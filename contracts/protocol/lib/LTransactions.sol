@@ -21,7 +21,7 @@ pragma solidity 0.5.1;
 
 library LTransactions {
 
-    bytes32 constant ADDRESS_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint256 constant ADDRESS_MASK = 0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     // ============ Enums ============
 
@@ -32,13 +32,15 @@ library LTransactions {
         Liquidate
     }
 
+    enum AmountSide {
+        Withdraw,
+        Deposit
+    }
+
     enum AmountType {
-        WithdrawAmount,
-        WithdrawPrincipal,
-        WithdrawAll,
-        DepositAmount,
-        DepositPrincipal,
-        DepositAll
+        TokenAmount,
+        Principal,
+        All
     }
 
     // ============ Structs ============
@@ -60,6 +62,7 @@ library LTransactions {
         address tokenDeposit;
         address exchangeWrapper;
         uint256 amount;
+        AmountSide amountSide;
         AmountType amountType;
         bytes orderData;
     }
@@ -70,7 +73,12 @@ library LTransactions {
         address liquidTrader;
         uint256 liquidAccount;
         uint256 amount;
+        AmountSide amountSide;
         AmountType amountType;
+    }
+
+    struct TransactionReceipt {
+        uint256 placeHolder; // TODO
     }
 
     // ============ Parsing Functions ============
@@ -151,9 +159,9 @@ library LTransactions {
     )
         private
         view
-        returns (byte result, uint256 pointer)
+        returns (uint8 result, uint256 pointer)
     {
-        result = byte(_staticParse(b, p) >> 31);
+        result = uint8(_staticParse(b, p) >> 31);
         pointer = p + 1;
     }
 
@@ -163,9 +171,9 @@ library LTransactions {
     )
         private
         view
-        returns (uint256 result, uint256 pointer)
+        returns (address result, uint256 pointer)
     {
-        result = address(_staticParse(b, p) && ADDRESS_MASK);
+        result = address(_staticParse(b, p) & ADDRESS_MASK);
         pointer = p + 32;
     }
 
@@ -177,7 +185,7 @@ library LTransactions {
         view
         returns (uint256 result, uint256 pointer)
     {
-        result = uint256(_staticParse(b, p));
+        result = _staticParse(b, p);
         pointer = p + 32;
     }
 
@@ -187,7 +195,7 @@ library LTransactions {
     )
         private
         view
-        returns (bytes32 result)
+        returns (uint256 result)
     {
         assembly {
             result := mload(add(b, add(32, p)))

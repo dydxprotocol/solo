@@ -18,22 +18,32 @@
 
 pragma solidity 0.5.1;
 
+import { IInterestOracle } from "../interfaces/IInterestOracle.sol";
+import { LInterest } from "../lib/LInterest.sol";
 
-interface IPriceOracle {
 
-    // ============ Public Functions ============
+contract InterestOracle is IInterestOracle {
+    uint128 constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
 
-    /**
-     * Get the price of a token
-     *
-     * @param  token  Address of the token to get the price for
-     * @return        The wei price of the token in USD, multiplied by 10**18
-     */
-    function getPrice(
-        address token
+    uint128 g_maxInterest;
+
+    constructor(
+        uint64 maxPercentage
+    )
+        public
+    {
+        g_maxInterest = maxPercentage * LInterest.BASE() / 100 / SECONDS_IN_A_YEAR;
+    }
+
+    function getNewInterest(
+        address token,
+        uint128 borrowed,
+        uint128 lent
     )
         external
         view
-        returns (uint128);
-
+        returns (uint64)
+    {
+        return LInterest.BASE() + (g_maxInterest * borrowed / lent);
+    }
 }

@@ -63,7 +63,4 @@ contract SoloMarginStorage {
 
     // token address => interestIndex
     mapping (address => LInterest.Index) g_index;
-
-    // token address => interestRate
-    mapping (address => uint64) g_rate;
 }

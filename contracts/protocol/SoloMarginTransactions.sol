@@ -17,8 +17,12 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
 
 import { LTransactions } from "./lib/LTransactions.sol";
+import { LInterest } from "./lib/LInterest.sol";
+import { LTokenInteract } from "./lib/LTokenInteract.sol";
+import { IExchangeWrapper } from "./interfaces/IExchangeWrapper.sol";
 import { IInterestOracle } from "./interfaces/IInterestOracle.sol";
 import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
 import { SoloMarginStorage } from "./SoloMarginStorage.sol";
@@ -29,6 +33,7 @@ contract SoloMarginTransactions is
     SoloMarginStorage,
     ReentrancyGuard
 {
+    using LTokenInteract for address;
 
     // ============ Public Functions ============
 
@@ -39,11 +44,12 @@ contract SoloMarginTransactions is
     )
         external
         nonReentrant
-        returns (uint256[] memory)
+        returns (LTransactions.TransactionReceipt[] memory)
     {
         (uint256 numTransactions, uint256 pointer) = LTransactions.parseNumTransactions(txData, 0);
 
-        uint256[] results = new uint256[](numTransactions);
+        LTransactions.TransactionReceipt[] memory results =
+            new LTransactions.TransactionReceipt[](numTransactions);
 
         for (uint256 i = 0; i < numTransactions; i++) {
             (results[i], pointer) = _transact(
@@ -53,6 +59,8 @@ contract SoloMarginTransactions is
                 pointer
             );
         }
+
+        // TODO: verify msg.sender is authorized to touch this trader's account
 
         // TODO: verify trader account is collateralized properly
 
@@ -68,7 +76,7 @@ contract SoloMarginTransactions is
         uint256 startPointer
     )
         internal
-        returns (uint256 result, uint256 pointer)
+        returns (LTransactions.TransactionReceipt memory result, uint256 pointer)
     {
         LTransactions.TransactionType ttype;
         LTransactions.DepositArgs memory dargs;
@@ -78,19 +86,19 @@ contract SoloMarginTransactions is
 
         (ttype, pointer) = LTransactions.parseTransactionType(txData, startPointer);
 
-        if (ttype == TransactionType.deposit) {
+        if (ttype == LTransactions.TransactionType.Deposit) {
             (dargs, pointer) = LTransactions.parseDepositArgs(txData, pointer);
             _updateIndex(dargs.token);
             result = _deposit(trader, account, dargs);
             _updateRate(dargs.token);
         }
-        else if (ttype == TransactionType.withdraw) {
+        else if (ttype == LTransactions.TransactionType.Withdraw) {
             (wargs, pointer) = LTransactions.parseWithdrawArgs(txData, pointer);
             _updateIndex(wargs.token);
             result = _withdraw(trader, account, wargs);
             _updateRate(wargs.token);
         }
-        else if (ttype == TransactionType.exchange) {
+        else if (ttype == LTransactions.TransactionType.Exchange) {
             (eargs, pointer) = LTransactions.parseExchangeArgs(txData, pointer);
             _updateIndex(eargs.tokenWithdraw);
             _updateIndex(eargs.tokenDeposit);
@@ -98,7 +106,7 @@ contract SoloMarginTransactions is
             _updateRate(eargs.tokenWithdraw);
             _updateRate(eargs.tokenDeposit);
         }
-        else if (ttype == TransactionType.liquidate) {
+        else if (ttype == LTransactions.TransactionType.Liquidate) {
             (largs, pointer) = LTransactions.parseLiquidateArgs(txData, pointer);
             _updateIndex(largs.tokenWithdraw);
             _updateIndex(largs.tokenDeposit);
@@ -106,11 +114,6 @@ contract SoloMarginTransactions is
             _updateRate(largs.tokenWithdraw);
             _updateRate(largs.tokenDeposit);
         }
-
-        index.r = IInterestOracle(g_interestOracle).getNewInterest(token, principals);
-        g_index[token] = index;
-
-        return (result, pointer);
     }
 
     function _deposit(
@@ -119,15 +122,24 @@ contract SoloMarginTransactions is
         LTransactions.DepositArgs memory args
     )
         internal
+        returns (LTransactions.TransactionReceipt memory)
     {
-        uint256 principal = amount.mul(c_BASE_INDEX).div(index.i);
+        (uint256 tokenAmount, uint256 principal) = _parseAmount(
+            trader,
+            account,
+            args.token,
+            args.amount,
+            g_index[args.token],
+            args.amountType,
+            LTransactions.AmountSide.Deposit
+        );
 
-        token.transferFrom(trader, address(this), amount);
+        args.token.transferFrom(trader, address(this), tokenAmount);
 
         _accountModify(
             trader,
             account,
-            token,
+            args.token,
             true,
             principal
         );
@@ -139,15 +151,24 @@ contract SoloMarginTransactions is
         LTransactions.WithdrawArgs memory args
     )
         internal
+        returns (LTransactions.TransactionReceipt memory)
     {
-        uint256 principal = amount.mul(c_BASE_INDEX).div(index.i);
+        (uint256 tokenAmount, uint256 principal) = _parseAmount(
+            trader,
+            account,
+            args.token,
+            args.amount,
+            g_index[args.token],
+            args.amountType,
+            LTransactions.AmountSide.Withdraw
+        );
 
-        token.transfer(trader, amount);
+        args.token.transfer(trader, tokenAmount);
 
         _accountModify(
             trader,
             account,
-            token,
+            args.token,
             false,
             principal
         );
@@ -159,23 +180,64 @@ contract SoloMarginTransactions is
         LTransactions.ExchangeArgs memory args
     )
         internal
+        returns (LTransactions.TransactionReceipt memory)
     {
-        token.transfer(exchangeWrapper, withdrawAmount);
-        uint256 withdrawPrincipal = withdrawAmount.mul(c_BASE_INDEX).div(index.i);
-        uint256 tokensReceived = IExchangeWrapper(exchangeWrapper).exchange(
-            trader,
-            tokenWithdraw,
-            tokenDeposit,
+        LInterest.Index memory withdrawIndex = g_index[args.tokenWithdraw];
+        LInterest.Index memory depositIndex = g_index[args.tokenDeposit];
+        uint256 withdrawAmount;
+        uint256 withdrawPrincipal;
+        uint256 depositAmount;
+        uint256 depositPrincipal;
+
+        if (args.amountSide == LTransactions.AmountSide.Withdraw) {
+            (withdrawAmount, withdrawPrincipal) = _parseAmount(
+                trader,
+                account,
+                args.tokenWithdraw,
+                args.amount,
+                withdrawIndex,
+                args.amountType,
+                args.amountSide
+            );
+        } else if (args.amountSide == LTransactions.AmountSide.Deposit) {
+            (depositAmount, depositPrincipal) = _parseAmount(
+                trader,
+                account,
+                args.tokenDeposit,
+                args.amount,
+                depositIndex,
+                args.amountType,
+                args.amountSide
+            );
+            withdrawAmount = IExchangeWrapper(args.exchangeWrapper).getExchangeCost(
+                args.tokenDeposit,
+                args.tokenWithdraw,
+                depositAmount,
+                args.orderData
+            );
+            withdrawPrincipal = LInterest.amountToPrincipal(withdrawAmount, withdrawIndex.i);
+        }
+
+        uint256 tempDepositAmount = IExchangeWrapper(args.exchangeWrapper).exchange(
+            msg.sender,
+            address(this),
+            args.tokenDeposit,
+            args.tokenWithdraw,
             withdrawAmount,
-            orderData
+            args.orderData
         );
-        tokenDeposit.transferFrom(exchangeWrapper, address(this), tokensReceived);
-        uint256 depositPrincipal = withdrawAmount.mul(c_BASE_INDEX).div(index.i);
+
+        if (args.amountSide == LTransactions.AmountSide.Withdraw) {
+            depositAmount = tempDepositAmount;
+            depositPrincipal = LInterest.amountToPrincipal(depositAmount, depositIndex.i);
+        }
+
+        args.tokenDeposit.transferFrom(args.exchangeWrapper, address(this), depositAmount);
 
         _accountModify(
             trader,
             account,
-            token,
+            args.tokenWithdraw,
             false,
             withdrawPrincipal
         );
@@ -183,7 +245,7 @@ contract SoloMarginTransactions is
         _accountModify(
             trader,
             account,
-            token,
+            args.tokenDeposit,
             true,
             depositPrincipal
         );
@@ -195,6 +257,7 @@ contract SoloMarginTransactions is
         LTransactions.LiquidateArgs memory args
     )
         internal
+        returns (LTransactions.TransactionReceipt memory)
     {
         // TODO
     }
@@ -206,10 +269,10 @@ contract SoloMarginTransactions is
     )
         internal
     {
-        Index memory index = g_index[token];
-        index.i = Interest.getInterest(index.i, index.r, (index.t - now32()));
-        index.t = now32();
-        g_index[token] = index;
+        LInterest.Index memory index = g_index[token];
+        if (index.i != LInterest.now32()) {
+            g_index[token] = LInterest.getUpdatedIndex(index);
+        }
     }
 
     function _updateRate(
@@ -217,7 +280,40 @@ contract SoloMarginTransactions is
     )
         internal
     {
-        g_rate[token] = IInterestOracle(g_interestOracle).getNewInterest(token, g_principals[token]);
+        g_index[token].r = IInterestOracle(g_interestOracle).getNewInterest(token, g_principals[token]);
+    }
+
+    function _parseAmount(
+        address trader,
+        uint256 account,
+        address token,
+        uint256 amount,
+        LInterest.Index memory index,
+        LTransactions.AmountType amountType,
+        LTransactions.AmountSide amountSide
+    )
+        internal
+        view
+        returns (uint256 tokenAmount, uint256 principal)
+    {
+        if (amountType == LTransactions.AmountType.TokenAmount) {
+            tokenAmount = amount;
+            principal = LInterest.amountToPrincipal(amount, index.i);
+        } else if (amountType == LTransactions.AmountType.Principal) {
+            principal = amount;
+            tokenAmount = LInterest.principalToAmount(principal, index.i);
+        } else if (amountType == LTransactions.AmountType.All) {
+            Balance memory balance = g_balances[trader][account][token];
+            if (amountSide == LTransactions.AmountSide.Withdraw) {
+                require(balance.positive, "BALANCE MUST BE POSITIVE TO WITHDRAW ALL");
+                principal = balance.principal;
+                tokenAmount = LInterest.principalToAmount(principal, index.i);
+            } else if (amountSide == LTransactions.AmountSide.Deposit) {
+                require(!balance.positive, "BALANCE MUST BE POSITIVE TO DEPOSIT ALL");
+                principal = balance.principal;
+                tokenAmount = LInterest.principalToAmount(principal, index.i);
+            }
+        }
     }
 
     function _accountModify(
