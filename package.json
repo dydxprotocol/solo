@@ -1,0 +1,86 @@
+{
+  "name": "@dydxprotocol/solomargin",
+  "version": "0.0.1",
+  "description": "Ethereum Smart Contracts for the dYdX Solo-Margin Trading Protocol",
+  "main": "dist/index.js",
+  "files": [
+    "dist/",
+    "build/",
+    "contracts/",
+    "src/",
+    "truffle.js",
+    "LICENSE",
+    "README.md",
+    ".babelrc"
+  ],
+  "directories": {
+    "contracts": "contracts",
+    "migrations": "migrations",
+    "test": "test",
+    "util": "util"
+  },
+  "scripts": {
+    "test": "NODE_ENV=test truffle test",
+    "compile": "truffle compile",
+    "migrate": "truffle migrate",
+    "develop": "truffle develop",
+    "console": "truffle console",
+    "lint": "eslint --ext .js --ignore-path .gitignore .",
+    "solint": "solium -d contracts/",
+    "coverage": "./node_modules/.bin/solidity-coverage",
+    "deploycosts": "truffle test util/DeployGasCosts.js",
+    "node": "ganache-cli",
+    "debug": "truffle debug",
+    "dydxlint": "python util/lintcontracts.py && python util/linttests.py",
+    "build:js": "./node_modules/.bin/babel src --out-dir dist --source-maps inline",
+    "docker_node": "ganache-cli -i 1212 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
+    "clean_contract_json": "babel-node ./scripts/clean-build.js",
+    "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
+    "deploy_kovan": "NETWORK=kovan npm run deploy",
+    "deploy_mainnet": "NETWORK=mainnet npm run deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dydxprotocol/solomargin"
+  },
+  "keywords": [
+    "dydx",
+    "ethereum"
+  ],
+  "author": "dYdX Trading Inc.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/dydxprotocol/solomargin/issues"
+  },
+  "homepage": "https://github.com/dydxprotocol/solomargin#readme",
+  "dependencies": {
+    "babel-runtime": "^6.26.0",
+    "bignumber.js": "^4.1.0",
+    "openzeppelin-solidity": "2.0.0"
+  },
+  "devDependencies": {
+    "@digix/tempo": "^0.2.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.6",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "bn.js": "4.11.8",
+    "canonical-weth": "^1.1.0",
+    "chai": "^4.1.2",
+    "coveralls": "^3.0.2",
+    "es6-promisify": "^5.0.0",
+    "eslint": "^4.19.1",
+    "ethereumjs-util": "^5.2.0",
+    "ganache-cli": "^6.1.8",
+    "mocha-junit-reporter": "^1.18.0",
+    "request-promise-native": "^1.0.5",
+    "solidity-coverage": "0.5.11",
+    "solium": "1.1.8",
+    "truffle": "5.0.0-beta.2",
+    "truffle-contract": "^3.0.6",
+    "web3": "1.0.0-beta.35",
+    "websocket": "1.0.26"
+  }
+}

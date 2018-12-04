@@ -1,0 +1,136 @@
+version: 2
+jobs:
+  checkout_and_install:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - dependency-cache-v1-{{ .Branch }}-
+            - dependency-cache-v1-
+      - run:
+          name: Install Dependencies
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc && npm ci
+      - save_cache:
+          key: dependency-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "$HOME/.npm"
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  build:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile contracts
+          command: npm run compile -- --all
+      - save_cache:
+          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  lint:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Lint
+          command: npm run lint && npm run dydxlint && npm run solint
+  test:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    parallelism: 3
+    steps:
+      - restore_cache:
+          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Test
+          command: TESTFILES=$(circleci tests glob "test/tests/**/*.js" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          no_output_timeout: 20m
+      - store_test_results:
+          path: ~/build/junit
+      - store_artifacts:
+          path: ~/build/junit
+  coverage:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Coverage
+          command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
+          no_output_timeout: 40m
+  prod_build:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Build Javascript
+          command: npm run build:js
+      - run:
+          name: Production Build
+          command: sh scripts/prod_build.sh
+      - save_cache:
+          key: cache-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  publish:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+      - add_ssh_keys:
+          fingerprints:
+            - "27:0f:9b:8a:19:8c:86:8f:4b:e8:28:01:69:08:ff:fb"
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
+      - run:
+          command: sh scripts/publish_if_not_exists.sh
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - build:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - test:
+          requires:
+            - build
+      - coverage:
+          requires:
+            - checkout_and_install
+      - prod_build:
+          requires:
+            - build
+      - publish:
+          requires:
+            - prod_build
+            - test
+            - lint
+          filters:
+            branches:
+              only: master
