@@ -37,11 +37,7 @@ contract SoloMarginAdmin is
     {
         g_approvedTokens.push(token);
 
-        g_index(token) = LInterest.Index({
-            i: LInterest.BASE,
-            t: uint32(block.timestamp),
-            r: 0
-        });
+        g_index[token] = LInterest.newIndex();
 
         // require current oracle can return a value
         require(0 != IPriceOracle(g_priceOracle).getPrice(token));

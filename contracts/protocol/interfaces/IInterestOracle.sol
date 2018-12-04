@@ -21,4 +21,22 @@ pragma solidity 0.5.1;
 
 interface IInterestOracle {
 
+    // ============ Public Functions ============
+
+    /**
+     * Get the interest rate of a token given some borrowed and lent amounts
+     *
+     * @param  token     The address of the token to get the interest rate for
+     * @param  borrowed  The principal amount of token borrowed
+     * @param  lent      The principal amount of token lent
+     * @return           The interest rate per second
+     */
+    function getNewInterest(
+        address token,
+        uint128 borrowed,
+        uint128 lent
+    )
+        external
+        view
+        returns (uint64);
 }

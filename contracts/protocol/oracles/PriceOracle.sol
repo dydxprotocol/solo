@@ -18,7 +18,29 @@
 
 pragma solidity 0.5.1;
 
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+
 
 contract PriceOracle {
 
+    mapping (address => uint128) g_price;
+
+    function getPrice(
+        address token
+    )
+        external
+        view
+        returns (uint128)
+    {
+        return g_price[token];
+    }
+
+    function setPrice(
+        address token,
+        uint128 price
+    )
+        external
+    {
+        g_price[token] = price;
+    }
 }

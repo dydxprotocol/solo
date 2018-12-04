@@ -24,29 +24,94 @@ import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.so
 library LInterest {
     using SafeMath for uint256;
 
-    uint64 constant BASE = 10**18;
+    uint64 constant public BASE = 10**18;
 
     struct Index {
         uint128 i; // current index of the token. starts at BASE and is monotonically increasing
         uint32 t; // last updated timestamp of the index
+        uint64 r; // current interest rate per second (times BASE)
     }
 
     // ============ Public Functions ============
 
-    function getInterest(
-        uint256 principal,
-        uint64 interest,
-        uint32 time
+    function getUpdatedIndex(
+        Index memory index
     )
-        external
+        internal
+        view
+        returns (Index memory)
+    {
+        uint32 t = now32();
+        uint128 i = _getInterest(
+            index.i,
+            index.r,
+            uint32(uint256(index.t).sub(t))
+        );
+        return Index({
+            i: i,
+            t: t,
+            r: index.r
+        });
+    }
+
+    function principalToAmount(
+        uint256 target,
+        uint128 interest
+    )
+        internal
         view
         returns (uint256)
     {
+        return target.mul(interest).div(BASE);
+    }
+
+    function amountToPrincipal(
+        uint256 target,
+        uint128 interest
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        return target.mul(BASE).div(interest);
+    }
+
+    function now32()
+        internal
+        view
+        returns (uint32)
+    {
+        return uint32(block.timestamp);
+    }
+
+    function newIndex()
+        internal
+        view
+        returns (Index memory)
+    {
+        return Index({
+            i: BASE,
+            t: now32(),
+            r: 0
+        });
+    }
+
+    // ============ Private Functions ============
+
+    function _getInterest(
+        uint128 principal,
+        uint64 interest,
+        uint32 time
+    )
+        internal
+        view
+        returns (uint128)
+    {
         // aggregate is the result of the caulculation
-        uint256 aggregate = BASE;
+        uint128 aggregate = BASE;
 
         // localInterest is interest^(2^rounds)
-        uint256 localInterest = uint256(interest);
+        uint128 localInterest = uint128(interest);
         uint256 localTime = uint256(time);
 
         while (localTime != 0) {
@@ -59,49 +124,19 @@ library LInterest {
             localInterest = _multiply(localInterest, localInterest);
         }
 
-        return _multiply(principal, aggregate);
+        return uint128(_multiply(principal, aggregate));
     }
-
-    function multiplyByInterest(
-        uint256 target,
-        uint64 interest
-    )
-        external
-        view
-        returns (uint256)
-    {
-        return target.mul(interest).div(BASE);
-    }
-
-    function divideByInterest(
-        uint256 target,
-        uint64 interest
-    )
-        external
-        view
-        returns (uint256)
-    {
-        return target.mul(BASE).div(interest);
-    }
-
-    // ============ Private Functions ============
 
     function _multiply(
-        uint256 x,
-        uint256 y
+        uint128 x,
+        uint128 y
     )
         private
         pure
-        returns (uint256)
+        returns (uint128)
     {
-        return x * y / BASE;
-    }
-
-    function _now32()
-        private
-        view
-        returns (uint32)
-    {
-        return uint32(block.timestamp);
+        uint256 val = uint256(x) * uint256(y) / BASE;
+        assert(uint128(val) == val);
+        return uint128(val);
     }
 }
