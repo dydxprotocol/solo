@@ -5,6 +5,7 @@ node_modules/
 coverage.json
 coverage/
 allFiredEvents
+config
 
 # VIM
 *.swo

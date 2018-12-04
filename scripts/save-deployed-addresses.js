@@ -1,3 +1,5 @@
+/* eslint-disable import/no-extraneous-dependencies, no-console */
+
 import fs from 'fs';
 import promisify from 'es6-promisify';
 import mkdirp from 'mkdirp';
@@ -10,13 +12,13 @@ const mkdirAsync = promisify(mkdirp);
 const NETWORK_IDS = ['1', '42'];
 
 async function run() {
-  const directory = __dirname + '/../migrations/';
+  const directory = `${__dirname}/../migrations/`;
   await mkdirAsync(directory);
 
-  Object.keys(contracts).forEach(contractName => {
+  Object.keys(contracts).forEach((contractName) => {
     const contract = contracts[contractName];
 
-    NETWORK_IDS.forEach(networkId => {
+    NETWORK_IDS.forEach((networkId) => {
       if (contract.networks[networkId]) {
         deployed[contractName] = deployed[contractName] || {};
 
@@ -33,11 +35,11 @@ async function run() {
 
   const filename = 'deployed.json';
   await writeFileAsync(directory + filename, json, 'utf8');
-  console.log('Wrote ' + filename);
+  console.log(`Wrote ${filename}`);
 }
 
 run()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

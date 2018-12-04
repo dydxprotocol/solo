@@ -16,8 +16,5 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
-
-module.exports = (deployer) => {
-  deployer.deploy(Migrations);
-};
+export * from './lib/contracts';
+export * from './lib/snapshots';

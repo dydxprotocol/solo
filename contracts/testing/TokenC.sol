@@ -16,8 +16,21 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity 0.4.24;
+pragma experimental "v0.5.0";
 
-module.exports = (deployer) => {
-  deployer.deploy(Migrations);
-};
+import { TestToken } from "./TestToken.sol";
+
+
+/* solium-disable-next-line */
+contract TokenC is TestToken {
+    function decimals() public pure returns (uint8) {
+        return 33;
+    }
+    function symbol() public pure returns (string) {
+        return "CCC";
+    }
+    function name() public pure returns (string) {
+        return "Test Token C";
+    }
+}

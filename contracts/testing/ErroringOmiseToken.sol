@@ -16,8 +16,23 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity 0.4.24;
+pragma experimental "v0.5.0";
 
-module.exports = (deployer) => {
-  deployer.deploy(Migrations);
-};
+
+import { OmiseToken } from "./OmiseToken.sol";
+
+contract ErroringOmiseToken is OmiseToken {
+
+    function transfer(address, uint256) public {
+        require(false);
+    }
+
+    function transferFrom(address, address, uint256) public {
+        require(false);
+    }
+
+    function approve(address, uint256) public {
+        require(false);
+    }
+}

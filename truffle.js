@@ -1,41 +1,38 @@
-require("babel-register");
-require('babel-polyfill');
-
 let mocha = {
-  useColors: true
+  useColors: true,
 };
 
 if (process.env.TRUFFLE_REPORTER) {
   mocha = {
     reporter: 'mocha-junit-reporter',
     reporterOptions: {
-      mochaFile: './junit/test-results.xml'
-    }
+      mochaFile: './junit/test-results.xml',
+    },
   };
 }
 
 module.exports = {
   networks: {
     mainnet: {
-      host: "127.0.0.1",
+      host: '127.0.0.1',
       port: 8545,
-      network_id: "1",
+      network_id: '1',
       gasPrice: process.env.GAS_PRICE,
-      gas: 7900000
+      gas: 7900000,
     },
     kovan: {
-      host: "127.0.0.1",
+      host: '127.0.0.1',
       port: 8545,
-      network_id: "42",
+      network_id: '42',
       gasPrice: 1000000000, // 1 gwei
-      gas: 7900000
+      gas: 7900000,
     },
     dev: {
-      host: "localhost",
+      host: 'localhost',
       port: 8545,
-      network_id: "*",
+      network_id: '*',
       gasPrice: 1000000000, // 1 gwei
-      gas: 7900000
+      gas: 7900000,
     },
     coverage: {
       host: 'localhost',
@@ -47,14 +44,14 @@ module.exports = {
     docker: {
       host: 'localhost',
       network_id: '1212',
-      port: 8545
-    }
+      port: 8545,
+    },
   },
   mocha,
   solc: {
     optimizer: {
       enabled: true,
-      runs: 10000
-    }
-  }
+      runs: 10000,
+    },
+  },
 };
