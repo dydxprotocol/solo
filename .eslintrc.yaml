@@ -1,71 +1,22 @@
-extends: eslint:recommended
-
+extends: airbnb-base
 parser: babel-eslint
-
+plugins:
+  - babel
+  - mocha
 env:
   node: true
   es6: true
   mocha: true
-
 globals:
   web3: true
   artifacts: true
   contract: true
-
 rules:
-  valid-jsdoc: error
-  curly: error
-  dot-location:
-    - error
-    - property
-  dot-notation: error
-  eqeqeq: error
-  no-alert: error
-  no-eval: error
-  no-implied-eval: error
-  no-invalid-this: error
-  no-new: error
-  no-new-func: error
-  no-new-wrappers: error
-  no-return-await: error
-  strict:
-    - error
-    - global
-  require-await: error
-  no-undef-init: error
-  global-require: error
-  block-spacing: error
-  array-bracket-spacing:
-    - error
-    - never
-  brace-style: error
-  eol-last:
-    - error
-    - always
-  func-call-spacing:
-    - error
-    - never
-  func-style:
-    - error
-    - declaration
-    - allowArrowFunctions: true
-  indent:
-    - warn
-    - 2
-  linebreak-style:
-    - error
-    - unix
+  no-use-before-define: 0
+  class-methods-use-this: 0
+  no-underscore-dangle: 0
+  import/prefer-default-export: 0
+  mocha/no-exclusive-tests: error
   max-len:
     - error
     - 100
-  no-tabs: error
-  no-trailing-spaces: warn
-  arrow-spacing: error
-  constructor-super: error
-  no-const-assign: error
-  no-duplicate-imports: error
-  no-var: error
-  no-console: off
-  no-unused-vars:
-    - warn
-    - argsIgnorePattern: "^_"

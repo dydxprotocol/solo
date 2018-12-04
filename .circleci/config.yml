@@ -8,14 +8,14 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - dependency-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - dependency-cache-v1-{{ .Branch }}-
-            - dependency-cache-v1-
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-
       - run:
           name: Install Dependencies
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc && npm ci
       - save_cache:
-          key: dependency-cache-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
             - "$HOME/.npm"
       - save_cache:
@@ -126,11 +126,11 @@ workflows:
       - prod_build:
           requires:
             - build
-      - publish:
-          requires:
-            - prod_build
-            - test
-            - lint
-          filters:
-            branches:
-              only: master
+      # - publish:
+      #     requires:
+      #       - prod_build
+      #       - test
+      #       - lint
+      #     filters:
+      #       branches:
+      #         only: master

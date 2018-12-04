@@ -16,8 +16,6 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+/* eslint-disable max-len, import/no-unresolved */
 
-module.exports = (deployer) => {
-  deployer.deploy(Migrations);
-};
+export { default as SoloMargin } from '../../build/contracts/SoloMargin.json';
