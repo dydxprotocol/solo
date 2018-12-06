@@ -18,32 +18,32 @@
 
 pragma solidity 0.5.1;
 
-import { IInterestOracle } from "../interfaces/IInterestOracle.sol";
-import { LInterest } from "../lib/LInterest.sol";
 
+library LMath {
 
-contract InterestOracle is IInterestOracle {
-    uint128 constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
+    // ============ Public Functions ============
 
-    uint128 g_maxInterest;
-
-    constructor(
-        uint64 maxPercentage
+    function to128(
+        uint256 x
     )
-        public
+        internal
+        pure
+        returns (uint128)
     {
-        g_maxInterest = maxPercentage * LInterest.BASE() / 100 / SECONDS_IN_A_YEAR;
+        uint128 r = uint128(x);
+        require(r == x, "UNSAFE CAST TO UINT128");
+        return r;
     }
 
-    function getNewInterest(
-        address token,
-        uint128 borrowed,
-        uint128 lent
+    function to64(
+        uint256 x
     )
-        external
-        view
+        internal
+        pure
         returns (uint64)
     {
-        return LInterest.BASE() + (g_maxInterest * borrowed / lent);
+        uint64 r = uint64(x);
+        require(r == x, "UNSAFE CAST TO UINT64");
+        return r;
     }
 }

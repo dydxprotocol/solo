@@ -45,36 +45,48 @@ library LTransactions {
 
     // ============ Structs ============
 
+    struct TransactionArgs {
+        TransactionType transactionType;
+        AmountSide amountSide;
+        AmountType amountType;
+        address tokenDeposit;
+        address tokenWithdraw;
+        address exchangeWrapperOrLiquidTrader;
+        uint256 liquidAccount;
+        uint256 amount;
+        bytes orderData;
+    }
+
     struct DepositArgs {
+        AmountType amountType;
         address token;
         uint256 amount;
-        AmountType amountType;
     }
 
     struct WithdrawArgs {
+        AmountType amountType;
         address token;
         uint256 amount;
-        AmountType amountType;
     }
 
     struct ExchangeArgs {
+        AmountSide amountSide;
+        AmountType amountType;
         address tokenWithdraw;
         address tokenDeposit;
         address exchangeWrapper;
         uint256 amount;
-        AmountSide amountSide;
-        AmountType amountType;
         bytes orderData;
     }
 
     struct LiquidateArgs {
+        AmountSide amountSide;
+        AmountType amountType;
         address tokenWithdraw;
         address tokenDeposit;
         address liquidTrader;
         uint256 liquidAccount;
         uint256 amount;
-        AmountSide amountSide;
-        AmountType amountType;
     }
 
     struct TransactionReceipt {
@@ -83,122 +95,67 @@ library LTransactions {
 
     // ============ Parsing Functions ============
 
-    function parseNumTransactions(
-        bytes memory b,
-        uint256 p
-    )
-        internal
-        view
-        returns (uint256 numTransactions, uint256 pointer)
-    {
-        uint8 temp;
-        (temp, pointer) = _parseUint8(b, p);
-        numTransactions = uint256(temp);
-    }
-
-    function parseTransactionType(
-        bytes memory b,
-        uint256 p
-    )
-        internal
-        view
-        returns (TransactionType, uint256)
-    {
-        // TODO
-    }
-
     function parseDepositArgs(
-        bytes memory b,
-        uint256 p
+        TransactionArgs memory args
     )
         internal
-        view
-        returns (DepositArgs memory, uint256)
+        pure
+        returns (DepositArgs memory)
     {
-        // TODO
+        return DepositArgs({
+            amountType: args.amountType,
+            token: args.tokenDeposit,
+            amount: args.amount
+        });
     }
 
     function parseWithdrawArgs(
-        bytes memory b,
-        uint256 p
+        TransactionArgs memory args
     )
         internal
-        view
-        returns (WithdrawArgs memory, uint256)
+        pure
+        returns (WithdrawArgs memory)
     {
-        // TODO
+        return WithdrawArgs({
+            amountType: args.amountType,
+            token: args.tokenWithdraw,
+            amount: args.amount
+        });
     }
 
     function parseExchangeArgs(
-        bytes memory b,
-        uint256 p
+        TransactionArgs memory args
     )
         internal
-        view
-        returns (ExchangeArgs memory, uint256)
+        pure
+        returns (ExchangeArgs memory)
     {
-        // TODO
+        return ExchangeArgs({
+            amountSide: args.amountSide,
+            amountType: args.amountType,
+            tokenWithdraw: args.tokenWithdraw,
+            tokenDeposit: args.tokenDeposit,
+            exchangeWrapper: args.exchangeWrapperOrLiquidTrader,
+            amount: args.amount,
+            orderData: args.orderData
+        });
     }
 
     function parseLiquidateArgs(
-        bytes memory b,
-        uint256 p
+        TransactionArgs memory args
     )
         internal
-        view
-        returns (LiquidateArgs memory, uint256)
+        pure
+        returns (LiquidateArgs memory)
     {
-        // TODO
-    }
-
-    // ============ Helper Functions ============
-
-    function _parseUint8(
-        bytes memory b,
-        uint256 p
-    )
-        private
-        view
-        returns (uint8 result, uint256 pointer)
-    {
-        result = uint8(_staticParse(b, p) >> 31);
-        pointer = p + 1;
-    }
-
-    function _parseAddress(
-        bytes memory b,
-        uint256 p
-    )
-        private
-        view
-        returns (address result, uint256 pointer)
-    {
-        result = address(_staticParse(b, p) & ADDRESS_MASK);
-        pointer = p + 32;
-    }
-
-    function _parseUint256(
-        bytes memory b,
-        uint256 p
-    )
-        private
-        view
-        returns (uint256 result, uint256 pointer)
-    {
-        result = _staticParse(b, p);
-        pointer = p + 32;
-    }
-
-    function _staticParse(
-        bytes memory b,
-        uint256 p
-    )
-        private
-        view
-        returns (uint256 result)
-    {
-        assembly {
-            result := mload(add(b, add(32, p)))
-        }
+        return LiquidateArgs({
+            amountSide: args.amountSide,
+            amountType: args.amountType,
+            tokenWithdraw: args.tokenWithdraw,
+            tokenDeposit: args.tokenWithdraw,
+            liquidTrader: args.exchangeWrapperOrLiquidTrader,
+            liquidAccount: args.liquidAccount,
+            amount: args.amount
+        });
     }
 }

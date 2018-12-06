@@ -17,7 +17,9 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
 
+import { LDecimal } from "./lib/LDecimal.sol";
 import { SoloMarginAdmin } from "./SoloMarginAdmin.sol";
 import { SoloMarginTransactions } from "./SoloMarginTransactions.sol";
 
@@ -27,16 +29,12 @@ contract SoloMargin is
     SoloMarginAdmin
 {
     constructor (
-        address priceOracle,
-        address interestOracle,
-        uint256 minCollateralRatio,
-        uint256 spread
+        LDecimal.D256 memory minCollateralRatio,
+        LDecimal.D256 memory spread
     )
         public
     {
-        g_priceOracle = priceOracle;
-        g_interestOracle = interestOracle;
         g_minCollateralRatio = minCollateralRatio;
-        g_spread = spread;
+        g_liquidationSpread = spread;
     }
 }

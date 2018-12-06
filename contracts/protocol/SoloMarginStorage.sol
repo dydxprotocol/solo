@@ -18,49 +18,58 @@
 
 pragma solidity 0.5.1;
 
+import { LDecimal } from "./lib/LDecimal.sol";
 import { LInterest } from "./lib/LInterest.sol";
+import { LTime } from "./lib/LTime.sol";
+import { LTypes } from "./lib/LTypes.sol";
+import { IInterestSetter } from "./interfaces/IInterestSetter.sol";
+import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
 
 
 contract SoloMarginStorage {
 
     // ============ Structs ============
 
-    struct Principals {
-        uint128 borrowed;
-        uint128 lent;
-    }
-
     struct Balance {
         bool positive;
-        uint128 principal;
+        LTypes.Principal principal;
+    }
+
+    struct Account {
+        mapping (address => Balance) balances;
+        LTime.Time closingTime;
+    }
+
+    struct Principals {
+        LTypes.Principal borrowed;
+        LTypes.Principal lent;
+    }
+
+    struct Market {
+        Principals principals;
+        LInterest.Index index;
+        IPriceOracle oracle;
+        IInterestSetter interestSetter;
     }
 
     // ============ Storage ============
 
-    // address of price oracle
-    address g_priceOracle;
-
-    // address of interest oracle
-    address g_interestOracle;
-
     // array of all approved tokens
-    address[] g_approvedTokens;
-
-    // collateral ratio at which accounts can be liquidated
-    uint256 g_minCollateralRatio;
-
-    // percentage spread of what trades are acceptable
-    uint256 g_spread;
-
-    // trader => account => token => balance
-    mapping (address => mapping (uint256 => mapping (address => Balance))) g_balances;
-
-    // trader => account => is closing
-    mapping (address => mapping (uint256 => bool)) g_closing;
+    address[] g_activeTokens;
 
     // token address => principals
-    mapping (address => Principals) g_principals;
+    mapping (address => Market) g_markets;
 
-    // token address => interestIndex
-    mapping (address => LInterest.Index) g_index;
+    // trader => account number => Account
+    mapping (address => mapping (uint256 => Account)) g_accounts;
+
+    // ============ Risk Parameters ============
+
+    // collateral ratio at which accounts can be liquidated
+    // default: 1.30
+    LDecimal.D256 g_minCollateralRatio;
+
+    // percentage spread of what trades are acceptable
+    // default: 0.95
+    LDecimal.D256 g_liquidationSpread;
 }

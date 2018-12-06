@@ -19,17 +19,24 @@
 pragma solidity 0.5.1;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { LDecimal } from "./LDecimal.sol";
+import { LMath } from "./LMath.sol";
+import { LTime } from "./LTime.sol";
+import { LTypes } from "./LTypes.sol";
 
 
 library LInterest {
+    using LMath for uint256;
     using SafeMath for uint256;
+    using SafeMath for uint128;
+    using LTime for LTime.Time;
 
     uint64 constant public BASE = 10**18;
 
     struct Index {
-        uint128 i; // current index of the token. starts at BASE and is monotonically increasing
-        uint32 t; // last updated timestamp of the index
-        uint64 r; // current interest rate per second (times BASE)
+        LDecimal.D128 accrued; // current interest of the token. starts at BASE and is monotonically increasing
+        LTime.Time time; // last updated timestamp of the index
+        LDecimal.D64 rate; // current interest rate per second (times BASE)
     }
 
     // ============ Public Functions ============
@@ -41,47 +48,39 @@ library LInterest {
         view
         returns (Index memory)
     {
-        uint32 t = now32();
-        uint128 i = _getInterest(
-            index.i,
-            index.r,
-            uint32(uint256(index.t).sub(t))
+        LTime.Time memory currentTime = LTime.currentTime();
+        LDecimal.D128 memory accrued = _getAccrued(
+            index.accrued,
+            index.rate,
+            currentTime.sub(index.time)
         );
         return Index({
-            i: i,
-            t: t,
-            r: index.r
+            accrued: accrued,
+            time: currentTime,
+            rate: index.rate
         });
     }
 
-    function principalToAmount(
-        uint256 target,
-        uint128 interest
+    function principalToActual(
+        LTypes.Principal memory principal,
+        LDecimal.D128 memory interest
     )
         internal
-        view
-        returns (uint256)
+        pure
+        returns (LTypes.TokenAmount memory)
     {
-        return target.mul(interest).div(BASE);
+        return LTypes.TokenAmount({ value: principal.value.mul(interest.value).div(BASE) });
     }
 
-    function amountToPrincipal(
-        uint256 target,
-        uint128 interest
+    function actualToPrincipal(
+        LTypes.TokenAmount memory tokenAmount,
+        LDecimal.D128 memory interest
     )
         internal
-        view
-        returns (uint256)
+        pure
+        returns (LTypes.Principal memory)
     {
-        return target.mul(BASE).div(interest);
-    }
-
-    function now32()
-        internal
-        view
-        returns (uint32)
-    {
-        return uint32(block.timestamp);
+        return LTypes.Principal({ value: tokenAmount.value.mul(BASE).div(interest.value).to128() });
     }
 
     function newIndex()
@@ -90,41 +89,41 @@ library LInterest {
         returns (Index memory)
     {
         return Index({
-            i: BASE,
-            t: now32(),
-            r: 0
+            accrued: LDecimal.one128(),
+            time: LTime.currentTime(),
+            rate: LDecimal.zero64()
         });
     }
 
     // ============ Private Functions ============
 
-    function _getInterest(
-        uint128 principal,
-        uint64 interest,
-        uint32 time
+    function _getAccrued(
+        LDecimal.D128 memory accrued,
+        LDecimal.D64 memory rate,
+        LTime.Time memory timeDelta
     )
         internal
-        view
-        returns (uint128)
+        pure
+        returns (LDecimal.D128 memory)
     {
         // aggregate is the result of the caulculation
         uint128 aggregate = BASE;
 
-        // localInterest is interest^(2^rounds)
-        uint128 localInterest = uint128(interest);
-        uint256 localTime = uint256(time);
+        // localRate is rate^(2^rounds)
+        uint128 localRate = uint128(rate.value);
+        uint256 localTime = uint256(timeDelta.value);
 
         while (localTime != 0) {
 
             if (localTime & 1 != 0) {
-                aggregate = _multiply(aggregate, localInterest);
+                aggregate = _multiply(aggregate, localRate);
             }
 
             localTime = localTime >> 1;
-            localInterest = _multiply(localInterest, localInterest);
+            localRate = _multiply(localRate, localRate);
         }
 
-        return uint128(_multiply(principal, aggregate));
+        return LDecimal.D128({ value: _multiply(accrued.value, aggregate) });
     }
 
     function _multiply(
@@ -136,7 +135,7 @@ library LInterest {
         returns (uint128)
     {
         uint256 val = uint256(x) * uint256(y) / BASE;
-        assert(uint128(val) == val);
+        assert(uint256(uint128(val)) == val);
         return uint128(val);
     }
 }

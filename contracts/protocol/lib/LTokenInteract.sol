@@ -18,6 +18,7 @@
 
 pragma solidity 0.5.1;
 
+import { LTypes } from "./LTypes.sol";
 
 /**
  * @title GeneralERC20
@@ -86,9 +87,9 @@ library LTokenInteract {
     )
         internal
         view
-        returns (uint256)
+        returns (LTypes.TokenAmount memory)
     {
-        return GeneralERC20(token).balanceOf(owner);
+        return LTypes.TokenAmount({ value: GeneralERC20(token).balanceOf(owner) });
     }
 
     function allowance(
@@ -98,19 +99,19 @@ library LTokenInteract {
     )
         internal
         view
-        returns (uint256)
+        returns (LTypes.TokenAmount memory)
     {
-        return GeneralERC20(token).allowance(owner, spender);
+        return LTypes.TokenAmount({ value: GeneralERC20(token).allowance(owner, spender) });
     }
 
     function approve(
         address token,
         address spender,
-        uint256 amount
+        LTypes.TokenAmount memory amount
     )
         internal
     {
-        GeneralERC20(token).approve(spender, amount);
+        GeneralERC20(token).approve(spender, amount.value);
 
         require(
             checkSuccess(),
@@ -121,19 +122,19 @@ library LTokenInteract {
     function transfer(
         address token,
         address to,
-        uint256 amount
+        LTypes.TokenAmount memory amount
     )
         internal
     {
         address from = address(this);
         if (
-            amount == 0
+            amount.value == 0
             || from == to
         ) {
             return;
         }
 
-        GeneralERC20(token).transfer(to, amount);
+        GeneralERC20(token).transfer(to, amount.value);
 
         require(
             checkSuccess(),
@@ -145,18 +146,18 @@ library LTokenInteract {
         address token,
         address from,
         address to,
-        uint256 amount
+        LTypes.TokenAmount memory amount
     )
         internal
     {
         if (
-            amount == 0
+            amount.value == 0
             || from == to
         ) {
             return;
         }
 
-        GeneralERC20(token).transferFrom(from, to, amount);
+        GeneralERC20(token).transferFrom(from, to, amount.value);
 
         require(
             checkSuccess(),

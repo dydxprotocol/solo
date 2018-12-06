@@ -17,23 +17,26 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
+
+import { LDecimal } from "../lib/LDecimal.sol";
 
 
-interface IPriceOracle {
+contract IPriceOracle {
 
     // ============ Public Functions ============
 
     /**
      * Get the price of a token
      *
-     * @param  token  Address of the token to get the price for
-     * @return        The wei price of the token in USD, multiplied by 10**18
+     * @return  The USD price of a base unit of the token, then multiplied by 10^36.
+     *          So a stablecoin with 18 decimal places would return 10^18.
+     *          Remember that this is the price of the base unit rather than the price of a
+     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
      */
-    function getPrice(
-        address token
-    )
-        external
+    function getPrice()
+        public
         view
-        returns (uint128);
+        returns (LDecimal.D128 memory);
 
 }

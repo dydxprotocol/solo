@@ -17,70 +17,90 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
 
 import { Ownable } from "../tempzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SoloMarginStorage } from "./SoloMarginStorage.sol";
 import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
-import { IInterestOracle } from "./interfaces/IInterestOracle.sol";
+import { IInterestSetter } from "./interfaces/IInterestSetter.sol";
+import { LDecimal } from "./lib/LDecimal.sol";
 import { LInterest } from "./lib/LInterest.sol";
+import { LTypes } from "./lib/LTypes.sol";
 
 
 contract SoloMarginAdmin is
     SoloMarginStorage,
-    Ownable
+    Ownable,
+    ReentrancyGuard
 {
+    using LDecimal for LDecimal.D128;
+    using LDecimal for LDecimal.D64;
+
     function ownerAddToken(
-        address token
+        address token,
+        IPriceOracle oracle
     )
         external
         onlyOwner
+        nonReentrant
     {
-        g_approvedTokens.push(token);
-
-        g_index[token] = LInterest.newIndex();
-
         // require current oracle can return a value
-        require(0 != IPriceOracle(g_priceOracle).getPrice(token));
+        require(!oracle.getPrice().equals(LDecimal.zero128()));
+
+        g_activeTokens.push(token);
+
+        g_markets[token].index = LInterest.newIndex();
+
+        g_markets[token].oracle = oracle;
     }
 
-    function ownerSetPriceOracle(
-        address priceOracle
+    function ownerSetOracle(
+        address token,
+        IPriceOracle oracle
     )
         external
         onlyOwner
+        nonReentrant
     {
-        // require oracle can return values for all tokens
-        for (uint256 i = 0; i < g_approvedTokens.length; i++) {
-            require(0 != IPriceOracle(priceOracle).getPrice(g_approvedTokens[i]));
-        }
+        // require oracle can return value for token
+        require(!oracle.getPrice().equals(LDecimal.zero128()));
 
-        g_priceOracle = priceOracle;
+        g_markets[token].oracle = oracle;
     }
 
-    function ownerSetInterestOracle(
-        address interestOracle
+    function ownerSetInterestSetter(
+        address token,
+        IInterestSetter interestSetter
     )
         external
         onlyOwner
+        nonReentrant
     {
-        g_interestOracle = interestOracle;
+        // require current oracle can return a value
+        LTypes.Principal memory zero = LTypes.Principal({ value: 0 });
+        require(!interestSetter.getNewInterest(token, zero, zero).equals(LDecimal.zero64()));
+
+        g_markets[token].interestSetter = interestSetter;
     }
 
     function ownerSetMinCollateralRatio(
-        uint256 minCollateralRatio
+        LDecimal.D256 memory minCollateralRatio
     )
-        external
+        public
         onlyOwner
+        nonReentrant
     {
         g_minCollateralRatio = minCollateralRatio;
     }
 
     function ownerSetSpread(
-        uint256 spread
+        LDecimal.D256 memory spread
     )
-        external
+        public
         onlyOwner
+        nonReentrant
     {
-        g_spread = spread;
+        g_liquidationSpread = spread;
     }
 }

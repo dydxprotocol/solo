@@ -17,9 +17,13 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
+
+import { LDecimal } from "../lib/LDecimal.sol";
+import { LTypes } from "../lib/LTypes.sol";
 
 
-interface IInterestOracle {
+contract IInterestSetter {
 
     // ============ Public Functions ============
 
@@ -33,10 +37,10 @@ interface IInterestOracle {
      */
     function getNewInterest(
         address token,
-        uint128 borrowed,
-        uint128 lent
+        LTypes.Principal memory borrowed,
+        LTypes.Principal memory lent
     )
-        external
+        public
         view
-        returns (uint64);
+        returns (LDecimal.D64 memory);
 }
