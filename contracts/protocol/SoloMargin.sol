@@ -20,13 +20,15 @@ pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { LDecimal } from "./lib/LDecimal.sol";
-import { SoloMarginAdmin } from "./SoloMarginAdmin.sol";
-import { SoloMarginTransactions } from "./SoloMarginTransactions.sol";
+import { Admin } from "./impl/Admin.sol";
+import { Queries } from "./impl/Queries.sol";
+import { TransactionLogic } from "./impl/TransactionLogic.sol";
 
 
 contract SoloMargin is
-    SoloMarginTransactions,
-    SoloMarginAdmin
+    TransactionLogic,
+    Admin,
+    Queries
 {
     constructor (
         LDecimal.D256 memory minCollateralRatio,

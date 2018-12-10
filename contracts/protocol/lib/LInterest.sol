@@ -30,112 +30,172 @@ library LInterest {
     using SafeMath for uint256;
     using SafeMath for uint128;
     using LTime for LTime.Time;
+    using LDecimal for LDecimal.D256;
+    using LTypes for LTypes.Principal;
+    using LInterest for Accrued;
 
     uint64 constant public BASE = 10**18;
 
+
+    // ============ Structs ============
+
+    struct TotalPrincipal {
+        LTypes.Principal lent;
+        LTypes.Principal borrowed;
+    }
+
     struct Index {
-        LDecimal.D128 accrued; // current interest of the token. starts at BASE and is monotonically increasing
-        LTime.Time time; // last updated timestamp of the index
-        LDecimal.D64 rate; // current interest rate per second (times BASE)
+        Accrued borrower;
+        Accrued lender;
+    }
+
+    struct Rate {
+        uint128 value;
+    }
+
+    struct Accrued {
+        uint128 value;
     }
 
     // ============ Public Functions ============
 
     function getUpdatedIndex(
+        Index memory index,
+        Rate memory rate,
+        LTime.Time memory timeDelta,
+        TotalPrincipal memory totalPrincipal,
+        LDecimal.D256 memory earningsRate
+    )
+        internal
+        pure
+        returns (Index memory result)
+    {
+        Accrued memory borrowerInterest = _getAccruedInterest(rate, timeDelta);
+
+        uint256 lenderInterestRaw = LMath.getPartial(
+            totalPrincipal.borrowed.value,
+            totalPrincipal.lent.value,
+            borrowerInterest.value.sub(BASE)
+        );
+        Accrued memory lenderInterest;
+        lenderInterest.value = earningsRate.mul(lenderInterestRaw).add(BASE).to128();
+
+        result.borrower = mul(index.borrower, borrowerInterest);
+        result.lender = mul(index.lender, lenderInterest);
+    }
+
+    function signedPrincipalToTokenAmount(
+        LTypes.SignedPrincipal memory signedPrincipal,
         Index memory index
     )
         internal
-        view
-        returns (Index memory)
+        pure
+        returns (LTypes.SignedTokenAmount memory result)
     {
-        LTime.Time memory currentTime = LTime.currentTime();
-        LDecimal.D128 memory accrued = _getAccrued(
-            index.accrued,
-            index.rate,
-            currentTime.sub(index.time)
+        result.sign = signedPrincipal.sign;
+        Accrued memory accrued = result.sign ? index.lender : index.borrower;
+        result.tokenAmount.value = LMath.getPartial(
+            accrued.value,
+            BASE,
+            signedPrincipal.principal.value
         );
-        return Index({
-            accrued: accrued,
-            time: currentTime,
-            rate: index.rate
-        });
     }
 
-    function principalToActual(
-        LTypes.Principal memory principal,
-        LDecimal.D128 memory interest
+    function signedTokenAmountToPrincipal(
+        LTypes.SignedTokenAmount memory signedTokenAmount,
+        Index memory index
     )
         internal
         pure
-        returns (LTypes.TokenAmount memory)
+        returns (LTypes.SignedPrincipal memory result)
     {
-        return LTypes.TokenAmount({ value: principal.value.mul(interest.value).div(BASE) });
-    }
-
-    function actualToPrincipal(
-        LTypes.TokenAmount memory tokenAmount,
-        LDecimal.D128 memory interest
-    )
-        internal
-        pure
-        returns (LTypes.Principal memory)
-    {
-        return LTypes.Principal({ value: tokenAmount.value.mul(BASE).div(interest.value).to128() });
+        result.sign = signedTokenAmount.sign;
+        Accrued memory accrued = result.sign ? index.lender : index.borrower;
+        result.principal.value = LMath.getPartial(
+            BASE,
+            accrued.value,
+            signedTokenAmount.tokenAmount.value
+        ).to128();
     }
 
     function newIndex()
         internal
-        view
+        pure
         returns (Index memory)
     {
         return Index({
-            accrued: LDecimal.one128(),
-            time: LTime.currentTime(),
-            rate: LDecimal.zero64()
+            borrower: Accrued({ value: BASE }),
+            lender: Accrued({ value: BASE })
         });
+    }
+
+    function isValidRate(
+        Rate memory rate
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return rate.value >= BASE;
+    }
+
+    function mul(
+        Accrued memory a,
+        Rate memory r
+    )
+        private
+        pure
+        returns (Accrued memory result)
+    {
+        result.value = (uint256(a.value) * uint256(r.value) / BASE).to128();
+    }
+
+    function mul(
+        Rate memory a,
+        Rate memory b
+    )
+        private
+        pure
+        returns (Rate memory result)
+    {
+        result.value = (uint256(a.value) * uint256(b.value) / BASE).to128();
+    }
+
+    function mul(
+        Accrued memory a,
+        Accrued memory b
+    )
+        private
+        pure
+        returns (Accrued memory result)
+    {
+        result.value = (uint256(a.value) * uint256(b.value) / BASE).to128();
     }
 
     // ============ Private Functions ============
 
-    function _getAccrued(
-        LDecimal.D128 memory accrued,
-        LDecimal.D64 memory rate,
+    function _getAccruedInterest(
+        Rate memory rate,
         LTime.Time memory timeDelta
     )
-        internal
+        private
         pure
-        returns (LDecimal.D128 memory)
+        returns (Accrued memory result)
     {
-        // aggregate is the result of the caulculation
-        uint128 aggregate = BASE;
+        result.value = BASE;
 
         // localRate is rate^(2^rounds)
-        uint128 localRate = uint128(rate.value);
+        Rate memory localRate = Rate({ value: rate.value });
         uint256 localTime = uint256(timeDelta.value);
 
         while (localTime != 0) {
 
             if (localTime & 1 != 0) {
-                aggregate = _multiply(aggregate, localRate);
+                result = mul(result, localRate);
             }
 
             localTime = localTime >> 1;
-            localRate = _multiply(localRate, localRate);
+            localRate = mul(localRate, localRate);
         }
-
-        return LDecimal.D128({ value: _multiply(accrued.value, aggregate) });
-    }
-
-    function _multiply(
-        uint128 x,
-        uint128 y
-    )
-        private
-        pure
-        returns (uint128)
-    {
-        uint256 val = uint256(x) * uint256(y) / BASE;
-        assert(uint256(uint128(val)) == val);
-        return uint128(val);
     }
 }

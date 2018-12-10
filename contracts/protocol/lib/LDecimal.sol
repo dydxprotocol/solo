@@ -24,7 +24,11 @@ import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.so
 library LDecimal {
     using SafeMath for uint256;
 
+    // ============ Constants ============
+
     uint64 constant public BASE = 10**18;
+
+    // ============ Structs ============
 
     struct D256 {
         uint256 value;
@@ -38,7 +42,7 @@ library LDecimal {
         uint64 value;
     }
 
-    // ============ Public Functions ============
+    // ============ multiply with ints ============
 
     function mul(
         D256 memory d,
@@ -71,6 +75,77 @@ library LDecimal {
         returns (uint256)
     {
         return target.mul(d.value).div(BASE);
+    }
+
+    // ============ multiply with other decimals ============
+
+    function mul(
+        D256 memory d,
+        D256 memory x
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return x.value.mul(d.value).div(BASE).div(BASE);
+    }
+
+    function mul(
+        D128 memory d,
+        D128 memory x
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return uint256(x.value).mul(d.value).div(BASE).div(BASE);
+    }
+
+    function mul(
+        D64 memory d,
+        D64 memory x
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return uint256(x.value).mul(d.value).div(BASE).div(BASE);
+    }
+
+    // ============ invThenMul ============
+    // returns target/d. Not called div because d is the first arg
+
+    function invThenMul(
+        D256 memory d,
+        uint256 target
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return target.mul(BASE).div(d.value);
+    }
+
+    function invThenMul(
+        D128 memory d,
+        uint256 target
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return target.mul(BASE).div(d.value);
+    }
+
+    function invThenMul(
+        D64 memory d,
+        uint256 target
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return target.mul(BASE).div(d.value);
     }
 
     // ============ Equality Functions ============

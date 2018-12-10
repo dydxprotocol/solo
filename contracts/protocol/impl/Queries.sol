@@ -20,25 +20,26 @@ pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { LPrice } from "../lib/LPrice.sol";
+import { Storage } from "./Storage.sol";
 
 
-contract IPriceOracle {
-
-    // ============ Public Functions ============
-
-    /**
-     * Get the price of a token
-     *
-     * @return  The USD price of a base unit of the token, then multiplied by 10^36.
-     *          So a stablecoin with 18 decimal places would return 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
-     */
+/**
+ * @title Queries
+ * @author dYdX
+ *
+ * Read-only functions to help understand the state of the protocol
+ */
+contract Queries is
+    Storage
+{
     function getPrice(
         address token
     )
         public
         view
-        returns (LPrice.Price memory);
+        returns (LPrice.Price memory)
+    {
+        return g_markets[token].oracle.getPrice(token);
+    }
 
 }

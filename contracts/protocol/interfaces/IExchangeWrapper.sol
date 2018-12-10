@@ -17,6 +17,9 @@
 */
 
 pragma solidity 0.5.1;
+pragma experimental ABIEncoderV2;
+
+import { LTypes } from "../lib/LTypes.sol";
 
 
 interface IExchangeWrapper {
@@ -41,11 +44,11 @@ interface IExchangeWrapper {
         address receiver,
         address makerToken,
         address takerToken,
-        uint256 requestedFillAmount,
+        LTypes.TokenAmount calldata requestedFillAmount,
         bytes calldata orderData
     )
         external
-        returns (uint256);
+        returns (LTypes.TokenAmount memory);
 
     /**
      * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
@@ -62,10 +65,10 @@ interface IExchangeWrapper {
     function getExchangeCost(
         address makerToken,
         address takerToken,
-        uint256 desiredMakerToken,
+        LTypes.TokenAmount calldata desiredMakerToken,
         bytes calldata orderData
     )
         external
         view
-        returns (uint256);
+        returns (LTypes.TokenAmount memory);
 }

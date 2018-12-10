@@ -134,6 +134,11 @@ library LTokenInteract {
             return;
         }
 
+        require(
+            GeneralERC20(token).balanceOf(address(this)) >= amount.value,
+            "TokenInteract#transfer: Not enough tokens"
+        );
+
         GeneralERC20(token).transfer(to, amount.value);
 
         require(
@@ -156,6 +161,11 @@ library LTokenInteract {
         ) {
             return;
         }
+
+        require(
+            GeneralERC20(token).balanceOf(from) >= amount.value,
+            "TokenInteract#transferFrom: Not enough tokens"
+        );
 
         GeneralERC20(token).transferFrom(from, to, amount.value);
 

@@ -18,79 +18,104 @@
 
 pragma solidity 0.5.1;
 
+import { LMath } from "./LMath.sol";
+import { LTime } from "./LTime.sol";
+import { LDecimal } from "./LDecimal.sol";
+import { LPrice } from "./LPrice.sol";
+import { LTypes } from "./LTypes.sol";
+import { LInterest } from "./LInterest.sol";
 
 library LTransactions {
-
-    uint256 constant ADDRESS_MASK = 0x000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     // ============ Enums ============
 
     enum TransactionType {
-        Deposit,
-        Withdraw,
-        Exchange,
-        Liquidate
+        Deposit,   // deposit tokens
+        Withdraw,  // withdraw tokens
+        Exchange,  // exchange one token for another on an external exchange
+        Liquidate, // liquidate an undercollateralized or expiring account
+        SetExpiry  // set the expiry of your account
     }
 
-    enum AmountSide {
-        Withdraw,
-        Deposit
+    enum AmountDenomination {
+        Actual,   // the amount is denominated in token amount (accrued amount)
+        Principal // the amount is denominated in principal
     }
 
-    enum AmountType {
-        TokenAmount,
-        Principal,
-        All
+    enum AmountReference {
+        Delta, // the amount is given as a delta from the current value
+        Target // the amount is given as an exact number to end up at
+    }
+
+    enum AmountIntention {
+        Deposit, // the amount applies to the depositAsset
+        Withdraw // the amount applies to the withdrawAsset
     }
 
     // ============ Structs ============
 
+    struct WorldState {
+        uint256 numAssets;
+        address trader;
+        uint256 account;
+        AssetInfo[] assets;
+    }
+
+    struct AssetInfo {
+        address token;
+        LInterest.Index index;
+        LInterest.TotalPrincipal totalPrincipal;
+        LPrice.Price price;
+        LTypes.SignedPrincipal oldBalance;
+        LTypes.SignedPrincipal balance;
+    }
+
+    struct Amount {
+        bool sign;
+        AmountIntention intent;
+        AmountDenomination denom;
+        AmountReference ref;
+        uint256 value;
+    }
+
     struct TransactionArgs {
         TransactionType transactionType;
-        AmountSide amountSide;
-        AmountType amountType;
-        address tokenDeposit;
-        address tokenWithdraw;
+        Amount amount;
+        uint256 depositAssetId;
+        uint256 withdrawAssetId;
         address exchangeWrapperOrLiquidTrader;
         uint256 liquidAccount;
-        uint256 amount;
         bytes orderData;
     }
 
     struct DepositArgs {
-        AmountType amountType;
-        address token;
-        uint256 amount;
+        Amount amount;
+        uint256 assetId;
     }
 
     struct WithdrawArgs {
-        AmountType amountType;
-        address token;
-        uint256 amount;
+        Amount amount;
+        uint256 assetId;
     }
 
     struct ExchangeArgs {
-        AmountSide amountSide;
-        AmountType amountType;
-        address tokenWithdraw;
-        address tokenDeposit;
+        Amount amount;
+        uint256 withdrawAssetId;
+        uint256 depositAssetId;
         address exchangeWrapper;
-        uint256 amount;
         bytes orderData;
     }
 
     struct LiquidateArgs {
-        AmountSide amountSide;
-        AmountType amountType;
-        address tokenWithdraw;
-        address tokenDeposit;
+        Amount amount;
+        uint256 withdrawAssetId;
+        uint256 depositAssetId;
         address liquidTrader;
         uint256 liquidAccount;
-        uint256 amount;
     }
 
-    struct TransactionReceipt {
-        uint256 placeHolder; // TODO
+    struct SetExpiryArgs {
+         LTime.Time time;
     }
 
     // ============ Parsing Functions ============
@@ -102,10 +127,10 @@ library LTransactions {
         pure
         returns (DepositArgs memory)
     {
+        assert(args.transactionType == TransactionType.Deposit);
         return DepositArgs({
-            amountType: args.amountType,
-            token: args.tokenDeposit,
-            amount: args.amount
+            amount: args.amount,
+            assetId: args.depositAssetId
         });
     }
 
@@ -116,10 +141,10 @@ library LTransactions {
         pure
         returns (WithdrawArgs memory)
     {
+        assert(args.transactionType == TransactionType.Deposit);
         return WithdrawArgs({
-            amountType: args.amountType,
-            token: args.tokenWithdraw,
-            amount: args.amount
+            amount: args.amount,
+            assetId: args.withdrawAssetId
         });
     }
 
@@ -130,13 +155,12 @@ library LTransactions {
         pure
         returns (ExchangeArgs memory)
     {
+        assert(args.transactionType == TransactionType.Exchange);
         return ExchangeArgs({
-            amountSide: args.amountSide,
-            amountType: args.amountType,
-            tokenWithdraw: args.tokenWithdraw,
-            tokenDeposit: args.tokenDeposit,
-            exchangeWrapper: args.exchangeWrapperOrLiquidTrader,
             amount: args.amount,
+            depositAssetId: args.depositAssetId,
+            withdrawAssetId: args.withdrawAssetId,
+            exchangeWrapper: args.exchangeWrapperOrLiquidTrader,
             orderData: args.orderData
         });
     }
@@ -148,14 +172,48 @@ library LTransactions {
         pure
         returns (LiquidateArgs memory)
     {
+        assert(args.transactionType == TransactionType.Liquidate);
         return LiquidateArgs({
-            amountSide: args.amountSide,
-            amountType: args.amountType,
-            tokenWithdraw: args.tokenWithdraw,
-            tokenDeposit: args.tokenWithdraw,
+            amount: args.amount,
+            depositAssetId: args.depositAssetId,
+            withdrawAssetId: args.withdrawAssetId,
             liquidTrader: args.exchangeWrapperOrLiquidTrader,
-            liquidAccount: args.liquidAccount,
-            amount: args.amount
+            liquidAccount: args.liquidAccount
         });
+    }
+
+    function parseSetExpiryArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (SetExpiryArgs memory)
+    {
+        assert(args.transactionType == TransactionType.SetExpiry);
+        return SetExpiryArgs({
+            time: LTime.toTime(args.amount.value)
+        });
+    }
+
+    function amountToSignedPrincipal(
+        Amount memory amount
+    )
+        internal
+        pure
+        returns (LTypes.SignedPrincipal memory result)
+    {
+        result.sign = amount.sign;
+        result.principal.value = LMath.to128(amount.value);
+    }
+
+    function amountToSignedTokenAmount(
+        Amount memory amount
+    )
+        internal
+        pure
+        returns (LTypes.SignedTokenAmount memory result)
+    {
+        result.sign = amount.sign;
+        result.tokenAmount.value = amount.value;
     }
 }

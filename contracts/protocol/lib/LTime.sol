@@ -19,10 +19,14 @@
 pragma solidity 0.5.1;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { LMath } from "./LMath.sol";
 
 
 library LTime {
+    using LMath for uint256;
     using SafeMath for uint256;
+    
+    // ============ Structs ============
 
     struct Time {
         uint32 value;
@@ -38,6 +42,16 @@ library LTime {
         uint32 timestamp = uint32(block.timestamp);
         require(uint256(timestamp) == block.timestamp, "WE LIVE IN THE FUTURE");
         return Time({ value: timestamp });
+    }
+
+    function toTime(
+        uint256 t
+    )
+        internal
+        pure
+        returns (Time memory)
+    {
+        return Time({ value: t.to32() });
     }
 
     function sub(

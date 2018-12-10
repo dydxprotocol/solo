@@ -20,7 +20,7 @@ pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { LDecimal } from "../lib/LDecimal.sol";
-import { LTypes } from "../lib/LTypes.sol";
+import { LInterest } from "../lib/LInterest.sol";
 
 
 contract IInterestSetter {
@@ -30,17 +30,15 @@ contract IInterestSetter {
     /**
      * Get the interest rate of a token given some borrowed and lent amounts
      *
-     * @param  token     The address of the token to get the interest rate for
-     * @param  borrowed  The principal amount of token borrowed
-     * @param  lent      The principal amount of token lent
-     * @return           The interest rate per second
+     * @param  token           The address of the token to get the interest rate for
+     * @param  totalPrincipal  The total borrowed/lent principal amounts
+     * @return                 The interest rate per second
      */
-    function getNewInterest(
+    function getInterestRate(
         address token,
-        LTypes.Principal memory borrowed,
-        LTypes.Principal memory lent
+        LInterest.TotalPrincipal memory totalPrincipal
     )
         public
         view
-        returns (LDecimal.D64 memory);
+        returns (LInterest.Rate memory);
 }

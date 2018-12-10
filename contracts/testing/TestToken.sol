@@ -16,10 +16,9 @@
 
 */
 
-pragma solidity 0.4.24;
-pragma experimental "v0.5.0";
+pragma solidity 0.5.1;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 contract TestToken {
@@ -56,11 +55,11 @@ contract TestToken {
         return allowed[owner][spender];
     }
 
-    function symbol() public pure returns (string) {
+    function symbol() public pure returns (string memory) {
         return "TEST";
     }
 
-    function name() public pure returns (string) {
+    function name() public pure returns (string memory) {
         return "Test Token";
     }
 

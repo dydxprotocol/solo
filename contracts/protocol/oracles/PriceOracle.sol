@@ -20,27 +20,30 @@ pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { LDecimal } from "../lib/LDecimal.sol";
+import { LPrice } from "../lib/LPrice.sol";
 
 
 contract PriceOracle {
 
-    uint128 g_price;
+    mapping (address => uint128) g_prices;
 
-    function getPrice()
+    function getPrice(
+        address token
+    )
         public
         view
-        returns (LDecimal.D128 memory)
+        returns (LPrice.Price memory result)
     {
         // TODO: this whole contract
-        return LDecimal.D128({ value: g_price });
+        result.value = g_prices[token];
     }
 
     function setPrice(
+        address token,
         uint128 price
     )
         external
     {
-        g_price = price;
+        g_prices[token] = price;
     }
 }

@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { LDecimal } from "../lib/LDecimal.sol";
-import { LTypes } from "../lib/LTypes.sol";
+import { LInterest } from "../lib/LInterest.sol";
 
 
 contract InterestSetter is
@@ -32,29 +32,27 @@ contract InterestSetter is
 
     uint128 constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
 
-    LDecimal.D64 g_maxInterest;
+    LInterest.Rate g_maxInterest;
 
     constructor(
-        LDecimal.D64 memory maxInterest
+        LInterest.Rate memory maxInterest
     )
         public
     {
         g_maxInterest = maxInterest;
     }
 
-    function getNewInterest(
+    function getInterestRate(
         address token,
-        LTypes.Principal memory borrowed,
-        LTypes.Principal memory lent
+        LInterest.TotalPrincipal memory totalPrincipal
     )
         public
         view
-        returns (LDecimal.D64 memory)
+        returns (LInterest.Rate memory)
     {
         // TODO: this whole contract
         token;
-        borrowed;
-        lent;
-        return LDecimal.one64(); // returns 0% interest
+        totalPrincipal;
+        return LInterest.Rate({ value: 10**18 });
     }
 }

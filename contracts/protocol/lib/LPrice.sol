@@ -21,56 +21,52 @@ pragma solidity 0.5.1;
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-library LMath {
+library LPrice {
     using SafeMath for uint256;
+
+    // ============ Structs ============
+
+    struct Price {
+        uint128 value;
+    }
+
+    struct Value {
+        uint256 value;
+    }
 
     // ============ Public Functions ============
 
-    function getPartial(
-        uint256 numerator,
-        uint256 denominator,
-        uint256 target
+    function getTotalValue(
+        Price memory price,
+        uint256 amount
     )
         internal
         pure
-        returns (uint256)
+        returns (Value memory result)
     {
-        return target.mul(numerator).div(denominator);
+        result.value = amount.mul(price.value);
     }
 
-    function to128(
-        uint256 x
+    function getEquivalentAmount(
+        uint256 amountA,
+        Price memory priceA,
+        Price memory priceB
     )
         internal
         pure
-        returns (uint128)
+        returns (uint256 amountB)
     {
-        uint128 r = uint128(x);
-        require(r == x, "UNSAFE CAST TO UINT128");
-        return r;
+        return amountA.mul(priceA.value).div(priceB.value);
     }
 
-    function to64(
-        uint256 x
+    function add(
+        Value memory a,
+        Value memory b
     )
         internal
         pure
-        returns (uint64)
+        returns (Value memory result)
     {
-        uint64 r = uint64(x);
-        require(r == x, "UNSAFE CAST TO UINT64");
-        return r;
-    }
-
-    function to32(
-        uint256 x
-    )
-        internal
-        pure
-        returns (uint32)
-    {
-        uint32 r = uint32(x);
-        require(r == x, "UNSAFE CAST TO UINT32");
-        return r;
+        result.value = a.value.mul(b.value);
     }
 }
