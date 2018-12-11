@@ -1,4 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies, no-console */
+/* eslint-disable */ // TODO
 
 import fs from 'fs';
 import promisify from 'es6-promisify';
