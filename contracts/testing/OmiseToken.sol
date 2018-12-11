@@ -68,7 +68,7 @@ contract OmiseToken {
     }
 
     function transfer(address to, uint256 value) public {
-        require (balances[msg.sender] >= value);
+        require(balances[msg.sender] >= value);
 
         balances[msg.sender] -= value;
         balances[to] = balances[to].add(value);
@@ -81,7 +81,7 @@ contract OmiseToken {
     }
 
     function transferFrom(address from, address to, uint256 value) public {
-        require (balances[from] >= value && allowed[from][msg.sender] >= value);
+        require(balances[from] >= value && allowed[from][msg.sender] >= value);
 
         balances[to] = balances[to].add(value);
         balances[from] = balances[from].sub(value);

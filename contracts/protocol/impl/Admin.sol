@@ -41,7 +41,7 @@ contract Admin is
     Ownable,
     ReentrancyGuard
 {
-    function ownerWithdrawExcessToken(
+    function ownerBorrowExcessToken(
         address token,
         address recipient
     )
@@ -51,51 +51,55 @@ contract Admin is
         returns (uint256)
     {
         // TODO
+        token;
+        recipient;
     }
 
     function ownerAddToken(
         address token,
-        IPriceOracle oracle,
+        IPriceOracle priceOracle,
         IInterestSetter interestSetter
     )
         external
         onlyOwner
         nonReentrant
     {
-        require(!g_markets[token].exists);
+        require(!_marketExistsForToken(token));
 
-        g_activeTokens.push(token);
-        g_markets[token].index = LInterest.newIndex();
-        g_markets[token].exists = true;
+        uint256 marketId = g_numMarkets;
 
-        _setOracle(token, oracle);
-        _setInterestSetter(token, interestSetter);
+        g_numMarkets++;
+        g_markets[marketId].token = token;
+        g_markets[marketId].index = LInterest.newIndex();
+
+        _setPriceOracle(marketId, priceOracle);
+        _setInterestSetter(marketId, interestSetter);
     }
 
-    function ownerSetOracle(
-        address token,
-        IPriceOracle oracle
+    function ownerSetPriceOracle(
+        uint256 market,
+        IPriceOracle priceOracle
     )
         external
         onlyOwner
         nonReentrant
     {
-        _setOracle(token, oracle);
+        _setPriceOracle(market, priceOracle);
     }
 
     function ownerSetInterestSetter(
-        address token,
+        uint256 market,
         IInterestSetter interestSetter
     )
         external
         onlyOwner
         nonReentrant
     {
-        _setInterestSetter(token, interestSetter);
+        _setInterestSetter(market, interestSetter);
     }
 
     function ownerSetMinCollateralRatio(
-        LDecimal.D256 memory minCollateralRatio
+        LDecimal.Decimal memory minCollateralRatio
     )
         public
         onlyOwner
@@ -105,7 +109,7 @@ contract Admin is
     }
 
     function ownerSetSpread(
-        LDecimal.D256 memory spread
+        LDecimal.Decimal memory spread
     )
         public
         onlyOwner
@@ -115,7 +119,7 @@ contract Admin is
     }
 
     function ownerSetEarningsRate(
-        LDecimal.D256 memory earningsRate
+        LDecimal.Decimal memory earningsRate
     )
         public
         onlyOwner
@@ -137,33 +141,53 @@ contract Admin is
     // ============ Internal Functions ============
 
     function _setInterestSetter(
-        address token,
+        uint256 market,
         IInterestSetter interestSetter
     )
         private
     {
-        require(g_markets[token].exists);
+        require(market < g_numMarkets);
 
-        g_markets[token].interestSetter = interestSetter;
+        g_markets[market].interestSetter = interestSetter;
 
         // require current interestSetter can return a value
-        LInterest.TotalPrincipal memory zero;
+        LInterest.TotalNominal memory zero;
+        address token = g_markets[market].token;
         require(LInterest.isValidRate(interestSetter.getInterestRate(token, zero)),
             "INVALID INTEREST VALUE"
         );
     }
 
-    function _setOracle(
-        address token,
-        IPriceOracle oracle
+    function _setPriceOracle(
+        uint256 market,
+        IPriceOracle priceOracle
     )
         private
     {
-        require(g_markets[token].exists);
+        require(market < g_numMarkets);
 
-        g_markets[token].oracle = oracle;
+        g_markets[market].priceOracle = priceOracle;
 
         // require oracle can return value for token
-        require(oracle.getPrice(token).value != 0, "INVALID ORACLE PRICE");
+        address token = g_markets[market].token;
+        require(priceOracle.getPrice(token).value != 0, "INVALID ORACLE PRICE");
+    }
+
+    function _marketExistsForToken(
+        address token
+    )
+        private
+        view
+        returns (bool)
+    {
+        uint256 numMarkets = g_numMarkets;
+
+        for (uint256 i = 0; i < numMarkets; i++) {
+            if (g_markets[i].token == token) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

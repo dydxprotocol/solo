@@ -38,16 +38,16 @@ contract Storage {
     // ============ Structs ============
 
     struct Account {
-        mapping (address => LTypes.SignedPrincipal) balances;
+        mapping (uint256 => LTypes.SignedNominal) balances;
         LTime.Time closingTime;
     }
 
     struct Market {
-        LInterest.TotalPrincipal totalPrincipal;
+        address token;
+        LInterest.TotalNominal totalNominal;
         LInterest.Index index;
-        IPriceOracle oracle;
+        IPriceOracle priceOracle;
         IInterestSetter interestSetter;
-        bool exists;
     }
 
     // ============ Storage ============
@@ -55,11 +55,11 @@ contract Storage {
     // timestamp of the last index update
     LTime.Time g_lastUpdate;
 
-    // array of all approved tokens
-    address[] g_activeTokens;
+    // number of markets
+    uint256 g_numMarkets;
 
-    // token address => Market
-    mapping (address => Market) g_markets;
+    // marketId => Market
+    mapping (uint256 => Market) g_markets;
 
     // trader => account number => Account
     mapping (address => mapping (uint256 => Account)) g_accounts;
@@ -67,13 +67,13 @@ contract Storage {
     // ============ Risk Parameters ============
 
     // collateral ratio at which accounts can be liquidated
-    LDecimal.D256 g_minCollateralRatio;
+    LDecimal.Decimal g_minCollateralRatio;
 
     // (1 - g_liquidationSpread) is the percentage penalty incurred by liquidated accounts
-    LDecimal.D256 g_liquidationSpread;
+    LDecimal.Decimal g_liquidationSpread;
 
     // (1 - g_earningsRate) is the percentage fee that the exchange takes of lender's earnings
-    LDecimal.D256 g_earningsRate;
+    LDecimal.Decimal g_earningsRate;
 
     // the minimum value of a negative position
     LPrice.Value g_minBorrowedValue;

@@ -25,21 +25,21 @@ import { LPrice } from "./LPrice.sol";
 import { LTypes } from "./LTypes.sol";
 import { LInterest } from "./LInterest.sol";
 
-library LTransactions {
+library LActions {
 
     // ============ Enums ============
 
     enum TransactionType {
-        Deposit,   // deposit tokens
-        Withdraw,  // withdraw tokens
+        Supply,   // supply tokens
+        Borrow,  // borrow tokens
         Exchange,  // exchange one token for another on an external exchange
         Liquidate, // liquidate an undercollateralized or expiring account
         SetExpiry  // set the expiry of your account
     }
 
     enum AmountDenomination {
-        Actual,   // the amount is denominated in token amount (accrued amount)
-        Principal // the amount is denominated in principal
+        Accrued, // the amount is denominated in token amount (accrued amount)
+        Nominal  // the amount is denominated in the nominal amount
     }
 
     enum AmountReference {
@@ -48,8 +48,8 @@ library LTransactions {
     }
 
     enum AmountIntention {
-        Deposit, // the amount applies to the depositAsset
-        Withdraw // the amount applies to the withdrawAsset
+        Supply, // the amount applies to the supplyAsset
+        Borrow // the amount applies to the borrowAsset
     }
 
     // ============ Structs ============
@@ -64,10 +64,10 @@ library LTransactions {
     struct AssetInfo {
         address token;
         LInterest.Index index;
-        LInterest.TotalPrincipal totalPrincipal;
+        LInterest.TotalNominal totalNominal;
         LPrice.Price price;
-        LTypes.SignedPrincipal oldBalance;
-        LTypes.SignedPrincipal balance;
+        LTypes.SignedNominal oldBalance;
+        LTypes.SignedNominal balance;
     }
 
     struct Amount {
@@ -81,35 +81,35 @@ library LTransactions {
     struct TransactionArgs {
         TransactionType transactionType;
         Amount amount;
-        uint256 depositAssetId;
-        uint256 withdrawAssetId;
+        uint256 supplyMarketId;
+        uint256 borrowMarketId;
         address exchangeWrapperOrLiquidTrader;
         uint256 liquidAccount;
         bytes orderData;
     }
 
-    struct DepositArgs {
+    struct SupplyArgs {
         Amount amount;
-        uint256 assetId;
+        uint256 marketId;
     }
 
-    struct WithdrawArgs {
+    struct BorrowArgs {
         Amount amount;
-        uint256 assetId;
+        uint256 marketId;
     }
 
     struct ExchangeArgs {
         Amount amount;
-        uint256 withdrawAssetId;
-        uint256 depositAssetId;
+        uint256 borrowMarketId;
+        uint256 supplyMarketId;
         address exchangeWrapper;
         bytes orderData;
     }
 
     struct LiquidateArgs {
         Amount amount;
-        uint256 withdrawAssetId;
-        uint256 depositAssetId;
+        uint256 borrowMarketId;
+        uint256 supplyMarketId;
         address liquidTrader;
         uint256 liquidAccount;
     }
@@ -120,31 +120,31 @@ library LTransactions {
 
     // ============ Parsing Functions ============
 
-    function parseDepositArgs(
+    function parseSupplyArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (DepositArgs memory)
+        returns (SupplyArgs memory)
     {
-        assert(args.transactionType == TransactionType.Deposit);
-        return DepositArgs({
+        assert(args.transactionType == TransactionType.Supply);
+        return SupplyArgs({
             amount: args.amount,
-            assetId: args.depositAssetId
+            marketId: args.supplyMarketId
         });
     }
 
-    function parseWithdrawArgs(
+    function parseBorrowArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (WithdrawArgs memory)
+        returns (BorrowArgs memory)
     {
-        assert(args.transactionType == TransactionType.Deposit);
-        return WithdrawArgs({
+        assert(args.transactionType == TransactionType.Supply);
+        return BorrowArgs({
             amount: args.amount,
-            assetId: args.withdrawAssetId
+            marketId: args.borrowMarketId
         });
     }
 
@@ -158,8 +158,8 @@ library LTransactions {
         assert(args.transactionType == TransactionType.Exchange);
         return ExchangeArgs({
             amount: args.amount,
-            depositAssetId: args.depositAssetId,
-            withdrawAssetId: args.withdrawAssetId,
+            supplyMarketId: args.supplyMarketId,
+            borrowMarketId: args.borrowMarketId,
             exchangeWrapper: args.exchangeWrapperOrLiquidTrader,
             orderData: args.orderData
         });
@@ -175,8 +175,8 @@ library LTransactions {
         assert(args.transactionType == TransactionType.Liquidate);
         return LiquidateArgs({
             amount: args.amount,
-            depositAssetId: args.depositAssetId,
-            withdrawAssetId: args.withdrawAssetId,
+            supplyMarketId: args.supplyMarketId,
+            borrowMarketId: args.borrowMarketId,
             liquidTrader: args.exchangeWrapperOrLiquidTrader,
             liquidAccount: args.liquidAccount
         });
@@ -195,25 +195,25 @@ library LTransactions {
         });
     }
 
-    function amountToSignedPrincipal(
+    function amountToSignedNominal(
         Amount memory amount
     )
         internal
         pure
-        returns (LTypes.SignedPrincipal memory result)
+        returns (LTypes.SignedNominal memory result)
     {
         result.sign = amount.sign;
-        result.principal.value = LMath.to128(amount.value);
+        result.nominal.value = LMath.to128(amount.value);
     }
 
-    function amountToSignedTokenAmount(
+    function amountToSignedAccrued(
         Amount memory amount
     )
         internal
         pure
-        returns (LTypes.SignedTokenAmount memory result)
+        returns (LTypes.SignedAccrued memory result)
     {
         result.sign = amount.sign;
-        result.tokenAmount.value = amount.value;
+        result.accrued.value = amount.value;
     }
 }

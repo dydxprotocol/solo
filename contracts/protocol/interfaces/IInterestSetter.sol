@@ -30,13 +30,13 @@ contract IInterestSetter {
     /**
      * Get the interest rate of a token given some borrowed and lent amounts
      *
-     * @param  token           The address of the token to get the interest rate for
-     * @param  totalPrincipal  The total borrowed/lent principal amounts
-     * @return                 The interest rate per second
+     * @param  token        The address of the token to get the interest rate for
+     * @param  totalNominal The total borrow/supply nominal amounts
+     * @return              The interest rate per second
      */
     function getInterestRate(
         address token,
-        LInterest.TotalPrincipal memory totalPrincipal
+        LInterest.TotalNominal memory totalNominal
     )
         public
         view

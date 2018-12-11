@@ -30,30 +30,29 @@ library LInterest {
     using SafeMath for uint256;
     using SafeMath for uint128;
     using LTime for LTime.Time;
-    using LDecimal for LDecimal.D256;
-    using LTypes for LTypes.Principal;
-    using LInterest for Accrued;
+    using LDecimal for LDecimal.Decimal;
+
+    // ============ Constants ============
 
     uint64 constant public BASE = 10**18;
 
-
     // ============ Structs ============
 
-    struct TotalPrincipal {
-        LTypes.Principal lent;
-        LTypes.Principal borrowed;
+    struct TotalNominal {
+        LTypes.Nominal supply;
+        LTypes.Nominal borrow;
     }
 
     struct Index {
-        Accrued borrower;
-        Accrued lender;
+        Compounded borrow;
+        Compounded supply;
     }
 
     struct Rate {
         uint128 value;
     }
 
-    struct Accrued {
+    struct Compounded {
         uint128 value;
     }
 
@@ -63,58 +62,58 @@ library LInterest {
         Index memory index,
         Rate memory rate,
         LTime.Time memory timeDelta,
-        TotalPrincipal memory totalPrincipal,
-        LDecimal.D256 memory earningsRate
+        TotalNominal memory totalNominal,
+        LDecimal.Decimal memory earningsRate
     )
         internal
         pure
         returns (Index memory result)
     {
-        Accrued memory borrowerInterest = _getAccruedInterest(rate, timeDelta);
+        Compounded memory borrowInterest = _getCompoundedInterest(rate, timeDelta);
 
-        uint256 lenderInterestRaw = LMath.getPartial(
-            totalPrincipal.borrowed.value,
-            totalPrincipal.lent.value,
-            borrowerInterest.value.sub(BASE)
+        uint256 supplyInterestRaw = LMath.getPartial(
+            totalNominal.borrow.value,
+            totalNominal.supply.value,
+            borrowInterest.value.sub(BASE)
         );
-        Accrued memory lenderInterest;
-        lenderInterest.value = earningsRate.mul(lenderInterestRaw).add(BASE).to128();
+        Compounded memory supplyInterest;
+        supplyInterest.value = earningsRate.mul(supplyInterestRaw).add(BASE).to128();
 
-        result.borrower = mul(index.borrower, borrowerInterest);
-        result.lender = mul(index.lender, lenderInterest);
+        result.borrow = mul(index.borrow, borrowInterest);
+        result.supply = mul(index.supply, supplyInterest);
     }
 
-    function signedPrincipalToTokenAmount(
-        LTypes.SignedPrincipal memory signedPrincipal,
+    function nominalToAccrued(
+        LTypes.SignedNominal memory signedNominal,
         Index memory index
     )
         internal
         pure
-        returns (LTypes.SignedTokenAmount memory result)
+        returns (LTypes.SignedAccrued memory result)
     {
-        result.sign = signedPrincipal.sign;
-        Accrued memory accrued = result.sign ? index.lender : index.borrower;
-        result.tokenAmount.value = LMath.getPartial(
-            accrued.value,
+        result.sign = signedNominal.sign;
+        Compounded memory interest = result.sign ? index.supply : index.borrow;
+        result.accrued.value = LMath.getPartial(
+            interest.value,
             BASE,
-            signedPrincipal.principal.value
+            signedNominal.nominal.value
         );
     }
 
-    function signedTokenAmountToPrincipal(
-        LTypes.SignedTokenAmount memory signedTokenAmount,
+    function accruedToNominal(
+        LTypes.SignedAccrued memory accrued,
         Index memory index
     )
         internal
         pure
-        returns (LTypes.SignedPrincipal memory result)
+        returns (LTypes.SignedNominal memory result)
     {
-        result.sign = signedTokenAmount.sign;
-        Accrued memory accrued = result.sign ? index.lender : index.borrower;
-        result.principal.value = LMath.getPartial(
+        result.sign = accrued.sign;
+        Compounded memory interest = result.sign ? index.supply : index.borrow;
+        result.nominal.value = LMath.getPartial(
             BASE,
-            accrued.value,
-            signedTokenAmount.tokenAmount.value
+            interest.value,
+            accrued.accrued.value
         ).to128();
     }
 
@@ -124,8 +123,8 @@ library LInterest {
         returns (Index memory)
     {
         return Index({
-            borrower: Accrued({ value: BASE }),
-            lender: Accrued({ value: BASE })
+            borrow: Compounded({ value: BASE }),
+            supply: Compounded({ value: BASE })
         });
     }
 
@@ -140,12 +139,12 @@ library LInterest {
     }
 
     function mul(
-        Accrued memory a,
+        Compounded memory a,
         Rate memory r
     )
         private
         pure
-        returns (Accrued memory result)
+        returns (Compounded memory result)
     {
         result.value = (uint256(a.value) * uint256(r.value) / BASE).to128();
     }
@@ -162,25 +161,25 @@ library LInterest {
     }
 
     function mul(
-        Accrued memory a,
-        Accrued memory b
+        Compounded memory a,
+        Compounded memory b
     )
         private
         pure
-        returns (Accrued memory result)
+        returns (Compounded memory result)
     {
         result.value = (uint256(a.value) * uint256(b.value) / BASE).to128();
     }
 
     // ============ Private Functions ============
 
-    function _getAccruedInterest(
+    function _getCompoundedInterest(
         Rate memory rate,
         LTime.Time memory timeDelta
     )
         private
         pure
-        returns (Accrued memory result)
+        returns (Compounded memory result)
     {
         result.value = BASE;
 

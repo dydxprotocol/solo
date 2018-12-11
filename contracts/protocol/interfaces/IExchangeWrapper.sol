@@ -44,11 +44,11 @@ interface IExchangeWrapper {
         address receiver,
         address makerToken,
         address takerToken,
-        LTypes.TokenAmount calldata requestedFillAmount,
+        uint256 requestedFillAmount,
         bytes calldata orderData
     )
         external
-        returns (LTypes.TokenAmount memory);
+        returns (uint256);
 
     /**
      * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
@@ -65,10 +65,10 @@ interface IExchangeWrapper {
     function getExchangeCost(
         address makerToken,
         address takerToken,
-        LTypes.TokenAmount calldata desiredMakerToken,
+        uint256 desiredMakerToken,
         bytes calldata orderData
     )
         external
         view
-        returns (LTypes.TokenAmount memory);
+        returns (uint256);
 }

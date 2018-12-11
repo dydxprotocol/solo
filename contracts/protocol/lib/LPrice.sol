@@ -67,6 +67,17 @@ library LPrice {
         pure
         returns (Value memory result)
     {
-        result.value = a.value.mul(b.value);
+        result.value = a.value.add(b.value);
+    }
+
+    function sub(
+        Value memory a,
+        Value memory b
+    )
+        internal
+        pure
+        returns (Value memory result)
+    {
+        result.value = a.value.sub(b.value);
     }
 }

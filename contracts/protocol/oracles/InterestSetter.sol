@@ -44,7 +44,7 @@ contract InterestSetter is
 
     function getInterestRate(
         address token,
-        LInterest.TotalPrincipal memory totalPrincipal
+        LInterest.TotalNominal memory totalNominal
     )
         public
         view
@@ -52,7 +52,7 @@ contract InterestSetter is
     {
         // TODO: this whole contract
         token;
-        totalPrincipal;
+        totalNominal;
         return LInterest.Rate({ value: 10**18 });
     }
 }

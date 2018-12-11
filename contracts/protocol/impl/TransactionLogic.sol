@@ -22,14 +22,14 @@ pragma experimental ABIEncoderV2;
 import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 import { LDecimal } from "../lib/LDecimal.sol";
-import { LTransactions } from "../lib/LTransactions.sol";
+import { LActions } from "../lib/LActions.sol";
 import { LMath } from "../lib/LMath.sol";
 import { LPrice } from "../lib/LPrice.sol";
 import { LTime } from "../lib/LTime.sol";
 import { LTypes } from "../lib/LTypes.sol";
 import { LInterest } from "../lib/LInterest.sol";
-import { LTokenInteract } from "../lib/LTokenInteract.sol";
-import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
+import { LToken } from "../lib/LToken.sol";
+import { LExchange } from "../lib/LExchange.sol";
 import { TransactionMemory } from "./TransactionMemory.sol";
 import { Storage } from "./Storage.sol";
 
@@ -45,11 +45,8 @@ contract TransactionLogic is
     TransactionMemory,
     ReentrancyGuard
 {
-    using LDecimal for LDecimal.D256;
-    using LTokenInteract for address;
     using LMath for uint256;
     using LTime for LTime.Time;
-    using LTypes for LTypes.Principal;
     using SafeMath for uint256;
     using SafeMath for uint128;
 
@@ -58,12 +55,12 @@ contract TransactionLogic is
     function transact(
         address trader,
         uint256 account,
-        LTransactions.TransactionArgs[] memory args
+        LActions.TransactionArgs[] memory args
     )
         public
         nonReentrant
     {
-        LTransactions.WorldState memory worldState = _readWorldState(trader, account);
+        LActions.WorldState memory worldState = _readWorldState(trader, account);
 
         // run all transactions
         for (uint256 i = 0; i < args.length; i++) {
@@ -77,168 +74,168 @@ contract TransactionLogic is
     // ============ Private Functions ============
 
     function _transact(
-        LTransactions.WorldState memory worldState,
-        LTransactions.TransactionArgs memory args
+        LActions.WorldState memory worldState,
+        LActions.TransactionArgs memory args
     )
-        internal
+        private
     {
-        LTransactions.TransactionType ttype = args.transactionType;
+        LActions.TransactionType ttype = args.transactionType;
 
-        if (ttype == LTransactions.TransactionType.Deposit) {
-            _deposit(worldState, LTransactions.parseDepositArgs(args));
+        if (ttype == LActions.TransactionType.Supply) {
+            _supply(worldState, LActions.parseSupplyArgs(args));
         }
-        else if (ttype == LTransactions.TransactionType.Withdraw) {
-            _withdraw(worldState, LTransactions.parseWithdrawArgs(args));
+        else if (ttype == LActions.TransactionType.Borrow) {
+            _borrow(worldState, LActions.parseBorrowArgs(args));
         }
-        else if (ttype == LTransactions.TransactionType.Exchange) {
-            _exchange(worldState, LTransactions.parseExchangeArgs(args));
+        else if (ttype == LActions.TransactionType.Exchange) {
+            _exchange(worldState, LActions.parseExchangeArgs(args));
         }
-        else if (ttype == LTransactions.TransactionType.Liquidate) {
-            _liquidate(worldState, LTransactions.parseLiquidateArgs(args));
+        else if (ttype == LActions.TransactionType.Liquidate) {
+            _liquidate(worldState, LActions.parseLiquidateArgs(args));
         }
-        else if (ttype == LTransactions.TransactionType.SetExpiry) {
-            _setExpiry(worldState, LTransactions.parseSetExpiryArgs(args));
+        else if (ttype == LActions.TransactionType.SetExpiry) {
+            _setExpiry(worldState, LActions.parseSetExpiryArgs(args));
         }
     }
 
-    function _deposit(
-        LTransactions.WorldState memory worldState,
-        LTransactions.DepositArgs memory args
+    function _supply(
+        LActions.WorldState memory worldState,
+        LActions.SupplyArgs memory args
     )
-        internal
+        private
     {
-        require (args.amount.intent == LTransactions.AmountIntention.Deposit);
+        require(args.amount.intent == LActions.AmountIntention.Supply);
 
         (
-            LTypes.SignedPrincipal memory newBalance,
-            LTypes.SignedTokenAmount memory tokenAmount
-        ) = _calculateUsingAmountStruct(worldState, args.assetId, args.amount);
+            LTypes.SignedNominal memory newBalance,
+            LTypes.SignedAccrued memory accrued
+        ) = _calculateUsingAmountStruct(worldState, args.marketId, args.amount);
 
-        require(tokenAmount.sign, "DEPOSIT AMOUNT MUST BE POSITIVE");
+        require(accrued.sign, "DEPOSIT AMOUNT MUST BE POSITIVE");
 
         // transfer the tokens
-        address token = worldState.assets[args.assetId].token;
-        token.transferFrom(worldState.trader, address(this), tokenAmount.tokenAmount);
+        address token = worldState.assets[args.marketId].token;
+        LToken.transferIn(token, worldState.trader, accrued);
 
-        // update the balance
         _updateBalance(
             worldState,
-            args.assetId,
+            args.marketId,
             newBalance
         );
     }
 
-    function _withdraw(
-        LTransactions.WorldState memory worldState,
-        LTransactions.WithdrawArgs memory args
+    function _borrow(
+        LActions.WorldState memory worldState,
+        LActions.BorrowArgs memory args
     )
-        internal
+        private
     {
-        require (args.amount.intent == LTransactions.AmountIntention.Withdraw);
+        require(args.amount.intent == LActions.AmountIntention.Borrow);
 
         (
-            LTypes.SignedPrincipal memory newBalance,
-            LTypes.SignedTokenAmount memory tokenAmount
-        ) = _calculateUsingAmountStruct(worldState, args.assetId, args.amount);
+            LTypes.SignedNominal memory newBalance,
+            LTypes.SignedAccrued memory accrued
+        ) = _calculateUsingAmountStruct(worldState, args.marketId, args.amount);
 
-        require(!tokenAmount.sign, "WITHDRAW AMOUNT MUST BE NEGATIVE");
+        require(!accrued.sign, "WITHDRAW AMOUNT MUST BE NEGATIVE");
 
         // transfer the tokens
-        address token = worldState.assets[args.assetId].token;
-        token.transfer(worldState.trader, tokenAmount.tokenAmount);
+        address token = worldState.assets[args.marketId].token;
+        LToken.transferOut(token, worldState.trader, accrued);
 
-        // update the balance
         _updateBalance(
             worldState,
-            args.assetId,
+            args.marketId,
             newBalance
         );
     }
 
     function _exchange(
-        LTransactions.WorldState memory worldState,
-        LTransactions.ExchangeArgs memory args
+        LActions.WorldState memory worldState,
+        LActions.ExchangeArgs memory args
     )
-        internal
+        private
     {
-        address withdrawToken = worldState.assets[args.withdrawAssetId].token;
-        address depositToken = worldState.assets[args.depositAssetId].token;
-        LTypes.SignedTokenAmount memory depositTokenAmount;
-        LTypes.SignedTokenAmount memory withdrawTokenAmount;
-        LTypes.SignedPrincipal memory newDepositBalance;
-        LTypes.SignedPrincipal memory newWithdrawBalance;
+        address borrowToken = worldState.assets[args.borrowMarketId].token;
+        address supplyToken = worldState.assets[args.supplyMarketId].token;
+        LTypes.SignedAccrued memory supplyAccrued;
+        LTypes.SignedAccrued memory borrowAccrued;
+        LTypes.SignedNominal memory newSupplyBalance;
+        LTypes.SignedNominal memory newBorrowBalance;
 
-        if (args.amount.intent == LTransactions.AmountIntention.Withdraw) {
+        if (args.amount.intent == LActions.AmountIntention.Borrow) {
             (
-                newWithdrawBalance,
-                withdrawTokenAmount
-            ) = _calculateUsingAmountStruct(worldState, args.withdrawAssetId, args.amount);
-        }
-        else if (args.amount.intent == LTransactions.AmountIntention.Deposit) {
-            (
-                newDepositBalance,
-                depositTokenAmount
-            ) = _calculateUsingAmountStruct(worldState, args.depositAssetId, args.amount);
+                newBorrowBalance,
+                borrowAccrued
+            ) = _calculateUsingAmountStruct(worldState, args.borrowMarketId, args.amount);
 
-            withdrawTokenAmount.sign = false;
-            withdrawTokenAmount.tokenAmount = IExchangeWrapper(args.exchangeWrapper).getExchangeCost(
-                depositToken,
-                withdrawToken,
-                withdrawTokenAmount.tokenAmount,
+            supplyAccrued = LExchange.exchange(
+                args.exchangeWrapper,
+                supplyToken,
+                borrowToken,
+                supplyAccrued,
                 args.orderData
             );
-            newWithdrawBalance = _getUpdatedBalanceFromDeltaTokenAmount(
+
+            newSupplyBalance = _getUpdatedBalanceFromDeltaAccrued(
                 worldState,
-                args.withdrawAssetId,
-                withdrawTokenAmount
+                args.supplyMarketId,
+                supplyAccrued
             );
         }
+        else if (args.amount.intent == LActions.AmountIntention.Supply) {
+            (
+                newSupplyBalance,
+                supplyAccrued
+            ) = _calculateUsingAmountStruct(worldState, args.supplyMarketId, args.amount);
 
-        withdrawToken.transfer(args.exchangeWrapper, withdrawTokenAmount.tokenAmount);
-        LTypes.TokenAmount memory tokensReceived = IExchangeWrapper(args.exchangeWrapper).exchange(
-            msg.sender,
-            address(this),
-            depositToken,
-            withdrawToken,
-            depositTokenAmount.tokenAmount,
-            args.orderData
-        );
-        require(tokensReceived.value >= depositTokenAmount.tokenAmount.value);
-        depositToken.transferFrom(args.exchangeWrapper, address(this), tokensReceived);
-
-        if (args.amount.intent == LTransactions.AmountIntention.Withdraw) {
-            depositTokenAmount.sign = true;
-            depositTokenAmount.tokenAmount = tokensReceived;
-            newDepositBalance = _getUpdatedBalanceFromDeltaTokenAmount(
-                worldState,
-                args.depositAssetId,
-                depositTokenAmount
+            borrowAccrued = LExchange.getCost(
+                args.exchangeWrapper,
+                supplyToken,
+                borrowToken,
+                borrowAccrued,
+                args.orderData
             );
+
+            newBorrowBalance = _getUpdatedBalanceFromDeltaAccrued(
+                worldState,
+                args.borrowMarketId,
+                borrowAccrued
+            );
+
+            LTypes.SignedAccrued memory tokensReceived = LExchange.exchange(
+                args.exchangeWrapper,
+                supplyToken,
+                borrowToken,
+                supplyAccrued,
+                args.orderData
+            );
+
+            require(tokensReceived.accrued.value >= supplyAccrued.accrued.value);
         }
 
-        // update the balances
         _updateBalance(
             worldState,
-            args.withdrawAssetId,
-            newWithdrawBalance
+            args.borrowMarketId,
+            newBorrowBalance
         );
         _updateBalance(
             worldState,
-            args.depositAssetId,
-            newDepositBalance
+            args.supplyMarketId,
+            newSupplyBalance
         );
     }
 
     function _liquidate(
-        LTransactions.WorldState memory worldState,
-        LTransactions.LiquidateArgs memory args
+        LActions.WorldState memory worldState,
+        LActions.LiquidateArgs memory args
     )
-        internal
+        private
     {
-        LTypes.SignedTokenAmount memory depositTokenAmount;
-        LTypes.SignedTokenAmount memory withdrawTokenAmount;
-        LTypes.SignedPrincipal memory newDepositBalance;
-        LTypes.SignedPrincipal memory newWithdrawBalance;
+        LTypes.SignedAccrued memory supplyAccrued;
+        LTypes.SignedAccrued memory borrowAccrued;
+        LTypes.SignedNominal memory newSupplyBalance;
+        LTypes.SignedNominal memory newBorrowBalance;
 
         // verify that this account can be liquidated
         if (!g_accounts[args.liquidTrader][args.liquidAccount].closingTime.hasHappened()) {
@@ -247,45 +244,45 @@ contract TransactionLogic is
         }
 
         // normalize the oracle prices according to the liquidation spread
-        LPrice.Price memory withdrawPrice = worldState.assets[args.withdrawAssetId].price;
-        LPrice.Price memory depositPrice = worldState.assets[args.depositAssetId].price;
-        depositPrice.value = g_liquidationSpread.mul(depositPrice.value).to128();
+        LPrice.Price memory borrowPrice = worldState.assets[args.borrowMarketId].price;
+        LPrice.Price memory supplyPrice = worldState.assets[args.supplyMarketId].price;
+        supplyPrice.value = g_liquidationSpread.mul(supplyPrice.value).to128();
 
-        // calculate the principal amounts
-        if (args.amount.intent == LTransactions.AmountIntention.Withdraw) {
-            (newWithdrawBalance, withdrawTokenAmount) = _calculateUsingAmountStruct(
+        // calculate the nominal amounts
+        if (args.amount.intent == LActions.AmountIntention.Borrow) {
+            (newBorrowBalance, borrowAccrued) = _calculateUsingAmountStruct(
                 worldState,
-                args.withdrawAssetId,
+                args.borrowMarketId,
                 args.amount
             );
-            depositTokenAmount.sign = true;
-            depositTokenAmount.tokenAmount.value = LPrice.getEquivalentAmount(
-                withdrawTokenAmount.tokenAmount.value,
-                withdrawPrice,
-                depositPrice
+            supplyAccrued.sign = true;
+            supplyAccrued.accrued.value = LPrice.getEquivalentAmount(
+                borrowAccrued.accrued.value,
+                borrowPrice,
+                supplyPrice
             );
-            newDepositBalance = _getUpdatedBalanceFromDeltaTokenAmount(
+            newSupplyBalance = _getUpdatedBalanceFromDeltaAccrued(
                 worldState,
-                args.depositAssetId,
-                depositTokenAmount
+                args.supplyMarketId,
+                supplyAccrued
             );
         }
-        else if (args.amount.intent == LTransactions.AmountIntention.Deposit) {
-            (newDepositBalance, depositTokenAmount) = _calculateUsingAmountStruct(
+        else if (args.amount.intent == LActions.AmountIntention.Supply) {
+            (newSupplyBalance, supplyAccrued) = _calculateUsingAmountStruct(
                 worldState,
-                args.depositAssetId,
+                args.supplyMarketId,
                 args.amount
             );
-            withdrawTokenAmount.sign = false;
-            withdrawTokenAmount.tokenAmount.value = LPrice.getEquivalentAmount(
-                depositTokenAmount.tokenAmount.value,
-                depositPrice,
-                withdrawPrice
+            borrowAccrued.sign = false;
+            borrowAccrued.accrued.value = LPrice.getEquivalentAmount(
+                supplyAccrued.accrued.value,
+                supplyPrice,
+                borrowPrice
             );
-            newWithdrawBalance = _getUpdatedBalanceFromDeltaTokenAmount(
+            newBorrowBalance = _getUpdatedBalanceFromDeltaAccrued(
                 worldState,
-                args.withdrawAssetId,
-                withdrawTokenAmount
+                args.borrowMarketId,
+                borrowAccrued
             );
         }
 
@@ -295,17 +292,17 @@ contract TransactionLogic is
         // pay back the debt of the liquidated account
         _shiftBalance(
             worldState,
-            args.depositAssetId,
+            args.supplyMarketId,
             args.liquidTrader,
             args.liquidAccount,
-            newDepositBalance.sub(worldState.assets[args.depositAssetId].balance)
+            newSupplyBalance.sub(worldState.assets[args.supplyMarketId].balance)
         );
         _shiftBalance(
             worldState,
-            args.withdrawAssetId,
+            args.borrowMarketId,
             args.liquidTrader,
             args.liquidAccount,
-            newWithdrawBalance.sub(worldState.assets[args.withdrawAssetId].balance)
+            newBorrowBalance.sub(worldState.assets[args.borrowMarketId].balance)
         );
 
         // TODO: check if the liquidated account has only negative values left. then VAPORIZE it by
@@ -313,10 +310,10 @@ contract TransactionLogic is
     }
 
     function _setExpiry(
-        LTransactions.WorldState memory worldState,
-        LTransactions.SetExpiryArgs memory args
+        LActions.WorldState memory worldState,
+        LActions.SetExpiryArgs memory args
     )
-        internal
+        private
     {
         g_accounts[worldState.trader][worldState.account].closingTime = args.time;
     }
@@ -324,119 +321,118 @@ contract TransactionLogic is
     // ============ Helper Functions ============
 
     function _calculateUsingAmountStruct(
-        LTransactions.WorldState memory worldState,
-        uint256 assetId,
-        LTransactions.Amount memory amount
+        LActions.WorldState memory worldState,
+        uint256 marketId,
+        LActions.Amount memory amount
     )
-        internal
+        private
         pure
-        returns (LTypes.SignedPrincipal memory newPrincipal, LTypes.SignedTokenAmount memory newTokenAmount)
+        returns (LTypes.SignedNominal memory newNominal, LTypes.SignedAccrued memory newAccrued)
     {
-        LInterest.Index memory index = worldState.assets[assetId].index;
-        LTypes.SignedPrincipal memory principal = worldState.assets[assetId].balance;
-        LTypes.SignedTokenAmount memory tokenAmount = LInterest.signedPrincipalToTokenAmount(
-            principal,
+        LInterest.Index memory index = worldState.assets[marketId].index;
+        LTypes.SignedNominal memory nominal = worldState.assets[marketId].balance;
+        LTypes.SignedAccrued memory accrued = LInterest.nominalToAccrued(
+            nominal,
             index
         );
 
-        if (amount.denom == LTransactions.AmountDenomination.Actual) {
-            if (amount.ref == LTransactions.AmountReference.Delta) {
-                newTokenAmount = LTransactions.amountToSignedTokenAmount(amount);
-            } else if (amount.ref == LTransactions.AmountReference.Target) {
-                newTokenAmount = LTransactions.amountToSignedTokenAmount(amount).sub(tokenAmount);
+        if (amount.denom == LActions.AmountDenomination.Accrued) {
+            if (amount.ref == LActions.AmountReference.Delta) {
+                newAccrued = LActions.amountToSignedAccrued(amount);
+            } else if (amount.ref == LActions.AmountReference.Target) {
+                newAccrued = LActions.amountToSignedAccrued(amount).sub(accrued);
             }
-            newPrincipal = LInterest.signedTokenAmountToPrincipal(tokenAmount.add(tokenAmount), index);
-        } else if (amount.denom == LTransactions.AmountDenomination.Principal) {
-            if (amount.ref == LTransactions.AmountReference.Delta) {
-                newPrincipal = LTransactions.amountToSignedPrincipal(amount).add(principal);
-            } else if (amount.ref == LTransactions.AmountReference.Target) {
-                newPrincipal = LTransactions.amountToSignedPrincipal(amount);
+            newNominal = LInterest.accruedToNominal(newAccrued.add(accrued), index);
+        } else if (amount.denom == LActions.AmountDenomination.Nominal) {
+            if (amount.ref == LActions.AmountReference.Delta) {
+                newNominal = LActions.amountToSignedNominal(amount).add(nominal);
+            } else if (amount.ref == LActions.AmountReference.Target) {
+                newNominal = LActions.amountToSignedNominal(amount);
             }
-            newTokenAmount = LInterest.signedPrincipalToTokenAmount(newPrincipal, index).sub(tokenAmount);
+            newAccrued = LInterest.nominalToAccrued(newNominal, index).sub(accrued);
         }
 
-        if (amount.intent == LTransactions.AmountIntention.Deposit) {
-            require(newTokenAmount.sign);
+        if (amount.intent == LActions.AmountIntention.Supply) {
+            require(newAccrued.sign);
         }
-        else if (amount.intent == LTransactions.AmountIntention.Withdraw) {
-            require(!newTokenAmount.sign);
+        else if (amount.intent == LActions.AmountIntention.Borrow) {
+            require(!newAccrued.sign);
         }
     }
 
-    function _getUpdatedBalanceFromDeltaTokenAmount(
-        LTransactions.WorldState memory worldState,
-        uint256 assetId,
-        LTypes.SignedTokenAmount memory tokenAmount
+    function _getUpdatedBalanceFromDeltaAccrued(
+        LActions.WorldState memory worldState,
+        uint256 marketId,
+        LTypes.SignedAccrued memory accrued
     )
-        internal
+        private
         pure
-        returns (LTypes.SignedPrincipal memory)
+        returns (LTypes.SignedNominal memory)
     {
-        LInterest.Index memory index = worldState.assets[assetId].index;
-        LTypes.SignedPrincipal memory currentBalance = worldState.assets[assetId].balance;
-        LTypes.SignedTokenAmount memory currentTokenAmount = LInterest.signedPrincipalToTokenAmount(
+        LInterest.Index memory index = worldState.assets[marketId].index;
+        LTypes.SignedNominal memory currentBalance = worldState.assets[marketId].balance;
+        LTypes.SignedAccrued memory currentAccrued = LInterest.nominalToAccrued(
             currentBalance,
             index
         );
 
-        return LInterest.signedTokenAmountToPrincipal(
-            currentTokenAmount.add(tokenAmount),
+        return LInterest.accruedToNominal(
+            currentAccrued.add(accrued),
             index
         );
     }
 
     function _updateBalance(
-        LTransactions.WorldState memory worldState,
-        uint256 assetId,
-        LTypes.SignedPrincipal memory newBalance
+        LActions.WorldState memory worldState,
+        uint256 marketId,
+        LTypes.SignedNominal memory newBalance
     )
-        internal
+        private
         pure
     {
-        LTypes.SignedPrincipal memory oldBalance = worldState.assets[assetId].balance;
-        LInterest.TotalPrincipal memory totalPrincipal = worldState.assets[assetId].totalPrincipal;
+        LTypes.SignedNominal memory oldBalance = worldState.assets[marketId].balance;
+        LInterest.TotalNominal memory totalNominal = worldState.assets[marketId].totalNominal;
 
         // roll-back oldBalance
         if (oldBalance.sign) {
-            totalPrincipal.borrowed = totalPrincipal.borrowed.sub(oldBalance.principal);
+            totalNominal.borrow = LTypes.sub(totalNominal.borrow, oldBalance.nominal);
         } else {
-            totalPrincipal.lent = totalPrincipal.lent.sub(oldBalance.principal);
+            totalNominal.supply = LTypes.sub(totalNominal.supply, oldBalance.nominal);
         }
 
         // roll-forward newBalance
         if (newBalance.sign) {
-            totalPrincipal.lent = totalPrincipal.lent.add(newBalance.principal);
+            totalNominal.supply = LTypes.add(totalNominal.supply, newBalance.nominal);
         } else {
-            totalPrincipal.borrowed = totalPrincipal.borrowed.add(newBalance.principal);
+            totalNominal.borrow = LTypes.add(totalNominal.borrow, newBalance.nominal);
         }
 
         // verify
-        require(totalPrincipal.lent.value >= totalPrincipal.borrowed.value, "CANNOT BORROW MORE THAN LENT");
+        require(totalNominal.supply.value >= totalNominal.borrow.value, "CANNOT BORROW MORE THAN LENT");
 
         // update worldState
-        worldState.assets[assetId].balance = newBalance;
-        worldState.assets[assetId].totalPrincipal = totalPrincipal;
+        worldState.assets[marketId].balance = newBalance;
+        worldState.assets[marketId].totalNominal = totalNominal;
     }
 
     // move balance to/from an external account
     function _shiftBalance(
-        LTransactions.WorldState memory worldState,
-        uint256 assetId,
+        LActions.WorldState memory worldState,
+        uint256 marketId,
         address exernalTrader,
         uint256 externalAccount,
-        LTypes.SignedPrincipal memory deltaBalance
+        LTypes.SignedNominal memory deltaBalance
     )
-        internal
+        private
     {
         // subtract deltaBalance from external account
-        address token = worldState.assets[assetId].token;
-        g_accounts[exernalTrader][externalAccount].balances[token] =
-            g_accounts[exernalTrader][externalAccount].balances[token].sub(deltaBalance);
+        g_accounts[exernalTrader][externalAccount].balances[marketId] =
+            g_accounts[exernalTrader][externalAccount].balances[marketId].sub(deltaBalance);
 
         // add deltaBalance to user's account
-        worldState.assets[assetId].balance =
-            worldState.assets[assetId].balance.add(deltaBalance);
+        worldState.assets[marketId].balance =
+            worldState.assets[marketId].balance.add(deltaBalance);
 
-        // no need to update the gobal principal values (they stay constant)
+        // no need to update the gobal nominal values (they stay constant)
     }
 }

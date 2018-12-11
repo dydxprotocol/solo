@@ -31,12 +31,10 @@ contract SoloMargin is
     Queries
 {
     constructor (
-        LDecimal.D256 memory minCollateralRatio,
-        LDecimal.D256 memory spread
+        // TODO
     )
         public
     {
-        g_minCollateralRatio = minCollateralRatio;
-        g_liquidationSpread = spread;
+        // TODO
     }
 }

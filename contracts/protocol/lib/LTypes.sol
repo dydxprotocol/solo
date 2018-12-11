@@ -26,144 +26,143 @@ library LTypes {
     using SafeMath for uint128;
     using LMath for uint256;
 
-    // ============ Principal ============
+    // ============ Nominal ============
 
-    struct Principal {
+    struct Nominal {
         uint128 value;
     }
 
     function sub(
-        Principal memory a,
-        Principal memory b
+        Nominal memory a,
+        Nominal memory b
     )
         internal
         pure
-        returns (Principal memory result)
+        returns (Nominal memory result)
     {
         result.value = a.value.sub(b.value).to128();
     }
 
     function add(
-        Principal memory a,
-        Principal memory b
+        Nominal memory a,
+        Nominal memory b
     )
         internal
         pure
-        returns (Principal memory result)
+        returns (Nominal memory result)
     {
         result.value = a.value.add(b.value).to128();
     }
 
-    // ============ Signed Principal ============
+    // ============ Signed Nominal ============
 
-    struct SignedPrincipal {
+    struct SignedNominal {
         bool sign;
-        Principal principal;
+        Nominal nominal;
     }
 
     function sub(
-        SignedPrincipal memory a,
-        SignedPrincipal memory b
+        SignedNominal memory a,
+        SignedNominal memory b
     )
         internal
         pure
-        returns (SignedPrincipal memory)
+        returns (SignedNominal memory)
     {
-        SignedPrincipal memory negativeB = b;
+        SignedNominal memory negativeB = b;
         negativeB.sign = !b.sign;
         return add(a, b);
     }
 
     function add(
-        SignedPrincipal memory a,
-        SignedPrincipal memory b
+        SignedNominal memory a,
+        SignedNominal memory b
     )
         internal
         pure
-        returns (SignedPrincipal memory result)
+        returns (SignedNominal memory result)
     {
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.principal = add(a.principal, b.principal);
+            result.nominal = add(a.nominal, b.nominal);
         } else {
-            result.sign = (a.principal.value >= b.principal.value);
-            if (a.principal.value > b.principal.value) {
+            if (a.nominal.value >= b.nominal.value) {
                 result.sign = a.sign;
-                result.principal = sub(a.principal, b.principal);
+                result.nominal = sub(a.nominal, b.nominal);
             } else {
                 result.sign = b.sign;
-                result.principal = sub(b.principal, a.principal);
+                result.nominal = sub(b.nominal, a.nominal);
             }
         }
     }
 
-    // ============ TokenAmount ============
+    // ============ Accrued ============
 
-    struct TokenAmount {
+    struct Accrued {
         uint256 value;
     }
 
     function sub(
-        TokenAmount memory a,
-        TokenAmount memory b
+        Accrued memory a,
+        Accrued memory b
     )
         internal
         pure
-        returns (TokenAmount memory result)
+        returns (Accrued memory result)
     {
         result.value = a.value.sub(b.value);
     }
 
     function add(
-        TokenAmount memory a,
-        TokenAmount memory b
+        Accrued memory a,
+        Accrued memory b
     )
         internal
         pure
-        returns (TokenAmount memory result)
+        returns (Accrued memory result)
     {
         result.value = a.value.add(b.value);
     }
 
-    // ============ Signed TokenAmount ============
+    // ============ Signed Accrued ============
 
-    struct SignedTokenAmount {
+    struct SignedAccrued {
         bool sign;
-        TokenAmount tokenAmount;
+        Accrued accrued;
     }
 
     function sub(
-        SignedTokenAmount memory a,
-        SignedTokenAmount memory b
+        SignedAccrued memory a,
+        SignedAccrued memory b
     )
         internal
         pure
-        returns (SignedTokenAmount memory)
+        returns (SignedAccrued memory)
     {
-        SignedTokenAmount memory negativeB = b;
+        SignedAccrued memory negativeB = b;
         negativeB.sign = !b.sign;
         return add(a, b);
     }
 
     function add(
-        SignedTokenAmount memory a,
-        SignedTokenAmount memory b
+        SignedAccrued memory a,
+        SignedAccrued memory b
     )
         internal
         pure
-        returns (SignedTokenAmount memory result)
+        returns (SignedAccrued memory result)
     {
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.tokenAmount = add(a.tokenAmount, b.tokenAmount);
+            result.accrued = add(a.accrued, b.accrued);
         } else {
-            result.sign = (a.tokenAmount.value >= b.tokenAmount.value);
-            if (a.tokenAmount.value > b.tokenAmount.value) {
+            result.sign = (a.accrued.value >= b.accrued.value);
+            if (a.accrued.value > b.accrued.value) {
                 result.sign = a.sign;
-                result.tokenAmount = sub(a.tokenAmount, b.tokenAmount);
+                result.accrued = sub(a.accrued, b.accrued);
             } else {
                 result.sign = b.sign;
-                result.tokenAmount = sub(b.tokenAmount, a.tokenAmount);
+                result.accrued = sub(b.accrued, a.accrued);
             }
         }
     }

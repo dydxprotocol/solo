@@ -21,13 +21,13 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 import { LDecimal } from "../lib/LDecimal.sol";
-import { LTransactions } from "../lib/LTransactions.sol";
+import { LActions } from "../lib/LActions.sol";
 import { LMath } from "../lib/LMath.sol";
 import { LTime } from "../lib/LTime.sol";
 import { LPrice } from "../lib/LPrice.sol";
 import { LTypes } from "../lib/LTypes.sol";
 import { LInterest } from "../lib/LInterest.sol";
-import { LTokenInteract } from "../lib/LTokenInteract.sol";
+import { LToken } from "../lib/LToken.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Storage } from "./Storage.sol";
@@ -42,16 +42,13 @@ import { Storage } from "./Storage.sol";
 contract TransactionMemory is
     Storage
 {
-    using LDecimal for LDecimal.D256;
+    using LDecimal for LDecimal.Decimal;
     using LMath for uint256;
     using LTime for LTime.Time;
-    using LTypes for LTypes.Principal;
-    using LTypes for LTypes.TokenAmount;
-    using LTypes for LTypes.SignedPrincipal;
-    using LTypes for LTypes.SignedTokenAmount;
+    using LTypes for LTypes.SignedNominal;
+    using LTypes for LTypes.SignedAccrued;
     using SafeMath for uint256;
     using SafeMath for uint128;
-    using LTokenInteract for address;
 
     // ============ Reading Functions ============
 
@@ -61,17 +58,17 @@ contract TransactionMemory is
     )
         internal
         view
-        returns (LTransactions.WorldState memory)
+        returns (LActions.WorldState memory)
     {
-        LTransactions.WorldState memory worldState;
+        LActions.WorldState memory worldState;
 
         worldState.trader = trader;
         worldState.account = account;
-        worldState.numAssets = g_activeTokens.length;
-        worldState.assets = new LTransactions.AssetInfo[](worldState.numAssets);
+        worldState.numAssets = g_numMarkets;
+        worldState.assets = new LActions.AssetInfo[](worldState.numAssets);
 
         _readTokens(worldState);
-        _readTotalPrincipals(worldState);
+        _readTotalNominals(worldState);
         _readIndexes(worldState);
         _readPrices(worldState);
         _readBalances(worldState);
@@ -80,104 +77,100 @@ contract TransactionMemory is
     }
 
     function _readTokens(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            worldState.assets[i].token = g_activeTokens[i];
+            worldState.assets[i].token = g_markets[i].token;
         }
     }
 
     function _readIndexes(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
     {
         LTime.Time memory currentTime = LTime.currentTime();
         LTime.Time memory timeDelta = currentTime.sub(g_lastUpdate);
-        LDecimal.D256 memory earningsRate = g_earningsRate;
+        LDecimal.Decimal memory earningsRate = g_earningsRate;
 
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-
             // if no time has passed since the last update, then simply load the cached value
             if (timeDelta.value == 0) {
-                worldState.assets[i].index = g_markets[token].index;
+                worldState.assets[i].index = g_markets[i].index;
                 continue;
             }
 
             // get previous rate
-            LInterest.TotalPrincipal memory totalPrincipal = worldState.assets[i].totalPrincipal;
-            LInterest.Rate memory rate = g_markets[token].interestSetter.getInterestRate(
-                token,
-                totalPrincipal
+            LInterest.TotalNominal memory totalNominal = worldState.assets[i].totalNominal;
+            LInterest.Rate memory rate = g_markets[i].interestSetter.getInterestRate(
+                worldState.assets[i].token,
+                totalNominal
             );
 
             worldState.assets[i].index = LInterest.getUpdatedIndex(
-                g_markets[token].index,
+                g_markets[i].index,
                 rate,
                 timeDelta,
-                totalPrincipal,
+                totalNominal,
                 earningsRate
             );
         }
     }
 
-    function _readTotalPrincipals(
-        LTransactions.WorldState memory worldState
+    function _readTotalNominals(
+        LActions.WorldState memory worldState
     )
         internal
         view
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-            worldState.assets[i].totalPrincipal = g_markets[token].totalPrincipal;
+            worldState.assets[i].totalNominal = g_markets[i].totalNominal;
         }
     }
 
     function _readPrices(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
             address token = worldState.assets[i].token;
-            worldState.assets[i].price = IPriceOracle(g_markets[token].oracle).getPrice(token);
+            worldState.assets[i].price = IPriceOracle(g_markets[i].priceOracle).getPrice(token);
         }
     }
 
     function _readBalances(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
             worldState.assets[i].balance =
                 worldState.assets[i].oldBalance =
-                    g_accounts[worldState.trader][worldState.account].balances[token];
+                    g_accounts[worldState.trader][worldState.account].balances[i];
         }
     }
 
     // ============ Writing Functions ============
 
     function _writeWorldState(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
     {
         _writeIndexes(worldState);
-        _writeTotalPrincipals(worldState);
+        _writeTotalNominals(worldState);
         _writeBalances(worldState);
     }
 
     function _writeIndexes(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
     {
@@ -187,39 +180,36 @@ contract TransactionMemory is
         }
 
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-            g_markets[token].index = worldState.assets[i].index;
+            g_markets[i].index = worldState.assets[i].index;
         }
 
         g_lastUpdate = currentTime;
     }
 
-    function _writeTotalPrincipals(
-        LTransactions.WorldState memory worldState
+    function _writeTotalNominals(
+        LActions.WorldState memory worldState
     )
         internal
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-            g_markets[token].totalPrincipal = worldState.assets[i].totalPrincipal;
+            g_markets[i].totalNominal = worldState.assets[i].totalNominal;
         }
     }
 
     function _writeBalances(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
     {
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-            g_accounts[worldState.trader][worldState.account].balances[token] = worldState.assets[i].balance;
+            g_accounts[worldState.trader][worldState.account].balances[i] = worldState.assets[i].balance;
         }
     }
 
     // ============ Verification Functions ============
 
     function _verifyWorldState(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
@@ -229,36 +219,31 @@ contract TransactionMemory is
         // TODO: add other forms of authentication (onBehalfOf, approval mapping, etc)
 
         // verify the account is properly over-collateralized
-        require(
-            _verifyCollateralization(worldState),
-            "Position cannot end up undercollateralized"
-        );
+        _verifyCollateralization(worldState);
 
         // ensure token balances
         for (uint256 i = 0 ; i < worldState.numAssets; i++) {
-            address token = worldState.assets[i].token;
-            LInterest.TotalPrincipal memory totalPrincipal = g_markets[token].totalPrincipal;
-            LTypes.TokenAmount memory held = worldState.assets[i].token.balanceOf(address(this));
-            LTypes.SignedPrincipal memory lent = LTypes.SignedPrincipal({
+            LTypes.SignedAccrued memory held = LToken.thisBalance(worldState.assets[i].token);
+            LTypes.SignedNominal memory lent = LTypes.SignedNominal({
                 sign: true,
-                principal: totalPrincipal.lent
+                nominal: g_markets[i].totalNominal.supply
             });
-            LTypes.SignedPrincipal memory borrowed = LTypes.SignedPrincipal({
+            LTypes.SignedNominal memory borrowed = LTypes.SignedNominal({
                 sign: false,
-                principal: totalPrincipal.borrowed
+                nominal: g_markets[i].totalNominal.borrow
             });
-            LTypes.SignedTokenAmount memory lentTokenAmount =
-                LInterest.signedPrincipalToTokenAmount(lent, worldState.assets[i].index);
-            LTypes.SignedTokenAmount memory borrowedTokenAmount =
-                LInterest.signedPrincipalToTokenAmount(borrowed, worldState.assets[i].index);
-            LTypes.SignedTokenAmount memory expected = lentTokenAmount.sub(borrowedTokenAmount);
+            LTypes.SignedAccrued memory lentAccrued =
+                LInterest.nominalToAccrued(lent, worldState.assets[i].index);
+            LTypes.SignedAccrued memory borrowedAccrued =
+                LInterest.nominalToAccrued(borrowed, worldState.assets[i].index);
+            LTypes.SignedAccrued memory expected = lentAccrued.sub(borrowedAccrued);
             require(expected.sign, "We cannot expect more to be borrowed than lent");
-            require(held.value >= expected.tokenAmount.value, "We dont have as many tokens as expected");
+            require(held.accrued.value >= expected.accrued.value, "We dont have as many tokens as expected");
         }
     }
 
     function _verifyCollateralization(
-        LTransactions.WorldState memory worldState
+        LActions.WorldState memory worldState
     )
         internal
         view
@@ -268,23 +253,23 @@ contract TransactionMemory is
         LPrice.Value memory borrowedValue;
 
         for (uint256 i = 0; i < worldState.numAssets; i++) {
-            LTypes.SignedPrincipal memory balance = worldState.assets[i].balance;
+            LTypes.SignedNominal memory balance = worldState.assets[i].balance;
 
-            if (balance.principal.value == 0) {
+            if (balance.nominal.value == 0) {
                 continue;
             }
 
-            LTypes.SignedTokenAmount memory tokenAmount = LInterest.signedPrincipalToTokenAmount(
+            LTypes.SignedAccrued memory accrued = LInterest.nominalToAccrued(
                 balance,
                 worldState.assets[i].index
             );
 
             LPrice.Value memory overallValue = LPrice.getTotalValue(
                 worldState.assets[i].price,
-                tokenAmount.tokenAmount.value
+                accrued.accrued.value
             );
 
-            if (tokenAmount.sign) {
+            if (accrued.sign) {
                 lentValue = LPrice.add(lentValue, overallValue);
             } else {
                 borrowedValue = LPrice.add(borrowedValue, overallValue);
