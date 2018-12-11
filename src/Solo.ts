@@ -16,6 +16,27 @@
 
 */
 
-/* eslint-disable max-len, import/no-unresolved */
+import { Provider } from 'web3/providers';
+import { Contracts } from './lib/Contracts';
+import { EVM } from './lib/EVM';
 
-export { default as SoloMargin } from '../../build/contracts/SoloMargin.json';
+export class Solo {
+  public contracts: Contracts;
+  public evm: EVM;
+
+  constructor(
+    provider: Provider,
+    networkId: number,
+  ) {
+    this.contracts = new Contracts(provider, networkId);
+    this.evm = new EVM(provider);
+  }
+
+  public setProvider(
+    provider: Provider,
+    networkId: number,
+  ): void {
+    this.contracts.setProvider(provider, networkId);
+    this.evm.setProvider(provider);
+  }
+}

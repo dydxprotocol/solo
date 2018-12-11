@@ -21,18 +21,19 @@
   },
   "scripts": {
     "test": "NODE_ENV=test truffle test",
-    "compile": "truffle compile",
+    "build": "truffle compile && typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/contracts/*.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "console": "truffle console",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
+    "tslint": "tslint --project . -t verbose 'src/**/*.ts'",
     "solint": "solium -d contracts/",
     "coverage": "./node_modules/.bin/solidity-coverage",
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
     "dydxlint": "python util/lintcontracts.py",
-    "build:js": "./node_modules/.bin/babel src --out-dir dist --source-maps inline",
+    "build:js": "rm -rf dist/ && tsc",
     "docker_node": "ganache-cli -i 1212 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "babel-node ./scripts/clean-build.js",
     "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
@@ -54,9 +55,11 @@
   },
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
+    "@types/web3": "^1.0.12",
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^4.1.0",
-    "openzeppelin-solidity": "2.1.0-rc.2"
+    "openzeppelin-solidity": "2.1.0-rc.2",
+    "web3": "^1.0.0-beta.36"
   },
   "devDependencies": {
     "@digix/tempo": "^0.2.0",
@@ -82,9 +85,21 @@
     "request-promise-native": "^1.0.5",
     "solidity-coverage": "0.5.01",
     "solium": "1.1.8",
+<<<<<<< HEAD
     "truffle": "5.0.0",
+=======
+    "truffle": "5.0.0-beta.2",
+<<<<<<< HEAD
+>>>>>>> Implement typescript lib setup
     "truffle-contract": "4.0.0",
     "web3": "1.0.0-beta.36",
+=======
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.1",
+    "tslint-no-focused-test": "^0.5.0",
+    "typechain": "^0.3.9",
+    "typescript": "^3.2.2",
+>>>>>>> Implement typescript lib setup
     "websocket": "1.0.28"
   }
 }

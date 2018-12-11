@@ -16,5 +16,9 @@
 
 */
 
-export * from './lib/contracts';
-export * from './lib/snapshots';
+import { Tx } from 'web3/eth/types';
+
+export interface ContractCallOptions extends Tx {
+  waitForConfirmation?: boolean;
+  confirmations?: number;
+}

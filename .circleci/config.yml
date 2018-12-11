@@ -45,7 +45,7 @@ jobs:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Lint
-          command: npm run lint && npm run dydxlint && npm run solint
+          command: npm run lint && npm run dydxlint && npm run solint && npm run tslint
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
