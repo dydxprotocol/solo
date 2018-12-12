@@ -1,9 +1,9 @@
-/* eslint-disable */ // TODO
+/* eslint-disable import/no-extraneous-dependencies, no-console */
 
 import fs from 'fs';
 import promisify from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import * as contracts from '../src/lib/contracts';
+import * as contracts from './contracts';
 import deployed from '../migrations/deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);
