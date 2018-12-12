@@ -17,8 +17,13 @@
 */
 
 import { Tx } from 'web3/eth/types';
+import { TransactionReceipt } from 'web3/types';
 
 export interface ContractCallOptions extends Tx {
-  waitForConfirmation?: boolean;
   confirmations?: number;
+}
+
+export interface TxResult {
+  transactionHash: string;
+  confirmation: Promise<TransactionReceipt>;
 }

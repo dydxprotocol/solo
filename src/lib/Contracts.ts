@@ -22,7 +22,7 @@ import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { abi as soloMarginABI } from '../../build/contracts/SoloMargin.json';
 import { TransactionObject, Block } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
-import { ContractCallOptions } from '../types';
+import { ContractCallOptions, TxResult } from '../types';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
 import PromiEvent from 'web3/promiEvent';
 
@@ -31,7 +31,6 @@ export class Contracts {
   private blockGasLimit: number;
   private autoGasMultiplier: number = 1.5;
   private defaultConfirmations: number = 1;
-  private waitForConfirmation: boolean = true;
   private web3: Web3;
 
   public soloMargin: SoloMargin;
@@ -57,7 +56,7 @@ export class Contracts {
   public async callContractFunction<T>(
     method: TransactionObject<T>,
     options: ContractCallOptions = {},
-  ): Promise<string | TransactionReceipt> {
+  ): Promise<TxResult> {
     if (!this.blockGasLimit) await this.setGasLimit();
     if (!options.gas) {
       const gasEstimate: number = await method.estimateGas(options);
@@ -68,27 +67,63 @@ export class Contracts {
       options.chainId = this.networkId;
     }
 
-    const { waitForConfirmation, confirmations, ...txOptions } = options;
+    const { confirmations, ...txOptions } = options;
 
     const promi: PromiEvent<T> = method.send(txOptions);
 
-    return new Promise((resolve, reject) => {
-      promi.on('error', error => reject(error));
+    const OUTCOMES = {
+      INITIAL: 0,
+      RESOLVED: 1,
+      REJECTED: 2,
+    };
 
-      if (
-        waitForConfirmation === undefined && this.waitForConfirmation
-        || !waitForConfirmation
-      ) {
-        promi.on('transactionHash', (txHash: string) => resolve(txHash));
-      } else {
+    let receivedOutcome = OUTCOMES.INITIAL;
+    let confirmationOutcome = OUTCOMES.INITIAL;
+
+    const receivedPromise: Promise<string> = new Promise(
+      (resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (receivedOutcome === OUTCOMES.INITIAL) {
+            receivedOutcome = OUTCOMES.REJECTED;
+            reject(error);
+          }
+        });
+
+        promi.on('transactionHash', (txHash: string) => {
+          if (receivedOutcome === OUTCOMES.INITIAL) {
+            receivedOutcome = OUTCOMES.RESOLVED;
+            resolve(txHash);
+          }
+        });
+      },
+    );
+
+    const confirmationPromise: Promise<TransactionReceipt> = new Promise(
+      (resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (receivedOutcome === OUTCOMES.RESOLVED && confirmationOutcome === OUTCOMES.INITIAL) {
+            confirmationOutcome = OUTCOMES.REJECTED;
+            reject(error);
+          }
+        });
+
         promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
           const desiredConf = confirmations || this.defaultConfirmations;
           if (confNumber >= desiredConf) {
-            resolve(receipt);
+            if (confirmationOutcome === OUTCOMES.INITIAL) {
+              resolve(receipt);
+            }
           }
         });
-      }
-    });
+      },
+    );
+
+    const transactionHash = await receivedPromise;
+
+    return {
+      transactionHash,
+      confirmation: confirmationPromise,
+    };
   }
 
   private async setGasLimit(): Promise<void> {
