@@ -16,6 +16,8 @@
 
 */
 
+import BN from 'bn.js';
+
 import { Tx } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
 
@@ -26,4 +28,59 @@ export interface ContractCallOptions extends Tx {
 export interface TxResult {
   transactionHash: string;
   confirmation: Promise<TransactionReceipt>;
+}
+
+export enum AmountDenomination {
+  Actual = 0,
+  Principal = 1,
+}
+
+export enum AmountReference {
+  Delta = 0,
+  Target = 1,
+}
+
+export enum TransactionType {
+  Deposit = 0,
+  Withdraw = 1,
+  Exchange = 2,
+  Liquidate = 3,
+  SetExpiry = 4,
+}
+
+export enum AmountIntention {
+  Deposit = 0,
+  Withdraw = 1,
+}
+
+export interface Amount {
+  value: BN;
+  denomination: AmountDenomination;
+  reference: AmountReference;
+  intent?: AmountIntention;
+}
+
+export interface AccountOperation {
+  amount: Amount;
+  asset: string;
+}
+
+export interface Deposit extends AccountOperation {}
+
+export interface Withdrawal extends AccountOperation {}
+
+export interface TransactionArgs {
+  transactionType: number | string;
+  amount: {
+    sign: boolean;
+    intent: number | string;
+    denom: number | string;
+    ref: number | string;
+    value: number | string;
+  };
+  depositAssetId: number | string;
+  withdrawAssetId: number | string;
+  exchangeWrapperOrLiquidTrader: string;
+  liquidAccount: number | string;
+  orderData: (string | number[])[];
 }
