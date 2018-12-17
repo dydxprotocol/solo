@@ -27,9 +27,9 @@ library LMath {
     // ============ Public Functions ============
 
     function getPartial(
+        uint256 target,
         uint256 numerator,
-        uint256 denominator,
-        uint256 target
+        uint256 denominator
     )
         internal
         pure
@@ -47,6 +47,18 @@ library LMath {
     {
         uint128 r = uint128(x);
         require(r == x, "UNSAFE CAST TO UINT128");
+        return r;
+    }
+
+    function to96(
+        uint256 x
+    )
+        internal
+        pure
+        returns (uint96)
+    {
+        uint96 r = uint96(x);
+        require(r == x, "UNSAFE CAST TO UINT96");
         return r;
     }
 

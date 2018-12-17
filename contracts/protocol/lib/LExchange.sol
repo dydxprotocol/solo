@@ -45,10 +45,10 @@ library LExchange {
 
         LTypes.SignedAccrued memory result;
         result.sign = false;
-        result.accrued.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
+        result.accrued = IExchangeWrapper(exchangeWrapper).getExchangeCost(
             supplyToken,
             borrowToken,
-            desiredAmount.accrued.value,
+            desiredAmount.accrued,
             orderData
         );
 
@@ -71,12 +71,12 @@ library LExchange {
 
         LTypes.SignedAccrued memory result;
         result.sign = true;
-        result.accrued.value = IExchangeWrapper(exchangeWrapper).exchange(
+        result.accrued = IExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,
             address(this),
             supplyToken,
             borrowToken,
-            requestedFillAmount.accrued.value,
+            requestedFillAmount.accrued,
             orderData
         );
 

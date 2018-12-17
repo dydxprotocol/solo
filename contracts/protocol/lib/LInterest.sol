@@ -28,8 +28,8 @@ import { LTypes } from "./LTypes.sol";
 library LInterest {
     using LMath for uint256;
     using SafeMath for uint256;
-    using SafeMath for uint128;
-    using LTime for LTime.Time;
+    using SafeMath for uint96;
+    using SafeMath for uint32;
     using LDecimal for LDecimal.Decimal;
 
     // ============ Constants ============
@@ -39,20 +39,17 @@ library LInterest {
     // ============ Structs ============
 
     struct TotalNominal {
-        LTypes.Nominal supply;
-        LTypes.Nominal borrow;
+        uint128 borrow;
+        uint128 supply;
     }
 
     struct Index {
-        Compounded borrow;
-        Compounded supply;
+        uint96 borrow;
+        uint96 supply;
+        uint32 lastUpdate;
     }
 
     struct Rate {
-        uint128 value;
-    }
-
-    struct Compounded {
         uint128 value;
     }
 
@@ -61,26 +58,29 @@ library LInterest {
     function getUpdatedIndex(
         Index memory index,
         Rate memory rate,
-        LTime.Time memory timeDelta,
         TotalNominal memory totalNominal,
-        LDecimal.Decimal memory earningsRate
+        LDecimal.Decimal memory earningsTax
     )
         internal
-        pure
-        returns (Index memory result)
+        view
+        returns (Index memory)
     {
-        Compounded memory borrowInterest = _getCompoundedInterest(rate, timeDelta);
+        uint32 timeDelta = LTime.currentTime().sub(index.lastUpdate).to32();
+        uint96 borrowInterest = _getCompoundedInterest(rate, timeDelta);
 
         uint256 supplyInterestRaw = LMath.getPartial(
-            totalNominal.borrow.value,
-            totalNominal.supply.value,
-            borrowInterest.value.sub(BASE)
+            borrowInterest.sub(BASE),
+            totalNominal.borrow,
+            totalNominal.supply
         );
-        Compounded memory supplyInterest;
-        supplyInterest.value = earningsRate.mul(supplyInterestRaw).add(BASE).to128();
+        LDecimal.Decimal memory earningsRate = LDecimal.one().sub(earningsTax);
+        uint96 supplyInterest = earningsRate.mul(supplyInterestRaw).add(BASE).to96();
 
-        result.borrow = mul(index.borrow, borrowInterest);
-        result.supply = mul(index.supply, supplyInterest);
+        return Index({
+            borrow: LMath.getPartial(index.borrow, borrowInterest, BASE).to96(),
+            supply: LMath.getPartial(index.supply, supplyInterest, BASE).to96(),
+            lastUpdate: LTime.currentTime()
+        });
     }
 
     function nominalToAccrued(
@@ -89,15 +89,16 @@ library LInterest {
     )
         internal
         pure
-        returns (LTypes.SignedAccrued memory result)
+        returns (LTypes.SignedAccrued memory)
     {
+        LTypes.SignedAccrued memory result;
         result.sign = signedNominal.sign;
-        Compounded memory interest = result.sign ? index.supply : index.borrow;
-        result.accrued.value = LMath.getPartial(
-            interest.value,
-            BASE,
-            signedNominal.nominal.value
+        result.accrued = LMath.getPartial(
+            signedNominal.nominal,
+            result.sign ? index.supply : index.borrow,
+            BASE
         );
+        return result;
     }
 
     function accruedToNominal(
@@ -106,25 +107,27 @@ library LInterest {
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory result)
+        returns (LTypes.SignedNominal memory)
     {
+        LTypes.SignedNominal memory result;
         result.sign = accrued.sign;
-        Compounded memory interest = result.sign ? index.supply : index.borrow;
-        result.nominal.value = LMath.getPartial(
+        result.nominal = LMath.getPartial(
+            accrued.accrued,
             BASE,
-            interest.value,
-            accrued.accrued.value
+            result.sign ? index.supply : index.borrow
         ).to128();
+        return result;
     }
 
     function newIndex()
         internal
-        pure
+        view
         returns (Index memory)
     {
         return Index({
-            borrow: Compounded({ value: BASE }),
-            supply: Compounded({ value: BASE })
+            borrow: BASE,
+            supply: BASE,
+            lastUpdate: LTime.currentTime()
         });
     }
 
@@ -138,63 +141,32 @@ library LInterest {
         return rate.value >= BASE;
     }
 
-    function mul(
-        Compounded memory a,
-        Rate memory r
-    )
-        private
-        pure
-        returns (Compounded memory result)
-    {
-        result.value = (uint256(a.value) * uint256(r.value) / BASE).to128();
-    }
-
-    function mul(
-        Rate memory a,
-        Rate memory b
-    )
-        private
-        pure
-        returns (Rate memory result)
-    {
-        result.value = (uint256(a.value) * uint256(b.value) / BASE).to128();
-    }
-
-    function mul(
-        Compounded memory a,
-        Compounded memory b
-    )
-        private
-        pure
-        returns (Compounded memory result)
-    {
-        result.value = (uint256(a.value) * uint256(b.value) / BASE).to128();
-    }
-
     // ============ Private Functions ============
 
     function _getCompoundedInterest(
         Rate memory rate,
-        LTime.Time memory timeDelta
+        uint32 timeDelta
     )
         private
         pure
-        returns (Compounded memory result)
+        returns (uint96)
     {
-        result.value = BASE;
+        uint96 result = BASE;
 
         // localRate is rate^(2^rounds)
         Rate memory localRate = Rate({ value: rate.value });
-        uint256 localTime = uint256(timeDelta.value);
+        uint256 localTime = uint256(timeDelta);
 
         while (localTime != 0) {
 
             if (localTime & 1 != 0) {
-                result = mul(result, localRate);
+                result = LMath.getPartial(result, localRate.value, BASE).to96();
             }
 
             localTime = localTime >> 1;
-            localRate = mul(localRate, localRate);
+            localRate.value = LMath.getPartial(localRate.value, localRate.value, BASE).to128();
         }
+
+        return result;
     }
 }

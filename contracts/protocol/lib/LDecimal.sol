@@ -50,52 +50,39 @@ library LDecimal {
     // ============ multiply with other decimals ============
 
     function mul(
-        Decimal memory d,
-        Decimal memory x
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return x.value.mul(d.value).div(BASE).div(BASE);
-    }
-
-    // ============ invThenMul ============
-    // returns target/d. Not called div because d is the first arg
-
-    function invThenMul(
-        Decimal memory d,
-        uint256 target
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return target.mul(BASE).div(d.value);
-    }
-
-    // ============ Equality Functions ============
-
-    function equals(
         Decimal memory a,
         Decimal memory b
     )
         internal
         pure
-        returns (bool)
+        returns (uint256)
     {
-        return a.value == b.value;
+        return a.value.mul(b.value).div(BASE).div(BASE);
     }
 
-    // ============ Creator Functions ============
-
-    function zero()
+    function add(
+        Decimal memory a,
+        Decimal memory b
+    )
         internal
         pure
         returns (Decimal memory)
     {
-        return Decimal({ value: 0 });
+        return Decimal({ value: a.value.add(b.value) });
     }
+
+    function sub(
+        Decimal memory a,
+        Decimal memory b
+    )
+        internal
+        pure
+        returns (Decimal memory)
+    {
+        return Decimal({ value: a.value.sub(b.value) });
+    }
+
+    // ============ Creator Functions ============
 
     function one()
         internal

@@ -18,10 +18,9 @@
 
 pragma solidity 0.5.1;
 
-import { LPrice } from "../lib/LPrice.sol";
 import { LDecimal } from "../lib/LDecimal.sol";
 import { LInterest } from "../lib/LInterest.sol";
-import { LTime } from "../lib/LTime.sol";
+import { LPrice } from "../lib/LPrice.sol";
 import { LTypes } from "../lib/LTypes.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
@@ -39,7 +38,7 @@ contract Storage {
 
     struct Account {
         mapping (uint256 => LTypes.SignedNominal) balances;
-        LTime.Time closingTime;
+        uint32 closingTime;
     }
 
     struct Market {
@@ -51,9 +50,6 @@ contract Storage {
     }
 
     // ============ Storage ============
-
-    // timestamp of the last index update
-    LTime.Time g_lastUpdate;
 
     // number of markets
     uint256 g_numMarkets;
@@ -67,14 +63,30 @@ contract Storage {
     // ============ Risk Parameters ============
 
     // collateral ratio at which accounts can be liquidated
-    LDecimal.Decimal g_minCollateralRatio;
+    LDecimal.Decimal g_liquidationRatio;
 
     // (1 - g_liquidationSpread) is the percentage penalty incurred by liquidated accounts
     LDecimal.Decimal g_liquidationSpread;
 
-    // (1 - g_earningsRate) is the percentage fee that the exchange takes of lender's earnings
-    LDecimal.Decimal g_earningsRate;
+    // Percentage fee that the exchange takes of lender's earnings
+    LDecimal.Decimal g_earningsTax;
 
-    // the minimum value of a negative position
+    // The minimum absolute borrow value of an account
+    // There must be sufficient incentivize to liquidate undercollateralized accounts
     LPrice.Value g_minBorrowedValue;
+
+    // ============ Permissioning ============
+
+    // Addresses that can act as a proxy for another address
+    mapping (address => mapping (address => bool)) g_trustedAddress;
+
+    function trustAddress(
+        address externalAddress,
+        bool trusted
+    )
+        external
+    {
+        require(msg.sender != externalAddress);
+        g_trustedAddress[msg.sender][externalAddress] = trusted;
+    }
 }

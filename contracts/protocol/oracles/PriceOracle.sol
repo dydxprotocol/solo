@@ -32,10 +32,12 @@ contract PriceOracle {
     )
         public
         view
-        returns (LPrice.Price memory result)
+        returns (LPrice.Price memory)
     {
         // TODO: this whole contract
-        result.value = g_prices[token];
+        return LPrice.Price({
+            value: g_prices[token]
+        });
     }
 
     function setPrice(

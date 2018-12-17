@@ -19,22 +19,22 @@
 pragma solidity 0.5.1;
 
 import { LMath } from "./LMath.sol";
-import { LTime } from "./LTime.sol";
 import { LDecimal } from "./LDecimal.sol";
 import { LPrice } from "./LPrice.sol";
 import { LTypes } from "./LTypes.sol";
 import { LInterest } from "./LInterest.sol";
 
 library LActions {
+    using LMath for uint256;
 
     // ============ Enums ============
 
     enum TransactionType {
-        Supply,   // supply tokens
-        Borrow,  // borrow tokens
-        Exchange,  // exchange one token for another on an external exchange
-        Liquidate, // liquidate an undercollateralized or expiring account
-        SetExpiry  // set the expiry of your account
+        ExternalTransfer, // supply tokens
+        InternalTransfer, // borrow tokens
+        Exchange,         // exchange one token for another on an external exchange
+        Liquidate,        // liquidate an undercollateralized or expiring account
+        SetExpiry         // set the expiry of your account
     }
 
     enum AmountDenomination {
@@ -54,22 +54,6 @@ library LActions {
 
     // ============ Structs ============
 
-    struct WorldState {
-        uint256 numAssets;
-        address trader;
-        uint256 account;
-        AssetInfo[] assets;
-    }
-
-    struct AssetInfo {
-        address token;
-        LInterest.Index index;
-        LInterest.TotalNominal totalNominal;
-        LPrice.Price price;
-        LTypes.SignedNominal oldBalance;
-        LTypes.SignedNominal balance;
-    }
-
     struct Amount {
         bool sign;
         AmountIntention intent;
@@ -80,25 +64,33 @@ library LActions {
 
     struct TransactionArgs {
         TransactionType transactionType;
+        uint256 accountId;
         Amount amount;
         uint256 supplyMarketId;
         uint256 borrowMarketId;
-        address exchangeWrapperOrLiquidTrader;
-        uint256 liquidAccount;
+        address otherAddress;
+        uint256 otherAccountId;
         bytes orderData;
     }
 
-    struct SupplyArgs {
+    // ============ Action Types ============
+
+    struct ExternalTransferArgs {
+        uint256 accountId;
         Amount amount;
         uint256 marketId;
+        address otherAddress;
     }
 
-    struct BorrowArgs {
+    struct InternalTransferArgs {
+        uint256 accountId;
         Amount amount;
         uint256 marketId;
+        uint256 otherAccountId;
     }
 
     struct ExchangeArgs {
+        uint256 accountId;
         Amount amount;
         uint256 borrowMarketId;
         uint256 supplyMarketId;
@@ -107,44 +99,49 @@ library LActions {
     }
 
     struct LiquidateArgs {
+        uint256 accountId;
         Amount amount;
         uint256 borrowMarketId;
         uint256 supplyMarketId;
-        address liquidTrader;
-        uint256 liquidAccount;
+        uint256 liquidAccountId;
     }
 
     struct SetExpiryArgs {
-         LTime.Time time;
+        uint256 accountId;
+        uint32 time;
     }
 
     // ============ Parsing Functions ============
 
-    function parseSupplyArgs(
+    function parseExternalTransferArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (SupplyArgs memory)
+        returns (ExternalTransferArgs memory)
     {
-        assert(args.transactionType == TransactionType.Supply);
-        return SupplyArgs({
+        assert(args.transactionType == TransactionType.ExternalTransfer);
+        return ExternalTransferArgs({
+            accountId: args.accountId,
             amount: args.amount,
-            marketId: args.supplyMarketId
+            marketId: args.amount.intent == AmountIntention.Supply ? args.supplyMarketId : args.borrowMarketId,
+            otherAddress: args.otherAddress
         });
     }
 
-    function parseBorrowArgs(
+    function parseInternalTransferArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (BorrowArgs memory)
+        returns (InternalTransferArgs memory)
     {
-        assert(args.transactionType == TransactionType.Supply);
-        return BorrowArgs({
+        assert(args.transactionType == TransactionType.InternalTransfer);
+        return InternalTransferArgs({
+            accountId: args.accountId,
             amount: args.amount,
-            marketId: args.borrowMarketId
+            marketId: args.amount.intent == AmountIntention.Supply ? args.supplyMarketId : args.borrowMarketId,
+            otherAccountId: args.otherAccountId
         });
     }
 
@@ -157,10 +154,11 @@ library LActions {
     {
         assert(args.transactionType == TransactionType.Exchange);
         return ExchangeArgs({
+            accountId: args.accountId,
             amount: args.amount,
             supplyMarketId: args.supplyMarketId,
             borrowMarketId: args.borrowMarketId,
-            exchangeWrapper: args.exchangeWrapperOrLiquidTrader,
+            exchangeWrapper: args.otherAddress,
             orderData: args.orderData
         });
     }
@@ -174,11 +172,11 @@ library LActions {
     {
         assert(args.transactionType == TransactionType.Liquidate);
         return LiquidateArgs({
+            accountId: args.accountId,
             amount: args.amount,
             supplyMarketId: args.supplyMarketId,
             borrowMarketId: args.borrowMarketId,
-            liquidTrader: args.exchangeWrapperOrLiquidTrader,
-            liquidAccount: args.liquidAccount
+            liquidAccountId: args.otherAccountId
         });
     }
 
@@ -191,7 +189,8 @@ library LActions {
     {
         assert(args.transactionType == TransactionType.SetExpiry);
         return SetExpiryArgs({
-            time: LTime.toTime(args.amount.value)
+            accountId: args.accountId,
+            time: args.amount.value.to32()
         });
     }
 
@@ -200,10 +199,12 @@ library LActions {
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory result)
+        returns (LTypes.SignedNominal memory)
     {
-        result.sign = amount.sign;
-        result.nominal.value = LMath.to128(amount.value);
+        return LTypes.SignedNominal({
+            sign: amount.sign,
+            nominal: amount.value.to128()
+        });
     }
 
     function amountToSignedAccrued(
@@ -211,9 +212,11 @@ library LActions {
     )
         internal
         pure
-        returns (LTypes.SignedAccrued memory result)
+        returns (LTypes.SignedAccrued memory)
     {
-        result.sign = amount.sign;
-        result.accrued.value = amount.value;
+        return LTypes.SignedAccrued({
+            sign: amount.sign,
+            accrued: amount.value
+        });
     }
 }

@@ -22,7 +22,6 @@ pragma experimental ABIEncoderV2;
 import { LDecimal } from "../lib/LDecimal.sol";
 import { LInterest } from "../lib/LInterest.sol";
 import { LPrice } from "../lib/LPrice.sol";
-import { LTime } from "../lib/LTime.sol";
 import { LTypes } from "../lib/LTypes.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
@@ -40,12 +39,12 @@ contract Queries is
 {
     // ============ Admin Variables ============
 
-    function getMinCollateralRatio()
+    function getLiquidationRatio()
         public
         view
         returns (LDecimal.Decimal memory)
     {
-        return g_minCollateralRatio;
+        return g_liquidationRatio;
     }
 
     function getLiquidationSpread()
@@ -56,12 +55,12 @@ contract Queries is
         return g_liquidationSpread;
     }
 
-    function getEarningsRate()
+    function getEarningsTax()
         public
         view
         returns (LDecimal.Decimal memory)
     {
-        return g_earningsRate;
+        return g_earningsTax;
     }
 
     function getMinBorrowedValue()
@@ -80,14 +79,6 @@ contract Queries is
         returns (uint256)
     {
         return g_numMarkets;
-    }
-
-    function getLastUpdateTime()
-        public
-        view
-        returns (LTime.Time memory)
-    {
-        return g_lastUpdate;
     }
 
     // ============ Market-Based Variables ============
@@ -121,6 +112,16 @@ contract Queries is
     {
         return g_markets[marketId].index;
         // TODO: give the updated index
+    }
+
+    function getLastUpdateTime(
+        uint256 marketId
+    )
+        public
+        view
+        returns (uint32)
+    {
+        return g_markets[marketId].index.lastUpdate;
     }
 
     function getMarketPriceOracle(
@@ -188,7 +189,7 @@ contract Queries is
     )
         public
         view
-        returns (LTime.Time memory)
+        returns (uint32)
     {
         return g_accounts[trader][account].closingTime;
     }
@@ -205,7 +206,7 @@ contract Queries is
         account;
         g_numMarkets;
         // TODO: return the value of the borrowAmount and the value of the supplyAmount
-        // The client can decide if the position is collateralized using the minCollateralRatio
+        // The client can decide if the position is collateralized using the liquidationRatio
     }
 
 }

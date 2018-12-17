@@ -19,6 +19,8 @@
 pragma solidity 0.5.1;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { LMath } from "./LMath.sol";
+import { LTypes } from "./LTypes.sol";
 
 
 library LPrice {
@@ -42,21 +44,30 @@ library LPrice {
     )
         internal
         pure
-        returns (Value memory result)
+        returns (Value memory)
     {
-        result.value = amount.mul(price.value);
+        return Value({
+            value: amount.mul(price.value)
+        });
     }
 
-    function getEquivalentAmount(
-        uint256 amountA,
-        Price memory priceA,
-        Price memory priceB
+    function getEquivalentAccrued(
+        LTypes.SignedAccrued memory input,
+        Price memory inputPrice,
+        Price memory resultPrice
     )
         internal
         pure
-        returns (uint256 amountB)
+        returns (LTypes.SignedAccrued memory)
     {
-        return amountA.mul(priceA.value).div(priceB.value);
+        LTypes.SignedAccrued memory result;
+        result.sign = !input.sign;
+        result.accrued = LMath.getPartial(
+            input.accrued,
+            inputPrice.value,
+            resultPrice.value
+        );
+        return result;
     }
 
     function add(
@@ -65,9 +76,11 @@ library LPrice {
     )
         internal
         pure
-        returns (Value memory result)
+        returns (Value memory)
     {
-        result.value = a.value.add(b.value);
+        return Value({
+            value: a.value.add(b.value)
+        });
     }
 
     function sub(
@@ -76,8 +89,10 @@ library LPrice {
     )
         internal
         pure
-        returns (Value memory result)
+        returns (Value memory)
     {
-        result.value = a.value.sub(b.value);
+        return Value({
+            value: a.value.sub(b.value)
+        });
     }
 }

@@ -41,8 +41,16 @@ contract Admin is
     Ownable,
     ReentrancyGuard
 {
-    function ownerBorrowExcessToken(
-        address token,
+    uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
+    uint256 constant MIN_LIQUIDATION_RATIO  = 100 * 10**16; // 100%
+    uint256 constant MAX_LIQUIDATION_SPREAD =  15 * 10**16; // 15%
+    uint256 constant MIN_LIQUIDATION_SPREAD =   1 * 10**16; // 1%
+    uint256 constant MAX_EARNINGS_TAX       =  50 * 10**16; // 50%
+    uint256 constant MIN_EARNINGS_TAX       =   0 * 10**16; // 0%
+    uint256 constant MAX_MIN_BORROWED_VALUE =       10**18; // $1
+
+    function ownerWithdrawTaxes(
+        uint256 marketId,
         address recipient
     )
         external
@@ -51,7 +59,7 @@ contract Admin is
         returns (uint256)
     {
         // TODO
-        token;
+        marketId;
         recipient;
     }
 
@@ -98,34 +106,40 @@ contract Admin is
         _setInterestSetter(market, interestSetter);
     }
 
-    function ownerSetMinCollateralRatio(
-        LDecimal.Decimal memory minCollateralRatio
+    function ownerSetLiquidationRatio(
+        LDecimal.Decimal memory liquidationRatio
     )
         public
         onlyOwner
         nonReentrant
     {
-        g_minCollateralRatio = minCollateralRatio;
+        require(liquidationRatio.value <= MAX_LIQUIDATION_RATIO);
+        require(liquidationRatio.value >= MIN_LIQUIDATION_RATIO);
+        g_liquidationRatio = liquidationRatio;
     }
 
-    function ownerSetSpread(
+    function ownerSetLiquidationSpread(
         LDecimal.Decimal memory spread
     )
         public
         onlyOwner
         nonReentrant
     {
+        require(spread.value <= MAX_LIQUIDATION_SPREAD);
+        require(spread.value >= MIN_LIQUIDATION_SPREAD);
         g_liquidationSpread = spread;
     }
 
-    function ownerSetEarningsRate(
-        LDecimal.Decimal memory earningsRate
+    function ownerSetEarningsTax(
+        LDecimal.Decimal memory earningsTax
     )
         public
         onlyOwner
         nonReentrant
     {
-        g_earningsRate = earningsRate;
+        require(earningsTax.value <= MAX_EARNINGS_TAX);
+        require(earningsTax.value >= MIN_EARNINGS_TAX);
+        g_earningsTax = earningsTax;
     }
 
     function ownerSetMinBorrowedValue(
@@ -135,6 +149,7 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
+        require(minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE);
         g_minBorrowedValue = minBorrowedValue;
     }
 
@@ -153,7 +168,8 @@ contract Admin is
         // require current interestSetter can return a value
         LInterest.TotalNominal memory zero;
         address token = g_markets[market].token;
-        require(LInterest.isValidRate(interestSetter.getInterestRate(token, zero)),
+        require(LInterest.isValidRate(
+            interestSetter.getInterestRate(token, zero)),
             "INVALID INTEREST VALUE"
         );
     }
@@ -170,7 +186,10 @@ contract Admin is
 
         // require oracle can return value for token
         address token = g_markets[market].token;
-        require(priceOracle.getPrice(token).value != 0, "INVALID ORACLE PRICE");
+        require(
+            priceOracle.getPrice(token).value != 0,
+            "INVALID ORACLE PRICE"
+        );
     }
 
     function _marketExistsForToken(

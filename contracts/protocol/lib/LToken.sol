@@ -39,7 +39,7 @@ library LToken {
     {
         LTypes.SignedAccrued memory result;
         result.sign = true;
-        result.accrued.value = IErc20(token).balanceOf(address(this));
+        result.accrued = IErc20(token).balanceOf(address(this));
         return result;
     }
 
@@ -54,16 +54,16 @@ library LToken {
             !amount.sign
         );
 
-        if (amount.accrued.value == 0) {
+        if (amount.accrued == 0) {
             return;
         }
 
         require(
-            IErc20(token).balanceOf(address(this)) >= amount.accrued.value,
+            IErc20(token).balanceOf(address(this)) >= amount.accrued,
             "TokenInteract#transferOut: Not enough tokens"
         );
 
-        IErc20(token).transfer(to, amount.accrued.value);
+        IErc20(token).transfer(to, amount.accrued);
 
         require(
             checkSuccess(),
@@ -82,16 +82,16 @@ library LToken {
             amount.sign
         );
 
-        if (amount.accrued.value == 0) {
+        if (amount.accrued == 0) {
             return;
         }
 
         require(
-            IErc20(token).balanceOf(from) >= amount.accrued.value,
+            IErc20(token).balanceOf(from) >= amount.accrued,
             "TokenInteract#transferIn: Not enough tokens"
         );
 
-        IErc20(token).transferFrom(from, address(this), amount.accrued.value);
+        IErc20(token).transferFrom(from, address(this), amount.accrued);
 
         require(
             checkSuccess(),
