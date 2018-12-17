@@ -19,9 +19,15 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { LPrice } from "../lib/LPrice.sol";
+import { Price } from "../lib/Price.sol";
 
 
+/**
+ * @title IPriceOracle
+ * @author dYdX
+ *
+ * TODO
+ */
 contract IPriceOracle {
 
     // ============ Public Functions ============
@@ -39,6 +45,6 @@ contract IPriceOracle {
     )
         public
         view
-        returns (LPrice.Price memory);
+        returns (Price.Price memory);
 
 }

@@ -19,12 +19,17 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { LDecimal } from "./lib/LDecimal.sol";
 import { Admin } from "./impl/Admin.sol";
 import { Queries } from "./impl/Queries.sol";
 import { TransactionLogic } from "./impl/TransactionLogic.sol";
 
 
+/**
+ * @title SoloMargin
+ * @author dYdX
+ *
+ * TODO
+ */
 contract SoloMargin is
     TransactionLogic,
     Admin,

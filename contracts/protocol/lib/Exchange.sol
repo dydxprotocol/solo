@@ -18,37 +18,37 @@
 
 pragma solidity 0.5.1;
 
-import { LTypes } from "./LTypes.sol";
-import { LToken } from "./LToken.sol";
+import { Token } from "./Token.sol";
+import { Types } from "./Types.sol";
 import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
 
 /**
- * @title LExcchange
+ * @title Exchange
  * @author dYdX
  *
  * This library contains basic functions for interacting with ExchangeWrappers
  */
-library LExchange {
+library Exchange {
 
     function getCost(
         address exchangeWrapper,
         address supplyToken,
         address borrowToken,
-        LTypes.SignedAccrued memory desiredAmount,
+        Types.Wei memory desiredAmount,
         bytes memory orderData
     )
         internal
         view
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
         require(desiredAmount.sign);
 
-        LTypes.SignedAccrued memory result;
+        Types.Wei memory result;
         result.sign = false;
-        result.accrued = IExchangeWrapper(exchangeWrapper).getExchangeCost(
+            result.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
             supplyToken,
             borrowToken,
-            desiredAmount.accrued,
+            desiredAmount.value,
             orderData
         );
 
@@ -59,28 +59,28 @@ library LExchange {
         address exchangeWrapper,
         address supplyToken,
         address borrowToken,
-        LTypes.SignedAccrued memory requestedFillAmount,
+        Types.Wei memory requestedFillAmount,
         bytes memory orderData
     )
         internal
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
         require(!requestedFillAmount.sign);
 
-        LToken.transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
+        Token.transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
 
-        LTypes.SignedAccrued memory result;
+        Types.Wei memory result;
         result.sign = true;
-        result.accrued = IExchangeWrapper(exchangeWrapper).exchange(
+        result.value = IExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,
             address(this),
             supplyToken,
             borrowToken,
-            requestedFillAmount.accrued,
+            requestedFillAmount.value,
             orderData
         );
 
-        LToken.transferIn(supplyToken, exchangeWrapper, result);
+        Token.transferIn(supplyToken, exchangeWrapper, result);
 
         return result;
     }

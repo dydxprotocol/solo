@@ -19,19 +19,18 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LActions } from "../lib/LActions.sol";
-import { LMath } from "../lib/LMath.sol";
-import { LPrice } from "../lib/LPrice.sol";
-import { LTime } from "../lib/LTime.sol";
-import { LTypes } from "../lib/LTypes.sol";
-import { LInterest } from "../lib/LInterest.sol";
-import { LToken } from "../lib/LToken.sol";
-import { LExchange } from "../lib/LExchange.sol";
-import { WorldManager } from "./WorldManager.sol";
 import { Storage } from "./Storage.sol";
+import { WorldManager } from "./WorldManager.sol";
+import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { Actions } from "../lib/Actions.sol";
+import { Decimal } from "../lib/Decimal.sol";
+import { Exchange } from "../lib/Exchange.sol";
+import { Math } from "../lib/Math.sol";
+import { Price } from "../lib/Price.sol";
+import { Time } from "../lib/Time.sol";
+import { Token } from "../lib/Token.sol";
+import { Types } from "../lib/Types.sol";
 
 
 /**
@@ -45,16 +44,16 @@ contract TransactionLogic is
     WorldManager,
     ReentrancyGuard
 {
-    using LMath for uint256;
+    using Math for uint256;
     using SafeMath for uint256;
     using SafeMath for uint128;
-    using LTime for uint32;
+    using Time for uint32;
 
     // ============ Public Functions ============
 
     function transact(
         AccountInfo[] memory accounts,
-        LActions.TransactionArgs[] memory args
+        Actions.TransactionArgs[] memory args
     )
         public
         nonReentrant
@@ -73,38 +72,38 @@ contract TransactionLogic is
 
     function _transact(
         WorldState memory worldState,
-        LActions.TransactionArgs memory args
+        Actions.TransactionArgs memory args
     )
         private
     {
-        LActions.TransactionType ttype = args.transactionType;
+        Actions.TransactionType ttype = args.transactionType;
 
-        if (ttype == LActions.TransactionType.ExternalTransfer) {
-            _externalTransfer(worldState, LActions.parseExternalTransferArgs(args));
+        if (ttype == Actions.TransactionType.ExternalTransfer) {
+            _externalTransfer(worldState, Actions.parseExternalTransferArgs(args));
         }
-        else if (ttype == LActions.TransactionType.InternalTransfer) {
-            _internalTransfer(worldState, LActions.parseInternalTransferArgs(args));
+        else if (ttype == Actions.TransactionType.InternalTransfer) {
+            _internalTransfer(worldState, Actions.parseInternalTransferArgs(args));
         }
-        else if (ttype == LActions.TransactionType.Exchange) {
-            _exchange(worldState, LActions.parseExchangeArgs(args));
+        else if (ttype == Actions.TransactionType.Exchange) {
+            _exchange(worldState, Actions.parseExchangeArgs(args));
         }
-        else if (ttype == LActions.TransactionType.Liquidate) {
-            _liquidate(worldState, LActions.parseLiquidateArgs(args));
+        else if (ttype == Actions.TransactionType.Liquidate) {
+            _liquidate(worldState, Actions.parseLiquidateArgs(args));
         }
-        else if (ttype == LActions.TransactionType.SetExpiry) {
-            _setExpiry(worldState, LActions.parseSetExpiryArgs(args));
+        else if (ttype == Actions.TransactionType.SetExpiry) {
+            _setExpiry(worldState, Actions.parseSetExpiryArgs(args));
         }
     }
 
     function _externalTransfer(
         WorldState memory worldState,
-        LActions.ExternalTransferArgs memory args
+        Actions.ExternalTransferArgs memory args
     )
         private
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        LTypes.SignedAccrued memory accrued = wsSetBalanceFromAmountStruct(
+        Types.Wei memory deltaWei = wsSetBalanceFromAmountStruct(
             worldState,
             args.accountId,
             args.marketId,
@@ -113,19 +112,19 @@ contract TransactionLogic is
 
         address token = wsGetToken(worldState, args.marketId);
 
-        if(args.amount.intent == LActions.AmountIntention.Supply) {
+        if(args.amount.intent == Actions.AmountIntention.Supply) {
             address depositor = args.otherAddress;
             require(msg.sender == depositor || g_trustedAddress[depositor][msg.sender]);
-            LToken.transferIn(token, args.otherAddress, accrued);
+            Token.transferIn(token, args.otherAddress, deltaWei);
         }
-        else if (args.amount.intent == LActions.AmountIntention.Borrow) {
-            LToken.transferOut(token, args.otherAddress, accrued);
+        else if (args.amount.intent == Actions.AmountIntention.Borrow) {
+            Token.transferOut(token, args.otherAddress, deltaWei);
         }
     }
 
     function _internalTransfer(
         WorldState memory worldState,
-        LActions.InternalTransferArgs memory args
+        Actions.InternalTransferArgs memory args
     )
         private
         view
@@ -134,7 +133,7 @@ contract TransactionLogic is
         wsSetCheckPerimissions(worldState, args.otherAccountId);
 
         // Get the values for your account
-        LTypes.SignedAccrued memory accrued = wsSetBalanceFromAmountStruct(
+        Types.Wei memory deltaWei = wsSetBalanceFromAmountStruct(
             worldState,
             args.accountId,
             args.marketId,
@@ -142,18 +141,17 @@ contract TransactionLogic is
         );
 
         // Get the values for the other account
-        LTypes.SignedAccrued memory otherAccrued = accrued.negative();
-        wsSetBalanceFromDeltaAccrued(
+        wsSetBalanceFromDeltaWei(
             worldState,
             args.otherAccountId,
             args.marketId,
-            otherAccrued
+            deltaWei.negative()
         );
     }
 
     function _exchange(
         WorldState memory worldState,
-        LActions.ExchangeArgs memory args
+        Actions.ExchangeArgs memory args
     )
         private
     {
@@ -161,70 +159,70 @@ contract TransactionLogic is
 
         address borrowToken = wsGetToken(worldState, args.borrowMarketId);
         address supplyToken = wsGetToken(worldState, args.supplyMarketId);
-        LTypes.SignedAccrued memory supplyAccrued;
-        LTypes.SignedAccrued memory borrowAccrued;
+        Types.Wei memory supplyWei;
+        Types.Wei memory borrowWei;
 
-        if (args.amount.intent == LActions.AmountIntention.Borrow) {
-            borrowAccrued = wsSetBalanceFromAmountStruct(
+        if (args.amount.intent == Actions.AmountIntention.Borrow) {
+            borrowWei = wsSetBalanceFromAmountStruct(
                 worldState,
                 args.accountId,
                 args.borrowMarketId,
                 args.amount
                 );
 
-            supplyAccrued = LExchange.exchange(
+            supplyWei = Exchange.exchange(
                 args.exchangeWrapper,
                 supplyToken,
                 borrowToken,
-                supplyAccrued,
+                supplyWei,
                 args.orderData
             );
 
-            wsSetBalanceFromDeltaAccrued(
+            wsSetBalanceFromDeltaWei(
                 worldState,
                 args.accountId,
                 args.supplyMarketId,
-                supplyAccrued
+                supplyWei
             );
         }
-        else if (args.amount.intent == LActions.AmountIntention.Supply) {
-            supplyAccrued = wsSetBalanceFromAmountStruct(
+        else if (args.amount.intent == Actions.AmountIntention.Supply) {
+            supplyWei = wsSetBalanceFromAmountStruct(
                 worldState,
                 args.accountId,
                 args.supplyMarketId,
                 args.amount
             );
 
-            borrowAccrued = LExchange.getCost(
+            borrowWei = Exchange.getCost(
                 args.exchangeWrapper,
                 supplyToken,
                 borrowToken,
-                borrowAccrued,
+                borrowWei,
                 args.orderData
             );
 
-            wsSetBalanceFromDeltaAccrued(
+            wsSetBalanceFromDeltaWei(
                 worldState,
                 args.accountId,
                 args.borrowMarketId,
-                borrowAccrued
+                borrowWei
             );
 
-            LTypes.SignedAccrued memory tokensReceived = LExchange.exchange(
+            Types.Wei memory tokensReceived = Exchange.exchange(
                 args.exchangeWrapper,
                 supplyToken,
                 borrowToken,
-                supplyAccrued,
+                supplyWei,
                 args.orderData
             );
 
-            require(tokensReceived.accrued >= borrowAccrued.accrued);
+            require(tokensReceived.value >= borrowWei.value);
         }
     }
 
     function _liquidate(
         WorldState memory worldState,
-        LActions.LiquidateArgs memory args
+        Actions.LiquidateArgs memory args
     )
         private
         view
@@ -232,74 +230,74 @@ contract TransactionLogic is
         wsSetCheckPerimissions(worldState, args.accountId);
         // don't mark liquidAccountId for permissions
 
-        LTypes.SignedAccrued memory supplyAccrued;
-        LTypes.SignedAccrued memory borrowAccrued;
+        Types.Wei memory supplyWei;
+        Types.Wei memory borrowWei;
 
         // verify that this account can be liquidated
         if (!wsGetClosingTime(worldState, args.liquidAccountId).hasHappened()) {
             require(!_isCollateralized(worldState, args.liquidAccountId));
-            wsSetClosingTime(worldState, args.liquidAccountId, LTime.currentTime());
+            wsSetClosingTime(worldState, args.liquidAccountId, Time.currentTime());
         }
 
         // normalize the oracle prices according to the liquidation spread
-        LPrice.Price memory borrowPrice = wsGetPrice(worldState, args.borrowMarketId);
-        LPrice.Price memory supplyPrice = wsGetPrice(worldState, args.supplyMarketId);
-        supplyPrice.value = g_liquidationSpread.mul(supplyPrice.value).to128();
+        Price.Price memory borrowPrice = wsGetPrice(worldState, args.borrowMarketId);
+        Price.Price memory supplyPrice = wsGetPrice(worldState, args.supplyMarketId);
+        supplyPrice.value = Decimal.mul(g_liquidationSpread, supplyPrice.value).to128();
 
         // calculate the nominal amounts
-        if (args.amount.intent == LActions.AmountIntention.Borrow) {
-            borrowAccrued = wsSetBalanceFromAmountStruct(
+        if (args.amount.intent == Actions.AmountIntention.Borrow) {
+            borrowWei = wsSetBalanceFromAmountStruct(
                 worldState,
                 args.accountId,
                 args.borrowMarketId,
                 args.amount
             );
-            supplyAccrued = LPrice.getEquivalentAccrued(
-                borrowAccrued,
+            supplyWei = Price.getEquivalentWei(
+                borrowWei,
                 borrowPrice,
                 supplyPrice
             );
-            wsSetBalanceFromDeltaAccrued(
+            wsSetBalanceFromDeltaWei(
                 worldState,
                 args.accountId,
                 args.supplyMarketId,
-                supplyAccrued
+                supplyWei
             );
         }
-        else if (args.amount.intent == LActions.AmountIntention.Supply) {
-            supplyAccrued = wsSetBalanceFromAmountStruct(
+        else if (args.amount.intent == Actions.AmountIntention.Supply) {
+            supplyWei = wsSetBalanceFromAmountStruct(
                 worldState,
                 args.accountId,
                 args.supplyMarketId,
                 args.amount
             );
-            borrowAccrued = LPrice.getEquivalentAccrued(
-                supplyAccrued,
+            borrowWei = Price.getEquivalentWei(
+                supplyWei,
                 supplyPrice,
                 borrowPrice
             );
-            wsSetBalanceFromDeltaAccrued(
+            wsSetBalanceFromDeltaWei(
                 worldState,
                 args.accountId,
                 args.borrowMarketId,
-                borrowAccrued
+                borrowWei
             );
         }
 
         // TODO: verify that you're not overliquidating (causing liquid account to go from pos=>neg
         // or from neg=>pos for either of the two tokens)
 
-        wsSetBalanceFromDeltaAccrued(
+        wsSetBalanceFromDeltaWei(
             worldState,
             args.liquidAccountId,
             args.supplyMarketId,
-            supplyAccrued.negative()
+            supplyWei.negative()
         );
-        wsSetBalanceFromDeltaAccrued(
+        wsSetBalanceFromDeltaWei(
             worldState,
             args.liquidAccountId,
             args.borrowMarketId,
-            borrowAccrued.negative()
+            borrowWei.negative()
         );
 
         // TODO: check if the liquidated account has only negative values left. then VAPORIZE it by
@@ -308,7 +306,7 @@ contract TransactionLogic is
 
     function _setExpiry(
         WorldState memory worldState,
-        LActions.SetExpiryArgs memory args
+        Actions.SetExpiryArgs memory args
     )
         private
         pure

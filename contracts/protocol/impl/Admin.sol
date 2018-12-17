@@ -19,15 +19,14 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
+import { Storage } from "./Storage.sol";
 import { Ownable } from "../../tempzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LPrice } from "../lib/LPrice.sol";
-import { LInterest } from "../lib/LInterest.sol";
-import { LTypes } from "../lib/LTypes.sol";
-import { Storage } from "./Storage.sol";
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { Decimal } from "../lib/Decimal.sol";
+import { Interest } from "../lib/Interest.sol";
+import { Price } from "../lib/Price.sol";
 
 
 /**
@@ -78,7 +77,7 @@ contract Admin is
 
         g_numMarkets++;
         g_markets[marketId].token = token;
-        g_markets[marketId].index = LInterest.newIndex();
+        g_markets[marketId].index = Interest.newIndex();
 
         _setPriceOracle(marketId, priceOracle);
         _setInterestSetter(marketId, interestSetter);
@@ -107,7 +106,7 @@ contract Admin is
     }
 
     function ownerSetLiquidationRatio(
-        LDecimal.Decimal memory liquidationRatio
+        Decimal.Decimal memory liquidationRatio
     )
         public
         onlyOwner
@@ -119,7 +118,7 @@ contract Admin is
     }
 
     function ownerSetLiquidationSpread(
-        LDecimal.Decimal memory spread
+        Decimal.Decimal memory spread
     )
         public
         onlyOwner
@@ -131,7 +130,7 @@ contract Admin is
     }
 
     function ownerSetEarningsTax(
-        LDecimal.Decimal memory earningsTax
+        Decimal.Decimal memory earningsTax
     )
         public
         onlyOwner
@@ -143,7 +142,7 @@ contract Admin is
     }
 
     function ownerSetMinBorrowedValue(
-        LPrice.Value memory minBorrowedValue
+        Price.Value memory minBorrowedValue
     )
         public
         onlyOwner
@@ -166,9 +165,9 @@ contract Admin is
         g_markets[market].interestSetter = interestSetter;
 
         // require current interestSetter can return a value
-        LInterest.TotalNominal memory zero;
+        Interest.TotalNominal memory zero;
         address token = g_markets[market].token;
-        require(LInterest.isValidRate(
+        require(Interest.isValidRate(
             interestSetter.getInterestRate(token, zero)),
             "INVALID INTEREST VALUE"
         );

@@ -19,10 +19,15 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LInterest } from "../lib/LInterest.sol";
+import { Interest } from "../lib/Interest.sol";
 
 
+/**
+ * @title IInterestSetter
+ * @author dYdX
+ *
+ * TODO
+ */
 contract IInterestSetter {
 
     // ============ Public Functions ============
@@ -36,9 +41,9 @@ contract IInterestSetter {
      */
     function getInterestRate(
         address token,
-        LInterest.TotalNominal memory totalNominal
+        Interest.TotalNominal memory totalNominal
     )
         public
         view
-        returns (LInterest.Rate memory);
+        returns (Interest.Rate memory);
 }

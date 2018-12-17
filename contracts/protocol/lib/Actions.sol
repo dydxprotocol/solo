@@ -18,14 +18,18 @@
 
 pragma solidity 0.5.1;
 
-import { LMath } from "./LMath.sol";
-import { LDecimal } from "./LDecimal.sol";
-import { LPrice } from "./LPrice.sol";
-import { LTypes } from "./LTypes.sol";
-import { LInterest } from "./LInterest.sol";
+import { Math } from "./Math.sol";
+import { Types } from "./Types.sol";
 
-library LActions {
-    using LMath for uint256;
+
+/**
+ * @title Actions
+ * @author dYdX
+ *
+ * TODO
+ */
+library Actions {
+    using Math for uint256;
 
     // ============ Enums ============
 
@@ -38,8 +42,8 @@ library LActions {
     }
 
     enum AmountDenomination {
-        Accrued, // the amount is denominated in token amount (accrued amount)
-        Nominal  // the amount is denominated in the nominal amount
+        Wei, // the amount is denominated in token amount
+        Par  // the amount is denominated in principal
     }
 
     enum AmountReference {
@@ -194,29 +198,29 @@ library LActions {
         });
     }
 
-    function amountToSignedNominal(
+    function amountToPar(
         Amount memory amount
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory)
+        returns (Types.Par memory)
     {
-        return LTypes.SignedNominal({
+        return Types.Par({
             sign: amount.sign,
-            nominal: amount.value.to128()
+            value: amount.value.to128()
         });
     }
 
-    function amountToSignedAccrued(
+    function amountToWei(
         Amount memory amount
     )
         internal
         pure
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
-        return LTypes.SignedAccrued({
+        return Types.Wei({
             sign: amount.sign,
-            accrued: amount.value
+            value: amount.value
         });
     }
 }

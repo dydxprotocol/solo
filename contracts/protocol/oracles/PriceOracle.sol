@@ -20,10 +20,16 @@ pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { LPrice } from "../lib/LPrice.sol";
+import { Price } from "../lib/Price.sol";
 
 
-contract PriceOracle {
+/**
+ * @title PriceOracle
+ * @author dYdX
+ *
+ * TODO
+ */
+contract PriceOracle is IPriceOracle{
 
     mapping (address => uint128) g_prices;
 
@@ -32,10 +38,10 @@ contract PriceOracle {
     )
         public
         view
-        returns (LPrice.Price memory)
+        returns (Price.Price memory)
     {
         // TODO: this whole contract
-        return LPrice.Price({
+        return Price.Price({
             value: g_prices[token]
         });
     }

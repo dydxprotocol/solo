@@ -18,19 +18,24 @@
 
 pragma solidity 0.5.1;
 
+import { Decimal } from "./Decimal.sol";
+import { Math } from "./Math.sol";
+import { Time } from "./Time.sol";
+import { Types } from "./Types.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { LDecimal } from "./LDecimal.sol";
-import { LMath } from "./LMath.sol";
-import { LTime } from "./LTime.sol";
-import { LTypes } from "./LTypes.sol";
 
 
-library LInterest {
-    using LMath for uint256;
+/**
+ * @title Interest
+ * @author dYdX
+ *
+ * TODO
+ */
+library Interest {
+    using Math for uint256;
     using SafeMath for uint256;
     using SafeMath for uint96;
     using SafeMath for uint32;
-    using LDecimal for LDecimal.Decimal;
 
     // ============ Constants ============
 
@@ -59,60 +64,60 @@ library LInterest {
         Index memory index,
         Rate memory rate,
         TotalNominal memory totalNominal,
-        LDecimal.Decimal memory earningsTax
+        Decimal.Decimal memory earningsTax
     )
         internal
         view
         returns (Index memory)
     {
-        uint32 timeDelta = LTime.currentTime().sub(index.lastUpdate).to32();
+        uint32 timeDelta = Time.currentTime().sub(index.lastUpdate).to32();
         uint96 borrowInterest = _getCompoundedInterest(rate, timeDelta);
 
-        uint256 supplyInterestRaw = LMath.getPartial(
+        uint256 supplyInterestRaw = Math.getPartial(
             borrowInterest.sub(BASE),
             totalNominal.borrow,
             totalNominal.supply
         );
-        LDecimal.Decimal memory earningsRate = LDecimal.one().sub(earningsTax);
-        uint96 supplyInterest = earningsRate.mul(supplyInterestRaw).add(BASE).to96();
+        Decimal.Decimal memory earningsRate = Decimal.sub(Decimal.one(), earningsTax);
+        uint96 supplyInterest = Decimal.mul(earningsRate, supplyInterestRaw).add(BASE).to96();
 
         return Index({
-            borrow: LMath.getPartial(index.borrow, borrowInterest, BASE).to96(),
-            supply: LMath.getPartial(index.supply, supplyInterest, BASE).to96(),
-            lastUpdate: LTime.currentTime()
+            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).to96(),
+            supply: Math.getPartial(index.supply, supplyInterest, BASE).to96(),
+            lastUpdate: Time.currentTime()
         });
     }
 
-    function nominalToAccrued(
-        LTypes.SignedNominal memory signedNominal,
+    function parToWei(
+        Types.Par memory input,
         Index memory index
     )
         internal
         pure
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
-        LTypes.SignedAccrued memory result;
-        result.sign = signedNominal.sign;
-        result.accrued = LMath.getPartial(
-            signedNominal.nominal,
+        Types.Wei memory result;
+        result.sign = input.sign;
+        result.value = Math.getPartial(
+            input.value,
             result.sign ? index.supply : index.borrow,
             BASE
         );
         return result;
     }
 
-    function accruedToNominal(
-        LTypes.SignedAccrued memory accrued,
+    function weiToPar(
+        Types.Wei memory input,
         Index memory index
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory)
+        returns (Types.Par memory)
     {
-        LTypes.SignedNominal memory result;
-        result.sign = accrued.sign;
-        result.nominal = LMath.getPartial(
-            accrued.accrued,
+        Types.Par memory result;
+        result.sign = input.sign;
+        result.value = Math.getPartial(
+            input.value,
             BASE,
             result.sign ? index.supply : index.borrow
         ).to128();
@@ -127,7 +132,7 @@ library LInterest {
         return Index({
             borrow: BASE,
             supply: BASE,
-            lastUpdate: LTime.currentTime()
+            lastUpdate: Time.currentTime()
         });
     }
 
@@ -160,11 +165,11 @@ library LInterest {
         while (localTime != 0) {
 
             if (localTime & 1 != 0) {
-                result = LMath.getPartial(result, localRate.value, BASE).to96();
+                result = Math.getPartial(result, localRate.value, BASE).to96();
             }
 
             localTime = localTime >> 1;
-            localRate.value = LMath.getPartial(localRate.value, localRate.value, BASE).to128();
+            localRate.value = Math.getPartial(localRate.value, localRate.value, BASE).to128();
         }
 
         return result;

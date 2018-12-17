@@ -19,9 +19,13 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { LTypes } from "../lib/LTypes.sol";
 
-
+/**
+ * @title IExchangeWrapper
+ * @author dYdX
+ *
+ * TODO
+ */
 interface IExchangeWrapper {
 
     // ============ Public Functions ============

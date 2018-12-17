@@ -3,8 +3,9 @@ pragma solidity 0.5.1;
 
 /**
  * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
+ * @author dYdX
+ *
+ * Temp library while openzeppelin upgrades to Solidity 0.5
  */
 contract Ownable {
     address private _owner;
@@ -54,16 +55,18 @@ contract Ownable {
     }
 
     /**
-     * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
+     * Allows the current owner to transfer control of the contract to a newOwner.
+     *
+     * @param  newOwner The address to transfer ownership to.
      */
     function transferOwnership(address newOwner) public onlyOwner {
         _transferOwnership(newOwner);
     }
 
     /**
-     * @dev Transfers control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
+     * Transfers control of the contract to a newOwner.
+     *
+     * @param  newOwner The address to transfer ownership to.
      */
     function _transferOwnership(address newOwner) internal {
         require(newOwner != address(0));

@@ -19,18 +19,17 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LActions } from "../lib/LActions.sol";
-import { LMath } from "../lib/LMath.sol";
-import { LTime } from "../lib/LTime.sol";
-import { LPrice } from "../lib/LPrice.sol";
-import { LTypes } from "../lib/LTypes.sol";
-import { LInterest } from "../lib/LInterest.sol";
-import { LToken } from "../lib/LToken.sol";
-import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Storage } from "./Storage.sol";
+import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { Actions } from "../lib/Actions.sol";
+import { Decimal } from "../lib/Decimal.sol";
+import { Interest } from "../lib/Interest.sol";
+import { Math } from "../lib/Math.sol";
+import { Price } from "../lib/Price.sol";
+import { Time } from "../lib/Time.sol";
+import { Token } from "../lib/Token.sol";
+import { Types } from "../lib/Types.sol";
 
 
 /**
@@ -42,10 +41,9 @@ import { Storage } from "./Storage.sol";
 contract WorldManager is
     Storage
 {
-    using LDecimal for LDecimal.Decimal;
-    using LMath for uint256;
-    using LTypes for LTypes.SignedNominal;
-    using LTypes for LTypes.SignedAccrued;
+    using Math for uint256;
+    using Types for Types.Par;
+    using Types for Types.Wei;
     using SafeMath for uint256;
     using SafeMath for uint128;
 
@@ -54,7 +52,7 @@ contract WorldManager is
     struct WorldState {
         AssetState[] assets;
         AccountState[] accounts;
-        LDecimal.Decimal earningsTax;
+        Decimal.Decimal earningsTax;
     }
 
     struct AccountInfo {
@@ -64,8 +62,8 @@ contract WorldManager is
 
     struct AccountState {
         AccountInfo info;
-        LTypes.SignedNominal[] balance;
-        LTypes.SignedNominal[] oldBalance;
+        Types.Par[] balance;
+        Types.Par[] oldBalance;
         uint32 closingTime;
 
         // need to check permissions for every account that was touched except for ones that were
@@ -75,8 +73,8 @@ contract WorldManager is
 
     struct AssetState {
         address token;
-        LInterest.Index index;
-        LPrice.Price price;
+        Interest.Index index;
+        Price.Price price;
         // doesn't cache totalNominal, just recalculates it at the end if needed
     }
 
@@ -102,7 +100,7 @@ contract WorldManager is
     )
         internal
         view
-        returns (LInterest.Index memory)
+        returns (Interest.Index memory)
     {
         if (worldState.assets[marketId].index.lastUpdate == 0) {
             _loadIndex(worldState, marketId);
@@ -116,7 +114,7 @@ contract WorldManager is
     )
         internal
         view
-        returns (LPrice.Price memory)
+        returns (Price.Price memory)
     {
         if (worldState.assets[marketId].price.value == 0) {
             _loadPrice(worldState, marketId);
@@ -142,7 +140,7 @@ contract WorldManager is
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory)
+        returns (Types.Par memory)
     {
         return worldState.accounts[accountId].balance[marketId];
     }
@@ -154,7 +152,7 @@ contract WorldManager is
     )
         internal
         pure
-        returns (LTypes.SignedNominal memory)
+        returns (Types.Par memory)
     {
         return worldState.accounts[accountId].oldBalance[marketId];
     }
@@ -164,7 +162,7 @@ contract WorldManager is
     )
         internal
         view
-        returns (LDecimal.Decimal memory)
+        returns (Decimal.Decimal memory)
     {
         if (worldState.earningsTax.value == 0) {
             _loadEarningsTax(worldState);
@@ -188,7 +186,7 @@ contract WorldManager is
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId,
-        LTypes.SignedNominal memory newBalance
+        Types.Par memory newBalance
     )
         internal
         pure
@@ -196,20 +194,20 @@ contract WorldManager is
         worldState.accounts[accountId].balance[marketId] = newBalance;
     }
 
-    function wsSetBalanceFromDeltaAccrued(
+    function wsSetBalanceFromDeltaWei(
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId,
-        LTypes.SignedAccrued memory deltaAccrued
+        Types.Wei memory deltaWei
     )
         internal
         view
     {
-        LInterest.Index memory index = wsGetIndex(worldState, marketId);
-        LTypes.SignedNominal memory b0 = wsGetBalance(worldState, accountId, marketId);
-        LTypes.SignedAccrued memory a0 = LInterest.nominalToAccrued(b0, index);
-        LTypes.SignedAccrued memory a1 = a0.add(deltaAccrued);
-        LTypes.SignedNominal memory newBalance = LInterest.accruedToNominal(a1, index);
+        Interest.Index memory index = wsGetIndex(worldState, marketId);
+        Types.Par memory b0 = wsGetBalance(worldState, accountId, marketId);
+        Types.Wei memory a0 = Interest.parToWei(b0, index);
+        Types.Wei memory a1 = a0.add(deltaWei);
+        Types.Par memory newBalance = Interest.weiToPar(a1, index);
         wsSetBalance(worldState, accountId, marketId, newBalance);
     }
 
@@ -217,53 +215,50 @@ contract WorldManager is
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId,
-        LActions.Amount memory amount
+        Actions.Amount memory amount
     )
         internal
         view
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
-        LTypes.SignedNominal memory newNominal;
-        LTypes.SignedAccrued memory deltaAccrued;
+        Types.Par memory newPar;
+        Types.Wei memory deltaWei;
 
-        LInterest.Index memory index = wsGetIndex(worldState, marketId);
-        LTypes.SignedNominal memory nominal = wsGetBalance(worldState, accountId, marketId);
-        LTypes.SignedAccrued memory accrued = LInterest.nominalToAccrued(
-            nominal,
-            index
-        );
+        Interest.Index memory index = wsGetIndex(worldState, marketId);
+        Types.Par memory oldPar = wsGetBalance(worldState, accountId, marketId);
+        Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
 
-        if (amount.denom == LActions.AmountDenomination.Accrued) {
-            if (amount.ref == LActions.AmountReference.Delta) {
-                deltaAccrued = LActions.amountToSignedAccrued(amount);
-            } else if (amount.ref == LActions.AmountReference.Target) {
-                deltaAccrued = LActions.amountToSignedAccrued(amount).sub(accrued);
+        if (amount.denom == Actions.AmountDenomination.Wei) {
+            if (amount.ref == Actions.AmountReference.Delta) {
+                deltaWei = Actions.amountToWei(amount);
+            } else if (amount.ref == Actions.AmountReference.Target) {
+                deltaWei = Actions.amountToWei(amount).sub(oldWei);
             }
-            newNominal = LInterest.accruedToNominal(deltaAccrued.add(accrued), index);
-        } else if (amount.denom == LActions.AmountDenomination.Nominal) {
-            if (amount.ref == LActions.AmountReference.Delta) {
-                newNominal = LActions.amountToSignedNominal(amount).add(nominal);
-            } else if (amount.ref == LActions.AmountReference.Target) {
-                newNominal = LActions.amountToSignedNominal(amount);
+            newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
+        } else if (amount.denom == Actions.AmountDenomination.Par) {
+            if (amount.ref == Actions.AmountReference.Delta) {
+                newPar = Actions.amountToPar(amount).add(oldPar);
+            } else if (amount.ref == Actions.AmountReference.Target) {
+                newPar = Actions.amountToPar(amount);
             }
-            deltaAccrued = LInterest.nominalToAccrued(newNominal, index).sub(accrued);
+            deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
         }
 
-        if (amount.intent == LActions.AmountIntention.Supply) {
-            require(deltaAccrued.sign);
+        if (amount.intent == Actions.AmountIntention.Supply) {
+            require(deltaWei.sign);
         }
-        else if (amount.intent == LActions.AmountIntention.Borrow) {
-            require(!deltaAccrued.sign);
+        else if (amount.intent == Actions.AmountIntention.Borrow) {
+            require(!deltaWei.sign);
         }
 
         wsSetBalance(
             worldState,
             accountId,
             marketId,
-            newNominal
+            newPar
         );
 
-        return deltaAccrued;
+        return deltaWei;
     }
 
     function wsSetClosingTime(
@@ -305,8 +300,8 @@ contract WorldManager is
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             worldState.accounts[a].info.trader = trueAddress(accounts[a].trader);
             worldState.accounts[a].info.account = accounts[a].account;
-            worldState.accounts[a].balance = new LTypes.SignedNominal[](worldState.assets.length);
-            worldState.accounts[a].oldBalance = new LTypes.SignedNominal[](worldState.assets.length);
+            worldState.accounts[a].balance = new Types.Par[](worldState.assets.length);
+            worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
         }
 
         // markets
@@ -338,22 +333,22 @@ contract WorldManager is
         private
         view
     {
-        LInterest.Index memory index = g_markets[marketId].index;
+        Interest.Index memory index = g_markets[marketId].index;
 
         // if no time has passed since the last update, then simply load the cached value
-        if (index.lastUpdate == LTime.currentTime()) {
+        if (index.lastUpdate == Time.currentTime()) {
             worldState.assets[marketId].index = index;
             return;
         }
 
         // get previous rate
-        LInterest.TotalNominal memory totalNominal = g_markets[marketId].totalNominal;
-        LInterest.Rate memory rate = g_markets[marketId].interestSetter.getInterestRate(
+        Interest.TotalNominal memory totalNominal = g_markets[marketId].totalNominal;
+        Interest.Rate memory rate = g_markets[marketId].interestSetter.getInterestRate(
             wsGetToken(worldState, marketId),
             totalNominal
         );
 
-        worldState.assets[marketId].index = LInterest.getUpdatedIndex(
+        worldState.assets[marketId].index = Interest.getUpdatedIndex(
             index,
             rate,
             totalNominal,
@@ -431,7 +426,7 @@ contract WorldManager is
     )
         private
     {
-        uint32 currentTime = LTime.currentTime();
+        uint32 currentTime = Time.currentTime();
 
         // TODO: determine if we have to adjust the index for VAPORIZATION
 
@@ -450,14 +445,14 @@ contract WorldManager is
         private
     {
         for (uint256 i = 0; i < worldState.assets.length; i++) {
-            LInterest.TotalNominal memory total = g_markets[i].totalNominal;
+            Interest.TotalNominal memory total = g_markets[i].totalNominal;
             bool modified = false;
 
             for (uint256 a = 0; a < worldState.accounts.length; a++) {
-                LTypes.SignedNominal memory b0 = wsGetOldBalance(worldState, a, i);
-                LTypes.SignedNominal memory b1 = wsGetBalance(worldState, a, i);
+                Types.Par memory b0 = wsGetOldBalance(worldState, a, i);
+                Types.Par memory b1 = wsGetBalance(worldState, a, i);
 
-                if (LTypes.equals(b0, b1)) {
+                if (Types.equals(b0, b1)) {
                     continue;
                 }
 
@@ -465,16 +460,16 @@ contract WorldManager is
 
                 // roll-back oldBalance
                 if (b0.sign) {
-                    total.supply = total.supply.sub(b0.nominal).to128();
+                    total.supply = total.supply.sub(b0.value).to128();
                 } else {
-                    total.borrow = total.borrow.sub(b0.nominal).to128();
+                    total.borrow = total.borrow.sub(b0.value).to128();
                 }
 
                 // roll-forward newBalance
                 if (b1.sign) {
-                    total.supply = total.supply.sub(b1.nominal).to128();
+                    total.supply = total.supply.sub(b1.value).to128();
                 } else {
-                    total.borrow = total.borrow.sub(b1.nominal).to128();
+                    total.borrow = total.borrow.sub(b1.value).to128();
                 }
             }
 
@@ -493,9 +488,9 @@ contract WorldManager is
             address trader = worldState.accounts[a].info.trader;
             uint256 account = worldState.accounts[a].info.account;
             for (uint256 i = 0; i < worldState.assets.length; i++) {
-                LTypes.SignedNominal memory b1 = worldState.accounts[a].oldBalance[i];
-                LTypes.SignedNominal memory b2 = worldState.accounts[a].balance[i];
-                if (!LTypes.equals(b1, b2)) {
+                Types.Par memory b1 = worldState.accounts[a].oldBalance[i];
+                Types.Par memory b2 = worldState.accounts[a].balance[i];
+                if (!Types.equals(b1, b2)) {
                     g_accounts[trader][account].balances[i] = b2;
                 }
             }
@@ -552,22 +547,22 @@ contract WorldManager is
 
         // ensure token balances
         for (uint256 i = 0 ; i < worldState.assets.length; i++) {
-            LTypes.SignedAccrued memory held = LToken.thisBalance(worldState.assets[i].token);
-            LTypes.SignedNominal memory lent = LTypes.SignedNominal({
+            Types.Wei memory held = Token.thisBalance(worldState.assets[i].token);
+            Types.Par memory lent = Types.Par({
                 sign: true,
-                nominal: g_markets[i].totalNominal.supply
+                value: g_markets[i].totalNominal.supply
             });
-            LTypes.SignedNominal memory borrowed = LTypes.SignedNominal({
+            Types.Par memory borrowed = Types.Par({
                 sign: false,
-                nominal: g_markets[i].totalNominal.borrow
+                value: g_markets[i].totalNominal.borrow
             });
-            LTypes.SignedAccrued memory lentAccrued =
-                LInterest.nominalToAccrued(lent, worldState.assets[i].index);
-            LTypes.SignedAccrued memory borrowedAccrued =
-                LInterest.nominalToAccrued(borrowed, worldState.assets[i].index);
-            LTypes.SignedAccrued memory expected = lentAccrued.sub(borrowedAccrued);
+            Types.Wei memory lentWei =
+                Interest.parToWei(lent, worldState.assets[i].index);
+            Types.Wei memory borrowedWei =
+                Interest.parToWei(borrowed, worldState.assets[i].index);
+            Types.Wei memory expected = lentWei.sub(borrowedWei);
             require(expected.sign, "We cannot expect more to be borrowed than lent");
-            require(held.accrued >= expected.accrued, "We dont have as many tokens as expected");
+            require(held.value >= expected.value, "We dont have as many tokens as expected");
         }
     }
 
@@ -590,35 +585,32 @@ contract WorldManager is
         view
         returns (bool)
     {
-        LPrice.Value memory lentValue;
-        LPrice.Value memory borrowedValue;
+        Price.Value memory lentValue;
+        Price.Value memory borrowedValue;
 
         for (uint256 i = 0; i < worldState.assets.length; i++) {
-            LTypes.SignedNominal memory balance = worldState.accounts[accountId].balance[i];
+            Types.Par memory balance = worldState.accounts[accountId].balance[i];
 
-            if (balance.nominal == 0) {
+            if (balance.value == 0) {
                 continue;
             }
 
-            LTypes.SignedAccrued memory accrued = LInterest.nominalToAccrued(
-                balance,
-                worldState.assets[i].index
-            );
+            Types.Wei memory tokenWei = Interest.parToWei(balance, worldState.assets[i].index);
 
-            LPrice.Value memory overallValue = LPrice.getTotalValue(
+            Price.Value memory overallValue = Price.getTotalValue(
                 worldState.assets[i].price,
-                accrued.accrued
+                tokenWei.value
             );
 
-            if (accrued.sign) {
-                lentValue = LPrice.add(lentValue, overallValue);
+            if (tokenWei.sign) {
+                lentValue = Price.add(lentValue, overallValue);
             } else {
-                borrowedValue = LPrice.add(borrowedValue, overallValue);
+                borrowedValue = Price.add(borrowedValue, overallValue);
             }
         }
 
         if (borrowedValue.value > 0) {
-            if (lentValue.value < g_liquidationRatio.mul(borrowedValue.value)) {
+            if (lentValue.value < Decimal.mul(g_liquidationRatio, borrowedValue.value)) {
                 return false;
             }
         }

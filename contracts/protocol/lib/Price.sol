@@ -18,12 +18,18 @@
 
 pragma solidity 0.5.1;
 
+import { Math } from "./Math.sol";
+import { Types } from "./Types.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { LMath } from "./LMath.sol";
-import { LTypes } from "./LTypes.sol";
 
 
-library LPrice {
+/**
+ * @title Price
+ * @author dYdX
+ *
+ * TODO
+ */
+library Price {
     using SafeMath for uint256;
 
     // ============ Structs ============
@@ -51,23 +57,23 @@ library LPrice {
         });
     }
 
-    function getEquivalentAccrued(
-        LTypes.SignedAccrued memory input,
+    function getEquivalentWei(
+        Types.Wei memory input,
         Price memory inputPrice,
         Price memory resultPrice
     )
         internal
         pure
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
-        LTypes.SignedAccrued memory result;
-        result.sign = !input.sign;
-        result.accrued = LMath.getPartial(
-            input.accrued,
-            inputPrice.value,
-            resultPrice.value
-        );
-        return result;
+        return Types.Wei({
+            sign: !input.sign,
+            value: Math.getPartial(
+                input.value,
+                inputPrice.value,
+                resultPrice.value
+            )
+        });
     }
 
     function add(

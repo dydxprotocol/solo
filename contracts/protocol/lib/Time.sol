@@ -19,7 +19,13 @@
 pragma solidity 0.5.1;
 
 
-library LTime {
+/**
+ * @title Time
+ * @author dYdX
+ *
+ * TODO
+ */
+library Time {
 
     // ============ Public Functions ============
 

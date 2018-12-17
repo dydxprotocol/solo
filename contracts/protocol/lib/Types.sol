@@ -18,136 +18,143 @@
 
 pragma solidity 0.5.1;
 
+import { Math } from "./Math.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { LMath } from "./LMath.sol";
 
-library LTypes {
+
+/**
+ * @title Types
+ * @author dYdX
+ *
+ * TODO
+ */
+library Types {
     using SafeMath for uint256;
     using SafeMath for uint128;
-    using LMath for uint256;
+    using Math for uint256;
 
-    // ============ Signed Nominal ============
+    // ============ Par (Principal Amount) ============
 
-    struct SignedNominal {
+    struct Par {
         bool sign;
-        uint128 nominal;
+        uint128 value;
     }
 
     function sub(
-        SignedNominal memory a,
-        SignedNominal memory b
+        Par memory a,
+        Par memory b
     )
         internal
         pure
-        returns (SignedNominal memory)
+        returns (Par memory)
     {
         return add(a, negative(b));
     }
 
     function add(
-        SignedNominal memory a,
-        SignedNominal memory b
+        Par memory a,
+        Par memory b
     )
         internal
         pure
-        returns (SignedNominal memory)
+        returns (Par memory)
     {
-        SignedNominal memory result;
+        Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.nominal = a.nominal.add(b.nominal).to128();
+            result.value = a.value.add(b.value).to128();
         } else {
-            if (a.nominal >= b.nominal) {
+            if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.nominal = a.nominal.sub(b.nominal).to128();
+                result.value = a.value.sub(b.value).to128();
             } else {
                 result.sign = b.sign;
-                result.nominal = b.nominal.sub(a.nominal).to128();
+                result.value = b.value.sub(a.value).to128();
             }
         }
         return result;
     }
 
     function equals(
-        SignedNominal memory a,
-        SignedNominal memory b
+        Par memory a,
+        Par memory b
     )
         internal
         pure
         returns (bool)
     {
-        if (a.nominal == 0 && b.nominal == 0) {
+        if (a.value == 0 && b.value == 0) {
             return true;
         }
-        return (a.nominal == b.nominal) && (a.sign == b.sign);
+        return (a.value == b.value) && (a.sign == b.sign);
     }
 
     function negative(
-        SignedNominal memory a
+        Par memory a
     )
         internal
         pure
-        returns (SignedNominal memory)
+        returns (Par memory)
     {
-        return SignedNominal({
+        return Par({
             sign: !a.sign,
-            nominal: a.nominal
+            value: a.value
         });
     }
 
-    // ============ Signed Accrued ============
+    // ============ Wei (Token Amount) ============
 
-    struct SignedAccrued {
+    struct Wei {
         bool sign;
-        uint256 accrued;
+        uint256 value;
     }
 
     function sub(
-        SignedAccrued memory a,
-        SignedAccrued memory b
+        Wei memory a,
+        Wei memory b
     )
         internal
         pure
-        returns (SignedAccrued memory)
+        returns (Wei memory)
     {
         return add(a, negative(b));
     }
 
     function add(
-        SignedAccrued memory a,
-        SignedAccrued memory b
+        Wei memory a,
+        Wei memory b
     )
         internal
         pure
-        returns (SignedAccrued memory)
+        returns (Wei memory)
     {
-        SignedAccrued memory result;
+        Wei memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.accrued = a.accrued.add(b.accrued);
+            result.value = a.value.add(b.value);
         } else {
-            result.sign = (a.accrued >= b.accrued);
-            if (a.accrued > b.accrued) {
+            result.sign = (a.value >= b.value);
+            if (a.value > b.value) {
                 result.sign = a.sign;
-                result.accrued = a.accrued.sub(b.accrued);
+                result.value = a.value.sub(b.value);
             } else {
                 result.sign = b.sign;
-                result.accrued = b.accrued.sub(a.accrued);
+                result.value = b.value.sub(a.value);
             }
         }
         return result;
     }
 
     function negative(
-        SignedAccrued memory a
+        Wei memory a
     )
         internal
         pure
-        returns (SignedAccrued memory)
+        returns (Wei memory)
     {
-        return SignedAccrued({
+        return Wei({
             sign: !a.sign,
-            accrued: a.accrued
+            value: a.value
         });
     }
 }

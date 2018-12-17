@@ -21,7 +21,13 @@ pragma solidity 0.5.1;
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-library LMath {
+/**
+ * @title Math
+ * @author dYdX
+ *
+ * TODO
+ */
+library Math {
     using SafeMath for uint256;
 
     // ============ Public Functions ============

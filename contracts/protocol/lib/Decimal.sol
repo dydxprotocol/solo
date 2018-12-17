@@ -21,7 +21,13 @@ pragma solidity 0.5.1;
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-library LDecimal {
+/**
+ * @title Decimal
+ * @author dYdX
+ *
+ * TODO
+ */
+library Decimal {
     using SafeMath for uint256;
 
     // ============ Constants ============
@@ -48,17 +54,6 @@ library LDecimal {
     }
 
     // ============ multiply with other decimals ============
-
-    function mul(
-        Decimal memory a,
-        Decimal memory b
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return a.value.mul(b.value).div(BASE).div(BASE);
-    }
 
     function add(
         Decimal memory a,

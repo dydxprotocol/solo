@@ -18,52 +18,52 @@
 
 pragma solidity 0.5.1;
 
+import { Types } from "./Types.sol";
 import { IErc20 } from "../interfaces/IErc20.sol";
-import { LTypes } from "./LTypes.sol";
 
 
 /**
- * @title LToken
+ * @title Token
  * @author dYdX
  *
  * This library contains basic functions for interacting with ERC20 tokens
  */
-library LToken {
+library Token {
 
     function thisBalance(
         address token
     )
         internal
         view
-        returns (LTypes.SignedAccrued memory)
+        returns (Types.Wei memory)
     {
-        LTypes.SignedAccrued memory result;
-        result.sign = true;
-        result.accrued = IErc20(token).balanceOf(address(this));
-        return result;
+        return Types.Wei({
+            sign: true,
+            value: IErc20(token).balanceOf(address(this))
+        });
     }
 
     function transferOut(
         address token,
         address to,
-        LTypes.SignedAccrued memory amount
+        Types.Wei memory deltaWei
     )
         internal
     {
         require(
-            !amount.sign
+            !deltaWei.sign
         );
 
-        if (amount.accrued == 0) {
+        if (deltaWei.value == 0) {
             return;
         }
 
         require(
-            IErc20(token).balanceOf(address(this)) >= amount.accrued,
+            IErc20(token).balanceOf(address(this)) >= deltaWei.value,
             "TokenInteract#transferOut: Not enough tokens"
         );
 
-        IErc20(token).transfer(to, amount.accrued);
+        IErc20(token).transfer(to, deltaWei.value);
 
         require(
             checkSuccess(),
@@ -74,24 +74,24 @@ library LToken {
     function transferIn(
         address token,
         address from,
-        LTypes.SignedAccrued memory amount
+        Types.Wei memory deltaWei
     )
         internal
     {
         require(
-            amount.sign
+            deltaWei.sign
         );
 
-        if (amount.accrued == 0) {
+        if (deltaWei.value == 0) {
             return;
         }
 
         require(
-            IErc20(token).balanceOf(from) >= amount.accrued,
+            IErc20(token).balanceOf(from) >= deltaWei.value,
             "TokenInteract#transferIn: Not enough tokens"
         );
 
-        IErc20(token).transferFrom(from, address(this), amount.accrued);
+        IErc20(token).transferFrom(from, address(this), deltaWei.value);
 
         require(
             checkSuccess(),

@@ -2,10 +2,10 @@ pragma solidity 0.5.1;
 
 
 /**
- * @title Helps contracts guard against reentrancy attacks.
- * @author Remco Bloemen <remco@2π.com>, Eenae <alexey@mixbytes.io>
- * @dev If you mark a function `nonReentrant`, you should also
- * mark it `external`.
+ * @title ReentrancyGuard
+ * @author dYdX
+ *
+ * Temp library while openzeppelin upgrades to Solidity 0.5
  */
 contract ReentrancyGuard {
     /// @dev counter to allow mutex lock with only one SSTORE operation

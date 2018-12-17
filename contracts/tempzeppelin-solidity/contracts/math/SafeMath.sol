@@ -3,7 +3,9 @@ pragma solidity 0.5.1;
 
 /**
  * @title SafeMath
- * @dev Math operations with safety checks that revert on error
+ * @author dYdX
+ *
+ * Temp library while openzeppelin upgrades to Solidity 0.5
  */
 library SafeMath {
     /**

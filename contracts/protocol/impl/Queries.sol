@@ -19,13 +19,13 @@
 pragma solidity 0.5.1;
 pragma experimental ABIEncoderV2;
 
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LInterest } from "../lib/LInterest.sol";
-import { LPrice } from "../lib/LPrice.sol";
-import { LTypes } from "../lib/LTypes.sol";
+import { Storage } from "./Storage.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Storage } from "./Storage.sol";
+import { Decimal } from "../lib/Decimal.sol";
+import { Interest } from "../lib/Interest.sol";
+import { Price } from "../lib/Price.sol";
+import { Types } from "../lib/Types.sol";
 
 
 /**
@@ -42,7 +42,7 @@ contract Queries is
     function getLiquidationRatio()
         public
         view
-        returns (LDecimal.Decimal memory)
+        returns (Decimal.Decimal memory)
     {
         return g_liquidationRatio;
     }
@@ -50,7 +50,7 @@ contract Queries is
     function getLiquidationSpread()
         public
         view
-        returns (LDecimal.Decimal memory)
+        returns (Decimal.Decimal memory)
     {
         return g_liquidationSpread;
     }
@@ -58,7 +58,7 @@ contract Queries is
     function getEarningsTax()
         public
         view
-        returns (LDecimal.Decimal memory)
+        returns (Decimal.Decimal memory)
     {
         return g_earningsTax;
     }
@@ -66,7 +66,7 @@ contract Queries is
     function getMinBorrowedValue()
         public
         view
-        returns (LPrice.Value memory)
+        returns (Price.Value memory)
     {
         return g_minBorrowedValue;
     }
@@ -98,7 +98,7 @@ contract Queries is
     )
         public
         view
-        returns (LInterest.TotalNominal memory)
+        returns (Interest.TotalNominal memory)
     {
         return g_markets[marketId].totalNominal;
     }
@@ -108,7 +108,7 @@ contract Queries is
     )
         public
         view
-        returns (LInterest.Index memory)
+        returns (Interest.Index memory)
     {
         return g_markets[marketId].index;
         // TODO: give the updated index
@@ -149,7 +149,7 @@ contract Queries is
     )
         public
         view
-        returns (LPrice.Price memory)
+        returns (Price.Price memory)
     {
         return g_markets[marketId].priceOracle.getPrice(
             getMarketTokenAddress(marketId)
@@ -161,7 +161,7 @@ contract Queries is
     )
         public
         view
-        returns (LInterest.Rate memory)
+        returns (Interest.Rate memory)
     {
         return g_markets[marketId].interestSetter.getInterestRate(
             getMarketTokenAddress(marketId),
@@ -178,7 +178,7 @@ contract Queries is
     )
         public
         view
-        returns (LTypes.SignedNominal memory)
+        returns (Types.Par memory)
     {
         return g_accounts[trader][account].balances[marketId];
     }
@@ -200,7 +200,7 @@ contract Queries is
     )
         public
         view
-        returns (LPrice.Value memory, LPrice.Value memory)
+        returns (Price.Value memory, Price.Value memory)
     {
         trader;
         account;

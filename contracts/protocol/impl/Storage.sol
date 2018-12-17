@@ -18,12 +18,12 @@
 
 pragma solidity 0.5.1;
 
-import { LDecimal } from "../lib/LDecimal.sol";
-import { LInterest } from "../lib/LInterest.sol";
-import { LPrice } from "../lib/LPrice.sol";
-import { LTypes } from "../lib/LTypes.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { Decimal } from "../lib/Decimal.sol";
+import { Interest } from "../lib/Interest.sol";
+import { Price } from "../lib/Price.sol";
+import { Types } from "../lib/Types.sol";
 
 
 /**
@@ -37,14 +37,14 @@ contract Storage {
     // ============ Structs ============
 
     struct Account {
-        mapping (uint256 => LTypes.SignedNominal) balances;
+        mapping (uint256 => Types.Par) balances;
         uint32 closingTime;
     }
 
     struct Market {
         address token;
-        LInterest.TotalNominal totalNominal;
-        LInterest.Index index;
+        Interest.TotalNominal totalNominal;
+        Interest.Index index;
         IPriceOracle priceOracle;
         IInterestSetter interestSetter;
     }
@@ -63,17 +63,17 @@ contract Storage {
     // ============ Risk Parameters ============
 
     // collateral ratio at which accounts can be liquidated
-    LDecimal.Decimal g_liquidationRatio;
+    Decimal.Decimal g_liquidationRatio;
 
     // (1 - g_liquidationSpread) is the percentage penalty incurred by liquidated accounts
-    LDecimal.Decimal g_liquidationSpread;
+    Decimal.Decimal g_liquidationSpread;
 
     // Percentage fee that the exchange takes of lender's earnings
-    LDecimal.Decimal g_earningsTax;
+    Decimal.Decimal g_earningsTax;
 
     // The minimum absolute borrow value of an account
     // There must be sufficient incentivize to liquidate undercollateralized accounts
-    LPrice.Value g_minBorrowedValue;
+    Price.Value g_minBorrowedValue;
 
     // ============ Permissioning ============
 
