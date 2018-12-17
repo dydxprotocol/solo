@@ -17,7 +17,7 @@
 */
 
 import BN from 'bn.js';
-
+import { Order } from '@dydxprotocol/exchange-wrappers';
 import { Tx } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
 
@@ -62,12 +62,28 @@ export interface Amount {
 
 export interface AccountOperation {
   amount: Amount;
+}
+
+export interface Deposit extends AccountOperation {
   asset: string;
 }
 
-export interface Deposit extends AccountOperation {}
+export interface Withdraw extends AccountOperation {
+  asset: string;
+}
 
-export interface Withdrawal extends AccountOperation {}
+export interface Exchange extends AccountOperation {
+  withdrawAsset: string;
+  depositAsset: string;
+  order: Order;
+}
+
+export interface Liquidate extends AccountOperation {
+  withdrawAsset: string;
+  depositAsset: string;
+  liquidTrader: string;
+  liquidAccount: BN;
+}
 
 export interface TransactionArgs {
   transactionType: number | string;

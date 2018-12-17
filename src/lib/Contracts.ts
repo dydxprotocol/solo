@@ -31,8 +31,8 @@ export class Contracts {
   private blockGasLimit: number;
   private autoGasMultiplier: number = 1.5;
   private defaultConfirmations: number = 1;
-  private web3: Web3;
 
+  public web3: Web3;
   public soloMargin: SoloMargin;
 
   constructor(
