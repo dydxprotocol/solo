@@ -4,7 +4,7 @@ import { Contracts } from '../lib/Contracts';
 import { AccountTransaction } from './AccountTransaction';
 import { ContractCallOptions } from '../types';
 
-export class Transact {
+export class Transaction {
   private contracts: Contracts;
   private orderMapper: OrderMapper;
 
