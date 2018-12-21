@@ -1,116 +1,112 @@
-import BN from 'bn.js';
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../lib/Contracts';
 import {
   AccountOperation,
   Deposit,
+  Withdraw,
   TransactionType,
   TransactionArgs,
-  AmountIntention,
   ContractCallOptions,
   TxResult,
+  Buy,
+  Sell,
   Exchange,
-  Withdraw,
+  Transfer,
   Liquidate,
+  AccountInfo,
 } from '../types';
+
+interface OptionalTransactionArgs {
+  transactionType: number | string;
+  mainMarketId?: number | string;
+  secondaryMarketId?: number | string;
+  otherAddress?: string;
+  otherAccountId?: number | string;
+  orderData?: (string | number[])[];
+  intent?: number | string;
+}
 
 export class AccountTransaction {
   private contracts: Contracts;
   private operations: TransactionArgs[];
-  private trader: string;
-  private account: BN;
   private committed: boolean;
   private options: ContractCallOptions;
   private orderMapper: OrderMapper;
+  private accounts: AccountInfo[];
 
   constructor(
     contracts: Contracts,
-    trader: string,
-    account: BN,
     options: ContractCallOptions,
     orderMapper: OrderMapper,
   ) {
     this.contracts = contracts;
     this.operations = [];
-    this.trader = trader;
-    this.account = account;
     this.committed = false;
     this.options = options;
     this.orderMapper = orderMapper;
+    this.accounts = [];
   }
 
   public deposit(deposit: Deposit): AccountTransaction {
-    if (this.committed) {
-      throw new Error('Transaction already committed');
-    }
-
-    const transactionArgs: TransactionArgs = this.newTransactionArgs(deposit);
-
-    transactionArgs.amount.intent = AmountIntention.Deposit;
-    transactionArgs.transactionType = TransactionType.Deposit;
-    transactionArgs.depositAssetId = deposit.asset;
-
-    this.operations.push(transactionArgs);
+    this.addTransactionArgs(
+      deposit,
+      {
+        transactionType: TransactionType.Deposit,
+        otherAddress: deposit.from,
+        mainMarketId: deposit.marketId.toString(),
+      },
+    );
 
     return this;
   }
 
   public withdraw(withdraw: Withdraw): AccountTransaction {
-    if (this.committed) {
-      throw new Error('Transaction already committed');
-    }
-
-    const transactionArgs: TransactionArgs = this.newTransactionArgs(withdraw);
-
-    transactionArgs.amount.intent = AmountIntention.Withdraw;
-    transactionArgs.transactionType = TransactionType.Withdraw;
-    transactionArgs.withdrawAssetId = withdraw.asset;
-
-    this.operations.push(transactionArgs);
+    this.addTransactionArgs(
+      withdraw,
+      {
+        transactionType: TransactionType.Withdraw,
+        otherAddress: withdraw.to,
+        mainMarketId: withdraw.marketId.toString(),
+      },
+    );
 
     return this;
   }
 
-  public exchange(exchange: Exchange): AccountTransaction {
-    if (this.committed) {
-      throw new Error('Transaction already committed');
-    }
-
-    const transactionArgs: TransactionArgs = this.newTransactionArgs(exchange);
-    const {
-      bytes,
-      exchangeWrapperAddress,
-    }: {
-      bytes: number[],
-      exchangeWrapperAddress: string,
-    } = this.orderMapper.mapOrder(exchange.order);
-
-    transactionArgs.transactionType = TransactionType.Exchange;
-    transactionArgs.depositAssetId = exchange.depositAsset;
-    transactionArgs.withdrawAssetId = exchange.withdrawAsset;
-    transactionArgs.exchangeWrapperOrLiquidTrader = exchangeWrapperAddress;
-    transactionArgs.orderData = [bytes];
-
-    this.operations.push(transactionArgs);
+  public transfer(transfer: Transfer): AccountTransaction {
+    this.addTransactionArgs(
+      transfer,
+      {
+        transactionType: TransactionType.Transfer,
+        mainMarketId: transfer.marketId.toString(),
+        otherAddress: transfer.toAccountOwner,
+        otherAccountId: transfer.toAccountId.toString(),
+      },
+    );
 
     return this;
+  }
+
+  public buy(buy: Buy): AccountTransaction {
+    return this.exchange(buy, TransactionType.Buy);
+  }
+
+  public sell(sell: Sell): AccountTransaction {
+    return this.exchange(sell, TransactionType.Sell);
   }
 
   public liquidate(liquidate: Liquidate): AccountTransaction {
-    if (this.committed) {
-      throw new Error('Transaction already committed');
-    }
-
-    const transactionArgs: TransactionArgs = this.newTransactionArgs(liquidate);
-
-    transactionArgs.transactionType = TransactionType.Liquidate;
-    transactionArgs.withdrawAssetId = liquidate.withdrawAsset;
-    transactionArgs.depositAssetId = liquidate.depositAsset;
-    transactionArgs.exchangeWrapperOrLiquidTrader = liquidate.liquidTrader;
-    transactionArgs.liquidAccount = liquidate.liquidAccount.toString(10);
-
-    this.operations.push(transactionArgs);
+    this.addTransactionArgs(
+      liquidate,
+      {
+        transactionType: TransactionType.Liquidate,
+        mainMarketId: liquidate.liquidMarketId.toString(),
+        secondaryMarketId: liquidate.payoutMarketId.toString(),
+        otherAddress: liquidate.liquidAccountOwner,
+        otherAccountId: liquidate.liquidAccountId.toString(),
+      },
+    );
 
     return this;
   }
@@ -119,12 +115,15 @@ export class AccountTransaction {
     if (this.committed) {
       throw new Error('Transaction already committed');
     }
+    if (this.operations.length === 0) {
+      throw new Error('No operations have been added to transaction');
+    }
+
     this.committed = true;
 
     try {
       const method: TransactionObject<void> = this.contracts.soloMargin.methods.transact(
-        this.trader,
-        this.account.toString(),
+        this.accounts,
         this.operations,
       );
 
@@ -138,24 +137,80 @@ export class AccountTransaction {
     }
   }
 
-  private newTransactionArgs(operation: AccountOperation): TransactionArgs {
+  private exchange(exchange: Exchange, transactionType: TransactionType): AccountTransaction {
+    const {
+      bytes,
+      exchangeWrapperAddress,
+    }: {
+      bytes: number[],
+      exchangeWrapperAddress: string,
+    } = this.orderMapper.mapOrder(exchange.order);
+
+    this.addTransactionArgs(
+      exchange,
+      {
+        transactionType,
+        otherAddress: exchangeWrapperAddress,
+        orderData: [bytes],
+         // TODO are these right? idk how contracts implemented
+        mainMarketId: exchange.baseMarketId.toString(),
+        secondaryMarketId: exchange.quoteMarketId.toString(),
+      },
+    );
+
+    return this;
+  }
+
+  private addTransactionArgs(
+    operation: AccountOperation,
+    args: OptionalTransactionArgs,
+  ): void {
+    if (this.committed) {
+      throw new Error('Transaction already committed');
+    }
+
     const amount = {
       sign: !operation.amount.value.isNeg(),
-      intent: operation.amount.intent,
       denom: operation.amount.denomination,
       ref: operation.amount.reference,
-      value: operation.amount.value.toString(10),
+      value: operation.amount.value.abs().toString(10),
+    };
+    const a = { // TODO remove when contracts updated
+      ...amount,
+      intent: 0,
     };
     const transactionArgs: TransactionArgs = {
-      amount,
-      transactionType: null,
-      depositAssetId: '',
-      withdrawAssetId: '',
-      exchangeWrapperOrLiquidTrader: '',
-      liquidAccount: '',
-      orderData: [],
+      amount: a,
+      accountId: this.getAccountId(operation),
+      transactionType: args.transactionType,
+      supplyMarketId: args.mainMarketId || '', // TODO change when contracts updated
+      borrowMarketId: args.secondaryMarketId || '',
+      otherAddress: args.otherAddress || '',
+      otherAccountId: args.otherAccountId || '',
+      orderData: args.orderData || [],
     };
 
-    return transactionArgs;
+    if (args.intent) {
+      transactionArgs.amount.intent = args.intent;
+    }
+
+    this.operations.push(transactionArgs);
+  }
+
+  private getAccountId(operation: AccountOperation): number {
+    const accountInfo: AccountInfo = {
+      trader: operation.mainAccountOwner,
+      account: operation.mainAccountId.toString(),
+    };
+
+    const index = this.accounts.indexOf(accountInfo);
+
+    if (index >= 0) {
+      return index;
+    }
+
+    this.accounts.push(accountInfo);
+
+    return this.accounts.length - 1;
   }
 }

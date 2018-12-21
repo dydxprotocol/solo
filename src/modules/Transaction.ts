@@ -1,4 +1,3 @@
-import BN from 'bn.js';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../lib/Contracts';
 import { AccountTransaction } from './AccountTransaction';
@@ -21,14 +20,10 @@ export class Transaction {
   }
 
   public initiate(
-    trader: string,
-    account: BN | number | string,
     options: ContractCallOptions = {},
   ): AccountTransaction {
     return new AccountTransaction(
       this.contracts,
-      trader,
-      new BN(account),
       options,
       this.orderMapper,
     );

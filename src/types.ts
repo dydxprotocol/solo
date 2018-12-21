@@ -43,50 +43,68 @@ export enum AmountReference {
 export enum TransactionType {
   Deposit = 0,
   Withdraw = 1,
-  Exchange = 2,
-  Liquidate = 3,
-  SetExpiry = 4,
-}
-
-export enum AmountIntention {
-  Deposit = 0,
-  Withdraw = 1,
+  Transfer = 2,
+  Buy = 3,
+  Sell = 4,
+  Liquidate = 5,
 }
 
 export interface Amount {
   value: BN;
   denomination: AmountDenomination;
   reference: AmountReference;
-  intent?: AmountIntention;
 }
 
+export type address = string;
+
 export interface AccountOperation {
+  mainAccountOwner: address;
+  mainAccountId: BN;
   amount: Amount;
 }
 
-export interface Deposit extends AccountOperation {
-  asset: string;
+interface ExternalTransfer extends AccountOperation {
+  marketId: BN;
 }
 
-export interface Withdraw extends AccountOperation {
-  asset: string;
+export interface Deposit extends ExternalTransfer {
+  from: address;
+}
+
+export interface Withdraw extends ExternalTransfer {
+  to: address;
+}
+
+export interface Transfer extends AccountOperation {
+  marketId: BN;
+  toAccountOwner: address;
+  toAccountId: BN;
 }
 
 export interface Exchange extends AccountOperation {
-  withdrawAsset: string;
-  depositAsset: string;
+  baseMarketId: BN;
+  quoteMarketId: BN;
   order: Order;
 }
 
+export interface Buy extends Exchange {}
+export interface Sell extends Exchange {}
+
 export interface Liquidate extends AccountOperation {
-  withdrawAsset: string;
-  depositAsset: string;
-  liquidTrader: string;
-  liquidAccount: BN;
+  liquidMarketId: BN;
+  payoutMarketId: BN;
+  liquidAccountOwner: address;
+  liquidAccountId: BN;
+}
+
+export interface AccountInfo {
+  trader: string;
+  account: number | string;
 }
 
 export interface TransactionArgs {
   transactionType: number | string;
+  accountId: number | string;
   amount: {
     sign: boolean;
     intent: number | string;
@@ -94,9 +112,9 @@ export interface TransactionArgs {
     ref: number | string;
     value: number | string;
   };
-  depositAssetId: number | string;
-  withdrawAssetId: number | string;
-  exchangeWrapperOrLiquidTrader: string;
-  liquidAccount: number | string;
+  supplyMarketId: number | string;
+  borrowMarketId: number | string;
+  otherAddress: string;
+  otherAccountId: number | string;
   orderData: (string | number[])[];
 }
