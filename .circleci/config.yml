@@ -45,7 +45,7 @@ jobs:
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Lint
           command: npm run lint
@@ -119,7 +119,7 @@ workflows:
             - checkout_and_install
       - lint:
           requires:
-            - checkout_and_install
+            - build
       - test:
           requires:
             - build

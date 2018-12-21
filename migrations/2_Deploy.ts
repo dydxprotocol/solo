@@ -26,7 +26,7 @@ const TokenB = artifacts.require('TokenB');
 const FeeToken = artifacts.require('TokenC');
 
 // Deploy functions
-async function maybeDeployTestTokens(deployer, network) {
+async function maybeDeployTestTokens(deployer: Truffle.Deployer, network: string) {
   if (isDevNetwork(network)) {
     await Promise.all([
       deployer.deploy(TokenA),
@@ -36,19 +36,8 @@ async function maybeDeployTestTokens(deployer, network) {
   }
 }
 
-async function deployBaseProtocol() {
-  // TODO
-}
-async function deploySecondLayer() {
-  // TODO
-}
-
-async function doMigration(deployer, network) {
+const migration: Truffle.Migration = async (deployer: Truffle.Deployer, network: string) => {
   await maybeDeployTestTokens(deployer, network);
-  await deployBaseProtocol(deployer, network);
-  await deploySecondLayer(deployer, network);
-}
-
-module.exports = (deployer, network) => {
-  deployer.then(() => doMigration(deployer, network));
 };
+
+export default migration;

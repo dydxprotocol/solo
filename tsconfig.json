@@ -14,10 +14,12 @@
     "typeRoots": [
       "node_modules/@types"
     ],
-    "types": ["node"]
+    "types": ["node", "mocha", "truffle-typings"]
   },
   "include": [
-    "src"
+    "src",
+    "test",
+    "migrations"
   ],
   "compileOnSave": true
 }
