@@ -22,7 +22,7 @@
   "scripts": {
     "test": "NODE_ENV=test truffle test",
     "build": "npm run compile && npm run build:wrappers",
-    "compile": "truffle compile",
+    "compile": "node_modules/.bin/truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/contracts/*.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",

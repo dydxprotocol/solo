@@ -14,6 +14,16 @@ if (process.env.TRUFFLE_REPORTER) {
 }
 
 module.exports = {
+  compilers: {
+    solc: {
+      version: '0.5.2',
+      docker: true,
+      optimizer: {
+        enabled: true,
+        runs: 10000,
+      },
+    },
+  },
   networks: {
     mainnet: {
       host: '127.0.0.1',
@@ -50,16 +60,5 @@ module.exports = {
     },
   },
   mocha,
-  compilers: {
-    solc: {
-      version: '0.5.2',
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
-      },
-    },
-  },
   test_file_extension_regexp: /.*\.ts$/,
 };
