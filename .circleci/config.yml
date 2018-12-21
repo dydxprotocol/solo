@@ -29,6 +29,8 @@ jobs:
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Pull solc
           command: docker pull ethereum/solc:0.5.1
