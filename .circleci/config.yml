@@ -30,6 +30,9 @@ jobs:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Pull solc
+          command: docker pull ethereum/solc:0.5.1
+      - run:
           name: Compile contracts
           command: npm run compile -- --all
       - run:
