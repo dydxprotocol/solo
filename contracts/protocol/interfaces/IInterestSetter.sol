@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Interest } from "../lib/Interest.sol";
@@ -33,15 +33,14 @@ contract IInterestSetter {
     // ============ Public Functions ============
 
     /**
-     * Get the interest rate of a token given some borrowed and lent amounts
+     * Get the interest rate of a token given some borrowed and supplied amounts
      *
-     * @param  token        The address of the token to get the interest rate for
-     * @param  totalNominal The total borrow/supply nominal amounts
      * @return              The interest rate per second
      */
     function getInterestRate(
         address token,
-        Interest.TotalNominal memory totalNominal
+        uint256 borrowWei,
+        uint256 supplyWei
     )
         public
         view

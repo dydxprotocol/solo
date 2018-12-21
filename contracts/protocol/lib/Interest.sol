@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Decimal } from "./Decimal.sol";
 import { Math } from "./Math.sol";
@@ -40,10 +40,15 @@ library Interest {
     // ============ Constants ============
 
     uint64 constant public BASE = 10**18;
+    uint64 constant public MAX_INTEREST_RATE = BASE / (60 * 60 * 24 * 365); // Max 100% per year
 
     // ============ Structs ============
 
-    struct TotalNominal {
+    struct Rate {
+        uint256 value;
+    }
+
+    struct TotalPar {
         uint128 borrow;
         uint128 supply;
     }
@@ -54,36 +59,60 @@ library Interest {
         uint32 lastUpdate;
     }
 
-    struct Rate {
-        uint128 value;
-    }
-
     // ============ Public Functions ============
 
-    function getUpdatedIndex(
+    function calculateNewIndex(
         Index memory index,
         Rate memory rate,
-        TotalNominal memory totalNominal,
-        Decimal.Decimal memory earningsTax
+        TotalPar memory totalPar,
+        Decimal.D256 memory earningsRate
     )
         internal
         view
         returns (Index memory)
     {
+        require(isValidRate(rate));
+        (
+            Types.Wei memory borrowWei,
+            Types.Wei memory supplyWei
+        ) = totalParToWei(totalPar, index);
         uint32 timeDelta = Time.currentTime().sub(index.lastUpdate).to32();
-        uint96 borrowInterest = _getCompoundedInterest(rate, timeDelta);
 
-        uint256 supplyInterestRaw = Math.getPartial(
-            borrowInterest.sub(BASE),
-            totalNominal.borrow,
-            totalNominal.supply
-        );
-        Decimal.Decimal memory earningsRate = Decimal.sub(Decimal.one(), earningsTax);
-        uint96 supplyInterest = Decimal.mul(earningsRate, supplyInterestRaw).add(BASE).to96();
+        // calculate the interest accrued by
+        uint96 borrowInterest = rate.value.mul(timeDelta).to96();
+
+        // adjust the interest by the earningsRate, then prorate the interest across all suppliers
+        uint96 supplyInterest = Math.getPartial(
+            Decimal.mul(earningsRate, borrowInterest).to96(),
+            borrowWei.value,
+            supplyWei.value
+        ).to96();
 
         return Index({
-            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).to96(),
-            supply: Math.getPartial(index.supply, supplyInterest, BASE).to96(),
+            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
+            supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
+            lastUpdate: Time.currentTime()
+        });
+    }
+
+    function isValidRate(
+        Rate memory rate
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return rate.value <= MAX_INTEREST_RATE;
+    }
+
+    function newIndex()
+        internal
+        view
+        returns (Index memory)
+    {
+        return Index({
+            borrow: BASE,
+            supply: BASE,
             lastUpdate: Time.currentTime()
         });
     }
@@ -124,54 +153,24 @@ library Interest {
         return result;
     }
 
-    function newIndex()
+    function totalParToWei(
+        TotalPar memory totalPar,
+        Index memory index
+    )
         internal
-        view
-        returns (Index memory)
+        pure
+        returns (Types.Wei memory, Types.Wei memory)
     {
-        return Index({
-            borrow: BASE,
-            supply: BASE,
-            lastUpdate: Time.currentTime()
+        Types.Par memory borrowPar = Types.Par({
+            sign: false,
+            value: totalPar.borrow
         });
-    }
-
-    function isValidRate(
-        Rate memory rate
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return rate.value >= BASE;
-    }
-
-    // ============ Private Functions ============
-
-    function _getCompoundedInterest(
-        Rate memory rate,
-        uint32 timeDelta
-    )
-        private
-        pure
-        returns (uint96)
-    {
-        uint96 result = BASE;
-
-        // localRate is rate^(2^rounds)
-        Rate memory localRate = Rate({ value: rate.value });
-        uint256 localTime = uint256(timeDelta);
-
-        while (localTime != 0) {
-
-            if (localTime & 1 != 0) {
-                result = Math.getPartial(result, localRate.value, BASE).to96();
-            }
-
-            localTime = localTime >> 1;
-            localRate.value = Math.getPartial(localRate.value, localRate.value, BASE).to128();
-        }
-
-        return result;
+        Types.Par memory supplyPar = Types.Par({
+            sign: true,
+            value: totalPar.supply
+        });
+        Types.Wei memory borrowWei = parToWei(borrowPar, index);
+        Types.Wei memory supplyWei = parToWei(supplyPar, index);
+        return (borrowWei, supplyWei);
     }
 }

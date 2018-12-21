@@ -16,13 +16,13 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -38,12 +38,12 @@ contract Storage {
 
     struct Account {
         mapping (uint256 => Types.Par) balances;
-        uint32 closingTime;
+        uint32 liquidationTime;
     }
 
     struct Market {
         address token;
-        Interest.TotalNominal totalNominal;
+        Interest.TotalPar totalPar;
         Interest.Index index;
         IPriceOracle priceOracle;
         IInterestSetter interestSetter;
@@ -57,36 +57,26 @@ contract Storage {
     // marketId => Market
     mapping (uint256 => Market) g_markets;
 
-    // trader => account number => Account
+    // owner => account number => Account
     mapping (address => mapping (uint256 => Account)) g_accounts;
 
     // ============ Risk Parameters ============
 
     // collateral ratio at which accounts can be liquidated
-    Decimal.Decimal g_liquidationRatio;
+    Decimal.D256 g_liquidationRatio;
 
     // (1 - g_liquidationSpread) is the percentage penalty incurred by liquidated accounts
-    Decimal.Decimal g_liquidationSpread;
+    Decimal.D256 g_liquidationSpread;
 
-    // Percentage fee that the exchange takes of lender's earnings
-    Decimal.Decimal g_earningsTax;
+    // Percentage of the borrower's interest fee that gets passed to the suppliers
+    Decimal.D256 g_earningsRate;
 
     // The minimum absolute borrow value of an account
     // There must be sufficient incentivize to liquidate undercollateralized accounts
-    Price.Value g_minBorrowedValue;
+    Monetary.Value g_minBorrowedValue;
 
     // ============ Permissioning ============
 
     // Addresses that can act as a proxy for another address
     mapping (address => mapping (address => bool)) g_trustedAddress;
-
-    function trustAddress(
-        address externalAddress,
-        bool trusted
-    )
-        external
-    {
-        require(msg.sender != externalAddress);
-        g_trustedAddress[msg.sender][externalAddress] = trusted;
-    }
 }

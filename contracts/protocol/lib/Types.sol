@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Math } from "./Math.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";

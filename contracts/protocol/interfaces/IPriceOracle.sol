@@ -16,10 +16,10 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
@@ -45,6 +45,6 @@ contract IPriceOracle {
     )
         public
         view
-        returns (Price.Price memory);
+        returns (Monetary.Price memory);
 
 }

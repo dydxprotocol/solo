@@ -16,20 +16,19 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Math } from "./Math.sol";
-import { Types } from "./Types.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
- * @title Price
+ * @title Monetary
  * @author dYdX
  *
  * TODO
  */
-library Price {
+library Monetary {
     using SafeMath for uint256;
 
     // ============ Structs ============
@@ -44,7 +43,7 @@ library Price {
 
     // ============ Public Functions ============
 
-    function getTotalValue(
+    function getValue(
         Price memory price,
         uint256 amount
     )
@@ -54,25 +53,6 @@ library Price {
     {
         return Value({
             value: amount.mul(price.value)
-        });
-    }
-
-    function getEquivalentWei(
-        Types.Wei memory input,
-        Price memory inputPrice,
-        Price memory resultPrice
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: !input.sign,
-            value: Math.getPartial(
-                input.value,
-                inputPrice.value,
-                resultPrice.value
-            )
         });
     }
 

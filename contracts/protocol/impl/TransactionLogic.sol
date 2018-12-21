@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
@@ -27,7 +27,7 @@ import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 import { Time } from "../lib/Time.sol";
 import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
@@ -67,7 +67,6 @@ contract TransactionLogic is
         wsStore(worldState);
     }
 
-
     // ============ Private Functions ============
 
     function _transact(
@@ -78,32 +77,35 @@ contract TransactionLogic is
     {
         Actions.TransactionType ttype = args.transactionType;
 
-        if (ttype == Actions.TransactionType.ExternalTransfer) {
-            _externalTransfer(worldState, Actions.parseExternalTransferArgs(args));
+        if (ttype == Actions.TransactionType.Deposit) {
+            _deposit(worldState, Actions.parseDepositArgs(args));
         }
-        else if (ttype == Actions.TransactionType.InternalTransfer) {
-            _internalTransfer(worldState, Actions.parseInternalTransferArgs(args));
+        else if (ttype == Actions.TransactionType.Withdraw) {
+            _withdraw(worldState, Actions.parseWithdrawArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Exchange) {
-            _exchange(worldState, Actions.parseExchangeArgs(args));
+        else if (ttype == Actions.TransactionType.Transfer) {
+            _transfer(worldState, Actions.parseTransferArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Buy) {
+            _buy(worldState, Actions.parseBuyArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Sell) {
+            _sell(worldState, Actions.parseSellArgs(args));
         }
         else if (ttype == Actions.TransactionType.Liquidate) {
             _liquidate(worldState, Actions.parseLiquidateArgs(args));
         }
-        else if (ttype == Actions.TransactionType.SetExpiry) {
-            _setExpiry(worldState, Actions.parseSetExpiryArgs(args));
-        }
     }
 
-    function _externalTransfer(
+    function _deposit(
         WorldState memory worldState,
-        Actions.ExternalTransferArgs memory args
+        Actions.DepositArgs memory args
     )
         private
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        Types.Wei memory deltaWei = wsSetBalanceFromAmountStruct(
+        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
             worldState,
             args.accountId,
             args.marketId,
@@ -112,19 +114,36 @@ contract TransactionLogic is
 
         address token = wsGetToken(worldState, args.marketId);
 
-        if(args.amount.intent == Actions.AmountIntention.Supply) {
-            address depositor = args.otherAddress;
-            require(msg.sender == depositor || g_trustedAddress[depositor][msg.sender]);
-            Token.transferIn(token, args.otherAddress, deltaWei);
-        }
-        else if (args.amount.intent == Actions.AmountIntention.Borrow) {
-            Token.transferOut(token, args.otherAddress, deltaWei);
-        }
+        require(msg.sender == args.from || g_trustedAddress[args.from][msg.sender]);
+
+        // requires a positive deltaWei
+        Token.transferIn(token, args.from, deltaWei);
     }
 
-    function _internalTransfer(
+    function _withdraw(
         WorldState memory worldState,
-        Actions.InternalTransferArgs memory args
+        Actions.WithdrawArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
+            worldState,
+            args.accountId,
+            args.marketId,
+            args.amount
+        );
+
+        address token = wsGetToken(worldState, args.marketId);
+
+        // requires a negative deltaWei
+        Token.transferOut(token, args.to, deltaWei);
+    }
+
+    function _transfer(
+        WorldState memory worldState,
+        Actions.TransferArgs memory args
     )
         private
         view
@@ -132,15 +151,13 @@ contract TransactionLogic is
         wsSetCheckPerimissions(worldState, args.accountId);
         wsSetCheckPerimissions(worldState, args.otherAccountId);
 
-        // Get the values for your account
-        Types.Wei memory deltaWei = wsSetBalanceFromAmountStruct(
+        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
             worldState,
             args.accountId,
             args.marketId,
             args.amount
         );
 
-        // Get the values for the other account
         wsSetBalanceFromDeltaWei(
             worldState,
             args.otherAccountId,
@@ -149,75 +166,86 @@ contract TransactionLogic is
         );
     }
 
-    function _exchange(
+    function _buy(
         WorldState memory worldState,
-        Actions.ExchangeArgs memory args
+        Actions.BuyArgs memory args
     )
         private
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        address borrowToken = wsGetToken(worldState, args.borrowMarketId);
-        address supplyToken = wsGetToken(worldState, args.supplyMarketId);
+        address borrowToken = wsGetToken(worldState, args.sellMarketId);
+        address supplyToken = wsGetToken(worldState, args.buyMarketId);
         Types.Wei memory supplyWei;
         Types.Wei memory borrowWei;
 
-        if (args.amount.intent == Actions.AmountIntention.Borrow) {
-            borrowWei = wsSetBalanceFromAmountStruct(
-                worldState,
-                args.accountId,
-                args.borrowMarketId,
-                args.amount
-                );
+        supplyWei = wsSetBalanceFromAssetAmount(
+            worldState,
+            args.accountId,
+            args.buyMarketId,
+            args.amount
+        );
 
-            supplyWei = Exchange.exchange(
-                args.exchangeWrapper,
-                supplyToken,
-                borrowToken,
-                supplyWei,
-                args.orderData
-            );
+        borrowWei = Exchange.getCost(
+            args.exchangeWrapper,
+            supplyToken,
+            borrowToken,
+            borrowWei,
+            args.orderData
+        );
 
-            wsSetBalanceFromDeltaWei(
-                worldState,
-                args.accountId,
-                args.supplyMarketId,
-                supplyWei
-            );
-        }
-        else if (args.amount.intent == Actions.AmountIntention.Supply) {
-            supplyWei = wsSetBalanceFromAmountStruct(
-                worldState,
-                args.accountId,
-                args.supplyMarketId,
-                args.amount
-            );
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.accountId,
+            args.sellMarketId,
+            borrowWei
+        );
 
-            borrowWei = Exchange.getCost(
-                args.exchangeWrapper,
-                supplyToken,
-                borrowToken,
-                borrowWei,
-                args.orderData
-            );
+        Types.Wei memory tokensReceived = Exchange.exchange(
+            args.exchangeWrapper,
+            supplyToken,
+            borrowToken,
+            borrowWei,
+            args.orderData
+        );
 
-            wsSetBalanceFromDeltaWei(
-                worldState,
-                args.accountId,
-                args.borrowMarketId,
-                borrowWei
-            );
+        require(tokensReceived.value >= supplyWei.value);
+    }
 
-            Types.Wei memory tokensReceived = Exchange.exchange(
-                args.exchangeWrapper,
-                supplyToken,
-                borrowToken,
-                supplyWei,
-                args.orderData
-            );
+    function _sell(
+        WorldState memory worldState,
+        Actions.SellArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
 
-            require(tokensReceived.value >= borrowWei.value);
-        }
+        address borrowToken = wsGetToken(worldState, args.sellMarketId);
+        address supplyToken = wsGetToken(worldState, args.buyMarketId);
+        Types.Wei memory supplyWei;
+        Types.Wei memory borrowWei;
+
+        borrowWei = wsSetBalanceFromAssetAmount(
+            worldState,
+            args.accountId,
+            args.sellMarketId,
+            args.amount
+        );
+
+        supplyWei = Exchange.exchange(
+            args.exchangeWrapper,
+            supplyToken,
+            borrowToken,
+            borrowWei,
+            args.orderData
+        );
+
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.accountId,
+            args.buyMarketId,
+            supplyWei
+        );
     }
 
     function _liquidate(
@@ -227,91 +255,99 @@ contract TransactionLogic is
         private
         view
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
-        // don't mark liquidAccountId for permissions
-
-        Types.Wei memory supplyWei;
-        Types.Wei memory borrowWei;
+        wsSetCheckPerimissions(worldState, args.stableAccountId);
+        // doesn't mark liquidAccountId for permissions
 
         // verify that this account can be liquidated
-        if (!wsGetClosingTime(worldState, args.liquidAccountId).hasHappened()) {
+        if (!wsGetLiquidationTime(worldState, args.liquidAccountId).hasHappened()) {
             require(!_isCollateralized(worldState, args.liquidAccountId));
-            wsSetClosingTime(worldState, args.liquidAccountId, Time.currentTime());
+            wsSetLiquidationTime(worldState, args.liquidAccountId, Time.currentTime());
         }
 
-        // normalize the oracle prices according to the liquidation spread
-        Price.Price memory borrowPrice = wsGetPrice(worldState, args.borrowMarketId);
-        Price.Price memory supplyPrice = wsGetPrice(worldState, args.supplyMarketId);
-        supplyPrice.value = Decimal.mul(g_liquidationSpread, supplyPrice.value).to128();
+        // verify that underwater is being repaid
+        require(!wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).sign);
 
-        // calculate the nominal amounts
-        if (args.amount.intent == Actions.AmountIntention.Borrow) {
-            borrowWei = wsSetBalanceFromAmountStruct(
-                worldState,
-                args.accountId,
-                args.borrowMarketId,
-                args.amount
-            );
-            supplyWei = Price.getEquivalentWei(
-                borrowWei,
-                borrowPrice,
-                supplyPrice
-            );
-            wsSetBalanceFromDeltaWei(
-                worldState,
-                args.accountId,
-                args.supplyMarketId,
-                supplyWei
-            );
-        }
-        else if (args.amount.intent == Actions.AmountIntention.Supply) {
-            supplyWei = wsSetBalanceFromAmountStruct(
-                worldState,
-                args.accountId,
-                args.supplyMarketId,
-                args.amount
-            );
-            borrowWei = Price.getEquivalentWei(
-                supplyWei,
-                supplyPrice,
-                borrowPrice
-            );
-            wsSetBalanceFromDeltaWei(
-                worldState,
-                args.accountId,
-                args.borrowMarketId,
-                borrowWei
-            );
-        }
+        // verify that the liquidated account has collateral
+        require(wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).sign);
 
-        // TODO: verify that you're not overliquidating (causing liquid account to go from pos=>neg
-        // or from neg=>pos for either of the two tokens)
+
+        // calculate the underwater to pay back
+        Types.Wei memory underwaterWei = wsSetBalanceFromAssetAmount(
+            worldState,
+            args.liquidAccountId,
+            args.underwaterMarketId,
+            args.amount
+        );
+
+        Types.Wei memory collateralWei = _getCollateralWei(
+            worldState,
+            underwaterWei,
+            args.underwaterMarketId,
+            args.collateralMarketId
+        );
 
         wsSetBalanceFromDeltaWei(
             worldState,
             args.liquidAccountId,
-            args.supplyMarketId,
-            supplyWei.negative()
+            args.collateralMarketId,
+            collateralWei
+        );
+
+        // verify that underwater is not overpaid
+        require(
+            0 == wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).value
+            || !wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).sign
+        );
+
+        // verify that collateral is not overused
+        require(
+            0 == wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).value
+            || wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).sign
+        );
+
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.stableAccountId,
+            args.collateralMarketId,
+            collateralWei.negative()
         );
         wsSetBalanceFromDeltaWei(
             worldState,
-            args.liquidAccountId,
-            args.borrowMarketId,
-            borrowWei.negative()
+            args.stableAccountId,
+            args.underwaterMarketId,
+            underwaterWei.negative()
         );
 
         // TODO: check if the liquidated account has only negative values left. then VAPORIZE it by
         // reducing the index of the negative token and then wiping away the negative value
     }
 
-    function _setExpiry(
+    function _getCollateralWei(
         WorldState memory worldState,
-        Actions.SetExpiryArgs memory args
+        Types.Wei memory underwaterWei,
+        uint256 underwaterMarketId,
+        uint256 collateralMarketId
     )
         private
-        pure
+        view
+        returns (Types.Wei memory)
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
-        wsSetClosingTime(worldState, args.accountId, args.time);
+        require(underwaterWei.sign);
+
+        Monetary.Price memory underwaterPrice = wsGetPrice(worldState, underwaterMarketId);
+        Monetary.Price memory collateralPrice = wsGetPrice(worldState, collateralMarketId);
+
+        // get the equal-value amount of collateral wei
+        Types.Wei memory collateralWei;
+        collateralWei.sign = false;
+        collateralWei.value = Math.getPartial(
+            underwaterWei.value,
+            underwaterPrice.value,
+            collateralPrice.value
+        );
+
+        // boost the amount of collateral by the liquidation spread
+        collateralWei.value = Decimal.mul(wsGetLiquidationSpread(worldState), collateralWei.value);
+        return collateralWei;
     }
 }

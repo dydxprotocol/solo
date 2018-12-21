@@ -17,35 +17,27 @@
 */
 
 pragma solidity 0.5.2;
+pragma experimental ABIEncoderV2;
+
+import { Storage } from "./Storage.sol";
 
 
 /**
- * @title Time
+ * @title Permissions
  * @author dYdX
  *
  * TODO
  */
-library Time {
-
-    // ============ Public Functions ============
-
-    function currentTime()
-        internal
-        view
-        returns (uint32)
-    {
-        uint32 timestamp = uint32(block.timestamp);
-        require(uint256(timestamp) == block.timestamp, "WE LIVE IN THE FUTURE");
-        return timestamp;
-    }
-
-    function hasHappened(
-        uint32 time
+contract Permissions is
+    Storage
+{
+    function trustAddress(
+        address externalAddress,
+        bool trusted
     )
-        internal
-        view
-        returns (bool)
+        external
     {
-        return (time != 0) && (time <= currentTime());
+        require(msg.sender != externalAddress);
+        g_trustedAddress[msg.sender][externalAddress] = trusted;
     }
 }

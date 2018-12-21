@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -36,14 +36,14 @@ library Decimal {
 
     // ============ Structs ============
 
-    struct Decimal {
+    struct D256 {
         uint256 value;
     }
 
     // ============ multiply with ints ============
 
     function mul(
-        Decimal memory d,
+        D256 memory d,
         uint256 target
     )
         internal
@@ -56,25 +56,25 @@ library Decimal {
     // ============ multiply with other decimals ============
 
     function add(
-        Decimal memory a,
-        Decimal memory b
+        D256 memory a,
+        D256 memory b
     )
         internal
         pure
-        returns (Decimal memory)
+        returns (D256 memory)
     {
-        return Decimal({ value: a.value.add(b.value) });
+        return D256({ value: a.value.add(b.value) });
     }
 
     function sub(
-        Decimal memory a,
-        Decimal memory b
+        D256 memory a,
+        D256 memory b
     )
         internal
         pure
-        returns (Decimal memory)
+        returns (D256 memory)
     {
-        return Decimal({ value: a.value.sub(b.value) });
+        return D256({ value: a.value.sub(b.value) });
     }
 
     // ============ Creator Functions ============
@@ -82,8 +82,8 @@ library Decimal {
     function one()
         internal
         pure
-        returns (Decimal memory)
+        returns (D256 memory)
     {
-        return Decimal({ value: BASE });
+        return D256({ value: BASE });
     }
 }

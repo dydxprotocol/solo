@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
@@ -24,7 +24,7 @@ import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -42,7 +42,7 @@ contract Queries is
     function getLiquidationRatio()
         public
         view
-        returns (Decimal.Decimal memory)
+        returns (Decimal.D256 memory)
     {
         return g_liquidationRatio;
     }
@@ -50,23 +50,23 @@ contract Queries is
     function getLiquidationSpread()
         public
         view
-        returns (Decimal.Decimal memory)
+        returns (Decimal.D256 memory)
     {
         return g_liquidationSpread;
     }
 
-    function getEarningsTax()
+    function getEarningsRate()
         public
         view
-        returns (Decimal.Decimal memory)
+        returns (Decimal.D256 memory)
     {
-        return g_earningsTax;
+        return g_earningsRate;
     }
 
     function getMinBorrowedValue()
         public
         view
-        returns (Price.Value memory)
+        returns (Monetary.Value memory)
     {
         return g_minBorrowedValue;
     }
@@ -93,17 +93,17 @@ contract Queries is
         return g_markets[marketId].token;
     }
 
-    function getMarketTotalNominal(
+    function getMarketTotalPar(
         uint256 marketId
     )
         public
         view
-        returns (Interest.TotalNominal memory)
+        returns (Interest.TotalPar memory)
     {
-        return g_markets[marketId].totalNominal;
+        return g_markets[marketId].totalPar;
     }
 
-    function getMarketIndex(
+    function getMarketCachedIndex(
         uint256 marketId
     )
         public
@@ -111,10 +111,21 @@ contract Queries is
         returns (Interest.Index memory)
     {
         return g_markets[marketId].index;
+    }
+
+    function getMarketCurrentIndex(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Interest.Index memory)
+    {
+        marketId;
+        g_markets[marketId].index;
         // TODO: give the updated index
     }
 
-    function getLastUpdateTime(
+    function getMarketLastUpdateTime(
         uint256 marketId
     )
         public
@@ -149,7 +160,7 @@ contract Queries is
     )
         public
         view
-        returns (Price.Price memory)
+        returns (Monetary.Price memory)
     {
         return g_markets[marketId].priceOracle.getPrice(
             getMarketTokenAddress(marketId)
@@ -163,16 +174,27 @@ contract Queries is
         view
         returns (Interest.Rate memory)
     {
+        Interest.Index memory index = getMarketCachedIndex(marketId);
+
+        (
+            Types.Wei memory borrowWei,
+            Types.Wei memory supplyWei
+        ) = Interest.totalParToWei(
+            getMarketTotalPar(marketId),
+            index
+        );
+
         return g_markets[marketId].interestSetter.getInterestRate(
             getMarketTokenAddress(marketId),
-            getMarketTotalNominal(marketId)
+            borrowWei.value,
+            supplyWei.value
         );
     }
 
     // ============ Account-Based Variables ============
 
     function getAccountBalance(
-        address trader,
+        address owner,
         uint256 account,
         uint256 marketId
     )
@@ -180,29 +202,29 @@ contract Queries is
         view
         returns (Types.Par memory)
     {
-        return g_accounts[trader][account].balances[marketId];
+        return g_accounts[owner][account].balances[marketId];
     }
 
-    function getAccountClosingTime(
-        address trader,
+    function getAccountLiquidationTime(
+        address owner,
         uint256 account
     )
         public
         view
         returns (uint32)
     {
-        return g_accounts[trader][account].closingTime;
+        return g_accounts[owner][account].liquidationTime;
     }
 
     function getAccountValues(
-        address trader,
+        address owner,
         uint256 account
     )
         public
         view
-        returns (Price.Value memory, Price.Value memory)
+        returns (Monetary.Value memory, Monetary.Value memory)
     {
-        trader;
+        owner;
         account;
         g_numMarkets;
         // TODO: return the value of the borrowAmount and the value of the supplyAmount

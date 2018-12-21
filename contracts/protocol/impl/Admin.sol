@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
@@ -26,7 +26,7 @@ import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
@@ -44,11 +44,11 @@ contract Admin is
     uint256 constant MIN_LIQUIDATION_RATIO  = 100 * 10**16; // 100%
     uint256 constant MAX_LIQUIDATION_SPREAD =  15 * 10**16; // 15%
     uint256 constant MIN_LIQUIDATION_SPREAD =   1 * 10**16; // 1%
-    uint256 constant MAX_EARNINGS_TAX       =  50 * 10**16; // 50%
-    uint256 constant MIN_EARNINGS_TAX       =   0 * 10**16; // 0%
+    uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
+    uint256 constant MAX_EARNINGS_RATE      = 100 * 10**16; // 100%
     uint256 constant MAX_MIN_BORROWED_VALUE =       10**18; // $1
 
-    function ownerWithdrawTaxes(
+    function ownerWithdrawes(
         uint256 marketId,
         address recipient
     )
@@ -106,7 +106,7 @@ contract Admin is
     }
 
     function ownerSetLiquidationRatio(
-        Decimal.Decimal memory liquidationRatio
+        Decimal.D256 memory liquidationRatio
     )
         public
         onlyOwner
@@ -118,7 +118,7 @@ contract Admin is
     }
 
     function ownerSetLiquidationSpread(
-        Decimal.Decimal memory spread
+        Decimal.D256 memory spread
     )
         public
         onlyOwner
@@ -129,20 +129,20 @@ contract Admin is
         g_liquidationSpread = spread;
     }
 
-    function ownerSetEarningsTax(
-        Decimal.Decimal memory earningsTax
+    function ownerSetEarningsRate(
+        Decimal.D256 memory earningsRate
     )
         public
         onlyOwner
         nonReentrant
     {
-        require(earningsTax.value <= MAX_EARNINGS_TAX);
-        require(earningsTax.value >= MIN_EARNINGS_TAX);
-        g_earningsTax = earningsTax;
+        require(earningsRate.value <= MAX_EARNINGS_RATE);
+        require(earningsRate.value >= MIN_EARNINGS_RATE);
+        g_earningsRate = earningsRate;
     }
 
     function ownerSetMinBorrowedValue(
-        Price.Value memory minBorrowedValue
+        Monetary.Value memory minBorrowedValue
     )
         public
         onlyOwner
@@ -165,10 +165,9 @@ contract Admin is
         g_markets[market].interestSetter = interestSetter;
 
         // require current interestSetter can return a value
-        Interest.TotalNominal memory zero;
         address token = g_markets[market].token;
-        require(Interest.isValidRate(
-            interestSetter.getInterestRate(token, zero)),
+        require(
+            Interest.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
             "INVALID INTEREST VALUE"
         );
     }

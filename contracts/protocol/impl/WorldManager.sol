@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
@@ -26,7 +26,7 @@ import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 import { Time } from "../lib/Time.sol";
 import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
@@ -52,11 +52,12 @@ contract WorldManager is
     struct WorldState {
         AssetState[] assets;
         AccountState[] accounts;
-        Decimal.Decimal earningsTax;
+        Decimal.D256 earningsRate;
+        Decimal.D256 liquidationSpread;
     }
 
     struct AccountInfo {
-        address trader;
+        address owner;
         uint256 account;
     }
 
@@ -64,7 +65,7 @@ contract WorldManager is
         AccountInfo info;
         Types.Par[] balance;
         Types.Par[] oldBalance;
-        uint32 closingTime;
+        uint32 liquidationTime;
 
         // need to check permissions for every account that was touched except for ones that were
         // only liquidated
@@ -74,8 +75,8 @@ contract WorldManager is
     struct AssetState {
         address token;
         Interest.Index index;
-        Price.Price price;
-        // doesn't cache totalNominal, just recalculates it at the end if needed
+        Monetary.Price price;
+        // doesn't cache totalPar, just recalculates it at the end if needed
     }
 
     // ============ Getter Functions ============
@@ -89,7 +90,7 @@ contract WorldManager is
         returns (address)
     {
         if (worldState.assets[marketId].token == address(0)) {
-            worldState.assets[marketId].token = g_markets[marketId].token;
+            _loadToken(worldState, marketId);
         }
         return worldState.assets[marketId].token;
     }
@@ -114,7 +115,7 @@ contract WorldManager is
     )
         internal
         view
-        returns (Price.Price memory)
+        returns (Monetary.Price memory)
     {
         if (worldState.assets[marketId].price.value == 0) {
             _loadPrice(worldState, marketId);
@@ -122,7 +123,7 @@ contract WorldManager is
         return worldState.assets[marketId].price;
     }
 
-    function wsGetClosingTime(
+    function wsGetLiquidationTime(
         WorldState memory worldState,
         uint256 accountId
     )
@@ -130,7 +131,7 @@ contract WorldManager is
         pure
         returns (uint32)
     {
-        return worldState.accounts[accountId].closingTime;
+        return worldState.accounts[accountId].liquidationTime;
     }
 
     function wsGetBalance(
@@ -145,7 +146,7 @@ contract WorldManager is
         return worldState.accounts[accountId].balance[marketId];
     }
 
-    function wsGetOldBalance(
+    function wsGetInitialBalance(
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId
@@ -157,17 +158,30 @@ contract WorldManager is
         return worldState.accounts[accountId].oldBalance[marketId];
     }
 
-    function wsGetEarningsTax(
+    function wsGetEarningsRate(
         WorldState memory worldState
     )
         internal
         view
-        returns (Decimal.Decimal memory)
+        returns (Decimal.D256 memory)
     {
-        if (worldState.earningsTax.value == 0) {
-            _loadEarningsTax(worldState);
+        if (worldState.earningsRate.value == 0) {
+            _loadEarningsRate(worldState);
         }
-        return worldState.earningsTax;
+        return worldState.earningsRate;
+    }
+
+    function wsGetLiquidationSpread(
+        WorldState memory worldState
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        if (worldState.liquidationSpread.value == 0) {
+            _loadLiquidationSpread(worldState);
+        }
+        return worldState.liquidationSpread;
     }
 
     // ============ Setter Functions ============
@@ -194,6 +208,9 @@ contract WorldManager is
         worldState.accounts[accountId].balance[marketId] = newBalance;
     }
 
+    /**
+     * Determines and sets an account's balance based on a change in wei
+     */
     function wsSetBalanceFromDeltaWei(
         WorldState memory worldState,
         uint256 accountId,
@@ -204,18 +221,27 @@ contract WorldManager is
         view
     {
         Interest.Index memory index = wsGetIndex(worldState, marketId);
-        Types.Par memory b0 = wsGetBalance(worldState, accountId, marketId);
-        Types.Wei memory a0 = Interest.parToWei(b0, index);
-        Types.Wei memory a1 = a0.add(deltaWei);
-        Types.Par memory newBalance = Interest.weiToPar(a1, index);
-        wsSetBalance(worldState, accountId, marketId, newBalance);
+        Types.Par memory oldPar = wsGetBalance(worldState, accountId, marketId);
+        Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
+        Types.Wei memory newWei = oldWei.add(deltaWei);
+        Types.Par memory newPar = Interest.weiToPar(newWei, index);
+        wsSetBalance(
+            worldState,
+            accountId,
+            marketId,
+            newPar
+        );
     }
 
-    function wsSetBalanceFromAmountStruct(
+    /**
+     * Determines and sets an account's balance based on the intended balance change. Returns the
+     * equivalent amount in wei
+     */
+    function wsSetBalanceFromAssetAmount(
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId,
-        Actions.Amount memory amount
+        Actions.AssetAmount memory amount
     )
         internal
         view
@@ -228,27 +254,25 @@ contract WorldManager is
         Types.Par memory oldPar = wsGetBalance(worldState, accountId, marketId);
         Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
 
-        if (amount.denom == Actions.AmountDenomination.Wei) {
-            if (amount.ref == Actions.AmountReference.Delta) {
-                deltaWei = Actions.amountToWei(amount);
-            } else if (amount.ref == Actions.AmountReference.Target) {
-                deltaWei = Actions.amountToWei(amount).sub(oldWei);
+        if (amount.denomination == Actions.AssetDenomination.Wei) {
+            deltaWei = Types.Wei({
+                sign: amount.sign,
+                value: amount.value
+            });
+            if (amount.refPoint == Actions.AssetRefPoint.Target) {
+                deltaWei = deltaWei.sub(oldWei);
             }
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
-        } else if (amount.denom == Actions.AmountDenomination.Par) {
-            if (amount.ref == Actions.AmountReference.Delta) {
-                newPar = Actions.amountToPar(amount).add(oldPar);
-            } else if (amount.ref == Actions.AmountReference.Target) {
-                newPar = Actions.amountToPar(amount);
+        }
+        else if (amount.denomination == Actions.AssetDenomination.Par) {
+            newPar = Types.Par({
+                sign: amount.sign,
+                value: amount.value.to128()
+            });
+            if (amount.refPoint == Actions.AssetRefPoint.Delta) {
+                newPar = oldPar.add(newPar);
             }
             deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
-        }
-
-        if (amount.intent == Actions.AmountIntention.Supply) {
-            require(deltaWei.sign);
-        }
-        else if (amount.intent == Actions.AmountIntention.Borrow) {
-            require(!deltaWei.sign);
         }
 
         wsSetBalance(
@@ -261,15 +285,15 @@ contract WorldManager is
         return deltaWei;
     }
 
-    function wsSetClosingTime(
+    function wsSetLiquidationTime(
         WorldState memory worldState,
         uint256 accountId,
-        uint32 closingTime
+        uint32 liquidationTime
     )
         internal
         pure
     {
-        worldState.accounts[accountId].closingTime = closingTime;
+        worldState.accounts[accountId].liquidationTime = liquidationTime;
     }
 
     // ============ Loading Functions ============
@@ -281,12 +305,11 @@ contract WorldManager is
         view
         returns (WorldState memory)
     {
-        // TODO: allow address(0) to default to msg.sender
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
             for (uint256 j = i + 1; j < accounts.length; j++) {
                 require(
-                    (trueAddress(accounts[i].trader) != trueAddress(accounts[j].trader))
+                    (trueAddress(accounts[i].owner) != trueAddress(accounts[j].owner))
                     || (accounts[i].account != accounts[j].account)
                 );
             }
@@ -297,23 +320,17 @@ contract WorldManager is
         worldState.assets = new AssetState[](g_numMarkets);
         worldState.accounts = new AccountState[](accounts.length);
 
+        // load all account information aggressively
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            worldState.accounts[a].info.trader = trueAddress(accounts[a].trader);
+            worldState.accounts[a].info.owner = trueAddress(accounts[a].owner);
             worldState.accounts[a].info.account = accounts[a].account;
             worldState.accounts[a].balance = new Types.Par[](worldState.assets.length);
             worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
         }
-
-        // markets
-        for (uint256 i = 0; i < worldState.assets.length; i++) {
-            _loadToken(worldState, i);
-            _loadIndex(worldState, i);
-            _loadPrice(worldState, i);
-        }
-
-        // accounts
         _loadBalances(worldState);
-        _loadClosingTimes(worldState);
+        _loadLiquidationTimes(worldState);
+
+        // do not load any market information, load it lazily later
     }
 
     function _loadToken(
@@ -342,27 +359,42 @@ contract WorldManager is
         }
 
         // get previous rate
-        Interest.TotalNominal memory totalNominal = g_markets[marketId].totalNominal;
+        Interest.TotalPar memory totalPar = g_markets[marketId].totalPar;
+        (
+            Types.Wei memory borrowWei,
+            Types.Wei memory supplyWei
+        ) = Interest.totalParToWei(totalPar, index);
+
         Interest.Rate memory rate = g_markets[marketId].interestSetter.getInterestRate(
             wsGetToken(worldState, marketId),
-            totalNominal
+            borrowWei.value,
+            supplyWei.value
         );
 
-        worldState.assets[marketId].index = Interest.getUpdatedIndex(
+        worldState.assets[marketId].index = Interest.calculateNewIndex(
             index,
             rate,
-            totalNominal,
-            wsGetEarningsTax(worldState)
+            totalPar,
+            wsGetEarningsRate(worldState)
         );
     }
 
-    function _loadEarningsTax(
+    function _loadEarningsRate(
         WorldState memory worldState
     )
         private
         view
     {
-        worldState.earningsTax = g_earningsTax;
+        worldState.earningsRate = g_earningsRate;
+    }
+
+    function _loadLiquidationSpread(
+        WorldState memory worldState
+    )
+        private
+        view
+    {
+        worldState.liquidationSpread = g_liquidationSpread;
     }
 
     function _loadPrice(
@@ -383,26 +415,29 @@ contract WorldManager is
         view
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            address trader = worldState.accounts[a].info.trader;
+            address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
             for (uint256 i = 0; i < worldState.assets.length; i++) {
-                worldState.accounts[a].balance[i] =
-                    worldState.accounts[a].oldBalance[i] =
-                        g_accounts[trader][account].balances[i];
+                // load balance from memory
+                worldState.accounts[a].oldBalance[i] = g_accounts[owner][account].balances[i];
+
+                // copy-by-value into balance
+                worldState.accounts[a].balance[i].sign = worldState.accounts[a].oldBalance[i].sign;
+                worldState.accounts[a].balance[i].value = worldState.accounts[a].oldBalance[i].value;
             }
         }
     }
 
-    function _loadClosingTimes(
+    function _loadLiquidationTimes(
         WorldState memory worldState
     )
         private
         view
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            address trader = worldState.accounts[a].info.trader;
+            address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
-            worldState.accounts[a].closingTime = g_accounts[trader][account].closingTime;
+            worldState.accounts[a].liquidationTime = g_accounts[owner][account].liquidationTime;
         }
     }
 
@@ -416,9 +451,9 @@ contract WorldManager is
         _verifyWorldState(worldState);
 
         _storeIndexes(worldState);
-        _storeTotalNominals(worldState);
+        _storeTotalPars(worldState);
         _storeBalances(worldState);
-        _storeClosingTimes(worldState);
+        _storeLiquidationTimes(worldState);
     }
 
     function _storeIndexes(
@@ -439,42 +474,47 @@ contract WorldManager is
         }
     }
 
-    function _storeTotalNominals(
+    function _storeTotalPars(
         WorldState memory worldState
     )
         private
     {
         for (uint256 i = 0; i < worldState.assets.length; i++) {
-            Interest.TotalNominal memory total = g_markets[i].totalNominal;
-            bool modified = false;
+            // load from storage
+            Interest.TotalPar memory oldTotal = g_markets[i].totalPar;
+
+            // copy-by-value into newTotal
+            Interest.TotalPar memory newTotal;
+            newTotal.supply = oldTotal.supply;
+            newTotal.borrow = oldTotal.borrow;
 
             for (uint256 a = 0; a < worldState.accounts.length; a++) {
-                Types.Par memory b0 = wsGetOldBalance(worldState, a, i);
-                Types.Par memory b1 = wsGetBalance(worldState, a, i);
+                Types.Par memory oldPar = wsGetInitialBalance(worldState, a, i);
+                Types.Par memory newPar = wsGetBalance(worldState, a, i);
 
-                if (Types.equals(b0, b1)) {
+                if (Types.equals(oldPar, newPar)) {
                     continue;
                 }
 
-                modified = true;
-
                 // roll-back oldBalance
-                if (b0.sign) {
-                    total.supply = total.supply.sub(b0.value).to128();
+                if (oldPar.sign) {
+                    newTotal.supply = newTotal.supply.sub(oldPar.value).to128();
                 } else {
-                    total.borrow = total.borrow.sub(b0.value).to128();
+                    newTotal.borrow = newTotal.borrow.sub(oldPar.value).to128();
                 }
 
                 // roll-forward newBalance
-                if (b1.sign) {
-                    total.supply = total.supply.sub(b1.value).to128();
+                if (newPar.sign) {
+                    newTotal.supply = newTotal.supply.sub(newPar.value).to128();
                 } else {
-                    total.borrow = total.borrow.sub(b1.value).to128();
+                    newTotal.borrow = newTotal.borrow.sub(newPar.value).to128();
                 }
             }
 
-            if (modified) {
-                g_markets[i].totalNominal = total;
+            // write to storage if modified
+            if (newTotal.borrow != oldTotal.borrow || newTotal.supply != oldTotal.supply) {
+                require(newTotal.supply >= newTotal.borrow);
+                g_markets[i].totalPar = newTotal;
             }
         }
     }
@@ -485,29 +525,33 @@ contract WorldManager is
         private
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            address trader = worldState.accounts[a].info.trader;
+            address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
             for (uint256 i = 0; i < worldState.assets.length; i++) {
-                Types.Par memory b1 = worldState.accounts[a].oldBalance[i];
-                Types.Par memory b2 = worldState.accounts[a].balance[i];
-                if (!Types.equals(b1, b2)) {
-                    g_accounts[trader][account].balances[i] = b2;
+                Types.Par memory oldPar = worldState.accounts[a].oldBalance[i];
+                Types.Par memory newPar = worldState.accounts[a].balance[i];
+                if (!Types.equals(oldPar, newPar)) {
+                    g_accounts[owner][account].balances[i] = newPar;
                 }
             }
         }
     }
 
-    function _storeClosingTimes(
+    function _storeLiquidationTimes(
         WorldState memory worldState
     )
         private
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            address trader = worldState.accounts[a].info.trader;
+            address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
-            uint32 newTime = worldState.accounts[a].closingTime;
-            if (g_accounts[trader][account].closingTime != newTime) {
-                g_accounts[trader][account].closingTime = newTime;
+            uint32 newTime = worldState.accounts[a].liquidationTime;
+
+            // reset liquidation time if no
+            if (worldState.accounts[a].checkPermission) {
+                g_accounts[owner][account].liquidationTime = 0;
+            } else if (g_accounts[owner][account].liquidationTime != newTime) {
+                g_accounts[owner][account].liquidationTime = newTime;
             }
         }
     }
@@ -528,10 +572,10 @@ contract WorldManager is
                 continue;
             }
 
-            address trader = worldState.accounts[a].info.trader;
+            address owner = worldState.accounts[a].info.owner;
             require(
-                trader == msg.sender
-                || g_trustedAddress[trader][msg.sender]
+                owner == msg.sender
+                || g_trustedAddress[owner][msg.sender]
                 // TODO: add other forms of authentication (onBehalfOf)
             );
         }
@@ -543,26 +587,6 @@ contract WorldManager is
                 continue;
             }
             _verifyCollateralization(worldState, a);
-        }
-
-        // ensure token balances
-        for (uint256 i = 0 ; i < worldState.assets.length; i++) {
-            Types.Wei memory held = Token.thisBalance(worldState.assets[i].token);
-            Types.Par memory lent = Types.Par({
-                sign: true,
-                value: g_markets[i].totalNominal.supply
-            });
-            Types.Par memory borrowed = Types.Par({
-                sign: false,
-                value: g_markets[i].totalNominal.borrow
-            });
-            Types.Wei memory lentWei =
-                Interest.parToWei(lent, worldState.assets[i].index);
-            Types.Wei memory borrowedWei =
-                Interest.parToWei(borrowed, worldState.assets[i].index);
-            Types.Wei memory expected = lentWei.sub(borrowedWei);
-            require(expected.sign, "We cannot expect more to be borrowed than lent");
-            require(held.value >= expected.value, "We dont have as many tokens as expected");
         }
     }
 
@@ -585,8 +609,8 @@ contract WorldManager is
         view
         returns (bool)
     {
-        Price.Value memory lentValue;
-        Price.Value memory borrowedValue;
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
 
         for (uint256 i = 0; i < worldState.assets.length; i++) {
             Types.Par memory balance = worldState.accounts[accountId].balance[i];
@@ -597,20 +621,20 @@ contract WorldManager is
 
             Types.Wei memory tokenWei = Interest.parToWei(balance, worldState.assets[i].index);
 
-            Price.Value memory overallValue = Price.getTotalValue(
+            Monetary.Value memory overallValue = Monetary.getValue(
                 worldState.assets[i].price,
                 tokenWei.value
             );
 
             if (tokenWei.sign) {
-                lentValue = Price.add(lentValue, overallValue);
+                supplyValue = Monetary.add(supplyValue, overallValue);
             } else {
-                borrowedValue = Price.add(borrowedValue, overallValue);
+                borrowValue = Monetary.add(borrowValue, overallValue);
             }
         }
 
-        if (borrowedValue.value > 0) {
-            if (lentValue.value < Decimal.mul(g_liquidationRatio, borrowedValue.value)) {
+        if (borrowValue.value > 0) {
+            if (supplyValue.value < Decimal.mul(g_liquidationRatio, borrowValue.value)) {
                 return false;
             }
         }
@@ -625,6 +649,8 @@ contract WorldManager is
         view
         returns (address)
     {
+        // TODO: move this function somewhere else
+        // TODO: consider making it address (0x1). Slightly less error prone but 64 more gas per address
         return a == address(0) ? msg.sender : a;
     }
 }

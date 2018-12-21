@@ -16,11 +16,11 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Price } from "../lib/Price.sol";
+import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
@@ -33,19 +33,6 @@ contract PriceOracle is IPriceOracle{
 
     mapping (address => uint128) g_prices;
 
-    function getPrice(
-        address token
-    )
-        public
-        view
-        returns (Price.Price memory)
-    {
-        // TODO: this whole contract
-        return Price.Price({
-            value: g_prices[token]
-        });
-    }
-
     function setPrice(
         address token,
         uint128 price
@@ -53,5 +40,19 @@ contract PriceOracle is IPriceOracle{
         external
     {
         g_prices[token] = price;
+    }
+
+    function getPrice(
+        address token
+    )
+        public
+        view
+        returns (Monetary.Price memory)
+    {
+        // TODO: this whole contract
+        require(g_prices[token] != 0);
+        return Monetary.Price({
+            value: g_prices[token]
+        });
     }
 }

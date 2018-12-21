@@ -16,11 +16,12 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
 import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
+
 
 /**
  * @title Exchange
@@ -45,7 +46,7 @@ library Exchange {
 
         Types.Wei memory result;
         result.sign = false;
-            result.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
+        result.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
             supplyToken,
             borrowToken,
             desiredAmount.value,

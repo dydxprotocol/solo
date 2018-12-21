@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Types } from "./Types.sol";
 import { IErc20 } from "../interfaces/IErc20.sol";

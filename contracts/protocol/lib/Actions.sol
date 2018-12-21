@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 
 import { Math } from "./Math.sol";
 import { Types } from "./Types.sol";
@@ -34,44 +34,39 @@ library Actions {
     // ============ Enums ============
 
     enum TransactionType {
-        ExternalTransfer, // supply tokens
-        InternalTransfer, // borrow tokens
-        Exchange,         // exchange one token for another on an external exchange
-        Liquidate,        // liquidate an undercollateralized or expiring account
-        SetExpiry         // set the expiry of your account
+        Deposit,  // supply tokens
+        Withdraw, // borrow tokens
+        Transfer, // transfer balance between accounts
+        Buy,      // acquire an amount of some token
+        Sell,     // sell-off an amount of some token
+        Liquidate // liquidate an undercollateralized or expiring account
     }
 
-    enum AmountDenomination {
+    enum AssetDenomination {
         Wei, // the amount is denominated in token amount
         Par  // the amount is denominated in principal
     }
 
-    enum AmountReference {
+    enum AssetRefPoint {
         Delta, // the amount is given as a delta from the current value
         Target // the amount is given as an exact number to end up at
     }
 
-    enum AmountIntention {
-        Supply, // the amount applies to the supplyAsset
-        Borrow // the amount applies to the borrowAsset
-    }
-
     // ============ Structs ============
 
-    struct Amount {
+    struct AssetAmount {
         bool sign;
-        AmountIntention intent;
-        AmountDenomination denom;
-        AmountReference ref;
+        AssetDenomination denomination;
+        AssetRefPoint refPoint;
         uint256 value;
     }
 
     struct TransactionArgs {
         TransactionType transactionType;
         uint256 accountId;
-        Amount amount;
-        uint256 supplyMarketId;
-        uint256 borrowMarketId;
+        AssetAmount amount;
+        uint256 primaryMarketId;
+        uint256 secondaryMarketId;
         address otherAddress;
         uint256 otherAccountId;
         bytes orderData;
@@ -79,89 +74,135 @@ library Actions {
 
     // ============ Action Types ============
 
-    struct ExternalTransferArgs {
+    struct DepositArgs {
         uint256 accountId;
-        Amount amount;
+        AssetAmount amount;
         uint256 marketId;
-        address otherAddress;
+        address from;
     }
 
-    struct InternalTransferArgs {
+    struct WithdrawArgs {
         uint256 accountId;
-        Amount amount;
+        AssetAmount amount;
+        uint256 marketId;
+        address to;
+    }
+
+    struct TransferArgs {
+        uint256 accountId;
+        AssetAmount amount;
         uint256 marketId;
         uint256 otherAccountId;
     }
 
-    struct ExchangeArgs {
+    struct BuyArgs {
         uint256 accountId;
-        Amount amount;
-        uint256 borrowMarketId;
-        uint256 supplyMarketId;
+        AssetAmount amount;
+        uint256 buyMarketId;
+        uint256 sellMarketId;
+        address exchangeWrapper;
+        bytes orderData;
+    }
+
+    struct SellArgs {
+        uint256 accountId;
+        AssetAmount amount;
+        uint256 sellMarketId;
+        uint256 buyMarketId;
         address exchangeWrapper;
         bytes orderData;
     }
 
     struct LiquidateArgs {
-        uint256 accountId;
-        Amount amount;
-        uint256 borrowMarketId;
-        uint256 supplyMarketId;
         uint256 liquidAccountId;
-    }
-
-    struct SetExpiryArgs {
-        uint256 accountId;
-        uint32 time;
+        AssetAmount amount;
+        uint256 underwaterMarketId;
+        uint256 collateralMarketId;
+        uint256 stableAccountId;
     }
 
     // ============ Parsing Functions ============
 
-    function parseExternalTransferArgs(
+    function parseDepositArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (ExternalTransferArgs memory)
+        returns (DepositArgs memory)
     {
-        assert(args.transactionType == TransactionType.ExternalTransfer);
-        return ExternalTransferArgs({
+        assert(args.transactionType == TransactionType.Deposit);
+        return DepositArgs({
             accountId: args.accountId,
             amount: args.amount,
-            marketId: args.amount.intent == AmountIntention.Supply ? args.supplyMarketId : args.borrowMarketId,
-            otherAddress: args.otherAddress
+            marketId: args.primaryMarketId,
+            from: args.otherAddress
         });
     }
 
-    function parseInternalTransferArgs(
+    function parseWithdrawArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (InternalTransferArgs memory)
+        returns (WithdrawArgs memory)
     {
-        assert(args.transactionType == TransactionType.InternalTransfer);
-        return InternalTransferArgs({
+        assert(args.transactionType == TransactionType.Withdraw);
+        return WithdrawArgs({
             accountId: args.accountId,
             amount: args.amount,
-            marketId: args.amount.intent == AmountIntention.Supply ? args.supplyMarketId : args.borrowMarketId,
+            marketId: args.primaryMarketId,
+            to: args.otherAddress
+        });
+    }
+
+    function parseTransferArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (TransferArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Transfer);
+        require(args.accountId != args.otherAccountId);
+        return TransferArgs({
+            accountId: args.accountId,
+            amount: args.amount,
+            marketId: args.primaryMarketId,
             otherAccountId: args.otherAccountId
         });
     }
 
-    function parseExchangeArgs(
+    function parseBuyArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (ExchangeArgs memory)
+        returns (BuyArgs memory)
     {
-        assert(args.transactionType == TransactionType.Exchange);
-        return ExchangeArgs({
+        assert(args.transactionType == TransactionType.Buy);
+        return BuyArgs({
             accountId: args.accountId,
             amount: args.amount,
-            supplyMarketId: args.supplyMarketId,
-            borrowMarketId: args.borrowMarketId,
+            buyMarketId: args.primaryMarketId,
+            sellMarketId: args.secondaryMarketId,
+            exchangeWrapper: args.otherAddress,
+            orderData: args.orderData
+        });
+    }
+
+    function parseSellArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (SellArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Sell);
+        return SellArgs({
+            accountId: args.accountId,
+            amount: args.amount,
+            sellMarketId: args.primaryMarketId,
+            buyMarketId: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.orderData
         });
@@ -175,52 +216,14 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
+        require(args.primaryMarketId != args.secondaryMarketId);
+        require(args.accountId != args.otherAccountId);
         return LiquidateArgs({
-            accountId: args.accountId,
+            liquidAccountId: args.accountId,
             amount: args.amount,
-            supplyMarketId: args.supplyMarketId,
-            borrowMarketId: args.borrowMarketId,
-            liquidAccountId: args.otherAccountId
-        });
-    }
-
-    function parseSetExpiryArgs(
-        TransactionArgs memory args
-    )
-        internal
-        pure
-        returns (SetExpiryArgs memory)
-    {
-        assert(args.transactionType == TransactionType.SetExpiry);
-        return SetExpiryArgs({
-            accountId: args.accountId,
-            time: args.amount.value.to32()
-        });
-    }
-
-    function amountToPar(
-        Amount memory amount
-    )
-        internal
-        pure
-        returns (Types.Par memory)
-    {
-        return Types.Par({
-            sign: amount.sign,
-            value: amount.value.to128()
-        });
-    }
-
-    function amountToWei(
-        Amount memory amount
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: amount.sign,
-            value: amount.value
+            underwaterMarketId: args.primaryMarketId,
+            collateralMarketId: args.secondaryMarketId,
+            stableAccountId: args.otherAccountId
         });
     }
 }

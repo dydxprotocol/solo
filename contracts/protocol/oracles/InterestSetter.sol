@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -49,7 +49,8 @@ contract InterestSetter is
 
     function getInterestRate(
         address token,
-        Interest.TotalNominal memory totalNominal
+        uint256 borrowWei,
+        uint256 supplyWei
     )
         public
         view
@@ -57,7 +58,8 @@ contract InterestSetter is
     {
         // TODO: this whole contract
         token;
-        totalNominal;
-        return Interest.Rate({ value: 10**18 });
+        borrowWei;
+        supplyWei;
+        return Interest.Rate({ value: 10**9 });
     }
 }

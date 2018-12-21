@@ -16,10 +16,11 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity 0.5.2;
 pragma experimental ABIEncoderV2;
 
 import { Admin } from "./impl/Admin.sol";
+import { Permissions } from "./impl/Permissions.sol";
 import { Queries } from "./impl/Queries.sol";
 import { TransactionLogic } from "./impl/TransactionLogic.sol";
 
@@ -32,6 +33,7 @@ import { TransactionLogic } from "./impl/TransactionLogic.sol";
  */
 contract SoloMargin is
     TransactionLogic,
+    Permissions,
     Admin,
     Queries
 {
