@@ -35,8 +35,8 @@ jobs:
           name: Install Docker
           command: apk add docker
       - run:
-          name: Pull solc
-          command: docker pull ethereum/solc:0.5.1
+          name: Install Compiler
+          command: npm run install_compiler
       - run:
           name: Compile contracts
           command: npm run compile -- --all
