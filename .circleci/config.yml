@@ -25,12 +25,16 @@ jobs:
   build:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
+      - image: ethereum/solc:0.5.1
     working_directory: ~/build
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - setup_remote_docker:
           docker_layer_caching: true
+      - add_docker:
+          name: Install Docker
+          command: apk add docker
       - run:
           name: Pull solc
           command: docker pull ethereum/solc:0.5.1
