@@ -25,7 +25,6 @@ jobs:
   build:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
-      - image: ethereum/solc:0.5.1
     working_directory: ~/build
     steps:
       - restore_cache:
