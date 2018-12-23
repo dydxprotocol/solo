@@ -16,3 +16,26 @@
 </p>
 
 Source code for Ethereum Smart Contracts used by the dYdX Solo-Margin Trading Protocol
+
+## Development
+
+### Compile Contracts
+
+You must be running Docker
+
+```
+npm run install_compiler
+npm run build
+```
+
+### Compile TypeScript
+
+```
+npm run build:js
+```
+
+### Test
+
+```
+npm test
+```

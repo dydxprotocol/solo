@@ -19,7 +19,8 @@
   "include": [
     "src",
     "test",
-    "migrations"
+    "migrations",
+    "scripts"
   ],
   "compileOnSave": true
 }
