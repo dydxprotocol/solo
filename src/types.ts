@@ -58,8 +58,8 @@ export interface Amount {
 export type address = string;
 
 export interface AccountOperation {
-  mainAccountOwner: address;
-  mainAccountId: BN;
+  primaryAccountOwner: address;
+  primaryAccountId: BN;
   amount: Amount;
 }
 
@@ -82,8 +82,8 @@ export interface Transfer extends AccountOperation {
 }
 
 export interface Exchange extends AccountOperation {
-  baseMarketId: BN;
-  quoteMarketId: BN;
+  takerMarketId: BN;
+  makerMarketId: BN;
   order: Order;
 }
 
@@ -98,7 +98,7 @@ export interface Liquidate extends AccountOperation {
 }
 
 export interface AccountInfo {
-  trader: string;
+  owner: string;
   account: number | string;
 }
 
@@ -107,13 +107,12 @@ export interface TransactionArgs {
   accountId: number | string;
   amount: {
     sign: boolean;
-    intent: number | string;
-    denom: number | string;
-    ref: number | string;
+    denomination: number | string;
+    refPoint: number | string;
     value: number | string;
   };
-  supplyMarketId: number | string;
-  borrowMarketId: number | string;
+  primaryMarketId: number | string;
+  secondaryMarketId: number | string;
   otherAddress: string;
   otherAccountId: number | string;
   orderData: (string | number[])[];

@@ -19,7 +19,7 @@ import {
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
-  mainMarketId?: number | string;
+  primaryMarketId?: number | string;
   secondaryMarketId?: number | string;
   otherAddress?: string;
   otherAccountId?: number | string;
@@ -54,7 +54,7 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Deposit,
         otherAddress: deposit.from,
-        mainMarketId: deposit.marketId.toString(),
+        primaryMarketId: deposit.marketId.toString(),
       },
     );
 
@@ -67,7 +67,7 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Withdraw,
         otherAddress: withdraw.to,
-        mainMarketId: withdraw.marketId.toString(),
+        primaryMarketId: withdraw.marketId.toString(),
       },
     );
 
@@ -79,7 +79,7 @@ export class AccountTransaction {
       transfer,
       {
         transactionType: TransactionType.Transfer,
-        mainMarketId: transfer.marketId.toString(),
+        primaryMarketId: transfer.marketId.toString(),
         otherAddress: transfer.toAccountOwner,
         otherAccountId: transfer.toAccountId.toString(),
       },
@@ -101,7 +101,7 @@ export class AccountTransaction {
       liquidate,
       {
         transactionType: TransactionType.Liquidate,
-        mainMarketId: liquidate.liquidMarketId.toString(),
+        primaryMarketId: liquidate.liquidMarketId.toString(),
         secondaryMarketId: liquidate.payoutMarketId.toString(),
         otherAddress: liquidate.liquidAccountOwner,
         otherAccountId: liquidate.liquidAccountId.toString(),
@@ -153,8 +153,8 @@ export class AccountTransaction {
         otherAddress: exchangeWrapperAddress,
         orderData: [bytes],
          // TODO are these right? idk how contracts implemented
-        mainMarketId: exchange.baseMarketId.toString(),
-        secondaryMarketId: exchange.quoteMarketId.toString(),
+        primaryMarketId: exchange.takerMarketId.toString(),
+        secondaryMarketId: exchange.makerMarketId.toString(),
       },
     );
 
@@ -171,8 +171,8 @@ export class AccountTransaction {
 
     const amount = {
       sign: !operation.amount.value.isNeg(),
-      denom: operation.amount.denomination,
-      ref: operation.amount.reference,
+      denomination: operation.amount.denomination,
+      refPoint: operation.amount.reference,
       value: operation.amount.value.abs().toString(10),
     };
     const a = { // TODO remove when contracts updated
@@ -183,24 +183,20 @@ export class AccountTransaction {
       amount: a,
       accountId: this.getAccountId(operation),
       transactionType: args.transactionType,
-      supplyMarketId: args.mainMarketId || '', // TODO change when contracts updated
-      borrowMarketId: args.secondaryMarketId || '',
+      primaryMarketId: args.primaryMarketId || '', // TODO change when contracts updated
+      secondaryMarketId: args.secondaryMarketId || '',
       otherAddress: args.otherAddress || '',
       otherAccountId: args.otherAccountId || '',
       orderData: args.orderData || [],
     };
-
-    if (args.intent) {
-      transactionArgs.amount.intent = args.intent;
-    }
 
     this.operations.push(transactionArgs);
   }
 
   private getAccountId(operation: AccountOperation): number {
     const accountInfo: AccountInfo = {
-      trader: operation.mainAccountOwner,
-      account: operation.mainAccountId.toString(),
+      owner: operation.primaryAccountOwner,
+      account: operation.primaryAccountId.toString(),
     };
 
     const index = this.accounts.indexOf(accountInfo);
