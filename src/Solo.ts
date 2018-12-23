@@ -19,12 +19,14 @@
 import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
 import { EVM } from './lib/EVM';
-import { Transaction } from './modules/Transaction';
+import { Transaction } from './modules/transact/Transaction';
+import { Token } from './modules/Token';
 
 export class Solo {
   public contracts: Contracts;
   public evm: EVM;
   public transaction: Transaction;
+  public token: Token;
 
   constructor(
     provider: Provider,
@@ -33,6 +35,7 @@ export class Solo {
     this.contracts = new Contracts(provider, networkId);
     this.evm = new EVM(provider);
     this.transaction = new Transaction(this.contracts, networkId);
+    this.token = new Token(this.contracts);
   }
 
   public setProvider(

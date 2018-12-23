@@ -19,7 +19,9 @@
 import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
-import { abi as soloMarginABI } from '../../build/contracts/SoloMargin.json';
+import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
+import soloMarginJson from '../../build/contracts/SoloMargin.json';
+import erc20Json from '../../build/contracts/IErc20.json';
 import { TransactionObject, Block } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
 import { ContractCallOptions, TxResult } from '../types';
@@ -34,13 +36,15 @@ export class Contracts {
 
   public web3: Web3;
   public soloMargin: SoloMargin;
+  public erc20: ERC20;
 
   constructor(
     provider: Provider,
     networkId: number,
   ) {
     this.web3 = new Web3();
-    this.soloMargin = new this.web3.eth.Contract(soloMarginABI) as SoloMargin;
+    this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
+    this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.setProvider(provider, networkId);
   }
 
@@ -51,6 +55,19 @@ export class Contracts {
     this.web3.setProvider(provider);
     this.networkId = networkId;
     this.soloMargin.setProvider(provider);
+
+    this.setContractProvider(
+      this.soloMargin,
+      soloMarginJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.erc20,
+      erc20Json,
+      provider,
+      networkId,
+    );
   }
 
   public async callContractFunction<T>(
@@ -129,5 +146,16 @@ export class Contracts {
   private async setGasLimit(): Promise<void> {
     const block: Block = await this.web3.eth.getBlock('latest');
     this.blockGasLimit = block.gasLimit - SUBTRACT_GAS_LIMIT;
+  }
+
+  private setContractProvider(
+    contract: any,
+    contractJson: any,
+    provider: Provider,
+    networkId: number,
+  ): void {
+    contract.setProvider(provider);
+    contract.options.address = contractJson.networks[networkId]
+      && contractJson.networks[networkId].address;
   }
 }

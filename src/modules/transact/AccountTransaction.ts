@@ -1,6 +1,6 @@
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
-import { Contracts } from '../lib/Contracts';
+import { Contracts } from '../../lib/Contracts';
 import {
   AccountOperation,
   Deposit,
@@ -15,7 +15,7 @@ import {
   Transfer,
   Liquidate,
   AccountInfo,
-} from '../types';
+} from '../../types';
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
