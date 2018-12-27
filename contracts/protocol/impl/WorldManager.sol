@@ -23,6 +23,7 @@ import { Storage } from "./Storage.sol";
 import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Actions } from "../lib/Actions.sol";
+import { Address } from "../lib/Address.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
@@ -122,6 +123,18 @@ contract WorldManager is
         }
         return worldState.assets[marketId].price;
     }
+
+    function wsGetOwner(
+        WorldState memory worldState,
+        uint256 accountId
+    )
+        internal
+        pure
+        returns (address)
+    {
+        return worldState.accounts[accountId].info.owner;
+    }
+
 
     function wsGetLiquidationTime(
         WorldState memory worldState,
@@ -237,7 +250,7 @@ contract WorldManager is
      * Determines and sets an account's balance based on the intended balance change. Returns the
      * equivalent amount in wei
      */
-    function wsSetBalanceFromAssetAmount(
+    function wsGetNewParAndDeltaWei(
         WorldState memory worldState,
         uint256 accountId,
         uint256 marketId,
@@ -245,21 +258,21 @@ contract WorldManager is
     )
         internal
         view
-        returns (Types.Wei memory)
+        returns (Types.Par memory, Types.Wei memory)
     {
-        Types.Par memory newPar;
-        Types.Wei memory deltaWei;
-
         Interest.Index memory index = wsGetIndex(worldState, marketId);
         Types.Par memory oldPar = wsGetBalance(worldState, accountId, marketId);
         Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
+
+        Types.Par memory newPar;
+        Types.Wei memory deltaWei;
 
         if (amount.denomination == Actions.AssetDenomination.Wei) {
             deltaWei = Types.Wei({
                 sign: amount.sign,
                 value: amount.value
             });
-            if (amount.refPoint == Actions.AssetRefPoint.Target) {
+            if (amount.ref == Actions.AssetReference.Target) {
                 deltaWei = deltaWei.sub(oldWei);
             }
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
@@ -269,20 +282,13 @@ contract WorldManager is
                 sign: amount.sign,
                 value: amount.value.to128()
             });
-            if (amount.refPoint == Actions.AssetRefPoint.Delta) {
+            if (amount.ref == Actions.AssetReference.Delta) {
                 newPar = oldPar.add(newPar);
             }
             deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
         }
 
-        wsSetBalance(
-            worldState,
-            accountId,
-            marketId,
-            newPar
-        );
-
-        return deltaWei;
+        return (newPar, deltaWei);
     }
 
     function wsSetLiquidationTime(
@@ -307,11 +313,12 @@ contract WorldManager is
     {
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
+            address ownerI = Address.trueAddress(accounts[i].owner);
+            uint256 accountI = accounts[i].account;
             for (uint256 j = i + 1; j < accounts.length; j++) {
-                require(
-                    (trueAddress(accounts[i].owner) != trueAddress(accounts[j].owner))
-                    || (accounts[i].account != accounts[j].account)
-                );
+                address ownerJ = Address.trueAddress(accounts[j].owner);
+                uint256 accountJ = accounts[j].account;
+                require(ownerI != ownerJ || accountI != accountJ);
             }
         }
 
@@ -322,7 +329,7 @@ contract WorldManager is
 
         // load all account information aggressively
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            worldState.accounts[a].info.owner = trueAddress(accounts[a].owner);
+            worldState.accounts[a].info.owner = Address.trueAddress(accounts[a].owner);
             worldState.accounts[a].info.account = accounts[a].account;
             worldState.accounts[a].balance = new Types.Par[](worldState.assets.length);
             worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
@@ -359,7 +366,7 @@ contract WorldManager is
         }
 
         // get previous rate
-        Interest.TotalPar memory totalPar = g_markets[marketId].totalPar;
+        Types.TotalPar memory totalPar = g_markets[marketId].totalPar;
         (
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei
@@ -481,10 +488,10 @@ contract WorldManager is
     {
         for (uint256 i = 0; i < worldState.assets.length; i++) {
             // load from storage
-            Interest.TotalPar memory oldTotal = g_markets[i].totalPar;
+            Types.TotalPar memory oldTotal = g_markets[i].totalPar;
 
             // copy-by-value into newTotal
-            Interest.TotalPar memory newTotal;
+            Types.TotalPar memory newTotal;
             newTotal.supply = oldTotal.supply;
             newTotal.borrow = oldTotal.borrow;
 
@@ -640,17 +647,5 @@ contract WorldManager is
         }
 
         return true;
-    }
-
-    function trueAddress(
-        address a
-    )
-        private
-        view
-        returns (address)
-    {
-        // TODO: move this function somewhere else
-        // TODO: consider making it address (0x1). Slightly less error prone but 64 more gas per address
-        return a == address(0) ? msg.sender : a;
     }
 }

@@ -43,7 +43,7 @@ contract Storage {
 
     struct Market {
         address token;
-        Interest.TotalPar totalPar;
+        Types.TotalPar totalPar;
         Interest.Index index;
         IPriceOracle priceOracle;
         IInterestSetter interestSetter;

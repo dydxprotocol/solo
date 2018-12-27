@@ -47,7 +47,7 @@ library Actions {
         Par  // the amount is denominated in principal
     }
 
-    enum AssetRefPoint {
+    enum AssetReference {
         Delta, // the amount is given as a delta from the current value
         Target // the amount is given as an exact number to end up at
     }
@@ -57,7 +57,7 @@ library Actions {
     struct AssetAmount {
         bool sign;
         AssetDenomination denomination;
-        AssetRefPoint refPoint;
+        AssetReference ref;
         uint256 value;
     }
 
@@ -98,8 +98,8 @@ library Actions {
     struct BuyArgs {
         uint256 accountId;
         AssetAmount amount;
-        uint256 buyMarketId;
-        uint256 sellMarketId;
+        uint256 makerMarketId;
+        uint256 takerMarketId;
         address exchangeWrapper;
         bytes orderData;
     }
@@ -107,8 +107,8 @@ library Actions {
     struct SellArgs {
         uint256 accountId;
         AssetAmount amount;
-        uint256 sellMarketId;
-        uint256 buyMarketId;
+        uint256 takerMarketId;
+        uint256 makerMarketId;
         address exchangeWrapper;
         bytes orderData;
     }
@@ -183,8 +183,8 @@ library Actions {
         return BuyArgs({
             accountId: args.accountId,
             amount: args.amount,
-            buyMarketId: args.primaryMarketId,
-            sellMarketId: args.secondaryMarketId,
+            makerMarketId: args.primaryMarketId,
+            takerMarketId: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.orderData
         });
@@ -201,8 +201,8 @@ library Actions {
         return SellArgs({
             accountId: args.accountId,
             amount: args.amount,
-            sellMarketId: args.primaryMarketId,
-            buyMarketId: args.secondaryMarketId,
+            takerMarketId: args.primaryMarketId,
+            makerMarketId: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.orderData
         });

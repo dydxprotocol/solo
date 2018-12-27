@@ -58,6 +58,7 @@ library Exchange {
 
     function exchange(
         address exchangeWrapper,
+        address accountOwner,
         address supplyToken,
         address borrowToken,
         Types.Wei memory requestedFillAmount,
@@ -73,7 +74,7 @@ library Exchange {
         Types.Wei memory result;
         result.sign = true;
         result.value = IExchangeWrapper(exchangeWrapper).exchange(
-            msg.sender,
+            accountOwner,
             address(this),
             supplyToken,
             borrowToken,

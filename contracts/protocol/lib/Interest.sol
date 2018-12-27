@@ -48,11 +48,6 @@ library Interest {
         uint256 value;
     }
 
-    struct TotalPar {
-        uint128 borrow;
-        uint128 supply;
-    }
-
     struct Index {
         uint96 borrow;
         uint96 supply;
@@ -64,7 +59,7 @@ library Interest {
     function calculateNewIndex(
         Index memory index,
         Rate memory rate,
-        TotalPar memory totalPar,
+        Types.TotalPar memory totalPar,
         Decimal.D256 memory earningsRate
     )
         internal
@@ -154,7 +149,7 @@ library Interest {
     }
 
     function totalParToWei(
-        TotalPar memory totalPar,
+        Types.TotalPar memory totalPar,
         Index memory index
     )
         internal

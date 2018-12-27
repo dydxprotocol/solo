@@ -35,6 +35,11 @@ library Types {
 
     // ============ Par (Principal Amount) ============
 
+    struct TotalPar {
+        uint128 borrow;
+        uint128 supply;
+    }
+
     struct Par {
         bool sign;
         uint128 value;

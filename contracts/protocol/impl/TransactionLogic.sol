@@ -103,18 +103,28 @@ contract TransactionLogic is
     )
         private
     {
+        require(args.from == msg.sender || args.from == wsGetOwner(worldState, args.accountId));
+
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.accountId,
             args.marketId,
             args.amount
         );
 
-        address token = wsGetToken(worldState, args.marketId);
+        wsSetBalance(
+            worldState,
+            args.accountId,
+            args.marketId,
+            newPar
+        );
 
-        require(msg.sender == args.from || g_trustedAddress[args.from][msg.sender]);
+        address token = wsGetToken(worldState, args.marketId);
 
         // requires a positive deltaWei
         Token.transferIn(token, args.from, deltaWei);
@@ -128,11 +138,21 @@ contract TransactionLogic is
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.accountId,
             args.marketId,
             args.amount
+        );
+
+        wsSetBalance(
+            worldState,
+            args.accountId,
+            args.marketId,
+            newPar
         );
 
         address token = wsGetToken(worldState, args.marketId);
@@ -151,11 +171,21 @@ contract TransactionLogic is
         wsSetCheckPerimissions(worldState, args.accountId);
         wsSetCheckPerimissions(worldState, args.otherAccountId);
 
-        Types.Wei memory deltaWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.accountId,
             args.marketId,
             args.amount
+        );
+
+        wsSetBalance(
+            worldState,
+            args.accountId,
+            args.marketId,
+            newPar
         );
 
         wsSetBalanceFromDeltaWei(
@@ -174,42 +204,51 @@ contract TransactionLogic is
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        address borrowToken = wsGetToken(worldState, args.sellMarketId);
-        address supplyToken = wsGetToken(worldState, args.buyMarketId);
-        Types.Wei memory supplyWei;
-        Types.Wei memory borrowWei;
+        address takerToken = wsGetToken(worldState, args.takerMarketId);
+        address makerToken = wsGetToken(worldState, args.makerMarketId);
 
-        supplyWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory makerPar,
+            Types.Wei memory makerWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.accountId,
-            args.buyMarketId,
+            args.makerMarketId,
             args.amount
         );
 
-        borrowWei = Exchange.getCost(
+        Types.Wei memory takerWei = Exchange.getCost(
             args.exchangeWrapper,
-            supplyToken,
-            borrowToken,
-            borrowWei,
+            makerToken,
+            takerToken,
+            makerWei,
             args.orderData
+        );
+
+        Types.Wei memory tokensReceived = Exchange.exchange(
+            args.exchangeWrapper,
+            wsGetOwner(worldState, args.accountId),
+            makerToken,
+            takerToken,
+            takerWei,
+            args.orderData
+        );
+
+        require(tokensReceived.value >= makerWei.value);
+
+        wsSetBalance(
+            worldState,
+            args.accountId,
+            args.makerMarketId,
+            makerPar
         );
 
         wsSetBalanceFromDeltaWei(
             worldState,
             args.accountId,
-            args.sellMarketId,
-            borrowWei
+            args.takerMarketId,
+            takerWei
         );
-
-        Types.Wei memory tokensReceived = Exchange.exchange(
-            args.exchangeWrapper,
-            supplyToken,
-            borrowToken,
-            borrowWei,
-            args.orderData
-        );
-
-        require(tokensReceived.value >= supplyWei.value);
     }
 
     function _sell(
@@ -220,31 +259,40 @@ contract TransactionLogic is
     {
         wsSetCheckPerimissions(worldState, args.accountId);
 
-        address borrowToken = wsGetToken(worldState, args.sellMarketId);
-        address supplyToken = wsGetToken(worldState, args.buyMarketId);
-        Types.Wei memory supplyWei;
-        Types.Wei memory borrowWei;
+        address takerToken = wsGetToken(worldState, args.takerMarketId);
+        address makerToken = wsGetToken(worldState, args.makerMarketId);
 
-        borrowWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory takerPar,
+            Types.Wei memory takerWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.accountId,
-            args.sellMarketId,
+            args.takerMarketId,
             args.amount
         );
 
-        supplyWei = Exchange.exchange(
+        Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
-            supplyToken,
-            borrowToken,
-            borrowWei,
+            wsGetOwner(worldState, args.accountId),
+            makerToken,
+            takerToken,
+            takerWei,
             args.orderData
+        );
+
+        wsSetBalance(
+            worldState,
+            args.accountId,
+            args.takerMarketId,
+            takerPar
         );
 
         wsSetBalanceFromDeltaWei(
             worldState,
             args.accountId,
-            args.buyMarketId,
-            supplyWei
+            args.makerMarketId,
+            makerWei
         );
     }
 
@@ -272,7 +320,10 @@ contract TransactionLogic is
 
 
         // calculate the underwater to pay back
-        Types.Wei memory underwaterWei = wsSetBalanceFromAssetAmount(
+        (
+            Types.Par memory underwaterPar,
+            Types.Wei memory underwaterWei
+        ) = wsGetNewParAndDeltaWei(
             worldState,
             args.liquidAccountId,
             args.underwaterMarketId,
@@ -284,6 +335,13 @@ contract TransactionLogic is
             underwaterWei,
             args.underwaterMarketId,
             args.collateralMarketId
+        );
+
+        wsSetBalance(
+            worldState,
+            args.liquidAccountId,
+            args.underwaterMarketId,
+            underwaterPar
         );
 
         wsSetBalanceFromDeltaWei(

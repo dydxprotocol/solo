@@ -98,7 +98,7 @@ contract Queries is
     )
         public
         view
-        returns (Interest.TotalPar memory)
+        returns (Types.TotalPar memory)
     {
         return g_markets[marketId].totalPar;
     }
