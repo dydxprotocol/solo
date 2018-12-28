@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
@@ -205,15 +205,15 @@ contract Queries is
         return g_accounts[owner][account].balances[marketId];
     }
 
-    function getAccountLiquidationTime(
+    function getAccountLiquidationFlag(
         address owner,
         uint256 account
     )
         public
         view
-        returns (uint32)
+        returns (bool)
     {
-        return g_accounts[owner][account].liquidationTime;
+        return g_accounts[owner][account].liquidationFlag;
     }
 
     function getAccountValues(

@@ -56,7 +56,7 @@
   "dependencies": {
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^4.1.0",
-    "openzeppelin-solidity": "2.0.0"
+    "openzeppelin-solidity": "2.1.0-rc.2"
   },
   "devDependencies": {
     "@digix/tempo": "^0.2.0",
@@ -82,7 +82,7 @@
     "request-promise-native": "^1.0.5",
     "solidity-coverage": "0.5.01",
     "solium": "1.1.8",
-    "truffle": "5.0.0-beta.2",
+    "truffle": "5.0.0",
     "truffle-contract": "4.0.0",
     "web3": "1.0.0-beta.36",
     "websocket": "1.0.28"

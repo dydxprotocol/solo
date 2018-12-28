@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
@@ -27,9 +27,47 @@ import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
  * @title Exchange
  * @author dYdX
  *
- * This library contains basic functions for interacting with ExchangeWrappers
+ * This library contains wrapper functionsf for interacting with tokens and ExchangeWrappers using
+ * the Wei struct directly.
  */
 library Exchange {
+
+    function transferOut(
+        address token,
+        address to,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        require(
+            !deltaWei.sign
+        );
+
+        Token.transfer(
+            token,
+            to,
+            deltaWei.value
+        );
+    }
+
+    function transferIn(
+        address token,
+        address from,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        require(
+            deltaWei.sign
+        );
+
+        Token.transferFrom(
+            token,
+            from,
+            address(this),
+            deltaWei.value
+        );
+    }
 
     function getCost(
         address exchangeWrapper,
@@ -69,7 +107,7 @@ library Exchange {
     {
         require(!requestedFillAmount.sign);
 
-        Token.transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
+        transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
 
         Types.Wei memory result;
         result.sign = true;
@@ -82,7 +120,7 @@ library Exchange {
             orderData
         );
 
-        Token.transferIn(supplyToken, exchangeWrapper, result);
+        transferIn(supplyToken, exchangeWrapper, result);
 
         return result;
     }

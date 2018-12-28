@@ -16,9 +16,9 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**

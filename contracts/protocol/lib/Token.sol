@@ -16,9 +16,8 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
-import { Types } from "./Types.sol";
 import { IErc20 } from "../interfaces/IErc20.sol";
 
 
@@ -29,73 +28,100 @@ import { IErc20 } from "../interfaces/IErc20.sol";
  * This library contains basic functions for interacting with ERC20 tokens
  */
 library Token {
-
-    function thisBalance(
-        address token
+    function balanceOf(
+        address token,
+        address owner
     )
         internal
         view
-        returns (Types.Wei memory)
+        returns (uint256)
     {
-        return Types.Wei({
-            sign: true,
-            value: IErc20(token).balanceOf(address(this))
-        });
+        return IErc20(token).balanceOf(owner);
     }
 
-    function transferOut(
+    function allowance(
+        address token,
+        address owner,
+        address spender
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        return IErc20(token).allowance(owner, spender);
+    }
+
+    function approve(
+        address token,
+        address spender,
+        uint256 amount
+    )
+        internal
+    {
+        IErc20(token).approve(spender, amount);
+
+        require(
+            checkSuccess(),
+            "Token#approve: Approval failed"
+        );
+    }
+
+    function approveMax(
+        address token,
+        address spender
+    )
+        internal
+    {
+        approve(
+            token,
+            spender,
+            uint256(-1)
+        );
+    }
+
+    function transfer(
         address token,
         address to,
-        Types.Wei memory deltaWei
+        uint256 amount
     )
         internal
     {
-        require(
-            !deltaWei.sign
-        );
-
-        if (deltaWei.value == 0) {
+        address from = address(this);
+        if (
+            amount == 0
+            || from == to
+        ) {
             return;
         }
 
-        require(
-            IErc20(token).balanceOf(address(this)) >= deltaWei.value,
-            "TokenInteract#transferOut: Not enough tokens"
-        );
-
-        IErc20(token).transfer(to, deltaWei.value);
+        IErc20(token).transfer(to, amount);
 
         require(
             checkSuccess(),
-            "TokenInteract#transferOut: Transfer failed"
+            "Token#transfer: Transfer failed"
         );
     }
 
-    function transferIn(
+    function transferFrom(
         address token,
         address from,
-        Types.Wei memory deltaWei
+        address to,
+        uint256 amount
     )
         internal
     {
-        require(
-            deltaWei.sign
-        );
-
-        if (deltaWei.value == 0) {
+        if (
+            amount == 0
+            || from == to
+        ) {
             return;
         }
 
-        require(
-            IErc20(token).balanceOf(from) >= deltaWei.value,
-            "TokenInteract#transferIn: Not enough tokens"
-        );
-
-        IErc20(token).transferFrom(from, address(this), deltaWei.value);
+        IErc20(token).transferFrom(from, to, amount);
 
         require(
             checkSuccess(),
-            "TokenInteract#transferIn: TransferFrom failed"
+            "Token#transferFrom: TransferFrom failed"
         );
     }
 
@@ -105,7 +131,8 @@ library Token {
      * Checks the return value of the previous function up to 32 bytes. Returns true if the previous
      * function returned 0 bytes or 32 bytes that are not all-zero.
      */
-    function checkSuccess()
+    function checkSuccess(
+    )
         private
         pure
         returns (bool)

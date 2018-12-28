@@ -16,14 +16,13 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Storage } from "./Storage.sol";
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Actions } from "../lib/Actions.sol";
-import { Address } from "../lib/Address.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
@@ -46,7 +45,6 @@ contract WorldManager is
     using Types for Types.Par;
     using Types for Types.Wei;
     using SafeMath for uint256;
-    using SafeMath for uint128;
 
     // ============ Structs ============
 
@@ -66,7 +64,7 @@ contract WorldManager is
         AccountInfo info;
         Types.Par[] balance;
         Types.Par[] oldBalance;
-        uint32 liquidationTime;
+        bool liquidationFlag;
 
         // need to check permissions for every account that was touched except for ones that were
         // only liquidated
@@ -136,15 +134,15 @@ contract WorldManager is
     }
 
 
-    function wsGetLiquidationTime(
+    function wsGetLiquidationFlag(
         WorldState memory worldState,
         uint256 accountId
     )
         internal
         pure
-        returns (uint32)
+        returns (bool)
     {
-        return worldState.accounts[accountId].liquidationTime;
+        return worldState.accounts[accountId].liquidationFlag;
     }
 
     function wsGetBalance(
@@ -291,15 +289,14 @@ contract WorldManager is
         return (newPar, deltaWei);
     }
 
-    function wsSetLiquidationTime(
+    function wsSetLiquidationFlag(
         WorldState memory worldState,
-        uint256 accountId,
-        uint32 liquidationTime
+        uint256 accountId
     )
         internal
         pure
     {
-        worldState.accounts[accountId].liquidationTime = liquidationTime;
+        worldState.accounts[accountId].liquidationFlag = true;
     }
 
     // ============ Loading Functions ============
@@ -313,10 +310,10 @@ contract WorldManager is
     {
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
-            address ownerI = Address.trueAddress(accounts[i].owner);
+            address ownerI = accounts[i].owner;
             uint256 accountI = accounts[i].account;
             for (uint256 j = i + 1; j < accounts.length; j++) {
-                address ownerJ = Address.trueAddress(accounts[j].owner);
+                address ownerJ = accounts[j].owner;
                 uint256 accountJ = accounts[j].account;
                 require(ownerI != ownerJ || accountI != accountJ);
             }
@@ -329,13 +326,13 @@ contract WorldManager is
 
         // load all account information aggressively
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            worldState.accounts[a].info.owner = Address.trueAddress(accounts[a].owner);
+            worldState.accounts[a].info.owner = accounts[a].owner;
             worldState.accounts[a].info.account = accounts[a].account;
             worldState.accounts[a].balance = new Types.Par[](worldState.assets.length);
             worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
         }
         _loadBalances(worldState);
-        _loadLiquidationTimes(worldState);
+        _loadLiquidationFlags(worldState);
 
         // do not load any market information, load it lazily later
     }
@@ -435,7 +432,7 @@ contract WorldManager is
         }
     }
 
-    function _loadLiquidationTimes(
+    function _loadLiquidationFlags(
         WorldState memory worldState
     )
         private
@@ -444,7 +441,7 @@ contract WorldManager is
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
-            worldState.accounts[a].liquidationTime = g_accounts[owner][account].liquidationTime;
+            worldState.accounts[a].liquidationFlag = g_accounts[owner][account].liquidationFlag;
         }
     }
 
@@ -460,7 +457,7 @@ contract WorldManager is
         _storeIndexes(worldState);
         _storeTotalPars(worldState);
         _storeBalances(worldState);
-        _storeLiquidationTimes(worldState);
+        _storeLiquidationFlags(worldState);
     }
 
     function _storeIndexes(
@@ -505,16 +502,16 @@ contract WorldManager is
 
                 // roll-back oldBalance
                 if (oldPar.sign) {
-                    newTotal.supply = newTotal.supply.sub(oldPar.value).to128();
+                    newTotal.supply = uint256(newTotal.supply).sub(oldPar.value).to128();
                 } else {
-                    newTotal.borrow = newTotal.borrow.sub(oldPar.value).to128();
+                    newTotal.borrow = uint256(newTotal.borrow).sub(oldPar.value).to128();
                 }
 
                 // roll-forward newBalance
                 if (newPar.sign) {
-                    newTotal.supply = newTotal.supply.sub(newPar.value).to128();
+                    newTotal.supply = uint256(newTotal.supply).sub(newPar.value).to128();
                 } else {
-                    newTotal.borrow = newTotal.borrow.sub(newPar.value).to128();
+                    newTotal.borrow = uint256(newTotal.borrow).sub(newPar.value).to128();
                 }
             }
 
@@ -544,7 +541,7 @@ contract WorldManager is
         }
     }
 
-    function _storeLiquidationTimes(
+    function _storeLiquidationFlags(
         WorldState memory worldState
     )
         private
@@ -552,13 +549,12 @@ contract WorldManager is
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
-            uint32 newTime = worldState.accounts[a].liquidationTime;
+            bool flag =
+                worldState.accounts[a].liquidationFlag
+                && !worldState.accounts[a].checkPermission;
 
-            // reset liquidation time if no
-            if (worldState.accounts[a].checkPermission) {
-                g_accounts[owner][account].liquidationTime = 0;
-            } else if (g_accounts[owner][account].liquidationTime != newTime) {
-                g_accounts[owner][account].liquidationTime = newTime;
+            if (g_accounts[owner][account].liquidationFlag != flag) {
+                g_accounts[owner][account].liquidationFlag = flag;
             }
         }
     }

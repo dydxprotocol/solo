@@ -16,12 +16,13 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
 import { Actions } from "../protocol/lib/Actions.sol";
-import { Address } from "../protocol/lib/Address.sol";
+import { Token } from "../protocol/lib/Token.sol";
 import { IWeth } from "./interfaces/IWeth.sol";
 
 
@@ -31,7 +32,9 @@ import { IWeth } from "./interfaces/IWeth.sol";
  *
  * TODO
  */
-contract PayableProxyForSoloMargin {
+contract PayableProxyForSoloMargin is
+    ReentrancyGuard
+{
 
     SoloMargin public SOLO_MARGIN;
     IWeth public WETH;
@@ -44,7 +47,7 @@ contract PayableProxyForSoloMargin {
     {
         SOLO_MARGIN = SoloMargin(soloMargin);
         WETH = IWeth(weth);
-        WETH.approve(soloMargin, uint256(-1));
+        WETH.approve(soloMargin, uint(-1));
     }
 
     function transact(
@@ -53,20 +56,19 @@ contract PayableProxyForSoloMargin {
     )
         public
         payable
+        nonReentrant
     {
         // create WETH from ETH
-        WETH.deposit.value(msg.value)();
-
-        // replace the shorthand for each msg.sender
-        for (uint256 i = 0; i < accounts.length; i++) {
-            accounts[i].owner = Address.trueAddress(accounts[i].owner);
+        if (msg.value != 0) {
+            WETH.deposit.value(msg.value)();
         }
 
         // validate the input
         for (uint256 i = 0; i < args.length; i++) {
             // for each deposit, deposit.from must be this or msg.sender
             if (args[i].transactionType == Actions.TransactionType.Deposit) {
-                require(accounts[args[i].accountId].owner == msg.sender);
+                address depositFrom = Actions.parseDepositArgs(args[i]).from;
+                require(depositFrom == msg.sender || depositFrom == address(this));
             }
 
             // for each non-liquidate, account owner must be msg.sender

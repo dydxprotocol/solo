@@ -16,12 +16,12 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./Storage.sol";
-import { Ownable } from "../../tempzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
@@ -36,9 +36,9 @@ import { Monetary } from "../lib/Monetary.sol";
  * Administrative functions to keep the protocol updated
  */
 contract Admin is
-    Storage,
     Ownable,
-    ReentrancyGuard
+    ReentrancyGuard,
+    Storage
 {
     uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
     uint256 constant MIN_LIQUIDATION_RATIO  = 100 * 10**16; // 100%

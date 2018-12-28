@@ -16,10 +16,10 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "./Math.sol";
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -29,8 +29,6 @@ import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.so
  * TODO
  */
 library Types {
-    using SafeMath for uint256;
-    using SafeMath for uint128;
     using Math for uint256;
 
     // ============ Par (Principal Amount) ============
@@ -67,14 +65,14 @@ library Types {
         Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = a.value.add(b.value).to128();
+            result.value = SafeMath.add(uint256(a.value), uint256(b.value)).to128();
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = a.value.sub(b.value).to128();
+                result.value = SafeMath.sub(uint256(a.value), uint256(b.value)).to128();
             } else {
                 result.sign = b.sign;
-                result.value = b.value.sub(a.value).to128();
+                result.value = SafeMath.sub(uint256(b.value), uint256(a.value)).to128();
             }
         }
         return result;
@@ -107,6 +105,26 @@ library Types {
         });
     }
 
+    function isNonPositive(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0 || !a.sign;
+    }
+
+    function isNonNegative(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0 || a.sign;
+    }
+
     // ============ Wei (Token Amount) ============
 
     struct Wei {
@@ -136,15 +154,15 @@ library Types {
         Wei memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = a.value.add(b.value);
+            result.value = SafeMath.add(a.value, b.value);
         } else {
             result.sign = (a.value >= b.value);
             if (a.value > b.value) {
                 result.sign = a.sign;
-                result.value = a.value.sub(b.value);
+                result.value = SafeMath.sub(a.value, b.value);
             } else {
                 result.sign = b.sign;
-                result.value = b.value.sub(a.value);
+                result.value = SafeMath.sub(b.value, a.value);
             }
         }
         return result;

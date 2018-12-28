@@ -16,20 +16,19 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./Storage.sol";
 import { WorldManager } from "./WorldManager.sol";
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
-import { ReentrancyGuard } from "../../tempzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Time } from "../lib/Time.sol";
-import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -40,13 +39,12 @@ import { Types } from "../lib/Types.sol";
  * Logic for processing transactions
  */
 contract TransactionLogic is
+    ReentrancyGuard,
     Storage,
-    WorldManager,
-    ReentrancyGuard
+    WorldManager
 {
     using Math for uint256;
     using SafeMath for uint256;
-    using SafeMath for uint128;
     using Time for uint32;
 
     // ============ Public Functions ============
@@ -127,7 +125,7 @@ contract TransactionLogic is
         address token = wsGetToken(worldState, args.marketId);
 
         // requires a positive deltaWei
-        Token.transferIn(token, args.from, deltaWei);
+        Exchange.transferIn(token, args.from, deltaWei);
     }
 
     function _withdraw(
@@ -158,7 +156,7 @@ contract TransactionLogic is
         address token = wsGetToken(worldState, args.marketId);
 
         // requires a negative deltaWei
-        Token.transferOut(token, args.to, deltaWei);
+        Exchange.transferOut(token, args.to, deltaWei);
     }
 
     function _transfer(
@@ -307,16 +305,20 @@ contract TransactionLogic is
         // doesn't mark liquidAccountId for permissions
 
         // verify that this account can be liquidated
-        if (!wsGetLiquidationTime(worldState, args.liquidAccountId).hasHappened()) {
+        if (!wsGetLiquidationFlag(worldState, args.liquidAccountId)) {
             require(!_isCollateralized(worldState, args.liquidAccountId));
-            wsSetLiquidationTime(worldState, args.liquidAccountId, Time.currentTime());
+            wsSetLiquidationFlag(worldState, args.liquidAccountId);
         }
 
         // verify that underwater is being repaid
-        require(!wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).sign);
+        require(
+            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive()
+        );
 
         // verify that the liquidated account has collateral
-        require(wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).sign);
+        require(
+            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative()
+        );
 
 
         // calculate the underwater to pay back
@@ -353,14 +355,12 @@ contract TransactionLogic is
 
         // verify that underwater is not overpaid
         require(
-            0 == wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).value
-            || !wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).sign
+            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive()
         );
 
         // verify that collateral is not overused
         require(
-            0 == wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).value
-            || wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).sign
+            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative()
         );
 
         wsSetBalanceFromDeltaWei(

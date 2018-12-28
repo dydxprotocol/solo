@@ -16,13 +16,13 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
 import { Math } from "./Math.sol";
 import { Time } from "./Time.sol";
 import { Types } from "./Types.sol";
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -34,8 +34,6 @@ import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.so
 library Interest {
     using Math for uint256;
     using SafeMath for uint256;
-    using SafeMath for uint96;
-    using SafeMath for uint32;
 
     // ============ Constants ============
 
@@ -71,7 +69,7 @@ library Interest {
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei
         ) = totalParToWei(totalPar, index);
-        uint32 timeDelta = Time.currentTime().sub(index.lastUpdate).to32();
+        uint32 timeDelta = uint256(Time.currentTime()).sub(index.lastUpdate).to32();
 
         // calculate the interest accrued by
         uint96 borrowInterest = rate.value.mul(timeDelta).to96();

@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
@@ -38,7 +38,7 @@ contract Storage {
 
     struct Account {
         mapping (uint256 => Types.Par) balances;
-        uint32 liquidationTime;
+        bool liquidationFlag; // is able to be liquidated
     }
 
     struct Market {

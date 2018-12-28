@@ -16,10 +16,10 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "../../tempzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { Interest } from "../lib/Interest.sol";
 
