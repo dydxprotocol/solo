@@ -172,18 +172,14 @@ export class AccountTransaction {
     const amount = {
       sign: !operation.amount.value.isNeg(),
       denomination: operation.amount.denomination,
-      refPoint: operation.amount.reference,
+      ref: operation.amount.reference,
       value: operation.amount.value.abs().toString(10),
     };
-    const a = { // TODO remove when contracts updated
-      ...amount,
-      intent: 0,
-    };
     const transactionArgs: TransactionArgs = {
-      amount: a,
+      amount,
       accountId: this.getAccountId(operation),
       transactionType: args.transactionType,
-      primaryMarketId: args.primaryMarketId || '', // TODO change when contracts updated
+      primaryMarketId: args.primaryMarketId || '',
       secondaryMarketId: args.secondaryMarketId || '',
       otherAddress: args.otherAddress || '',
       otherAccountId: args.otherAccountId || '',

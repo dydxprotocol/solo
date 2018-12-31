@@ -108,7 +108,7 @@ export interface TransactionArgs {
   amount: {
     sign: boolean;
     denomination: number | string;
-    refPoint: number | string;
+    ref: number | string;
     value: number | string;
   };
   primaryMarketId: number | string;
