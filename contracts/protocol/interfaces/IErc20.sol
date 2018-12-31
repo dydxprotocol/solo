@@ -67,4 +67,19 @@ interface IErc20 {
         uint256 value
     )
         external;
+
+    function name()
+        external
+        view
+        returns (string memory);
+
+    function symbol()
+        external
+        view
+        returns (string memory);
+
+    function decimals()
+        external
+        view
+        returns (uint8);
 }

@@ -40,23 +40,21 @@ export class Token {
     return new BN(supplyStr);
   }
 
-  // TODO: ERC20 contract with details
+  public async getName(tokenAddress: address): Promise<string> {
+    const token = this.getToken(tokenAddress);
+    return token.methods.name().call();
+  }
 
-  // public async getName(tokenAddress: address): Promise<string> {
-  //   const token = this.getToken(tokenAddress);
-  //   return token.methods.name().call();
-  // }
+  public async getSymbol(tokenAddress: address): Promise<string> {
+    const token = this.getToken(tokenAddress);
+    return token.methods.symbol().call();
+  }
 
-  // public async getSymbol(tokenAddress: address): Promise<string> {
-  //   const token = this.getToken(tokenAddress);
-  //   return token.methods.symbol().call();
-  // }
-
-  // public async getDecimals(tokenAddress: address): Promise<BN> {
-  //   const token = this.getToken(tokenAddress);
-  //   const decStr: string = token.methods.decimals().call();
-  //   return new BN(decStr);
-  // }
+  public async getDecimals(tokenAddress: address): Promise<BN> {
+    const token = this.getToken(tokenAddress);
+    const decStr: string = await token.methods.decimals().call();
+    return new BN(decStr);
+  }
 
   public async getSoloAllowance(
     tokenAddress: address,
