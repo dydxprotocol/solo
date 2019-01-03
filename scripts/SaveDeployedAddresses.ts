@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import * as contracts from './contracts';
+import * as contracts from './Contracts';
 import deployed from '../migrations/deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);

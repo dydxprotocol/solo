@@ -18,7 +18,7 @@
 
 import {
   isDevNetwork,
-} from './helpers';
+} from './Helpers';
 
 // For testing
 const TokenA = artifacts.require('TokenA');

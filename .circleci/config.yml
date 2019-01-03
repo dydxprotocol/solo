@@ -67,7 +67,7 @@ jobs:
           key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Test
-          command: TESTFILES=$(circleci tests glob "test/tests/**/*.js" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          command: TESTFILES=$(circleci tests glob "test/tests/**.js" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
           no_output_timeout: 20m
       - store_test_results:
           path: ~/build/junit
@@ -80,6 +80,14 @@ jobs:
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install Docker
+          command: apk add docker
+      - run:
+          name: Install Compiler
+          command: npm run install_compiler
       - run:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
@@ -131,9 +139,10 @@ workflows:
       - test:
           requires:
             - build
-      - coverage:
-          requires:
-            - checkout_and_install
+      # TODO https://github.com/sc-forks/solidity-coverage/issues/258
+      # - coverage:
+      #     requires:
+      #       - checkout_and_install
       - prod_build:
           requires:
             - build
