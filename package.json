@@ -68,17 +68,17 @@
     "chai": "^4.1.2",
     "coveralls": "^3.0.2",
     "es6-promisify": "^6.0.1",
+    "ethlint": "1.2.1",
     "ganache-cli": "^6.2.5",
     "mocha-junit-reporter": "^1.18.0",
     "solidity-coverage": "0.5.11",
-    "solium": "1.1.8",
-    "truffle": "5.0.0",
-    "truffle-typings": "1.0.5",
+    "truffle": "5.0.1",
+    "truffle-typings": "1.0.6",
     "ts-node": "^7.0.1",
     "tslint": "^5.12.0",
     "tslint-config-airbnb": "^5.11.1",
     "tslint-no-focused-test": "^0.5.0",
-    "typechain": "^0.3.9",
+    "typechain": "^0.3.10",
     "typescript": "^3.2.2"
   }
 }
