@@ -50,7 +50,10 @@ contract PriceOracle is IPriceOracle{
         returns (Monetary.Price memory)
     {
         // TODO: this whole contract
-        require(g_prices[token] != 0);
+        require(
+            g_prices[token] != 0,
+            "TODO_REASON"
+        );
         return Monetary.Price({
             value: g_prices[token]
         });

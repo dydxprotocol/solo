@@ -101,7 +101,10 @@ contract TransactionLogic is
     )
         private
     {
-        require(args.from == msg.sender || args.from == wsGetOwner(worldState, args.accountId));
+        require(
+            args.from == msg.sender || args.from == wsGetOwner(worldState, args.accountId),
+            "TODO_REASON"
+        );
 
         wsSetCheckPerimissions(worldState, args.accountId);
 
@@ -232,7 +235,10 @@ contract TransactionLogic is
             args.orderData
         );
 
-        require(tokensReceived.value >= makerWei.value);
+        require(
+            tokensReceived.value >= makerWei.value,
+            "TODO_REASON"
+        );
 
         wsSetBalance(
             worldState,
@@ -306,18 +312,23 @@ contract TransactionLogic is
 
         // verify that this account can be liquidated
         if (!wsGetIsLiquidating(worldState, args.liquidAccountId)) {
-            require(!_isCollateralized(worldState, args.liquidAccountId));
+            require(
+                !_isCollateralized(worldState, args.liquidAccountId),
+                "TODO_REASON"
+            );
             wsSetIsLiquidating(worldState, args.liquidAccountId);
         }
 
         // verify that underwater is being repaid
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive()
+            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive(),
+            "TODO_REASON"
         );
 
         // verify that the liquidated account has collateral
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative()
+            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative(),
+            "TODO_REASON"
         );
 
 
@@ -355,12 +366,14 @@ contract TransactionLogic is
 
         // verify that underwater is not overpaid
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive()
+            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive(),
+            "TODO_REASON"
         );
 
         // verify that collateral is not overused
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative()
+            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative(),
+            "TODO_REASON"
         );
 
         wsSetBalanceFromDeltaWei(
@@ -390,7 +403,10 @@ contract TransactionLogic is
         view
         returns (Types.Wei memory)
     {
-        require(underwaterWei.sign);
+        require(
+            underwaterWei.sign,
+            "TODO_REASON"
+        );
 
         Monetary.Price memory underwaterPrice = wsGetPrice(worldState, underwaterMarketId);
         Monetary.Price memory collateralPrice = wsGetPrice(worldState, collateralMarketId);

@@ -64,7 +64,10 @@ library Interest {
         view
         returns (Index memory)
     {
-        require(isValidRate(rate));
+        require(
+            isValidRate(rate),
+            "TODO_REASON"
+        );
         (
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei

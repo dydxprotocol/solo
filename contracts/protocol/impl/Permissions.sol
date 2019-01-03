@@ -37,7 +37,10 @@ contract Permissions is
     )
         external
     {
-        require(msg.sender != externalAddress);
+        require(
+            msg.sender != externalAddress,
+            "TODO_REASON"
+        );
         g_trustedAddress[msg.sender][externalAddress] = trusted;
     }
 }
