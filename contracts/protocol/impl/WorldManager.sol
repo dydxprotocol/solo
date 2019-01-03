@@ -314,7 +314,10 @@ contract WorldManager is
             for (uint256 j = i + 1; j < accounts.length; j++) {
                 address ownerJ = accounts[j].owner;
                 uint256 accountJ = accounts[j].account;
-                require(ownerI != ownerJ || accountI != accountJ);
+                require(
+                    ownerI != ownerJ || accountI != accountJ,
+                    "TODO_REASON"
+                );
             }
         }
 
@@ -519,7 +522,10 @@ contract WorldManager is
 
             // write to storage if modified
             if (newTotal.borrow != oldTotal.borrow || newTotal.supply != oldTotal.supply) {
-                require(newTotal.supply >= newTotal.borrow);
+                require(
+                    newTotal.supply >= newTotal.borrow,
+                    "TODO_REASON"
+                );
                 g_markets[i].totalPar = newTotal;
             }
         }
@@ -580,7 +586,8 @@ contract WorldManager is
             address owner = worldState.accounts[a].info.owner;
             require(
                 owner == msg.sender
-                || g_trustedAddress[owner][msg.sender]
+                || g_trustedAddress[owner][msg.sender],
+                "TODO_REASON"
                 // TODO: add other forms of authentication (onBehalfOf)
             );
         }
@@ -602,7 +609,10 @@ contract WorldManager is
         private
         view
     {
-        require(_isCollateralized(worldState, accountId));
+        require(
+            _isCollateralized(worldState, accountId),
+            "TODO_REASON"
+        );
         // TODO: require(borrowedValue.value >= g_minBorrowedValue.value);
     }
 

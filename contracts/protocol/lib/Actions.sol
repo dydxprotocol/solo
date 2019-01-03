@@ -163,7 +163,10 @@ library Actions {
         returns (TransferArgs memory)
     {
         assert(args.transactionType == TransactionType.Transfer);
-        require(args.accountId != args.otherAccountId);
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
         return TransferArgs({
             accountId: args.accountId,
             amount: args.amount,
@@ -216,8 +219,14 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
-        require(args.primaryMarketId != args.secondaryMarketId);
-        require(args.accountId != args.otherAccountId);
+        require(
+            args.primaryMarketId != args.secondaryMarketId,
+            "TODO_REASON"
+        );
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
         return LiquidateArgs({
             liquidAccountId: args.accountId,
             amount: args.amount,

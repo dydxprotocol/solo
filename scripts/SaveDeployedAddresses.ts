@@ -1,9 +1,7 @@
-/* eslint-disable import/no-extraneous-dependencies, no-console */
-
 import fs from 'fs';
-import promisify from 'es6-promisify';
+import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import * as contracts from '../src/lib/contracts';
+import * as contracts from './Contracts';
 import deployed from '../migrations/deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);
@@ -34,7 +32,7 @@ async function run() {
   const json = JSON.stringify(deployed, null, 4);
 
   const filename = 'deployed.json';
-  await writeFileAsync(directory + filename, json, 'utf8');
+  await writeFileAsync(directory + filename, json, null);
   console.log(`Wrote ${filename}`);
 }
 

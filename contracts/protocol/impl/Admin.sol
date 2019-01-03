@@ -71,7 +71,10 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(!_marketExistsForToken(token));
+        require(
+            !_marketExistsForToken(token),
+            "TODO_REASON"
+        );
 
         uint256 marketId = g_numMarkets;
 
@@ -112,8 +115,14 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(liquidationRatio.value <= MAX_LIQUIDATION_RATIO);
-        require(liquidationRatio.value >= MIN_LIQUIDATION_RATIO);
+        require(
+            liquidationRatio.value <= MAX_LIQUIDATION_RATIO,
+            "TODO_REASON"
+        );
+        require(
+            liquidationRatio.value >= MIN_LIQUIDATION_RATIO,
+            "TODO_REASON"
+        );
         g_liquidationRatio = liquidationRatio;
     }
 
@@ -124,8 +133,14 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(spread.value <= MAX_LIQUIDATION_SPREAD);
-        require(spread.value >= MIN_LIQUIDATION_SPREAD);
+        require(
+            spread.value <= MAX_LIQUIDATION_SPREAD,
+            "TODO_REASON"
+        );
+        require(
+            spread.value >= MIN_LIQUIDATION_SPREAD,
+            "TODO_REASON"
+        );
         g_liquidationSpread = spread;
     }
 
@@ -136,8 +151,14 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(earningsRate.value <= MAX_EARNINGS_RATE);
-        require(earningsRate.value >= MIN_EARNINGS_RATE);
+        require(
+            earningsRate.value <= MAX_EARNINGS_RATE,
+            "TODO_REASON"
+        );
+        require(
+            earningsRate.value >= MIN_EARNINGS_RATE,
+            "TODO_REASON"
+        );
         g_earningsRate = earningsRate;
     }
 
@@ -148,7 +169,10 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE);
+        require(
+            minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE,
+            "TODO_REASON"
+        );
         g_minBorrowedValue = minBorrowedValue;
     }
 
@@ -160,7 +184,10 @@ contract Admin is
     )
         private
     {
-        require(market < g_numMarkets);
+        require(
+            market < g_numMarkets,
+            "TODO_REASON"
+        );
 
         g_markets[market].interestSetter = interestSetter;
 
@@ -178,7 +205,10 @@ contract Admin is
     )
         private
     {
-        require(market < g_numMarkets);
+        require(
+            market < g_numMarkets,
+            "TODO_REASON"
+        );
 
         g_markets[market].priceOracle = priceOracle;
 

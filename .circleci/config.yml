@@ -22,18 +22,29 @@ jobs:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
-  build:
+  build_contracts:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
     working_directory: ~/build
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install Docker
+          command: apk add docker
+      - run:
+          name: Install Compiler
+          command: npm run install_compiler
       - run:
           name: Compile contracts
           command: npm run compile -- --all
+      - run:
+          name: Generate wrappers
+          command: npm run build:wrappers
       - save_cache:
-          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
   lint:
@@ -45,7 +56,7 @@ jobs:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Lint
-          command: npm run lint && npm run dydxlint && npm run solint
+          command: npm run lint
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -53,10 +64,10 @@ jobs:
     parallelism: 3
     steps:
       - restore_cache:
-          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Test
-          command: TESTFILES=$(circleci tests glob "test/tests/**/*.js" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          command: TESTFILES=$(circleci tests glob "test/**/*.ts" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
           no_output_timeout: 20m
       - store_test_results:
           path: ~/build/junit
@@ -69,20 +80,39 @@ jobs:
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install Docker
+          command: apk add docker
+      - run:
+          name: Install Compiler
+          command: npm run install_compiler
       - run:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
           no_output_timeout: 40m
+  build_js:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile Typescript
+          command: npm run build:js
+      - save_cache:
+          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
   prod_build:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Build Javascript
-          command: npm run build:js
+          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Production Build
           command: sh scripts/prod_build.sh
@@ -111,7 +141,7 @@ workflows:
   build_and_test:
     jobs:
       - checkout_and_install
-      - build:
+      - build_contracts:
           requires:
             - checkout_and_install
       - lint:
@@ -119,13 +149,21 @@ workflows:
             - checkout_and_install
       - test:
           requires:
-            - build
-      - coverage:
+            - build_contracts
+      # TODO https://github.com/sc-forks/solidity-coverage/issues/258
+      # - coverage:
+      #     requires:
+      #       - checkout_and_install
+      - build_js:
           requires:
-            - checkout_and_install
-      - prod_build:
-          requires:
-            - build
+            - build_contracts
+      # TODO
+      # - prod_build:
+      #     requires:
+      #       - build_js
+      #     filters:
+      #       branches:
+      #         only: master
       # - publish:
       #     requires:
       #       - prod_build

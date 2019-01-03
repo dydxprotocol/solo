@@ -1,18 +1,16 @@
-/* eslint-disable import/no-extraneous-dependencies, no-console */
-
 import fs from 'fs';
-import promisify from 'es6-promisify';
+import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import * as contracts from '../src/lib/contracts';
-import deployed from '../migrations/deployed';
-import externalDeployed from '../migrations/external-deployed';
+import * as contracts from './Contracts';
+import deployed from '../migrations/deployed.json';
+import externalDeployed from '../migrations/external-deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
 
-const DOCKER_NETWORK_ID = '1212';
+const DOCKER_NETWORK_ID: string = '1212';
 
-async function clean() {
+async function clean(): Promise<void> {
   const directory = `${__dirname}/../build/test/`;
   await mkdirAsync(directory);
 
@@ -46,7 +44,7 @@ async function clean() {
     const json = JSON.stringify(cleaned, null, 4);
 
     const filename = `${contractName}.json`;
-    await writeFileAsync(directory + filename, json, 'utf8');
+    await writeFileAsync(directory + filename, json, null);
 
     console.log(`Wrote ${directory}${filename}`);
   });

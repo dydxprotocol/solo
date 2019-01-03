@@ -40,7 +40,8 @@ library Exchange {
         internal
     {
         require(
-            !deltaWei.sign
+            !deltaWei.sign,
+            "TODO_REASON"
         );
 
         Token.transfer(
@@ -58,7 +59,8 @@ library Exchange {
         internal
     {
         require(
-            deltaWei.sign
+            deltaWei.sign,
+            "TODO_REASON"
         );
 
         Token.transferFrom(
@@ -80,7 +82,10 @@ library Exchange {
         view
         returns (Types.Wei memory)
     {
-        require(desiredAmount.sign);
+        require(
+            desiredAmount.sign,
+            "TODO_REASON"
+        );
 
         Types.Wei memory result;
         result.sign = false;
@@ -105,7 +110,10 @@ library Exchange {
         internal
         returns (Types.Wei memory)
     {
-        require(!requestedFillAmount.sign);
+        require(
+            !requestedFillAmount.sign,
+            "TODO_REASON"
+        );
 
         transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
 

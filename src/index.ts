@@ -16,6 +16,4 @@
 
 */
 
-/* eslint-disable max-len, import/no-unresolved */
-
-export { default as SoloMargin } from '../../build/contracts/SoloMargin.json';
+export { Solo } from './Solo';
