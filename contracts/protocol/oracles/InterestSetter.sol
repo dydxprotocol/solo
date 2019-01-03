@@ -19,40 +19,47 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Monetary } from "../lib/Monetary.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
+import { Interest } from "../lib/Interest.sol";
 
 
 /**
- * @title PriceOracle
+ * @title InterestSetter
  * @author dYdX
  *
  * TODO
  */
-contract PriceOracle is IPriceOracle{
+contract InterestSetter is
+    IInterestSetter
+{
+    using SafeMath for uint256;
 
-    mapping (address => uint128) g_prices;
+    uint128 constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
 
-    function setPrice(
-        address token,
-        uint128 price
+    Interest.Rate g_maxInterest;
+
+    constructor(
+        Interest.Rate memory maxInterest
     )
-        external
+        public
     {
-        g_prices[token] = price;
+        g_maxInterest = maxInterest;
     }
 
-    function getPrice(
-        address token
+    function getInterestRate(
+        address token,
+        uint256 borrowWei,
+        uint256 supplyWei
     )
         public
         view
-        returns (Monetary.Price memory)
+        returns (Interest.Rate memory)
     {
         // TODO: this whole contract
-        require(g_prices[token] != 0);
-        return Monetary.Price({
-            value: g_prices[token]
-        });
+        token;
+        borrowWei;
+        supplyWei;
+        return Interest.Rate({ value: 10**9 });
     }
 }

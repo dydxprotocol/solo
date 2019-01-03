@@ -16,27 +16,28 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
+
+import { Storage } from "./Storage.sol";
 
 
-interface IInterestOracle {
-
-    // ============ Public Functions ============
-
-    /**
-     * Get the interest rate of a token given some borrowed and lent amounts
-     *
-     * @param  token     The address of the token to get the interest rate for
-     * @param  borrowed  The principal amount of token borrowed
-     * @param  lent      The principal amount of token lent
-     * @return           The interest rate per second
-     */
-    function getNewInterest(
-        address token,
-        uint128 borrowed,
-        uint128 lent
+/**
+ * @title Permissions
+ * @author dYdX
+ *
+ * TODO
+ */
+contract Permissions is
+    Storage
+{
+    function trustAddress(
+        address externalAddress,
+        bool trusted
     )
         external
-        view
-        returns (uint64);
+    {
+        require(msg.sender != externalAddress);
+        g_trustedAddress[msg.sender][externalAddress] = trusted;
+    }
 }

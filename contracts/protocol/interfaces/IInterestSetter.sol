@@ -16,34 +16,33 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
-import { IInterestOracle } from "../interfaces/IInterestOracle.sol";
-import { LInterest } from "../lib/LInterest.sol";
+import { Interest } from "../lib/Interest.sol";
 
 
-contract InterestOracle is IInterestOracle {
-    uint128 constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
+/**
+ * @title IInterestSetter
+ * @author dYdX
+ *
+ * TODO
+ */
+contract IInterestSetter {
 
-    uint128 g_maxInterest;
+    // ============ Public Functions ============
 
-    constructor(
-        uint64 maxPercentage
+    /**
+     * Get the interest rate of a token given some borrowed and supplied amounts
+     *
+     * @return              The interest rate per second
+     */
+    function getInterestRate(
+        address token,
+        uint256 borrowWei,
+        uint256 supplyWei
     )
         public
-    {
-        g_maxInterest = maxPercentage * LInterest.BASE() / 100 / SECONDS_IN_A_YEAR;
-    }
-
-    function getNewInterest(
-        address token,
-        uint128 borrowed,
-        uint128 lent
-    )
-        external
         view
-        returns (uint64)
-    {
-        return LInterest.BASE() + (g_maxInterest * borrowed / lent);
-    }
+        returns (Interest.Rate memory);
 }

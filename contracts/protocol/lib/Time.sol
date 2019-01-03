@@ -17,34 +17,35 @@
 */
 
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
-
-import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
- * @title IPriceOracle
+ * @title Time
  * @author dYdX
  *
  * TODO
  */
-contract IPriceOracle {
+library Time {
 
     // ============ Public Functions ============
 
-    /**
-     * Get the price of a token
-     *
-     * @return  The USD price of a base unit of the token, then multiplied by 10^36.
-     *          So a stablecoin with 18 decimal places would return 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
-    )
-        public
+    function currentTime()
+        internal
         view
-        returns (Monetary.Price memory);
+        returns (uint32)
+    {
+        uint32 timestamp = uint32(block.timestamp);
+        require(uint256(timestamp) == block.timestamp, "WE LIVE IN THE FUTURE");
+        return timestamp;
+    }
 
+    function hasHappened(
+        uint32 time
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return (time != 0) && (time <= currentTime());
+    }
 }

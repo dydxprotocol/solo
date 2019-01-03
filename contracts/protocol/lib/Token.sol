@@ -16,70 +16,18 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity ^0.5.0;
+
+import { IErc20 } from "../interfaces/IErc20.sol";
 
 
 /**
- * @title GeneralERC20
- * @author dYdX
- *
- * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
- * that we dont automatically revert when calling non-compliant tokens that have no return value for
- * transfer(), transferFrom(), or approve().
- */
-interface GeneralERC20 {
-    function totalSupply(
-    )
-        external
-        view
-        returns (uint256);
-
-    function balanceOf(
-        address who
-    )
-        external
-        view
-        returns (uint256);
-
-    function allowance(
-        address owner,
-        address spender
-    )
-        external
-        view
-        returns (uint256);
-
-    function transfer(
-        address to,
-        uint256 value
-    )
-        external;
-
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    )
-        external;
-
-    function approve(
-        address spender,
-        uint256 value
-    )
-        external;
-}
-
-
-/**
- * @title TokenInteract
+ * @title Token
  * @author dYdX
  *
  * This library contains basic functions for interacting with ERC20 tokens
  */
-library LTokenInteract {
-    string constant CONTRACT_NAME = "TokenInteract";
-
+library Token {
     function balanceOf(
         address token,
         address owner
@@ -88,7 +36,7 @@ library LTokenInteract {
         view
         returns (uint256)
     {
-        return GeneralERC20(token).balanceOf(owner);
+        return IErc20(token).balanceOf(owner);
     }
 
     function allowance(
@@ -100,7 +48,7 @@ library LTokenInteract {
         view
         returns (uint256)
     {
-        return GeneralERC20(token).allowance(owner, spender);
+        return IErc20(token).allowance(owner, spender);
     }
 
     function approve(
@@ -110,11 +58,24 @@ library LTokenInteract {
     )
         internal
     {
-        GeneralERC20(token).approve(spender, amount);
+        IErc20(token).approve(spender, amount);
 
         require(
             checkSuccess(),
-            "TokenInteract#approve: Approval failed"
+            "Token#approve: Approval failed"
+        );
+    }
+
+    function approveMax(
+        address token,
+        address spender
+    )
+        internal
+    {
+        approve(
+            token,
+            spender,
+            uint256(-1)
         );
     }
 
@@ -133,11 +94,11 @@ library LTokenInteract {
             return;
         }
 
-        GeneralERC20(token).transfer(to, amount);
+        IErc20(token).transfer(to, amount);
 
         require(
             checkSuccess(),
-            "TokenInteract#transfer: Transfer failed"
+            "Token#transfer: Transfer failed"
         );
     }
 
@@ -156,11 +117,11 @@ library LTokenInteract {
             return;
         }
 
-        GeneralERC20(token).transferFrom(from, to, amount);
+        IErc20(token).transferFrom(from, to, amount);
 
         require(
             checkSuccess(),
-            "TokenInteract#transferFrom: TransferFrom failed"
+            "Token#transferFrom: TransferFrom failed"
         );
     }
 

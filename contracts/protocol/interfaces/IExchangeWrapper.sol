@@ -16,9 +16,16 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
 
+/**
+ * @title IExchangeWrapper
+ * @author dYdX
+ *
+ * TODO
+ */
 interface IExchangeWrapper {
 
     // ============ Public Functions ============

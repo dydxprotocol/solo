@@ -16,27 +16,32 @@
 
 */
 
-pragma solidity 0.5.1;
+pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
-import { SoloMarginAdmin } from "./SoloMarginAdmin.sol";
-import { SoloMarginTransactions } from "./SoloMarginTransactions.sol";
+import { Admin } from "./impl/Admin.sol";
+import { Permissions } from "./impl/Permissions.sol";
+import { Queries } from "./impl/Queries.sol";
+import { TransactionLogic } from "./impl/TransactionLogic.sol";
 
 
+/**
+ * @title SoloMargin
+ * @author dYdX
+ *
+ * TODO
+ */
 contract SoloMargin is
-    SoloMarginTransactions,
-    SoloMarginAdmin
+    TransactionLogic,
+    Permissions,
+    Admin,
+    Queries
 {
     constructor (
-        address priceOracle,
-        address interestOracle,
-        uint256 minCollateralRatio,
-        uint256 spread
+        // TODO
     )
         public
     {
-        g_priceOracle = priceOracle;
-        g_interestOracle = interestOracle;
-        g_minCollateralRatio = minCollateralRatio;
-        g_spread = spread;
+        // TODO
     }
 }

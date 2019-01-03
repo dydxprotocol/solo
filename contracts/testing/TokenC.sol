@@ -16,8 +16,7 @@
 
 */
 
-pragma solidity 0.4.24;
-pragma experimental "v0.5.0";
+pragma solidity ^0.5.0;
 
 import { TestToken } from "./TestToken.sol";
 
@@ -27,10 +26,10 @@ contract TokenC is TestToken {
     function decimals() public pure returns (uint8) {
         return 33;
     }
-    function symbol() public pure returns (string) {
+    function symbol() public pure returns (string memory) {
         return "CCC";
     }
-    function name() public pure returns (string) {
+    function name() public pure returns (string memory) {
         return "Test Token C";
     }
 }
