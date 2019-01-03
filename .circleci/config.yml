@@ -141,7 +141,7 @@ workflows:
   build_and_test:
     jobs:
       - checkout_and_install
-      - compile_contracts:
+      - build_contracts:
           requires:
             - checkout_and_install
       - lint:
@@ -149,18 +149,18 @@ workflows:
             - checkout_and_install
       - test:
           requires:
-            - compile_contracts
+            - build_contracts
       # TODO https://github.com/sc-forks/solidity-coverage/issues/258
       # - coverage:
       #     requires:
       #       - checkout_and_install
-      - compile_js:
+      - build_js:
           requires:
-            - compile_contracts
+            - build_contracts
       # TODO
       # - prod_build:
       #     requires:
-      #       - compile_js
+      #       - build_js
       #     filters:
       #       branches:
       #         only: master
