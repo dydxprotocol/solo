@@ -29,9 +29,20 @@ jobs:
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install Docker
+          command: apk add docker
+      - run:
+          name: Install Compiler
+          command: npm run install_compiler
       - run:
           name: Compile contracts
           command: npm run compile -- --all
+      - run:
+          name: Generate wrappers
+          command: npm run build:wrappers
       - save_cache:
           key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
           paths:
@@ -42,10 +53,10 @@ jobs:
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Lint
-          command: npm run lint && npm run dydxlint && npm run solint
+          command: npm run lint
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -116,7 +127,7 @@ workflows:
             - checkout_and_install
       - lint:
           requires:
-            - checkout_and_install
+            - build
       - test:
           requires:
             - build
