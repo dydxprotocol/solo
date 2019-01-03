@@ -38,7 +38,7 @@ contract Storage {
 
     struct Account {
         mapping (uint256 => Types.Par) balances;
-        bool liquidationFlag; // is able to be liquidated
+        bool isLiquidating; // is able to be liquidated
     }
 
     struct Market {

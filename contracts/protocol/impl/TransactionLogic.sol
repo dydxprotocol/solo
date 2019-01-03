@@ -305,9 +305,9 @@ contract TransactionLogic is
         // doesn't mark liquidAccountId for permissions
 
         // verify that this account can be liquidated
-        if (!wsGetLiquidationFlag(worldState, args.liquidAccountId)) {
+        if (!wsGetIsLiquidating(worldState, args.liquidAccountId)) {
             require(!_isCollateralized(worldState, args.liquidAccountId));
-            wsSetLiquidationFlag(worldState, args.liquidAccountId);
+            wsSetIsLiquidating(worldState, args.liquidAccountId);
         }
 
         // verify that underwater is being repaid

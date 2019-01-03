@@ -64,7 +64,7 @@ contract WorldManager is
         AccountInfo info;
         Types.Par[] balance;
         Types.Par[] oldBalance;
-        bool liquidationFlag;
+        bool isLiquidating;
 
         // need to check permissions for every account that was touched except for ones that were
         // only liquidated
@@ -133,8 +133,7 @@ contract WorldManager is
         return worldState.accounts[accountId].info.owner;
     }
 
-
-    function wsGetLiquidationFlag(
+    function wsGetIsLiquidating(
         WorldState memory worldState,
         uint256 accountId
     )
@@ -142,7 +141,7 @@ contract WorldManager is
         pure
         returns (bool)
     {
-        return worldState.accounts[accountId].liquidationFlag;
+        return worldState.accounts[accountId].isLiquidating;
     }
 
     function wsGetBalance(
@@ -289,14 +288,14 @@ contract WorldManager is
         return (newPar, deltaWei);
     }
 
-    function wsSetLiquidationFlag(
+    function wsSetIsLiquidating(
         WorldState memory worldState,
         uint256 accountId
     )
         internal
         pure
     {
-        worldState.accounts[accountId].liquidationFlag = true;
+        worldState.accounts[accountId].isLiquidating = true;
     }
 
     // ============ Loading Functions ============
@@ -332,7 +331,7 @@ contract WorldManager is
             worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
         }
         _loadBalances(worldState);
-        _loadLiquidationFlags(worldState);
+        _loadIsLiquidatings(worldState);
 
         // do not load any market information, load it lazily later
     }
@@ -409,7 +408,8 @@ contract WorldManager is
         view
     {
         address token = worldState.assets[marketId].token;
-        worldState.assets[marketId].price = IPriceOracle(g_markets[marketId].priceOracle).getPrice(token);
+        IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
+        worldState.assets[marketId].price = oracle.getPrice(token);
     }
 
     function _loadBalances(
@@ -426,13 +426,15 @@ contract WorldManager is
                 worldState.accounts[a].oldBalance[i] = g_accounts[owner][account].balances[i];
 
                 // copy-by-value into balance
-                worldState.accounts[a].balance[i].sign = worldState.accounts[a].oldBalance[i].sign;
-                worldState.accounts[a].balance[i].value = worldState.accounts[a].oldBalance[i].value;
+                worldState.accounts[a].balance[i].sign =
+                    worldState.accounts[a].oldBalance[i].sign;
+                worldState.accounts[a].balance[i].value =
+                    worldState.accounts[a].oldBalance[i].value;
             }
         }
     }
 
-    function _loadLiquidationFlags(
+    function _loadIsLiquidatings(
         WorldState memory worldState
     )
         private
@@ -441,7 +443,7 @@ contract WorldManager is
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
-            worldState.accounts[a].liquidationFlag = g_accounts[owner][account].liquidationFlag;
+            worldState.accounts[a].isLiquidating = g_accounts[owner][account].isLiquidating;
         }
     }
 
@@ -457,7 +459,7 @@ contract WorldManager is
         _storeIndexes(worldState);
         _storeTotalPars(worldState);
         _storeBalances(worldState);
-        _storeLiquidationFlags(worldState);
+        _storeIsLiquidatings(worldState);
     }
 
     function _storeIndexes(
@@ -541,7 +543,7 @@ contract WorldManager is
         }
     }
 
-    function _storeLiquidationFlags(
+    function _storeIsLiquidatings(
         WorldState memory worldState
     )
         private
@@ -550,11 +552,11 @@ contract WorldManager is
             address owner = worldState.accounts[a].info.owner;
             uint256 account = worldState.accounts[a].info.account;
             bool flag =
-                worldState.accounts[a].liquidationFlag
+                worldState.accounts[a].isLiquidating
                 && !worldState.accounts[a].checkPermission;
 
-            if (g_accounts[owner][account].liquidationFlag != flag) {
-                g_accounts[owner][account].liquidationFlag = flag;
+            if (g_accounts[owner][account].isLiquidating != flag) {
+                g_accounts[owner][account].isLiquidating = flag;
             }
         }
     }

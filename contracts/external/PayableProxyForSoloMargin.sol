@@ -47,7 +47,7 @@ contract PayableProxyForSoloMargin is
     {
         SOLO_MARGIN = SoloMargin(soloMargin);
         WETH = IWeth(weth);
-        WETH.approve(soloMargin, uint(-1));
+        WETH.approve(soloMargin, uint256(-1));
     }
 
     function transact(

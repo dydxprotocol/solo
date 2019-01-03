@@ -205,7 +205,7 @@ contract Queries is
         return g_accounts[owner][account].balances[marketId];
     }
 
-    function getAccountLiquidationFlag(
+    function getAccountIsLiquidating(
         address owner,
         uint256 account
     )
@@ -213,7 +213,7 @@ contract Queries is
         view
         returns (bool)
     {
-        return g_accounts[owner][account].liquidationFlag;
+        return g_accounts[owner][account].isLiquidating;
     }
 
     function getAccountValues(
