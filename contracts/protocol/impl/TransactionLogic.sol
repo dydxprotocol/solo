@@ -30,6 +30,8 @@ import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Time } from "../lib/Time.sol";
 import { Types } from "../lib/Types.sol";
+import { ICallee } from "../interfaces/Icallee.sol";
+import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 
 
 /**
@@ -92,6 +94,15 @@ contract TransactionLogic is
         }
         else if (ttype == Actions.TransactionType.Liquidate) {
             _liquidate(worldState, Actions.parseLiquidateArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Authorize) {
+            _authorize(worldState, Actions.parseAuthorizeArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Call) {
+            _call(worldState, Actions.parseCallArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Authorize) {
+            _trade(worldState, Actions.parseTradeArgs(args));
         }
     }
 
@@ -393,6 +404,69 @@ contract TransactionLogic is
         // reducing the index of the negative token and then wiping away the negative value
     }
 
+    function _authorize(
+        WorldState memory worldState,
+        Actions.AuthorizeArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        // !! Does not use WorldState, goes straight to storage
+        address accountOwner = worldState.accounts[args.accountId].info.owner;
+        uint256 accountNum = worldState.accounts[args.accountId].info.account;
+        g_accounts[accountOwner][accountNum].authorizedTraders[args.who] = args.isAuthorized;
+    }
+
+    function _call(
+        WorldState memory worldState,
+        Actions.CallArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        // !! Does not use WorldState, goes straight to storage
+        address accountOwner = worldState.accounts[args.accountId].info.owner;
+        uint256 accountNum = worldState.accounts[args.accountId].info.account;
+
+        _callRecurse(
+            args.who,
+            accountOwner,
+            accountNum,
+            args.data
+        );
+    }
+
+    function _trade(
+        WorldState memory worldState,
+        Actions.TradeArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        // !! Does not use WorldState, goes straight to storage
+        address takerAccountOwner = worldState.accounts[args.accountId].info.owner;
+        uint256 takerAccountNum = worldState.accounts[args.accountId].info.account;
+        address makerAccountOwner = worldState.accounts[args.makerAccountId].info.owner;
+        uint256 makerAccountNum = worldState.accounts[args.makerAccountId].info.account;
+
+        Actions.AssetAmount memory makerAmount = _getTradeCostRecurse(
+            args.autoTrader,
+            args.makerMarketId,
+            args.takerMarketId,
+            makerAccountOwner,
+            makerAccountNum,
+            takerAccountOwner,
+            takerAccountNum,
+            args.amount,
+            args.data
+        );
+
+        // TODO transfer the funds between accounts
+    }
+
     function _getCollateralWei(
         WorldState memory worldState,
         Types.Wei memory underwaterWei,
@@ -423,5 +497,90 @@ contract TransactionLogic is
         // boost the amount of collateral by the liquidation spread
         collateralWei.value = Decimal.mul(wsGetLiquidationSpread(worldState), collateralWei.value);
         return collateralWei;
+    }
+
+    function _callRecurse(
+        address callee,
+        address accountOwner,
+        uint256 accountId,
+        bytes memory data
+    )
+        private
+    {
+        (
+            address nextCallee,
+            bytes memory nextData
+        ) = ICallee(callee).callFunction(
+            msg.sender,
+            accountOwner,
+            accountId,
+            data
+        );
+
+        require(
+            nextCallee != address(0),
+            "TransactionLogic#_callRecurse: Call Failed"
+        );
+
+        if (callee != nextCallee) {
+            _callRecurse(
+                nextCallee,
+                accountOwner,
+                accountId,
+                nextData
+            );
+        }
+    }
+
+    function _getTradeCostRecurse(
+        address trader,
+        uint256 makerAsset,
+        uint256 takerAsset,
+        address makerAccountOwner,
+        uint256 makerAccountId,
+        address takerAccountOwner,
+        uint256 takerAccountId,
+        Actions.AssetAmount memory takerAssetAmount,
+        bytes memory data
+    )
+        private
+        returns (Actions.AssetAmount memory)
+    {
+        (
+            address nextTrader,
+            Actions.AssetAmount memory amount,
+            bytes memory nextData
+        ) = IAutoTrader(trader).getTradeCost(
+            makerAsset,
+            takerAsset,
+            msg.sender,
+            makerAccountOwner,
+            makerAccountId,
+            takerAccountOwner,
+            takerAccountId,
+            takerAssetAmount,
+            data
+        );
+
+        require(
+            nextTrader != address(0),
+            "TransactionLogic#_getTradeCostRecurse: getTradeCost failed"
+        );
+
+        if (nextTrader != trader) {
+            return _getTradeCostRecurse(
+                nextTrader,
+                makerAsset,
+                takerAsset,
+                makerAccountOwner,
+                makerAccountId,
+                takerAccountOwner,
+                takerAccountId,
+                takerAssetAmount,
+                nextData
+            );
+        }
+
+        return amount;
     }
 }

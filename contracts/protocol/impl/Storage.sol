@@ -38,6 +38,7 @@ contract Storage {
 
     struct Account {
         mapping (uint256 => Types.Par) balances;
+        mapping (address => bool) authorizedTraders;
         bool isLiquidating; // is able to be liquidated
     }
 
