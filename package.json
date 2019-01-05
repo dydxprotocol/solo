@@ -58,7 +58,7 @@
     "@dydxprotocol/exchange-wrappers": "0.0.3",
     "bignumber.js": "^4.1.0",
     "bn.js": "4.11.8",
-    "openzeppelin-solidity": "2.1.0-rc.2",
+    "openzeppelin-solidity": "2.1.1",
     "web3": "^1.0.0-beta.37"
   },
   "devDependencies": {
