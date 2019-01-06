@@ -77,6 +77,6 @@ contract Storage {
 
     // ============ Permissioning ============
 
-    // Addresses that can act as a proxy for another address
-    mapping (address => mapping (address => bool)) g_trustedAddress;
+    // Addresses that can control other users accounts
+    mapping (address => mapping (address => bool)) g_operators;
 }

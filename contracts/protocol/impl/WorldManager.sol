@@ -586,7 +586,7 @@ contract WorldManager is
             address owner = worldState.accounts[a].info.owner;
             require(
                 owner == msg.sender
-                || g_trustedAddress[owner][msg.sender],
+                || g_operators[owner][msg.sender],
                 "TODO_REASON"
                 // TODO: add other forms of authentication (onBehalfOf)
             );
