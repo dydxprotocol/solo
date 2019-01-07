@@ -20,8 +20,10 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
+import { Expiry } from '../../build/wrappers/Expiry';
 import soloMarginJson from '../../build/contracts/SoloMargin.json';
 import erc20Json from '../../build/contracts/IErc20.json';
+import expiryJson from '../../build/contracts/Expiry.json';
 import { TransactionObject, Block } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
 import { ContractCallOptions, TxResult } from '../types';
@@ -37,6 +39,7 @@ export class Contracts {
   public web3: Web3;
   public soloMargin: SoloMargin;
   public erc20: ERC20;
+  public expiry: Expiry;
 
   constructor(
     provider: Provider,
@@ -45,6 +48,7 @@ export class Contracts {
     this.web3 = new Web3();
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
+    this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.setProvider(provider, networkId);
   }
 
@@ -65,6 +69,12 @@ export class Contracts {
     this.setContractProvider(
       this.erc20,
       erc20Json,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.expiry,
+      expiryJson,
       provider,
       networkId,
     );

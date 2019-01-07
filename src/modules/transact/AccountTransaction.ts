@@ -15,7 +15,10 @@ import {
   Transfer,
   Liquidate,
   AcctInfo,
+  SetExpiry,
+  Amount,
 } from '../../types';
+import { toBytes } from '../../lib/BytesHelper';
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
@@ -24,7 +27,7 @@ interface OptionalTransactionArgs {
   otherAddress?: string;
   otherAccountId?: number | string;
   data?: (string | number[])[];
-  intent?: number | string;
+  amount?: Amount;
 }
 
 export class AccountTransaction {
@@ -111,6 +114,19 @@ export class AccountTransaction {
     return this;
   }
 
+  public setExpiry(args: SetExpiry): AccountTransaction {
+    this.addTransactionArgs(
+      args,
+      {
+        transactionType: TransactionType.Call,
+        otherAddress: this.contracts.expiry.options.address,
+        data: [toBytes(args.marketId, args.expiryTime)],
+      },
+    );
+
+    return this;
+  }
+
   public async commit(): Promise<TxResult> {
     if (this.committed) {
       throw new Error('Transaction already committed');
@@ -169,12 +185,18 @@ export class AccountTransaction {
       throw new Error('Transaction already committed');
     }
 
-    const amount = {
-      sign: !operation.amount.value.isNeg(),
-      denomination: operation.amount.denomination,
-      ref: operation.amount.reference,
-      value: operation.amount.value.abs().toString(10),
+    const amount = args.amount ? {
+      sign: !args.amount.value.isNeg(),
+      denomination: args.amount.denomination,
+      ref: args.amount.reference,
+      value: args.amount.value.abs().toString(10),
+    } : {
+      sign: false,
+      denomination: 0,
+      ref: 0,
+      value: 0,
     };
+
     const transactionArgs: TransactionArgs = {
       amount,
       accountId: this.getAccountId(operation),
