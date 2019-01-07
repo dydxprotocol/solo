@@ -31,16 +31,33 @@ import { Storage } from "./Storage.sol";
 contract Permissions is
     Storage
 {
-    function trustAddress(
-        address externalAddress,
+    // ============ Events ============
+
+    event OperatorSet(
+        address indexed owner,
+        address operator,
         bool trusted
+    );
+
+    // ============ Structs ============
+
+    struct OperatorArg {
+        address operator;
+        bool trusted;
+    }
+
+    // ============ Public Functions ============
+
+    function setOperators(
+        OperatorArg[] memory args
     )
-        external
+        public
     {
-        require(
-            msg.sender != externalAddress,
-            "TODO_REASON"
-        );
-        g_trustedAddress[msg.sender][externalAddress] = trusted;
+        for (uint256 i = 0; i < args.length; i++) {
+            address operator = args[i].operator;
+            bool trusted = args[i].trusted;
+            g_operators[msg.sender][operator] = trusted;
+            emit OperatorSet(msg.sender, operator, trusted);
+        }
     }
 }
