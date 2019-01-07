@@ -19,7 +19,8 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Actions } from '../lib/Actions.sol';
+import { Acct } from "../lib/Acct.sol";
+import { Types } from "../lib/Types.sol";
 
 
 /**
@@ -33,20 +34,15 @@ contract IAutoTrader {
     // ============ Public Functions ============
 
     function getTradeCost(
-        uint256 makerAsset,
-        uint256 takerAsset,
-        address taker,
-        address makerAccountOwner,
-        uint256 makerAccountId,
-        address takerAccountOwner,
-        uint256 takerAccountId,
-        Actions.AssetAmount memory takerAssetAmount,
+        uint256 inputMarketId,
+        uint256 outputMarketId,
+        Acct.Info memory makerAccount,
+        Acct.Info memory takerAccount,
+        Types.Par memory oldInputPar,
+        Types.Par memory newInputPar,
+        Types.Wei memory inputWei,
         bytes memory data
     )
         public
-        returns (
-            address,
-            Actions.AssetAmount memory,
-            bytes memory
-        );
+        returns (Types.Wei memory);
 }

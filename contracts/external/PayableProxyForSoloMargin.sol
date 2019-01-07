@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
+import { Acct } from "../protocol/lib/Acct.sol";
 import { Actions } from "../protocol/lib/Actions.sol";
 import { Token } from "../protocol/lib/Token.sol";
 import { IWeth } from "./interfaces/IWeth.sol";
@@ -51,7 +52,7 @@ contract PayableProxyForSoloMargin is
     }
 
     function transact(
-        SoloMargin.AccountInfo[] memory accounts,
+        Acct.Info[] memory accounts,
         Actions.TransactionArgs[] memory args
     )
         public

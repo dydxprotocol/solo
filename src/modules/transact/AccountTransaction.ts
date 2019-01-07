@@ -14,7 +14,7 @@ import {
   Exchange,
   Transfer,
   Liquidate,
-  AccountInfo,
+  AcctInfo,
 } from '../../types';
 
 interface OptionalTransactionArgs {
@@ -23,7 +23,7 @@ interface OptionalTransactionArgs {
   secondaryMarketId?: number | string;
   otherAddress?: string;
   otherAccountId?: number | string;
-  orderData?: (string | number[])[];
+  data?: (string | number[])[];
   intent?: number | string;
 }
 
@@ -33,7 +33,7 @@ export class AccountTransaction {
   private committed: boolean;
   private options: ContractCallOptions;
   private orderMapper: OrderMapper;
-  private accounts: AccountInfo[];
+  private accounts: AcctInfo[];
 
   constructor(
     contracts: Contracts,
@@ -151,7 +151,7 @@ export class AccountTransaction {
       {
         transactionType,
         otherAddress: exchangeWrapperAddress,
-        orderData: [bytes],
+        data: [bytes],
          // TODO are these right? idk how contracts implemented
         primaryMarketId: exchange.takerMarketId.toString(),
         secondaryMarketId: exchange.makerMarketId.toString(),
@@ -183,16 +183,16 @@ export class AccountTransaction {
       secondaryMarketId: args.secondaryMarketId || '',
       otherAddress: args.otherAddress || '',
       otherAccountId: args.otherAccountId || '',
-      orderData: args.orderData || [],
+      data: args.data || [],
     };
 
     this.operations.push(transactionArgs);
   }
 
   private getAccountId(operation: AccountOperation): number {
-    const accountInfo: AccountInfo = {
+    const accountInfo: AcctInfo = {
       owner: operation.primaryAccountOwner,
-      account: operation.primaryAccountId.toString(),
+      number: operation.primaryAccountId.toString(),
     };
 
     const index = this.accounts.indexOf(accountInfo);

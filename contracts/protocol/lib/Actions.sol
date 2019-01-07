@@ -37,12 +37,11 @@ library Actions {
         Deposit,   // supply tokens
         Withdraw,  // borrow tokens
         Transfer,  // transfer balance between accounts
-        Buy,       // acquire an amount of some token
-        Sell,      // sell-off an amount of some token
+        Buy,       // buy an amount of some token (externally)
+        Sell,      // sell an amount of some token (externally)
+        Trade,     // buy an amount of some token (internally)
         Liquidate, // liquidate an undercollateralized or expiring account
-        Authorize,
-        Call,
-        Trade
+        Call       // send arbitrary data to an address
     }
 
     enum AssetDenomination {
@@ -72,7 +71,6 @@ library Actions {
         uint256 secondaryMarketId;
         address otherAddress;
         uint256 otherAccountId;
-        bool flag;
         bytes data;
     }
 
@@ -117,6 +115,16 @@ library Actions {
         bytes orderData;
     }
 
+    struct TradeArgs {
+        uint256 accountId;
+        uint256 makerAccountId;
+        uint256 inputMarketId;
+        uint256 outputMarketId;
+        AssetAmount amount;
+        address tradeContract;
+        bytes tradeData;
+    }
+
     struct LiquidateArgs {
         uint256 liquidAccountId;
         AssetAmount amount;
@@ -125,25 +133,9 @@ library Actions {
         uint256 stableAccountId;
     }
 
-    struct AuthorizeArgs {
-        uint256 accountId;
-        address who;
-        bool isAuthorized;
-    }
-
     struct CallArgs {
         uint256 accountId;
         address who;
-        bytes data;
-    }
-
-    struct TradeArgs {
-        uint256 accountId;
-        uint256 makerAccountId;
-        uint256 makerMarketId;
-        uint256 takerMarketId;
-        AssetAmount amount;
-        address autoTrader;
         bytes data;
     }
 
@@ -237,6 +229,29 @@ library Actions {
         });
     }
 
+    function parseTradeArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (TradeArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Trade);
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
+        return TradeArgs({
+            accountId: args.accountId,
+            makerAccountId: args.otherAccountId,
+            tradeContract: args.otherAddress,
+            inputMarketId: args.primaryMarketId,
+            outputMarketId: args.secondaryMarketId,
+            amount: args.amount,
+            tradeData: args.data
+        });
+    }
+
     function parseLiquidateArgs(
         TransactionArgs memory args
     )
@@ -262,21 +277,6 @@ library Actions {
         });
     }
 
-    function parseAuthorizeArgs(
-        TransactionArgs memory args
-    )
-        internal
-        pure
-        returns (AuthorizeArgs memory)
-    {
-        assert(args.transactionType == TransactionType.Authorize);
-        return AuthorizeArgs({
-            accountId: args.accountId,
-            who: args.otherAddress,
-            isAuthorized: args.flag
-        });
-    }
-
     function parseCallArgs(
         TransactionArgs memory args
     )
@@ -288,25 +288,6 @@ library Actions {
         return CallArgs({
             accountId: args.accountId,
             who: args.otherAddress,
-            data: args.data
-        });
-    }
-
-    function parseTradeArgs(
-        TransactionArgs memory args
-    )
-        internal
-        pure
-        returns (TradeArgs memory)
-    {
-        assert(args.transactionType == TransactionType.Trade);
-        return TradeArgs({
-            accountId: args.accountId,
-            makerAccountId: args.otherAccountId,
-            autoTrader: args.otherAddress,
-            makerMarketId: args.primaryMarketId,
-            takerMarketId: args.secondaryMarketId,
-            amount: args.amount,
             data: args.data
         });
     }

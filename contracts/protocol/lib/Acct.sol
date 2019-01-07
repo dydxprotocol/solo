@@ -19,23 +19,32 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Acct } from "../lib/Acct.sol";
-
 
 /**
- * @title ICallee
+ * @title Acct
  * @author dYdX
  *
  * TODO
  */
-contract ICallee {
+library Acct {
 
-    // ============ Public Functions ============
+    // ============ Structs ============
 
-    function callFunction(
-        address sender,
-        Acct.Info memory accountInfo,
-        bytes memory data
+    struct Info {
+        address owner;
+        uint256 number;
+    }
+
+    // ============ Functions ============
+
+    function equals(
+        Info memory a,
+        Info memory b
     )
-        public;
+        public
+        pure
+        returns (bool)
+    {
+        return a.owner == b.owner && a.number == b.number;
+    }
 }

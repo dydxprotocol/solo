@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Storage } from "./Storage.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
@@ -55,13 +56,8 @@ contract WorldManager is
         Decimal.D256 liquidationSpread;
     }
 
-    struct AccountInfo {
-        address owner;
-        uint256 account;
-    }
-
     struct AccountState {
-        AccountInfo info;
+        Acct.Info info;
         Types.Par[] balance;
         Types.Par[] oldBalance;
         bool isLiquidating;
@@ -122,15 +118,15 @@ contract WorldManager is
         return worldState.assets[marketId].price;
     }
 
-    function wsGetOwner(
+    function wsGetAcctInfo(
         WorldState memory worldState,
         uint256 accountId
     )
         internal
         pure
-        returns (address)
+        returns (Acct.Info memory)
     {
-        return worldState.accounts[accountId].info.owner;
+        return worldState.accounts[accountId].info;
     }
 
     function wsGetIsLiquidating(
@@ -301,7 +297,7 @@ contract WorldManager is
     // ============ Loading Functions ============
 
     function wsInitialize(
-        AccountInfo[] memory accounts
+        Acct.Info[] memory accounts
     )
         internal
         view
@@ -309,13 +305,9 @@ contract WorldManager is
     {
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
-            address ownerI = accounts[i].owner;
-            uint256 accountI = accounts[i].account;
             for (uint256 j = i + 1; j < accounts.length; j++) {
-                address ownerJ = accounts[j].owner;
-                uint256 accountJ = accounts[j].account;
                 require(
-                    ownerI != ownerJ || accountI != accountJ,
+                    !Acct.equals(accounts[i], accounts[j]),
                     "TODO_REASON"
                 );
             }
@@ -329,7 +321,7 @@ contract WorldManager is
         // load all account information aggressively
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             worldState.accounts[a].info.owner = accounts[a].owner;
-            worldState.accounts[a].info.account = accounts[a].account;
+            worldState.accounts[a].info.number = accounts[a].number;
             worldState.accounts[a].balance = new Types.Par[](worldState.assets.length);
             worldState.accounts[a].oldBalance = new Types.Par[](worldState.assets.length);
         }
@@ -423,7 +415,7 @@ contract WorldManager is
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
-            uint256 account = worldState.accounts[a].info.account;
+            uint256 account = worldState.accounts[a].info.number;
             for (uint256 i = 0; i < worldState.assets.length; i++) {
                 // load balance from memory
                 worldState.accounts[a].oldBalance[i] = g_accounts[owner][account].balances[i];
@@ -445,7 +437,7 @@ contract WorldManager is
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
-            uint256 account = worldState.accounts[a].info.account;
+            uint256 account = worldState.accounts[a].info.number;
             worldState.accounts[a].isLiquidating = g_accounts[owner][account].isLiquidating;
         }
     }
@@ -538,7 +530,7 @@ contract WorldManager is
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
-            uint256 account = worldState.accounts[a].info.account;
+            uint256 account = worldState.accounts[a].info.number;
             for (uint256 i = 0; i < worldState.assets.length; i++) {
                 Types.Par memory oldPar = worldState.accounts[a].oldBalance[i];
                 Types.Par memory newPar = worldState.accounts[a].balance[i];
@@ -556,7 +548,7 @@ contract WorldManager is
     {
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
             address owner = worldState.accounts[a].info.owner;
-            uint256 account = worldState.accounts[a].info.account;
+            uint256 account = worldState.accounts[a].info.number;
             bool flag =
                 worldState.accounts[a].isLiquidating
                 && !worldState.accounts[a].checkPermission;
