@@ -97,9 +97,9 @@ export interface Liquidate extends AccountOperation {
   liquidAccountId: BN;
 }
 
-export interface AccountInfo {
+export interface Info {
   owner: string;
-  account: number | string;
+  number: number | string;
 }
 
 export interface TransactionArgs {

@@ -14,7 +14,7 @@ import {
   Exchange,
   Transfer,
   Liquidate,
-  AccountInfo,
+  Info,
 } from '../../types';
 
 interface OptionalTransactionArgs {
@@ -33,7 +33,7 @@ export class AccountTransaction {
   private committed: boolean;
   private options: ContractCallOptions;
   private orderMapper: OrderMapper;
-  private accounts: AccountInfo[];
+  private accounts: Info[];
 
   constructor(
     contracts: Contracts,
@@ -190,7 +190,7 @@ export class AccountTransaction {
   }
 
   private getAccountId(operation: AccountOperation): number {
-    const accountInfo: AccountInfo = {
+    const accountInfo: Info = {
       owner: operation.primaryAccountOwner,
       account: operation.primaryAccountId.toString(),
     };

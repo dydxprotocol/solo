@@ -19,33 +19,29 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Accountz } from '../lib/Accountz.sol';
-import { Actions } from '../lib/Actions.sol';
-
 
 /**
- * @title IAutoTrader
+ * @title Accountz
  * @author dYdX
  *
  * TODO
  */
-contract IAutoTrader {
+library Accountz {
+    // ============ Structs ============
 
-    // ============ Public Functions ============
+    struct Info {
+        address owner;
+        uint256 number;
+    }
 
-    function getTradeCost(
-        uint256 makerAsset,
-        uint256 takerAsset,
-        address taker,
-        Accountz.Info memory makerInfo,
-        Accountz.Info memory takerInfo,
-        Actions.AssetAmount memory takerAssetAmount,
-        bytes memory data
+    function equals(
+        Info memory a,
+        Info memory b
     )
         public
-        returns (
-            address,
-            Actions.AssetAmount memory,
-            bytes memory
-        );
+        pure
+        returns (bool)
+    {
+        return a.owner == b.owner && a.number == b.number;
+    }
 }

@@ -23,6 +23,7 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./Storage.sol";
 import { WorldManager } from "./WorldManager.sol";
+import { Accountz } from "../lib/Accountz.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
@@ -30,7 +31,7 @@ import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Time } from "../lib/Time.sol";
 import { Types } from "../lib/Types.sol";
-import { ICallee } from "../interfaces/Icallee.sol";
+import { ICallee } from "../interfaces/ICallee.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 
 
@@ -52,7 +53,7 @@ contract TransactionLogic is
     // ============ Public Functions ============
 
     function transact(
-        AccountInfo[] memory accounts,
+        Accountz.Info[] memory accounts,
         Actions.TransactionArgs[] memory args
     )
         public
@@ -86,23 +87,23 @@ contract TransactionLogic is
         else if (ttype == Actions.TransactionType.Transfer) {
             _transfer(worldState, Actions.parseTransferArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Buy) {
-            _buy(worldState, Actions.parseBuyArgs(args));
+        else if (ttype == Actions.TransactionType.ExtBuy) {
+            _extbuy(worldState, Actions.parseExtBuyArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Sell) {
-            _sell(worldState, Actions.parseSellArgs(args));
+        else if (ttype == Actions.TransactionType.ExtSell) {
+            _extsell(worldState, Actions.parseExtSellArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.IntBuy) {
+            _intbuy(worldState, Actions.parseIntBuyArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.IntSell) {
+            _intsell(worldState, Actions.parseIntSell(args));
         }
         else if (ttype == Actions.TransactionType.Liquidate) {
             _liquidate(worldState, Actions.parseLiquidateArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Authorize) {
-            _authorize(worldState, Actions.parseAuthorizeArgs(args));
-        }
         else if (ttype == Actions.TransactionType.Call) {
             _call(worldState, Actions.parseCallArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Authorize) {
-            _trade(worldState, Actions.parseTradeArgs(args));
         }
     }
 
@@ -112,8 +113,10 @@ contract TransactionLogic is
     )
         private
     {
+        Accountz.Info memory accountInfo = wsGetAccountzInfo(worldState, args.accountId);
+
         require(
-            args.from == msg.sender || args.from == wsGetOwner(worldState, args.accountId),
+            args.from == msg.sender || args.from == accountInfo.owner,
             "TODO_REASON"
         );
 
@@ -208,9 +211,9 @@ contract TransactionLogic is
         );
     }
 
-    function _buy(
+    function _extbuy(
         WorldState memory worldState,
-        Actions.BuyArgs memory args
+        Actions.ExtBuyArgs memory args
     )
         private
     {
@@ -237,9 +240,10 @@ contract TransactionLogic is
             args.orderData
         );
 
+        Accountz.Info memory accountInfo = wsGetAccountzInfo(worldState, args.accountId);
         Types.Wei memory tokensReceived = Exchange.exchange(
             args.exchangeWrapper,
-            wsGetOwner(worldState, args.accountId),
+            accountInfo.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -266,9 +270,9 @@ contract TransactionLogic is
         );
     }
 
-    function _sell(
+    function _extsell(
         WorldState memory worldState,
-        Actions.SellArgs memory args
+        Actions.ExtSellArgs memory args
     )
         private
     {
@@ -287,9 +291,10 @@ contract TransactionLogic is
             args.amount
         );
 
+        Accountz.Info memory accountInfo = wsGetAccountzInfo(worldState, args.accountId);
         Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
-            wsGetOwner(worldState, args.accountId),
+            accountInfo.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -309,6 +314,45 @@ contract TransactionLogic is
             args.makerMarketId,
             makerWei
         );
+    }
+
+    function _intbuy(
+        WorldState memory worldState,
+        Actions.IntBuyArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        // !! Does not use WorldState, goes straight to storage
+        Accountz.Info memory takerInfo = wsGetAccountzInfo(worldState, args.accountId);
+        Accountz.Info memory makerInfo = wsGetAccountzInfo(worldState, args.makerAccountId);
+
+        require(
+            g_operators[makerInfo.owner][args.autoTrader],
+            "TODO_REASON"
+        );
+
+        Actions.AssetAmount memory makerAmount = _getTradeCostRecurse(
+            args.autoTrader,
+            args.makerMarketId,
+            args.takerMarketId,
+            makerInfo,
+            takerInfo,
+            args.amount,
+            args.data
+        );
+
+        // TODO transfer the funds between accounts
+    }
+
+    function _intsell(
+        WorldState memory worldState,
+        Actions.IntBuyArgs memory args
+    )
+        private
+    {
+        // TODO
     }
 
     function _liquidate(
@@ -404,20 +448,6 @@ contract TransactionLogic is
         // reducing the index of the negative token and then wiping away the negative value
     }
 
-    function _authorize(
-        WorldState memory worldState,
-        Actions.AuthorizeArgs memory args
-    )
-        private
-    {
-        wsSetCheckPerimissions(worldState, args.accountId);
-
-        // !! Does not use WorldState, goes straight to storage
-        address accountOwner = worldState.accounts[args.accountId].info.owner;
-        uint256 accountNum = worldState.accounts[args.accountId].info.account;
-        g_accounts[accountOwner][accountNum].authorizedTraders[args.who] = args.isAuthorized;
-    }
-
     function _call(
         WorldState memory worldState,
         Actions.CallArgs memory args
@@ -427,44 +457,13 @@ contract TransactionLogic is
         wsSetCheckPerimissions(worldState, args.accountId);
 
         // !! Does not use WorldState, goes straight to storage
-        address accountOwner = worldState.accounts[args.accountId].info.owner;
-        uint256 accountNum = worldState.accounts[args.accountId].info.account;
+        Accountz.Info memory accountInfo = wsGetAccountzInfo(worldState, args.accountId);
 
         _callRecurse(
             args.who,
-            accountOwner,
-            accountNum,
+            accountInfo,
             args.data
         );
-    }
-
-    function _trade(
-        WorldState memory worldState,
-        Actions.TradeArgs memory args
-    )
-        private
-    {
-        wsSetCheckPerimissions(worldState, args.accountId);
-
-        // !! Does not use WorldState, goes straight to storage
-        address takerAccountOwner = worldState.accounts[args.accountId].info.owner;
-        uint256 takerAccountNum = worldState.accounts[args.accountId].info.account;
-        address makerAccountOwner = worldState.accounts[args.makerAccountId].info.owner;
-        uint256 makerAccountNum = worldState.accounts[args.makerAccountId].info.account;
-
-        Actions.AssetAmount memory makerAmount = _getTradeCostRecurse(
-            args.autoTrader,
-            args.makerMarketId,
-            args.takerMarketId,
-            makerAccountOwner,
-            makerAccountNum,
-            takerAccountOwner,
-            takerAccountNum,
-            args.amount,
-            args.data
-        );
-
-        // TODO transfer the funds between accounts
     }
 
     function _getCollateralWei(
@@ -501,8 +500,7 @@ contract TransactionLogic is
 
     function _callRecurse(
         address callee,
-        address accountOwner,
-        uint256 accountId,
+        Accountz.Info memory accountInfo,
         bytes memory data
     )
         private
@@ -512,8 +510,7 @@ contract TransactionLogic is
             bytes memory nextData
         ) = ICallee(callee).callFunction(
             msg.sender,
-            accountOwner,
-            accountId,
+            accountInfo,
             data
         );
 
@@ -525,8 +522,7 @@ contract TransactionLogic is
         if (callee != nextCallee) {
             _callRecurse(
                 nextCallee,
-                accountOwner,
-                accountId,
+                accountInfo,
                 nextData
             );
         }
@@ -536,10 +532,8 @@ contract TransactionLogic is
         address trader,
         uint256 makerAsset,
         uint256 takerAsset,
-        address makerAccountOwner,
-        uint256 makerAccountId,
-        address takerAccountOwner,
-        uint256 takerAccountId,
+        Accountz.Info memory makerInfo,
+        Accountz.Info memory takerInfo,
         Actions.AssetAmount memory takerAssetAmount,
         bytes memory data
     )
@@ -554,10 +548,8 @@ contract TransactionLogic is
             makerAsset,
             takerAsset,
             msg.sender,
-            makerAccountOwner,
-            makerAccountId,
-            takerAccountOwner,
-            takerAccountId,
+            makerInfo,
+            takerInfo,
             takerAssetAmount,
             data
         );
@@ -572,10 +564,8 @@ contract TransactionLogic is
                 nextTrader,
                 makerAsset,
                 takerAsset,
-                makerAccountOwner,
-                makerAccountId,
-                takerAccountOwner,
-                takerAccountId,
+                makerInfo,
+                takerInfo,
                 takerAssetAmount,
                 nextData
             );
