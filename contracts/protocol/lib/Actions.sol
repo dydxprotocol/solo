@@ -97,7 +97,7 @@ library Actions {
         uint256 otherAccountId;
     }
 
-    struct BuyArgs {
+    struct ExtBuyArgs {
         uint256 accountId;
         AssetAmount amount;
         uint256 makerMarketId;
@@ -106,7 +106,7 @@ library Actions {
         bytes orderData;
     }
 
-    struct SellArgs {
+    struct ExtSellArgs {
         uint256 accountId;
         AssetAmount amount;
         uint256 takerMarketId;
@@ -193,15 +193,15 @@ library Actions {
         });
     }
 
-    function parseBuyArgs(
+    function parseExtBuyArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (BuyArgs memory)
+        returns (ExtBuyArgs memory)
     {
-        assert(args.transactionType == TransactionType.Buy);
-        return BuyArgs({
+        assert(args.transactionType == TransactionType.ExtBuy);
+        return ExtBuyArgs({
             accountId: args.accountId,
             amount: args.amount,
             makerMarketId: args.primaryMarketId,
@@ -211,15 +211,15 @@ library Actions {
         });
     }
 
-    function parseSellArgs(
+    function parseExtSellArgs(
         TransactionArgs memory args
     )
         internal
         pure
-        returns (SellArgs memory)
+        returns (ExtSellArgs memory)
     {
-        assert(args.transactionType == TransactionType.Sell);
-        return SellArgs({
+        assert(args.transactionType == TransactionType.ExtSell);
+        return ExtSellArgs({
             accountId: args.accountId,
             amount: args.amount,
             takerMarketId: args.primaryMarketId,
@@ -257,6 +257,29 @@ library Actions {
     )
         internal
         pure
+        returns (IntBuyArgs memory)
+    {
+        assert(args.transactionType == TransactionType.IntBuy);
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
+        return IntBuyArgs({
+            accountId: args.accountId,
+            makerAccountId: args.otherAccountId,
+            autoTrader: args.otherAddress,
+            makerMarketId: args.primaryMarketId,
+            takerMarketId: args.secondaryMarketId,
+            amount: args.amount,
+            data: args.data
+        });
+    }
+
+    function parseCallArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
@@ -274,21 +297,6 @@ library Actions {
             underwaterMarketId: args.primaryMarketId,
             collateralMarketId: args.secondaryMarketId,
             stableAccountId: args.otherAccountId
-        });
-    }
-
-    function parseCallArgs(
-        TransactionArgs memory args
-    )
-        internal
-        pure
-        returns (CallArgs memory)
-    {
-        assert(args.transactionType == TransactionType.Call);
-        return CallArgs({
-            accountId: args.accountId,
-            who: args.otherAddress,
-            data: args.data
         });
     }
 }

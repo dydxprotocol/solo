@@ -117,7 +117,6 @@ contract WorldManager is
         }
         return worldState.assets[marketId].price;
     }
-
     function wsGetAcctInfo(
         WorldState memory worldState,
         uint256 accountId

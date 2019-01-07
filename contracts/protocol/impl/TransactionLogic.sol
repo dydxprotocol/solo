@@ -87,11 +87,17 @@ contract TransactionLogic is
         else if (ttype == Actions.TransactionType.Transfer) {
             _transfer(worldState, Actions.parseTransferArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Buy) {
-            _buy(worldState, Actions.parseBuyArgs(args));
+        else if (ttype == Actions.TransactionType.ExtBuy) {
+            _extbuy(worldState, Actions.parseExtBuyArgs(args));
         }
-        else if (ttype == Actions.TransactionType.Sell) {
-            _sell(worldState, Actions.parseSellArgs(args));
+        else if (ttype == Actions.TransactionType.ExtSell) {
+            _extsell(worldState, Actions.parseExtSellArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.IntBuy) {
+            _intbuy(worldState, Actions.parseIntBuyArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.IntSell) {
+            _intsell(worldState, Actions.parseIntSell(args));
         }
         else if (ttype == Actions.TransactionType.Trade) {
             _trade(worldState, Actions.parseTradeArgs(args));
@@ -208,9 +214,9 @@ contract TransactionLogic is
         );
     }
 
-    function _buy(
+    function _extbuy(
         WorldState memory worldState,
-        Actions.BuyArgs memory args
+        Actions.ExtBuyArgs memory args
     )
         private
     {
@@ -267,9 +273,9 @@ contract TransactionLogic is
         );
     }
 
-    function _sell(
+    function _extsell(
         WorldState memory worldState,
-        Actions.SellArgs memory args
+        Actions.ExtSellArgs memory args
     )
         private
     {
