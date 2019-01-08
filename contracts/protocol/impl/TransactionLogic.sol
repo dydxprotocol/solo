@@ -23,6 +23,9 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./Storage.sol";
 import { WorldManager } from "./WorldManager.sol";
+import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
+import { ICallee } from "../interfaces/ICallee.sol";
+import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
@@ -50,7 +53,7 @@ contract TransactionLogic is
     // ============ Public Functions ============
 
     function transact(
-        AccountInfo[] memory accounts,
+        Acct.Info[] memory accounts,
         Actions.TransactionArgs[] memory args
     )
         public
@@ -90,8 +93,14 @@ contract TransactionLogic is
         else if (ttype == Actions.TransactionType.Sell) {
             _sell(worldState, Actions.parseSellArgs(args));
         }
+        else if (ttype == Actions.TransactionType.Trade) {
+            _trade(worldState, Actions.parseTradeArgs(args));
+        }
         else if (ttype == Actions.TransactionType.Liquidate) {
             _liquidate(worldState, Actions.parseLiquidateArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Call) {
+            _call(worldState, Actions.parseCallArgs(args));
         }
     }
 
@@ -101,8 +110,10 @@ contract TransactionLogic is
     )
         private
     {
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
+
         require(
-            args.from == msg.sender || args.from == wsGetOwner(worldState, args.accountId),
+            args.from == msg.sender || args.from == account.owner,
             "TODO_REASON"
         );
 
@@ -226,9 +237,10 @@ contract TransactionLogic is
             args.orderData
         );
 
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
         Types.Wei memory tokensReceived = Exchange.exchange(
             args.exchangeWrapper,
-            wsGetOwner(worldState, args.accountId),
+            account.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -276,9 +288,10 @@ contract TransactionLogic is
             args.amount
         );
 
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
         Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
-            wsGetOwner(worldState, args.accountId),
+            account.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -297,6 +310,82 @@ contract TransactionLogic is
             args.accountId,
             args.makerMarketId,
             makerWei
+        );
+    }
+
+    function _trade(
+        WorldState memory worldState,
+        Actions.TradeArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        Acct.Info memory makerAccount = wsGetAcctInfo(worldState, args.makerAccountId);
+        Acct.Info memory takerAccount = wsGetAcctInfo(worldState, args.accountId);
+
+        require(
+            g_operators[makerAccount.owner][args.tradeContract],
+            "TODO_REASON"
+        );
+
+        Types.Par memory oldInputPar = wsGetBalance(
+            worldState,
+            args.inputMarketId,
+            args.makerAccountId
+        );
+        (
+            Types.Par memory newInputPar,
+            Types.Wei memory inputWei
+        ) = wsGetNewParAndDeltaWei(
+            worldState,
+            args.accountId,
+            args.inputMarketId,
+            args.amount
+        );
+
+        Types.Wei memory outputWei = IAutoTrader(args.tradeContract).getTradeCost(
+            args.inputMarketId,
+            args.outputMarketId,
+            makerAccount,
+            takerAccount,
+            oldInputPar,
+            newInputPar,
+            inputWei,
+            args.tradeData
+        );
+
+        require(
+            outputWei.sign != inputWei.sign,
+            "TODO_REASON"
+        );
+
+        // set the balance for the maker
+        wsSetBalance(
+            worldState,
+            args.makerAccountId,
+            args.inputMarketId,
+            newInputPar
+        );
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.makerAccountId,
+            args.outputMarketId,
+            outputWei
+        );
+
+        // set the balance for the taker
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.accountId,
+            args.inputMarketId,
+            inputWei.negative()
+        );
+        wsSetBalanceFromDeltaWei(
+            worldState,
+            args.accountId,
+            args.outputMarketId,
+            outputWei.negative()
         );
     }
 
@@ -391,6 +480,23 @@ contract TransactionLogic is
 
         // TODO: check if the liquidated account has only negative values left. then VAPORIZE it by
         // reducing the index of the negative token and then wiping away the negative value
+    }
+
+    function _call(
+        WorldState memory worldState,
+        Actions.CallArgs memory args
+    )
+        private
+    {
+        wsSetCheckPerimissions(worldState, args.accountId);
+
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
+
+        ICallee(args.who).callFunction(
+            msg.sender,
+            account,
+            args.data
+        );
     }
 
     function _getCollateralWei(

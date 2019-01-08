@@ -34,12 +34,14 @@ library Actions {
     // ============ Enums ============
 
     enum TransactionType {
-        Deposit,  // supply tokens
-        Withdraw, // borrow tokens
-        Transfer, // transfer balance between accounts
-        Buy,      // acquire an amount of some token
-        Sell,     // sell-off an amount of some token
-        Liquidate // liquidate an undercollateralized or expiring account
+        Deposit,   // supply tokens
+        Withdraw,  // borrow tokens
+        Transfer,  // transfer balance between accounts
+        Buy,       // buy an amount of some token (externally)
+        Sell,      // sell an amount of some token (externally)
+        Trade,     // buy an amount of some token (internally)
+        Liquidate, // liquidate an undercollateralized or expiring account
+        Call       // send arbitrary data to an address
     }
 
     enum AssetDenomination {
@@ -69,7 +71,7 @@ library Actions {
         uint256 secondaryMarketId;
         address otherAddress;
         uint256 otherAccountId;
-        bytes orderData;
+        bytes data;
     }
 
     // ============ Action Types ============
@@ -113,12 +115,28 @@ library Actions {
         bytes orderData;
     }
 
+    struct TradeArgs {
+        uint256 accountId;
+        uint256 makerAccountId;
+        uint256 inputMarketId;
+        uint256 outputMarketId;
+        AssetAmount amount;
+        address tradeContract;
+        bytes tradeData;
+    }
+
     struct LiquidateArgs {
         uint256 liquidAccountId;
         AssetAmount amount;
         uint256 underwaterMarketId;
         uint256 collateralMarketId;
         uint256 stableAccountId;
+    }
+
+    struct CallArgs {
+        uint256 accountId;
+        address who;
+        bytes data;
     }
 
     // ============ Parsing Functions ============
@@ -189,7 +207,7 @@ library Actions {
             makerMarketId: args.primaryMarketId,
             takerMarketId: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
-            orderData: args.orderData
+            orderData: args.data
         });
     }
 
@@ -207,7 +225,30 @@ library Actions {
             takerMarketId: args.primaryMarketId,
             makerMarketId: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
-            orderData: args.orderData
+            orderData: args.data
+        });
+    }
+
+    function parseTradeArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (TradeArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Trade);
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
+        return TradeArgs({
+            accountId: args.accountId,
+            makerAccountId: args.otherAccountId,
+            tradeContract: args.otherAddress,
+            inputMarketId: args.primaryMarketId,
+            outputMarketId: args.secondaryMarketId,
+            amount: args.amount,
+            tradeData: args.data
         });
     }
 
@@ -233,6 +274,21 @@ library Actions {
             underwaterMarketId: args.primaryMarketId,
             collateralMarketId: args.secondaryMarketId,
             stableAccountId: args.otherAccountId
+        });
+    }
+
+    function parseCallArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (CallArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Call);
+        return CallArgs({
+            accountId: args.accountId,
+            who: args.otherAddress,
+            data: args.data
         });
     }
 }
