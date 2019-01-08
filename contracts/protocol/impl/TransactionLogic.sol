@@ -117,7 +117,7 @@ contract TransactionLogic is
             "TODO_REASON"
         );
 
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetPrimary(worldState, args.accountId);
 
         (
             Types.Par memory newPar,
@@ -148,7 +148,7 @@ contract TransactionLogic is
     )
         private
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetPrimary(worldState, args.accountId);
 
         (
             Types.Par memory newPar,
@@ -180,8 +180,8 @@ contract TransactionLogic is
         private
         view
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
-        wsSetCheckPerimissions(worldState, args.otherAccountId);
+        wsSetPrimary(worldState, args.accountId);
+        wsSetPrimary(worldState, args.otherAccountId);
 
         (
             Types.Par memory newPar,
@@ -214,7 +214,7 @@ contract TransactionLogic is
     )
         private
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetPrimary(worldState, args.accountId);
 
         address takerToken = wsGetToken(worldState, args.takerMarketId);
         address makerToken = wsGetToken(worldState, args.makerMarketId);
@@ -273,7 +273,7 @@ contract TransactionLogic is
     )
         private
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetPrimary(worldState, args.accountId);
 
         address takerToken = wsGetToken(worldState, args.takerMarketId);
         address makerToken = wsGetToken(worldState, args.makerMarketId);
@@ -319,7 +319,8 @@ contract TransactionLogic is
     )
         private
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetTraded(worldState, args.makerAccountId);
+        wsSetPrimary(worldState, args.accountId);
 
         Acct.Info memory makerAccount = wsGetAcctInfo(worldState, args.makerAccountId);
         Acct.Info memory takerAccount = wsGetAcctInfo(worldState, args.accountId);
@@ -394,15 +395,14 @@ contract TransactionLogic is
         Actions.LiquidateArgs memory args
     )
         private
-        view
     {
-        wsSetCheckPerimissions(worldState, args.stableAccountId);
+        wsSetPrimary(worldState, args.stableAccountId);
         // doesn't mark liquidAccountId for permissions
 
         // verify that this account can be liquidated
         if (!wsGetIsLiquidating(worldState, args.liquidAccountId)) {
             require(
-                !_isCollateralized(worldState, args.liquidAccountId),
+                !wsGetIsCollateralized(worldState, args.liquidAccountId),
                 "TODO_REASON"
             );
             wsSetIsLiquidating(worldState, args.liquidAccountId);
@@ -419,7 +419,6 @@ contract TransactionLogic is
             wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative(),
             "TODO_REASON"
         );
-
 
         // calculate the underwater to pay back
         (
@@ -488,7 +487,7 @@ contract TransactionLogic is
     )
         private
     {
-        wsSetCheckPerimissions(worldState, args.accountId);
+        wsSetPrimary(worldState, args.accountId);
 
         Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
 
@@ -527,7 +526,11 @@ contract TransactionLogic is
         );
 
         // boost the amount of collateral by the liquidation spread
-        collateralWei.value = Decimal.mul(wsGetLiquidationSpread(worldState), collateralWei.value);
+        collateralWei.value = Decimal.mul(
+            wsGetLiquidationSpread(worldState),
+            collateralWei.value
+        );
+
         return collateralWei;
     }
 }

@@ -20,8 +20,10 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { Storage } from "./Storage.sol";
+import { WorldManager } from "./WorldManager.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { Acct } from "../lib/Acct.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
@@ -35,7 +37,8 @@ import { Types } from "../lib/Types.sol";
  * Read-only functions to help understand the state of the protocol
  */
 contract Queries is
-    Storage
+    Storage,
+    WorldManager
 {
     // ============ Admin Variables ============
 
@@ -120,9 +123,8 @@ contract Queries is
         view
         returns (Interest.Index memory)
     {
-        marketId;
-        g_markets[marketId].index;
-        // TODO: give the updated index
+        WorldState memory worldState = wsInitializeEmpty();
+        return wsGetIndex(worldState, marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -194,41 +196,35 @@ contract Queries is
     // ============ Account-Based Variables ============
 
     function getAccountBalance(
-        address owner,
-        uint256 account,
+        Acct.Info memory account,
         uint256 marketId
     )
         public
         view
         returns (Types.Par memory)
     {
-        return g_accounts[owner][account].balances[marketId];
+        return g_accounts[account.owner][account.number].balances[marketId];
     }
 
     function getAccountIsLiquidating(
-        address owner,
-        uint256 account
+        Acct.Info memory account
     )
         public
         view
         returns (bool)
     {
-        return g_accounts[owner][account].isLiquidating;
+        return g_accounts[account.owner][account.number].isLiquidating;
     }
 
     function getAccountValues(
-        address owner,
-        uint256 account
+        Acct.Info memory account
     )
         public
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        owner;
-        account;
-        g_numMarkets;
-        // TODO: return the value of the borrowAmount and the value of the supplyAmount
-        // The client can decide if the position is collateralized using the liquidationRatio
+        WorldState memory worldState = wsInitializeSingle(account);
+        return wsGetAccountValues(worldState, 0);
     }
 
 }
