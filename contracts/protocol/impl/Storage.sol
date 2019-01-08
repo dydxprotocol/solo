@@ -47,6 +47,7 @@ contract Storage {
         Interest.Index index;
         IPriceOracle priceOracle;
         IInterestSetter interestSetter;
+        bool isClosing;
     }
 
     // ============ Storage ============
