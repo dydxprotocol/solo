@@ -45,7 +45,7 @@ contract Admin is
     WorldManager
 {
     uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
-    uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 100%
+    uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 110%
     uint256 constant MAX_LIQUIDATION_SPREAD =  15 * 10**16; // 15%
     uint256 constant MIN_LIQUIDATION_SPREAD =   1 * 10**16; // 1%
     uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
@@ -61,6 +61,8 @@ contract Admin is
         nonReentrant
         returns (uint256)
     {
+        _validateMarketId(marketId);
+
         WorldState memory worldState = wsInitializeEmpty();
         Interest.Index memory index = wsGetIndex(worldState, marketId);
         g_markets[marketId].index = index;
@@ -79,7 +81,7 @@ contract Admin is
         uint256 negativeTokens = supplyWei.value;
 
         require(
-            positiveTokens >= negativeTokens,
+            positiveTokens > negativeTokens,
             "TODO_REASON"
         );
 
@@ -88,7 +90,7 @@ contract Admin is
         return tokensToWithdraw;
     }
 
-    function ownerWithdrawAirdroppedTokens(
+    function ownerWithdrawUnsupportedTokens(
         address token,
         address recipient
     )

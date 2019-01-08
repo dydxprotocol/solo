@@ -582,12 +582,11 @@ contract WorldManager is
         WorldState memory worldState
     )
         private
-        view
     {
         Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
 
         for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            Acct.Info memory account = wsGetAcctInfo(worldstate, a);
+            Acct.Info memory account = wsGetAcctInfo(worldState, a);
 
             // check minimum borrowed value for all accounts
             (, Monetary.Value memory borrowValue) = wsGetAccountValues(worldState, a);
