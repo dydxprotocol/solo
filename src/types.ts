@@ -46,7 +46,9 @@ export enum TransactionType {
   Transfer = 2,
   Buy = 3,
   Sell = 4,
-  Liquidate = 5,
+  Trade = 5,
+  Liquidate = 6,
+  Call = 7,
 }
 
 export interface Amount {
@@ -60,11 +62,11 @@ export type address = string;
 export interface AccountOperation {
   primaryAccountOwner: address;
   primaryAccountId: BN;
-  amount: Amount;
 }
 
 interface ExternalTransfer extends AccountOperation {
   marketId: BN;
+  amount: Amount;
 }
 
 export interface Deposit extends ExternalTransfer {
@@ -79,12 +81,14 @@ export interface Transfer extends AccountOperation {
   marketId: BN;
   toAccountOwner: address;
   toAccountId: BN;
+  amount: Amount;
 }
 
 export interface Exchange extends AccountOperation {
   takerMarketId: BN;
   makerMarketId: BN;
   order: Order;
+  amount: Amount;
 }
 
 export interface Buy extends Exchange {}
@@ -95,6 +99,12 @@ export interface Liquidate extends AccountOperation {
   payoutMarketId: BN;
   liquidAccountOwner: address;
   liquidAccountId: BN;
+  amount: Amount;
+}
+
+export interface SetExpiry extends AccountOperation {
+  marketId: BN;
+  expiryTime: BN;
 }
 
 export interface AcctInfo {

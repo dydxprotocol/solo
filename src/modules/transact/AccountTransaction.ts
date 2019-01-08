@@ -1,5 +1,6 @@
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
+import BN from 'bn.js';
 import { Contracts } from '../../lib/Contracts';
 import {
   AccountOperation,
@@ -15,16 +16,19 @@ import {
   Transfer,
   Liquidate,
   AcctInfo,
+  SetExpiry,
+  Amount,
 } from '../../types';
+import { toBytes } from '../../lib/BytesHelper';
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
   primaryMarketId?: number | string;
   secondaryMarketId?: number | string;
   otherAddress?: string;
-  otherAccountId?: number | string;
+  otherAccountId?: number;
   data?: (string | number[])[];
-  intent?: number | string;
+  amount?: Amount;
 }
 
 export class AccountTransaction {
@@ -53,6 +57,7 @@ export class AccountTransaction {
       deposit,
       {
         transactionType: TransactionType.Deposit,
+        amount: deposit.amount,
         otherAddress: deposit.from,
         primaryMarketId: deposit.marketId.toString(),
       },
@@ -65,6 +70,7 @@ export class AccountTransaction {
     this.addTransactionArgs(
       withdraw,
       {
+        amount: withdraw.amount,
         transactionType: TransactionType.Withdraw,
         otherAddress: withdraw.to,
         primaryMarketId: withdraw.marketId.toString(),
@@ -79,9 +85,10 @@ export class AccountTransaction {
       transfer,
       {
         transactionType: TransactionType.Transfer,
+        amount: transfer.amount,
         primaryMarketId: transfer.marketId.toString(),
         otherAddress: transfer.toAccountOwner,
-        otherAccountId: transfer.toAccountId.toString(),
+        otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
       },
     );
 
@@ -101,10 +108,40 @@ export class AccountTransaction {
       liquidate,
       {
         transactionType: TransactionType.Liquidate,
+        amount: liquidate.amount,
         primaryMarketId: liquidate.liquidMarketId.toString(),
         secondaryMarketId: liquidate.payoutMarketId.toString(),
         otherAddress: liquidate.liquidAccountOwner,
-        otherAccountId: liquidate.liquidAccountId.toString(),
+        otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
+      },
+    );
+
+    return this;
+  }
+
+  public setExpiry(args: SetExpiry): AccountTransaction {
+    this.addTransactionArgs(
+      args,
+      {
+        transactionType: TransactionType.Call,
+        otherAddress: this.contracts.expiry.options.address,
+        data: [toBytes(args.marketId, args.expiryTime)],
+      },
+    );
+
+    return this;
+  }
+
+  public liquidateExpiredAccount(liquidate: Liquidate): AccountTransaction {
+    this.addTransactionArgs(
+      liquidate,
+      {
+        transactionType: TransactionType.Trade,
+        amount: liquidate.amount,
+        primaryMarketId: liquidate.liquidMarketId.toString(),
+        secondaryMarketId: liquidate.payoutMarketId.toString(),
+        otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
+        otherAddress: this.contracts.expiry.options.address,
       },
     );
 
@@ -150,6 +187,7 @@ export class AccountTransaction {
       exchange,
       {
         transactionType,
+        amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
         data: [bytes],
          // TODO are these right? idk how contracts implemented
@@ -169,15 +207,21 @@ export class AccountTransaction {
       throw new Error('Transaction already committed');
     }
 
-    const amount = {
-      sign: !operation.amount.value.isNeg(),
-      denomination: operation.amount.denomination,
-      ref: operation.amount.reference,
-      value: operation.amount.value.abs().toString(10),
+    const amount = args.amount ? {
+      sign: !args.amount.value.isNeg(),
+      denomination: args.amount.denomination,
+      ref: args.amount.reference,
+      value: args.amount.value.abs().toString(10),
+    } : {
+      sign: false,
+      denomination: 0,
+      ref: 0,
+      value: 0,
     };
+
     const transactionArgs: TransactionArgs = {
       amount,
-      accountId: this.getAccountId(operation),
+      accountId: this.getPrimaryAccountId(operation),
       transactionType: args.transactionType,
       primaryMarketId: args.primaryMarketId || '',
       secondaryMarketId: args.secondaryMarketId || '',
@@ -189,10 +233,14 @@ export class AccountTransaction {
     this.operations.push(transactionArgs);
   }
 
-  private getAccountId(operation: AccountOperation): number {
+  private getPrimaryAccountId(operation: AccountOperation): number {
+    return this.getAccountId(operation.primaryAccountOwner, operation.primaryAccountId);
+  }
+
+  private getAccountId(accountOwner: string, accountNumber: BN): number {
     const accountInfo: AcctInfo = {
-      owner: operation.primaryAccountOwner,
-      number: operation.primaryAccountId.toString(),
+      owner: accountOwner,
+      number: accountNumber.toString(),
     };
 
     const index = this.accounts.indexOf(accountInfo);
