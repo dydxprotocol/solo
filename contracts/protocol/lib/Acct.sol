@@ -41,7 +41,7 @@ library Acct {
         Info memory a,
         Info memory b
     )
-        public
+        internal
         pure
         returns (bool)
     {

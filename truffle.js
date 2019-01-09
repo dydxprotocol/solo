@@ -1,18 +1,5 @@
 require('ts-node/register');
 
-let mocha = {
-  useColors: true,
-};
-
-if (process.env.TRUFFLE_REPORTER) {
-  mocha = {
-    reporter: 'mocha-junit-reporter',
-    reporterOptions: {
-      mochaFile: './junit/test-results.xml',
-    },
-  };
-}
-
 module.exports = {
   compilers: {
     solc: {
@@ -20,11 +7,18 @@ module.exports = {
       docker: true,
       optimizer: {
         enabled: true,
-        runs: 10000,
+        runs: 200,
       },
     },
   },
   networks: {
+    test: {
+      host: '0.0.0.0',
+      port: 8445,
+      gasPrice: 1,
+      network_id: '1001',
+      gas: 0x1fffffffffffff, // TODO reduce this when deploy gas costs go down
+    },
     mainnet: {
       host: '127.0.0.1',
       port: 8545,
@@ -59,6 +53,5 @@ module.exports = {
       port: 8545,
     },
   },
-  mocha,
-  test_file_extension_regexp: /.*\.ts$/,
+  // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations
 };

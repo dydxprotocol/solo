@@ -1,4 +1,4 @@
-export function isDevNetwork(network: string): boolean {
+function isDevNetwork(network) {
   return network === 'development'
           || network === 'test'
           || network === 'develop'
@@ -7,17 +7,24 @@ export function isDevNetwork(network: string): boolean {
           || network === 'coverage';
 }
 
-export function isMainNet(network: string): boolean {
+function isMainNet(network) {
   return network === 'mainnet';
 }
 
-export function isKovan(network: string): boolean {
+function isKovan(network) {
   return network === 'kovan';
 }
 
-export const MULTISIG = {
+const MULTISIG = {
   KOVAN: {
   },
   MAINNET: {
   },
+};
+
+module.exports = {
+  isDevNetwork,
+  isMainNet,
+  isKovan,
+  MULTISIG,
 };

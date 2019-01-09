@@ -188,9 +188,11 @@ export class Token {
       return this.tokens[tokenAddress];
     }
 
-    const token: any = this.contracts.erc20;
-    const contract = token.clone(); // https://github.com/ethereum-ts/TypeChain/issues/132
+    const token: ERC20 = this.contracts.erc20;
+    const contract: ERC20 = token.clone();
     contract.options.address = tokenAddress;
+
+    this.tokens[tokenAddress] = contract;
 
     return contract;
   }

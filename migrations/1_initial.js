@@ -18,8 +18,6 @@
 
 const Migrations = artifacts.require('./Migrations.sol');
 
-const migration: Truffle.Migration = (deployer: Truffle.Deployer) => {
-  deployer.deploy(Migrations);
-};
+const migration = deployer => deployer.deploy(Migrations);
 
-export default migration;
+module.exports = migration;
