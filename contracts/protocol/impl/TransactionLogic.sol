@@ -50,6 +50,17 @@ contract TransactionLogic is
     using SafeMath for uint256;
     using Time for uint32;
 
+    // ============ Events ============
+
+    event BalanceUpdate(
+        address indexed owner,
+        uint256 indexed number,
+        uint256 marketId,
+        Types.Par newPar,
+        Types.Wei deltaWei,
+        Actions.TransactionType reason
+    );
+
     // ============ Public Functions ============
 
     function transact(
@@ -110,14 +121,14 @@ contract TransactionLogic is
     )
         private
     {
+        wsSetPrimary(worldState, args.accountId);
+
         Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
 
         require(
             args.from == msg.sender || args.from == account.owner,
             "TODO_REASON"
         );
-
-        wsSetPrimary(worldState, args.accountId);
 
         (
             Types.Par memory newPar,
@@ -137,9 +148,15 @@ contract TransactionLogic is
         );
 
         address token = wsGetToken(worldState, args.marketId);
-
-        // requires a positive deltaWei
         Exchange.transferIn(token, args.from, deltaWei);
+
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.marketId,
+            deltaWei,
+            Actions.TransactionType.Deposit
+        );
     }
 
     function _withdraw(
@@ -168,9 +185,15 @@ contract TransactionLogic is
         );
 
         address token = wsGetToken(worldState, args.marketId);
-
-        // requires a negative deltaWei
         Exchange.transferOut(token, args.to, deltaWei);
+
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.marketId,
+            deltaWei,
+            Actions.TransactionType.Withdraw
+        );
     }
 
     function _transfer(
@@ -178,7 +201,6 @@ contract TransactionLogic is
         Actions.TransferArgs memory args
     )
         private
-        view
     {
         wsSetPrimary(worldState, args.accountId);
         wsSetPrimary(worldState, args.otherAccountId);
@@ -199,12 +221,26 @@ contract TransactionLogic is
             args.marketId,
             newPar
         );
-
         wsSetBalanceFromDeltaWei(
             worldState,
             args.otherAccountId,
             args.marketId,
             deltaWei.negative()
+        );
+
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.marketId,
+            deltaWei,
+            Actions.TransactionType.Transfer
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.otherAccountId,
+            args.marketId,
+            deltaWei.negative(),
+            Actions.TransactionType.Transfer
         );
     }
 
@@ -215,6 +251,8 @@ contract TransactionLogic is
         private
     {
         wsSetPrimary(worldState, args.accountId);
+
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
 
         address takerToken = wsGetToken(worldState, args.takerMarketId);
         address makerToken = wsGetToken(worldState, args.makerMarketId);
@@ -237,7 +275,6 @@ contract TransactionLogic is
             args.orderData
         );
 
-        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
         Types.Wei memory tokensReceived = Exchange.exchange(
             args.exchangeWrapper,
             account.owner,
@@ -258,12 +295,26 @@ contract TransactionLogic is
             args.makerMarketId,
             makerPar
         );
-
         wsSetBalanceFromDeltaWei(
             worldState,
             args.accountId,
             args.takerMarketId,
             takerWei
+        );
+
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.takerMarketId,
+            takerWei,
+            Actions.TransactionType.Buy
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.makerMarketId,
+            makerWei,
+            Actions.TransactionType.Buy
         );
     }
 
@@ -274,6 +325,8 @@ contract TransactionLogic is
         private
     {
         wsSetPrimary(worldState, args.accountId);
+
+        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
 
         address takerToken = wsGetToken(worldState, args.takerMarketId);
         address makerToken = wsGetToken(worldState, args.makerMarketId);
@@ -288,7 +341,6 @@ contract TransactionLogic is
             args.amount
         );
 
-        Acct.Info memory account = wsGetAcctInfo(worldState, args.accountId);
         Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
             account.owner,
@@ -304,12 +356,26 @@ contract TransactionLogic is
             args.takerMarketId,
             takerPar
         );
-
         wsSetBalanceFromDeltaWei(
             worldState,
             args.accountId,
             args.makerMarketId,
             makerWei
+        );
+
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.takerMarketId,
+            takerWei,
+            Actions.TransactionType.Sell
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.makerMarketId,
+            makerWei,
+            Actions.TransactionType.Sell
         );
     }
 
@@ -330,13 +396,8 @@ contract TransactionLogic is
             "TODO_REASON"
         );
 
-        Types.Par memory oldInputPar = wsGetBalance(
-            worldState,
-            args.inputMarketId,
-            args.makerAccountId
-        );
         (
-            Types.Par memory newInputPar,
+            Types.Par memory inputPar,
             Types.Wei memory inputWei
         ) = wsGetNewParAndDeltaWei(
             worldState,
@@ -350,8 +411,8 @@ contract TransactionLogic is
             args.outputMarketId,
             makerAccount,
             takerAccount,
-            oldInputPar,
-            newInputPar,
+            wsGetBalance(worldState, args.inputMarketId, args.makerAccountId),
+            inputPar,
             inputWei,
             args.tradeData
         );
@@ -366,7 +427,7 @@ contract TransactionLogic is
             worldState,
             args.makerAccountId,
             args.inputMarketId,
-            newInputPar
+            inputPar
         );
         wsSetBalanceFromDeltaWei(
             worldState,
@@ -387,6 +448,35 @@ contract TransactionLogic is
             args.accountId,
             args.outputMarketId,
             outputWei.negative()
+        );
+
+        _logBalanceUpdate(
+            worldState,
+            args.makerAccountId,
+            args.inputMarketId,
+            inputWei,
+            Actions.TransactionType.Trade
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.makerAccountId,
+            args.outputMarketId,
+            outputWei,
+            Actions.TransactionType.Trade
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.inputMarketId,
+            inputWei.negative(),
+            Actions.TransactionType.Trade
+        );
+        _logBalanceUpdate(
+            worldState,
+            args.accountId,
+            args.outputMarketId,
+            outputWei.negative(),
+            Actions.TransactionType.Trade
         );
     }
 
@@ -498,6 +588,8 @@ contract TransactionLogic is
         );
     }
 
+    // ============ Helper Functions ============
+
     function _getCollateralWei(
         WorldState memory worldState,
         Types.Wei memory underwaterWei,
@@ -532,5 +624,26 @@ contract TransactionLogic is
         );
 
         return collateralWei;
+    }
+
+    function _logBalanceUpdate(
+        WorldState memory worldState,
+        uint256 accountId,
+        uint256 marketId,
+        Types.Wei memory deltaWei,
+        Actions.TransactionType ttype
+    )
+        private
+    {
+        Acct.Info memory account = wsGetAcctInfo(worldState, accountId);
+        Types.Par memory newPar = wsGetBalance(worldState, accountId, marketId);
+        emit BalanceUpdate(
+            account.owner,
+            account.number,
+            marketId,
+            newPar,
+            deltaWei,
+            ttype
+        );
     }
 }

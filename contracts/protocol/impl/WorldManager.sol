@@ -201,49 +201,7 @@ contract WorldManager is
         return worldState.liquidationRatio;
     }
 
-    // ============ Setter Functions ============
-
-    function wsSetPrimary(
-        WorldState memory worldState,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        worldState.accounts[accountId].primary = true;
-    }
-
-    function wsSetTraded(
-        WorldState memory worldState,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        worldState.accounts[accountId].traded = true;
-    }
-
-    function wsSetBalance(
-        WorldState memory worldState,
-        uint256 accountId,
-        uint256 marketId,
-        Types.Par memory newBalance
-    )
-        internal
-        pure
-    {
-        worldState.accounts[accountId].balance[marketId] = newBalance;
-    }
-
-    function wsSetIsLiquidating(
-        WorldState memory worldState,
-        uint256 accountId
-    )
-        internal
-    {
-        Acct.Info memory account = wsGetAcctInfo(worldState, accountId);
-        g_accounts[account.owner][account.number].isLiquidating = true;
-    }
+    // ============ Calculation Functions ============
 
     /**
      * Determines and sets an account's balance based on a change in wei
@@ -313,6 +271,50 @@ contract WorldManager is
         }
 
         return (newPar, deltaWei);
+    }
+
+    // ============ Setter Functions ============
+
+    function wsSetPrimary(
+        WorldState memory worldState,
+        uint256 accountId
+    )
+        internal
+        pure
+    {
+        worldState.accounts[accountId].primary = true;
+    }
+
+    function wsSetTraded(
+        WorldState memory worldState,
+        uint256 accountId
+    )
+        internal
+        pure
+    {
+        worldState.accounts[accountId].traded = true;
+    }
+
+    function wsSetBalance(
+        WorldState memory worldState,
+        uint256 accountId,
+        uint256 marketId,
+        Types.Par memory newBalance
+    )
+        internal
+        pure
+    {
+        worldState.accounts[accountId].balance[marketId] = newBalance;
+    }
+
+    function wsSetIsLiquidating(
+        WorldState memory worldState,
+        uint256 accountId
+    )
+        internal
+    {
+        Acct.Info memory account = wsGetAcctInfo(worldState, accountId);
+        g_accounts[account.owner][account.number].isLiquidating = true;
     }
 
     // ============ Loading Functions ============
