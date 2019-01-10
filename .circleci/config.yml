@@ -69,7 +69,7 @@ jobs:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Test
-          command: TESTFILES=$(circleci tests glob "test/**/*.ts" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          command: TESTFILES=$(circleci tests glob "__tests__/**/*.test.ts" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
           no_output_timeout: 20m
       - store_test_results:
           path: ~/build/junit
