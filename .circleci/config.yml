@@ -60,6 +60,8 @@ jobs:
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
+      - image: trufflesuite/ganache-cli:v6.2.5
+        command: -d -i 1001 -l 0x1fffffffffffff --allowUnlimitedContractSize
     working_directory: ~/build
     parallelism: 3
     steps:
