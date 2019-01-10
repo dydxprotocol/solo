@@ -148,16 +148,16 @@ contract Manager is
         return cache.accounts[accountId].info;
     }
 
-    function cacheGetIsLiquidating(
+    function cacheGetAccountStatus(
         Cache memory cache,
         uint256 accountId
     )
         internal
         view
-        returns (bool)
+        returns (AccountStatus)
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
-        return g_accounts[account.owner][account.number].isLiquidating;
+        Acct.Info memory account = cacheGetAcctInfo(worldState, accountId);
+        return g_accounts[account.owner][account.number].status;
     }
 
     function cacheGetPar(
@@ -252,15 +252,16 @@ contract Manager is
         cache.accounts[accountId].traded = true;
     }
 
-    function cacheSetIsLiquidating(
+    function cacheSetAccountStatus(
         Cache memory cache,
-        uint256 accountId
+        uint256 accountId,
+        AccountStatus status
     )
         internal
         returns (bool)
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
-        g_accounts[account.owner][account.number].isLiquidating = true;
+        Acct.Info memory account = cacheGetAcctInfo(worldState, accountId);
+        g_accounts[account.owner][account.number].status = status;
     }
 
     function cacheSetPar(
@@ -363,6 +364,45 @@ contract Manager is
                 newPar = oldPar.add(newPar);
             }
             deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
+        }
+
+        return (newPar, deltaWei);
+    }
+
+    function wsGetNewParAndDeltaWeiForLiquidation(
+        WorldState memory worldState,
+        uint256 accountId,
+        uint256 marketId,
+        Actions.AssetAmount memory amount
+    )
+        internal
+        view
+        returns (Types.Par memory, Types.Wei memory)
+    {
+        require(
+            wsGetPar(worldState, accountId, marketId).isNegative(),
+            "TODO_REASON"
+        );
+
+        (
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
+        ) = wsGetNewParAndDeltaWei(
+            worldState,
+            accountId,
+            marketId,
+            amount
+        );
+
+        require(
+            deltaWei.isPositive(),
+            "TODO_REASON"
+        );
+
+        // if attempting to over-repay the underwater asset, bound it by the maximum
+        if (newPar.isPositive()) {
+            newPar = Types.zeroPar();
+            deltaWei = wsGetWei(worldState, accountId, marketId).negative();
         }
 
         return (newPar, deltaWei);
@@ -553,12 +593,12 @@ contract Manager is
             // check collateralization for non-liquidated accounts
             if (cache.accounts[a].primary || cache.accounts[a].traded) {
                 Require.that(
-                    cacheGetIsCollateralized(cache, a),
+                    cacheGetNextAccountStatus(worldState, a) == AccountStatus.Normal,
                     FILE,
                     "Cannot leave primary or traded account undercollateralized",
                     a
                 );
-                g_accounts[account.owner][account.number].isLiquidating = false;
+                g_accounts[account.owner][account.number].status = AccountStatus.Normal;
             }
 
             // check permissions for primary accounts
@@ -574,13 +614,13 @@ contract Manager is
 
     // ============ Query Functions ============
 
-    function cacheGetIsCollateralized(
+    function cacheGetNextAccountStatus(
         Cache memory cache,
         uint256 accountId
     )
         internal
         view
-        returns (bool)
+        returns (AccountStatus)
     {
         (
             Monetary.Value memory supplyValue,
@@ -588,12 +628,20 @@ contract Manager is
         ) = cacheGetAccountValues(cache, accountId);
 
         if (borrowValue.value == 0) {
-            return true;
+            return AccountStatus.Normal;
+        }
+
+        if (supplyValue.value == 0) {
+            return AccountStatus.Vaporizing;
         }
 
         uint256 requiredSupply = Decimal.mul(borrowValue.value, cacheGetLiquidationRatio(cache));
 
-        return supplyValue.value >= requiredSupply;
+        if (supplyValue.value >= requiredSupply) {
+            return AccountStatus.Normal;
+        } else {
+            return AccountStatus.Liquidating;
+        }
     }
 
     function cacheGetAccountValues(
@@ -650,5 +698,74 @@ contract Manager is
         ) = Interest.totalParToWei(totalPar, index);
 
         return balanceWei.add(borrowWei).sub(supplyWei);
+    }
+
+    function wsGetPriceRatio(
+        WorldState memory worldState,
+        uint256 collateralMarketId,
+        uint256 underwaterMarketId
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        Monetary.Price memory collateralPrice = wsGetPrice(worldState, collateralMarketId);
+        Monetary.Price memory underwaterPrice = wsGetPrice(worldState, underwaterMarketId);
+        Decimal.D256 memory liqMul = Decimal.add(Decimal.one(), wsGetLiquidationSpread(worldState));
+        underwaterPrice.value = Decimal.mul(underwaterPrice.value, liqMul);
+
+        return Decimal.D256({
+            value: Decimal.one().value.mul(underwaterPrice.value).div(collateralPrice.value)
+        });
+    }
+
+    function wsGetCollateralWeiFromUnderwaterWei(
+        WorldState memory worldState,
+        uint256 collateralMarketId,
+        uint256 underwaterMarketId,
+        Types.Wei memory underwaterWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        require(
+            underwaterWei.isPositive(),
+            "TODO_REASON"
+        );
+        Decimal.D256 memory priceRatio = wsGetPriceRatio(
+            worldState,
+            collateralMarketId,
+            underwaterMarketId
+        );
+        return Types.Wei({
+            sign: false,
+            value: Decimal.mul(underwaterWei.value, priceRatio)
+        });
+    }
+
+    function wsGetUnderwaterWeiFromCollateralWei(
+        WorldState memory worldState,
+        uint256 underwaterMarketId,
+        uint256 collateralMarketId,
+        Types.Wei memory collateralWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        require(
+            collateralWei.isNegative(),
+            "TODO_REASON"
+        );
+        Decimal.D256 memory priceRatio = wsGetPriceRatio(
+            worldState,
+            collateralMarketId,
+            underwaterMarketId
+        );
+        return Types.Wei({
+            sign: true,
+            value: Decimal.div(collateralWei.value, priceRatio)
+        });
     }
 }

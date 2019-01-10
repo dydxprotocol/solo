@@ -44,6 +44,7 @@ library Actions {
         Sell,      // sell an amount of some token (externally)
         Trade,     // buy an amount of some token (internally)
         Liquidate, // liquidate an undercollateralized or expiring account
+        Vaporize,  // arbitrage admin funds to save a completely negative account
         Call       // send arbitrary data to an address
     }
 
@@ -130,8 +131,16 @@ library Actions {
 
     struct LiquidateArgs {
         AssetAmount amount;
-        uint256 stableAcct;
+        uint256 solidAcct;
         uint256 liquidAcct;
+        uint256 owedMkt;
+        uint256 heldMkt;
+    }
+
+    struct VaporizeArgs {
+        AssetAmount amount;
+        uint256 solidAcct;
+        uint256 vaporAcct;
         uint256 owedMkt;
         uint256 heldMkt;
     }
@@ -265,7 +274,28 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
-        Require.that(
+        require(
+            args.accountId != args.otherAccountId,
+            "TODO_REASON"
+        );
+        return LiquidateArgs({
+            amount: args.amount,
+            solidAcct: args.otherAccountId,
+            liquidAcct: args.accountId,
+            owedMkt: args.primaryMarketId,
+            heldMkt: args.secondaryMarketId
+        });
+    }
+
+    function parseVaporizeArgs(
+        TransactionArgs memory args
+    )
+        internal
+        pure
+        returns (VaporizeArgs memory)
+    {
+        assert(args.transactionType == TransactionType.Vaporize);
+        require(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
             "Liquidate markets must be distinct"
@@ -275,10 +305,10 @@ library Actions {
             FILE,
             "Liquidate accounts must be distinct"
         );
-        return LiquidateArgs({
+        return VaporizeArgs({
             amount: args.amount,
-            stableAcct: args.accountId,
-            liquidAcct: args.otherAccountId,
+            solidAcct: args.otherAccountId,
+            vaporAcct: args.accountId,
             owedMkt: args.primaryMarketId,
             heldMkt: args.secondaryMarketId
         });

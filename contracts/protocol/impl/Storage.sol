@@ -33,12 +33,19 @@ import { Types } from "../lib/Types.sol";
  * Storing the state of the protocol
  */
 contract Storage {
+    // ============ Enums ============
+
+    enum AccountStatus {
+        Normal,
+        Liquidating,
+        Vaporizing
+    }
 
     // ============ Structs ============
 
     struct Account {
         mapping (uint256 => Types.Par) balances;
-        bool isLiquidating; // is able to be liquidated
+        AccountStatus status;
     }
 
     struct Market {

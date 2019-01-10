@@ -283,14 +283,14 @@ contract Queries is
         return cacheGetWei(cache, 0, marketId);
     }
 
-    function getAccountIsLiquidating(
+    function getAccountstatus(
         Acct.Info memory account
     )
         public
         view
-        returns (bool)
+        returns (AccountStatus)
     {
-        return g_accounts[account.owner][account.number].isLiquidating;
+        return g_accounts[account.owner][account.number].status;
     }
 
     function getAccountValues(
