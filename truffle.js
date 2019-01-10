@@ -19,6 +19,13 @@ module.exports = {
       network_id: '1001',
       gas: 0x1fffffffffffff, // TODO reduce this when deploy gas costs go down
     },
+    ci_test: {
+      host: '0.0.0.0',
+      port: 8545,
+      gasPrice: 1,
+      network_id: '1001',
+      gas: 0x1fffffffffffff, // TODO reduce this when deploy gas costs go down
+    },
     mainnet: {
       host: '127.0.0.1',
       port: 8545,
