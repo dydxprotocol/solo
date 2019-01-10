@@ -36,6 +36,24 @@ npm run build:js
 
 ### Test
 
+Requires docker
+
+Start test node:
+```
+docker-compose up
+```
+
+Deploy contracts to test node & run tests:
 ```
 npm test
+```
+
+Just run tests (contracts must already be deployed to test node)
+```
+npm run test_only
+```
+
+Just deploy contracts to test node:
+```
+npm run deploy_test
 ```

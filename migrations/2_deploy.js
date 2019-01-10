@@ -16,17 +16,14 @@
 
 */
 
-import {
-  isDevNetwork,
-} from './Helpers';
+const { isDevNetwork } = require('./helpers');
 
-// For testing
+const SoloMargin = artifacts.require('SoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const FeeToken = artifacts.require('TokenC');
 
-// Deploy functions
-async function maybeDeployTestTokens(deployer: Truffle.Deployer, network: string) {
+async function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
       deployer.deploy(TokenA),
@@ -36,8 +33,15 @@ async function maybeDeployTestTokens(deployer: Truffle.Deployer, network: string
   }
 }
 
-const migration: Truffle.Migration = async (deployer: Truffle.Deployer, network: string) => {
-  await maybeDeployTestTokens(deployer, network);
+async function deployBaseProtocol(deployer) {
+  await deployer.deploy(SoloMargin);
+}
+
+const migration = async (deployer, network) => {
+  await Promise.all([
+    maybeDeployTestTokens(deployer, network),
+    deployBaseProtocol(deployer),
+  ]);
 };
 
-export default migration;
+module.exports = migration;

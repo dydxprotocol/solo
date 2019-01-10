@@ -18,7 +18,7 @@
     "util": "util"
   },
   "scripts": {
-    "test": "NODE_ENV=test truffle test",
+    "test": "npm run deploy_test && npm run test_only",
     "build": "npm run compile && npm run build:wrappers",
     "compile": "node_modules/.bin/truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/contracts/*.json'",
@@ -38,6 +38,10 @@
     "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
+    "deploy_test": "npm run migrate -- --network test --reset",
+    "deploy_test_ci": "npm run migrate -- --network test_ci --reset",
+    "test_only": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand",
+    "ci_test": "NODE_ENV=test WS_NODE_URI=ws://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "install_compiler": "docker pull ethereum/solc:0.5.2"
   },
   "repository": {
@@ -63,17 +67,19 @@
   },
   "devDependencies": {
     "@types/es6-promisify": "^6.0.0",
-    "@types/mocha": "^5.2.5",
+    "@types/jest": "^23.3.12",
     "@types/web3": "^1.0.14",
     "chai": "^4.1.2",
     "coveralls": "^3.0.2",
+    "dotenv": "^6.2.0",
     "es6-promisify": "^6.0.1",
     "ethlint": "1.2.1",
     "ganache-cli": "^6.2.5",
+    "jest": "^23.6.0",
     "mocha-junit-reporter": "^1.18.0",
     "solidity-coverage": "0.5.11",
     "truffle": "5.0.1",
-    "truffle-typings": "1.0.6",
+    "ts-jest": "^23.10.5",
     "ts-node": "^7.0.1",
     "tslint": "^5.12.0",
     "tslint-config-airbnb": "^5.11.1",

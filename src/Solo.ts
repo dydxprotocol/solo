@@ -18,13 +18,13 @@
 
 import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
-import { EVM } from './lib/EVM';
 import { Transaction } from './modules/transact/Transaction';
 import { Token } from './modules/Token';
+import { Testing } from './modules/testing/Testing';
 
 export class Solo {
   public contracts: Contracts;
-  public evm: EVM;
+  public testing: Testing;
   public transaction: Transaction;
   public token: Token;
 
@@ -33,9 +33,9 @@ export class Solo {
     networkId: number,
   ) {
     this.contracts = new Contracts(provider, networkId);
-    this.evm = new EVM(provider);
     this.transaction = new Transaction(this.contracts, networkId);
     this.token = new Token(this.contracts);
+    this.testing = new Testing(provider, this.contracts, this.token);
   }
 
   public setProvider(
@@ -43,7 +43,7 @@ export class Solo {
     networkId: number,
   ): void {
     this.contracts.setProvider(provider, networkId);
-    this.evm.setProvider(provider);
+    this.testing.setProvider(provider);
     this.transaction.setNetworkId(networkId);
   }
 }

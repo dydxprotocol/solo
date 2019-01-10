@@ -60,14 +60,19 @@ jobs:
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
+      - image: trufflesuite/ganache-cli:v6.2.5
+        command: -d -i 1001 -l 0x1fffffffffffff --allowUnlimitedContractSize
     working_directory: ~/build
     parallelism: 3
     steps:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Deploy Contracts
+          command: npm run deploy_test_ci
+      - run:
           name: Test
-          command: TESTFILES=$(circleci tests glob "test/**/*.ts" | circleci tests split --split-by=filesize) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          command: TESTFILES=$(circleci tests glob "__tests__/**/*.test.ts" | circleci tests split --split-by=filesize) && npm run ci_test -- ${TESTFILES}
           no_output_timeout: 20m
       - store_test_results:
           path: ~/build/junit
