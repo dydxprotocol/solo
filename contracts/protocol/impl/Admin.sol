@@ -26,6 +26,7 @@ import { WorldManager } from "./WorldManager.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
+import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Token } from "../lib/Token.sol";
@@ -64,30 +65,9 @@ contract Admin is
         _validateMarketId(marketId);
 
         WorldState memory worldState = wsInitializeEmpty();
-        Interest.Index memory index = wsGetIndex(worldState, marketId);
-        g_markets[marketId].index = index;
-
-        Types.TotalPar memory totalPar = g_markets[marketId].totalPar;
-
-        (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
-        ) = Interest.totalParToWei(totalPar, index);
-
-        address token = g_markets[marketId].token;
-        uint256 balance = Token.balanceOf(token, address(this));
-
-        uint256 positiveTokens = balance.add(borrowWei.value);
-        uint256 negativeTokens = supplyWei.value;
-
-        require(
-            positiveTokens > negativeTokens,
-            "TODO_REASON"
-        );
-
-        uint256 tokensToWithdraw = positiveTokens.sub(negativeTokens);
-        Token.transfer(token, recipient, tokensToWithdraw);
-        return tokensToWithdraw;
+        Types.Wei memory excessWei = wsGetNumExcessTokens(worldState, marketId);
+        Exchange.transferOut(wsGetToken(worldState, marketId), recipient, excessWei);
+        return excessWei.value;
     }
 
     function ownerWithdrawUnsupportedTokens(

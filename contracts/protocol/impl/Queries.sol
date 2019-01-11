@@ -195,7 +195,7 @@ contract Queries is
 
     // ============ Account-Based Variables ============
 
-    function getAccountBalance(
+    function getAccountPar(
         Acct.Info memory account,
         uint256 marketId
     )
@@ -204,6 +204,18 @@ contract Queries is
         returns (Types.Par memory)
     {
         return g_accounts[account.owner][account.number].balances[marketId];
+    }
+
+    function getAccountWei(
+        Acct.Info memory account,
+        uint256 marketId
+    )
+        public
+        view
+        returns (Types.Wei memory)
+    {
+        WorldState memory worldState = wsInitializeSingle(account);
+        return wsGetWei(worldState, 0, marketId);
     }
 
     function getAccountIsLiquidating(

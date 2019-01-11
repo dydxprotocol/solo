@@ -34,14 +34,14 @@ library Monetary {
     // ============ Structs ============
 
     struct Price {
-        uint128 value;
+        uint256 value;
     }
 
     struct Value {
         uint256 value;
     }
 
-    // ============ Public Functions ============
+    // ============ Library Functions ============
 
     function getValue(
         Price memory price,

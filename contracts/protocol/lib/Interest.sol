@@ -37,8 +37,8 @@ library Interest {
 
     // ============ Constants ============
 
-    uint64 constant public BASE = 10**18;
-    uint64 constant public MAX_INTEREST_RATE = BASE / (60 * 60 * 24 * 365); // Max 100% per year
+    uint64 constant BASE = 10**18;
+    uint64 constant MAX_INTEREST_RATE = BASE / (60 * 60 * 24 * 365); // Max 100% per year
 
     // ============ Structs ============
 
@@ -52,7 +52,7 @@ library Interest {
         uint32 lastUpdate;
     }
 
-    // ============ Public Functions ============
+    // ============ Library Functions ============
 
     function calculateNewIndex(
         Index memory index,
@@ -79,7 +79,7 @@ library Interest {
 
         // adjust the interest by the earningsRate, then prorate the interest across all suppliers
         uint96 supplyInterest = Math.getPartial(
-            Decimal.mul(earningsRate, borrowInterest).to96(),
+            Decimal.mul(borrowInterest, earningsRate).to96(),
             borrowWei.value,
             supplyWei.value
         ).to96();

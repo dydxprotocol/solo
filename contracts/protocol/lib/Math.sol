@@ -30,7 +30,7 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 library Math {
     using SafeMath for uint256;
 
-    // ============ Public Functions ============
+    // ============ Library Functions ============
 
     function getPartial(
         uint256 target,
