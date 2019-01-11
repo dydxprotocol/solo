@@ -127,3 +127,7 @@ export interface TransactionArgs {
   otherAccountId: number | string;
   data: (string | number[])[];
 }
+
+export interface SoloOptions {
+  defaultAccount?: address;
+}

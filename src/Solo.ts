@@ -16,23 +16,32 @@
 
 */
 
+import Web3 from 'web3';
 import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
 import { Transaction } from './modules/transact/Transaction';
 import { Token } from './modules/Token';
 import { Testing } from './modules/testing/Testing';
+import { SoloOptions, address } from './types';
 
 export class Solo {
   public contracts: Contracts;
   public testing: Testing;
   public transaction: Transaction;
   public token: Token;
+  public web3: Web3;
 
   constructor(
     provider: Provider,
     networkId: number,
+    options: SoloOptions = {},
   ) {
-    this.contracts = new Contracts(provider, networkId);
+    this.web3 = new Web3(provider);
+    if (options.defaultAccount) {
+      this.web3.eth.defaultAccount = options.defaultAccount;
+    }
+
+    this.contracts = new Contracts(provider, networkId, this.web3);
     this.transaction = new Transaction(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.testing = new Testing(provider, this.contracts, this.token);
@@ -42,8 +51,16 @@ export class Solo {
     provider: Provider,
     networkId: number,
   ): void {
+    this.web3.setProvider(provider);
     this.contracts.setProvider(provider, networkId);
     this.testing.setProvider(provider);
     this.transaction.setNetworkId(networkId);
+  }
+
+  public setDefaultAccount(
+    account: address,
+  ): void {
+    this.web3.eth.defaultAccount = account;
+    this.contracts.setDefaultAccount(account);
   }
 }

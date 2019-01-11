@@ -38,10 +38,12 @@
     "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
-    "deploy_test": "npm run migrate -- --network test --reset",
-    "deploy_test_ci": "npm run migrate -- --network test_ci --reset",
+    "deploy_test": "npm run reset_test_evm && npm run migrate -- --network test --reset && npm run snapshot_test_evm",
+    "deploy_test_ci": "WS_NODE_URI=ws://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && WS_NODE_URI=ws://0.0.0.0:8545 npm run snapshot_test_evm",
     "test_only": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand",
     "ci_test": "NODE_ENV=test WS_NODE_URI=ws://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
+    "reset_test_evm": "node scripts/reset-test-evm.js",
+    "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
     "install_compiler": "docker pull ethereum/solc:0.5.2"
   },
   "repository": {

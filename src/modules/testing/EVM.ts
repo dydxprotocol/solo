@@ -39,11 +39,11 @@ export class EVM {
    * @param provider a valid web3 provider
    * @returns null
    */
-  public async resetEVM(): Promise<void> {
+  public async resetEVM(resetSnapshotId: string = '0x1'): Promise<void> {
     const id = await this.snapshot();
 
-    if (id !== '0x1') {
-      await this.reset('0x1');
+    if (id !== resetSnapshotId) {
+      await this.reset(resetSnapshotId);
     }
   }
 
