@@ -1,6 +1,7 @@
 function isDevNetwork(network) {
   return network === 'development'
           || network === 'test'
+          || network === 'test_ci'
           || network === 'develop'
           || network === 'dev'
           || network === 'docker'
