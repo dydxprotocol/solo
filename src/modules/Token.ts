@@ -72,7 +72,7 @@ export class Token {
     ownerAddress: address,
     spenderAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 
@@ -89,7 +89,7 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -104,7 +104,7 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -118,7 +118,7 @@ export class Token {
   public async setMaximumSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -132,7 +132,7 @@ export class Token {
   public async unsetSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -148,7 +148,7 @@ export class Token {
     fromAddress: address,
     toAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 
@@ -167,7 +167,7 @@ export class Token {
     toAddress: address,
     senderAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 

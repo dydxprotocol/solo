@@ -18,6 +18,9 @@
 
 import { Provider } from 'web3/providers';
 import Web3 from 'web3';
+import PromiEvent from 'web3/promiEvent';
+import { TransactionReceipt } from 'web3/types';
+import { TransactionObject, Block } from 'web3/eth/types';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { Expiry } from '../../build/wrappers/Expiry';
@@ -28,19 +31,15 @@ import expiryJson from '../../build/contracts/Expiry.json';
 import tokenAJson from '../../build/contracts/TokenA.json';
 import tokenBJson from '../../build/contracts/TokenB.json';
 import tokenCJson from '../../build/contracts/TokenC.json';
-import { TransactionObject, Block } from 'web3/eth/types';
-import { TransactionReceipt } from 'web3/types';
-import { ContractCallOptions, TxResult } from '../types';
+import { ContractCallOptions, TxResult, address } from '../types';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
-import PromiEvent from 'web3/promiEvent';
 
 export class Contracts {
   private networkId: number;
   private blockGasLimit: number;
   private autoGasMultiplier: number = 1.5;
   private defaultConfirmations: number = 1;
-
-  public web3: Web3;
+  private web3: Web3;
 
   // Contract instances
   public soloMargin: SoloMargin;
@@ -55,8 +54,9 @@ export class Contracts {
   constructor(
     provider: Provider,
     networkId: number,
+    web3: Web3,
   ) {
-    this.web3 = new Web3();
+    this.web3 = web3;
 
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
@@ -66,13 +66,13 @@ export class Contracts {
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
 
     this.setProvider(provider, networkId);
+    this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
   public setProvider(
     provider: Provider,
     networkId: number,
   ): void {
-    this.web3.setProvider(provider);
     this.networkId = networkId;
     this.soloMargin.setProvider(provider);
 
@@ -112,6 +112,17 @@ export class Contracts {
       provider,
       networkId,
     );
+  }
+
+  public setDefaultAccount(
+    account: address,
+  ): void {
+    this.soloMargin.options.from = account;
+    this.erc20.options.from = account;
+    this.expiry.options.from = account;
+    this.tokenA.options.from = account;
+    this.tokenB.options.from = account;
+    this.tokenC.options.from = account;
   }
 
   public async callContractFunction<T>(

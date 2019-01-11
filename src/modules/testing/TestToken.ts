@@ -22,7 +22,7 @@ export class TestToken {
   public issue(
     amount: BN,
     from: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.testTokenContract.methods.issue(
@@ -35,7 +35,7 @@ export class TestToken {
   public issueTo(
     amount: BN,
     who: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.testTokenContract.methods.issueTo(
@@ -103,7 +103,7 @@ export class TestToken {
     ownerAddress: address,
     spenderAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setAllowance(
       this.testTokenContract.options.address,
@@ -117,7 +117,7 @@ export class TestToken {
   public async setSolollowance(
     ownerAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setSolollowance(
       this.testTokenContract.options.address,
@@ -130,7 +130,7 @@ export class TestToken {
   public async setMaximumAllowance(
     ownerAddress: address,
     spenderAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumAllowance(
       this.testTokenContract.options.address,
@@ -142,7 +142,7 @@ export class TestToken {
 
   public async setMaximumSoloAllowance(
     ownerAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumSoloAllowance(
       this.testTokenContract.options.address,
@@ -153,7 +153,7 @@ export class TestToken {
 
   public async unsetSoloAllowance(
     ownerAddress: address,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.unsetSoloAllowance(
       this.testTokenContract.options.address,
@@ -166,7 +166,7 @@ export class TestToken {
     fromAddress: address,
     toAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transfer(
       this.testTokenContract.options.address,
@@ -182,7 +182,7 @@ export class TestToken {
     toAddress: address,
     senderAddress: address,
     amount: BN,
-    options: ContractCallOptions,
+    options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transferFrom(
       this.testTokenContract.options.address,
