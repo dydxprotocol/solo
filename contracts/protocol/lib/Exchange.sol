@@ -31,6 +31,21 @@ import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
  * the Wei struct directly.
  */
 library Exchange {
+    
+    // ============ Library Functions ============
+
+    function thisBalance(
+        address token
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        return Types.Wei({
+            sign: true,
+            value: Token.balanceOf(token, address(this))
+        });
+    }
 
     function transferOut(
         address token,

@@ -32,7 +32,7 @@ library Decimal {
 
     // ============ Constants ============
 
-    uint256 constant public BASE = 10**18;
+    uint256 constant BASE = 10**18;
 
     // ============ Structs ============
 
@@ -40,11 +40,11 @@ library Decimal {
         uint256 value;
     }
 
-    // ============ multiply with ints ============
+    // ============ Int <-> Decimal Functions ============
 
     function mul(
-        D256 memory d,
-        uint256 target
+        uint256 target,
+        D256 memory d
     )
         internal
         pure
@@ -53,7 +53,18 @@ library Decimal {
         return target.mul(d.value).div(BASE);
     }
 
-    // ============ multiply with other decimals ============
+    function div(
+        uint256 target,
+        D256 memory d
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return target.mul(BASE).div(d.value);
+    }
+
+    // ============ Decimal <-> Decimal Functions ============
 
     function add(
         D256 memory a,

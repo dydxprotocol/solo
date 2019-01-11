@@ -19,7 +19,6 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./Storage.sol";
 import { WorldManager } from "./WorldManager.sol";
@@ -31,7 +30,6 @@ import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
-import { Time } from "../lib/Time.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -46,9 +44,6 @@ contract TransactionLogic is
     Storage,
     WorldManager
 {
-    using Math for uint256;
-    using SafeMath for uint256;
-    using Time for uint32;
 
     // ============ Public Functions ============
 
@@ -129,7 +124,7 @@ contract TransactionLogic is
             args.amount
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.accountId,
             args.marketId,
@@ -160,7 +155,7 @@ contract TransactionLogic is
             args.amount
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.accountId,
             args.marketId,
@@ -193,14 +188,14 @@ contract TransactionLogic is
             args.amount
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.accountId,
             args.marketId,
             newPar
         );
 
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.otherAccountId,
             args.marketId,
@@ -252,14 +247,14 @@ contract TransactionLogic is
             "TODO_REASON"
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.accountId,
             args.makerMarketId,
             makerPar
         );
 
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.accountId,
             args.takerMarketId,
@@ -298,14 +293,14 @@ contract TransactionLogic is
             args.orderData
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.accountId,
             args.takerMarketId,
             takerPar
         );
 
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.accountId,
             args.makerMarketId,
@@ -330,7 +325,7 @@ contract TransactionLogic is
             "TODO_REASON"
         );
 
-        Types.Par memory oldInputPar = wsGetBalance(
+        Types.Par memory oldInputPar = wsGetPar(
             worldState,
             args.inputMarketId,
             args.makerAccountId
@@ -362,13 +357,13 @@ contract TransactionLogic is
         );
 
         // set the balance for the maker
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.makerAccountId,
             args.inputMarketId,
             newInputPar
         );
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.makerAccountId,
             args.outputMarketId,
@@ -376,13 +371,13 @@ contract TransactionLogic is
         );
 
         // set the balance for the taker
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.accountId,
             args.inputMarketId,
             inputWei.negative()
         );
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.accountId,
             args.outputMarketId,
@@ -410,13 +405,13 @@ contract TransactionLogic is
 
         // verify that underwater is being repaid
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive(),
+            wsGetPar(worldState, args.liquidAccountId, args.underwaterMarketId).isNegative(),
             "TODO_REASON"
         );
 
         // verify that the liquidated account has collateral
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative(),
+            wsGetPar(worldState, args.liquidAccountId, args.collateralMarketId).isPositive(),
             "TODO_REASON"
         );
 
@@ -438,14 +433,14 @@ contract TransactionLogic is
             args.collateralMarketId
         );
 
-        wsSetBalance(
+        wsSetPar(
             worldState,
             args.liquidAccountId,
             args.underwaterMarketId,
             underwaterPar
         );
 
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.liquidAccountId,
             args.collateralMarketId,
@@ -454,23 +449,23 @@ contract TransactionLogic is
 
         // verify that underwater is not overpaid
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.underwaterMarketId).isNonPositive(),
+            !wsGetPar(worldState, args.liquidAccountId, args.underwaterMarketId).isPositive(),
             "TODO_REASON"
         );
 
         // verify that collateral is not overused
         require(
-            wsGetBalance(worldState, args.liquidAccountId, args.collateralMarketId).isNonNegative(),
+            !wsGetPar(worldState, args.liquidAccountId, args.collateralMarketId).isNegative(),
             "TODO_REASON"
         );
 
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.stableAccountId,
             args.collateralMarketId,
             collateralWei.negative()
         );
-        wsSetBalanceFromDeltaWei(
+        wsSetParFromDeltaWei(
             worldState,
             args.stableAccountId,
             args.underwaterMarketId,
@@ -527,8 +522,8 @@ contract TransactionLogic is
 
         // boost the amount of collateral by the liquidation spread
         collateralWei.value = Decimal.mul(
-            wsGetLiquidationSpread(worldState),
-            collateralWei.value
+            collateralWei.value,
+            wsGetLiquidationSpread(worldState)
         );
 
         return collateralWei;

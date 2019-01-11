@@ -35,7 +35,7 @@ library Acct {
         uint256 number;
     }
 
-    // ============ Functions ============
+    // ============ Library Functions ============
 
     function equals(
         Info memory a,

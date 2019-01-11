@@ -27,7 +27,7 @@ pragma solidity ^0.5.0;
  */
 library Time {
 
-    // ============ Public Functions ============
+    // ============ Library Functions ============
 
     function currentTime()
         internal

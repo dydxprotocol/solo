@@ -43,6 +43,17 @@ library Types {
         uint128 value;
     }
 
+    function zeroPar()
+        internal
+        pure
+        returns (Par memory)
+    {
+        return Par({
+            sign: false,
+            value: 0
+        });
+    }
+
     function sub(
         Par memory a,
         Par memory b
@@ -105,24 +116,34 @@ library Types {
         });
     }
 
-    function isNonPositive(
+    function isNegative(
         Par memory a
     )
         internal
         pure
         returns (bool)
     {
-        return a.value == 0 || !a.sign;
+        return !a.sign && a.value > 0;
     }
 
-    function isNonNegative(
+    function isPositive(
         Par memory a
     )
         internal
         pure
         returns (bool)
     {
-        return a.value == 0 || a.sign;
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
     }
 
     // ============ Wei (Token Amount) ============
@@ -130,6 +151,17 @@ library Types {
     struct Wei {
         bool sign;
         uint256 value;
+    }
+
+    function zeroWei()
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return Wei({
+            sign: false,
+            value: 0
+        });
     }
 
     function sub(
@@ -179,5 +211,35 @@ library Types {
             sign: !a.sign,
             value: a.value
         });
+    }
+
+    function isNegative(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return !a.sign && a.value > 0;
+    }
+
+    function isPositive(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
     }
 }

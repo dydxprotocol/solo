@@ -28,6 +28,9 @@ import { IErc20 } from "../interfaces/IErc20.sol";
  * This library contains basic functions for interacting with ERC20 tokens
  */
 library Token {
+
+    // ============ Library Functions ============
+
     function balanceOf(
         address token,
         address owner
@@ -125,7 +128,7 @@ library Token {
         );
     }
 
-    // ============ Private Helper-Functions ============
+    // ============ Private Functions ============
 
     /**
      * Checks the return value of the previous function up to 32 bytes. Returns true if the previous

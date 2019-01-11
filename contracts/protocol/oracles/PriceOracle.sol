@@ -31,11 +31,11 @@ import { Monetary } from "../lib/Monetary.sol";
  */
 contract PriceOracle is IPriceOracle{
 
-    mapping (address => uint128) g_prices;
+    mapping (address => uint256) g_prices;
 
     function setPrice(
         address token,
-        uint128 price
+        uint256 price
     )
         external
     {

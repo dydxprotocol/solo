@@ -18,7 +18,6 @@
 
 pragma solidity ^0.5.0;
 
-import { Math } from "./Math.sol";
 import { Types } from "./Types.sol";
 
 
@@ -29,8 +28,7 @@ import { Types } from "./Types.sol";
  * TODO
  */
 library Actions {
-    using Math for uint256;
-
+    
     // ============ Enums ============
 
     enum TransactionType {
