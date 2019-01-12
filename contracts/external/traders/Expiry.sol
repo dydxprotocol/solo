@@ -37,7 +37,7 @@ import { Types } from "../../protocol/lib/Types.sol";
  *
  * Sets the negative balance for an account to expire at a certain time. This allows any other
  * account to repay that negative balance after expiry using any positive balance in the same
- * account. The arbitration incentive is the same as the liquidationSpread in the base protocol.n
+ * account. The arbitrage incentive is the same as liquidation in the base protocol.
  */
 contract Expiry is
     OnlySolo,
@@ -169,12 +169,6 @@ contract Expiry is
     )
         private
     {
-
-        require(
-            !Time.hasHappened(time),
-            "Expiry#setExpiry: cannot set expiry time in the past"
-        );
-
         g_expiries[account.owner][account.number][marketId] = time;
 
         emit ExpirySet(
