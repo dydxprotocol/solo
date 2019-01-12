@@ -275,6 +275,10 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Liquidate);
         require(
+            args.primaryMarketId != args.secondaryMarketId,
+            "TODO_REASON"
+        );
+        require(
             args.accountId != args.otherAccountId,
             "TODO_REASON"
         );

@@ -37,8 +37,8 @@ contract Storage {
 
     enum AccountStatus {
         Normal,
-        Liquidating,
-        Vaporizing
+        Liquid,
+        Vapor
     }
 
     // ============ Structs ============
