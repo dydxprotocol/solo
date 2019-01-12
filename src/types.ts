@@ -131,3 +131,23 @@ export interface TransactionArgs {
 export interface SoloOptions {
   defaultAccount?: address;
 }
+
+export interface Index {
+  borrow: string;
+  supply: string;
+  lastUpdate: string;
+}
+
+export interface MarketWithInfo {
+  market: {
+    token: string;
+    totalPar: { borrow: string; supply: string };
+    index: Index;
+    priceOracle: string;
+    interestSetter: string;
+    isClosing: boolean;
+  };
+  currentIndex: Index;
+  currentPrice: { value: string };
+  currentInterestRate: { value: string };
+}

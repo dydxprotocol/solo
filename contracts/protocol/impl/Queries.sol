@@ -40,6 +40,15 @@ contract Queries is
     Storage,
     Manager
 {
+    // ============ Structs ============
+
+    struct MarketWithInfo {
+        Storage.Market market;
+        Interest.Index currentIndex;
+        Monetary.Price currentPrice;
+        Interest.Rate currentInterestRate;
+    }
+
     // ============ Admin Variables ============
 
     function getLiquidationRatio()
@@ -85,6 +94,38 @@ contract Queries is
     }
 
     // ============ Market-Based Variables ============
+
+    function getMarketWithInfo(
+        uint256 marketId
+    )
+        public
+        view
+        returns (MarketWithInfo memory)
+    {
+        return MarketWithInfo({
+            market: getMarket(marketId),
+            currentIndex: getMarketCurrentIndex(marketId),
+            currentPrice: getMarketPrice(marketId),
+            currentInterestRate: getMarketInterestRate(marketId)
+        });
+    }
+
+    function getMarket(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Storage.Market memory)
+    {
+        return Market({
+            token: getMarketTokenAddress(marketId),
+            totalPar: getMarketTotalPar(marketId),
+            index: getMarketCachedIndex(marketId),
+            priceOracle: getMarketPriceOracle(marketId),
+            interestSetter: getMarketInterestSetter(marketId),
+            isClosing: getMarketIsClosing(marketId)
+        });
+    }
 
     function getMarketTokenAddress(
         uint256 marketId
@@ -155,6 +196,16 @@ contract Queries is
         returns (IInterestSetter)
     {
         return g_markets[marketId].interestSetter;
+    }
+
+    function getMarketIsClosing(
+        uint256 marketId
+    )
+        public
+        view
+        returns (bool)
+    {
+        return g_markets[marketId].isClosing;
     }
 
     function getMarketPrice(

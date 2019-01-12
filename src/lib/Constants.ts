@@ -1,4 +1,5 @@
 import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 
 export const SUBTRACT_GAS_LIMIT: number = 100000;
 
@@ -11,4 +12,8 @@ export const BNS = {
   ONES_255: new BN(
     '115792089237316195423570985008687907853269984665640564039457584007913129639935',
   ), // 2**256-1
+};
+
+export const BIG_NUMBERS = {
+  INTEREST_RATE_BASE: new BigNumber('1e18'),
 };

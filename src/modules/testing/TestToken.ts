@@ -19,6 +19,10 @@ export class TestToken {
     this.testTokenContract = testTokenContract;
   }
 
+  public getAddress(): string {
+    return this.testTokenContract.options.address;
+  }
+
   public issue(
     amount: BN,
     from: address,

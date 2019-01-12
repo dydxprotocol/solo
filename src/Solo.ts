@@ -21,6 +21,8 @@ import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
 import { Transaction } from './modules/transact/Transaction';
 import { Token } from './modules/Token';
+import { Admin } from './modules/Admin';
+import { Getters } from './modules/Getters';
 import { Testing } from './modules/testing/Testing';
 import { SoloOptions, address } from './types';
 
@@ -30,6 +32,8 @@ export class Solo {
   public transaction: Transaction;
   public token: Token;
   public web3: Web3;
+  public admin: Admin;
+  public getters: Getters;
 
   constructor(
     provider: Provider,
@@ -45,6 +49,8 @@ export class Solo {
     this.transaction = new Transaction(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.testing = new Testing(provider, this.contracts, this.token);
+    this.admin = new Admin(this.contracts);
+    this.getters = new Getters(this.contracts);
   }
 
   public setProvider(

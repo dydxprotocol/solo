@@ -19,43 +19,40 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Monetary } from "../lib/Monetary.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { IInterestSetter } from "../protocol/interfaces/IInterestSetter.sol";
+import { Interest } from "../protocol/lib/Interest.sol";
 
 
 /**
- * @title PriceOracle
+ * @title TestInterestSetter
  * @author dYdX
  *
- * TODO
+ * Interest setter used for testing that always returns a constant interest rate
  */
-contract PriceOracle is IPriceOracle{
+contract TestInterestSetter is
+    IInterestSetter
+{
+    mapping (address => Interest.Rate) public g_interestRates;
 
-    mapping (address => uint256) g_prices;
-
-    function setPrice(
+    function setInterestRate(
         address token,
-        uint256 price
+        Interest.Rate memory rate
     )
-        external
+        public
     {
-        g_prices[token] = price;
+        g_interestRates[token] = rate;
     }
 
-    function getPrice(
-        address token
+    function getInterestRate(
+        address token,
+        uint256 /* borrowWei */,
+        uint256 /* supplyWei */
     )
         public
         view
-        returns (Monetary.Price memory)
+        returns (Interest.Rate memory)
     {
-        // TODO: this whole contract
-        require(
-            g_prices[token] != 0,
-            "TODO_REASON"
-        );
-        return Monetary.Price({
-            value: g_prices[token]
-        });
+        return g_interestRates[token];
     }
 }

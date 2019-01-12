@@ -21,16 +21,22 @@ const { isDevNetwork } = require('./helpers');
 const SoloMargin = artifacts.require('SoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
-const FeeToken = artifacts.require('TokenC');
+const TokenC = artifacts.require('TokenC');
+const TestPriceOracle = artifacts.require('TestPriceOracle');
+const TestInterestSetter = artifacts.require('TestInterestSetter');
 
-async function maybeDeployTestTokens(deployer, network) {
-  if (isDevNetwork(network)) {
-    await Promise.all([
-      deployer.deploy(TokenA),
-      deployer.deploy(TokenB),
-      deployer.deploy(FeeToken),
-    ]);
+async function maybeDeployTestContracts(deployer, network) {
+  if (!isDevNetwork(network)) {
+    return;
   }
+
+  await Promise.all([
+    deployer.deploy(TokenA),
+    deployer.deploy(TokenB),
+    deployer.deploy(TokenC),
+    deployer.deploy(TestPriceOracle),
+    deployer.deploy(TestInterestSetter),
+  ]);
 }
 
 async function deployBaseProtocol(deployer) {
@@ -39,7 +45,7 @@ async function deployBaseProtocol(deployer) {
 
 const migration = async (deployer, network) => {
   await Promise.all([
-    maybeDeployTestTokens(deployer, network),
+    maybeDeployTestContracts(deployer, network),
     deployBaseProtocol(deployer),
   ]);
 };

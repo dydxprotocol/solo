@@ -112,7 +112,7 @@ contract Admin is
         return balance;
     }
 
-    function ownerAddToken(
+    function ownerAddMarket(
         address token,
         IPriceOracle priceOracle,
         IInterestSetter interestSetter
