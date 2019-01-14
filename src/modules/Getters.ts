@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { MarketWithInfo, address, Index, Integer } from '../types';
+import { MarketWithInfo, Index, Integer } from '../types';
 import { INTEGERS } from '../lib/Constants';
 
 export class Getters {
@@ -36,31 +36,6 @@ export class Getters {
         INTEGERS.INTEREST_RATE_BASE,
       ),
     };
-  }
-
-  public async getMarketTokenAddress(
-    marketId: Integer,
-  ): Promise<address> {
-    return this.contracts.soloMargin.methods
-      .getMarketTokenAddress(marketId.toString()).call();
-  }
-
-  public async getMarketPrice(
-    marketId: Integer,
-  ): Promise<Integer> {
-    const { value } = await this.contracts.soloMargin.methods
-      .getMarketPrice(marketId.toString()).call();
-
-    return new BigNumber(value);
-  }
-
-  public async getMarketCurrentIndex(
-    marketId: Integer,
-  ): Promise<Index> {
-    const index = await this.contracts.soloMargin.methods
-      .getMarketCurrentIndex(marketId.toString()).call();
-
-    return this.parseIndex(index);
   }
 
   private parseIndex(
