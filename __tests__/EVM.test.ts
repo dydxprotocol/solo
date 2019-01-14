@@ -1,4 +1,4 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { address } from '../src/types';
@@ -20,17 +20,17 @@ describe('EVM', () => {
 
   it('Resets the state of the EVM successfully', async () => {
     const account = accounts[1];
-    const amount = new BN(1);
+    const amount = new BigNumber(1);
     await solo.testing.tokenA.issueTo(
       amount,
       account,
     );
-    const balance: BN = await solo.testing.tokenA.getBalance(account);
+    const balance: BigNumber = await solo.testing.tokenA.getBalance(account);
     expect(balance.eq(amount)).toBe(true);
 
     await resetEVM();
 
-    const newBalance: BN = await solo.testing.tokenA.getBalance(account);
-    expect(newBalance.eq(new BN(0))).toBe(true);
+    const newBalance: BigNumber = await solo.testing.tokenA.getBalance(account);
+    expect(newBalance.eq(new BigNumber(0))).toBe(true);
   });
 });

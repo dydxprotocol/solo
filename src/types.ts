@@ -16,10 +16,14 @@
 
 */
 
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
 import { Tx } from 'web3/eth/types';
 import { TransactionReceipt } from 'web3/types';
+
+export type address = string;
+export type Integer = BigNumber;
+export type Decimal = BigNumber;
 
 export interface ContractCallOptions extends Tx {
   confirmations?: number;
@@ -52,20 +56,18 @@ export enum TransactionType {
 }
 
 export interface Amount {
-  value: BN;
+  value: Integer;
   denomination: AmountDenomination;
   reference: AmountReference;
 }
 
-export type address = string;
-
 export interface AccountOperation {
   primaryAccountOwner: address;
-  primaryAccountId: BN;
+  primaryAccountId: Integer;
 }
 
 interface ExternalTransfer extends AccountOperation {
-  marketId: BN;
+  marketId: Integer;
   amount: Amount;
 }
 
@@ -78,15 +80,15 @@ export interface Withdraw extends ExternalTransfer {
 }
 
 export interface Transfer extends AccountOperation {
-  marketId: BN;
+  marketId: Integer;
   toAccountOwner: address;
-  toAccountId: BN;
+  toAccountId: Integer;
   amount: Amount;
 }
 
 export interface Exchange extends AccountOperation {
-  takerMarketId: BN;
-  makerMarketId: BN;
+  takerMarketId: Integer;
+  makerMarketId: Integer;
   order: Order;
   amount: Amount;
 }
@@ -95,16 +97,16 @@ export interface Buy extends Exchange {}
 export interface Sell extends Exchange {}
 
 export interface Liquidate extends AccountOperation {
-  liquidMarketId: BN;
-  payoutMarketId: BN;
+  liquidMarketId: Integer;
+  payoutMarketId: Integer;
   liquidAccountOwner: address;
-  liquidAccountId: BN;
+  liquidAccountId: Integer;
   amount: Amount;
 }
 
 export interface SetExpiry extends AccountOperation {
-  marketId: BN;
-  expiryTime: BN;
+  marketId: Integer;
+  expiryTime: Integer;
 }
 
 export interface AcctInfo {
@@ -133,21 +135,21 @@ export interface SoloOptions {
 }
 
 export interface Index {
-  borrow: string;
-  supply: string;
-  lastUpdate: string;
+  borrow: Decimal;
+  supply: Decimal;
+  lastUpdate: Integer;
 }
 
 export interface MarketWithInfo {
   market: {
-    token: string;
-    totalPar: { borrow: string; supply: string };
+    token: address;
+    totalPar: { borrow: Integer; supply: Integer };
     index: Index;
-    priceOracle: string;
-    interestSetter: string;
+    priceOracle: address;
+    interestSetter: address;
     isClosing: boolean;
   };
   currentIndex: Index;
-  currentPrice: { value: string };
-  currentInterestRate: { value: string };
+  currentPrice: Integer;
+  currentInterestRate: Decimal;
 }

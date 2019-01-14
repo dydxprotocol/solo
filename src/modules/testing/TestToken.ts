@@ -1,6 +1,5 @@
-import BN from 'bn.js';
 import { Contracts } from '../../lib/Contracts';
-import { ContractCallOptions, TxResult, address } from '../../types';
+import { ContractCallOptions, TxResult, address, Integer } from '../../types';
 import { Token } from '../Token';
 import { TestToken as TestTokenContract } from '../../../build/wrappers/TestToken';
 
@@ -24,7 +23,7 @@ export class TestToken {
   }
 
   public issue(
-    amount: BN,
+    amount: Integer,
     from: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
@@ -37,7 +36,7 @@ export class TestToken {
   }
 
   public issueTo(
-    amount: BN,
+    amount: Integer,
     who: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
@@ -53,7 +52,7 @@ export class TestToken {
   public async getAllowance(
     ownerAddress: address,
     spenderAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     return this.token.getAllowance(
       this.testTokenContract.options.address,
       ownerAddress,
@@ -63,14 +62,14 @@ export class TestToken {
 
   public async getBalance(
     ownerAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     return this.token.getBalance(
       this.testTokenContract.options.address,
       ownerAddress,
     );
   }
 
-  public async getTotalSupply(): Promise<BN> {
+  public async getTotalSupply(): Promise<Integer> {
     return this.token.getTotalSupply(
       this.testTokenContract.options.address,
     );
@@ -88,7 +87,7 @@ export class TestToken {
     );
   }
 
-  public async getDecimals(): Promise<BN> {
+  public async getDecimals(): Promise<Integer> {
     return this.token.getDecimals(
       this.testTokenContract.options.address,
     );
@@ -96,7 +95,7 @@ export class TestToken {
 
   public async getSoloAllowance(
     ownerAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     return this.token.getSoloAllowance(
       this.testTokenContract.options.address,
       ownerAddress,
@@ -106,7 +105,7 @@ export class TestToken {
   public async setAllowance(
     ownerAddress: address,
     spenderAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setAllowance(
@@ -120,7 +119,7 @@ export class TestToken {
 
   public async setSolollowance(
     ownerAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setSolollowance(
@@ -169,7 +168,7 @@ export class TestToken {
   public async transfer(
     fromAddress: address,
     toAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transfer(
@@ -185,7 +184,7 @@ export class TestToken {
     fromAddress: address,
     toAddress: address,
     senderAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transferFrom(

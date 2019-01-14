@@ -315,13 +315,13 @@ contract Queries is
 
         Balance[] memory balances = new Balance[](numMarkets);
 
-        WorldState memory worldState = wsInitializeSingle(account);
+        Cache memory cache = cacheInitializeSingle(account);
 
         for (uint256 m = 0; m < numMarkets; m++) {
             balances[m] = Balance({
-                tokenAddress: wsGetToken(worldState, m),
-                parBalance: wsGetPar(worldState, 0, m),
-                weiBalance: wsGetWei(worldState, 0, m)
+                tokenAddress: cacheGetToken(cache, m),
+                parBalance: cacheGetPar(cache, 0, m),
+                weiBalance: cacheGetWei(cache, 0, m)
             });
         }
 

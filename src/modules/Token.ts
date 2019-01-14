@@ -1,8 +1,8 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { BNS } from '../lib/Constants';
+import { INTEGERS } from '../lib/Constants';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
-import { ContractCallOptions, TxResult, address } from '../types';
+import { ContractCallOptions, TxResult, address, Integer } from '../types';
 
 export class Token {
   private contracts: Contracts;
@@ -19,25 +19,25 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
     const allowStr: string = await token.methods.allowance(ownerAddress, spenderAddress).call();
-    return new BN(allowStr);
+    return new BigNumber(allowStr);
   }
 
   public async getBalance(
     tokenAddress: address,
     ownerAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
     const balStr: string = await token.methods.balanceOf(ownerAddress).call();
-    return new BN(balStr);
+    return new BigNumber(balStr);
   }
 
-  public async getTotalSupply(tokenAddress: address): Promise<BN> {
+  public async getTotalSupply(tokenAddress: address): Promise<Integer> {
     const token = this.getToken(tokenAddress);
     const supplyStr: string = await token.methods.totalSupply().call();
-    return new BN(supplyStr);
+    return new BigNumber(supplyStr);
   }
 
   public async getName(tokenAddress: address): Promise<string> {
@@ -50,16 +50,16 @@ export class Token {
     return token.methods.symbol().call();
   }
 
-  public async getDecimals(tokenAddress: address): Promise<BN> {
+  public async getDecimals(tokenAddress: address): Promise<Integer> {
     const token = this.getToken(tokenAddress);
     const decStr: string = await token.methods.decimals().call();
-    return new BN(decStr);
+    return new BigNumber(decStr);
   }
 
   public async getSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-  ): Promise<BN> {
+  ): Promise<Integer> {
     return this.getAllowance(
       tokenAddress,
       ownerAddress,
@@ -71,7 +71,7 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
@@ -88,7 +88,7 @@ export class Token {
   public async setSolollowance(
     tokenAddress: address,
     ownerAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
@@ -110,7 +110,7 @@ export class Token {
       tokenAddress,
       ownerAddress,
       spenderAddress,
-      BNS.ONES_255,
+      INTEGERS.ONES_255,
       options,
     );
   }
@@ -124,7 +124,7 @@ export class Token {
       tokenAddress,
       ownerAddress,
       this.contracts.soloMargin.options.address,
-      BNS.ONES_255,
+      INTEGERS.ONES_255,
       options,
     );
   }
@@ -138,7 +138,7 @@ export class Token {
       tokenAddress,
       ownerAddress,
       this.contracts.soloMargin.options.address,
-      BNS.ZERO,
+      INTEGERS.ZERO,
       options,
     );
   }
@@ -147,7 +147,7 @@ export class Token {
     tokenAddress: address,
     fromAddress: address,
     toAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
@@ -166,7 +166,7 @@ export class Token {
     fromAddress: address,
     toAddress: address,
     senderAddress: address,
-    amount: BN,
+    amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);

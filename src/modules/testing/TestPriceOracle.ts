@@ -1,6 +1,5 @@
-import BN from 'bn.js';
 import { Contracts } from '../../lib/Contracts';
-import { ContractCallOptions, TxResult, address } from '../../types';
+import { ContractCallOptions, TxResult, address, Integer } from '../../types';
 
 export class TestPriceOracle {
   private contracts: Contracts;
@@ -17,7 +16,7 @@ export class TestPriceOracle {
 
   public async setPrice(
     token: address,
-    price: BN,
+    price: Integer,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
