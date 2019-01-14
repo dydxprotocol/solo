@@ -428,7 +428,6 @@ contract Manager is
         private
         view
     {
-        return;
         Interest.Index memory index = g_markets[marketId].index;
 
         // if no time has passed since the last update, then simply load the cached value
@@ -436,7 +435,6 @@ contract Manager is
             cache.markets[marketId].index = index;
             return;
         }
-        return;
 
         // get previous rate
         Types.TotalPar memory totalPar = g_markets[marketId].totalPar;
@@ -451,7 +449,6 @@ contract Manager is
             supplyWei.value
         );
 
-        return;
         cache.markets[marketId].index = Interest.calculateNewIndex(
             index,
             rate,

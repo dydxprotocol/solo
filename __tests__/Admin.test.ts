@@ -43,8 +43,6 @@ describe('Admin', () => {
 
       const marketInfo: MarketWithInfo = await solo.getters.getMarket(new BigNumber(0));
 
-      console.log(marketInfo);
-
       expect(marketInfo.market.token).toBe(token);
       expect(marketInfo.market.priceOracle).toBe(priceOracle);
       expect(marketInfo.market.interestSetter).toBe(interestSetter);
