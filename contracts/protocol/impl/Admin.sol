@@ -245,6 +245,10 @@ contract Admin is
             minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE,
             "TODO_REASON"
         );
+        require(
+            minBorrowedValue.value >= MIN_MIN_BORROWED_VALUE,
+            "TODO_REASON"
+        );
         g_minBorrowedValue = minBorrowedValue;
     }
 
