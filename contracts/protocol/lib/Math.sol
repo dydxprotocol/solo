@@ -44,6 +44,22 @@ library Math {
         return target.mul(numerator).div(denominator);
     }
 
+    function getPartialRoundUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (numerator == 0 || target == 0) {
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
+        }
+        return numerator.mul(target).sub(1).div(denominator).add(1);
+    }
+
     function to128(
         uint256 x
     )
