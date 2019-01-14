@@ -34,6 +34,10 @@ describe('Admin', () => {
         { from: accounts[0] },
       );
 
+      const addr = await solo.getters.getMarketCurrentIndex(new BN(0));
+
+      console.log(addr)
+
       console.log('A')
       const marketInfo: MarketWithInfo = await solo.getters.getMarket(new BN(0));
       console.log('B')

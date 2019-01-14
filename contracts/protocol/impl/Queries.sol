@@ -49,6 +49,20 @@ contract Queries is
         Interest.Rate currentInterestRate;
     }
 
+    struct Globals {
+        Decimal.D256 liquidationRatio;
+        Decimal.D256 liquidationSpread;
+        Decimal.D256 earningsRate;
+        Monetary.Value minBorrowedValue;
+        uint256 numMarkets;
+    }
+
+    struct Balance {
+        address tokenAddress;
+        Types.Par parBalance;
+        Types.Wei weiBalance;
+    }
+
     // ============ Admin Variables ============
 
     function getLiquidationRatio()
@@ -290,4 +304,27 @@ contract Queries is
         return cacheGetAccountValues(cache, 0);
     }
 
+    function getAccountBalances(
+        Acct.Info memory account
+    )
+        public
+        view
+        returns (Balance[] memory)
+    {
+        uint256 numMarkets = g_numMarkets;
+
+        Balance[] memory balances = new Balance[](numMarkets);
+
+        WorldState memory worldState = wsInitializeSingle(account);
+
+        for (uint256 m = 0; m < numMarkets; m++) {
+            balances[m] = Balance({
+                tokenAddress: wsGetToken(worldState, m),
+                parBalance: wsGetPar(worldState, 0, m),
+                weiBalance: wsGetWei(worldState, 0, m)
+            });
+        }
+
+        return balances;
+    }
 }
