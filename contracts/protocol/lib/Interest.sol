@@ -78,11 +78,16 @@ library Interest {
         uint96 borrowInterest = rate.value.mul(timeDelta).to96();
 
         // adjust the interest by the earningsRate, then prorate the interest across all suppliers
-        uint96 supplyInterest = Math.getPartial(
-            Decimal.mul(borrowInterest, earningsRate).to96(),
-            borrowWei.value,
-            supplyWei.value
-        ).to96();
+        uint96 supplyInterest;
+        if (Types.isZero(supplyWei)) {
+            supplyInterest = 0;
+        } else {
+            supplyInterest = Math.getPartial(
+                Decimal.mul(borrowInterest, earningsRate),
+                borrowWei.value,
+                supplyWei.value
+            ).to96();
+        }
 
         return Index({
             borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
