@@ -19,8 +19,8 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { Manager } from "./Manager.sol";
 import { Storage } from "./Storage.sol";
-import { WorldManager } from "./WorldManager.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Acct } from "../lib/Acct.sol";
@@ -38,7 +38,7 @@ import { Types } from "../lib/Types.sol";
  */
 contract Queries is
     Storage,
-    WorldManager
+    Manager
 {
     // ============ Admin Variables ============
 
@@ -123,8 +123,8 @@ contract Queries is
         view
         returns (Interest.Index memory)
     {
-        WorldState memory worldState = wsInitializeEmpty();
-        return wsGetIndex(worldState, marketId);
+        Cache memory cache = cacheInitializeEmpty();
+        return cacheGetIndex(cache, marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -214,8 +214,8 @@ contract Queries is
         view
         returns (Types.Wei memory)
     {
-        WorldState memory worldState = wsInitializeSingle(account);
-        return wsGetWei(worldState, 0, marketId);
+        Cache memory cache = cacheInitializeSingle(account);
+        return cacheGetWei(cache, 0, marketId);
     }
 
     function getAccountIsLiquidating(
@@ -235,8 +235,8 @@ contract Queries is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        WorldState memory worldState = wsInitializeSingle(account);
-        return wsGetAccountValues(worldState, 0);
+        Cache memory cache = cacheInitializeSingle(account);
+        return cacheGetAccountValues(cache, 0);
     }
 
 }

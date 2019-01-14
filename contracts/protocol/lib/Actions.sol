@@ -28,7 +28,7 @@ import { Types } from "./Types.sol";
  * TODO
  */
 library Actions {
-    
+
     // ============ Enums ============
 
     enum TransactionType {
@@ -75,64 +75,64 @@ library Actions {
     // ============ Action Types ============
 
     struct DepositArgs {
-        uint256 accountId;
         AssetAmount amount;
-        uint256 marketId;
+        uint256 acct;
+        uint256 mkt;
         address from;
     }
 
     struct WithdrawArgs {
-        uint256 accountId;
         AssetAmount amount;
-        uint256 marketId;
+        uint256 acct;
+        uint256 mkt;
         address to;
     }
 
     struct TransferArgs {
-        uint256 accountId;
         AssetAmount amount;
-        uint256 marketId;
-        uint256 otherAccountId;
+        uint256 acctOne;
+        uint256 acctTwo;
+        uint256 mkt;
     }
 
     struct BuyArgs {
-        uint256 accountId;
         AssetAmount amount;
-        uint256 makerMarketId;
-        uint256 takerMarketId;
+        uint256 acct;
+        uint256 makerMkt;
+        uint256 takerMkt;
         address exchangeWrapper;
         bytes orderData;
     }
 
     struct SellArgs {
-        uint256 accountId;
         AssetAmount amount;
-        uint256 takerMarketId;
-        uint256 makerMarketId;
+        uint256 acct;
+        uint256 takerMkt;
+        uint256 makerMkt;
         address exchangeWrapper;
         bytes orderData;
     }
 
     struct TradeArgs {
-        uint256 accountId;
-        uint256 makerAccountId;
-        uint256 inputMarketId;
-        uint256 outputMarketId;
         AssetAmount amount;
-        address tradeContract;
+        uint256 takerAcct;
+        uint256 makerAcct;
+        uint256 inputMkt;
+        uint256 outputMkt;
+        address autoTrader;
         bytes tradeData;
     }
 
     struct LiquidateArgs {
-        uint256 liquidAccountId;
         AssetAmount amount;
-        uint256 underwaterMarketId;
-        uint256 collateralMarketId;
-        uint256 stableAccountId;
+        uint256 stableAcct;
+        uint256 liquidAcct;
+        uint256 owedMkt;
+        uint256 heldMkt;
     }
 
     struct CallArgs {
-        uint256 accountId;
+        uint256 acct;
         address who;
         bytes data;
     }
@@ -148,9 +148,9 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Deposit);
         return DepositArgs({
-            accountId: args.accountId,
             amount: args.amount,
-            marketId: args.primaryMarketId,
+            acct: args.accountId,
+            mkt: args.primaryMarketId,
             from: args.otherAddress
         });
     }
@@ -164,9 +164,9 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Withdraw);
         return WithdrawArgs({
-            accountId: args.accountId,
             amount: args.amount,
-            marketId: args.primaryMarketId,
+            acct: args.accountId,
+            mkt: args.primaryMarketId,
             to: args.otherAddress
         });
     }
@@ -184,10 +184,10 @@ library Actions {
             "TODO_REASON"
         );
         return TransferArgs({
-            accountId: args.accountId,
             amount: args.amount,
-            marketId: args.primaryMarketId,
-            otherAccountId: args.otherAccountId
+            acctOne: args.accountId,
+            acctTwo: args.otherAccountId,
+            mkt: args.primaryMarketId
         });
     }
 
@@ -200,10 +200,10 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Buy);
         return BuyArgs({
-            accountId: args.accountId,
             amount: args.amount,
-            makerMarketId: args.primaryMarketId,
-            takerMarketId: args.secondaryMarketId,
+            acct: args.accountId,
+            makerMkt: args.primaryMarketId,
+            takerMkt: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.data
         });
@@ -218,10 +218,10 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Sell);
         return SellArgs({
-            accountId: args.accountId,
             amount: args.amount,
-            takerMarketId: args.primaryMarketId,
-            makerMarketId: args.secondaryMarketId,
+            acct: args.accountId,
+            takerMkt: args.primaryMarketId,
+            makerMkt: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.data
         });
@@ -240,12 +240,12 @@ library Actions {
             "TODO_REASON"
         );
         return TradeArgs({
-            accountId: args.accountId,
-            makerAccountId: args.otherAccountId,
-            tradeContract: args.otherAddress,
-            inputMarketId: args.primaryMarketId,
-            outputMarketId: args.secondaryMarketId,
             amount: args.amount,
+            takerAcct: args.accountId,
+            makerAcct: args.otherAccountId,
+            inputMkt: args.primaryMarketId,
+            outputMkt: args.secondaryMarketId,
+            autoTrader: args.otherAddress,
             tradeData: args.data
         });
     }
@@ -267,11 +267,11 @@ library Actions {
             "TODO_REASON"
         );
         return LiquidateArgs({
-            liquidAccountId: args.accountId,
             amount: args.amount,
-            underwaterMarketId: args.primaryMarketId,
-            collateralMarketId: args.secondaryMarketId,
-            stableAccountId: args.otherAccountId
+            stableAcct: args.accountId,
+            liquidAcct: args.otherAccountId,
+            owedMkt: args.primaryMarketId,
+            heldMkt: args.secondaryMarketId
         });
     }
 
@@ -284,7 +284,7 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Call);
         return CallArgs({
-            accountId: args.accountId,
+            acct: args.accountId,
             who: args.otherAddress,
             data: args.data
         });

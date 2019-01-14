@@ -35,12 +35,12 @@ import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title WorldManager
+ * @title Manager
  * @author dYdX
  *
  * Functions for reading, writing, and verifying storage
  */
-contract WorldManager is
+contract Manager is
     Storage
 {
     using Math for uint256;
@@ -50,22 +50,22 @@ contract WorldManager is
 
     // ============ Structs ============
 
-    struct WorldState {
-        MarketState[] markets;
-        AccountState[] accounts;
+    struct Cache {
+        MarketCache[] markets;
+        AccountCache[] accounts;
         Decimal.D256 earningsRate;
         Decimal.D256 liquidationSpread;
         Decimal.D256 liquidationRatio;
     }
 
-    struct AccountState {
+    struct AccountCache {
         Acct.Info info;
         Types.Par[] balance;
         bool primary; // was used as a primary account
         bool traded; // was used as an account to trade against
     }
 
-    struct MarketState {
+    struct MarketCache {
         address token;
         Interest.Index index;
         Monetary.Price price;
@@ -75,88 +75,88 @@ contract WorldManager is
 
     // ============ Getter Functions ============
 
-    function wsGetToken(
-        WorldState memory worldState,
+    function cacheGetToken(
+        Cache memory cache,
         uint256 marketId
     )
         internal
         view
         returns (address)
     {
-        if (worldState.markets[marketId].token == address(0)) {
-            worldState.markets[marketId].token = g_markets[marketId].token;
+        if (cache.markets[marketId].token == address(0)) {
+            cache.markets[marketId].token = g_markets[marketId].token;
         }
-        return worldState.markets[marketId].token;
+        return cache.markets[marketId].token;
     }
 
-    function wsGetIndex(
-        WorldState memory worldState,
+    function cacheGetIndex(
+        Cache memory cache,
         uint256 marketId
     )
         internal
         view
         returns (Interest.Index memory)
     {
-        if (worldState.markets[marketId].index.lastUpdate == 0) {
-            _loadIndex(worldState, marketId);
+        if (cache.markets[marketId].index.lastUpdate == 0) {
+            _loadIndex(cache, marketId);
         }
-        return worldState.markets[marketId].index;
+        return cache.markets[marketId].index;
     }
 
-    function wsGetTotalPar(
-        WorldState memory worldState,
+    function cacheGetTotalPar(
+        Cache memory cache,
         uint256 marketId
     )
         internal
         view
         returns (Types.TotalPar memory)
     {
-        if (!worldState.markets[marketId].totalParLoaded) {
-            worldState.markets[marketId].totalPar = g_markets[marketId].totalPar;
-            worldState.markets[marketId].totalParLoaded = true;
+        if (!cache.markets[marketId].totalParLoaded) {
+            cache.markets[marketId].totalPar = g_markets[marketId].totalPar;
+            cache.markets[marketId].totalParLoaded = true;
         }
-        return worldState.markets[marketId].totalPar;
+        return cache.markets[marketId].totalPar;
     }
 
-    function wsGetPrice(
-        WorldState memory worldState,
+    function cacheGetPrice(
+        Cache memory cache,
         uint256 marketId
     )
         internal
         view
         returns (Monetary.Price memory)
     {
-        if (worldState.markets[marketId].price.value == 0) {
-            _loadPrice(worldState, marketId);
+        if (cache.markets[marketId].price.value == 0) {
+            _loadPrice(cache, marketId);
         }
-        return worldState.markets[marketId].price;
+        return cache.markets[marketId].price;
     }
 
-    function wsGetAcctInfo(
-        WorldState memory worldState,
+    function cacheGetAcctInfo(
+        Cache memory cache,
         uint256 accountId
     )
         internal
         pure
         returns (Acct.Info memory)
     {
-        return worldState.accounts[accountId].info;
+        return cache.accounts[accountId].info;
     }
 
-    function wsGetIsLiquidating(
-        WorldState memory worldState,
+    function cacheGetIsLiquidating(
+        Cache memory cache,
         uint256 accountId
     )
         internal
         view
         returns (bool)
     {
-        Acct.Info memory account = wsGetAcctInfo(worldState, accountId);
+        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
         return g_accounts[account.owner][account.number].isLiquidating;
     }
 
-    function wsGetPar(
-        WorldState memory worldState,
+    function cacheGetPar(
+        Cache memory cache,
         uint256 accountId,
         uint256 marketId
     )
@@ -164,11 +164,11 @@ contract WorldManager is
         pure
         returns (Types.Par memory)
     {
-        return worldState.accounts[accountId].balance[marketId];
+        return cache.accounts[accountId].balance[marketId];
     }
 
-    function wsGetWei(
-        WorldState memory worldState,
+    function cacheGetWei(
+        Cache memory cache,
         uint256 accountId,
         uint256 marketId
     )
@@ -176,90 +176,90 @@ contract WorldManager is
         view
         returns (Types.Wei memory)
     {
-        Types.Par memory par = wsGetPar(worldState, accountId, marketId);
+        Types.Par memory par = cacheGetPar(cache, accountId, marketId);
 
         if (par.isZero()) {
             return Types.zeroWei();
         }
 
-        Interest.Index memory index = wsGetIndex(worldState, marketId);
+        Interest.Index memory index = cacheGetIndex(cache, marketId);
         return Interest.parToWei(par, index);
     }
 
-    function wsGetEarningsRate(
-        WorldState memory worldState
+    function cacheGetEarningsRate(
+        Cache memory cache
     )
         internal
         view
         returns (Decimal.D256 memory)
     {
-        if (worldState.earningsRate.value == 0) {
-            worldState.earningsRate = g_earningsRate;
+        if (cache.earningsRate.value == 0) {
+            cache.earningsRate = g_earningsRate;
         }
-        return worldState.earningsRate;
+        return cache.earningsRate;
     }
 
-    function wsGetLiquidationSpread(
-        WorldState memory worldState
+    function cacheGetLiquidationSpread(
+        Cache memory cache
     )
         internal
         view
         returns (Decimal.D256 memory)
     {
-        if (worldState.liquidationSpread.value == 0) {
-            worldState.liquidationSpread = g_liquidationSpread;
+        if (cache.liquidationSpread.value == 0) {
+            cache.liquidationSpread = g_liquidationSpread;
         }
-        return worldState.liquidationSpread;
+        return cache.liquidationSpread;
     }
 
-    function wsGetLiquidationRatio(
-        WorldState memory worldState
+    function cacheGetLiquidationRatio(
+        Cache memory cache
     )
         internal
         view
         returns (Decimal.D256 memory)
     {
-        if (worldState.liquidationRatio.value == 0) {
-            worldState.liquidationRatio = g_liquidationRatio;
+        if (cache.liquidationRatio.value == 0) {
+            cache.liquidationRatio = g_liquidationRatio;
         }
-        return worldState.liquidationRatio;
+        return cache.liquidationRatio;
     }
 
     // ============ Setter Functions ============
 
-    function wsSetPrimary(
-        WorldState memory worldState,
+    function cacheSetPrimary(
+        Cache memory cache,
         uint256 accountId
     )
         internal
         pure
     {
-        worldState.accounts[accountId].primary = true;
+        cache.accounts[accountId].primary = true;
     }
 
-    function wsSetTraded(
-        WorldState memory worldState,
+    function cacheSetTraded(
+        Cache memory cache,
         uint256 accountId
     )
         internal
         pure
     {
-        worldState.accounts[accountId].traded = true;
+        cache.accounts[accountId].traded = true;
     }
 
-    function wsSetIsLiquidating(
-        WorldState memory worldState,
+    function cacheSetIsLiquidating(
+        Cache memory cache,
         uint256 accountId
     )
         internal
         returns (bool)
     {
-        Acct.Info memory account = wsGetAcctInfo(worldState, accountId);
+        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
         g_accounts[account.owner][account.number].isLiquidating = true;
     }
 
-    function wsSetPar(
-        WorldState memory worldState,
+    function cacheSetPar(
+        Cache memory cache,
         uint256 accountId,
         uint256 marketId,
         Types.Par memory newPar
@@ -267,14 +267,14 @@ contract WorldManager is
         internal
         view
     {
-        Types.Par memory oldPar = wsGetPar(worldState, accountId, marketId);
+        Types.Par memory oldPar = cacheGetPar(cache, accountId, marketId);
 
         if (Types.equals(oldPar, newPar)) {
             return;
         }
 
         // updateTotalPar
-        Types.TotalPar memory totalPar = wsGetTotalPar(worldState, marketId);
+        Types.TotalPar memory totalPar = cacheGetTotalPar(cache, marketId);
 
         // roll-back oldPar
         if (oldPar.sign) {
@@ -290,15 +290,15 @@ contract WorldManager is
             totalPar.borrow = uint256(totalPar.borrow).sub(newPar.value).to128();
         }
 
-        worldState.markets[marketId].totalPar = totalPar;
-        worldState.accounts[accountId].balance[marketId] = newPar;
+        cache.markets[marketId].totalPar = totalPar;
+        cache.accounts[accountId].balance[marketId] = newPar;
     }
 
     /**
      * Determines and sets an account's balance based on a change in wei
      */
-    function wsSetParFromDeltaWei(
-        WorldState memory worldState,
+    function cacheSetParFromDeltaWei(
+        Cache memory cache,
         uint256 accountId,
         uint256 marketId,
         Types.Wei memory deltaWei
@@ -306,12 +306,12 @@ contract WorldManager is
         internal
         view
     {
-        Interest.Index memory index = wsGetIndex(worldState, marketId);
-        Types.Wei memory oldWei = wsGetWei(worldState, accountId, marketId);
+        Interest.Index memory index = cacheGetIndex(cache, marketId);
+        Types.Wei memory oldWei = cacheGetWei(cache, accountId, marketId);
         Types.Wei memory newWei = oldWei.add(deltaWei);
         Types.Par memory newPar = Interest.weiToPar(newWei, index);
-        wsSetPar(
-            worldState,
+        cacheSetPar(
+            cache,
             accountId,
             marketId,
             newPar
@@ -322,8 +322,8 @@ contract WorldManager is
      * Determines and sets an account's balance based on the intended balance change. Returns the
      * equivalent amount in wei
      */
-    function wsGetNewParAndDeltaWei(
-        WorldState memory worldState,
+    function cacheGetNewParAndDeltaWei(
+        Cache memory cache,
         uint256 accountId,
         uint256 marketId,
         Actions.AssetAmount memory amount
@@ -332,9 +332,9 @@ contract WorldManager is
         view
         returns (Types.Par memory, Types.Wei memory)
     {
-        Interest.Index memory index = wsGetIndex(worldState, marketId);
-        Types.Par memory oldPar = wsGetPar(worldState, accountId, marketId);
-        Types.Wei memory oldWei = wsGetWei(worldState, accountId, marketId);
+        Interest.Index memory index = cacheGetIndex(cache, marketId);
+        Types.Par memory oldPar = cacheGetPar(cache, accountId, marketId);
+        Types.Wei memory oldWei = cacheGetWei(cache, accountId, marketId);
 
         Types.Par memory newPar;
         Types.Wei memory deltaWei;
@@ -365,33 +365,33 @@ contract WorldManager is
 
     // ============ Loading Functions ============
 
-    function wsInitializeEmpty()
+    function cacheInitializeEmpty()
         internal
         view
-        returns (WorldState memory)
+        returns (Cache memory)
     {
         Acct.Info[] memory nullAccounts = new Acct.Info[](0);
-        return wsInitialize(nullAccounts);
+        return cacheInitialize(nullAccounts);
     }
 
-    function wsInitializeSingle(
+    function cacheInitializeSingle(
         Acct.Info memory account
     )
         internal
         view
-        returns (WorldState memory)
+        returns (Cache memory)
     {
         Acct.Info[] memory accounts = new Acct.Info[](1);
         accounts[0] = account;
-        return wsInitialize(accounts);
+        return cacheInitialize(accounts);
     }
 
-    function wsInitialize(
+    function cacheInitialize(
         Acct.Info[] memory accounts
     )
         internal
         view
-        returns (WorldState memory)
+        returns (Cache memory)
     {
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
@@ -403,24 +403,24 @@ contract WorldManager is
             }
         }
 
-        WorldState memory worldState;
+        Cache memory cache;
 
-        worldState.markets = new MarketState[](g_numMarkets);
-        worldState.accounts = new AccountState[](accounts.length);
+        cache.markets = new MarketCache[](g_numMarkets);
+        cache.accounts = new AccountCache[](accounts.length);
 
         // load all account information aggressively
-        for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            worldState.accounts[a].info.owner = accounts[a].owner;
-            worldState.accounts[a].info.number = accounts[a].number;
-            worldState.accounts[a].balance = new Types.Par[](worldState.markets.length);
+        for (uint256 a = 0; a < cache.accounts.length; a++) {
+            cache.accounts[a].info.owner = accounts[a].owner;
+            cache.accounts[a].info.number = accounts[a].number;
+            cache.accounts[a].balance = new Types.Par[](cache.markets.length);
         }
-        _loadBalances(worldState);
+        _loadBalances(cache);
 
         // do not load any market information, load it lazily later
     }
 
     function _loadIndex(
-        WorldState memory worldState,
+        Cache memory cache,
         uint256 marketId
     )
         private
@@ -430,7 +430,7 @@ contract WorldManager is
 
         // if no time has passed since the last update, then simply load the cached value
         if (index.lastUpdate == Time.currentTime()) {
-            worldState.markets[marketId].index = index;
+            cache.markets[marketId].index = index;
             return;
         }
 
@@ -442,41 +442,41 @@ contract WorldManager is
         ) = Interest.totalParToWei(totalPar, index);
 
         Interest.Rate memory rate = g_markets[marketId].interestSetter.getInterestRate(
-            wsGetToken(worldState, marketId),
+            cacheGetToken(cache, marketId),
             borrowWei.value,
             supplyWei.value
         );
 
-        worldState.markets[marketId].index = Interest.calculateNewIndex(
+        cache.markets[marketId].index = Interest.calculateNewIndex(
             index,
             rate,
             totalPar,
-            wsGetEarningsRate(worldState)
+            cacheGetEarningsRate(cache)
         );
     }
 
     function _loadPrice(
-        WorldState memory worldState,
+        Cache memory cache,
         uint256 marketId
     )
         private
         view
     {
-        address token = worldState.markets[marketId].token;
+        address token = cache.markets[marketId].token;
         IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
-        worldState.markets[marketId].price = oracle.getPrice(token);
+        cache.markets[marketId].price = oracle.getPrice(token);
     }
 
     function _loadBalances(
-        WorldState memory worldState
+        Cache memory cache
     )
         private
         view
     {
-        for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            Acct.Info memory account = worldState.accounts[a].info;
-            for (uint256 m = 0; m < worldState.markets.length; m++) {
-                worldState.accounts[a].balance[m] =
+        for (uint256 a = 0; a < cache.accounts.length; a++) {
+            Acct.Info memory account = cache.accounts[a].info;
+            for (uint256 m = 0; m < cache.markets.length; m++) {
+                cache.accounts[a].balance[m] =
                     g_accounts[account.owner][account.number].balances[m];
             }
         }
@@ -484,72 +484,72 @@ contract WorldManager is
 
     // ============ Writing Functions ============
 
-    function wsStore(
-        WorldState memory worldState
+    function cacheStore(
+        Cache memory cache
     )
         internal
     {
-        _verifyWorldState(worldState);
+        _verifyCache(cache);
 
         //store indexes
-        for (uint256 i = 0; i < worldState.markets.length; i++) {
-            if (worldState.markets[i].index.lastUpdate != 0) {
-                g_markets[i].index = worldState.markets[i].index;
+        for (uint256 i = 0; i < cache.markets.length; i++) {
+            if (cache.markets[i].index.lastUpdate != 0) {
+                g_markets[i].index = cache.markets[i].index;
             }
         }
 
         // store total pars
-        for (uint256 m = 0; m < worldState.markets.length; m++) {
-            if (worldState.markets[m].totalParLoaded) {
+        for (uint256 m = 0; m < cache.markets.length; m++) {
+            if (cache.markets[m].totalParLoaded) {
                 require(
                     !g_markets[m].isClosing
-                    || g_markets[m].totalPar.borrow >= worldState.markets[m].totalPar.borrow,
+                    || g_markets[m].totalPar.borrow >= cache.markets[m].totalPar.borrow,
                     "TODO_REASON"
                 );
-                g_markets[m].totalPar = worldState.markets[m].totalPar;
+                g_markets[m].totalPar = cache.markets[m].totalPar;
             }
         }
 
         // store balances
-        for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            Acct.Info memory account = worldState.accounts[a].info;
-            for (uint256 m = 0; m < worldState.markets.length; m++) {
+        for (uint256 a = 0; a < cache.accounts.length; a++) {
+            Acct.Info memory account = cache.accounts[a].info;
+            for (uint256 m = 0; m < cache.markets.length; m++) {
                 g_accounts[account.owner][account.number].balances[m] =
-                    wsGetPar(worldState, a, m);
+                    cacheGetPar(cache, a, m);
             }
         }
     }
 
     // ============ Verification Functions ============
 
-    function _verifyWorldState(
-        WorldState memory worldState
+    function _verifyCache(
+        Cache memory cache
     )
         private
     {
         Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
 
-        for (uint256 a = 0; a < worldState.accounts.length; a++) {
-            Acct.Info memory account = wsGetAcctInfo(worldState, a);
+        for (uint256 a = 0; a < cache.accounts.length; a++) {
+            Acct.Info memory account = cacheGetAcctInfo(cache, a);
 
             // check minimum borrowed value for all accounts
-            (, Monetary.Value memory borrowValue) = wsGetAccountValues(worldState, a);
+            (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, a);
             require(
                 borrowValue.value >= minBorrowedValue.value,
                 "TODO_REASON"
             );
 
             // check collateralization for non-liquidated accounts
-            if (worldState.accounts[a].primary || worldState.accounts[a].traded) {
+            if (cache.accounts[a].primary || cache.accounts[a].traded) {
                 require(
-                    wsGetIsCollateralized(worldState, a),
+                    cacheGetIsCollateralized(cache, a),
                     "TODO_REASON"
                 );
                 g_accounts[account.owner][account.number].isLiquidating = false;
             }
 
             // check permissions for primary accounts
-            if (worldState.accounts[a].primary) {
+            if (cache.accounts[a].primary) {
                 require(
                     account.owner == msg.sender || g_operators[account.owner][msg.sender],
                     "TODO_REASON"
@@ -560,8 +560,8 @@ contract WorldManager is
 
     // ============ Query Functions ============
 
-    function wsGetIsCollateralized(
-        WorldState memory worldState,
+    function cacheGetIsCollateralized(
+        Cache memory cache,
         uint256 accountId
     )
         internal
@@ -571,19 +571,19 @@ contract WorldManager is
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = wsGetAccountValues(worldState, accountId);
+        ) = cacheGetAccountValues(cache, accountId);
 
         if (borrowValue.value == 0) {
             return true;
         }
 
-        uint256 requiredSupply = Decimal.mul(borrowValue.value, wsGetLiquidationRatio(worldState));
+        uint256 requiredSupply = Decimal.mul(borrowValue.value, cacheGetLiquidationRatio(cache));
 
         return supplyValue.value >= requiredSupply;
     }
 
-    function wsGetAccountValues(
-        WorldState memory worldState,
+    function cacheGetAccountValues(
+        Cache memory cache,
         uint256 accountId
     )
         internal
@@ -593,15 +593,15 @@ contract WorldManager is
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        for (uint256 m = 0; m < worldState.markets.length; m++) {
-            Types.Wei memory tokenWei = wsGetWei(worldState, accountId, m);
+        for (uint256 m = 0; m < cache.markets.length; m++) {
+            Types.Wei memory tokenWei = cacheGetWei(cache, accountId, m);
 
             if (tokenWei.isZero()) {
                 continue;
             }
 
             Monetary.Value memory overallValue = Monetary.getValue(
-                wsGetPrice(worldState, m),
+                cacheGetPrice(cache, m),
                 tokenWei.value
             );
 
@@ -615,18 +615,18 @@ contract WorldManager is
         return (supplyValue, borrowValue);
     }
 
-    function wsGetNumExcessTokens(
-        WorldState memory worldState,
+    function cacheGetNumExcessTokens(
+        Cache memory cache,
         uint256 marketId
     )
         internal
         view
         returns (Types.Wei memory)
     {
-        Interest.Index memory index = wsGetIndex(worldState, marketId);
-        Types.TotalPar memory totalPar = wsGetTotalPar(worldState, marketId);
+        Interest.Index memory index = cacheGetIndex(cache, marketId);
+        Types.TotalPar memory totalPar = cacheGetTotalPar(cache, marketId);
 
-        address token = wsGetToken(worldState, marketId);
+        address token = cacheGetToken(cache, marketId);
 
         Types.Wei memory balanceWei = Exchange.thisBalance(token);
 

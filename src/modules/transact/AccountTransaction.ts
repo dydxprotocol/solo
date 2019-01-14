@@ -183,6 +183,11 @@ export class AccountTransaction {
       exchangeWrapperAddress: string,
     } = this.orderMapper.mapOrder(exchange.order);
 
+    const [primaryMarketId, secondaryMarketId] =
+      transactionType === TransactionType.Buy ?
+      [exchange.makerMarketId, exchange.takerMarketId] :
+      [exchange.takerMarketId, exchange.makerMarketId];
+
     this.addTransactionArgs(
       exchange,
       {
@@ -190,9 +195,8 @@ export class AccountTransaction {
         amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
         data: [bytes],
-         // TODO are these right? idk how contracts implemented
-        primaryMarketId: exchange.takerMarketId.toString(),
-        secondaryMarketId: exchange.makerMarketId.toString(),
+        primaryMarketId: primaryMarketId.toString(),
+        secondaryMarketId: secondaryMarketId.toString(),
       },
     );
 

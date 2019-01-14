@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { Admin } from "./impl/Admin.sol";
 import { Permissions } from "./impl/Permissions.sol";
 import { Queries } from "./impl/Queries.sol";
-import { TransactionLogic } from "./impl/TransactionLogic.sol";
+import { Transactions } from "./impl/Transactions.sol";
 
 
 /**
@@ -32,7 +32,7 @@ import { TransactionLogic } from "./impl/TransactionLogic.sol";
  * TODO
  */
 contract SoloMargin is
-    TransactionLogic,
+    Transactions,
     Permissions,
     Admin,
     Queries
