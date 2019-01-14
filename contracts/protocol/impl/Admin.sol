@@ -21,8 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { Manager } from "./Manager.sol";
 import { Storage } from "./Storage.sol";
-import { WorldManager } from "./WorldManager.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
@@ -43,15 +43,38 @@ contract Admin is
     Ownable,
     ReentrancyGuard,
     Storage,
-    WorldManager
+    Manager
 {
+    // ============ Constants ============
+
     uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
+    uint256 constant DEF_LIQUIDATION_RATIO  = 125 * 10**16; // 125%
     uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 110%
-    uint256 constant MAX_LIQUIDATION_SPREAD =  15 * 10**16; // 15%
-    uint256 constant MIN_LIQUIDATION_SPREAD =   1 * 10**16; // 1%
+
+    uint256 constant MAX_LIQUIDATION_SPREAD = 115 * 10**16; // 115%
+    uint256 constant DEF_LIQUIDATION_SPREAD = 115 * 10**16; // 105%
+    uint256 constant MIN_LIQUIDATION_SPREAD = 101 * 10**16; // 101%
+
     uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
+    uint256 constant DEF_EARNINGS_RATE      =  50 * 10**16; // 90%
     uint256 constant MAX_EARNINGS_RATE      = 100 * 10**16; // 100%
-    uint256 constant MAX_MIN_BORROWED_VALUE =       10**18; // $1
+
+    uint256 constant MAX_MIN_BORROWED_VALUE = 100 * 10**18; // $100
+    uint256 constant DEF_MIN_BORROWED_VALUE = 100 * 10**18; // $5
+    uint256 constant MIN_MIN_BORROWED_VALUE =   1 * 10**18; // $1
+
+    // ============ Constructor ============
+
+    constructor()
+        public
+    {
+        g_liquidationRatio =  Decimal.D256({ value: DEF_LIQUIDATION_RATIO });
+        g_liquidationSpread = Decimal.D256({ value: DEF_LIQUIDATION_SPREAD });
+        g_earningsRate =      Decimal.D256({ value: DEF_EARNINGS_RATE });
+        g_minBorrowedValue =  Monetary.Value({ value: DEF_MIN_BORROWED_VALUE });
+    }
+
+    // ============ Owner-Only Functions ============
 
     function ownerWithdrawExcessTokens(
         uint256 marketId,
@@ -64,9 +87,9 @@ contract Admin is
     {
         _validateMarketId(marketId);
 
-        WorldState memory worldState = wsInitializeEmpty();
-        Types.Wei memory excessWei = wsGetNumExcessTokens(worldState, marketId);
-        Exchange.transferOut(wsGetToken(worldState, marketId), recipient, excessWei);
+        Cache memory cache = cacheInitializeEmpty();
+        Types.Wei memory excessWei = cacheGetNumExcessTokens(cache, marketId);
+        Exchange.transferOut(cacheGetToken(cache, marketId), recipient, excessWei);
         return excessWei.value;
     }
 
@@ -150,21 +173,25 @@ contract Admin is
     }
 
     function ownerSetLiquidationRatio(
-        Decimal.D256 memory liquidationRatio
+        Decimal.D256 memory ratio
     )
         public
         onlyOwner
         nonReentrant
     {
         require(
-            liquidationRatio.value <= MAX_LIQUIDATION_RATIO,
+            ratio.value <= MAX_LIQUIDATION_RATIO,
             "TODO_REASON"
         );
         require(
-            liquidationRatio.value >= MIN_LIQUIDATION_RATIO,
+            ratio.value >= MIN_LIQUIDATION_RATIO,
             "TODO_REASON"
         );
-        g_liquidationRatio = liquidationRatio;
+        require(
+            ratio.value > g_liquidationSpread.value,
+            "TODO_REASON"
+        );
+        g_liquidationRatio = ratio;
     }
 
     function ownerSetLiquidationSpread(
@@ -180,6 +207,10 @@ contract Admin is
         );
         require(
             spread.value >= MIN_LIQUIDATION_SPREAD,
+            "TODO_REASON"
+        );
+        require(
+            spread.value < g_liquidationRatio.value,
             "TODO_REASON"
         );
         g_liquidationSpread = spread;
@@ -217,7 +248,7 @@ contract Admin is
         g_minBorrowedValue = minBorrowedValue;
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Functions ============
 
     function _setInterestSetter(
         uint256 marketId,
