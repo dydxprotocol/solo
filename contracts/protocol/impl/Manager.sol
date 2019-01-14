@@ -417,6 +417,8 @@ contract Manager is
         _loadBalances(cache);
 
         // do not load any market information, load it lazily later
+
+        return cache;
     }
 
     function _loadIndex(

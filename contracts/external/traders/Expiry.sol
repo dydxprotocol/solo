@@ -188,10 +188,7 @@ contract Expiry is
         view
         returns (Types.Wei memory)
     {
-        Decimal.D256 memory onePlusSpread = Decimal.add(
-            Decimal.one(),
-            SOLO_MARGIN.getLiquidationSpread()
-        );
+        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpread();
         uint256 nonSpreadValue = Math.getPartial(
             inputWei.value,
             SOLO_MARGIN.getMarketPrice(inputMarketId).value,
@@ -199,7 +196,7 @@ contract Expiry is
         );
         return Types.Wei({
             sign: false,
-            value: Decimal.mul(nonSpreadValue, onePlusSpread)
+            value: Decimal.mul(nonSpreadValue, spread)
         });
     }
 
