@@ -274,13 +274,15 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
-        require(
+        Require.that(
             args.primaryMarketId != args.secondaryMarketId,
-            "TODO_REASON"
+            FILE,
+            "Liquidate markets must be distinct"
         );
-        require(
+        Require.that(
             args.accountId != args.otherAccountId,
-            "TODO_REASON"
+            FILE,
+            "Liquidate accounts must be distinct"
         );
         return LiquidateArgs({
             amount: args.amount,
@@ -299,15 +301,15 @@ library Actions {
         returns (VaporizeArgs memory)
     {
         assert(args.transactionType == TransactionType.Vaporize);
-        require(
+        Require.that(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
-            "Liquidate markets must be distinct"
+            "Vaporize markets must be distinct"
         );
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
-            "Liquidate accounts must be distinct"
+            "Vaporize accounts must be distinct"
         );
         return VaporizeArgs({
             amount: args.amount,

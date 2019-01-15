@@ -379,9 +379,12 @@ contract Manager is
         view
         returns (Types.Par memory, Types.Wei memory)
     {
-        require(
+        Require.that(
             cacheGetPar(cache, accountId, marketId).isNegative(),
-            "TODO_REASON"
+            FILE,
+            "Liquidating/Vaporizing account must have negative balance",
+            accountId,
+            marketId
         );
 
         (
@@ -394,9 +397,10 @@ contract Manager is
             amount
         );
 
-        require(
+        Require.that(
             deltaWei.isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Liquidating/Vaporizing negative account balance must be repaid"
         );
 
         // if attempting to over-repay the owed asset, bound it by the maximum
@@ -730,9 +734,11 @@ contract Manager is
         view
         returns (Types.Wei memory)
     {
-        require(
+        Require.that(
             owedWei.isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Owed balance must be repaid",
+            owedMarketId
         );
         Decimal.D256 memory priceRatio = cacheGetPriceRatio(
             cache,
@@ -755,9 +761,11 @@ contract Manager is
         view
         returns (Types.Wei memory)
     {
-        require(
+        Require.that(
             heldWei.isNegative(),
-            "TODO_REASON"
+            FILE,
+            "Held balance must be spent",
+            heldMarketId
         );
         Decimal.D256 memory priceRatio = cacheGetPriceRatio(
             cache,

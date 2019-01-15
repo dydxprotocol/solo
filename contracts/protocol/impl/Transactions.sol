@@ -27,6 +27,7 @@ import { ICallee } from "../interfaces/ICallee.sol";
 import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Require } from "../lib/Require.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -402,9 +403,10 @@ contract Transactions is
 
         // verify liquidatable
         if (AccountStatus.Liquid != cacheGetAccountStatus(cache, args.liquidAcct)) {
-            require(
+            Require.that(
                 cacheGetNextAccountStatus(cache, args.liquidAcct) == AccountStatus.Liquid,
-                "TODO_REASON"
+                FILE,
+                "Liquidation account must be undercollateralized"
             );
             cacheSetAccountStatus(cache, args.liquidAcct, AccountStatus.Liquid);
         }
@@ -415,9 +417,10 @@ contract Transactions is
             args.heldMkt
         );
 
-        require(
+        Require.that(
             maxHeldWei.isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Liquidation account must have positive collateral"
         );
 
         (
@@ -499,9 +502,10 @@ contract Transactions is
 
         // verify vaporizable
         if (AccountStatus.Vapor != cacheGetAccountStatus(cache, args.vaporAcct)) {
-            require(
+            Require.that(
                 AccountStatus.Vapor == cacheGetNextAccountStatus(cache, args.vaporAcct),
-                "TODO_REASON"
+                FILE,
+                "Vaporization account must have only negative values"
             );
             cacheSetAccountStatus(cache, args.vaporAcct, AccountStatus.Vapor);
         }
@@ -516,9 +520,10 @@ contract Transactions is
             args.heldMkt
         );
 
-        require(
+        Require.that(
             maxHeldWei.isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Owner fund must have positive collateral"
         );
 
         (
