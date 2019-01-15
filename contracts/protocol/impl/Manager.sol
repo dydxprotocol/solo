@@ -148,16 +148,16 @@ contract Manager is
         return cache.accounts[accountId].info;
     }
 
-    function cacheGetIsLiquidating(
+    function cacheGetAccountStatus(
         Cache memory cache,
         uint256 accountId
     )
         internal
         view
-        returns (bool)
+        returns (AccountStatus)
     {
         Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
-        return g_accounts[account.owner][account.number].isLiquidating;
+        return g_accounts[account.owner][account.number].status;
     }
 
     function cacheGetPar(
@@ -252,15 +252,16 @@ contract Manager is
         cache.accounts[accountId].traded = true;
     }
 
-    function cacheSetIsLiquidating(
+    function cacheSetAccountStatus(
         Cache memory cache,
-        uint256 accountId
+        uint256 accountId,
+        AccountStatus status
     )
         internal
         returns (bool)
     {
         Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
-        g_accounts[account.owner][account.number].isLiquidating = true;
+        g_accounts[account.owner][account.number].status = status;
     }
 
     function cacheSetPar(
@@ -363,6 +364,49 @@ contract Manager is
                 newPar = oldPar.add(newPar);
             }
             deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
+        }
+
+        return (newPar, deltaWei);
+    }
+
+    function cacheGetNewParAndDeltaWeiForLiquidation(
+        Cache memory cache,
+        uint256 accountId,
+        uint256 marketId,
+        Actions.AssetAmount memory amount
+    )
+        internal
+        view
+        returns (Types.Par memory, Types.Wei memory)
+    {
+        Require.that(
+            cacheGetPar(cache, accountId, marketId).isNegative(),
+            FILE,
+            "Liquidating/Vaporizing account must have negative balance",
+            accountId,
+            marketId
+        );
+
+        (
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
+        ) = cacheGetNewParAndDeltaWei(
+            cache,
+            accountId,
+            marketId,
+            amount
+        );
+
+        Require.that(
+            deltaWei.isPositive(),
+            FILE,
+            "Liquidating/Vaporizing negative account balance must be repaid"
+        );
+
+        // if attempting to over-repay the owed asset, bound it by the maximum
+        if (newPar.isPositive()) {
+            newPar = Types.zeroPar();
+            deltaWei = cacheGetWei(cache, accountId, marketId).negative();
         }
 
         return (newPar, deltaWei);
@@ -553,12 +597,12 @@ contract Manager is
             // check collateralization for non-liquidated accounts
             if (cache.accounts[a].primary || cache.accounts[a].traded) {
                 Require.that(
-                    cacheGetIsCollateralized(cache, a),
+                    cacheGetNextAccountStatus(cache, a) == AccountStatus.Normal,
                     FILE,
                     "Cannot leave primary or traded account undercollateralized",
                     a
                 );
-                g_accounts[account.owner][account.number].isLiquidating = false;
+                g_accounts[account.owner][account.number].status = AccountStatus.Normal;
             }
 
             // check permissions for primary accounts
@@ -574,13 +618,13 @@ contract Manager is
 
     // ============ Query Functions ============
 
-    function cacheGetIsCollateralized(
+    function cacheGetNextAccountStatus(
         Cache memory cache,
         uint256 accountId
     )
         internal
         view
-        returns (bool)
+        returns (AccountStatus)
     {
         (
             Monetary.Value memory supplyValue,
@@ -588,12 +632,20 @@ contract Manager is
         ) = cacheGetAccountValues(cache, accountId);
 
         if (borrowValue.value == 0) {
-            return true;
+            return AccountStatus.Normal;
+        }
+
+        if (supplyValue.value == 0) {
+            return AccountStatus.Vapor;
         }
 
         uint256 requiredSupply = Decimal.mul(borrowValue.value, cacheGetLiquidationRatio(cache));
 
-        return supplyValue.value >= requiredSupply;
+        if (supplyValue.value >= requiredSupply) {
+            return AccountStatus.Normal;
+        } else {
+            return AccountStatus.Liquid;
+        }
     }
 
     function cacheGetAccountValues(
@@ -650,5 +702,123 @@ contract Manager is
         ) = Interest.totalParToWei(totalPar, index);
 
         return balanceWei.add(borrowWei).sub(supplyWei);
+    }
+
+    function cacheGetPriceRatio(
+        Cache memory cache,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        Monetary.Price memory heldPrice = cacheGetPrice(cache, heldMarketId);
+        Monetary.Price memory owedPrice = cacheGetPrice(cache, owedMarketId);
+        return Decimal.D256({
+            value: Math.getPartial(
+                cacheGetLiquidationSpread(cache).value,
+                owedPrice.value,
+                heldPrice.value
+            )
+        });
+    }
+
+    function cacheOwedWeiToHeldWei(
+        Cache memory cache,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        Types.Wei memory owedWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        Require.that(
+            owedWei.isPositive(),
+            FILE,
+            "Owed balance must be repaid",
+            owedMarketId
+        );
+        Decimal.D256 memory priceRatio = cacheGetPriceRatio(
+            cache,
+            heldMarketId,
+            owedMarketId
+        );
+        return Types.Wei({
+            sign: false,
+            value: Decimal.mul(owedWei.value, priceRatio)
+        });
+    }
+
+    function cacheHeldWeiToOwedWei(
+        Cache memory cache,
+        uint256 owedMarketId,
+        uint256 heldMarketId,
+        Types.Wei memory heldWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        Require.that(
+            heldWei.isNegative(),
+            FILE,
+            "Held balance must be spent",
+            heldMarketId
+        );
+        Decimal.D256 memory priceRatio = cacheGetPriceRatio(
+            cache,
+            heldMarketId,
+            owedMarketId
+        );
+        return Types.Wei({
+            sign: true,
+            value: Decimal.div(heldWei.value, priceRatio)
+        });
+    }
+
+    function cacheVaporizeUsingExcess(
+        Cache memory cache,
+        uint256 vaporAccount,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (bool)
+    {
+
+        Types.Wei memory sameWei = cacheGetNumExcessTokens(
+            cache,
+            owedMarketId
+        );
+
+        if (!sameWei.isPositive()) {
+            return false;
+        }
+
+        Types.Wei memory toRefundWei = cacheGetWei(
+            cache,
+            vaporAccount,
+            owedMarketId
+        );
+
+        if (sameWei.value >= toRefundWei.value) {
+            cacheSetPar(
+                cache,
+                vaporAccount,
+                owedMarketId,
+                Types.zeroPar()
+            );
+            return true;
+        } else {
+            cacheSetParFromDeltaWei(
+                cache,
+                vaporAccount,
+                owedMarketId,
+                sameWei
+            );
+            return false;
+        }
     }
 }

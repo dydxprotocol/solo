@@ -26,10 +26,7 @@ import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
-import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
-import { Math } from "../lib/Math.sol";
-import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Types } from "../lib/Types.sol";
 
@@ -97,6 +94,9 @@ contract Transactions is
         }
         else if (ttype == Actions.TransactionType.Liquidate) {
             _liquidate(cache, Actions.parseLiquidateArgs(args));
+        }
+        else if (ttype == Actions.TransactionType.Vaporize) {
+            _vaporize(cache, Actions.parseVaporizeArgs(args));
         }
         else if (ttype == Actions.TransactionType.Call) {
             _call(cache, Actions.parseCallArgs(args));
@@ -323,8 +323,8 @@ contract Transactions is
         cacheSetPrimary(cache, args.takerAcct);
         cacheSetTraded(cache, args.makerAcct);
 
-        Acct.Info memory makerAccount = cacheGetAcctInfo(cache, args.makerAcct);
         Acct.Info memory takerAccount = cacheGetAcctInfo(cache, args.takerAcct);
+        Acct.Info memory makerAccount = cacheGetAcctInfo(cache, args.makerAcct);
 
         Require.that(
             g_operators[makerAccount.owner][args.autoTrader],
@@ -399,94 +399,188 @@ contract Transactions is
     )
         private
     {
-        cacheSetPrimary(cache, args.stableAcct);
-        // doesn't mark liquidAcct for permissions
+        cacheSetPrimary(cache, args.solidAcct);
 
-        // verify that this account can be liquidated
-        if (!cacheGetIsLiquidating(cache, args.liquidAcct)) {
+        // verify liquidatable
+        if (AccountStatus.Liquid != cacheGetAccountStatus(cache, args.liquidAcct)) {
             Require.that(
-                !cacheGetIsCollateralized(cache, args.liquidAcct),
+                cacheGetNextAccountStatus(cache, args.liquidAcct) == AccountStatus.Liquid,
                 FILE,
-                "Account must be undercollateralied"
+                "Liquidation account must be undercollateralized"
             );
-            cacheSetIsLiquidating(cache, args.liquidAcct);
+            cacheSetAccountStatus(cache, args.liquidAcct, AccountStatus.Liquid);
         }
 
-        // verify that owed is being repaid
-        Require.that(
-            cacheGetPar(cache, args.liquidAcct, args.owedMkt).isNegative(),
-            FILE,
-            "Owed must start negative"
+        Types.Wei memory maxHeldWei = cacheGetWei(
+            cache,
+            args.liquidAcct,
+            args.heldMkt
         );
 
-        // verify that the liquidated account has held
         Require.that(
-            cacheGetPar(cache, args.liquidAcct, args.heldMkt).isPositive(),
+            maxHeldWei.isPositive(),
             FILE,
-            "Held must start positive"
+            "Liquidation account must have positive collateral"
         );
 
-        // calculate the owed to pay back
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
-        ) = cacheGetNewParAndDeltaWei(
+        ) = cacheGetNewParAndDeltaWeiForLiquidation(
             cache,
             args.liquidAcct,
             args.owedMkt,
             args.amount
         );
 
-        Types.Wei memory heldWei = _getCollateralWei(
+        Types.Wei memory heldWei = cacheOwedWeiToHeldWei(
             cache,
-            owedWei,
-            args.owedMkt,
-            args.heldMkt
-        );
-
-        cacheSetPar(
-            cache,
-            args.liquidAcct,
-            args.owedMkt,
-            owedPar
-        );
-
-        cacheSetParFromDeltaWei(
-            cache,
-            args.liquidAcct,
             args.heldMkt,
-            heldWei
+            args.owedMkt,
+            owedWei
         );
 
-        // verify that owed is not overpaid
-        Require.that(
-            !cacheGetPar(cache, args.liquidAcct, args.owedMkt).isPositive(),
-            FILE,
-            "Owed must not end positive"
-        );
+        // if attempting to over-borrow the held asset, bound it by the maximum
+        if (heldWei.value > maxHeldWei.value) {
+            heldWei = maxHeldWei.negative();
+            owedWei = cacheHeldWeiToOwedWei(
+                cache,
+                args.owedMkt,
+                args.heldMkt,
+                heldWei
+            );
 
-        // verify that held is not overused
-        Require.that(
-            !cacheGetPar(cache, args.liquidAcct, args.heldMkt).isNegative(),
-            FILE,
-            "Held must not end negative"
-        );
+            cacheSetPar(
+                cache,
+                args.liquidAcct,
+                args.heldMkt,
+                Types.zeroPar()
+            );
+            cacheSetParFromDeltaWei(
+                cache,
+                args.liquidAcct,
+                args.owedMkt,
+                owedWei
+            );
+        } else {
+            cacheSetPar(
+                cache,
+                args.liquidAcct,
+                args.owedMkt,
+                owedPar
+            );
+            cacheSetParFromDeltaWei(
+                cache,
+                args.liquidAcct,
+                args.heldMkt,
+                heldWei
+            );
+        }
 
+        // set the balances for the solid account
         cacheSetParFromDeltaWei(
             cache,
-            args.stableAcct,
-            args.heldMkt,
-            heldWei.negative()
-        );
-        cacheSetParFromDeltaWei(
-            cache,
-            args.stableAcct,
+            args.solidAcct,
             args.owedMkt,
             owedWei.negative()
         );
+        cacheSetParFromDeltaWei(
+            cache,
+            args.solidAcct,
+            args.heldMkt,
+            heldWei.negative()
+        );
+    }
 
-        // TODO: check if the liquidated account has only negative values left. then VAPORIZE it by
-        // reducing the index of the negative token and then wiping away the negative value
+    function _vaporize(
+        Cache memory cache,
+        Actions.VaporizeArgs memory args
+    )
+        private
+    {
+        cacheSetPrimary(cache, args.solidAcct);
+
+        // verify vaporizable
+        if (AccountStatus.Vapor != cacheGetAccountStatus(cache, args.vaporAcct)) {
+            Require.that(
+                AccountStatus.Vapor == cacheGetNextAccountStatus(cache, args.vaporAcct),
+                FILE,
+                "Vaporization account must have only negative values"
+            );
+            cacheSetAccountStatus(cache, args.vaporAcct, AccountStatus.Vapor);
+        }
+
+        // First, attempt to refund using the same token
+        if (cacheVaporizeUsingExcess(cache, args.vaporAcct, args.owedMkt)) {
+            return;
+        }
+
+        Types.Wei memory maxHeldWei = cacheGetNumExcessTokens(
+            cache,
+            args.heldMkt
+        );
+
+        Require.that(
+            maxHeldWei.isPositive(),
+            FILE,
+            "Owner fund must have positive collateral"
+        );
+
+        (
+            Types.Par memory owedPar,
+            Types.Wei memory owedWei
+        ) = cacheGetNewParAndDeltaWeiForLiquidation(
+            cache,
+            args.vaporAcct,
+            args.owedMkt,
+            args.amount
+        );
+
+        Types.Wei memory heldWei = cacheOwedWeiToHeldWei(
+            cache,
+            args.heldMkt,
+            args.owedMkt,
+            owedWei
+        );
+
+        // if attempting to over-borrow the held asset, bound it by the maximum
+        if (heldWei.value > maxHeldWei.value) {
+            heldWei = maxHeldWei.negative();
+            owedWei = cacheHeldWeiToOwedWei(
+                cache,
+                args.owedMkt,
+                args.heldMkt,
+                heldWei
+            );
+
+            cacheSetParFromDeltaWei(
+                cache,
+                args.vaporAcct,
+                args.owedMkt,
+                owedWei
+            );
+        } else {
+            cacheSetPar(
+                cache,
+                args.vaporAcct,
+                args.owedMkt,
+                owedPar
+            );
+        }
+
+        // set the balances for the solid account
+        cacheSetParFromDeltaWei(
+            cache,
+            args.solidAcct,
+            args.owedMkt,
+            owedWei.negative()
+        );
+        cacheSetParFromDeltaWei(
+            cache,
+            args.solidAcct,
+            args.heldMkt,
+            heldWei.negative()
+        );
     }
 
     function _call(
@@ -504,42 +598,5 @@ contract Transactions is
             account,
             args.data
         );
-    }
-
-    function _getCollateralWei(
-        Cache memory cache,
-        Types.Wei memory owedWei,
-        uint256 owedMkt,
-        uint256 heldMkt
-    )
-        private
-        view
-        returns (Types.Wei memory)
-    {
-        Require.that(
-            owedWei.sign,
-            FILE,
-            "Owed must be positive for calculation"
-        );
-
-        Monetary.Price memory owedPrice = cacheGetPrice(cache, owedMkt);
-        Monetary.Price memory heldPrice = cacheGetPrice(cache, heldMkt);
-
-        // get the equal-value amount of held wei
-        Types.Wei memory heldWei;
-        heldWei.sign = false;
-        heldWei.value = Math.getPartial(
-            owedWei.value,
-            owedPrice.value,
-            heldPrice.value
-        );
-
-        // boost the amount of held by the liquidation spread
-        heldWei.value = Decimal.mul(
-            heldWei.value,
-            cacheGetLiquidationSpread(cache)
-        );
-
-        return heldWei;
     }
 }
