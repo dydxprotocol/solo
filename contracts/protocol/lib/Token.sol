@@ -18,6 +18,7 @@
 
 pragma solidity ^0.5.0;
 
+import { Require } from "./Require.sol";
 import { IErc20 } from "../interfaces/IErc20.sol";
 
 
@@ -28,6 +29,10 @@ import { IErc20 } from "../interfaces/IErc20.sol";
  * This library contains basic functions for interacting with ERC20 tokens
  */
 library Token {
+
+    // ============ Constants ============
+
+    string constant FILE = "Token";
 
     // ============ Library Functions ============
 
@@ -63,9 +68,10 @@ library Token {
     {
         IErc20(token).approve(spender, amount);
 
-        require(
+        Require.that(
             checkSuccess(),
-            "Token#approve: Approval failed"
+            FILE,
+            "Approval failed"
         );
     }
 
@@ -99,9 +105,10 @@ library Token {
 
         IErc20(token).transfer(to, amount);
 
-        require(
+        Require.that(
             checkSuccess(),
-            "Token#transfer: Transfer failed"
+            FILE,
+            "Transfer failed"
         );
     }
 
@@ -122,9 +129,10 @@ library Token {
 
         IErc20(token).transferFrom(from, to, amount);
 
-        require(
+        Require.that(
             checkSuccess(),
-            "Token#transferFrom: TransferFrom failed"
+            FILE,
+            "TransferFrom failed"
         );
     }
 

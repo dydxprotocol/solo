@@ -20,6 +20,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -29,7 +30,16 @@ import { SoloMargin } from "../../protocol/SoloMargin.sol";
  * TODO
  */
 contract OnlySolo {
+
+    // ============ Constants ============
+
+    string constant FILE = "OnlySolo";
+
+    // ============ Storage ============
+
     SoloMargin public SOLO_MARGIN;
+
+    // ============ Constructor ============
 
     constructor (
         address soloMargin
@@ -39,10 +49,13 @@ contract OnlySolo {
         SOLO_MARGIN = SoloMargin(soloMargin);
     }
 
+    // ============ Modifiers ============
+
     modifier onlySolo(address from) {
-        require(
+        Require.that(
             from == address(SOLO_MARGIN),
-            "OnlySolo#onlySolo: Only Solo can call function"
+            FILE,
+            "Only Solo can call function"
         );
         _;
     }

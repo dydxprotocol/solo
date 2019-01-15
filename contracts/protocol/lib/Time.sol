@@ -18,6 +18,8 @@
 
 pragma solidity ^0.5.0;
 
+import { Require } from "./Require.sol";
+
 
 /**
  * @title Time
@@ -27,6 +29,10 @@ pragma solidity ^0.5.0;
  */
 library Time {
 
+    // ============ Constants ============
+
+    string constant FILE = "Time";
+
     // ============ Library Functions ============
 
     function currentTime()
@@ -35,7 +41,13 @@ library Time {
         returns (uint32)
     {
         uint32 timestamp = uint32(block.timestamp);
-        require(uint256(timestamp) == block.timestamp, "WE LIVE IN THE FUTURE");
+
+        Require.that(
+            uint256(timestamp) == block.timestamp,
+            FILE,
+            "We live in the future"
+        );
+
         return timestamp;
     }
 

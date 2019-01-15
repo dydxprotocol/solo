@@ -19,6 +19,7 @@
 pragma solidity ^0.5.0;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Require } from "./Require.sol";
 
 
 /**
@@ -29,6 +30,10 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
  */
 library Math {
     using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    string constant FILE = "Math";
 
     // ============ Library Functions ============
 
@@ -52,7 +57,11 @@ library Math {
         returns (uint128)
     {
         uint128 r = uint128(x);
-        require(r == x, "UNSAFE CAST TO UINT128");
+        Require.that(
+            r == x,
+            FILE,
+            "Unsafe cast to uint128"
+        );
         return r;
     }
 
@@ -64,7 +73,11 @@ library Math {
         returns (uint96)
     {
         uint96 r = uint96(x);
-        require(r == x, "UNSAFE CAST TO UINT96");
+        Require.that(
+            r == x,
+            FILE,
+            "Unsafe cast to uint96"
+        );
         return r;
     }
 
@@ -76,7 +89,11 @@ library Math {
         returns (uint64)
     {
         uint64 r = uint64(x);
-        require(r == x, "UNSAFE CAST TO UINT64");
+        Require.that(
+            r == x,
+            FILE,
+            "Unsafe cast to uint64"
+        );
         return r;
     }
 
@@ -88,7 +105,11 @@ library Math {
         returns (uint32)
     {
         uint32 r = uint32(x);
-        require(r == x, "UNSAFE CAST TO UINT32");
+        Require.that(
+            r == x,
+            FILE,
+            "Unsafe cast to uint32"
+        );
         return r;
     }
 }
