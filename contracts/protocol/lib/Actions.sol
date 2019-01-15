@@ -18,6 +18,7 @@
 
 pragma solidity ^0.5.0;
 
+import { Require } from "./Require.sol";
 import { Types } from "./Types.sol";
 
 
@@ -28,6 +29,10 @@ import { Types } from "./Types.sol";
  * TODO
  */
 library Actions {
+
+    // ============ Constants ============
+
+    string constant FILE = "Actions";
 
     // ============ Enums ============
 
@@ -179,9 +184,10 @@ library Actions {
         returns (TransferArgs memory)
     {
         assert(args.transactionType == TransactionType.Transfer);
-        require(
+        Require.that(
             args.accountId != args.otherAccountId,
-            "TODO_REASON"
+            FILE,
+            "Transfer accounts must be distinct"
         );
         return TransferArgs({
             amount: args.amount,
@@ -235,9 +241,10 @@ library Actions {
         returns (TradeArgs memory)
     {
         assert(args.transactionType == TransactionType.Trade);
-        require(
+        Require.that(
             args.accountId != args.otherAccountId,
-            "TODO_REASON"
+            FILE,
+            "Trade accounts must be distinct"
         );
         return TradeArgs({
             amount: args.amount,
@@ -258,13 +265,15 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.transactionType == TransactionType.Liquidate);
-        require(
+        Require.that(
             args.primaryMarketId != args.secondaryMarketId,
-            "TODO_REASON"
+            FILE,
+            "Liquidate markets must be distinct"
         );
-        require(
+        Require.that(
             args.accountId != args.otherAccountId,
-            "TODO_REASON"
+            FILE,
+            "Liquidate accounts must be distinct"
         );
         return LiquidateArgs({
             amount: args.amount,

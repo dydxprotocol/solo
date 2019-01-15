@@ -29,6 +29,7 @@ import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
+import { Require } from "../lib/Require.sol";
 import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
 
@@ -46,6 +47,8 @@ contract Admin is
     Manager
 {
     // ============ Constants ============
+
+    string constant FILE = "Admin";
 
     uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
     uint256 constant DEF_LIQUIDATION_RATIO  = 125 * 10**16; // 125%
@@ -102,9 +105,10 @@ contract Admin is
         nonReentrant
         returns (uint256)
     {
-        require(
+        Require.that(
             !_marketExistsForToken(token),
-            "TODO_REASON"
+            FILE,
+            "Market exists"
         );
 
         uint256 balance = Token.balanceOf(token, address(this));
@@ -121,9 +125,10 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(
+        Require.that(
             !_marketExistsForToken(token),
-            "TODO_REASON"
+            FILE,
+            "Market exists"
         );
 
         uint256 marketId = g_numMarkets;
@@ -179,17 +184,20 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(
+        Require.that(
             ratio.value <= MAX_LIQUIDATION_RATIO,
-            "TODO_REASON"
+            FILE,
+            "Ratio too high"
         );
-        require(
+        Require.that(
             ratio.value >= MIN_LIQUIDATION_RATIO,
-            "TODO_REASON"
+            FILE,
+            "Ratio too low"
         );
-        require(
+        Require.that(
             ratio.value > g_liquidationSpread.value,
-            "TODO_REASON"
+            FILE,
+            "Ratio higher than spread"
         );
         g_liquidationRatio = ratio;
     }
@@ -201,17 +209,20 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(
+        Require.that(
             spread.value <= MAX_LIQUIDATION_SPREAD,
-            "TODO_REASON"
+            FILE,
+            "Spread too high"
         );
-        require(
+        Require.that(
             spread.value >= MIN_LIQUIDATION_SPREAD,
-            "TODO_REASON"
+            FILE,
+            "Spread too low"
         );
-        require(
+        Require.that(
             spread.value < g_liquidationRatio.value,
-            "TODO_REASON"
+            FILE,
+            "Spread lower than ratio"
         );
         g_liquidationSpread = spread;
     }
@@ -223,13 +234,15 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(
+        Require.that(
             earningsRate.value <= MAX_EARNINGS_RATE,
-            "TODO_REASON"
+            FILE,
+            "Rate too high"
         );
-        require(
+        Require.that(
             earningsRate.value >= MIN_EARNINGS_RATE,
-            "TODO_REASON"
+            FILE,
+            "Rate too low"
         );
         g_earningsRate = earningsRate;
     }
@@ -241,13 +254,15 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        require(
+        Require.that(
             minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE,
-            "TODO_REASON"
+            FILE,
+            "Value too high"
         );
-        require(
+        Require.that(
             minBorrowedValue.value >= MIN_MIN_BORROWED_VALUE,
-            "TODO_REASON"
+            FILE,
+            "Value too low"
         );
         g_minBorrowedValue = minBorrowedValue;
     }
@@ -264,9 +279,11 @@ contract Admin is
 
         // require current interestSetter can return a value
         address token = g_markets[marketId].token;
-        require(
+
+        Require.that(
             Interest.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
-            "INVALID INTEREST VALUE"
+            FILE,
+            "Invalid interest rate"
         );
     }
 
@@ -280,9 +297,11 @@ contract Admin is
 
         // require oracle can return value for token
         address token = g_markets[marketId].token;
-        require(
+
+        Require.that(
             priceOracle.getPrice(token).value != 0,
-            "INVALID ORACLE PRICE"
+            FILE,
+            "Invalid oracle price"
         );
     }
 
@@ -310,9 +329,11 @@ contract Admin is
         private
         view
     {
-        require(
+        Require.that(
             marketId < g_numMarkets,
-            "TODO_REASON"
+            FILE,
+            "Market out-of-bounds",
+            marketId
         );
     }
 }

@@ -18,6 +18,7 @@
 
 pragma solidity ^0.5.0;
 
+import { Require } from "./Require.sol";
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
 import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
@@ -31,7 +32,11 @@ import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
  * the Wei struct directly.
  */
 library Exchange {
-    
+
+    // ============ Constants ============
+
+    string constant FILE = "Exchange";
+
     // ============ Library Functions ============
 
     function thisBalance(
@@ -54,9 +59,10 @@ library Exchange {
     )
         internal
     {
-        require(
+        Require.that(
             !deltaWei.sign,
-            "TODO_REASON"
+            FILE,
+            "Cannot transferOut positive tokens"
         );
 
         Token.transfer(
@@ -73,9 +79,10 @@ library Exchange {
     )
         internal
     {
-        require(
+        Require.that(
             deltaWei.sign,
-            "TODO_REASON"
+            FILE,
+            "Cannot transferIn negative tokens"
         );
 
         Token.transferFrom(
@@ -97,9 +104,10 @@ library Exchange {
         view
         returns (Types.Wei memory)
     {
-        require(
+        Require.that(
             desiredAmount.sign,
-            "TODO_REASON"
+            FILE,
+            "Cannot getCost of negative tokens"
         );
 
         Types.Wei memory result;
@@ -125,9 +133,10 @@ library Exchange {
         internal
         returns (Types.Wei memory)
     {
-        require(
+        Require.that(
             !requestedFillAmount.sign,
-            "TODO_REASON"
+            FILE,
+            "Cannot exchange positive tokens"
         );
 
         transferOut(borrowToken, exchangeWrapper, requestedFillAmount);

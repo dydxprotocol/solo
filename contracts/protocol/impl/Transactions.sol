@@ -30,6 +30,7 @@ import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
+import { Require } from "../lib/Require.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -44,6 +45,9 @@ contract Transactions is
     Storage,
     Manager
 {
+    // ============ Constants ============
+
+    string constant FILE = "Transactions";
 
     // ============ Public Functions ============
 
@@ -107,9 +111,10 @@ contract Transactions is
     {
         Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
 
-        require(
+        Require.that(
             args.from == msg.sender || args.from == account.owner,
-            "TODO_REASON"
+            FILE,
+            "Deposit must come from sender or owner"
         );
 
         cacheSetPrimary(cache, args.acct);
@@ -242,9 +247,10 @@ contract Transactions is
             args.orderData
         );
 
-        require(
+        Require.that(
             tokensReceived.value >= makerWei.value,
-            "TODO_REASON"
+            FILE,
+            "Exchange must receive more than expected from getCost"
         );
 
         cacheSetPar(
@@ -320,9 +326,10 @@ contract Transactions is
         Acct.Info memory makerAccount = cacheGetAcctInfo(cache, args.makerAcct);
         Acct.Info memory takerAccount = cacheGetAcctInfo(cache, args.takerAcct);
 
-        require(
+        Require.that(
             g_operators[makerAccount.owner][args.autoTrader],
-            "TODO_REASON"
+            FILE,
+            "AutoTrader not authorized"
         );
 
         Types.Par memory oldInputPar = cacheGetPar(
@@ -351,9 +358,10 @@ contract Transactions is
             args.tradeData
         );
 
-        require(
+        Require.that(
             outputWei.sign != inputWei.sign,
-            "TODO_REASON"
+            FILE,
+            "Trades cannot be one-sided"
         );
 
         // set the balance for the maker
@@ -396,23 +404,26 @@ contract Transactions is
 
         // verify that this account can be liquidated
         if (!cacheGetIsLiquidating(cache, args.liquidAcct)) {
-            require(
+            Require.that(
                 !cacheGetIsCollateralized(cache, args.liquidAcct),
-                "TODO_REASON"
+                FILE,
+                "Account must be undercollateralied"
             );
             cacheSetIsLiquidating(cache, args.liquidAcct);
         }
 
         // verify that owed is being repaid
-        require(
+        Require.that(
             cacheGetPar(cache, args.liquidAcct, args.owedMkt).isNegative(),
-            "TODO_REASON"
+            FILE,
+            "Owed must start negative"
         );
 
         // verify that the liquidated account has held
-        require(
+        Require.that(
             cacheGetPar(cache, args.liquidAcct, args.heldMkt).isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Held must start positive"
         );
 
         // calculate the owed to pay back
@@ -448,15 +459,17 @@ contract Transactions is
         );
 
         // verify that owed is not overpaid
-        require(
+        Require.that(
             !cacheGetPar(cache, args.liquidAcct, args.owedMkt).isPositive(),
-            "TODO_REASON"
+            FILE,
+            "Owed must not end positive"
         );
 
         // verify that held is not overused
-        require(
+        Require.that(
             !cacheGetPar(cache, args.liquidAcct, args.heldMkt).isNegative(),
-            "TODO_REASON"
+            FILE,
+            "Held must not end negative"
         );
 
         cacheSetParFromDeltaWei(
@@ -503,9 +516,10 @@ contract Transactions is
         view
         returns (Types.Wei memory)
     {
-        require(
+        Require.that(
             owedWei.sign,
-            "TODO_REASON"
+            FILE,
+            "Owed must be positive for calculation"
         );
 
         Monetary.Price memory owedPrice = cacheGetPrice(cache, owedMkt);

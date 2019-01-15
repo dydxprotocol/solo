@@ -21,6 +21,7 @@ pragma solidity ^0.5.0;
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
 import { Math } from "./Math.sol";
+import { Require } from "./Require.sol";
 import { Time } from "./Time.sol";
 import { Types } from "./Types.sol";
 
@@ -37,6 +38,7 @@ library Interest {
 
     // ============ Constants ============
 
+    string constant FILE = "Interest";
     uint64 constant BASE = 10**18;
     uint64 constant MAX_INTEREST_RATE = BASE / (60 * 60 * 24 * 365); // Max 100% per year
 
@@ -64,10 +66,13 @@ library Interest {
         view
         returns (Index memory)
     {
-        require(
+        Require.that(
             isValidRate(rate),
-            "TODO_REASON"
+            FILE,
+            "Invalid rate",
+            rate.value
         );
+
         (
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei

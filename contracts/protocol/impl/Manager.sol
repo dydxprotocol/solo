@@ -29,6 +29,7 @@ import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
+import { Require } from "../lib/Require.sol";
 import { Time } from "../lib/Time.sol";
 import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
@@ -47,6 +48,10 @@ contract Manager is
     using Types for Types.Par;
     using Types for Types.Wei;
     using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    string constant FILE = "Manager";
 
     // ============ Structs ============
 
@@ -396,9 +401,10 @@ contract Manager is
         // verify no duplicate accounts
         for (uint256 i = 0; i < accounts.length; i++) {
             for (uint256 j = i + 1; j < accounts.length; j++) {
-                require(
+                Require.that(
                     !Acct.equals(accounts[i], accounts[j]),
-                    "TODO_REASON"
+                    FILE,
+                    "Cannot duplicate accounts"
                 );
             }
         }
@@ -503,10 +509,11 @@ contract Manager is
         // store total pars
         for (uint256 m = 0; m < cache.markets.length; m++) {
             if (cache.markets[m].totalParLoaded) {
-                require(
+                Require.that(
                     !g_markets[m].isClosing
                     || g_markets[m].totalPar.borrow >= cache.markets[m].totalPar.borrow,
-                    "TODO_REASON"
+                    FILE,
+                    "Cannot increase borrow amount for closing market"
                 );
                 g_markets[m].totalPar = cache.markets[m].totalPar;
             }
@@ -536,25 +543,30 @@ contract Manager is
 
             // check minimum borrowed value for all accounts
             (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, a);
-            require(
+            Require.that(
                 borrowValue.value >= minBorrowedValue.value,
-                "TODO_REASON"
+                FILE,
+                "Cannot leave account with borrow value less than minBorrowedValue",
+                a
             );
 
             // check collateralization for non-liquidated accounts
             if (cache.accounts[a].primary || cache.accounts[a].traded) {
-                require(
+                Require.that(
                     cacheGetIsCollateralized(cache, a),
-                    "TODO_REASON"
+                    FILE,
+                    "Cannot leave primary or traded account undercollateralized",
+                    a
                 );
                 g_accounts[account.owner][account.number].isLiquidating = false;
             }
 
             // check permissions for primary accounts
             if (cache.accounts[a].primary) {
-                require(
+                Require.that(
                     account.owner == msg.sender || g_operators[account.owner][msg.sender],
-                    "TODO_REASON"
+                    FILE,
+                    "Must have permissions for primary accounts"
                 );
             }
         }
