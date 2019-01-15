@@ -22,7 +22,7 @@ export class TestPriceOracle {
     return this.contracts.callContractFunction(
       this.contracts.testPriceOracle.methods.setPrice(
         token,
-        price.toString(),
+        price.toFixed(0),
       ),
       options,
     );

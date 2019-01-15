@@ -79,7 +79,7 @@ export class Token {
     return this.contracts.callContractFunction(
       token.methods.approve(
         spenderAddress,
-        amount.toString(),
+        amount.toFixed(0),
       ),
       { ...options, from: ownerAddress },
     );
@@ -155,7 +155,7 @@ export class Token {
     return this.contracts.callContractFunction(
       token.methods.transfer(
         toAddress,
-        amount.toString(),
+        amount.toFixed(0),
       ),
       { ...options, from: fromAddress },
     );
@@ -175,7 +175,7 @@ export class Token {
       token.methods.transferFrom(
         fromAddress,
         toAddress,
-        amount.toString(),
+        amount.toFixed(0),
       ),
       { ...options, from: senderAddress },
     );

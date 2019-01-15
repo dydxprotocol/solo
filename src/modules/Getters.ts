@@ -16,7 +16,7 @@ export class Getters {
     marketId: Integer,
   ): Promise<MarketWithInfo> {
     const marketWithInfo = await this.contracts.soloMargin.methods
-      .getMarketWithInfo(marketId.toString()).call();
+      .getMarketWithInfo(marketId.toFixed(0)).call();
 
     return {
       market: {

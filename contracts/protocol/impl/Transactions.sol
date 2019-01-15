@@ -109,10 +109,12 @@ contract Transactions is
 
         require(
             args.from == msg.sender || args.from == account.owner,
-            "TODO_REASON"
+            "Transactions#_deposit: from is invalid"
         );
 
         cacheSetPrimary(cache, args.acct);
+
+        return;
 
         (
             Types.Par memory newPar,

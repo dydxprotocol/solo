@@ -28,7 +28,7 @@ export class TestInterestSetter {
           value: interestRate
             .times(INTEGERS.INTEREST_RATE_BASE)
             .integerValue(BigNumber.ROUND_DOWN)
-            .toFixed(),
+            .toFixed(0),
         },
       ),
       options,

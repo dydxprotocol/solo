@@ -29,7 +29,7 @@ export class TestToken {
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.testTokenContract.methods.issue(
-        amount.toString(),
+        amount.toFixed(0),
       ),
       { ...options, from },
     );
@@ -43,7 +43,7 @@ export class TestToken {
     return this.contracts.callContractFunction(
       this.testTokenContract.methods.issueTo(
         who,
-        amount.toString(),
+        amount.toFixed(0),
       ),
       { ...options },
     );
