@@ -285,9 +285,9 @@ contract Manager is
 
         // roll-forward newPar
         if (newPar.sign) {
-            totalPar.supply = uint256(totalPar.supply).sub(newPar.value).to128();
+            totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
         } else {
-            totalPar.borrow = uint256(totalPar.borrow).sub(newPar.value).to128();
+            totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
         }
 
         cache.markets[marketId].totalPar = totalPar;
