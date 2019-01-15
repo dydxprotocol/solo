@@ -62,8 +62,7 @@
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
     "@dydxprotocol/exchange-wrappers": "0.0.3",
-    "bignumber.js": "^4.1.0",
-    "bn.js": "4.11.8",
+    "bignumber.js": "^8.0.2",
     "openzeppelin-solidity": "2.1.1",
     "web3": "^1.0.0-beta.37"
   },
@@ -75,7 +74,7 @@
     "coveralls": "^3.0.2",
     "dotenv": "^6.2.0",
     "es6-promisify": "^6.0.1",
-    "ethlint": "1.2.1",
+    "ethlint": "^1.2.2",
     "ganache-cli": "^6.2.5",
     "jest": "^23.6.0",
     "mocha-junit-reporter": "^1.18.0",
@@ -83,10 +82,10 @@
     "truffle": "5.0.1",
     "ts-jest": "^23.10.5",
     "ts-node": "^7.0.1",
-    "tslint": "^5.12.0",
+    "tslint": "^5.12.1",
     "tslint-config-airbnb": "^5.11.1",
     "tslint-no-focused-test": "^0.5.0",
-    "typechain": "^0.3.10",
+    "typechain": "^0.3.11",
     "typescript": "^3.2.2"
   }
 }

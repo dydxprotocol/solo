@@ -1,6 +1,5 @@
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
-import BN from 'bn.js';
 import { Contracts } from '../../lib/Contracts';
 import {
   AccountOperation,
@@ -18,6 +17,7 @@ import {
   AcctInfo,
   SetExpiry,
   Amount,
+  Integer,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
 
@@ -212,7 +212,7 @@ export class AccountTransaction {
     }
 
     const amount = args.amount ? {
-      sign: !args.amount.value.isNeg(),
+      sign: !args.amount.value.isNegative(),
       denomination: args.amount.denomination,
       ref: args.amount.reference,
       value: args.amount.value.abs().toString(10),
@@ -241,7 +241,7 @@ export class AccountTransaction {
     return this.getAccountId(operation.primaryAccountOwner, operation.primaryAccountId);
   }
 
-  private getAccountId(accountOwner: string, accountNumber: BN): number {
+  private getAccountId(accountOwner: string, accountNumber: Integer): number {
     const accountInfo: AcctInfo = {
       owner: accountOwner,
       number: accountNumber.toString(),

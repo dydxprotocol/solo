@@ -40,6 +40,29 @@ contract Queries is
     Storage,
     Manager
 {
+    // ============ Structs ============
+
+    struct MarketWithInfo {
+        Storage.Market market;
+        Interest.Index currentIndex;
+        Monetary.Price currentPrice;
+        Interest.Rate currentInterestRate;
+    }
+
+    struct Globals {
+        Decimal.D256 liquidationRatio;
+        Decimal.D256 liquidationSpread;
+        Decimal.D256 earningsRate;
+        Monetary.Value minBorrowedValue;
+        uint256 numMarkets;
+    }
+
+    struct Balance {
+        address tokenAddress;
+        Types.Par parBalance;
+        Types.Wei weiBalance;
+    }
+
     // ============ Admin Variables ============
 
     function getLiquidationRatio()
@@ -85,6 +108,38 @@ contract Queries is
     }
 
     // ============ Market-Based Variables ============
+
+    function getMarketWithInfo(
+        uint256 marketId
+    )
+        public
+        view
+        returns (MarketWithInfo memory)
+    {
+        return MarketWithInfo({
+            market: getMarket(marketId),
+            currentIndex: getMarketCurrentIndex(marketId),
+            currentPrice: getMarketPrice(marketId),
+            currentInterestRate: getMarketInterestRate(marketId)
+        });
+    }
+
+    function getMarket(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Storage.Market memory)
+    {
+        return Market({
+            token: getMarketTokenAddress(marketId),
+            totalPar: getMarketTotalPar(marketId),
+            index: getMarketCachedIndex(marketId),
+            priceOracle: getMarketPriceOracle(marketId),
+            interestSetter: getMarketInterestSetter(marketId),
+            isClosing: getMarketIsClosing(marketId)
+        });
+    }
 
     function getMarketTokenAddress(
         uint256 marketId
@@ -155,6 +210,16 @@ contract Queries is
         returns (IInterestSetter)
     {
         return g_markets[marketId].interestSetter;
+    }
+
+    function getMarketIsClosing(
+        uint256 marketId
+    )
+        public
+        view
+        returns (bool)
+    {
+        return g_markets[marketId].isClosing;
     }
 
     function getMarketPrice(
@@ -239,4 +304,27 @@ contract Queries is
         return cacheGetAccountValues(cache, 0);
     }
 
+    function getAccountBalances(
+        Acct.Info memory account
+    )
+        public
+        view
+        returns (Balance[] memory)
+    {
+        uint256 numMarkets = g_numMarkets;
+
+        Balance[] memory balances = new Balance[](numMarkets);
+
+        Cache memory cache = cacheInitializeSingle(account);
+
+        for (uint256 m = 0; m < numMarkets; m++) {
+            balances[m] = Balance({
+                tokenAddress: cacheGetToken(cache, m),
+                parBalance: cacheGetPar(cache, 0, m),
+                weiBalance: cacheGetWei(cache, 0, m)
+            });
+        }
+
+        return balances;
+    }
 }
