@@ -59,7 +59,7 @@ export class AccountTransaction {
         transactionType: TransactionType.Deposit,
         amount: deposit.amount,
         otherAddress: deposit.from,
-        primaryMarketId: deposit.marketId.toString(),
+        primaryMarketId: deposit.marketId.toFixed(0),
       },
     );
 
@@ -73,7 +73,7 @@ export class AccountTransaction {
         amount: withdraw.amount,
         transactionType: TransactionType.Withdraw,
         otherAddress: withdraw.to,
-        primaryMarketId: withdraw.marketId.toString(),
+        primaryMarketId: withdraw.marketId.toFixed(0),
       },
     );
 
@@ -86,7 +86,7 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Transfer,
         amount: transfer.amount,
-        primaryMarketId: transfer.marketId.toString(),
+        primaryMarketId: transfer.marketId.toFixed(0),
         otherAddress: transfer.toAccountOwner,
         otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
       },
@@ -109,8 +109,8 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Liquidate,
         amount: liquidate.amount,
-        primaryMarketId: liquidate.liquidMarketId.toString(),
-        secondaryMarketId: liquidate.payoutMarketId.toString(),
+        primaryMarketId: liquidate.liquidMarketId.toFixed(0),
+        secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAddress: liquidate.liquidAccountOwner,
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
       },
@@ -138,8 +138,8 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Trade,
         amount: liquidate.amount,
-        primaryMarketId: liquidate.liquidMarketId.toString(),
-        secondaryMarketId: liquidate.payoutMarketId.toString(),
+        primaryMarketId: liquidate.liquidMarketId.toFixed(0),
+        secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
         otherAddress: this.contracts.expiry.options.address,
       },
@@ -159,6 +159,8 @@ export class AccountTransaction {
     this.committed = true;
 
     try {
+      console.log(this.accounts)
+      console.log(this.operations)
       const method: TransactionObject<void> = this.contracts.soloMargin.methods.transact(
         this.accounts,
         this.operations,
@@ -195,8 +197,8 @@ export class AccountTransaction {
         amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
         data: [bytes],
-        primaryMarketId: primaryMarketId.toString(),
-        secondaryMarketId: secondaryMarketId.toString(),
+        primaryMarketId: primaryMarketId.toFixed(0),
+        secondaryMarketId: secondaryMarketId.toFixed(0),
       },
     );
 
@@ -215,7 +217,7 @@ export class AccountTransaction {
       sign: !args.amount.value.isNegative(),
       denomination: args.amount.denomination,
       ref: args.amount.reference,
-      value: args.amount.value.abs().toString(10),
+      value: args.amount.value.abs().toFixed(0),
     } : {
       sign: false,
       denomination: 0,
@@ -244,7 +246,7 @@ export class AccountTransaction {
   private getAccountId(accountOwner: string, accountNumber: Integer): number {
     const accountInfo: AcctInfo = {
       owner: accountOwner,
-      number: accountNumber.toString(),
+      number: accountNumber.toFixed(0),
     };
 
     const index = this.accounts.indexOf(accountInfo);

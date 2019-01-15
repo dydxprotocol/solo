@@ -69,4 +69,8 @@ export class Solo {
     this.web3.eth.defaultAccount = account;
     this.contracts.setDefaultAccount(account);
   }
+
+  public getDefaultAccount(): address {
+    return this.web3.eth.defaultAccount;
+  }
 }
