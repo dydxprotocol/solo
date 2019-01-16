@@ -26,6 +26,13 @@ pragma solidity ^0.5.0;
  * TODO
  */
 library Require {
+
+    // ============ Constants ============
+
+    uint256 constant ASCII_ZERO = 48;
+
+    // ============ Library Functions ============
+
     function that(
         bool must,
         string memory file,
@@ -64,7 +71,7 @@ library Require {
                         ": ",
                         reason,
                         "<",
-                        payloadA,
+                        stringify(payloadA),
                         ">"
                     )
                 )
@@ -90,9 +97,9 @@ library Require {
                         ": ",
                         reason,
                         "<",
-                        payloadA,
+                        stringify(payloadA),
                         ",",
-                        payloadB,
+                        stringify(payloadB),
                         ">"
                     )
                 )
@@ -119,15 +126,47 @@ library Require {
                         ": ",
                         reason,
                         "<",
-                        payloadA,
+                        stringify(payloadA),
                         ",",
-                        payloadB,
+                        stringify(payloadB),
                         ",",
-                        payloadC,
+                        stringify(payloadC),
                         ">"
                     )
                 )
             );
         }
+    }
+
+    // ============ Private Functions ============
+
+    function stringify(
+        uint256 i
+    )
+        private
+        pure
+        returns (string memory)
+    {
+        if (i == 0) {
+            return "0";
+        }
+
+        // get length
+        uint256 j = i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+
+        // get string
+        j = i;
+        bytes memory bstr = new bytes(length);
+        uint256 k = length - 1;
+        while (j != 0) {
+            bstr[k--] = byte(uint8(ASCII_ZERO + (j % 10)));
+            j /= 10;
+        }
+        return string(bstr);
     }
 }

@@ -27,6 +27,7 @@ import { Acct } from "../../protocol/lib/Acct.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 
@@ -47,6 +48,10 @@ contract Expiry is
     using SafeMath for uint256;
     using Types for Types.Par;
     using Types for Types.Wei;
+
+    // ============ Constants ============
+
+    string constant FILE = "Expiry";
 
     // ============ Events ============
 
@@ -104,23 +109,27 @@ contract Expiry is
         returns (Types.Wei memory)
     {
         // input validation
-        require(
+        Require.that(
             oldInputPar.isNegative(),
-            "Expiry#getTradeCost: only negative balances can be expired"
+            FILE,
+            "Only negative balances can be expired"
         );
-        require(
+        Require.that(
             newInputPar.isPositive(),
-            "Expiry#getTradeCost: balances cannot be overpaid"
+            FILE,
+            "Loans cannot be overpaid"
         );
-        require(
+        Require.that(
             inputWei.isPositive(),
-            "Expiry#getTradeCost: loans must be decreased"
+            FILE,
+            "Loans must be decreased"
         );
 
         // expiry time validation
-        require(
+        Require.that(
             Time.hasHappened(getExpiry(makerAccount, inputMarketId)),
-            "Expiry#getTradeCost: market not yet expired for account"
+            FILE,
+            "Market not yet expired for account"
         );
 
         // clear expiry if loan is fully repaid
@@ -130,9 +139,10 @@ contract Expiry is
 
         // get maximum acceptable return value
         Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
-        require(
+        Require.that(
             maxOutputWei.isPositive(),
-            "Expiry#getTradeCost: only positive balances can be used as collateral"
+            FILE,
+            "Only positive balances can be used as collateral"
         );
 
         // get return value
@@ -141,9 +151,10 @@ contract Expiry is
             inputMarketId,
             outputMarketId
         );
-        require(
+        Require.that(
             outputWei.value <= maxOutputWei.value,
-            "Expiry#getTradeCost: collateral balance cannot be made negative"
+            FILE,
+            "Collateral balance cannot be made negative"
         );
 
         return outputWei;
@@ -210,9 +221,10 @@ contract Expiry is
             uint32
         )
     {
-        require(
+        Require.that(
             data.length == 64,
-            "Expiry:#parseCallArgs: data is not the right length"
+            FILE,
+            "Call data invalid length"
         );
 
         uint256 marketId;
