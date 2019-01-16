@@ -20,6 +20,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { Events } from "./Events.sol";
 import { Manager } from "./Manager.sol";
 import { Storage } from "./Storage.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
@@ -40,7 +41,8 @@ import { Types } from "../lib/Types.sol";
 contract Transactions is
     ReentrancyGuard,
     Storage,
-    Manager
+    Manager,
+    Events
 {
     // ============ Constants ============
 
@@ -56,6 +58,8 @@ contract Transactions is
         nonReentrant
     {
         Cache memory cache = cacheInitialize(accounts);
+
+        logTransaction();
 
         for (uint256 i = 0; i < args.length; i++) {
             _transact(cache, args[i]);
@@ -140,6 +144,12 @@ contract Transactions is
 
         // requires a positive deltaWei
         Exchange.transferIn(token, args.from, deltaWei);
+
+        logDeposit(
+            cache,
+            args,
+            deltaWei
+        );
     }
 
     function _withdraw(
@@ -171,6 +181,12 @@ contract Transactions is
 
         // requires a negative deltaWei
         Exchange.transferOut(token, args.to, deltaWei);
+
+        logWithdraw(
+            cache,
+            args,
+            deltaWei
+        );
     }
 
     function _transfer(
@@ -178,7 +194,6 @@ contract Transactions is
         Actions.TransferArgs memory args
     )
         private
-        view
     {
         cacheSetPrimary(cache, args.acctOne);
         cacheSetPrimary(cache, args.acctTwo);
@@ -205,6 +220,12 @@ contract Transactions is
             args.acctTwo,
             args.mkt,
             deltaWei.negative()
+        );
+
+        logTransfer(
+            cache,
+            args,
+            deltaWei
         );
     }
 
@@ -266,6 +287,13 @@ contract Transactions is
             args.takerMkt,
             takerWei
         );
+
+        logBuy(
+            cache,
+            args,
+            takerWei,
+            makerWei
+        );
     }
 
     function _sell(
@@ -310,6 +338,13 @@ contract Transactions is
             cache,
             args.acct,
             args.makerMkt,
+            makerWei
+        );
+
+        logSell(
+            cache,
+            args,
+            takerWei,
             makerWei
         );
     }
@@ -390,6 +425,13 @@ contract Transactions is
             args.takerAcct,
             args.outputMkt,
             outputWei.negative()
+        );
+
+        logTrade(
+            cache,
+            args,
+            inputWei,
+            outputWei
         );
     }
 
@@ -490,6 +532,13 @@ contract Transactions is
             args.heldMkt,
             heldWei.negative()
         );
+
+        logLiquidate(
+            cache,
+            args,
+            heldWei,
+            owedWei
+        );
     }
 
     function _vaporize(
@@ -581,6 +630,13 @@ contract Transactions is
             args.heldMkt,
             heldWei.negative()
         );
+
+        logVaporize(
+            cache,
+            args,
+            heldWei,
+            owedWei
+        );
     }
 
     function _call(
@@ -593,10 +649,15 @@ contract Transactions is
 
         Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
 
-        ICallee(args.who).callFunction(
+        ICallee(args.callee).callFunction(
             msg.sender,
             account,
             args.data
+        );
+
+        logCall(
+            cache,
+            args
         );
     }
 }
