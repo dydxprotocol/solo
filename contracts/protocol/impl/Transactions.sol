@@ -123,8 +123,6 @@ contract Transactions is
 
         cacheSetPrimary(cache, args.acct);
 
-        return;
-
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei

@@ -48,8 +48,15 @@ describe('Deposit', () => {
         },
         from: who,
       })
-      .commit();
+      .commit({ confirmations: 0 });
 
     console.log(tx)
+    const transaction = await solo.web3.eth.getTransaction(tx.transactionHash);
+
+    await solo.testing.evm.mineBlock();
+
+    // console.log(await tx.confirmation)
+
+    console.log(transaction)
   });
 });

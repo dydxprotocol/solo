@@ -35,19 +35,16 @@ export class AccountTransaction {
   private contracts: Contracts;
   private operations: TransactionArgs[];
   private committed: boolean;
-  private options: ContractCallOptions;
   private orderMapper: OrderMapper;
   private accounts: AcctInfo[];
 
   constructor(
     contracts: Contracts,
-    options: ContractCallOptions,
     orderMapper: OrderMapper,
   ) {
     this.contracts = contracts;
     this.operations = [];
     this.committed = false;
-    this.options = options;
     this.orderMapper = orderMapper;
     this.accounts = [];
   }
@@ -148,7 +145,9 @@ export class AccountTransaction {
     return this;
   }
 
-  public async commit(): Promise<TxResult> {
+  public async commit(
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
     if (this.committed) {
       throw new Error('Transaction already committed');
     }
@@ -168,7 +167,7 @@ export class AccountTransaction {
 
       return this.contracts.callContractFunction(
         method,
-        this.options,
+        options,
       );
     } catch (error) {
       this.committed = false;
