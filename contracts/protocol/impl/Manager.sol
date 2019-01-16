@@ -588,7 +588,7 @@ contract Manager is
             // check minimum borrowed value for all accounts
             (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, a);
             Require.that(
-                borrowValue.value >= minBorrowedValue.value,
+                borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
                 FILE,
                 "Cannot leave account with borrow value less than minBorrowedValue",
                 a
