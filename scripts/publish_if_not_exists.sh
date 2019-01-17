@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION=$(cat package.json | jq -r '.version')
-NAME=@dydxprotocol/solomargin
+NAME=@dydxprotocol/solo
 
 test -z "$(npm info $NAME@$VERSION)"
 if [ $? -eq 0 ]

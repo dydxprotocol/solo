@@ -1,14 +1,14 @@
 import fs from 'fs';
 import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import * as contracts from './Contracts';
+import * as contracts from '../src/lib/Artifacts';
 import deployed from '../migrations/deployed.json';
 import externalDeployed from '../migrations/external-deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
 
-const DOCKER_NETWORK_ID: string = '1212';
+const DOCKER_NETWORK_ID: string = '1313';
 
 async function clean(): Promise<void> {
   const directory = `${__dirname}/../build/test/`;
@@ -25,12 +25,10 @@ async function clean(): Promise<void> {
       schemaVersion: contract.schemaVersion,
     };
 
-    if (deployed[contractName]) {
-      cleaned.networks = deployed[contractName];
-    }
-
     if (externalDeployed[contractName]) {
       cleaned.networks = externalDeployed[contractName];
+    } else if (deployed[contractName]) {
+      cleaned.networks = deployed[contractName];
     }
 
     if (contract.networks[DOCKER_NETWORK_ID]) {
