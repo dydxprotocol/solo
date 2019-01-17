@@ -19,6 +19,7 @@
 const { isDevNetwork } = require('./helpers');
 
 const SoloMargin = artifacts.require('SoloMargin');
+const MockSoloMargin = artifacts.require('MockSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
@@ -31,6 +32,7 @@ async function maybeDeployTestContracts(deployer, network) {
   }
 
   await Promise.all([
+    deployer.deploy(MockSoloMargin),
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),

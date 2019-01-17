@@ -6,7 +6,10 @@ import { address, ConfirmationType } from '../../src/types';
 export const solo = new Solo(
   provider,
   NETWORK_ID,
-  { confirmationType: ConfirmationType.Confirmed },
+  {
+    confirmationType: ConfirmationType.Confirmed,
+    testing: true,
+  },
 );
 let accounts: address[];
 

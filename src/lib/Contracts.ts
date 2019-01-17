@@ -22,12 +22,14 @@ import PromiEvent from 'web3/promiEvent';
 import { TransactionReceipt } from 'web3/types';
 import { TransactionObject, Block } from 'web3/eth/types';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
+import { MockSoloMargin } from '../../build/wrappers/MockSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { Expiry } from '../../build/wrappers/Expiry';
 import { TestToken } from '../../build/wrappers/TestToken';
 import { TestPriceOracle } from '../../build/wrappers/TestPriceOracle';
 import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
 import soloMarginJson from '../../build/contracts/SoloMargin.json';
+import mockSoloMarginJson from '../../build/contracts/MockSoloMargin.json';
 import erc20Json from '../../build/contracts/IErc20.json';
 import expiryJson from '../../build/contracts/Expiry.json';
 import tokenAJson from '../../build/contracts/TokenA.json';
@@ -58,6 +60,7 @@ export class Contracts {
   public expiry: Expiry;
 
   // Testing contract instances
+  public mockSoloMargin: MockSoloMargin;
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
@@ -78,6 +81,11 @@ export class Contracts {
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
+
+    this.mockSoloMargin = new this.web3.eth.Contract(mockSoloMarginJson.abi) as MockSoloMargin;
+    if (options.testing) {
+      this.soloMargin = this.mockSoloMargin;
+    }
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
@@ -111,6 +119,13 @@ export class Contracts {
     this.setContractProvider(
       this.expiry,
       expiryJson,
+      provider,
+      networkId,
+    );
+
+    this.setContractProvider(
+      this.mockSoloMargin,
+      mockSoloMarginJson,
       provider,
       networkId,
     );
@@ -150,6 +165,7 @@ export class Contracts {
     account: address,
   ): void {
     this.soloMargin.options.from = account;
+    this.mockSoloMargin.options.from = account;
     this.erc20.options.from = account;
     this.expiry.options.from = account;
     this.tokenA.options.from = account;
