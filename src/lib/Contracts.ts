@@ -35,14 +35,21 @@ import tokenBJson from '../../build/contracts/TokenB.json';
 import tokenCJson from '../../build/contracts/TokenC.json';
 import testPriceOracleJson from '../../build/contracts/TestPriceOracle.json';
 import testInterestSetterJson from '../../build/contracts/TestInterestSetter.json';
-import { ContractCallOptions, TxResult, address } from '../types';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
+import {
+  ContractCallOptions,
+  TxResult,
+  address,
+  SoloOptions,
+  ConfirmationType,
+} from '../types';
 
 export class Contracts {
   private networkId: number;
   private blockGasLimit: number;
-  private autoGasMultiplier: number = 1.5;
-  private defaultConfirmations: number = 1;
+  private autoGasMultiplier: number;
+  private defaultConfirmations: number;
+  private confirmationType: ConfirmationType;
   private web3: Web3;
 
   // Contract instances
@@ -61,8 +68,12 @@ export class Contracts {
     provider: Provider,
     networkId: number,
     web3: Web3,
+    options: SoloOptions,
   ) {
     this.web3 = web3;
+    this.defaultConfirmations = options.defaultConfirmations || 1;
+    this.autoGasMultiplier = options.autoGasMultiplier || 1.5;
+    this.confirmationType = options.confirmationType || ConfirmationType.Confirmed;
 
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
@@ -151,18 +162,22 @@ export class Contracts {
   public async callContractFunction<T>(
     method: TransactionObject<T>,
     options: ContractCallOptions = {},
-  ): Promise<TxResult> {
-    if (!this.blockGasLimit) await this.setGasLimit();
+  ): Promise<string | TransactionReceipt | TxResult> {
+    const { confirmations, confirmationType, autoGasMultiplier, ...txOptions } = options;
+
+    if (!this.blockGasLimit) {
+      await this.setGasLimit();
+    }
+
     if (!options.gas) {
       const gasEstimate: number = await method.estimateGas(options);
-      const totalGas: number = Math.floor(gasEstimate * this.autoGasMultiplier);
+      const multiplier = autoGasMultiplier || this.autoGasMultiplier;
+      const totalGas: number = Math.floor(gasEstimate * multiplier);
       options.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
     }
     if (!options.chainId) {
       options.chainId = this.networkId;
     }
-
-    const { confirmations, ...txOptions } = options;
 
     const promi: PromiEvent<T> = method.send(txOptions);
 
@@ -175,43 +190,72 @@ export class Contracts {
     let receivedOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
 
-    const receivedPromise: Promise<string> = new Promise(
-      (resolve, reject) => {
-        promi.on('error', (error: Error) => {
-          if (receivedOutcome === OUTCOMES.INITIAL) {
-            receivedOutcome = OUTCOMES.REJECTED;
-            reject(error);
-          }
-        });
+    const t = confirmationType
+      || (confirmationType === undefined && this.confirmationType);
 
-        promi.on('transactionHash', (txHash: string) => {
-          if (receivedOutcome === OUTCOMES.INITIAL) {
-            receivedOutcome = OUTCOMES.RESOLVED;
-            resolve(txHash);
-          }
-        });
-      },
-    );
+    let receivedPromise: Promise<string>;
+    let confirmationPromise: Promise<TransactionReceipt>;
+    let confirmationRejection: () => void;
 
-    const confirmationPromise: Promise<TransactionReceipt> = new Promise(
-      (resolve, reject) => {
-        promi.on('error', (error: Error) => {
-          if (receivedOutcome === OUTCOMES.RESOLVED && confirmationOutcome === OUTCOMES.INITIAL) {
-            confirmationOutcome = OUTCOMES.REJECTED;
-            reject(error);
-          }
-        });
-
-        promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
-          const desiredConf = confirmations || this.defaultConfirmations;
-          if (confNumber >= desiredConf) {
-            if (confirmationOutcome === OUTCOMES.INITIAL) {
-              resolve(receipt);
+    if (t === ConfirmationType.Received || t === ConfirmationType.Both) {
+      receivedPromise = new Promise(
+        (resolve, reject) => {
+          promi.on('error', (error: Error) => {
+            if (receivedOutcome === OUTCOMES.INITIAL) {
+              receivedOutcome = OUTCOMES.REJECTED;
+              reject(error);
             }
-          }
-        });
-      },
-    );
+          });
+
+          promi.on('transactionHash', (txHash: string) => {
+            if (receivedOutcome === OUTCOMES.INITIAL) {
+              receivedOutcome = OUTCOMES.RESOLVED;
+              resolve(txHash);
+
+              if (confirmationRejection) {
+                confirmationRejection();
+              }
+            }
+          });
+        },
+      );
+    }
+
+    if (t === ConfirmationType.Confirmed || t === ConfirmationType.Both) {
+      confirmationPromise = new Promise(
+        (resolve, reject) => {
+          promi.on('error', (error: Error) => {
+            if (t === ConfirmationType.Both && receivedOutcome === OUTCOMES.INITIAL) {
+              confirmationRejection = () => reject(error);
+              confirmationOutcome = OUTCOMES.REJECTED;
+            } else if (
+              (t === ConfirmationType.Confirmed || receivedOutcome === OUTCOMES.RESOLVED)
+              && confirmationOutcome === OUTCOMES.INITIAL
+            ) {
+              confirmationOutcome = OUTCOMES.REJECTED;
+              reject(error);
+            }
+          });
+
+          promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
+            const desiredConf = confirmations || this.defaultConfirmations;
+            if (confNumber >= desiredConf) {
+              if (confirmationOutcome === OUTCOMES.INITIAL) {
+                resolve(receipt);
+              }
+            }
+          });
+        },
+      );
+    }
+
+    if (t === ConfirmationType.Received) {
+      return receivedPromise;
+    }
+
+    if (t === ConfirmationType.Confirmed) {
+      return confirmationPromise;
+    }
 
     const transactionHash = await receivedPromise;
 

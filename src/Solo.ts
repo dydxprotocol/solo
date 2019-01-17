@@ -45,7 +45,7 @@ export class Solo {
       this.web3.eth.defaultAccount = options.defaultAccount;
     }
 
-    this.contracts = new Contracts(provider, networkId, this.web3);
+    this.contracts = new Contracts(provider, networkId, this.web3, options);
     this.transaction = new Transaction(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.testing = new Testing(provider, this.contracts, this.token);

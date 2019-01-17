@@ -25,8 +25,23 @@ export type address = string;
 export type Integer = BigNumber;
 export type Decimal = BigNumber;
 
+export enum ConfirmationType {
+  Received = 0,
+  Confirmed = 1,
+  Both = 2,
+}
+
+export interface SoloOptions {
+  defaultAccount?: address;
+  confirmationType?: ConfirmationType;
+  defaultConfirmations?: number;
+  autoGasMultiplier?: number;
+}
+
 export interface ContractCallOptions extends Tx {
   confirmations?: number;
+  confirmationType?: ConfirmationType;
+  autoGasMultiplier?: number;
 }
 
 export interface TxResult {
@@ -128,10 +143,6 @@ export interface TransactionArgs {
   otherAddress: string;
   otherAccountId: number | string;
   data: (string | number[])[];
-}
-
-export interface SoloOptions {
-  defaultAccount?: address;
 }
 
 export interface Index {
