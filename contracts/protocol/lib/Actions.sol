@@ -147,7 +147,7 @@ library Actions {
 
     struct CallArgs {
         uint256 acct;
-        address who;
+        address callee;
         bytes data;
     }
 
@@ -330,7 +330,7 @@ library Actions {
         assert(args.transactionType == TransactionType.Call);
         return CallArgs({
             acct: args.accountId,
-            who: args.otherAddress,
+            callee: args.otherAddress,
             data: args.data
         });
     }
