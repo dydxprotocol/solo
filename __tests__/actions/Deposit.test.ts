@@ -38,7 +38,7 @@ describe('Deposit', () => {
       ),
     ]);
 
-    await solo.transaction.initiate()
+    const { gasUsed } = await solo.transaction.initiate()
       .deposit({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
@@ -52,6 +52,8 @@ describe('Deposit', () => {
       })
       .commit({ confirmations: 0 });
 
+    console.log(`\tDeposit gas used: ${gasUsed}`)
+
     const [
       walletTokenBalance,
       soloTokenBalance,
@@ -62,8 +64,17 @@ describe('Deposit', () => {
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    console.log(accountBalances)
-    console.log(walletTokenBalance)
-    console.log(soloTokenBalance)
+    expect(walletTokenBalance.eq(INTEGERS.ZERO)).toBe(true);
+    expect(soloTokenBalance.eq(amount)).toBe(true);
+
+    accountBalances.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (i === market.toNumber()) {
+        expected = amount;
+      }
+
+      expect(balance.par.eq(expected)).toBe(true);
+      expect(balance.wei.eq(expected)).toBe(true);
+    });
   });
 });

@@ -65,7 +65,7 @@ export class Getters {
   private parseValue({ value, sign }: { value: string, sign: boolean }): Integer {
     const absolute = new BigNumber(value);
 
-    if (!sign) {
+    if (!sign && !absolute.eq(INTEGERS.ZERO)) {
       return absolute.times(new BigNumber(-1));
     }
 
