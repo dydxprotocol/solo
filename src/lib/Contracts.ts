@@ -203,6 +203,8 @@ export class Contracts {
             if (receivedOutcome === OUTCOMES.INITIAL) {
               receivedOutcome = OUTCOMES.REJECTED;
               reject(error);
+              const anyPromi = promi as any;
+              anyPromi.off();
             }
           });
 
@@ -210,6 +212,10 @@ export class Contracts {
             if (receivedOutcome === OUTCOMES.INITIAL) {
               receivedOutcome = OUTCOMES.RESOLVED;
               resolve(txHash);
+              if (t !== ConfirmationType.Both) {
+                const anyPromi = promi as any;
+                anyPromi.off();
+              }
             }
           });
         },
@@ -226,6 +232,8 @@ export class Contracts {
             ) {
               confirmationOutcome = OUTCOMES.REJECTED;
               reject(error);
+              const anyPromi = promi as any;
+              anyPromi.off();
             }
           });
 
@@ -236,6 +244,8 @@ export class Contracts {
                 if (confirmationOutcome === OUTCOMES.INITIAL) {
                   confirmationOutcome = OUTCOMES.RESOLVED;
                   resolve(receipt);
+                  const anyPromi = promi as any;
+                  anyPromi.off();
                 }
               }
             });
@@ -243,6 +253,8 @@ export class Contracts {
             promi.on('receipt', (receipt: TransactionReceipt) => {
               confirmationOutcome = OUTCOMES.RESOLVED;
               resolve(receipt);
+              const anyPromi = promi as any;
+              anyPromi.off();
             });
           }
         },
