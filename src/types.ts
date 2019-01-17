@@ -19,19 +19,47 @@
 import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
 import { Tx } from 'web3/eth/types';
-import { TransactionReceipt } from 'web3/types';
+import { TransactionReceipt, Log, EventLog } from 'web3/types';
 
 export type address = string;
 export type Integer = BigNumber;
 export type Decimal = BigNumber;
 
+export enum ConfirmationType {
+  Hash = 0,
+  Confirmed = 1,
+  Both = 2,
+}
+
+export interface SoloOptions {
+  defaultAccount?: address;
+  confirmationType?: ConfirmationType;
+  defaultConfirmations?: number;
+  autoGasMultiplier?: number;
+}
+
 export interface ContractCallOptions extends Tx {
   confirmations?: number;
+  confirmationType?: ConfirmationType;
+  autoGasMultiplier?: number;
 }
 
 export interface TxResult {
   transactionHash: string;
-  confirmation: Promise<TransactionReceipt>;
+  transactionIndex?: number;
+  blockHash?: string;
+  blockNumber?: number;
+  from?: string;
+  to?: string;
+  contractAddress?: string;
+  cumulativeGasUsed?: number;
+  gasUsed?: number;
+  logs?: Log[];
+  events?: {
+    [eventName: string]: EventLog;
+  };
+  status?: boolean;
+  confirmation?: Promise<TransactionReceipt>;
 }
 
 export enum AmountDenomination {
@@ -128,10 +156,6 @@ export interface TransactionArgs {
   otherAddress: string;
   otherAccountId: number | string;
   data: (string | number[])[];
-}
-
-export interface SoloOptions {
-  defaultAccount?: address;
 }
 
 export interface Index {
