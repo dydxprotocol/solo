@@ -45,8 +45,9 @@ export interface ContractCallOptions extends Tx {
 }
 
 export interface TxResult {
-  transactionHash: string;
-  confirmation: Promise<TransactionReceipt>;
+  transactionHash?: string;
+  receipt?: TransactionReceipt;
+  confirmation?: Promise<TransactionReceipt>;
 }
 
 export enum AmountDenomination {

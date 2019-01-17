@@ -162,7 +162,7 @@ export class Contracts {
   public async callContractFunction<T>(
     method: TransactionObject<T>,
     options: ContractCallOptions = {},
-  ): Promise<string | TransactionReceipt | TxResult> {
+  ): Promise<TxResult> {
     const { confirmations, confirmationType, autoGasMultiplier, ...txOptions } = options;
 
     if (!this.blockGasLimit) {
@@ -250,11 +250,13 @@ export class Contracts {
     }
 
     if (t === ConfirmationType.Received) {
-      return receivedPromise;
+      const transactionHash = await receivedPromise;
+      return { transactionHash };
     }
 
     if (t === ConfirmationType.Confirmed) {
-      return confirmationPromise;
+      const receipt = await confirmationPromise;
+      return { receipt };
     }
 
     const transactionHash = await receivedPromise;
