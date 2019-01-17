@@ -1,9 +1,13 @@
 import { NETWORK_ID } from './Constants';
 import { Solo } from '../../src/Solo';
 import { provider } from './Provider';
-import { address } from '../../src/types';
+import { address, ConfirmationType } from '../../src/types';
 
-export const solo = new Solo(provider, NETWORK_ID);
+export const solo = new Solo(
+  provider,
+  NETWORK_ID,
+  { confirmationType: ConfirmationType.Confirmed },
+);
 let accounts: address[];
 
 let defaultAccountSet = false;

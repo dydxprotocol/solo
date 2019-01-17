@@ -19,14 +19,14 @@
 import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
 import { Tx } from 'web3/eth/types';
-import { TransactionReceipt } from 'web3/types';
+import { TransactionReceipt, Log, EventLog } from 'web3/types';
 
 export type address = string;
 export type Integer = BigNumber;
 export type Decimal = BigNumber;
 
 export enum ConfirmationType {
-  Received = 0,
+  Hash = 0,
   Confirmed = 1,
   Both = 2,
 }
@@ -45,8 +45,20 @@ export interface ContractCallOptions extends Tx {
 }
 
 export interface TxResult {
-  transactionHash?: string;
-  receipt?: TransactionReceipt;
+  transactionHash: string;
+  transactionIndex?: number;
+  blockHash?: string;
+  blockNumber?: number;
+  from?: string;
+  to?: string;
+  contractAddress?: string;
+  cumulativeGasUsed?: number;
+  gasUsed?: number;
+  logs?: Log[];
+  events?: {
+    [eventName: string]: EventLog;
+  };
+  status?: boolean;
   confirmation?: Promise<TransactionReceipt>;
 }
 
