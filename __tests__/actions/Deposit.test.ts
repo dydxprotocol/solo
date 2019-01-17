@@ -50,7 +50,7 @@ describe('Deposit', () => {
         },
         from: who,
       })
-      .commit({ confirmations: 0 });
+      .commit();
 
     console.log(`\tDeposit gas used: ${gasUsed}`);
 
