@@ -41,32 +41,34 @@ contract Events is
     );
 
     event LogDeposit(
-        address indexed owner,
-        uint256 number,
+        address indexed acctOwner,
+        uint256 acctNumber,
         uint256 mkt,
-        BalanceUpdate update
+        BalanceUpdate update,
+        address from
     );
 
     event LogWithdraw(
-        address indexed owner,
-        uint256 number,
+        address indexed acctOwner,
+        uint256 acctNumber,
         uint256 mkt,
-        BalanceUpdate update
+        BalanceUpdate update,
+        address to
     );
 
     event LogTransfer(
-        address indexed ownerOne,
-        uint256 numberOne,
-        address indexed ownerTwo,
-        uint256 numberTwo,
+        address indexed acctOneOwner,
+        uint256 acctOneNumber,
+        address indexed acctTwoOwner,
+        uint256 acctTwoNumber,
         uint256 mkt,
         BalanceUpdate updateOne,
         BalanceUpdate updateTwo
     );
 
     event LogBuy(
-        address indexed owner,
-        uint256 number,
+        address indexed acctOwner,
+        uint256 acctNumber,
         uint256 takerMkt,
         uint256 makerMkt,
         BalanceUpdate takerUpdate,
@@ -75,8 +77,8 @@ contract Events is
     );
 
     event LogSell(
-        address indexed owner,
-        uint256 number,
+        address indexed acctOwner,
+        uint256 acctNumber,
         uint256 takerMkt,
         uint256 makerMkt,
         BalanceUpdate takerUpdate,
@@ -85,10 +87,10 @@ contract Events is
     );
 
     event LogTrade(
-        address indexed takerOwner,
-        uint256 takerNumber,
-        address indexed traderOwner,
-        uint256 traderNumber,
+        address indexed takerAcctOwner,
+        uint256 takerAcctNumber,
+        address indexed makerAcctOwner,
+        uint256 makerAcctNumber,
         uint256 inputMkt,
         uint256 outputMkt,
         BalanceUpdate takerInputUpdate,
@@ -99,16 +101,16 @@ contract Events is
     );
 
     event LogCall(
-        address indexed owner,
-        uint256 number,
+        address indexed acctOwner,
+        uint256 acctNumber,
         address callee
     );
 
     event LogLiquidate(
-        address indexed solidOwner,
-        uint256 solidNumber,
-        address indexed liquidOwner,
-        uint256 liquidNumber,
+        address indexed solidAcctOwner,
+        uint256 solidAcctNumber,
+        address indexed liquidAcctOwner,
+        uint256 liquidAcctNumber,
         uint256 heldMkt,
         uint256 owedMkt,
         BalanceUpdate solidHeldUpdate,
@@ -118,10 +120,10 @@ contract Events is
     );
 
     event LogVaporize(
-        address indexed solidOwner,
-        uint256 solidNumber,
-        address indexed vaporOwner,
-        uint256 vaporNumber,
+        address indexed solidAcctOwner,
+        uint256 solidAcctNumber,
+        address indexed vaporAcctOwner,
+        uint256 vaporAcctNumber,
         uint256 heldMkt,
         uint256 owedMkt,
         BalanceUpdate solidHeldUpdate,
@@ -162,7 +164,8 @@ contract Events is
                 args.acct,
                 args.mkt,
                 deltaWei
-            )
+            ),
+            args.from
         );
     }
 
@@ -184,7 +187,8 @@ contract Events is
                 args.acct,
                 args.mkt,
                 deltaWei
-            )
+            ),
+            args.to
         );
     }
 
