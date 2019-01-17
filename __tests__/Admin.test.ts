@@ -31,15 +31,14 @@ describe('Admin', () => {
         price,
       );
 
-      const { transactionHash } = await solo.admin.addMarket(
+      const { blockNumber } = await solo.admin.addMarket(
         token,
         priceOracle,
         interestSetter,
         { from: accounts[0] },
       );
 
-      const transaction = await solo.web3.eth.getTransaction(transactionHash);
-      const { timestamp } = await solo.web3.eth.getBlock(transaction.blockNumber);
+      const { timestamp } = await solo.web3.eth.getBlock(blockNumber);
 
       const marketInfo: MarketWithInfo = await solo.getters.getMarket(new BigNumber(0));
 
