@@ -25,6 +25,8 @@ describe('Deposit', () => {
 
     const amount = new BigNumber(100);
     const who = solo.getDefaultAccount();
+    const accountNumber = INTEGERS.ZERO;
+    const market = INTEGERS.ZERO;
 
     await Promise.all([
       solo.testing.tokenA.issueTo(
@@ -36,11 +38,11 @@ describe('Deposit', () => {
       ),
     ]);
 
-    const tx = await solo.transaction.initiate()
+    await solo.transaction.initiate()
       .deposit({
         primaryAccountOwner: who,
-        primaryAccountId: INTEGERS.ZERO,
-        marketId: INTEGERS.ZERO,
+        primaryAccountId: accountNumber,
+        marketId: market,
         amount: {
           value: amount,
           denomination: AmountDenomination.Actual,
@@ -50,13 +52,18 @@ describe('Deposit', () => {
       })
       .commit({ confirmations: 0 });
 
-    console.log(tx)
-    const transaction = await solo.web3.eth.getTransaction(tx.transactionHash);
+    const [
+      walletTokenBalance,
+      soloTokenBalance,
+      accountBalances,
+    ] = await Promise.all([
+      solo.testing.tokenA.getBalance(who),
+      solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
+      solo.getters.getAccountBalances(who, accountNumber),
+    ]);
 
-    await solo.testing.evm.mineBlock();
-
-    // console.log(await tx.confirmation)
-
-    console.log(transaction)
+    console.log(accountBalances)
+    console.log(walletTokenBalance)
+    console.log(soloTokenBalance)
   });
 });

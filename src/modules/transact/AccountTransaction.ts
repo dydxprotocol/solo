@@ -158,8 +158,6 @@ export class AccountTransaction {
     this.committed = true;
 
     try {
-      console.log(this.accounts)
-      console.log(this.operations)
       const method: TransactionObject<void> = this.contracts.soloMargin.methods.transact(
         this.accounts,
         this.operations,
