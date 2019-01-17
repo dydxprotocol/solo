@@ -52,7 +52,7 @@ describe('Deposit', () => {
       })
       .commit({ confirmations: 0 });
 
-    console.log(`\tDeposit gas used: ${gasUsed}`)
+    console.log(`\tDeposit gas used: ${gasUsed}`);
 
     const [
       walletTokenBalance,
