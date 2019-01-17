@@ -177,3 +177,9 @@ export interface MarketWithInfo {
   currentPrice: Integer;
   currentInterestRate: Decimal;
 }
+
+export interface Balance {
+  tokenAddress: address;
+  par: Integer;
+  wei: Integer;
+}

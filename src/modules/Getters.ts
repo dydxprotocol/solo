@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { MarketWithInfo, Index, Integer } from '../types';
+import { MarketWithInfo, Index, Integer, address, Balance } from '../types';
 import { INTEGERS } from '../lib/Constants';
 
 export class Getters {
@@ -16,7 +16,7 @@ export class Getters {
     marketId: Integer,
   ): Promise<MarketWithInfo> {
     const marketWithInfo = await this.contracts.soloMargin.methods
-      .getMarketWithInfo(marketId.toString()).call();
+      .getMarketWithInfo(marketId.toFixed(0)).call();
 
     return {
       market: {
@@ -38,6 +38,20 @@ export class Getters {
     };
   }
 
+  public async getAccountBalances(
+    accountOwner: address,
+    accountNumber: Integer,
+  ): Promise<Balance[]> {
+    const balances = await this.contracts.soloMargin.methods
+      .getAccountBalances({ owner: accountOwner, number: accountNumber.toFixed(0) }).call();
+
+    return balances.map(b => ({
+      tokenAddress: b.tokenAddress,
+      par: this.parseValue(b.parBalance),
+      wei: this.parseValue(b.weiBalance),
+    }));
+  }
+
   private parseIndex(
     { borrow, supply, lastUpdate }: { borrow: string, supply: string, lastUpdate: string },
   ): Index {
@@ -46,5 +60,15 @@ export class Getters {
       supply: new BigNumber(supply).div(INTEGERS.INTEREST_RATE_BASE),
       lastUpdate: new BigNumber(lastUpdate),
     };
+  }
+
+  private parseValue({ value, sign }: { value: string, sign: boolean }): Integer {
+    const absolute = new BigNumber(value);
+
+    if (!sign && !absolute.eq(INTEGERS.ZERO)) {
+      return absolute.times(new BigNumber(-1));
+    }
+
+    return absolute;
   }
 }
