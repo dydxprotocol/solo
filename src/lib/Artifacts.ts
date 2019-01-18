@@ -6,6 +6,7 @@ import { default as TokenB } from '../../build/contracts/TokenB.json';
 import { default as TokenC } from '../../build/contracts/TokenC.json';
 import { default as TestPriceOracle } from '../../build/contracts/TestPriceOracle.json';
 import { default as TestInterestSetter } from '../../build/contracts/TestInterestSetter.json';
+import { default as TestSoloMargin } from '../../build/contracts/TestSoloMargin.json';
 
 export default {
   SoloMargin,
@@ -16,4 +17,5 @@ export default {
   TokenC,
   TestPriceOracle,
   TestInterestSetter,
+  TestSoloMargin,
 };
