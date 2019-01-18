@@ -12,8 +12,6 @@ RUN npm run compile -- --all
 
 COPY ./migrations ./migrations
 COPY ./scripts ./scripts
-COPY ./test ./test
-COPY ./src ./src
 
 RUN mkdir /home/.ganache
 RUN sh scripts/docker.sh
