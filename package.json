@@ -1,21 +1,17 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
-  "main": "dist/index.js",
+  "main": "dist/js/src/index.js",
   "files": [
-    "dist/",
+    "dist/js/build",
+    "dist/js/src",
+    "dist/types/src",
     "build/",
     "src/",
     "LICENSE",
     "README.md"
   ],
-  "directories": {
-    "contracts": "contracts",
-    "migrations": "migrations",
-    "test": "test",
-    "util": "util"
-  },
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
     "build": "npm run compile && npm run build:wrappers",
