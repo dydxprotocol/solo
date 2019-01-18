@@ -58,8 +58,10 @@ module.exports = {
     },
     docker: {
       host: 'localhost',
-      network_id: '1212',
+      network_id: '1313',
       port: 8545,
+      gasPrice: 1,
+      gas: 0x1fffffffffffff,
     },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations

@@ -6,15 +6,12 @@ WORKDIR /home/dydx/app
 COPY ./package.json ./package-lock.json ./
 RUN npm ci --loglevel warn
 
-COPY ./.babelrc ./.babelrc
 COPY ./truffle.js ./truffle.js
 COPY ./contracts ./contracts
 RUN npm run compile -- --all
 
 COPY ./migrations ./migrations
 COPY ./scripts ./scripts
-COPY ./test ./test
-COPY ./src ./src
 
 RUN mkdir /home/.ganache
 RUN sh scripts/docker.sh
