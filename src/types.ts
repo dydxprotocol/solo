@@ -86,8 +86,8 @@ export enum TransactionType {
 
 export enum AccountStatus {
   Normal = 0,
-  Liquid = 1,
-  Vapor = 2,
+  Liquidating = 1,
+  Vaporizing = 2,
 }
 
 export interface Amount {

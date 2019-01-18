@@ -51,7 +51,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.mockSoloMargin.methods.setAccountBalance(
+      this.contracts.testSoloMargin.methods.setAccountBalance(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -73,7 +73,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.mockSoloMargin.methods.setAccountStatus(
+      this.contracts.testSoloMargin.methods.setAccountStatus(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -90,7 +90,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.mockSoloMargin.methods.setMarketIndex(
+      this.contracts.testSoloMargin.methods.setMarketIndex(
         marketId.toFixed(0),
         {
           borrow: index.borrow.toFixed(0),

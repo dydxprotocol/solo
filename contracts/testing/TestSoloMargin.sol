@@ -27,7 +27,7 @@ import { Math } from "../protocol/lib/Math.sol";
 import { Types } from "../protocol/lib/Types.sol";
 
 
-contract MockSoloMargin is
+contract TestSoloMargin is
     SoloMargin
 {
     using Math for uint256;
