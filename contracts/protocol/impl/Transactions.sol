@@ -65,7 +65,7 @@ contract Transactions is
             _transact(cache, args[i]);
         }
 
-        cacheStore(cache);
+        cacheVerify(cache);
     }
 
     // ============ Private Functions ============
@@ -113,7 +113,8 @@ contract Transactions is
     )
         private
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
+        cacheSetPrimary(cache, args.acct);
 
         Require.that(
             args.from == msg.sender || args.from == account.owner,
@@ -121,26 +122,22 @@ contract Transactions is
             "Deposit must come from sender or owner"
         );
 
-        cacheSetPrimary(cache, args.acct);
-
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.acct,
+        ) = getNewParAndDeltaWei(
+            account,
             args.mkt,
             args.amount
         );
 
-        cacheSetPar(
-            cache,
-            args.acct,
+        setPar(
+            account,
             args.mkt,
             newPar
         );
 
-        address token = cacheGetToken(cache, args.mkt);
+        address token = getToken(args.mkt);
 
         // requires a positive deltaWei
         Exchange.transferIn(token, args.from, deltaWei);
@@ -158,26 +155,25 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.acct,
+        ) = getNewParAndDeltaWei(
+            account,
             args.mkt,
             args.amount
         );
 
-        cacheSetPar(
-            cache,
-            args.acct,
+        setPar(
+            account,
             args.mkt,
             newPar
         );
 
-        address token = cacheGetToken(cache, args.mkt);
+        address token = getToken(args.mkt);
 
         // requires a negative deltaWei
         Exchange.transferOut(token, args.to, deltaWei);
@@ -195,29 +191,28 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory accountOne = cache.accounts[args.acctOne];
+        Acct.Info memory accountTwo = cache.accounts[args.acctTwo];
         cacheSetPrimary(cache, args.acctOne);
         cacheSetPrimary(cache, args.acctTwo);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.acctOne,
+        ) = getNewParAndDeltaWei(
+            accountOne,
             args.mkt,
             args.amount
         );
 
-        cacheSetPar(
-            cache,
-            args.acctOne,
+        setPar(
+            accountOne,
             args.mkt,
             newPar
         );
 
-        cacheSetParFromDeltaWei(
-            cache,
-            args.acctTwo,
+        setParFromDeltaWei(
+            accountTwo,
             args.mkt,
             deltaWei.negative()
         );
@@ -235,17 +230,17 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
 
-        address takerToken = cacheGetToken(cache, args.takerMkt);
-        address makerToken = cacheGetToken(cache, args.makerMkt);
+        address takerToken = getToken(args.takerMkt);
+        address makerToken = getToken(args.makerMkt);
 
         (
             Types.Par memory makerPar,
             Types.Wei memory makerWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.acct,
+        ) = getNewParAndDeltaWei(
+            account,
             args.makerMkt,
             args.amount
         );
@@ -258,7 +253,6 @@ contract Transactions is
             args.orderData
         );
 
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
         Types.Wei memory tokensReceived = Exchange.exchange(
             args.exchangeWrapper,
             account.owner,
@@ -274,16 +268,14 @@ contract Transactions is
             "Exchange must receive more than expected from getCost"
         );
 
-        cacheSetPar(
-            cache,
-            args.acct,
+        setPar(
+            account,
             args.makerMkt,
             makerPar
         );
 
-        cacheSetParFromDeltaWei(
-            cache,
-            args.acct,
+        setParFromDeltaWei(
+            account,
             args.takerMkt,
             takerWei
         );
@@ -302,22 +294,21 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
 
-        address takerToken = cacheGetToken(cache, args.takerMkt);
-        address makerToken = cacheGetToken(cache, args.makerMkt);
+        address takerToken = getToken(args.takerMkt);
+        address makerToken = getToken(args.makerMkt);
 
         (
             Types.Par memory takerPar,
             Types.Wei memory takerWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.acct,
+        ) = getNewParAndDeltaWei(
+            account,
             args.takerMkt,
             args.amount
         );
 
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
         Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
             account.owner,
@@ -327,16 +318,14 @@ contract Transactions is
             args.orderData
         );
 
-        cacheSetPar(
-            cache,
-            args.acct,
+        setPar(
+            account,
             args.takerMkt,
             takerPar
         );
 
-        cacheSetParFromDeltaWei(
-            cache,
-            args.acct,
+        setParFromDeltaWei(
+            account,
             args.makerMkt,
             makerWei
         );
@@ -355,11 +344,10 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory takerAccount = cache.accounts[args.takerAcct];
+        Acct.Info memory makerAccount = cache.accounts[args.makerAcct];
         cacheSetPrimary(cache, args.takerAcct);
         cacheSetTraded(cache, args.makerAcct);
-
-        Acct.Info memory takerAccount = cacheGetAcctInfo(cache, args.takerAcct);
-        Acct.Info memory makerAccount = cacheGetAcctInfo(cache, args.makerAcct);
 
         Require.that(
             g_operators[makerAccount.owner][args.autoTrader],
@@ -367,17 +355,15 @@ contract Transactions is
             "AutoTrader not authorized"
         );
 
-        Types.Par memory oldInputPar = cacheGetPar(
-            cache,
-            args.inputMkt,
-            args.makerAcct
+        Types.Par memory oldInputPar = getPar(
+            makerAccount,
+            args.inputMkt
         );
         (
             Types.Par memory newInputPar,
             Types.Wei memory inputWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            args.makerAcct,
+        ) = getNewParAndDeltaWei(
+            makerAccount,
             args.inputMkt,
             args.amount
         );
@@ -400,29 +386,25 @@ contract Transactions is
         );
 
         // set the balance for the maker
-        cacheSetPar(
-            cache,
-            args.makerAcct,
+        setPar(
+            makerAccount,
             args.inputMkt,
             newInputPar
         );
-        cacheSetParFromDeltaWei(
-            cache,
-            args.makerAcct,
+        setParFromDeltaWei(
+            makerAccount,
             args.outputMkt,
             outputWei
         );
 
         // set the balance for the taker
-        cacheSetParFromDeltaWei(
-            cache,
-            args.takerAcct,
+        setParFromDeltaWei(
+            takerAccount,
             args.inputMkt,
             inputWei.negative()
         );
-        cacheSetParFromDeltaWei(
-            cache,
-            args.takerAcct,
+        setParFromDeltaWei(
+            takerAccount,
             args.outputMkt,
             outputWei.negative()
         );
@@ -441,21 +423,22 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
+        Acct.Info memory liquidAccount = cache.accounts[args.liquidAcct];
         cacheSetPrimary(cache, args.solidAcct);
 
         // verify liquidatable
-        if (AccountStatus.Liquid != cacheGetAccountStatus(cache, args.liquidAcct)) {
+        if (AccountStatus.Liquid != getStatus(liquidAccount)) {
             Require.that(
-                cacheGetNextAccountStatus(cache, args.liquidAcct) == AccountStatus.Liquid,
+                cacheGetNextAccountStatus(cache, liquidAccount) == AccountStatus.Liquid,
                 FILE,
                 "Liquidation account must be undercollateralized"
             );
-            cacheSetAccountStatus(cache, args.liquidAcct, AccountStatus.Liquid);
+            setStatus(liquidAccount, AccountStatus.Liquid);
         }
 
-        Types.Wei memory maxHeldWei = cacheGetWei(
-            cache,
-            args.liquidAcct,
+        Types.Wei memory maxHeldWei = getWei(
+            liquidAccount,
             args.heldMkt
         );
 
@@ -468,9 +451,8 @@ contract Transactions is
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
-        ) = cacheGetNewParAndDeltaWeiForLiquidation(
-            cache,
-            args.liquidAcct,
+        ) = getNewParAndDeltaWeiForLiquidation(
+            liquidAccount,
             args.owedMkt,
             args.amount
         );
@@ -492,43 +474,37 @@ contract Transactions is
                 heldWei
             );
 
-            cacheSetPar(
-                cache,
-                args.liquidAcct,
+            setPar(
+                liquidAccount,
                 args.heldMkt,
                 Types.zeroPar()
             );
-            cacheSetParFromDeltaWei(
-                cache,
-                args.liquidAcct,
+            setParFromDeltaWei(
+                liquidAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
-            cacheSetPar(
-                cache,
-                args.liquidAcct,
+            setPar(
+                liquidAccount,
                 args.owedMkt,
                 owedPar
             );
-            cacheSetParFromDeltaWei(
-                cache,
-                args.liquidAcct,
+            setParFromDeltaWei(
+                liquidAccount,
                 args.heldMkt,
                 heldWei
             );
         }
 
         // set the balances for the solid account
-        cacheSetParFromDeltaWei(
-            cache,
-            args.solidAcct,
+        setParFromDeltaWei(
+            solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
-        cacheSetParFromDeltaWei(
-            cache,
-            args.solidAcct,
+        setParFromDeltaWei(
+            solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
@@ -547,27 +523,26 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
+        Acct.Info memory vaporAccount = cache.accounts[args.vaporAcct];
         cacheSetPrimary(cache, args.solidAcct);
 
         // verify vaporizable
-        if (AccountStatus.Vapor != cacheGetAccountStatus(cache, args.vaporAcct)) {
+        if (AccountStatus.Vapor != getStatus(vaporAccount)) {
             Require.that(
-                AccountStatus.Vapor == cacheGetNextAccountStatus(cache, args.vaporAcct),
+                AccountStatus.Vapor == cacheGetNextAccountStatus(cache, vaporAccount),
                 FILE,
                 "Vaporization account must have only negative values"
             );
-            cacheSetAccountStatus(cache, args.vaporAcct, AccountStatus.Vapor);
+            setStatus(vaporAccount, AccountStatus.Vapor);
         }
 
         // First, attempt to refund using the same token
-        if (cacheVaporizeUsingExcess(cache, args.vaporAcct, args.owedMkt)) {
+        if (vaporizeUsingExcess(vaporAccount, args.owedMkt)) {
             return;
         }
 
-        Types.Wei memory maxHeldWei = cacheGetNumExcessTokens(
-            cache,
-            args.heldMkt
-        );
+        Types.Wei memory maxHeldWei = getNumExcessTokens(args.heldMkt);
 
         Require.that(
             maxHeldWei.isPositive(),
@@ -578,9 +553,8 @@ contract Transactions is
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
-        ) = cacheGetNewParAndDeltaWeiForLiquidation(
-            cache,
-            args.vaporAcct,
+        ) = getNewParAndDeltaWeiForLiquidation(
+            vaporAccount,
             args.owedMkt,
             args.amount
         );
@@ -602,31 +576,27 @@ contract Transactions is
                 heldWei
             );
 
-            cacheSetParFromDeltaWei(
-                cache,
-                args.vaporAcct,
+            setParFromDeltaWei(
+                vaporAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
-            cacheSetPar(
-                cache,
-                args.vaporAcct,
+            setPar(
+                vaporAccount,
                 args.owedMkt,
                 owedPar
             );
         }
 
         // set the balances for the solid account
-        cacheSetParFromDeltaWei(
-            cache,
-            args.solidAcct,
+        setParFromDeltaWei(
+            solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
-        cacheSetParFromDeltaWei(
-            cache,
-            args.solidAcct,
+        setParFromDeltaWei(
+            solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
@@ -645,9 +615,8 @@ contract Transactions is
     )
         private
     {
+        Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
-
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
 
         ICallee(args.callee).callFunction(
             msg.sender,

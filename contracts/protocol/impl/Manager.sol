@@ -56,42 +56,56 @@ contract Manager is
     // ============ Structs ============
 
     struct Cache {
-        MarketCache[] markets;
-        AccountCache[] accounts;
-        Decimal.D256 earningsRate;
-        Decimal.D256 liquidationSpread;
-        Decimal.D256 liquidationRatio;
+        Monetary.Price[] prices;
+        Acct.Info[] accounts;
+        bool[] primary; // was used as a primary account
+        bool[] traded; // was used as an account to trade against
     }
 
-    struct AccountCache {
-        Acct.Info info;
-        bool primary; // was used as a primary account
-        bool traded; // was used as an account to trade against
-    }
+    // ============ Non-Cache Functions ============
 
-    struct MarketCache {
-        address token;
-        Monetary.Price price;
-    }
-
-    // ============ Getter Functions ============
-
-    function cacheGetToken(
-        Cache memory cache,
+    function getToken(
         uint256 marketId
     )
         internal
         view
         returns (address)
     {
-        if (cache.markets[marketId].token == address(0)) {
-            cache.markets[marketId].token = g_markets[marketId].token;
-        }
-        return cache.markets[marketId].token;
+        return g_markets[marketId].token;
     }
 
-    function cacheGetIndex(
-        Cache memory cache,
+    function getTotalPar(
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Types.TotalPar memory)
+    {
+        return g_markets[marketId].totalPar;
+    }
+
+    function getInterestRate(
+        uint256 marketId,
+        Interest.Index memory index
+    )
+        internal
+        view
+        returns (Interest.Rate memory)
+    {
+        Types.TotalPar memory totalPar = getTotalPar(marketId);
+        (
+            Types.Wei memory borrowWei,
+            Types.Wei memory supplyWei
+        ) = Interest.totalParToWei(totalPar, index);
+
+        return g_markets[marketId].interestSetter.getInterestRate(
+            getToken(marketId),
+            borrowWei.value,
+            supplyWei.value
+        );
+    }
+
+    function getIndex(
         uint256 marketId
     )
         internal
@@ -103,23 +117,13 @@ contract Manager is
             return index;
         }
 
-        Types.TotalPar memory totalPar = cacheGetTotalPar(cache, marketId);
-        (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
-        ) = Interest.totalParToWei(totalPar, index);
-
-        Interest.Rate memory rate = g_markets[marketId].interestSetter.getInterestRate(
-            cacheGetToken(cache, marketId),
-            borrowWei.value,
-            supplyWei.value
-        );
+        Interest.Rate memory rate = getInterestRate(marketId, index);
 
         index = Interest.calculateNewIndex(
             index,
             rate,
-            totalPar,
-            cacheGetEarningsRate(cache)
+            getTotalPar(marketId),
+            g_earningsRate
         );
 
         g_markets[marketId].index = index;
@@ -127,176 +131,90 @@ contract Manager is
         return index;
     }
 
-    function cacheGetTotalPar(
-        Cache memory cache,
+    function getNumExcessTokens(
         uint256 marketId
     )
         internal
-        view
-        returns (Types.TotalPar memory)
+        returns (Types.Wei memory)
     {
-        return g_markets[marketId].totalPar;
+        Interest.Index memory index = getIndex(marketId);
+        Types.TotalPar memory totalPar = getTotalPar(marketId);
+
+        address token = getToken(marketId);
+
+        Types.Wei memory balanceWei = Exchange.thisBalance(token);
+
+        (
+            Types.Wei memory supplyWei,
+            Types.Wei memory borrowWei
+        ) = Interest.totalParToWei(totalPar, index);
+
+        return balanceWei.add(borrowWei).sub(supplyWei);
     }
 
-    function cacheGetPrice(
-        Cache memory cache,
-        uint256 marketId
+    function getStatus(
+        Acct.Info memory account
     )
         internal
         view
-        returns (Monetary.Price memory)
-    {
-        if (cache.markets[marketId].price.value == 0) {
-            address token = cache.markets[marketId].token;
-            IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
-            cache.markets[marketId].price = oracle.getPrice(token);
-        }
-        return cache.markets[marketId].price;
-    }
-
-    function cacheGetAcctInfo(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
-        pure
-        returns (Acct.Info memory)
-    {
-        return cache.accounts[accountId].info;
-    }
-
-    function cacheGetAccountStatus(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
         returns (AccountStatus)
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
         return g_accounts[account.owner][account.number].status;
     }
 
-    function cacheGetPar(
-        Cache memory cache,
-        uint256 accountId,
+    function getPar(
+        Acct.Info memory account,
         uint256 marketId
     )
         internal
         view
         returns (Types.Par memory)
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
         return g_accounts[account.owner][account.number].balances[marketId];
     }
 
-    function cacheGetWei(
-        Cache memory cache,
-        uint256 accountId,
+    function getWei(
+        Acct.Info memory account,
         uint256 marketId
     )
         internal
         returns (Types.Wei memory)
     {
-        Types.Par memory par = cacheGetPar(cache, accountId, marketId);
+        Types.Par memory par = getPar(account, marketId);
 
         if (par.isZero()) {
             return Types.zeroWei();
         }
 
-        Interest.Index memory index = cacheGetIndex(cache, marketId);
+        Interest.Index memory index = getIndex(marketId);
         return Interest.parToWei(par, index);
     }
 
-    function cacheGetEarningsRate(
-        Cache memory cache
-    )
-        internal
-        view
-        returns (Decimal.D256 memory)
-    {
-        if (cache.earningsRate.value == 0) {
-            cache.earningsRate = g_earningsRate;
-        }
-        return cache.earningsRate;
-    }
-
-    function cacheGetLiquidationSpread(
-        Cache memory cache
-    )
-        internal
-        view
-        returns (Decimal.D256 memory)
-    {
-        if (cache.liquidationSpread.value == 0) {
-            cache.liquidationSpread = g_liquidationSpread;
-        }
-        return cache.liquidationSpread;
-    }
-
-    function cacheGetLiquidationRatio(
-        Cache memory cache
-    )
-        internal
-        view
-        returns (Decimal.D256 memory)
-    {
-        if (cache.liquidationRatio.value == 0) {
-            cache.liquidationRatio = g_liquidationRatio;
-        }
-        return cache.liquidationRatio;
-    }
-
-    // ============ Setter Functions ============
-
-    function cacheSetPrimary(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        cache.accounts[accountId].primary = true;
-    }
-
-    function cacheSetTraded(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        cache.accounts[accountId].traded = true;
-    }
-
-    function cacheSetAccountStatus(
-        Cache memory cache,
-        uint256 accountId,
+    function setStatus(
+        Acct.Info memory account,
         AccountStatus status
     )
         internal
         returns (bool)
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
         g_accounts[account.owner][account.number].status = status;
     }
 
-    function cacheSetPar(
-        Cache memory cache,
-        uint256 accountId,
+    function setPar(
+        Acct.Info memory account,
         uint256 marketId,
         Types.Par memory newPar
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, accountId);
-        Types.Par memory oldPar = cacheGetPar(cache, accountId, marketId);
+        Types.Par memory oldPar = getPar(account, marketId);
 
         if (Types.equals(oldPar, newPar)) {
             return;
         }
 
         // updateTotalPar
-        Types.TotalPar memory totalPar = cacheGetTotalPar(cache, marketId);
+        Types.TotalPar memory totalPar = getTotalPar(marketId);
 
         // roll-back oldPar
         if (oldPar.sign) {
@@ -319,21 +237,19 @@ contract Manager is
     /**
      * Determines and sets an account's balance based on a change in wei
      */
-    function cacheSetParFromDeltaWei(
-        Cache memory cache,
-        uint256 accountId,
+    function setParFromDeltaWei(
+        Acct.Info memory account,
         uint256 marketId,
         Types.Wei memory deltaWei
     )
         internal
     {
-        Interest.Index memory index = cacheGetIndex(cache, marketId);
-        Types.Wei memory oldWei = cacheGetWei(cache, accountId, marketId);
+        Interest.Index memory index = getIndex(marketId);
+        Types.Wei memory oldWei = getWei(account, marketId);
         Types.Wei memory newWei = oldWei.add(deltaWei);
         Types.Par memory newPar = Interest.weiToPar(newWei, index);
-        cacheSetPar(
-            cache,
-            accountId,
+        setPar(
+            account,
             marketId,
             newPar
         );
@@ -343,18 +259,17 @@ contract Manager is
      * Determines and sets an account's balance based on the intended balance change. Returns the
      * equivalent amount in wei
      */
-    function cacheGetNewParAndDeltaWei(
-        Cache memory cache,
-        uint256 accountId,
+    function getNewParAndDeltaWei(
+        Acct.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
     )
         internal
         returns (Types.Par memory, Types.Wei memory)
     {
-        Interest.Index memory index = cacheGetIndex(cache, marketId);
-        Types.Par memory oldPar = cacheGetPar(cache, accountId, marketId);
-        Types.Wei memory oldWei = cacheGetWei(cache, accountId, marketId);
+        Interest.Index memory index = getIndex(marketId);
+        Types.Par memory oldPar = getPar(account, marketId);
+        Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
 
         Types.Par memory newPar;
         Types.Wei memory deltaWei;
@@ -383,9 +298,8 @@ contract Manager is
         return (newPar, deltaWei);
     }
 
-    function cacheGetNewParAndDeltaWeiForLiquidation(
-        Cache memory cache,
-        uint256 accountId,
+    function getNewParAndDeltaWeiForLiquidation(
+        Acct.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
     )
@@ -393,19 +307,18 @@ contract Manager is
         returns (Types.Par memory, Types.Wei memory)
     {
         Require.that(
-            cacheGetPar(cache, accountId, marketId).isNegative(),
+            getPar(account, marketId).isNegative(),
             FILE,
             "Liquidating/Vaporizing account must have negative balance",
-            accountId,
+            account.number,
             marketId
         );
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = cacheGetNewParAndDeltaWei(
-            cache,
-            accountId,
+        ) = getNewParAndDeltaWei(
+            account,
             marketId,
             amount
         );
@@ -419,22 +332,13 @@ contract Manager is
         // if attempting to over-repay the owed asset, bound it by the maximum
         if (newPar.isPositive()) {
             newPar = Types.zeroPar();
-            deltaWei = cacheGetWei(cache, accountId, marketId).negative();
+            deltaWei = getWei(account, marketId).negative();
         }
 
         return (newPar, deltaWei);
     }
 
-    // ============ Loading Functions ============
-
-    function cacheInitializeEmpty()
-        internal
-        view
-        returns (Cache memory)
-    {
-        Acct.Info[] memory nullAccounts = new Acct.Info[](0);
-        return cacheInitialize(nullAccounts);
-    }
+    // ============ Cache Functions ============
 
     function cacheInitializeSingle(
         Acct.Info memory account
@@ -468,19 +372,15 @@ contract Manager is
 
         Cache memory cache;
 
-        cache.markets = new MarketCache[](g_numMarkets);
-        cache.accounts = new AccountCache[](accounts.length);
-
-        for (uint256 a = 0; a < cache.accounts.length; a++) {
-            cache.accounts[a].info = accounts[a];
-        }
+        cache.prices = new Monetary.Price[](g_numMarkets);
+        cache.accounts = accounts;
+        cache.primary = new bool[](accounts.length);
+        cache.traded = new bool[](accounts.length);
 
         return cache;
     }
 
-    // ============ Writing Functions ============
-
-    function cacheStore(
+    function cacheVerify(
         Cache memory cache
     )
         internal
@@ -488,10 +388,10 @@ contract Manager is
         Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
 
         for (uint256 a = 0; a < cache.accounts.length; a++) {
-            Acct.Info memory account = cacheGetAcctInfo(cache, a);
+            Acct.Info memory account = cache.accounts[a];
 
             // check minimum borrowed value for all accounts
-            (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, a);
+            (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, account);
             Require.that(
                 borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
                 FILE,
@@ -500,9 +400,9 @@ contract Manager is
             );
 
             // check collateralization for non-liquidated accounts
-            if (cache.accounts[a].primary || cache.accounts[a].traded) {
+            if (cache.primary[a] || cache.traded[a]) {
                 Require.that(
-                    cacheGetNextAccountStatus(cache, a) == AccountStatus.Normal,
+                    cacheGetNextAccountStatus(cache, cache.accounts[a]) == AccountStatus.Normal,
                     FILE,
                     "Cannot leave primary or traded account undercollateralized",
                     a
@@ -511,7 +411,7 @@ contract Manager is
             }
 
             // check permissions for primary accounts
-            if (cache.accounts[a].primary) {
+            if (cache.primary[a]) {
                 Require.that(
                     account.owner == msg.sender || g_operators[account.owner][msg.sender],
                     FILE,
@@ -521,11 +421,45 @@ contract Manager is
         }
     }
 
-    // ============ Query Functions ============
+    function cacheGetPrice(
+        Cache memory cache,
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Monetary.Price memory)
+    {
+        if (cache.prices[marketId].value == 0) {
+            address token = getToken(marketId);
+            IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
+            cache.prices[marketId] = oracle.getPrice(token);
+        }
+        return cache.prices[marketId];
+    }
+
+    function cacheSetPrimary(
+        Cache memory cache,
+        uint256 accountId
+    )
+        internal
+        pure
+    {
+        cache.primary[accountId] = true;
+    }
+
+    function cacheSetTraded(
+        Cache memory cache,
+        uint256 accountId
+    )
+        internal
+        pure
+    {
+        cache.traded[accountId] = true;
+    }
 
     function cacheGetNextAccountStatus(
         Cache memory cache,
-        uint256 accountId
+        Acct.Info memory account
     )
         internal
         returns (AccountStatus)
@@ -533,7 +467,7 @@ contract Manager is
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = cacheGetAccountValues(cache, accountId);
+        ) = cacheGetAccountValues(cache, account);
 
         if (borrowValue.value == 0) {
             return AccountStatus.Normal;
@@ -543,7 +477,7 @@ contract Manager is
             return AccountStatus.Vapor;
         }
 
-        uint256 requiredSupply = Decimal.mul(borrowValue.value, cacheGetLiquidationRatio(cache));
+        uint256 requiredSupply = Decimal.mul(borrowValue.value, g_liquidationRatio);
 
         if (supplyValue.value >= requiredSupply) {
             return AccountStatus.Normal;
@@ -554,7 +488,7 @@ contract Manager is
 
     function cacheGetAccountValues(
         Cache memory cache,
-        uint256 accountId
+        Acct.Info memory account
     )
         internal
         returns (Monetary.Value memory, Monetary.Value memory)
@@ -562,8 +496,8 @@ contract Manager is
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        for (uint256 m = 0; m < cache.markets.length; m++) {
-            Types.Wei memory tokenWei = cacheGetWei(cache, accountId, m);
+        for (uint256 m = 0; m < cache.prices.length; m++) {
+            Types.Wei memory tokenWei = getWei(account, m);
 
             if (tokenWei.isZero()) {
                 continue;
@@ -584,28 +518,6 @@ contract Manager is
         return (supplyValue, borrowValue);
     }
 
-    function cacheGetNumExcessTokens(
-        Cache memory cache,
-        uint256 marketId
-    )
-        internal
-        returns (Types.Wei memory)
-    {
-        Interest.Index memory index = cacheGetIndex(cache, marketId);
-        Types.TotalPar memory totalPar = cacheGetTotalPar(cache, marketId);
-
-        address token = cacheGetToken(cache, marketId);
-
-        Types.Wei memory balanceWei = Exchange.thisBalance(token);
-
-        (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
-        ) = Interest.totalParToWei(totalPar, index);
-
-        return balanceWei.add(borrowWei).sub(supplyWei);
-    }
-
     function cacheGetPriceRatio(
         Cache memory cache,
         uint256 heldMarketId,
@@ -619,7 +531,7 @@ contract Manager is
         Monetary.Price memory owedPrice = cacheGetPrice(cache, owedMarketId);
         return Decimal.D256({
             value: Math.getPartial(
-                cacheGetLiquidationSpread(cache).value,
+                g_liquidationSpread.value,
                 owedPrice.value,
                 heldPrice.value
             )
@@ -680,42 +592,35 @@ contract Manager is
         });
     }
 
-    function cacheVaporizeUsingExcess(
-        Cache memory cache,
-        uint256 vaporAccount,
+    function vaporizeUsingExcess(
+        Acct.Info memory account,
         uint256 owedMarketId
     )
         internal
         returns (bool)
     {
 
-        Types.Wei memory sameWei = cacheGetNumExcessTokens(
-            cache,
-            owedMarketId
-        );
+        Types.Wei memory sameWei = getNumExcessTokens(owedMarketId);
 
         if (!sameWei.isPositive()) {
             return false;
         }
 
-        Types.Wei memory toRefundWei = cacheGetWei(
-            cache,
-            vaporAccount,
+        Types.Wei memory toRefundWei = getWei(
+            account,
             owedMarketId
         );
 
         if (sameWei.value >= toRefundWei.value) {
-            cacheSetPar(
-                cache,
-                vaporAccount,
+            setPar(
+                account,
                 owedMarketId,
                 Types.zeroPar()
             );
             return true;
         } else {
-            cacheSetParFromDeltaWei(
-                cache,
-                vaporAccount,
+            setParFromDeltaWei(
+                account,
                 owedMarketId,
                 sameWei
             );

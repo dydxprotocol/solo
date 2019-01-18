@@ -176,8 +176,7 @@ contract Queries is
         public
         returns (Interest.Index memory)
     {
-        Cache memory cache = cacheInitializeEmpty();
-        return cacheGetIndex(cache, marketId);
+        return getIndex(marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -239,21 +238,7 @@ contract Queries is
         view
         returns (Interest.Rate memory)
     {
-        Interest.Index memory index = getMarketCachedIndex(marketId);
-
-        (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
-        ) = Interest.totalParToWei(
-            getMarketTotalPar(marketId),
-            index
-        );
-
-        return g_markets[marketId].interestSetter.getInterestRate(
-            getMarketTokenAddress(marketId),
-            borrowWei.value,
-            supplyWei.value
-        );
+        return getInterestRate(marketId, g_markets[marketId].index);
     }
 
     // ============ Account-Based Variables ============
@@ -276,8 +261,7 @@ contract Queries is
         public
         returns (Types.Wei memory)
     {
-        Cache memory cache = cacheInitializeSingle(account);
-        return cacheGetWei(cache, 0, marketId);
+        return getWei(account, marketId);
     }
 
     function getAccountStatus(
@@ -297,7 +281,7 @@ contract Queries is
         returns (Monetary.Value memory, Monetary.Value memory)
     {
         Cache memory cache = cacheInitializeSingle(account);
-        return cacheGetAccountValues(cache, 0);
+        return cacheGetAccountValues(cache, account);
     }
 
     function getAccountBalances(
@@ -310,13 +294,11 @@ contract Queries is
 
         Balance[] memory balances = new Balance[](numMarkets);
 
-        Cache memory cache = cacheInitializeSingle(account);
-
         for (uint256 m = 0; m < numMarkets; m++) {
             balances[m] = Balance({
-                tokenAddress: cacheGetToken(cache, m),
-                parBalance: cacheGetPar(cache, 0, m),
-                weiBalance: cacheGetWei(cache, 0, m)
+                tokenAddress: getToken(m),
+                parBalance: getPar(account, m),
+                weiBalance: getWei(account, m)
             });
         }
 

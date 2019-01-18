@@ -90,9 +90,8 @@ contract Admin is
     {
         _validateMarketId(marketId);
 
-        Cache memory cache = cacheInitializeEmpty();
-        Types.Wei memory excessWei = cacheGetNumExcessTokens(cache, marketId);
-        Exchange.transferOut(cacheGetToken(cache, marketId), recipient, excessWei);
+        Types.Wei memory excessWei = getNumExcessTokens(marketId);
+        Exchange.transferOut(getToken(marketId), recipient, excessWei);
         return excessWei.value;
     }
 

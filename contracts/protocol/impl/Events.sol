@@ -153,15 +153,14 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
 
         emit LogDeposit(
             account.owner,
             account.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.mkt,
                 deltaWei
             ),
@@ -176,15 +175,14 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
 
         emit LogWithdraw(
             account.owner,
             account.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.mkt,
                 deltaWei
             ),
@@ -199,8 +197,8 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory accountOne = cacheGetAcctInfo(cache, args.acctOne);
-        Acct.Info memory accountTwo = cacheGetAcctInfo(cache, args.acctTwo);
+        Acct.Info memory accountOne = cache.accounts[args.acctOne];
+        Acct.Info memory accountTwo = cache.accounts[args.acctTwo];
 
         emit LogTransfer(
             accountOne.owner,
@@ -209,14 +207,12 @@ contract Events is
             accountTwo.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acctOne,
+                accountOne,
                 args.mkt,
                 deltaWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acctTwo,
+                accountTwo,
                 args.mkt,
                 deltaWei.negative()
             )
@@ -231,7 +227,7 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
 
         emit LogBuy(
             account.owner,
@@ -239,14 +235,12 @@ contract Events is
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.makerMkt,
                 makerWei
             ),
@@ -262,7 +256,7 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
 
         emit LogSell(
             account.owner,
@@ -270,14 +264,12 @@ contract Events is
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acct,
+                account,
                 args.makerMkt,
                 makerWei
             ),
@@ -294,32 +286,28 @@ contract Events is
         internal
     {
         Acct.Info[2] memory accounts = [
-            cacheGetAcctInfo(cache, args.takerAcct),
-            cacheGetAcctInfo(cache, args.makerAcct)
+            cache.accounts[args.takerAcct],
+            cache.accounts[args.makerAcct]
         ];
 
         BalanceUpdate[4] memory updates = [
             getBalanceUpdate(
-                cache,
-                args.takerAcct,
+                accounts[0],
                 args.inputMkt,
                 inputWei.negative()
             ),
             getBalanceUpdate(
-                cache,
-                args.takerAcct,
+                accounts[0],
                 args.outputMkt,
                 outputWei.negative()
             ),
             getBalanceUpdate(
-                cache,
-                args.makerAcct,
+                accounts[1],
                 args.inputMkt,
                 inputWei
             ),
             getBalanceUpdate(
-                cache,
-                args.makerAcct,
+                accounts[1],
                 args.outputMkt,
                 outputWei
             )
@@ -346,7 +334,7 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
+        Acct.Info memory account = cache.accounts[args.acct];
 
         emit LogCall(
             account.owner,
@@ -363,30 +351,26 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory solidAccount = cacheGetAcctInfo(cache, args.solidAcct);
-        Acct.Info memory liquidAccount = cacheGetAcctInfo(cache, args.liquidAcct);
+        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
+        Acct.Info memory liquidAccount = cache.accounts[args.liquidAcct];
 
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.liquidAcct,
+            liquidAccount,
             args.heldMkt,
             heldWei
         );
         BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.liquidAcct,
+            liquidAccount,
             args.owedMkt,
             owedWei
         );
@@ -413,24 +397,21 @@ contract Events is
     )
         internal
     {
-        Acct.Info memory solidAccount = cacheGetAcctInfo(cache, args.solidAcct);
-        Acct.Info memory vaporAccount = cacheGetAcctInfo(cache, args.vaporAcct);
+        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
+        Acct.Info memory vaporAccount = cache.accounts[args.vaporAcct];
 
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
-            cache,
-            args.vaporAcct,
+            vaporAccount,
             args.owedMkt,
             owedWei
         );
@@ -451,17 +432,17 @@ contract Events is
     // ============ Private Functions ============
 
     function getBalanceUpdate(
-        Cache memory cache,
-        uint256 acct,
+        Acct.Info memory account,
         uint256 mkt,
         Types.Wei memory deltaWei
     )
         private
+        view
         returns (BalanceUpdate memory)
     {
         return BalanceUpdate({
             deltaWei: deltaWei,
-            newPar: cacheGetPar(cache, acct, mkt)
+            newPar: getPar(account, mkt)
         });
     }
 }
