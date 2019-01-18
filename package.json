@@ -1,12 +1,11 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
   "main": "dist/index.js",
   "files": [
     "dist/",
     "build/",
-    "contracts/",
     "src/",
     "LICENSE",
     "README.md"
@@ -34,7 +33,7 @@
     "debug": "truffle debug",
     "build:js": "rm -rf dist/ && tsc",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache -l 0x1fffffffffffff --allowUnlimitedContractSize",
-    "clean_contract_json": "ts-node ./scripts/clean-build.js",
+    "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",

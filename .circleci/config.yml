@@ -162,18 +162,17 @@ workflows:
       - build_js:
           requires:
             - build_contracts
-      # TODO
-      # - prod_build:
-      #     requires:
-      #       - build_js
-      #     filters:
-      #       branches:
-      #         only: master
-      # - publish:
-      #     requires:
-      #       - prod_build
-      #       - test
-      #       - lint
-      #     filters:
-      #       branches:
-      #         only: master
+      - prod_build:
+          requires:
+            - build_js
+          # filters:
+          #   branches:
+          #     only: master
+      - publish:
+          requires:
+            - prod_build
+            - test
+            - lint
+          # filters:
+          #   branches:
+          #     only: master
