@@ -4,10 +4,10 @@ module.exports = {
   compilers: {
     solc: {
       version: '0.5.2',
-      docker: true,
+      docker: process.env.DOCKER_COMPILER !== undefined ? process.env.DOCKER_COMPILER === 'true' : true,
       settings: {
         optimizer: {
-          enabled: process.env.DOCKER_COMPILER !== undefined ? process.env.DOCKER_COMPILER === 'true' : true,
+          enabled: true,
           runs: 200,
         },
       },
