@@ -4,10 +4,10 @@
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
   "main": "dist/js/src/index.js",
   "files": [
-    "dist/js/build",
-    "dist/js/src",
-    "dist/types/src",
-    "build/",
+    "dist/js/build/",
+    "dist/js/src/",
+    "dist/types/src/",
+    "build/wrappers/",
     "src/",
     "LICENSE",
     "README.md"
