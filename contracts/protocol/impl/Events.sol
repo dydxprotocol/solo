@@ -457,7 +457,6 @@ contract Events is
         Types.Wei memory deltaWei
     )
         private
-        pure
         returns (BalanceUpdate memory)
     {
         return BalanceUpdate({

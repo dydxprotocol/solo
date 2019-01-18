@@ -113,7 +113,6 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (MarketWithInfo memory)
     {
         return MarketWithInfo({
@@ -175,7 +174,6 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (Interest.Index memory)
     {
         Cache memory cache = cacheInitializeEmpty();
@@ -276,7 +274,6 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (Types.Wei memory)
     {
         Cache memory cache = cacheInitializeSingle(account);
@@ -297,7 +294,6 @@ contract Queries is
         Acct.Info memory account
     )
         public
-        view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
         Cache memory cache = cacheInitializeSingle(account);
@@ -308,7 +304,6 @@ contract Queries is
         Acct.Info memory account
     )
         public
-        view
         returns (Balance[] memory)
     {
         uint256 numMarkets = g_numMarkets;
