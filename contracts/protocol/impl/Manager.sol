@@ -109,32 +109,17 @@ contract Manager is
         uint256 marketId
     )
         internal
+        view
         returns (Interest.Index memory)
     {
-        Interest.Index memory index = g_markets[marketId].index;
-
-        if (index.lastUpdate == Time.currentTime()) {
-            return index;
-        }
-
-        Interest.Rate memory rate = getInterestRate(marketId, index);
-
-        index = Interest.calculateNewIndex(
-            index,
-            rate,
-            getTotalPar(marketId),
-            g_earningsRate
-        );
-
-        g_markets[marketId].index = index;
-
-        return index;
+        return g_markets[marketId].index;
     }
 
     function getNumExcessTokens(
         uint256 marketId
     )
         internal
+        view
         returns (Types.Wei memory)
     {
         Interest.Index memory index = getIndex(marketId);
@@ -178,6 +163,7 @@ contract Manager is
         uint256 marketId
     )
         internal
+        view
         returns (Types.Wei memory)
     {
         Types.Par memory par = getPar(account, marketId);
@@ -188,6 +174,34 @@ contract Manager is
 
         Interest.Index memory index = getIndex(marketId);
         return Interest.parToWei(par, index);
+    }
+
+    // =============== Setter Functions ===============
+
+    function updateIndex(
+        uint256 marketId
+    )
+        internal
+        returns (Interest.Index memory)
+    {
+        Interest.Index memory index = g_markets[marketId].index;
+
+        if (index.lastUpdate == Time.currentTime()) {
+            return index;
+        }
+
+        Interest.Rate memory rate = getInterestRate(marketId, index);
+
+        index = Interest.calculateNewIndex(
+            index,
+            rate,
+            getTotalPar(marketId),
+            g_earningsRate
+        );
+
+        g_markets[marketId].index = index;
+
+        return index;
     }
 
     function setStatus(
@@ -265,6 +279,7 @@ contract Manager is
         Actions.AssetAmount memory amount
     )
         internal
+        view
         returns (Types.Par memory, Types.Wei memory)
     {
         Interest.Index memory index = getIndex(marketId);
@@ -304,6 +319,7 @@ contract Manager is
         Actions.AssetAmount memory amount
     )
         internal
+        view
         returns (Types.Par memory, Types.Wei memory)
     {
         Require.that(
@@ -497,18 +513,21 @@ contract Manager is
         Monetary.Value memory borrowValue;
 
         for (uint256 m = 0; m < cache.prices.length; m++) {
-            Types.Wei memory tokenWei = getWei(account, m);
+            Types.Par memory userPar = getWei(account, m);
 
-            if (tokenWei.isZero()) {
+            if (userWei.isZero()) {
                 continue;
             }
 
+            Interest.Index memory index = updateIndex(m);
+            Types.Wei memory userWei = Interest.parToWei(userPar, index);
+
             Monetary.Value memory overallValue = Monetary.getValue(
                 cacheGetPrice(cache, m),
-                tokenWei.value
+                userWei.value
             );
 
-            if (tokenWei.sign) {
+            if (userWei.sign) {
                 supplyValue = Monetary.add(supplyValue, overallValue);
             } else {
                 borrowValue = Monetary.add(borrowValue, overallValue);
@@ -599,7 +618,6 @@ contract Manager is
         internal
         returns (bool)
     {
-
         Types.Wei memory sameWei = getNumExcessTokens(owedMarketId);
 
         if (!sameWei.isPositive()) {

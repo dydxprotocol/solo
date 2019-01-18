@@ -89,7 +89,7 @@ contract Admin is
         returns (uint256)
     {
         _validateMarketId(marketId);
-
+        updateIndex(marketId);
         Types.Wei memory excessWei = getNumExcessTokens(marketId);
         Exchange.transferOut(getToken(marketId), recipient, excessWei);
         return excessWei.value;

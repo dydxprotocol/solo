@@ -115,6 +115,7 @@ contract Transactions is
     {
         Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
+        updateIndex(args.mkt);
 
         Require.that(
             args.from == msg.sender || args.from == account.owner,
@@ -157,6 +158,7 @@ contract Transactions is
     {
         Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
+        updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
@@ -195,6 +197,7 @@ contract Transactions is
         Acct.Info memory accountTwo = cache.accounts[args.acctTwo];
         cacheSetPrimary(cache, args.acctOne);
         cacheSetPrimary(cache, args.acctTwo);
+        updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
@@ -232,6 +235,8 @@ contract Transactions is
     {
         Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
+        updateIndex(args.takerMkt);
+        updateIndex(args.makerMkt);
 
         address takerToken = getToken(args.takerMkt);
         address makerToken = getToken(args.makerMkt);
@@ -296,6 +301,8 @@ contract Transactions is
     {
         Acct.Info memory account = cache.accounts[args.acct];
         cacheSetPrimary(cache, args.acct);
+        updateIndex(args.takerMkt);
+        updateIndex(args.makerMkt);
 
         address takerToken = getToken(args.takerMkt);
         address makerToken = getToken(args.makerMkt);
@@ -348,6 +355,8 @@ contract Transactions is
         Acct.Info memory makerAccount = cache.accounts[args.makerAcct];
         cacheSetPrimary(cache, args.takerAcct);
         cacheSetTraded(cache, args.makerAcct);
+        updateIndex(args.inputMkt);
+        updateIndex(args.outputMkt);
 
         Require.that(
             g_operators[makerAccount.owner][args.autoTrader],
@@ -426,6 +435,8 @@ contract Transactions is
         Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
         Acct.Info memory liquidAccount = cache.accounts[args.liquidAcct];
         cacheSetPrimary(cache, args.solidAcct);
+        updateIndex(args.heldMkt);
+        updateIndex(args.owedMkt);
 
         // verify liquidatable
         if (AccountStatus.Liquid != getStatus(liquidAccount)) {
@@ -526,6 +537,8 @@ contract Transactions is
         Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
         Acct.Info memory vaporAccount = cache.accounts[args.vaporAcct];
         cacheSetPrimary(cache, args.solidAcct);
+        updateIndex(args.heldMkt);
+        updateIndex(args.owedMkt);
 
         // verify vaporizable
         if (AccountStatus.Vapor != getStatus(vaporAccount)) {

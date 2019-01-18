@@ -176,7 +176,7 @@ contract Queries is
         public
         returns (Interest.Index memory)
     {
-        return getIndex(marketId);
+        return updateIndex(marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -261,6 +261,7 @@ contract Queries is
         public
         returns (Types.Wei memory)
     {
+        updateIndex(marketId);
         return getWei(account, marketId);
     }
 
@@ -295,6 +296,7 @@ contract Queries is
         Balance[] memory balances = new Balance[](numMarkets);
 
         for (uint256 m = 0; m < numMarkets; m++) {
+            updateIndex(m);
             balances[m] = Balance({
                 tokenAddress: getToken(m),
                 parBalance: getPar(account, m),
