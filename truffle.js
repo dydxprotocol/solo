@@ -7,7 +7,7 @@ module.exports = {
       docker: true,
       settings: {
         optimizer: {
-          enabled: true,
+          enabled: process.env.DOCKER_COMPILER !== undefined ? process.env.DOCKER_COMPILER === 'true' : true,
           runs: 200,
         },
       },

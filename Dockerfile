@@ -8,7 +8,7 @@ RUN npm ci --loglevel warn
 
 COPY ./truffle.js ./truffle.js
 COPY ./contracts ./contracts
-RUN npm run compile -- --all
+RUN DOCKER_COMPILER=false npm run compile -- --all
 
 COPY ./migrations ./migrations
 COPY ./scripts ./scripts
