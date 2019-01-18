@@ -246,7 +246,8 @@ export class AccountTransaction {
       number: accountNumber.toFixed(0),
     };
 
-    const index = this.accounts.indexOf(accountInfo);
+    const correctIndex = i => (i.owner === accountInfo.owner && i.number === accountInfo.number);
+    const index = this.accounts.findIndex(correctIndex);
 
     if (index >= 0) {
       return index;

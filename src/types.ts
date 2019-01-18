@@ -36,6 +36,7 @@ export interface SoloOptions {
   confirmationType?: ConfirmationType;
   defaultConfirmations?: number;
   autoGasMultiplier?: number;
+  testing?: boolean;
 }
 
 export interface ContractCallOptions extends Tx {
@@ -81,6 +82,12 @@ export enum TransactionType {
   Trade = 5,
   Liquidate = 6,
   Call = 7,
+}
+
+export enum AccountStatus {
+  Normal = 0,
+  Liquidating = 1,
+  Vaporizing = 2,
 }
 
 export interface Amount {
