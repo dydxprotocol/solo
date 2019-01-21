@@ -106,6 +106,7 @@ contract Expiry is
     )
         public
         // view
+        onlySolo(msg.sender)
         returns (Types.Wei memory)
     {
         // input validation
