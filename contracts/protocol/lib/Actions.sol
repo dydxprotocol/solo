@@ -18,6 +18,7 @@
 
 pragma solidity ^0.5.0;
 
+import { Acct } from "./Acct.sol";
 import { Require } from "./Require.sol";
 import { Types } from "./Types.sol";
 
@@ -82,28 +83,28 @@ library Actions {
 
     struct DepositArgs {
         AssetAmount amount;
-        uint256 acct;
+        Acct.Info account;
         uint256 mkt;
         address from;
     }
 
     struct WithdrawArgs {
         AssetAmount amount;
-        uint256 acct;
+        Acct.Info account;
         uint256 mkt;
         address to;
     }
 
     struct TransferArgs {
         AssetAmount amount;
-        uint256 acctOne;
-        uint256 acctTwo;
+        Acct.Info accountOne;
+        Acct.Info accountTwo;
         uint256 mkt;
     }
 
     struct BuyArgs {
         AssetAmount amount;
-        uint256 acct;
+        Acct.Info account;
         uint256 makerMkt;
         uint256 takerMkt;
         address exchangeWrapper;
@@ -112,7 +113,7 @@ library Actions {
 
     struct SellArgs {
         AssetAmount amount;
-        uint256 acct;
+        Acct.Info account;
         uint256 takerMkt;
         uint256 makerMkt;
         address exchangeWrapper;
@@ -121,8 +122,8 @@ library Actions {
 
     struct TradeArgs {
         AssetAmount amount;
-        uint256 takerAcct;
-        uint256 makerAcct;
+        Acct.Info takerAccount;
+        Acct.Info makerAccount;
         uint256 inputMkt;
         uint256 outputMkt;
         address autoTrader;
@@ -131,22 +132,22 @@ library Actions {
 
     struct LiquidateArgs {
         AssetAmount amount;
-        uint256 solidAcct;
-        uint256 liquidAcct;
+        Acct.Info solidAccount;
+        Acct.Info liquidAccount;
         uint256 owedMkt;
         uint256 heldMkt;
     }
 
     struct VaporizeArgs {
         AssetAmount amount;
-        uint256 solidAcct;
-        uint256 vaporAcct;
+        Acct.Info solidAccount;
+        Acct.Info vaporAccount;
         uint256 owedMkt;
         uint256 heldMkt;
     }
 
     struct CallArgs {
-        uint256 acct;
+        Acct.Info account;
         address callee;
         bytes data;
     }
@@ -154,6 +155,7 @@ library Actions {
     // ============ Parsing Functions ============
 
     function parseDepositArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -163,13 +165,14 @@ library Actions {
         assert(args.transactionType == TransactionType.Deposit);
         return DepositArgs({
             amount: args.amount,
-            acct: args.accountId,
+            account: accounts[args.accountId],
             mkt: args.primaryMarketId,
             from: args.otherAddress
         });
     }
 
     function parseWithdrawArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -179,13 +182,14 @@ library Actions {
         assert(args.transactionType == TransactionType.Withdraw);
         return WithdrawArgs({
             amount: args.amount,
-            acct: args.accountId,
+            account: accounts[args.accountId],
             mkt: args.primaryMarketId,
             to: args.otherAddress
         });
     }
 
     function parseTransferArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -200,13 +204,14 @@ library Actions {
         );
         return TransferArgs({
             amount: args.amount,
-            acctOne: args.accountId,
-            acctTwo: args.otherAccountId,
+            accountOne: accounts[args.accountId],
+            accountTwo: accounts[args.otherAccountId],
             mkt: args.primaryMarketId
         });
     }
 
     function parseBuyArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -216,7 +221,7 @@ library Actions {
         assert(args.transactionType == TransactionType.Buy);
         return BuyArgs({
             amount: args.amount,
-            acct: args.accountId,
+            account: accounts[args.accountId],
             makerMkt: args.primaryMarketId,
             takerMkt: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
@@ -225,6 +230,7 @@ library Actions {
     }
 
     function parseSellArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -234,7 +240,7 @@ library Actions {
         assert(args.transactionType == TransactionType.Sell);
         return SellArgs({
             amount: args.amount,
-            acct: args.accountId,
+            account: accounts[args.accountId],
             takerMkt: args.primaryMarketId,
             makerMkt: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
@@ -243,6 +249,7 @@ library Actions {
     }
 
     function parseTradeArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -257,8 +264,8 @@ library Actions {
         );
         return TradeArgs({
             amount: args.amount,
-            takerAcct: args.accountId,
-            makerAcct: args.otherAccountId,
+            takerAccount: accounts[args.accountId],
+            makerAccount: accounts[args.otherAccountId],
             inputMkt: args.primaryMarketId,
             outputMkt: args.secondaryMarketId,
             autoTrader: args.otherAddress,
@@ -267,6 +274,7 @@ library Actions {
     }
 
     function parseLiquidateArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -286,14 +294,15 @@ library Actions {
         );
         return LiquidateArgs({
             amount: args.amount,
-            solidAcct: args.accountId,
-            liquidAcct: args.otherAccountId,
+            solidAccount: accounts[args.accountId],
+            liquidAccount: accounts[args.otherAccountId],
             owedMkt: args.primaryMarketId,
             heldMkt: args.secondaryMarketId
         });
     }
 
     function parseVaporizeArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -313,14 +322,15 @@ library Actions {
         );
         return VaporizeArgs({
             amount: args.amount,
-            solidAcct: args.accountId,
-            vaporAcct: args.otherAccountId,
+            solidAccount: accounts[args.accountId],
+            vaporAccount: accounts[args.otherAccountId],
             owedMkt: args.primaryMarketId,
             heldMkt: args.secondaryMarketId
         });
     }
 
     function parseCallArgs(
+        Acct.Info[] memory accounts,
         TransactionArgs memory args
     )
         internal
@@ -329,7 +339,7 @@ library Actions {
     {
         assert(args.transactionType == TransactionType.Call);
         return CallArgs({
-            acct: args.accountId,
+            account: accounts[args.accountId],
             callee: args.otherAddress,
             data: args.data
         });

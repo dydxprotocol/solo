@@ -53,16 +53,7 @@ contract Manager is
 
     string constant FILE = "Manager";
 
-    // ============ Structs ============
-
-    struct Cache {
-        Monetary.Price[] prices;
-        Acct.Info[] accounts;
-        bool[] primary; // was used as a primary account
-        bool[] traded; // was used as an account to trade against
-    }
-
-    // ============ Non-Cache Functions ============
+    // ============ Functions ============
 
     function getToken(
         uint256 marketId
@@ -82,27 +73,6 @@ contract Manager is
         returns (Types.TotalPar memory)
     {
         return g_markets[marketId].totalPar;
-    }
-
-    function getInterestRate(
-        uint256 marketId,
-        Interest.Index memory index
-    )
-        internal
-        view
-        returns (Interest.Rate memory)
-    {
-        Types.TotalPar memory totalPar = getTotalPar(marketId);
-        (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
-        ) = Interest.totalParToWei(totalPar, index);
-
-        return g_markets[marketId].interestSetter.getInterestRate(
-            getToken(marketId),
-            borrowWei.value,
-            supplyWei.value
-        );
     }
 
     function getIndex(
@@ -176,6 +146,38 @@ contract Manager is
         return Interest.parToWei(par, index);
     }
 
+    function fetchInterestRate(
+        uint256 marketId,
+        Interest.Index memory index
+    )
+        internal
+        view
+        returns (Interest.Rate memory)
+    {
+        Types.TotalPar memory totalPar = getTotalPar(marketId);
+        (
+            Types.Wei memory borrowWei,
+            Types.Wei memory supplyWei
+        ) = Interest.totalParToWei(totalPar, index);
+
+        return g_markets[marketId].interestSetter.getInterestRate(
+            getToken(marketId),
+            borrowWei.value,
+            supplyWei.value
+        );
+    }
+
+    function fetchPrice(
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Monetary.Price memory)
+    {
+        IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
+        return oracle.getPrice(getToken(marketId));
+    }
+
     // =============== Setter Functions ===============
 
     function updateIndex(
@@ -190,7 +192,7 @@ contract Manager is
             return index;
         }
 
-        Interest.Rate memory rate = getInterestRate(marketId, index);
+        Interest.Rate memory rate = fetchInterestRate(marketId, index);
 
         index = Interest.calculateNewIndex(
             index,
@@ -354,137 +356,14 @@ contract Manager is
         return (newPar, deltaWei);
     }
 
-    // ============ Cache Functions ============
-
-    function cacheInitializeSingle(
-        Acct.Info memory account
+    function valuesToStatus(
+        Monetary.Value memory supplyValue,
+        Monetary.Value memory borrowValue
     )
         internal
         view
-        returns (Cache memory)
-    {
-        Acct.Info[] memory accounts = new Acct.Info[](1);
-        accounts[0] = account;
-        return cacheInitialize(accounts);
-    }
-
-    function cacheInitialize(
-        Acct.Info[] memory accounts
-    )
-        internal
-        view
-        returns (Cache memory)
-    {
-        // verify no duplicate accounts
-        for (uint256 i = 0; i < accounts.length; i++) {
-            for (uint256 j = i + 1; j < accounts.length; j++) {
-                Require.that(
-                    !Acct.equals(accounts[i], accounts[j]),
-                    FILE,
-                    "Cannot duplicate accounts"
-                );
-            }
-        }
-
-        Cache memory cache;
-
-        cache.prices = new Monetary.Price[](g_numMarkets);
-        cache.accounts = accounts;
-        cache.primary = new bool[](accounts.length);
-        cache.traded = new bool[](accounts.length);
-
-        return cache;
-    }
-
-    function cacheVerify(
-        Cache memory cache
-    )
-        internal
-    {
-        Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
-
-        for (uint256 a = 0; a < cache.accounts.length; a++) {
-            Acct.Info memory account = cache.accounts[a];
-
-            // check minimum borrowed value for all accounts
-            (, Monetary.Value memory borrowValue) = cacheGetAccountValues(cache, account);
-            Require.that(
-                borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
-                FILE,
-                "Cannot leave account with borrow value less than minBorrowedValue",
-                a
-            );
-
-            // check collateralization for non-liquidated accounts
-            if (cache.primary[a] || cache.traded[a]) {
-                Require.that(
-                    cacheGetNextAccountStatus(cache, cache.accounts[a]) == AccountStatus.Normal,
-                    FILE,
-                    "Cannot leave primary or traded account undercollateralized",
-                    a
-                );
-                g_accounts[account.owner][account.number].status = AccountStatus.Normal;
-            }
-
-            // check permissions for primary accounts
-            if (cache.primary[a]) {
-                Require.that(
-                    account.owner == msg.sender || g_operators[account.owner][msg.sender],
-                    FILE,
-                    "Must have permissions for primary accounts"
-                );
-            }
-        }
-    }
-
-    function cacheGetPrice(
-        Cache memory cache,
-        uint256 marketId
-    )
-        internal
-        view
-        returns (Monetary.Price memory)
-    {
-        if (cache.prices[marketId].value == 0) {
-            address token = getToken(marketId);
-            IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
-            cache.prices[marketId] = oracle.getPrice(token);
-        }
-        return cache.prices[marketId];
-    }
-
-    function cacheSetPrimary(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        cache.primary[accountId] = true;
-    }
-
-    function cacheSetTraded(
-        Cache memory cache,
-        uint256 accountId
-    )
-        internal
-        pure
-    {
-        cache.traded[accountId] = true;
-    }
-
-    function cacheGetNextAccountStatus(
-        Cache memory cache,
-        Acct.Info memory account
-    )
-        internal
         returns (AccountStatus)
     {
-        (
-            Monetary.Value memory supplyValue,
-            Monetary.Value memory borrowValue
-        ) = cacheGetAccountValues(cache, account);
-
         if (borrowValue.value == 0) {
             return AccountStatus.Normal;
         }
@@ -494,121 +373,11 @@ contract Manager is
         }
 
         uint256 requiredSupply = Decimal.mul(borrowValue.value, g_liquidationRatio);
-
         if (supplyValue.value >= requiredSupply) {
             return AccountStatus.Normal;
         } else {
             return AccountStatus.Liquid;
         }
-    }
-
-    function cacheGetAccountValues(
-        Cache memory cache,
-        Acct.Info memory account
-    )
-        internal
-        returns (Monetary.Value memory, Monetary.Value memory)
-    {
-        Monetary.Value memory supplyValue;
-        Monetary.Value memory borrowValue;
-
-        for (uint256 m = 0; m < cache.prices.length; m++) {
-            Types.Par memory userPar = getWei(account, m);
-
-            if (userWei.isZero()) {
-                continue;
-            }
-
-            Interest.Index memory index = updateIndex(m);
-            Types.Wei memory userWei = Interest.parToWei(userPar, index);
-
-            Monetary.Value memory overallValue = Monetary.getValue(
-                cacheGetPrice(cache, m),
-                userWei.value
-            );
-
-            if (userWei.sign) {
-                supplyValue = Monetary.add(supplyValue, overallValue);
-            } else {
-                borrowValue = Monetary.add(borrowValue, overallValue);
-            }
-        }
-
-        return (supplyValue, borrowValue);
-    }
-
-    function cacheGetPriceRatio(
-        Cache memory cache,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (Decimal.D256 memory)
-    {
-        Monetary.Price memory heldPrice = cacheGetPrice(cache, heldMarketId);
-        Monetary.Price memory owedPrice = cacheGetPrice(cache, owedMarketId);
-        return Decimal.D256({
-            value: Math.getPartial(
-                g_liquidationSpread.value,
-                owedPrice.value,
-                heldPrice.value
-            )
-        });
-    }
-
-    function cacheOwedWeiToHeldWei(
-        Cache memory cache,
-        uint256 heldMarketId,
-        uint256 owedMarketId,
-        Types.Wei memory owedWei
-    )
-        internal
-        view
-        returns (Types.Wei memory)
-    {
-        Require.that(
-            owedWei.isPositive(),
-            FILE,
-            "Owed balance must be repaid",
-            owedMarketId
-        );
-        Decimal.D256 memory priceRatio = cacheGetPriceRatio(
-            cache,
-            heldMarketId,
-            owedMarketId
-        );
-        return Types.Wei({
-            sign: false,
-            value: Decimal.mul(owedWei.value, priceRatio)
-        });
-    }
-
-    function cacheHeldWeiToOwedWei(
-        Cache memory cache,
-        uint256 owedMarketId,
-        uint256 heldMarketId,
-        Types.Wei memory heldWei
-    )
-        internal
-        view
-        returns (Types.Wei memory)
-    {
-        Require.that(
-            heldWei.isNegative(),
-            FILE,
-            "Held balance must be spent",
-            heldMarketId
-        );
-        Decimal.D256 memory priceRatio = cacheGetPriceRatio(
-            cache,
-            heldMarketId,
-            owedMarketId
-        );
-        return Types.Wei({
-            sign: true,
-            value: Decimal.div(heldWei.value, priceRatio)
-        });
     }
 
     function vaporizeUsingExcess(
@@ -644,5 +413,88 @@ contract Manager is
             );
             return false;
         }
+    }
+
+    function getValues(
+        Acct.Info memory account
+    )
+        internal
+        returns (Monetary.Value memory, Monetary.Value memory)
+    {
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
+
+        for (uint256 m = 0; m < g_numMarkets; m++) {
+            Types.Par memory userPar = getPar(account, m);
+
+            if (userPar.isZero()) {
+                continue;
+            }
+
+            Interest.Index memory index = updateIndex(m);
+            Types.Wei memory userWei = Interest.parToWei(userPar, index);
+
+            Monetary.Value memory overallValue = Monetary.getValue(
+                fetchPrice(m),
+                userWei.value
+            );
+
+            if (userWei.sign) {
+                supplyValue = Monetary.add(supplyValue, overallValue);
+            } else {
+                borrowValue = Monetary.add(borrowValue, overallValue);
+            }
+        }
+
+        return (supplyValue, borrowValue);
+    }
+
+    function fetchPriceRatio(
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        Monetary.Price memory heldPrice = fetchPrice(heldMarketId);
+        Monetary.Price memory owedPrice = fetchPrice(owedMarketId);
+        return Decimal.D256({
+            value: Math.getPartial(
+                Decimal.one().value,
+                owedPrice.value,
+                heldPrice.value
+            )
+        });
+    }
+
+    function owedWeiToHeldWei(
+        Decimal.D256 memory priceRatio,
+        Types.Wei memory owedWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        // TODO: bug here?
+        return Types.Wei({
+            sign: false,
+            value: Decimal.mul(owedWei.value, Decimal.mul(priceRatio, g_liquidationSpread))
+        });
+    }
+
+    function heldWeiToOwedWei(
+        Decimal.D256 memory priceRatio,
+        Types.Wei memory heldWei
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        // TODO: bug here?
+        return Types.Wei({
+            sign: true,
+            value: Decimal.div(heldWei.value, Decimal.div(priceRatio, g_liquidationSpread))
+        });
     }
 }

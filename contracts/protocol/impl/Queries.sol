@@ -238,7 +238,7 @@ contract Queries is
         view
         returns (Interest.Rate memory)
     {
-        return getInterestRate(marketId, g_markets[marketId].index);
+        return fetchInterestRate(marketId, g_markets[marketId].index);
     }
 
     // ============ Account-Based Variables ============
@@ -281,8 +281,7 @@ contract Queries is
         public
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        Cache memory cache = cacheInitializeSingle(account);
-        return cacheGetAccountValues(cache, account);
+        return getValues(account);
     }
 
     function getAccountBalances(

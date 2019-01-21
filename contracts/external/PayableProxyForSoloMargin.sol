@@ -68,7 +68,7 @@ contract PayableProxyForSoloMargin is
         for (uint256 i = 0; i < args.length; i++) {
             // for each deposit, deposit.from must be this or msg.sender
             if (args[i].transactionType == Actions.TransactionType.Deposit) {
-                address depositFrom = Actions.parseDepositArgs(args[i]).from;
+                address depositFrom = Actions.parseDepositArgs(accounts, args[i]).from;
                 require(depositFrom == msg.sender || depositFrom == address(this));
             }
 

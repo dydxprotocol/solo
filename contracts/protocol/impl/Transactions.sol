@@ -27,7 +27,9 @@ import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
+import { Decimal } from "../lib/Decimal.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Types } from "../lib/Types.sol";
 
@@ -57,68 +59,108 @@ contract Transactions is
         public
         nonReentrant
     {
-        Cache memory cache = cacheInitialize(accounts);
-
         logTransaction();
 
+        bool[] memory primary = new bool[](accounts.length);
+        bool[] memory traded = new bool[](accounts.length);
+
         for (uint256 i = 0; i < args.length; i++) {
-            _transact(cache, args[i]);
+            Actions.TransactionArgs memory arg = args[i];
+            Actions.TransactionType ttype = arg.transactionType;
+
+            if (ttype == Actions.TransactionType.Deposit) {
+                _deposit(Actions.parseDepositArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Withdraw) {
+                _withdraw(Actions.parseWithdrawArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Transfer) {
+                _transfer(Actions.parseTransferArgs(accounts, arg));
+                primary[arg.accountId] = true;
+            }
+            else if (ttype == Actions.TransactionType.Buy) {
+                _buy(Actions.parseBuyArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Sell) {
+                _sell(Actions.parseSellArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Trade) {
+                _trade(Actions.parseTradeArgs(accounts, arg));
+                traded[arg.accountId] = true;
+            }
+            else if (ttype == Actions.TransactionType.Liquidate) {
+                _liquidate(Actions.parseLiquidateArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Vaporize) {
+                _vaporize(Actions.parseVaporizeArgs(accounts, arg));
+            }
+            else if (ttype == Actions.TransactionType.Call) {
+                _call(Actions.parseCallArgs(accounts, arg));
+            }
+            primary[arg.accountId] = true;
         }
 
-        cacheVerify(cache);
+        _verify(accounts, primary, traded);
+    }
+
+    function _verify(
+        Acct.Info[] memory accounts,
+        bool[] memory primary,
+        bool[] memory traded
+    )
+        private
+    {
+        Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
+
+        for (uint256 a = 0; a < accounts.length; a++) {
+            Acct.Info memory account = accounts[a];
+
+            (
+                Monetary.Value memory supplyValue,
+                Monetary.Value memory borrowValue
+            ) = getValues(account);
+
+            // check minimum borrowed value for all accounts
+            Require.that(
+                borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
+                FILE,
+                "Cannot leave account with borrow value less than minBorrowedValue",
+                a
+            );
+
+            // check collateralization for non-liquidated accounts
+            if (primary[a] || traded[a]) {
+                Require.that(
+                    valuesToStatus(supplyValue, borrowValue) == AccountStatus.Normal,
+                    FILE,
+                    "Cannot leave primary or traded account undercollateralized",
+                    a
+                );
+                setStatus(account, AccountStatus.Normal);
+            }
+
+            // check permissions for primary accounts
+            if (primary[a]) {
+                Require.that(
+                    account.owner == msg.sender || g_operators[account.owner][msg.sender],
+                    FILE,
+                    "Must have permissions for primary accounts"
+                );
+            }
+        }
     }
 
     // ============ Private Functions ============
 
-    function _transact(
-        Cache memory cache,
-        Actions.TransactionArgs memory args
-    )
-        private
-    {
-        Actions.TransactionType ttype = args.transactionType;
-
-        if (ttype == Actions.TransactionType.Deposit) {
-            _deposit(cache, Actions.parseDepositArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Withdraw) {
-            _withdraw(cache, Actions.parseWithdrawArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Transfer) {
-            _transfer(cache, Actions.parseTransferArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Buy) {
-            _buy(cache, Actions.parseBuyArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Sell) {
-            _sell(cache, Actions.parseSellArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Trade) {
-            _trade(cache, Actions.parseTradeArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Liquidate) {
-            _liquidate(cache, Actions.parseLiquidateArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Vaporize) {
-            _vaporize(cache, Actions.parseVaporizeArgs(args));
-        }
-        else if (ttype == Actions.TransactionType.Call) {
-            _call(cache, Actions.parseCallArgs(args));
-        }
-    }
-
     function _deposit(
-        Cache memory cache,
         Actions.DepositArgs memory args
     )
         private
     {
-        Acct.Info memory account = cache.accounts[args.acct];
-        cacheSetPrimary(cache, args.acct);
         updateIndex(args.mkt);
 
         Require.that(
-            args.from == msg.sender || args.from == account.owner,
+            args.from == msg.sender || args.from == args.account.owner,
             FILE,
             "Deposit must come from sender or owner"
         );
@@ -127,114 +169,98 @@ contract Transactions is
             Types.Par memory newPar,
             Types.Wei memory deltaWei
         ) = getNewParAndDeltaWei(
-            account,
+            args.account,
             args.mkt,
             args.amount
         );
 
         setPar(
-            account,
+            args.account,
             args.mkt,
             newPar
         );
 
-        address token = getToken(args.mkt);
-
         // requires a positive deltaWei
-        Exchange.transferIn(token, args.from, deltaWei);
-
-        logDeposit(
-            cache,
-            args,
+        Exchange.transferIn(
+            getToken(args.mkt),
+            args.from,
             deltaWei
         );
+
+        logDeposit(args, deltaWei);
     }
 
     function _withdraw(
-        Cache memory cache,
         Actions.WithdrawArgs memory args
     )
         private
     {
-        Acct.Info memory account = cache.accounts[args.acct];
-        cacheSetPrimary(cache, args.acct);
         updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
         ) = getNewParAndDeltaWei(
-            account,
+            args.account,
             args.mkt,
             args.amount
         );
 
         setPar(
-            account,
+            args.account,
             args.mkt,
             newPar
         );
 
-        address token = getToken(args.mkt);
-
         // requires a negative deltaWei
-        Exchange.transferOut(token, args.to, deltaWei);
-
-        logWithdraw(
-            cache,
-            args,
+        Exchange.transferOut(
+            getToken(args.mkt),
+            args.to,
             deltaWei
         );
+
+        logWithdraw(args, deltaWei);
     }
 
     function _transfer(
-        Cache memory cache,
         Actions.TransferArgs memory args
     )
         private
     {
-        Acct.Info memory accountOne = cache.accounts[args.acctOne];
-        Acct.Info memory accountTwo = cache.accounts[args.acctTwo];
-        cacheSetPrimary(cache, args.acctOne);
-        cacheSetPrimary(cache, args.acctTwo);
         updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
         ) = getNewParAndDeltaWei(
-            accountOne,
+            args.accountOne,
             args.mkt,
             args.amount
         );
 
         setPar(
-            accountOne,
+            args.accountOne,
             args.mkt,
             newPar
         );
 
         setParFromDeltaWei(
-            accountTwo,
+            args.accountTwo,
             args.mkt,
             deltaWei.negative()
         );
 
         logTransfer(
-            cache,
             args,
             deltaWei
         );
     }
 
     function _buy(
-        Cache memory cache,
         Actions.BuyArgs memory args
     )
         private
     {
-        Acct.Info memory account = cache.accounts[args.acct];
-        cacheSetPrimary(cache, args.acct);
         updateIndex(args.takerMkt);
         updateIndex(args.makerMkt);
 
@@ -245,7 +271,7 @@ contract Transactions is
             Types.Par memory makerPar,
             Types.Wei memory makerWei
         ) = getNewParAndDeltaWei(
-            account,
+            args.account,
             args.makerMkt,
             args.amount
         );
@@ -260,7 +286,7 @@ contract Transactions is
 
         Types.Wei memory tokensReceived = Exchange.exchange(
             args.exchangeWrapper,
-            account.owner,
+            args.account.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -274,19 +300,18 @@ contract Transactions is
         );
 
         setPar(
-            account,
+            args.account,
             args.makerMkt,
             makerPar
         );
 
         setParFromDeltaWei(
-            account,
+            args.account,
             args.takerMkt,
             takerWei
         );
 
         logBuy(
-            cache,
             args,
             takerWei,
             makerWei
@@ -294,13 +319,10 @@ contract Transactions is
     }
 
     function _sell(
-        Cache memory cache,
         Actions.SellArgs memory args
     )
         private
     {
-        Acct.Info memory account = cache.accounts[args.acct];
-        cacheSetPrimary(cache, args.acct);
         updateIndex(args.takerMkt);
         updateIndex(args.makerMkt);
 
@@ -311,14 +333,14 @@ contract Transactions is
             Types.Par memory takerPar,
             Types.Wei memory takerWei
         ) = getNewParAndDeltaWei(
-            account,
+            args.account,
             args.takerMkt,
             args.amount
         );
 
         Types.Wei memory makerWei = Exchange.exchange(
             args.exchangeWrapper,
-            account.owner,
+            args.account.owner,
             makerToken,
             takerToken,
             takerWei,
@@ -326,19 +348,18 @@ contract Transactions is
         );
 
         setPar(
-            account,
+            args.account,
             args.takerMkt,
             takerPar
         );
 
         setParFromDeltaWei(
-            account,
+            args.account,
             args.makerMkt,
             makerWei
         );
 
         logSell(
-            cache,
             args,
             takerWei,
             makerWei
@@ -346,33 +367,28 @@ contract Transactions is
     }
 
     function _trade(
-        Cache memory cache,
         Actions.TradeArgs memory args
     )
         private
     {
-        Acct.Info memory takerAccount = cache.accounts[args.takerAcct];
-        Acct.Info memory makerAccount = cache.accounts[args.makerAcct];
-        cacheSetPrimary(cache, args.takerAcct);
-        cacheSetTraded(cache, args.makerAcct);
         updateIndex(args.inputMkt);
         updateIndex(args.outputMkt);
 
         Require.that(
-            g_operators[makerAccount.owner][args.autoTrader],
+            g_operators[args.makerAccount.owner][args.autoTrader],
             FILE,
             "AutoTrader not authorized"
         );
 
         Types.Par memory oldInputPar = getPar(
-            makerAccount,
+            args.makerAccount,
             args.inputMkt
         );
         (
             Types.Par memory newInputPar,
             Types.Wei memory inputWei
         ) = getNewParAndDeltaWei(
-            makerAccount,
+            args.makerAccount,
             args.inputMkt,
             args.amount
         );
@@ -380,8 +396,8 @@ contract Transactions is
         Types.Wei memory outputWei = IAutoTrader(args.autoTrader).getTradeCost(
             args.inputMkt,
             args.outputMkt,
-            makerAccount,
-            takerAccount,
+            args.makerAccount,
+            args.takerAccount,
             oldInputPar,
             newInputPar,
             inputWei,
@@ -396,30 +412,29 @@ contract Transactions is
 
         // set the balance for the maker
         setPar(
-            makerAccount,
+            args.makerAccount,
             args.inputMkt,
             newInputPar
         );
         setParFromDeltaWei(
-            makerAccount,
+            args.makerAccount,
             args.outputMkt,
             outputWei
         );
 
         // set the balance for the taker
         setParFromDeltaWei(
-            takerAccount,
+            args.takerAccount,
             args.inputMkt,
             inputWei.negative()
         );
         setParFromDeltaWei(
-            takerAccount,
+            args.takerAccount,
             args.outputMkt,
             outputWei.negative()
         );
 
         logTrade(
-            cache,
             args,
             inputWei,
             outputWei
@@ -427,29 +442,29 @@ contract Transactions is
     }
 
     function _liquidate(
-        Cache memory cache,
         Actions.LiquidateArgs memory args
     )
         private
     {
-        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
-        Acct.Info memory liquidAccount = cache.accounts[args.liquidAcct];
-        cacheSetPrimary(cache, args.solidAcct);
         updateIndex(args.heldMkt);
         updateIndex(args.owedMkt);
 
         // verify liquidatable
-        if (AccountStatus.Liquid != getStatus(liquidAccount)) {
+        if (AccountStatus.Liquid != getStatus(args.liquidAccount)) {
+            (
+                Monetary.Value memory supplyValue,
+                Monetary.Value memory borrowValue
+            ) = getValues(args.liquidAccount);
             Require.that(
-                cacheGetNextAccountStatus(cache, liquidAccount) == AccountStatus.Liquid,
+                AccountStatus.Liquid == valuesToStatus(supplyValue, borrowValue),
                 FILE,
                 "Liquidation account must be undercollateralized"
             );
-            setStatus(liquidAccount, AccountStatus.Liquid);
+            setStatus(args.liquidAccount, AccountStatus.Liquid);
         }
 
         Types.Wei memory maxHeldWei = getWei(
-            liquidAccount,
+            args.liquidAccount,
             args.heldMkt
         );
 
@@ -463,46 +478,38 @@ contract Transactions is
             Types.Par memory owedPar,
             Types.Wei memory owedWei
         ) = getNewParAndDeltaWeiForLiquidation(
-            liquidAccount,
+            args.liquidAccount,
             args.owedMkt,
             args.amount
         );
 
-        Types.Wei memory heldWei = cacheOwedWeiToHeldWei(
-            cache,
-            args.heldMkt,
-            args.owedMkt,
-            owedWei
-        );
+        Decimal.D256 memory priceRatio = fetchPriceRatio(args.owedMkt, args.heldMkt);
+
+        Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = cacheHeldWeiToOwedWei(
-                cache,
-                args.owedMkt,
-                args.heldMkt,
-                heldWei
-            );
+            owedWei = heldWeiToOwedWei(priceRatio, heldWei);
 
             setPar(
-                liquidAccount,
+                args.liquidAccount,
                 args.heldMkt,
                 Types.zeroPar()
             );
             setParFromDeltaWei(
-                liquidAccount,
+                args.liquidAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
             setPar(
-                liquidAccount,
+                args.liquidAccount,
                 args.owedMkt,
                 owedPar
             );
             setParFromDeltaWei(
-                liquidAccount,
+                args.liquidAccount,
                 args.heldMkt,
                 heldWei
             );
@@ -510,18 +517,17 @@ contract Transactions is
 
         // set the balances for the solid account
         setParFromDeltaWei(
-            solidAccount,
+            args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         setParFromDeltaWei(
-            solidAccount,
+            args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
 
         logLiquidate(
-            cache,
             args,
             heldWei,
             owedWei
@@ -529,29 +535,29 @@ contract Transactions is
     }
 
     function _vaporize(
-        Cache memory cache,
         Actions.VaporizeArgs memory args
     )
         private
     {
-        Acct.Info memory solidAccount = cache.accounts[args.solidAcct];
-        Acct.Info memory vaporAccount = cache.accounts[args.vaporAcct];
-        cacheSetPrimary(cache, args.solidAcct);
         updateIndex(args.heldMkt);
         updateIndex(args.owedMkt);
 
         // verify vaporizable
-        if (AccountStatus.Vapor != getStatus(vaporAccount)) {
+        if (AccountStatus.Vapor != getStatus(args.vaporAccount)) {
+            (
+                Monetary.Value memory supplyValue,
+                Monetary.Value memory borrowValue
+            ) = getValues(args.vaporAccount);
             Require.that(
-                AccountStatus.Vapor == cacheGetNextAccountStatus(cache, vaporAccount),
+                AccountStatus.Vapor == valuesToStatus(supplyValue, borrowValue),
                 FILE,
                 "Vaporization account must have only negative values"
             );
-            setStatus(vaporAccount, AccountStatus.Vapor);
+            setStatus(args.vaporAccount, AccountStatus.Vapor);
         }
 
         // First, attempt to refund using the same token
-        if (vaporizeUsingExcess(vaporAccount, args.owedMkt)) {
+        if (vaporizeUsingExcess(args.vaporAccount, args.owedMkt)) {
             return;
         }
 
@@ -567,36 +573,28 @@ contract Transactions is
             Types.Par memory owedPar,
             Types.Wei memory owedWei
         ) = getNewParAndDeltaWeiForLiquidation(
-            vaporAccount,
+            args.vaporAccount,
             args.owedMkt,
             args.amount
         );
 
-        Types.Wei memory heldWei = cacheOwedWeiToHeldWei(
-            cache,
-            args.heldMkt,
-            args.owedMkt,
-            owedWei
-        );
+        Decimal.D256 memory priceRatio = fetchPriceRatio(args.owedMkt, args.heldMkt);
+
+        Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = cacheHeldWeiToOwedWei(
-                cache,
-                args.owedMkt,
-                args.heldMkt,
-                heldWei
-            );
+            owedWei = heldWeiToOwedWei(priceRatio, heldWei);
 
             setParFromDeltaWei(
-                vaporAccount,
+                args.vaporAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
             setPar(
-                vaporAccount,
+                args.vaporAccount,
                 args.owedMkt,
                 owedPar
             );
@@ -604,18 +602,17 @@ contract Transactions is
 
         // set the balances for the solid account
         setParFromDeltaWei(
-            solidAccount,
+            args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         setParFromDeltaWei(
-            solidAccount,
+            args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
 
         logVaporize(
-            cache,
             args,
             heldWei,
             owedWei
@@ -623,23 +620,16 @@ contract Transactions is
     }
 
     function _call(
-        Cache memory cache,
         Actions.CallArgs memory args
     )
         private
     {
-        Acct.Info memory account = cache.accounts[args.acct];
-        cacheSetPrimary(cache, args.acct);
-
         ICallee(args.callee).callFunction(
             msg.sender,
-            account,
+            args.account,
             args.data
         );
 
-        logCall(
-            cache,
-            args
-        );
+        logCall(args);
     }
 }
