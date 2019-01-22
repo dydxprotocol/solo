@@ -26,6 +26,8 @@ import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { Expiry } from '../../build/wrappers/Expiry';
 import { TestToken } from '../../build/wrappers/TestToken';
+import { TestAutoTrader } from '../../build/wrappers/TestAutoTrader';
+import { TestCallee } from '../../build/wrappers/TestCallee';
 import { TestExchangeWrapper } from '../../build/wrappers/TestExchangeWrapper';
 import { TestPriceOracle } from '../../build/wrappers/TestPriceOracle';
 import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
@@ -36,6 +38,8 @@ import expiryJson from '../../build/contracts/Expiry.json';
 import tokenAJson from '../../build/contracts/TokenA.json';
 import tokenBJson from '../../build/contracts/TokenB.json';
 import tokenCJson from '../../build/contracts/TokenC.json';
+import testAutoTraderJson from '../../build/contracts/TestAutoTrader.json';
+import testCalleeJson from '../../build/contracts/TestCallee.json';
 import testExchangeWrapperJson from '../../build/contracts/TestExchangeWrapper.json';
 import testPriceOracleJson from '../../build/contracts/TestPriceOracle.json';
 import testInterestSetterJson from '../../build/contracts/TestInterestSetter.json';
@@ -66,6 +70,8 @@ export class Contracts {
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
+  public testAutoTrader: TestAutoTrader;
+  public testCallee: TestCallee;
   public testExchangeWrapper: TestExchangeWrapper;
   public testPriceOracle: TestPriceOracle;
   public testInterestSetter: TestInterestSetter;
@@ -91,6 +97,8 @@ export class Contracts {
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
+    this.testAutoTrader = new this.web3.eth.Contract(testAutoTraderJson.abi) as TestAutoTrader;
+    this.testCallee = new this.web3.eth.Contract(testCalleeJson.abi) as TestCallee;
     this.testExchangeWrapper = new this.web3.eth.Contract(
       testExchangeWrapperJson.abi) as TestExchangeWrapper;
     this.testPriceOracle = new this.web3.eth.Contract(testPriceOracleJson.abi) as TestPriceOracle;
@@ -152,6 +160,18 @@ export class Contracts {
       networkId,
     );
     this.setContractProvider(
+      this.testAutoTrader,
+      testAutoTraderJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.testCallee,
+      testCalleeJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
       this.testExchangeWrapper,
       testExchangeWrapperJson,
       provider,
@@ -181,6 +201,8 @@ export class Contracts {
     this.tokenA.options.from = account;
     this.tokenB.options.from = account;
     this.tokenC.options.from = account;
+    this.testAutoTrader.options.from = account;
+    this.testCallee.options.from = account;
     this.testExchangeWrapper.options.from = account;
     this.testPriceOracle.options.from = account;
     this.testInterestSetter.options.from = account;

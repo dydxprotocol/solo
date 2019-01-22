@@ -19,6 +19,7 @@ import {
   Liquidate,
   AcctInfo,
   SetExpiry,
+  Call,
   Amount,
   Integer,
 } from '../../types';
@@ -126,6 +127,19 @@ export class AccountTransaction {
         transactionType: TransactionType.Call,
         otherAddress: this.contracts.expiry.options.address,
         data: toBytes(args.marketId, args.expiryTime),
+      },
+    );
+
+    return this;
+  }
+
+  public call(args: Call): AccountTransaction {
+    this.addTransactionArgs(
+      args,
+      {
+        transactionType: TransactionType.Call,
+        otherAddress: args.callee,
+        data: args.data,
       },
     );
 

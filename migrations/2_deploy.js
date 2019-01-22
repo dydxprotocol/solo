@@ -23,6 +23,8 @@ const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
+const TestAutoTrader = artifacts.require('TestAutoTrader');
+const TestCallee = artifacts.require('TestCallee');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
@@ -37,6 +39,8 @@ async function maybeDeployTestContracts(deployer, network) {
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
+    deployer.deploy(TestAutoTrader),
+    deployer.deploy(TestCallee),
     deployer.deploy(TestExchangeWrapper),
     deployer.deploy(TestPriceOracle),
     deployer.deploy(TestInterestSetter),

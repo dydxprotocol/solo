@@ -81,7 +81,8 @@ export enum TransactionType {
   Sell = 4,
   Trade = 5,
   Liquidate = 6,
-  Call = 7,
+  Vaporize = 7,
+  Call = 8,
 }
 
 export enum AccountStatus {
@@ -154,6 +155,11 @@ export interface Liquidate extends AccountOperation {
 export interface SetExpiry extends AccountOperation {
   marketId: Integer;
   expiryTime: Integer;
+}
+
+export interface Call extends AccountOperation {
+  callee: address;
+  data: (string | number[])[];
 }
 
 export interface AcctInfo {

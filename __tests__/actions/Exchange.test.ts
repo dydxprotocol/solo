@@ -6,7 +6,7 @@ import { resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 
-describe('Deposit', () => {
+describe('Exchange', () => {
   let solo: Solo;
   let accounts: address[];
 
@@ -151,7 +151,7 @@ describe('Deposit', () => {
       })
       .commit();
 
-    console.log(`\tBuy gas used: ${gasUsed}`);
+    console.log(`\tSell gas used: ${gasUsed}`);
 
     const [
       takerBalance,

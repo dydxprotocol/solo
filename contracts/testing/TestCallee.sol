@@ -29,82 +29,82 @@ import { Types } from "../protocol/lib/Types.sol";
 
 
 /**
- * @title TestCalleeTrader
+ * @title TestCallee
  * @author dYdX
  *
- * ICallee and IAutoTrader for testing
+ * ICallee for testing
  */
-contract TestCalleeTrader is
-    ICallee,
-    IAutoTrader
+contract TestCallee is
+    ICallee
 {
     // ============ Constants ============
 
-    string constant FILE = "TestCalleeTrader";
+    string constant FILE = "TestCallee";
 
     // ============ Events ============
 
-    event DataSet(
-        uint256 indexed input,
-        uint256 output
+    event Called(
+        address indexed sender,
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 accountData,
+        uint256 senderData
     );
 
     // ============ Storage ============
 
-    // input => output
-    mapping (uint256 => uint256) g_data;
+    // owner => number => data
+    mapping (address => mapping (uint256 => uint256)) g_account;
+
+    // sender => data
+    mapping (address => uint256) g_sender;
 
     // ============ Public Functions ============
 
+    function getAccountData(
+        Acct.Info memory account
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return g_account[account.owner][account.number];
+    }
+
+    function getSenderData(
+        address sender
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return g_sender[sender];
+    }
+
+    // ============ ICallee Functions ============
+
     function callFunction(
-        address /* sender */,
-        Acct.Info memory /* account */,
+        address sender,
+        Acct.Info memory account,
         bytes memory data
     )
         public
     {
         (
-            uint256 input,
-            uint256 output
+            uint256 accountData,
+            uint256 senderData
         ) = parseData(data);
 
-        setData(input, output);
-    }
+        emit Called(
+            sender,
+            account.owner,
+            account.number,
+            accountData,
+            senderData
+        );
 
-    function getTradeCost(
-        uint256 /* inputMarketId */,
-        uint256 /* outputMarketId */,
-        Acct.Info memory /* makerAccount */,
-        Acct.Info memory /* takerAccount */,
-        Types.Par memory /* oldInputPar */,
-        Types.Par memory /* newInputPar */,
-        Types.Wei memory /* inputWei */,
-        bytes memory data
-    )
-        public
-        returns (Types.Wei memory)
-    {
-
-        (uint256 input, ) = parseData(data);
-
-        uint256 output = g_data[input];
-
-        setData(input, 0);
-
-        return Types.Wei({
-            sign: true,
-            value: output
-        });
-    }
-
-    function setData(
-        uint256 input,
-        uint256 output
-    )
-        private
-    {
-        emit DataSet(input, output);
-        g_data[input] = output;
+        g_account[account.owner][account.number] = accountData;
+        g_sender[sender] = senderData;
     }
 
     // ============ Private Functions ============
@@ -125,18 +125,18 @@ contract TestCalleeTrader is
             "Call data invalid length"
         );
 
-        uint256 input;
-        uint256 output;
+        uint256 accountData;
+        uint256 senderData;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            input := mload(add(data, 32))
-            output := mload(add(data, 64))
+            accountData := mload(add(data, 32))
+            senderData := mload(add(data, 64))
         }
 
         return (
-            input,
-            output
+            accountData,
+            senderData
         );
     }
 }
