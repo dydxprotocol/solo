@@ -143,30 +143,78 @@ contract TestAutoTrader is
         returns (Types.Wei memory)
     {
         if (g_inputMarketId != 0) {
-            require(g_inputMarketId == inputMarketId);
+            Require.that(
+                g_inputMarketId == inputMarketId,
+                FILE,
+                "input market mismatch"
+            );
         }
         if (g_outputMarketId != 0) {
-            require(g_outputMarketId == outputMarketId);
+            Require.that(
+                g_outputMarketId == outputMarketId,
+                FILE,
+                "output market mismatch"
+            );
         }
         if (g_makerAccount.owner != address(0)) {
-            require(g_makerAccount.owner == makerAccount.owner);
-            require(g_makerAccount.number == makerAccount.number);
+            Require.that(
+                g_makerAccount.owner == makerAccount.owner,
+                FILE,
+                "maker account owner mismatch"
+            );
+            Require.that(
+                g_makerAccount.number == makerAccount.number,
+                FILE,
+                "maker account number mismatch"
+            );
         }
         if (g_takerAccount.owner != address(0)) {
-            require(g_takerAccount.owner == takerAccount.owner);
-            require(g_takerAccount.number == takerAccount.number);
+            Require.that(
+                g_takerAccount.owner == takerAccount.owner,
+                FILE,
+                "taker account owner mismatch"
+            );
+            Require.that(
+                g_takerAccount.number == takerAccount.number,
+                FILE,
+                "taker account number mismatch"
+            );
         }
         if (g_oldInputPar.value != 0) {
-            require(g_oldInputPar.sign == oldInputPar.sign);
-            require(g_oldInputPar.value == oldInputPar.value);
+            Require.that(
+                g_oldInputPar.sign == oldInputPar.sign,
+                FILE,
+                "oldInputPar sign mismatch"
+                );
+            Require.that(
+                g_oldInputPar.value == oldInputPar.value,
+                FILE,
+                "oldInputPar value mismatch"
+                );
         }
         if (g_newInputPar.value != 0) {
-            require(g_newInputPar.sign == newInputPar.sign);
-            require(g_newInputPar.value == newInputPar.value);
+            Require.that(
+                g_newInputPar.sign == newInputPar.sign,
+                FILE,
+                "newInputPar sign mismatch"
+            );
+            Require.that(
+                g_newInputPar.value == newInputPar.value,
+                FILE,
+                "newInputPar value mismatch"
+            );
         }
         if (g_inputWei.value != 0) {
-            require(g_inputWei.sign == inputWei.sign);
-            require(g_inputWei.value == inputWei.value);
+            Require.that(
+                g_inputWei.sign == inputWei.sign,
+                FILE,
+                "inputWei sign mismatch"
+            );
+            Require.that(
+                g_inputWei.value == inputWei.value,
+                FILE,
+                "inputWei value mismatch"
+            );
         }
 
         uint256 input = parseData(data);
@@ -181,6 +229,8 @@ contract TestAutoTrader is
         });
     }
 
+    // ============ Private Functions ============
+
     function setDataInternal(
         uint256 input,
         uint256 output
@@ -190,8 +240,6 @@ contract TestAutoTrader is
         emit DataSet(input, output);
         g_data[input] = output;
     }
-
-    // ============ Private Functions ============
 
     function parseData(
         bytes memory data

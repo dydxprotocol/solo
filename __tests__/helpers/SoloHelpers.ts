@@ -5,7 +5,7 @@ import { address } from '../../src/types';
 export async function setupMarkets(solo: Solo, accounts: address[]): Promise<void> {
   const priceOracle = solo.testing.priceOracle.getAddress();
   const interestSetter = solo.testing.interestSetter.getAddress();
-  const price = new BigNumber(1);
+  const price = new BigNumber(1000);
 
   await Promise.all([
     solo.testing.priceOracle.setPrice(

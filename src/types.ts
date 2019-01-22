@@ -144,6 +144,16 @@ export interface TestExchange extends AccountOperation {
 export interface TestBuy extends TestExchange {}
 export interface TestSell extends TestExchange {}
 
+export interface Trade extends AccountOperation {
+  autoTrader: address;
+  inputMarketId: Integer;
+  outputMarketId: Integer;
+  otherAccountOwner: address;
+  otherAccountId: Integer;
+  amount: Amount;
+  data: (string | number[])[];
+}
+
 export interface Liquidate extends AccountOperation {
   liquidMarketId: Integer;
   payoutMarketId: Integer;

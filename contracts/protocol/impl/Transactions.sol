@@ -377,7 +377,7 @@ contract Transactions is
             Types.Wei memory inputWei
         ) = cacheGetNewParAndDeltaWei(
             cache,
-            args.takerAcct,
+            args.makerAcct,
             args.inputMkt,
             args.amount
         );

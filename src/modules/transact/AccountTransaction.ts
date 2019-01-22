@@ -16,6 +16,7 @@ import {
   TestSell,
   TestExchange,
   Transfer,
+  Trade,
   Liquidate,
   AcctInfo,
   SetExpiry,
@@ -140,6 +141,23 @@ export class AccountTransaction {
         transactionType: TransactionType.Call,
         otherAddress: args.callee,
         data: args.data,
+      },
+    );
+
+    return this;
+  }
+
+  public trade(trade: Trade): AccountTransaction {
+    this.addTransactionArgs(
+      trade,
+      {
+        transactionType: TransactionType.Trade,
+        amount: trade.amount,
+        primaryMarketId: trade.inputMarketId.toFixed(0),
+        secondaryMarketId: trade.outputMarketId.toFixed(0),
+        otherAccountId: this.getAccountId(trade.otherAccountOwner, trade.otherAccountId),
+        otherAddress: trade.autoTrader,
+        data: trade.data,
       },
     );
 
