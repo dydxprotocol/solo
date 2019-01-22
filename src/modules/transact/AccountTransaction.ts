@@ -12,6 +12,9 @@ import {
   Buy,
   Sell,
   Exchange,
+  TestBuy,
+  TestSell,
+  TestExchange,
   Transfer,
   Liquidate,
   AcctInfo,
@@ -122,7 +125,7 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Call,
         otherAddress: this.contracts.expiry.options.address,
-        data: [toBytes(args.marketId, args.expiryTime)],
+        data: toBytes(args.marketId, args.expiryTime),
       },
     );
 
@@ -200,6 +203,38 @@ export class AccountTransaction {
     );
 
     return this;
+  }
+
+  private testExchange(
+    exchange: TestExchange,
+    transactionType: TransactionType,
+  ): AccountTransaction {
+    const [primaryMarketId, secondaryMarketId] =
+      transactionType === TransactionType.Buy ?
+      [exchange.makerMarketId, exchange.takerMarketId] :
+      [exchange.takerMarketId, exchange.makerMarketId];
+
+    this.addTransactionArgs(
+      exchange,
+      {
+        transactionType,
+        amount: exchange.amount,
+        otherAddress: exchange.exchangeWrapperAddress,
+        data: toBytes(exchange.makerAmount, exchange.takerAmount),
+        primaryMarketId: primaryMarketId.toFixed(0),
+        secondaryMarketId: secondaryMarketId.toFixed(0),
+      },
+    );
+
+    return this;
+  }
+
+  public testBuy(buy: TestBuy): AccountTransaction {
+    return this.testExchange(buy, TransactionType.Buy);
+  }
+
+  public testSell(sell: TestSell): AccountTransaction {
+    return this.testExchange(sell, TransactionType.Sell);
   }
 
   private addTransactionArgs(

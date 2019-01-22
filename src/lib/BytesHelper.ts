@@ -3,8 +3,12 @@ import { Integer } from '../types';
 
 const web3 = new Web3();
 
-export function toBytes(...args: Integer[]): number[] {
-  return args.reduce((acc: number[], val: Integer): number[] => acc.concat(argToBytes(val)), []);
+export function toBytes(...args: Integer[]): number[][] {
+  return args.reduce(
+    (acc: number[], val: Integer): number[] => acc.concat(argToBytes(val)), [],
+  ).map(
+    (a :number): number[] => [a],
+  );
 }
 
 function argToBytes(val: string | Integer) {

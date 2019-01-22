@@ -3,6 +3,7 @@ import { Contracts } from '../../lib/Contracts';
 import { EVM } from './EVM';
 import { TestToken } from './TestToken';
 import { Token } from '../Token';
+import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
 import { TestInterestSetter } from './TestInterestSetter';
 import {
@@ -22,6 +23,7 @@ export class Testing {
   public tokenC: TestToken;
   public priceOracle: TestPriceOracle;
   public interestSetter: TestInterestSetter;
+  public exchangeWrapper: TestExchangeWrapper;
 
   constructor(
     provider: Provider,
@@ -33,6 +35,7 @@ export class Testing {
     this.tokenA = new TestToken(contracts, token, contracts.tokenA);
     this.tokenB = new TestToken(contracts, token, contracts.tokenB);
     this.tokenC = new TestToken(contracts, token, contracts.tokenC);
+    this.exchangeWrapper = new TestExchangeWrapper(contracts);
     this.priceOracle = new TestPriceOracle(contracts);
     this.interestSetter = new TestInterestSetter(contracts);
   }
