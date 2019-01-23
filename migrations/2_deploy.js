@@ -51,8 +51,10 @@ async function deployBaseProtocol(deployer) {
 }
 
 const migration = async (deployer, network) => {
-  await deployBaseProtocol(deployer);
-  await maybeDeployTestContracts(deployer, network);
+  await Promise.all([
+    deployBaseProtocol(deployer),
+    maybeDeployTestContracts(deployer, network),
+  ]);
 };
 
 module.exports = migration;

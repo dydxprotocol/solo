@@ -59,6 +59,21 @@ describe('Vaporize', () => {
       ),
     ]);
 
+    const [
+      startingBalancesA,
+      startingBalancesB,
+    ] = await Promise.all([
+      solo.getters.getAccountBalances(who1, accountNumber1),
+      solo.getters.getAccountBalances(who2, accountNumber2),
+    ]);
+
+    startingBalancesA.forEach((balance, i) => {
+      console.log(balance.par.toString());
+    });
+    startingBalancesB.forEach((balance, i) => {
+      console.log(balance.par.toString());
+    });
+
     const { gasUsed } = await solo.transaction.initiate()
       .vaporize({
         primaryAccountOwner: who1,
