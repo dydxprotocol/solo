@@ -15,6 +15,7 @@
     limitations under the License.
 
 */
+
 const { isDevNetwork } = require('./helpers');
 
 const SoloMargin = artifacts.require('SoloMargin');

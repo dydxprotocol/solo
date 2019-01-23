@@ -55,11 +55,7 @@ describe('Admin', () => {
       expect(marketInfo.currentInterestRate.eq(INTEGERS.ZERO)).toBe(true);
       expect(marketInfo.currentIndex.borrow.eq(INTEGERS.ONE)).toBe(true);
       expect(marketInfo.currentIndex.supply.eq(INTEGERS.ONE)).toBe(true);
-      const sameTimestamp = marketInfo.market.index.lastUpdate.eq(new BigNumber(timestamp));
-      if (!sameTimestamp) {
-        console.log(marketInfo.market.index.lastUpdate, timestamp);
-      }
-      expect(sameTimestamp).toBe(true);
+      expect(marketInfo.market.index.lastUpdate.eq(new BigNumber(timestamp))).toBe(true);
     });
   });
 });

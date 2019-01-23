@@ -11,7 +11,7 @@ export class Permissions {
   }
 
   public async setOperators(
-    operatorArgs: ({operator: address, trusted: boolean})[],
+    operatorArgs: ({ operator: address, trusted: boolean })[],
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(

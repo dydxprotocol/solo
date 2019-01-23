@@ -214,3 +214,8 @@ export interface Balance {
   par: Integer;
   wei: Integer;
 }
+
+export interface Values {
+  supply: Integer;
+  borrow: Integer;
+}

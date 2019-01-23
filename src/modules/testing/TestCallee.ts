@@ -1,5 +1,5 @@
 import { Contracts } from '../../lib/Contracts';
-import { ContractCallOptions, address, Integer } from '../../types';
+import { address, Integer } from '../../types';
 
 export class TestCallee {
   private contracts: Contracts;
@@ -17,7 +17,6 @@ export class TestCallee {
   public async getAccountData(
     accountOwner: address,
     accountNumber: Integer,
-    options?: ContractCallOptions,
   ): Promise<string> {
     return this.contracts.testCallee.methods.getAccountData(
       {
@@ -29,8 +28,9 @@ export class TestCallee {
 
   public async getSenderData(
     sender: address,
-    options?: ContractCallOptions,
   ): Promise<string> {
-    return this.contracts.testCallee.methods.getSenderData(sender).call();
+    return this.contracts.testCallee.methods.getSenderData(
+      sender,
+    ).call();
   }
 }
