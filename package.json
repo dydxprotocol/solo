@@ -14,10 +14,10 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "build": "npm run compile && npm run build:externalwrappers && npm run build:wrappers ",
+    "build": "npm run compile && npm run copy_tew && npm run build:wrappers",
+    "copy_tew" : "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "compile": "node_modules/.bin/truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/contracts/*.json'",
-    "build:externalwrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './node_modules/@dydxprotocol/exchange-wrappers/build/contracts/*ExchangeWrapper.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "console": "truffle console",

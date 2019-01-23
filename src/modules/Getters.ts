@@ -52,6 +52,19 @@ export class Getters {
     }));
   }
 
+  public async getAccountValues(
+    accountOwner: address,
+    accountNumber: Integer,
+  ): Promise<{
+    0: { value: string };
+    1: { value: string };
+  }> {
+    const values = await this.contracts.soloMargin.methods
+      .getAccountValues({ owner: accountOwner, number: accountNumber.toFixed(0) }).call();
+
+    return values;
+  }
+
   private parseIndex(
     { borrow, supply, lastUpdate }: { borrow: string, supply: string, lastUpdate: string },
   ): Index {

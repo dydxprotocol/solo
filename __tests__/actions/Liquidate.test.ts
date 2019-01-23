@@ -6,7 +6,7 @@ import { resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 
-describe('Vaporize', () => {
+describe('Liquidate', () => {
   let solo: Solo;
   let accounts: address[];
 
@@ -20,11 +20,10 @@ describe('Vaporize', () => {
     await resetEVM();
   });
 
-  it('Vaporize', async () => {
+  it('Liquidate', async () => {
     await setupMarkets(solo, accounts);
 
     const fullAmount = new BigNumber(100);
-    const halfAmount = new BigNumber(50);
     const who1 = solo.getDefaultAccount();
     const who2 = accounts[2];
     expect(who1).not.toEqual(who2);
@@ -39,7 +38,13 @@ describe('Vaporize', () => {
         who1,
         accountNumber1,
         marketB,
-        halfAmount,
+        fullAmount.times(5),
+      ),
+      solo.testing.setAccountBalance(
+        who2,
+        accountNumber2,
+        marketA,
+        fullAmount.times(1.2),
       ),
       solo.testing.setAccountBalance(
         who2,
@@ -47,25 +52,15 @@ describe('Vaporize', () => {
         marketB,
         fullAmount.times(-1),
       ),
-
-      // set tokens
-      solo.testing.tokenA.issueTo(
-        fullAmount,
-        solo.contracts.soloMargin.options.address,
-      ),
-      solo.testing.tokenB.issueTo(
-        fullAmount,
-        solo.contracts.soloMargin.options.address,
-      ),
     ]);
 
     const { gasUsed } = await solo.transaction.initiate()
-      .vaporize({
+      .liquidate({
         primaryAccountOwner: who1,
         primaryAccountId: accountNumber1,
-        vaporAccountOwner: who2,
-        vaporAccountId: accountNumber2,
-        vaporMarketId: marketB,
+        liquidAccountOwner: who2,
+        liquidAccountId: accountNumber2,
+        liquidMarketId: marketB,
         payoutMarketId: marketA,
         amount: {
           value: INTEGERS.ZERO,
@@ -75,6 +70,6 @@ describe('Vaporize', () => {
       })
       .commit();
 
-    console.log(`\tVaporize gas used: ${gasUsed}`);
+    console.log(`\tLiquidate gas used: ${gasUsed}`);
   });
 });

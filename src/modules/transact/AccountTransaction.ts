@@ -23,6 +23,7 @@ import {
   Integer,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
+import { ADDRESSES } from '../../lib/Constants';
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
@@ -87,7 +88,6 @@ export class AccountTransaction {
         transactionType: TransactionType.Transfer,
         amount: transfer.amount,
         primaryMarketId: transfer.marketId.toFixed(0),
-        otherAddress: transfer.toAccountOwner,
         otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
       },
     );
@@ -111,7 +111,6 @@ export class AccountTransaction {
         amount: liquidate.amount,
         primaryMarketId: liquidate.liquidMarketId.toFixed(0),
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
-        otherAddress: liquidate.liquidAccountOwner,
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
       },
     );
@@ -127,7 +126,6 @@ export class AccountTransaction {
         amount: vaporize.amount,
         primaryMarketId: vaporize.vaporMarketId.toFixed(0),
         secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
-        otherAddress: vaporize.vaporAccountOwner,
         otherAccountId: this.getAccountId(vaporize.vaporAccountOwner, vaporize.vaporAccountId),
       },
     );
@@ -277,10 +275,10 @@ export class AccountTransaction {
       amount,
       accountId: this.getPrimaryAccountId(operation),
       transactionType: args.transactionType,
-      primaryMarketId: args.primaryMarketId || '',
-      secondaryMarketId: args.secondaryMarketId || '',
-      otherAddress: args.otherAddress || '',
-      otherAccountId: args.otherAccountId || '',
+      primaryMarketId: args.primaryMarketId || '0',
+      secondaryMarketId: args.secondaryMarketId || '0',
+      otherAddress: args.otherAddress || ADDRESSES.ZERO,
+      otherAccountId: args.otherAccountId || '0',
       data: args.data || [],
     };
 

@@ -26,22 +26,12 @@ const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
-
-// external contracts
-const { networks } = require("../truffle");
-const { TestExchangeWrapper } = require("../__tests__/external/TestExchangeWrapper");
-function parseExternalContract(contract) {
-  contract.setProvider(SoloMargin.web3.currentProvider);
-  contract.setNetwork(SoloMargin.network);
-  contract.class_defaults = SoloMargin.class_defaults;
-}
+const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 
 async function maybeDeployTestContracts(deployer, network) {
   if (!isDevNetwork(network)) {
     return;
   }
-
-  parseExternalContract(TestExchangeWrapper);
 
   await Promise.all([
     deployer.deploy(TestSoloMargin),
