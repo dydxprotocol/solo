@@ -14,9 +14,10 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "build": "npm run compile && npm run build:wrappers",
+    "build": "npm run compile && npm run build:externalwrappers && npm run build:wrappers ",
     "compile": "node_modules/.bin/truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/contracts/*.json'",
+    "build:externalwrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './node_modules/@dydxprotocol/exchange-wrappers/build/contracts/*ExchangeWrapper.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "console": "truffle console",
@@ -56,7 +57,7 @@
   },
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
-    "@dydxprotocol/exchange-wrappers": "0.0.4",
+    "@dydxprotocol/exchange-wrappers": "0.0.5",
     "bignumber.js": "^8.0.2",
     "openzeppelin-solidity": "2.1.1",
     "web3": "^1.0.0-beta.37"
@@ -75,6 +76,7 @@
     "mocha-junit-reporter": "^1.18.0",
     "solidity-coverage": "^0.5.11",
     "truffle": "^5.0.2",
+    "truffle-contract": "^4.0.2",
     "ts-jest": "^23.10.5",
     "ts-node": "^7.0.1",
     "tslint": "^5.12.1",

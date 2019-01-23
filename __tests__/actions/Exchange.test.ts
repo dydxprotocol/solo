@@ -5,6 +5,7 @@ import { address, AmountDenomination, AmountReference } from '../../src/types';
 import { resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
+import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 
 describe('Exchange', () => {
   let solo: Solo;
@@ -31,6 +32,10 @@ describe('Exchange', () => {
     const makerMkt = INTEGERS.ONE;
 
     await Promise.all([
+      solo.testing.tokenB.issueTo(
+        startAmount,
+        solo.testing.exchangeWrapper.getAddress(),
+      ),
       solo.testing.tokenA.issueTo(
         startAmount,
         solo.contracts.soloMargin.options.address,
@@ -53,15 +58,23 @@ describe('Exchange', () => {
       ),
     ]);
 
+    const testOrder: TestOrder = {
+      type: OrderType.Test,
+      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      originator: who,
+      makerToken: solo.testing.tokenB.getAddress(),
+      takerToken: solo.testing.tokenA.getAddress(),
+      makerAmount: tradeAmount,
+      takerAmount: tradeAmount,
+    };
+
     const { gasUsed } = await solo.transaction.initiate()
-      .testBuy({
+      .buy({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
-        exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
         takerMarketId: takerMkt,
         makerMarketId: makerMkt,
-        takerAmount: tradeAmount,
-        makerAmount: tradeAmount,
+        order: testOrder,
         amount: {
           value: tradeAmount,
           denomination: AmountDenomination.Actual,
@@ -112,6 +125,10 @@ describe('Exchange', () => {
     const makerMkt = INTEGERS.ONE;
 
     await Promise.all([
+      solo.testing.tokenB.issueTo(
+        startAmount,
+        solo.testing.exchangeWrapper.getAddress(),
+      ),
       solo.testing.tokenA.issueTo(
         startAmount,
         solo.contracts.soloMargin.options.address,
@@ -134,15 +151,23 @@ describe('Exchange', () => {
       ),
     ]);
 
+    const testOrder: TestOrder = {
+      type: OrderType.Test,
+      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      originator: who,
+      makerToken: solo.testing.tokenB.getAddress(),
+      takerToken: solo.testing.tokenA.getAddress(),
+      makerAmount: tradeAmount,
+      takerAmount: tradeAmount,
+    };
+
     const { gasUsed } = await solo.transaction.initiate()
-      .testSell({
+      .sell({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
-        exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
         takerMarketId: takerMkt,
         makerMarketId: makerMkt,
-        takerAmount: tradeAmount,
-        makerAmount: tradeAmount,
+        order: testOrder,
         amount: {
           value: tradeAmount.times(-1),
           denomination: AmountDenomination.Actual,

@@ -132,18 +132,6 @@ export interface Exchange extends AccountOperation {
 export interface Buy extends Exchange {}
 export interface Sell extends Exchange {}
 
-export interface TestExchange extends AccountOperation {
-  exchangeWrapperAddress: address;
-  takerMarketId: Integer;
-  makerMarketId: Integer;
-  takerAmount: Integer;
-  makerAmount: Integer;
-  amount: Amount;
-}
-
-export interface TestBuy extends TestExchange {}
-export interface TestSell extends TestExchange {}
-
 export interface Trade extends AccountOperation {
   autoTrader: address;
   inputMarketId: Integer;
@@ -159,6 +147,14 @@ export interface Liquidate extends AccountOperation {
   payoutMarketId: Integer;
   liquidAccountOwner: address;
   liquidAccountId: Integer;
+  amount: Amount;
+}
+
+export interface Vaporize extends AccountOperation {
+  vaporMarketId: Integer;
+  payoutMarketId: Integer;
+  vaporAccountOwner: address;
+  vaporAccountId: Integer;
   amount: Amount;
 }
 

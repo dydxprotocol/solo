@@ -15,7 +15,6 @@
     limitations under the License.
 
 */
-
 const { isDevNetwork } = require('./helpers');
 
 const SoloMargin = artifacts.require('SoloMargin');
@@ -25,14 +24,24 @@ const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
 const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
-const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
+
+// external contracts
+const { networks } = require("../truffle");
+const { TestExchangeWrapper } = require("../__tests__/external/TestExchangeWrapper");
+function parseExternalContract(contract) {
+  contract.setProvider(SoloMargin.web3.currentProvider);
+  contract.setNetwork(SoloMargin.network);
+  contract.class_defaults = SoloMargin.class_defaults;
+}
 
 async function maybeDeployTestContracts(deployer, network) {
   if (!isDevNetwork(network)) {
     return;
   }
+
+  parseExternalContract(TestExchangeWrapper);
 
   await Promise.all([
     deployer.deploy(TestSoloMargin),
@@ -52,10 +61,8 @@ async function deployBaseProtocol(deployer) {
 }
 
 const migration = async (deployer, network) => {
-  await Promise.all([
-    maybeDeployTestContracts(deployer, network),
-    deployBaseProtocol(deployer),
-  ]);
+  await deployBaseProtocol(deployer);
+  await maybeDeployTestContracts(deployer, network);
 };
 
 module.exports = migration;

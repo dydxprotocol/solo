@@ -40,7 +40,8 @@ import tokenBJson from '../../build/contracts/TokenB.json';
 import tokenCJson from '../../build/contracts/TokenC.json';
 import testAutoTraderJson from '../../build/contracts/TestAutoTrader.json';
 import testCalleeJson from '../../build/contracts/TestCallee.json';
-import testExchangeWrapperJson from '../../build/contracts/TestExchangeWrapper.json';
+const testExchangeWrapperJson =
+  require('@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json');
 import testPriceOracleJson from '../../build/contracts/TestPriceOracle.json';
 import testInterestSetterJson from '../../build/contracts/TestInterestSetter.json';
 import { SUBTRACT_GAS_LIMIT } from './Constants';

@@ -42,6 +42,9 @@ jobs:
           command: npm run compile -- --all
       - run:
           name: Generate wrappers
+          command: npm run build:externalwrappers
+      - run:
+          name: Generate wrappers
           command: npm run build:wrappers
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}

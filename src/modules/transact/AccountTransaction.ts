@@ -12,12 +12,10 @@ import {
   Buy,
   Sell,
   Exchange,
-  TestBuy,
-  TestSell,
-  TestExchange,
   Transfer,
   Trade,
   Liquidate,
+  Vaporize,
   AcctInfo,
   SetExpiry,
   Call,
@@ -115,6 +113,22 @@ export class AccountTransaction {
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAddress: liquidate.liquidAccountOwner,
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
+      },
+    );
+
+    return this;
+  }
+
+  public vaporize(vaporize: Vaporize): AccountTransaction {
+    this.addTransactionArgs(
+      vaporize,
+      {
+        transactionType: TransactionType.Vaporize,
+        amount: vaporize.amount,
+        primaryMarketId: vaporize.vaporMarketId.toFixed(0),
+        secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
+        otherAddress: vaporize.vaporAccountOwner,
+        otherAccountId: this.getAccountId(vaporize.vaporAccountOwner, vaporize.vaporAccountId),
       },
     );
 
@@ -222,51 +236,21 @@ export class AccountTransaction {
       [exchange.makerMarketId, exchange.takerMarketId] :
       [exchange.takerMarketId, exchange.makerMarketId];
 
+    const orderData = bytes.map((a :number): number[] => [a]);
+
     this.addTransactionArgs(
       exchange,
       {
         transactionType,
         amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
-        data: [bytes],
+        data: orderData,
         primaryMarketId: primaryMarketId.toFixed(0),
         secondaryMarketId: secondaryMarketId.toFixed(0),
       },
     );
 
     return this;
-  }
-
-  private testExchange(
-    exchange: TestExchange,
-    transactionType: TransactionType,
-  ): AccountTransaction {
-    const [primaryMarketId, secondaryMarketId] =
-      transactionType === TransactionType.Buy ?
-      [exchange.makerMarketId, exchange.takerMarketId] :
-      [exchange.takerMarketId, exchange.makerMarketId];
-
-    this.addTransactionArgs(
-      exchange,
-      {
-        transactionType,
-        amount: exchange.amount,
-        otherAddress: exchange.exchangeWrapperAddress,
-        data: toBytes(exchange.makerAmount, exchange.takerAmount),
-        primaryMarketId: primaryMarketId.toFixed(0),
-        secondaryMarketId: secondaryMarketId.toFixed(0),
-      },
-    );
-
-    return this;
-  }
-
-  public testBuy(buy: TestBuy): AccountTransaction {
-    return this.testExchange(buy, TransactionType.Buy);
-  }
-
-  public testSell(sell: TestSell): AccountTransaction {
-    return this.testExchange(sell, TransactionType.Sell);
   }
 
   private addTransactionArgs(
