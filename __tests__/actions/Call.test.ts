@@ -21,16 +21,13 @@ describe('Call', () => {
     await resetEVM();
   });
 
-  it('Call', async () => {
+  it('Basic call test', async () => {
     await setupMarkets(solo, accounts);
 
     const accountData = new BigNumber(100);
     const senderData = new BigNumber(50);
     const who = solo.getDefaultAccount();
     const accountNumber = INTEGERS.ONE;
-
-    await Promise.all([
-    ]);
 
     const { gasUsed } = await solo.transaction.initiate()
       .call({

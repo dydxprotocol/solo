@@ -20,11 +20,10 @@ describe('Vaporize', () => {
     await resetEVM();
   });
 
-  it('Vaporize', async () => {
+  it('Basic vaporize test', async () => {
     await setupMarkets(solo, accounts);
 
     const fullAmount = new BigNumber(100);
-    const halfAmount = new BigNumber(50);
     const who1 = solo.getDefaultAccount();
     const who2 = accounts[2];
     expect(who1).not.toEqual(who2);
@@ -39,7 +38,7 @@ describe('Vaporize', () => {
         who1,
         accountNumber1,
         marketB,
-        halfAmount,
+        fullAmount,
       ),
       solo.testing.setAccountBalance(
         who2,
@@ -50,29 +49,10 @@ describe('Vaporize', () => {
 
       // set tokens
       solo.testing.tokenA.issueTo(
-        fullAmount,
-        solo.contracts.soloMargin.options.address,
-      ),
-      solo.testing.tokenB.issueTo(
-        fullAmount,
+        fullAmount.times(2),
         solo.contracts.soloMargin.options.address,
       ),
     ]);
-
-    const [
-      startingBalancesA,
-      startingBalancesB,
-    ] = await Promise.all([
-      solo.getters.getAccountBalances(who1, accountNumber1),
-      solo.getters.getAccountBalances(who2, accountNumber2),
-    ]);
-
-    startingBalancesA.forEach((balance, i) => {
-      console.log(balance.par.toString());
-    });
-    startingBalancesB.forEach((balance, i) => {
-      console.log(balance.par.toString());
-    });
 
     const { gasUsed } = await solo.transaction.initiate()
       .vaporize({
@@ -91,5 +71,8 @@ describe('Vaporize', () => {
       .commit();
 
     console.log(`\tVaporize gas used: ${gasUsed}`);
+
+    // TODO: check excess token amounts before and after
+    // TODO: check balances before and after
   });
 });

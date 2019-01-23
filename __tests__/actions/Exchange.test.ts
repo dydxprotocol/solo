@@ -21,7 +21,7 @@ describe('Exchange', () => {
     await resetEVM();
   });
 
-  it('Buy', async () => {
+  it('Basic buy test', async () => {
     await setupMarkets(solo, accounts);
 
     const startAmount = new BigNumber(100);
@@ -86,19 +86,23 @@ describe('Exchange', () => {
     console.log(`\tBuy gas used: ${gasUsed}`);
 
     const [
+      exchangeBalance,
       takerBalance,
       makerBalance,
       accountBalances,
     ] = await Promise.all([
+      solo.testing.tokenA.getBalance(solo.testing.exchangeWrapper.getAddress()),
       solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
       solo.testing.tokenB.getBalance(solo.contracts.soloMargin.options.address),
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
+    expect(exchangeBalance).toEqual(INTEGERS.ZERO);
+
     const expectedTakerAmount = startAmount.minus(tradeAmount);
     const expectedMakerAmount = startAmount.plus(tradeAmount);
-    expect(takerBalance.eq(expectedTakerAmount)).toBe(true);
-    expect(makerBalance.eq(expectedMakerAmount)).toBe(true);
+    expect(takerBalance).toEqual(expectedTakerAmount);
+    expect(makerBalance).toEqual(expectedMakerAmount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -109,12 +113,12 @@ describe('Exchange', () => {
         expected = expectedMakerAmount;
       }
 
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 
-  it('Sell', async () => {
+  it('Basic sell test', async () => {
     await setupMarkets(solo, accounts);
 
     const startAmount = new BigNumber(100);
@@ -179,19 +183,23 @@ describe('Exchange', () => {
     console.log(`\tSell gas used: ${gasUsed}`);
 
     const [
+      exchangeBalance,
       takerBalance,
       makerBalance,
       accountBalances,
     ] = await Promise.all([
+      solo.testing.tokenA.getBalance(solo.testing.exchangeWrapper.getAddress()),
       solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
       solo.testing.tokenB.getBalance(solo.contracts.soloMargin.options.address),
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
+    expect(exchangeBalance).toEqual(INTEGERS.ZERO);
+
     const expectedTakerAmount = startAmount.minus(tradeAmount);
     const expectedMakerAmount = startAmount.plus(tradeAmount);
-    expect(takerBalance.eq(expectedTakerAmount)).toBe(true);
-    expect(makerBalance.eq(expectedMakerAmount)).toBe(true);
+    expect(takerBalance).toEqual(expectedTakerAmount);
+    expect(makerBalance).toEqual(expectedMakerAmount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -202,8 +210,8 @@ describe('Exchange', () => {
         expected = expectedMakerAmount;
       }
 
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });

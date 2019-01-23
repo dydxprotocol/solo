@@ -20,7 +20,7 @@ describe('Deposit', () => {
     await resetEVM();
   });
 
-  it('Deposit', async () => {
+  it('Basic deposit test', async () => {
     await setupMarkets(solo, accounts);
 
     const amount = new BigNumber(100);
@@ -64,8 +64,8 @@ describe('Deposit', () => {
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    expect(walletTokenBalance.eq(INTEGERS.ZERO)).toBe(true);
-    expect(soloTokenBalance.eq(amount)).toBe(true);
+    expect(walletTokenBalance).toEqual(INTEGERS.ZERO);
+    expect(soloTokenBalance).toEqual(amount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -73,8 +73,8 @@ describe('Deposit', () => {
         expected = amount;
       }
 
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });

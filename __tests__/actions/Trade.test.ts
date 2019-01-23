@@ -21,7 +21,7 @@ describe('Trade', () => {
     await resetEVM();
   });
 
-  it('Trade', async () => {
+  it('Basic trade test', async () => {
     await setupMarkets(solo, accounts);
 
     const fullAmount = new BigNumber(100);
@@ -111,8 +111,8 @@ describe('Trade', () => {
       if (i === marketB.toNumber()) {
         expected = fullAmount.plus(halfAmount);
       }
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
 
     accountBalances2.forEach((balance, i) => {
@@ -123,8 +123,8 @@ describe('Trade', () => {
       if (i === marketB.toNumber()) {
         expected = fullAmount.minus(halfAmount);
       }
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });

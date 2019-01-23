@@ -20,7 +20,7 @@ describe('Transfer', () => {
     await resetEVM();
   });
 
-  it('Transfer', async () => {
+  it('Basic transfer test', async () => {
     await setupMarkets(solo, accounts);
 
     const fullAmount = new BigNumber(100);
@@ -75,8 +75,8 @@ describe('Transfer', () => {
       if (i === market.toNumber()) {
         expected = fullAmount.plus(halfAmount);
       }
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
 
     accountBalances2.forEach((balance, i) => {
@@ -84,8 +84,8 @@ describe('Transfer', () => {
       if (i === market.toNumber()) {
         expected = fullAmount.minus(halfAmount);
       }
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });

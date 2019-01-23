@@ -20,7 +20,7 @@ describe('Liquidate', () => {
     await resetEVM();
   });
 
-  it('Liquidate', async () => {
+  it('Basic liquidate test', async () => {
     await setupMarkets(solo, accounts);
 
     const fullAmount = new BigNumber(100);
@@ -31,6 +31,8 @@ describe('Liquidate', () => {
     const accountNumber2 = INTEGERS.ONE;
     const marketA = INTEGERS.ZERO;
     const marketB = INTEGERS.ONE;
+    const collateralization = new BigNumber("1.2");
+    const premium = new BigNumber("1.15");
 
     await Promise.all([
       // set balances
@@ -44,7 +46,7 @@ describe('Liquidate', () => {
         who2,
         accountNumber2,
         marketA,
-        fullAmount.times(1.2),
+        fullAmount.times(collateralization),
       ),
       solo.testing.setAccountBalance(
         who2,
@@ -53,21 +55,6 @@ describe('Liquidate', () => {
         fullAmount.times(-1),
       ),
     ]);
-
-    const [
-      startingBalancesA,
-      startingBalancesB,
-    ] = await Promise.all([
-      solo.getters.getAccountBalances(who1, accountNumber1),
-      solo.getters.getAccountBalances(who2, accountNumber2),
-    ]);
-
-    startingBalancesA.forEach((balance, i) => {
-      console.log(balance.par.toString());
-    });
-    startingBalancesB.forEach((balance, i) => {
-      console.log(balance.par.toString());
-    });
 
     const { gasUsed } = await solo.transaction.initiate()
       .liquidate({
@@ -86,5 +73,33 @@ describe('Liquidate', () => {
       .commit();
 
     console.log(`\tLiquidate gas used: ${gasUsed}`);
+
+    const [
+      balancesA,
+      balancesB,
+    ] = await Promise.all([
+      solo.getters.getAccountBalances(who1, accountNumber1),
+      solo.getters.getAccountBalances(who2, accountNumber2),
+    ]);
+
+    balancesA.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (i === marketA.toNumber()) {
+        expected = fullAmount.times(premium);
+      }
+      if (i === marketB.toNumber()) {
+        expected = fullAmount.times(4);
+      }
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
+    balancesB.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (i === marketA.toNumber()) {
+        expected = fullAmount.times(collateralization.minus(premium));
+      }
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
   });
 });

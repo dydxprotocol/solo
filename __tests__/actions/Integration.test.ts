@@ -76,8 +76,8 @@ describe('Integration', () => {
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    expect(walletTokenBalance.eq(amount2)).toBe(true);
-    expect(soloTokenBalance.eq(amount2)).toBe(true);
+    expect(walletTokenBalance).toEqual(amount2);
+    expect(soloTokenBalance).toEqual(amount2);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -85,8 +85,8 @@ describe('Integration', () => {
         expected = amount2;
       }
 
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });
