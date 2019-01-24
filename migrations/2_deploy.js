@@ -40,11 +40,12 @@ async function maybeDeployTestContracts(deployer, network) {
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
     deployer.deploy(TestAutoTrader),
-    deployer.deploy(TestCallee),
     deployer.deploy(TestExchangeWrapper),
     deployer.deploy(TestPriceOracle),
     deployer.deploy(TestInterestSetter),
   ]);
+
+  await deployer.deploy(TestCallee, TestSoloMargin.address);
 }
 
 async function deployBaseProtocol(deployer) {

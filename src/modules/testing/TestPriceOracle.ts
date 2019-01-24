@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Contracts } from '../../lib/Contracts';
 import { ContractCallOptions, TxResult, address, Integer } from '../../types';
 
@@ -26,5 +27,12 @@ export class TestPriceOracle {
       ),
       options,
     );
+  }
+
+  public async getPrice(
+    token: address,
+  ): Promise<Integer> {
+    const price = await this.contracts.testPriceOracle.methods.getPrice(token).call();
+    return new BigNumber(price.value);
   }
 }

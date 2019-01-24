@@ -19,6 +19,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { OnlySolo } from "../external/helpers/OnlySolo.sol";
 import { ICallee } from "../protocol/interfaces/ICallee.sol";
 import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";
 import { Acct } from "../protocol/lib/Acct.sol";
@@ -35,7 +36,8 @@ import { Types } from "../protocol/lib/Types.sol";
  * ICallee for testing
  */
 contract TestCallee is
-    ICallee
+    ICallee,
+    OnlySolo
 {
     // ============ Constants ============
 
@@ -54,32 +56,19 @@ contract TestCallee is
     // ============ Storage ============
 
     // owner => number => data
-    mapping (address => mapping (uint256 => uint256)) g_account;
+    mapping (address => mapping (uint256 => uint256)) public accountData;
 
     // sender => data
-    mapping (address => uint256) g_sender;
+    mapping (address => uint256) public senderData;
 
-    // ============ Public Functions ============
+    // ============ Constructor ============
 
-    function getAccountData(
-        Acct.Info memory account
+    constructor(
+        address SOLO_MARGIN
     )
         public
-        view
-        returns (uint256)
-    {
-        return g_account[account.owner][account.number];
-    }
-
-    function getSenderData(
-        address sender
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return g_sender[sender];
-    }
+        OnlySolo(SOLO_MARGIN)
+    {}
 
     // ============ ICallee Functions ============
 
@@ -89,22 +78,23 @@ contract TestCallee is
         bytes memory data
     )
         public
+        onlySolo(msg.sender)
     {
         (
-            uint256 accountData,
-            uint256 senderData
+            uint256 aData,
+            uint256 sData
         ) = parseData(data);
 
         emit Called(
             sender,
             account.owner,
             account.number,
-            accountData,
-            senderData
+            aData,
+            sData
         );
 
-        g_account[account.owner][account.number] = accountData;
-        g_sender[sender] = senderData;
+        accountData[account.owner][account.number] = aData;
+        senderData[sender] = sData;
     }
 
     // ============ Private Functions ============
@@ -125,18 +115,18 @@ contract TestCallee is
             "Call data invalid length"
         );
 
-        uint256 accountData;
-        uint256 senderData;
+        uint256 aData;
+        uint256 sData;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            accountData := mload(add(data, 32))
-            senderData := mload(add(data, 64))
+            aData := mload(add(data, 32))
+            sData := mload(add(data, 64))
         }
 
         return (
-            accountData,
-            senderData
+            aData,
+            sData
         );
     }
 }

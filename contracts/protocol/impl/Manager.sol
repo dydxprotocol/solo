@@ -514,7 +514,7 @@ contract Manager is
         private
         view
     {
-        address token = cache.markets[marketId].token;
+        address token = cacheGetToken(cache, marketId);
         IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
         cache.markets[marketId].price = oracle.getPrice(token);
     }

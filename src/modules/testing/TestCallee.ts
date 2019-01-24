@@ -18,18 +18,16 @@ export class TestCallee {
     accountOwner: address,
     accountNumber: Integer,
   ): Promise<string> {
-    return this.contracts.testCallee.methods.getAccountData(
-      {
-        owner: accountOwner,
-        number: accountNumber.toFixed(0),
-      },
+    return this.contracts.testCallee.methods.accountData(
+      accountOwner,
+      accountNumber.toFixed(0),
     ).call();
   }
 
   public async getSenderData(
     sender: address,
   ): Promise<string> {
-    return this.contracts.testCallee.methods.getSenderData(
+    return this.contracts.testCallee.methods.senderData(
       sender,
     ).call();
   }

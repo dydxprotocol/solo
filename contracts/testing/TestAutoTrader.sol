@@ -50,15 +50,15 @@ contract TestAutoTrader is
     // ============ Storage ============
 
     // input => output
-    mapping (uint256 => uint256) g_data;
+    mapping (uint256 => uint256) public data;
 
-    uint256 g_inputMarketId;
-    uint256 g_outputMarketId;
-    Acct.Info g_makerAccount;
-    Acct.Info g_takerAccount;
-    Types.Par g_oldInputPar;
-    Types.Par g_newInputPar;
-    Types.Wei g_inputWei;
+    uint256 public requireInputMarketId;
+    uint256 public requireOutputMarketId;
+    Acct.Info public requireMakerAccount;
+    Acct.Info public requireTakerAccount;
+    Types.Par public requireOldInputPar;
+    Types.Par public requireNewInputPar;
+    Types.Wei public requireInputWei;
 
     // ============ Testing Functions ============
 
@@ -71,60 +71,60 @@ contract TestAutoTrader is
         setDataInternal(input, output);
     }
 
-    function setRequireInputMarketId(
+    function setrequireInputMarketId(
         uint256 inputMarketId
     )
         public
     {
-        g_inputMarketId = inputMarketId;
+        requireInputMarketId = inputMarketId;
     }
 
-    function setRequireOutputMarketId(
+    function setrequireOutputMarketId(
         uint256 outputMarketId
     )
         public
     {
-        g_outputMarketId = outputMarketId;
+        requireOutputMarketId = outputMarketId;
     }
 
-    function setRequireMakerAccount(
+    function setrequireMakerAccount(
         Acct.Info memory account
     )
         public
     {
-        g_makerAccount = account;
+        requireMakerAccount = account;
     }
 
-    function setRequireTakerAccount(
+    function setrequireTakerAccount(
         Acct.Info memory account
     )
         public
     {
-        g_takerAccount = account;
+        requireTakerAccount = account;
     }
 
-    function setRequireOldInputPar(
+    function setrequireOldInputPar(
         Types.Par memory oldInputPar
     )
         public
     {
-        g_oldInputPar = oldInputPar;
+        requireOldInputPar = oldInputPar;
     }
 
-    function setRequireNewInputPar(
+    function setrequireNewInputPar(
         Types.Par memory newInputPar
     )
         public
     {
-        g_newInputPar = newInputPar;
+        requireNewInputPar = newInputPar;
     }
 
-    function setRequireInputWei(
+    function setrequireInputWei(
         Types.Wei memory inputWei
     )
         public
     {
-        g_inputWei = inputWei;
+        requireInputWei = inputWei;
     }
 
     // ============ AutoTrader Functions ============
@@ -137,89 +137,89 @@ contract TestAutoTrader is
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,
-        bytes memory data
+        bytes memory tradeData
     )
         public
         returns (Types.Wei memory)
     {
-        if (g_inputMarketId != 0) {
+        if (requireInputMarketId != 0) {
             Require.that(
-                g_inputMarketId == inputMarketId,
+                requireInputMarketId == inputMarketId,
                 FILE,
                 "input market mismatch"
             );
         }
-        if (g_outputMarketId != 0) {
+        if (requireOutputMarketId != 0) {
             Require.that(
-                g_outputMarketId == outputMarketId,
+                requireOutputMarketId == outputMarketId,
                 FILE,
                 "output market mismatch"
             );
         }
-        if (g_makerAccount.owner != address(0)) {
+        if (requireMakerAccount.owner != address(0)) {
             Require.that(
-                g_makerAccount.owner == makerAccount.owner,
+                requireMakerAccount.owner == makerAccount.owner,
                 FILE,
                 "maker account owner mismatch"
             );
             Require.that(
-                g_makerAccount.number == makerAccount.number,
+                requireMakerAccount.number == makerAccount.number,
                 FILE,
                 "maker account number mismatch"
             );
         }
-        if (g_takerAccount.owner != address(0)) {
+        if (requireTakerAccount.owner != address(0)) {
             Require.that(
-                g_takerAccount.owner == takerAccount.owner,
+                requireTakerAccount.owner == takerAccount.owner,
                 FILE,
                 "taker account owner mismatch"
             );
             Require.that(
-                g_takerAccount.number == takerAccount.number,
+                requireTakerAccount.number == takerAccount.number,
                 FILE,
                 "taker account number mismatch"
             );
         }
-        if (g_oldInputPar.value != 0) {
+        if (requireOldInputPar.value != 0) {
             Require.that(
-                g_oldInputPar.sign == oldInputPar.sign,
+                requireOldInputPar.sign == oldInputPar.sign,
                 FILE,
                 "oldInputPar sign mismatch"
                 );
             Require.that(
-                g_oldInputPar.value == oldInputPar.value,
+                requireOldInputPar.value == oldInputPar.value,
                 FILE,
                 "oldInputPar value mismatch"
                 );
         }
-        if (g_newInputPar.value != 0) {
+        if (requireNewInputPar.value != 0) {
             Require.that(
-                g_newInputPar.sign == newInputPar.sign,
+                requireNewInputPar.sign == newInputPar.sign,
                 FILE,
                 "newInputPar sign mismatch"
             );
             Require.that(
-                g_newInputPar.value == newInputPar.value,
+                requireNewInputPar.value == newInputPar.value,
                 FILE,
                 "newInputPar value mismatch"
             );
         }
-        if (g_inputWei.value != 0) {
+        if (requireInputWei.value != 0) {
             Require.that(
-                g_inputWei.sign == inputWei.sign,
+                requireInputWei.sign == inputWei.sign,
                 FILE,
                 "inputWei sign mismatch"
             );
             Require.that(
-                g_inputWei.value == inputWei.value,
+                requireInputWei.value == inputWei.value,
                 FILE,
                 "inputWei value mismatch"
             );
         }
 
-        uint256 input = parseData(data);
+        uint256 input = parseTradeData(tradeData);
 
-        uint256 output = g_data[input];
+        uint256 output = data[input];
 
         setDataInternal(input, 0);
 
@@ -238,18 +238,18 @@ contract TestAutoTrader is
         private
     {
         emit DataSet(input, output);
-        g_data[input] = output;
+        data[input] = output;
     }
 
-    function parseData(
-        bytes memory data
+    function parseTradeData(
+        bytes memory tradeData
     )
         private
         pure
         returns (uint256)
     {
         Require.that(
-            data.length == 32,
+            tradeData.length == 32,
             FILE,
             "Call data invalid length"
         );
@@ -258,7 +258,7 @@ contract TestAutoTrader is
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            input := mload(add(data, 32))
+            input := mload(add(tradeData, 32))
         }
 
         return input;
