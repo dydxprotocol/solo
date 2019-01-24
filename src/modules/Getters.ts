@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { MarketWithInfo, Index, Integer, address, Balance } from '../types';
+import { MarketWithInfo, Index, Integer, address, Balance, Values } from '../types';
 import { INTEGERS } from '../lib/Constants';
 
 export class Getters {
@@ -50,6 +50,19 @@ export class Getters {
       par: this.parseValue(b.parBalance),
       wei: this.parseValue(b.weiBalance),
     }));
+  }
+
+  public async getAccountValues(
+    accountOwner: address,
+    accountNumber: Integer,
+  ): Promise<Values> {
+    const values = await this.contracts.soloMargin.methods
+      .getAccountValues({ owner: accountOwner, number: accountNumber.toFixed(0) }).call();
+
+    return {
+      supply: new BigNumber(values[0].value),
+      borrow: new BigNumber(values[1].value),
+    };
   }
 
   private parseIndex(

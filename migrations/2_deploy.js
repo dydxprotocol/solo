@@ -23,8 +23,11 @@ const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
+const TestAutoTrader = artifacts.require('TestAutoTrader');
+const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
+const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 
 async function maybeDeployTestContracts(deployer, network) {
   if (!isDevNetwork(network)) {
@@ -36,9 +39,13 @@ async function maybeDeployTestContracts(deployer, network) {
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
+    deployer.deploy(TestAutoTrader),
+    deployer.deploy(TestExchangeWrapper),
     deployer.deploy(TestPriceOracle),
     deployer.deploy(TestInterestSetter),
   ]);
+
+  await deployer.deploy(TestCallee, TestSoloMargin.address);
 }
 
 async function deployBaseProtocol(deployer) {
@@ -47,8 +54,8 @@ async function deployBaseProtocol(deployer) {
 
 const migration = async (deployer, network) => {
   await Promise.all([
-    maybeDeployTestContracts(deployer, network),
     deployBaseProtocol(deployer),
+    maybeDeployTestContracts(deployer, network),
   ]);
 };
 

@@ -20,7 +20,7 @@ describe('Withdraw', () => {
     await resetEVM();
   });
 
-  it('Withdraw', async () => {
+  it('Basic withdraw test', async () => {
     await setupMarkets(solo, accounts);
 
     const amount1 = new BigNumber(100);
@@ -68,8 +68,8 @@ describe('Withdraw', () => {
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    expect(walletTokenBalance.eq(amount2)).toBe(true);
-    expect(soloTokenBalance.eq(amount2)).toBe(true);
+    expect(walletTokenBalance).toEqual(amount2);
+    expect(soloTokenBalance).toEqual(amount2);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -77,8 +77,8 @@ describe('Withdraw', () => {
         expected = amount2;
       }
 
-      expect(balance.par.eq(expected)).toBe(true);
-      expect(balance.wei.eq(expected)).toBe(true);
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
     });
   });
 });

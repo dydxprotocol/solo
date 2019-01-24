@@ -6,7 +6,7 @@ import { resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 
-describe('Integration', () => {
+describe('Transfer', () => {
   let solo: Solo;
   let accounts: address[];
 
@@ -20,71 +20,70 @@ describe('Integration', () => {
     await resetEVM();
   });
 
-  it('Deposit then Withdraw', async () => {
+  it('Basic transfer test', async () => {
     await setupMarkets(solo, accounts);
 
-    const amount1 = new BigNumber(100);
-    const amount2 = new BigNumber(50);
+    const fullAmount = new BigNumber(100);
+    const halfAmount = new BigNumber(50);
     const who = solo.getDefaultAccount();
-    const accountNumber = INTEGERS.ZERO;
+    const accountNumber1 = INTEGERS.ZERO;
+    const accountNumber2 = INTEGERS.ONE;
     const market = INTEGERS.ZERO;
 
     await Promise.all([
-      solo.testing.tokenA.issueTo(
-        amount1,
+      solo.testing.setAccountBalance(
         who,
+        accountNumber1,
+        market,
+        fullAmount,
       ),
-      solo.testing.tokenA.setMaximumSoloAllowance(
+      solo.testing.setAccountBalance(
         who,
+        accountNumber2,
+        market,
+        fullAmount,
       ),
     ]);
 
     const { gasUsed } = await solo.transaction.initiate()
-      .deposit({
+      .transfer({
         primaryAccountOwner: who,
-        primaryAccountId: accountNumber,
+        primaryAccountId: accountNumber1,
+        toAccountOwner: who,
+        toAccountId: accountNumber2,
         marketId: market,
         amount: {
-          value: amount1,
+          value: halfAmount,
           denomination: AmountDenomination.Actual,
           reference: AmountReference.Delta,
         },
-        from: who,
-      })
-      .withdraw({
-        primaryAccountOwner: who,
-        primaryAccountId: accountNumber,
-        marketId: market,
-        amount: {
-          value: amount2.times(-1),
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-        to: who,
       })
       .commit();
 
-    console.log(`\tDeposit then Withdraw gas used: ${gasUsed}`);
+    console.log(`\tTransfer gas used: ${gasUsed}`);
 
     const [
-      walletTokenBalance,
-      soloTokenBalance,
-      accountBalances,
+      accountBalances1,
+      accountBalances2,
     ] = await Promise.all([
-      solo.testing.tokenA.getBalance(who),
-      solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(who, accountNumber),
+      solo.getters.getAccountBalances(who, accountNumber1),
+      solo.getters.getAccountBalances(who, accountNumber2),
     ]);
 
-    expect(walletTokenBalance).toEqual(amount2);
-    expect(soloTokenBalance).toEqual(amount2);
-
-    accountBalances.forEach((balance, i) => {
+    accountBalances1.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
       if (i === market.toNumber()) {
-        expected = amount2;
+        expected = fullAmount.plus(halfAmount);
       }
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
 
+    accountBalances2.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (i === market.toNumber()) {
+        expected = fullAmount.minus(halfAmount);
+      }
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });

@@ -13,13 +13,17 @@ import {
   Sell,
   Exchange,
   Transfer,
+  Trade,
   Liquidate,
+  Vaporize,
   AcctInfo,
   SetExpiry,
+  Call,
   Amount,
   Integer,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
+import { ADDRESSES } from '../../lib/Constants';
 
 interface OptionalTransactionArgs {
   transactionType: number | string;
@@ -84,7 +88,6 @@ export class AccountTransaction {
         transactionType: TransactionType.Transfer,
         amount: transfer.amount,
         primaryMarketId: transfer.marketId.toFixed(0),
-        otherAddress: transfer.toAccountOwner,
         otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
       },
     );
@@ -108,8 +111,22 @@ export class AccountTransaction {
         amount: liquidate.amount,
         primaryMarketId: liquidate.liquidMarketId.toFixed(0),
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
-        otherAddress: liquidate.liquidAccountOwner,
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
+      },
+    );
+
+    return this;
+  }
+
+  public vaporize(vaporize: Vaporize): AccountTransaction {
+    this.addTransactionArgs(
+      vaporize,
+      {
+        transactionType: TransactionType.Vaporize,
+        amount: vaporize.amount,
+        primaryMarketId: vaporize.vaporMarketId.toFixed(0),
+        secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
+        otherAccountId: this.getAccountId(vaporize.vaporAccountOwner, vaporize.vaporAccountId),
       },
     );
 
@@ -122,7 +139,37 @@ export class AccountTransaction {
       {
         transactionType: TransactionType.Call,
         otherAddress: this.contracts.expiry.options.address,
-        data: [toBytes(args.marketId, args.expiryTime)],
+        data: toBytes(args.marketId, args.expiryTime),
+      },
+    );
+
+    return this;
+  }
+
+  public call(args: Call): AccountTransaction {
+    this.addTransactionArgs(
+      args,
+      {
+        transactionType: TransactionType.Call,
+        otherAddress: args.callee,
+        data: args.data,
+      },
+    );
+
+    return this;
+  }
+
+  public trade(trade: Trade): AccountTransaction {
+    this.addTransactionArgs(
+      trade,
+      {
+        transactionType: TransactionType.Trade,
+        amount: trade.amount,
+        primaryMarketId: trade.inputMarketId.toFixed(0),
+        secondaryMarketId: trade.outputMarketId.toFixed(0),
+        otherAccountId: this.getAccountId(trade.otherAccountOwner, trade.otherAccountId),
+        otherAddress: trade.autoTrader,
+        data: trade.data,
       },
     );
 
@@ -187,13 +234,15 @@ export class AccountTransaction {
       [exchange.makerMarketId, exchange.takerMarketId] :
       [exchange.takerMarketId, exchange.makerMarketId];
 
+    const orderData = bytes.map((a :number): number[] => [a]);
+
     this.addTransactionArgs(
       exchange,
       {
         transactionType,
         amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
-        data: [bytes],
+        data: orderData,
         primaryMarketId: primaryMarketId.toFixed(0),
         secondaryMarketId: secondaryMarketId.toFixed(0),
       },
@@ -226,10 +275,10 @@ export class AccountTransaction {
       amount,
       accountId: this.getPrimaryAccountId(operation),
       transactionType: args.transactionType,
-      primaryMarketId: args.primaryMarketId || '',
-      secondaryMarketId: args.secondaryMarketId || '',
-      otherAddress: args.otherAddress || '',
-      otherAccountId: args.otherAccountId || '',
+      primaryMarketId: args.primaryMarketId || '0',
+      secondaryMarketId: args.secondaryMarketId || '0',
+      otherAddress: args.otherAddress || ADDRESSES.ZERO,
+      otherAccountId: args.otherAccountId || '0',
       data: args.data || [],
     };
 

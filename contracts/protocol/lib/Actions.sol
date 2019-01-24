@@ -286,8 +286,8 @@ library Actions {
         );
         return LiquidateArgs({
             amount: args.amount,
-            solidAcct: args.otherAccountId,
-            liquidAcct: args.accountId,
+            solidAcct: args.accountId,
+            liquidAcct: args.otherAccountId,
             owedMkt: args.primaryMarketId,
             heldMkt: args.secondaryMarketId
         });
@@ -313,8 +313,8 @@ library Actions {
         );
         return VaporizeArgs({
             amount: args.amount,
-            solidAcct: args.otherAccountId,
-            vaporAcct: args.accountId,
+            solidAcct: args.accountId,
+            vaporAcct: args.otherAccountId,
             owedMkt: args.primaryMarketId,
             heldMkt: args.secondaryMarketId
         });

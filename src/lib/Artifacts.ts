@@ -4,6 +4,9 @@ import { default as Expiry } from '../../build/contracts/Expiry.json';
 import { default as TokenA } from '../../build/contracts/TokenA.json';
 import { default as TokenB } from '../../build/contracts/TokenB.json';
 import { default as TokenC } from '../../build/contracts/TokenC.json';
+import { default as TestAutoTrader } from '../../build/contracts/TestAutoTrader.json';
+import { default as TestCallee } from '../../build/contracts/TestCallee.json';
+import { default as TestExchangeWrapper } from '../../build/contracts/TestExchangeWrapper.json';
 import { default as TestPriceOracle } from '../../build/contracts/TestPriceOracle.json';
 import { default as TestInterestSetter } from '../../build/contracts/TestInterestSetter.json';
 import { default as TestSoloMargin } from '../../build/contracts/TestSoloMargin.json';
@@ -18,4 +21,7 @@ export default {
   TestPriceOracle,
   TestInterestSetter,
   TestSoloMargin,
+  TestAutoTrader,
+  TestCallee,
+  TestExchangeWrapper,
 };

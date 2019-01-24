@@ -283,7 +283,7 @@ contract Queries is
         return cacheGetWei(cache, 0, marketId);
     }
 
-    function getAccountstatus(
+    function getAccountStatus(
         Acct.Info memory account
     )
         public

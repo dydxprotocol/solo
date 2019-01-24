@@ -14,3 +14,7 @@ export const INTEGERS = {
   ), // 2**256-1
   INTEREST_RATE_BASE: new BigNumber('1e18'),
 };
+
+export const ADDRESSES = {
+  ZERO: '0x0000000000000000000000000000000000000000',
+};

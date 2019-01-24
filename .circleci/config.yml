@@ -41,6 +41,9 @@ jobs:
           name: Compile contracts
           command: npm run compile -- --all
       - run:
+          name: Compile contracts
+          command: npm run copy_tew
+      - run:
           name: Generate wrappers
           command: npm run build:wrappers
       - save_cache:

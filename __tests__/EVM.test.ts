@@ -26,11 +26,11 @@ describe('EVM', () => {
       account,
     );
     const balance: BigNumber = await solo.testing.tokenA.getBalance(account);
-    expect(balance.eq(amount)).toBe(true);
+    expect(balance).toEqual(amount);
 
     await resetEVM();
 
     const newBalance: BigNumber = await solo.testing.tokenA.getBalance(account);
-    expect(newBalance.eq(new BigNumber(0))).toBe(true);
+    expect(newBalance).toEqual(new BigNumber(0));
   });
 });

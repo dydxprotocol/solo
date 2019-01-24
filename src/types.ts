@@ -81,7 +81,8 @@ export enum TransactionType {
   Sell = 4,
   Trade = 5,
   Liquidate = 6,
-  Call = 7,
+  Vaporize = 7,
+  Call = 8,
 }
 
 export enum AccountStatus {
@@ -131,6 +132,16 @@ export interface Exchange extends AccountOperation {
 export interface Buy extends Exchange {}
 export interface Sell extends Exchange {}
 
+export interface Trade extends AccountOperation {
+  autoTrader: address;
+  inputMarketId: Integer;
+  outputMarketId: Integer;
+  otherAccountOwner: address;
+  otherAccountId: Integer;
+  amount: Amount;
+  data: (string | number[])[];
+}
+
 export interface Liquidate extends AccountOperation {
   liquidMarketId: Integer;
   payoutMarketId: Integer;
@@ -139,9 +150,22 @@ export interface Liquidate extends AccountOperation {
   amount: Amount;
 }
 
+export interface Vaporize extends AccountOperation {
+  vaporMarketId: Integer;
+  payoutMarketId: Integer;
+  vaporAccountOwner: address;
+  vaporAccountId: Integer;
+  amount: Amount;
+}
+
 export interface SetExpiry extends AccountOperation {
   marketId: Integer;
   expiryTime: Integer;
+}
+
+export interface Call extends AccountOperation {
+  callee: address;
+  data: (string | number[])[];
 }
 
 export interface AcctInfo {
@@ -189,4 +213,9 @@ export interface Balance {
   tokenAddress: address;
   par: Integer;
   wei: Integer;
+}
+
+export interface Values {
+  supply: Integer;
+  borrow: Integer;
 }
