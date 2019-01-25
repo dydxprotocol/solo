@@ -83,6 +83,22 @@ contract Storage {
     // There must be sufficient incentivize to liquidate undercollateralized accounts
     Monetary.Value g_minBorrowedValue;
 
+    // ============ Limits ============
+
+    uint64 MAX_INTEREST_RATE;
+
+    uint64 MAX_LIQUIDATION_RATIO;
+    uint64 MIN_LIQUIDATION_RATIO;
+
+    uint64 MAX_LIQUIDATION_SPREAD;
+    uint64 MIN_LIQUIDATION_SPREAD;
+
+    uint64 MIN_EARNINGS_RATE;
+    uint64 MAX_EARNINGS_RATE;
+
+    uint128 MAX_MIN_BORROWED_VALUE;
+    uint128 MIN_MIN_BORROWED_VALUE;
+
     // ============ Permissioning ============
 
     // Addresses that can control other users accounts

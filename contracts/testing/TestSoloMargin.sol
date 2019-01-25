@@ -32,6 +32,17 @@ contract TestSoloMargin is
 {
     using Math for uint256;
 
+    // ============ Constructor ============
+
+    constructor (
+        RiskParameters memory rp
+    )
+        public
+        SoloMargin(rp)
+    {}
+
+    // ============ Testing Functions ============
+
     function setAccountBalance(
         Acct.Info memory account,
         uint256 market,

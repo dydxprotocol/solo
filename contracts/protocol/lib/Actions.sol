@@ -200,7 +200,7 @@ library Actions {
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
-            "Transfer accounts must be distinct"
+            "Transfer accounts match"
         );
         return TransferArgs({
             amount: args.amount,
@@ -260,7 +260,7 @@ library Actions {
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
-            "Trade accounts must be distinct"
+            "Trade accounts match"
         );
         return TradeArgs({
             amount: args.amount,
@@ -285,12 +285,12 @@ library Actions {
         Require.that(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
-            "Liquidate markets must be distinct"
+            "Liquidate markets match"
         );
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
-            "Liquidate accounts must be distinct"
+            "Liquidate accounts match"
         );
         return LiquidateArgs({
             amount: args.amount,
@@ -313,12 +313,12 @@ library Actions {
         Require.that(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
-            "Vaporize markets must be distinct"
+            "Vaporize markets match"
         );
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
-            "Vaporize accounts must be distinct"
+            "Vaporize accounts match"
         );
         return VaporizeArgs({
             amount: args.amount,

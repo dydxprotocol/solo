@@ -20,9 +20,9 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { Admin } from "./impl/Admin.sol";
+import { Interactions } from "./impl/Interactions.sol";
 import { Permissions } from "./impl/Permissions.sol";
 import { Queries } from "./impl/Queries.sol";
-import { Transactions } from "./impl/Transactions.sol";
 
 
 /**
@@ -32,16 +32,15 @@ import { Transactions } from "./impl/Transactions.sol";
  * TODO
  */
 contract SoloMargin is
-    Transactions,
+    Interactions,
     Permissions,
     Admin,
     Queries
 {
     constructor (
-        // TODO
+        RiskParameters memory rp
     )
         public
-    {
-        // TODO
-    }
+        Admin(rp)
+    {}
 }

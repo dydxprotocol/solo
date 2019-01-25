@@ -50,31 +50,48 @@ contract Admin is
 
     string constant FILE = "Admin";
 
-    uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
-    uint256 constant DEF_LIQUIDATION_RATIO  = 125 * 10**16; // 125%
-    uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 110%
+    // ============ Structs ============
 
-    uint256 constant MAX_LIQUIDATION_SPREAD = 115 * 10**16; // 115%
-    uint256 constant DEF_LIQUIDATION_SPREAD = 105 * 10**16; // 105%
-    uint256 constant MIN_LIQUIDATION_SPREAD = 101 * 10**16; // 101%
+    struct RiskParameters {
+        uint64 MAX_INTEREST_RATE;
 
-    uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
-    uint256 constant DEF_EARNINGS_RATE      =  50 * 10**16; // 90%
-    uint256 constant MAX_EARNINGS_RATE      = 100 * 10**16; // 100%
+        uint64 MAX_LIQUIDATION_RATIO;
+        uint64 LIQUIDATION_RATIO;
+        uint64 MIN_LIQUIDATION_RATIO;
 
-    uint256 constant MAX_MIN_BORROWED_VALUE = 100 * 10**18; // $100
-    uint256 constant DEF_MIN_BORROWED_VALUE = 100 * 10**18; // $5
-    uint256 constant MIN_MIN_BORROWED_VALUE =   1 * 10**18; // $1
+        uint64 MAX_LIQUIDATION_SPREAD;
+        uint64 LIQUIDATION_SPREAD;
+        uint64 MIN_LIQUIDATION_SPREAD;
+
+        uint64 MIN_EARNINGS_RATE;
+        uint64 EARNINGS_RATE;
+        uint64 MAX_EARNINGS_RATE;
+
+        uint128 MAX_MIN_BORROWED_VALUE;
+        uint128 MIN_BORROWED_VALUE;
+        uint128 MIN_MIN_BORROWED_VALUE;
+    }
 
     // ============ Constructor ============
 
-    constructor()
+    constructor(
+        RiskParameters memory rp
+    )
         public
     {
-        g_liquidationRatio =  Decimal.D256({ value: DEF_LIQUIDATION_RATIO });
-        g_liquidationSpread = Decimal.D256({ value: DEF_LIQUIDATION_SPREAD });
-        g_earningsRate =      Decimal.D256({ value: DEF_EARNINGS_RATE });
-        g_minBorrowedValue =  Monetary.Value({ value: DEF_MIN_BORROWED_VALUE });
+        MAX_INTEREST_RATE = rp.MAX_INTEREST_RATE;
+        MAX_LIQUIDATION_RATIO = rp.MAX_LIQUIDATION_RATIO;
+        MIN_LIQUIDATION_RATIO = rp.MIN_LIQUIDATION_RATIO;
+        MAX_LIQUIDATION_SPREAD = rp.MAX_LIQUIDATION_SPREAD;
+        MIN_LIQUIDATION_SPREAD = rp.MIN_LIQUIDATION_SPREAD;
+        MAX_EARNINGS_RATE = rp.MAX_EARNINGS_RATE;
+        MIN_EARNINGS_RATE = rp.MIN_EARNINGS_RATE;
+        MAX_MIN_BORROWED_VALUE = rp.MAX_MIN_BORROWED_VALUE;
+        MIN_MIN_BORROWED_VALUE = rp.MIN_MIN_BORROWED_VALUE;
+        g_liquidationRatio =  Decimal.D256({ value: rp.LIQUIDATION_RATIO });
+        g_liquidationSpread = Decimal.D256({ value: rp.LIQUIDATION_SPREAD });
+        g_earningsRate =      Decimal.D256({ value: rp.EARNINGS_RATE });
+        g_minBorrowedValue =  Monetary.Value({ value: rp.MIN_BORROWED_VALUE });
     }
 
     // ============ Owner-Only Functions ============
@@ -104,11 +121,7 @@ contract Admin is
         nonReentrant
         returns (uint256)
     {
-        Require.that(
-            !_marketExistsForToken(token),
-            FILE,
-            "Market exists"
-        );
+        _requireNoMarket(token);
 
         uint256 balance = Token.balanceOf(token, address(this));
         Token.transfer(token, recipient, balance);
@@ -124,11 +137,7 @@ contract Admin is
         onlyOwner
         nonReentrant
     {
-        Require.that(
-            !_marketExistsForToken(token),
-            FILE,
-            "Market exists"
-        );
+        _requireNoMarket(token);
 
         uint256 marketId = g_numMarkets;
 
@@ -280,7 +289,7 @@ contract Admin is
         address token = g_markets[marketId].token;
 
         Require.that(
-            Interest.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
+            Manager.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
             FILE,
             "Invalid interest rate"
         );
@@ -304,22 +313,28 @@ contract Admin is
         );
     }
 
-    function _marketExistsForToken(
+    function _requireNoMarket(
         address token
     )
         private
         view
-        returns (bool)
     {
         uint256 numMarkets = g_numMarkets;
 
+        bool marketExists = false;
+
         for (uint256 m = 0; m < numMarkets; m++) {
             if (g_markets[m].token == token) {
-                return true;
+                marketExists = true;
+                break;
             }
         }
 
-        return false;
+        Require.that(
+            !marketExists,
+            FILE,
+            "Market exists"
+        );
     }
 
     function _validateMarketId(
@@ -331,7 +346,7 @@ contract Admin is
         Require.that(
             marketId < g_numMarkets,
             FILE,
-            "Market out-of-bounds",
+            "Market OOB",
             marketId
         );
     }

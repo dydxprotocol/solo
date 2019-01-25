@@ -35,12 +35,12 @@ import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title Transactions
+ * @title Interactions
  * @author dYdX
  *
- * Logic for processing transactions
+ * Logic for processing actions
  */
-contract Transactions is
+contract Interactions is
     ReentrancyGuard,
     Storage,
     Manager,
@@ -48,7 +48,7 @@ contract Transactions is
 {
     // ============ Constants ============
 
-    string constant FILE = "Transactions";
+    string constant FILE = "Interactions";
 
     // ============ Public Functions ============
 
@@ -124,7 +124,7 @@ contract Transactions is
             Require.that(
                 borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
                 FILE,
-                "Cannot leave account with borrow value less than minBorrowedValue",
+                "Borrow value too low",
                 a
             );
 
@@ -133,10 +133,12 @@ contract Transactions is
                 Require.that(
                     valuesToStatus(supplyValue, borrowValue) == AccountStatus.Normal,
                     FILE,
-                    "Cannot leave primary or traded account undercollateralized",
+                    "Undercollateralized account",
                     a
                 );
-                setStatus(account, AccountStatus.Normal);
+                if (getStatus(account) != AccountStatus.Normal) {
+                    setStatus(account, AccountStatus.Normal);
+                }
             }
 
             // check permissions for primary accounts
@@ -144,7 +146,8 @@ contract Transactions is
                 Require.that(
                     account.owner == msg.sender || g_operators[account.owner][msg.sender],
                     FILE,
-                    "Must have permissions for primary accounts"
+                    "Unpermissioned account",
+                    a
                 );
             }
         }
@@ -162,7 +165,7 @@ contract Transactions is
         Require.that(
             args.from == msg.sender || args.from == args.account.owner,
             FILE,
-            "Deposit must come from sender or owner"
+            "Invalid deposit source"
         );
 
         (
@@ -296,7 +299,7 @@ contract Transactions is
         Require.that(
             tokensReceived.value >= makerWei.value,
             FILE,
-            "Exchange must receive more than expected from getCost"
+            "Buy amount less than promised"
         );
 
         setPar(
@@ -377,7 +380,7 @@ contract Transactions is
         Require.that(
             g_operators[args.makerAccount.owner][args.autoTrader],
             FILE,
-            "AutoTrader not authorized"
+            "Unpermissioned AutoTrader"
         );
 
         Types.Par memory oldInputPar = getPar(
@@ -458,7 +461,7 @@ contract Transactions is
             Require.that(
                 AccountStatus.Liquid == valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Liquidation account must be undercollateralized"
+                "Unliquidatable account"
             );
             setStatus(args.liquidAccount, AccountStatus.Liquid);
         }
@@ -471,7 +474,7 @@ contract Transactions is
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Liquidation account must have positive collateral"
+            "Collateral must be positive"
         );
 
         (
@@ -551,7 +554,7 @@ contract Transactions is
             Require.that(
                 AccountStatus.Vapor == valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Vaporization account must have only negative values"
+                "Unvaporizable account"
             );
             setStatus(args.vaporAccount, AccountStatus.Vapor);
         }
@@ -566,7 +569,7 @@ contract Transactions is
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Owner fund must have positive collateral"
+            "Excess token must be positive"
         );
 
         (

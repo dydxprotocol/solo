@@ -113,7 +113,7 @@ contract Expiry is
         Require.that(
             oldInputPar.isNegative(),
             FILE,
-            "Only negative balances can be expired"
+            "Balance must be negative"
         );
         Require.that(
             newInputPar.isPositive(),
@@ -130,7 +130,7 @@ contract Expiry is
         Require.that(
             Time.hasHappened(getExpiry(makerAccount, inputMarketId)),
             FILE,
-            "Market not yet expired for account"
+            "Loan not yet expired"
         );
 
         // clear expiry if loan is fully repaid
@@ -143,7 +143,7 @@ contract Expiry is
         Require.that(
             maxOutputWei.isPositive(),
             FILE,
-            "Only positive balances can be used as collateral"
+            "Collateral must be positive"
         );
 
         // get return value
@@ -155,7 +155,7 @@ contract Expiry is
         Require.that(
             outputWei.value <= maxOutputWei.value,
             FILE,
-            "Collateral balance cannot be made negative"
+            "Collateral cannot be overtaken"
         );
 
         return outputWei;

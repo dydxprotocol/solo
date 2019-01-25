@@ -21,7 +21,6 @@ pragma solidity ^0.5.0;
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
 import { Math } from "./Math.sol";
-import { Require } from "./Require.sol";
 import { Time } from "./Time.sol";
 import { Types } from "./Types.sol";
 
@@ -40,7 +39,6 @@ library Interest {
 
     string constant FILE = "Interest";
     uint64 constant BASE = 10**18;
-    uint64 constant MAX_INTEREST_RATE = BASE / (60 * 60 * 24 * 365); // Max 100% per year
 
     // ============ Structs ============
 
@@ -66,13 +64,6 @@ library Interest {
         view
         returns (Index memory)
     {
-        Require.that(
-            isValidRate(rate),
-            FILE,
-            "Invalid rate",
-            rate.value
-        );
-
         (
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei
@@ -99,16 +90,6 @@ library Interest {
             supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
             lastUpdate: Time.currentTime()
         });
-    }
-
-    function isValidRate(
-        Rate memory rate
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return rate.value <= MAX_INTEREST_RATE;
     }
 
     function newIndex()

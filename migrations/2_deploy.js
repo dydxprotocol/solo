@@ -2,7 +2,7 @@
 
     Copyright 2018 dYdX Trading Inc.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
+    Licensed under the Apache License, Version 2.0 (the "License";
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
@@ -29,13 +29,43 @@ const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 
+const MAX_INTEREST_RATE = "31709791983"; // Max 100% per year
+const MAX_LIQUIDATION_RATIO = "2000000000000000000"; // 200%
+const LIQUIDATION_RATIO = "1250000000000000000"; // 125%
+const MIN_LIQUIDATION_RATIO = "1100000000000000000"; // 110%
+const MAX_LIQUIDATION_SPREAD = "1150000000000000000"; // 115%
+const LIQUIDATION_SPREAD = "1050000000000000000"; // 105%
+const MIN_LIQUIDATION_SPREAD = "1010000000000000000"; // 101%
+const MIN_EARNINGS_RATE = "500000000000000000"; // 50%
+const EARNINGS_RATE = "500000000000000000"; // 90%
+const MAX_EARNINGS_RATE = "1000000000000000000"; // 100%
+const MAX_MIN_BORROWED_VALUE = "100000000000000000000"; // $100
+const MIN_BORROWED_VALUE = "100000000000000000000"; // $5
+const MIN_MIN_BORROWED_VALUE = "1000000000000000000"; // $1
+
+const prodArgs = {
+  MAX_INTEREST_RATE,
+  MAX_LIQUIDATION_RATIO,
+  LIQUIDATION_RATIO,
+  MIN_LIQUIDATION_RATIO,
+  MAX_LIQUIDATION_SPREAD,
+  LIQUIDATION_SPREAD,
+  MIN_LIQUIDATION_SPREAD,
+  MIN_EARNINGS_RATE,
+  EARNINGS_RATE,
+  MAX_EARNINGS_RATE,
+  MAX_MIN_BORROWED_VALUE,
+  MIN_BORROWED_VALUE,
+  MIN_MIN_BORROWED_VALUE,
+}
+
 async function maybeDeployTestContracts(deployer, network) {
   if (!isDevNetwork(network)) {
     return;
   }
 
   await Promise.all([
-    deployer.deploy(TestSoloMargin),
+    deployer.deploy(TestSoloMargin, prodArgs),
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
@@ -49,7 +79,7 @@ async function maybeDeployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer) {
-  await deployer.deploy(SoloMargin);
+  await deployer.deploy(SoloMargin, prodArgs);
 }
 
 const migration = async (deployer, network) => {

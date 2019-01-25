@@ -113,6 +113,7 @@ contract Queries is
         uint256 marketId
     )
         public
+        view
         returns (MarketWithInfo memory)
     {
         return MarketWithInfo({
@@ -174,9 +175,10 @@ contract Queries is
         uint256 marketId
     )
         public
+        view
         returns (Interest.Index memory)
     {
-        return updateIndex(marketId);
+        return fetchNewIndex(marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -259,10 +261,13 @@ contract Queries is
         uint256 marketId
     )
         public
+        view
         returns (Types.Wei memory)
     {
-        updateIndex(marketId);
-        return getWei(account, marketId);
+        return Interest.parToWei(
+            getPar(account, marketId),
+            fetchNewIndex(marketId)
+        );
     }
 
     function getAccountStatus(

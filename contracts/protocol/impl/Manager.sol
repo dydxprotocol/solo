@@ -25,7 +25,6 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Acct } from "../lib/Acct.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
-import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
@@ -97,7 +96,10 @@ contract Manager is
 
         address token = getToken(marketId);
 
-        Types.Wei memory balanceWei = Exchange.thisBalance(token);
+        Types.Wei memory balanceWei = Types.Wei({
+            sign: true,
+            value: Token.balanceOf(token, address(this))
+        });
 
         (
             Types.Wei memory supplyWei,
@@ -146,6 +148,31 @@ contract Manager is
         return Interest.parToWei(par, index);
     }
 
+    function fetchNewIndex(
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Interest.Index memory)
+    {
+        Interest.Index memory index = g_markets[marketId].index;
+        Interest.Rate memory rate = fetchInterestRate(marketId, index);
+
+        Require.that(
+            isValidRate(rate),
+            FILE,
+            "Invalid interest rate",
+            rate.value
+        );
+
+        return Interest.calculateNewIndex(
+            index,
+            rate,
+            getTotalPar(marketId),
+            g_earningsRate
+        );
+    }
+
     function fetchInterestRate(
         uint256 marketId,
         Interest.Index memory index
@@ -184,26 +211,22 @@ contract Manager is
         uint256 marketId
     )
         internal
-        returns (Interest.Index memory)
     {
-        Interest.Index memory index = g_markets[marketId].index;
-
-        if (index.lastUpdate == Time.currentTime()) {
-            return index;
+        if (Time.currentTime() == g_markets[marketId].index.lastUpdate) {
+            return;
         }
 
-        Interest.Rate memory rate = fetchInterestRate(marketId, index);
+        g_markets[marketId].index = fetchNewIndex(marketId);
+    }
 
-        index = Interest.calculateNewIndex(
-            index,
-            rate,
-            getTotalPar(marketId),
-            g_earningsRate
-        );
-
-        g_markets[marketId].index = index;
-
-        return index;
+    function isValidRate(
+        Interest.Rate memory rate
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return rate.value <= MAX_INTEREST_RATE;
     }
 
     function setStatus(
@@ -327,7 +350,7 @@ contract Manager is
         Require.that(
             getPar(account, marketId).isNegative(),
             FILE,
-            "Liquidating/Vaporizing account must have negative balance",
+            "Balance must be negatives",
             account.number,
             marketId
         );
@@ -344,7 +367,7 @@ contract Manager is
         Require.that(
             deltaWei.isPositive(),
             FILE,
-            "Liquidating/Vaporizing negative account balance must be repaid"
+            "Balance must be repaid"
         );
 
         // if attempting to over-repay the owed asset, bound it by the maximum
@@ -431,7 +454,8 @@ contract Manager is
                 continue;
             }
 
-            Interest.Index memory index = updateIndex(m);
+            updateIndex(m);
+            Interest.Index memory index = getIndex(m);
             Types.Wei memory userWei = Interest.parToWei(userPar, index);
 
             Monetary.Value memory overallValue = Monetary.getValue(
