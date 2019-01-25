@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
   "main": "dist/js/src/index.js",
   "files": [
@@ -57,7 +57,7 @@
   },
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
-    "@dydxprotocol/exchange-wrappers": "0.0.5",
+    "@dydxprotocol/exchange-wrappers": "0.0.6",
     "bignumber.js": "^8.0.2",
     "openzeppelin-solidity": "2.1.1",
     "web3": "^1.0.0-beta.37"
