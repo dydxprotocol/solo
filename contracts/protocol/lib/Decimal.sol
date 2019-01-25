@@ -66,6 +66,28 @@ library Decimal {
 
     // ============ Decimal <-> Decimal Functions ============
 
+    function mul(
+        D256 memory a,
+        D256 memory b
+    )
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: a.value.mul(b.value).div(BASE) });
+    }
+
+    function div(
+        D256 memory a,
+        D256 memory b
+    )
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: a.value.mul(BASE).div(b.value) });
+    }
+
     function add(
         D256 memory a,
         D256 memory b

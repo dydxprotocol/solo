@@ -113,7 +113,6 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (MarketWithInfo memory)
     {
         return MarketWithInfo({
@@ -175,11 +174,9 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (Interest.Index memory)
     {
-        Cache memory cache = cacheInitializeEmpty();
-        return cacheGetIndex(cache, marketId);
+        return updateIndex(marketId);
     }
 
     function getMarketLastUpdateTime(
@@ -241,21 +238,7 @@ contract Queries is
         view
         returns (Interest.Rate memory)
     {
-        Interest.Index memory index = getMarketCachedIndex(marketId);
-
-        (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
-        ) = Interest.totalParToWei(
-            getMarketTotalPar(marketId),
-            index
-        );
-
-        return g_markets[marketId].interestSetter.getInterestRate(
-            getMarketTokenAddress(marketId),
-            borrowWei.value,
-            supplyWei.value
-        );
+        return fetchInterestRate(marketId, g_markets[marketId].index);
     }
 
     // ============ Account-Based Variables ============
@@ -276,11 +259,10 @@ contract Queries is
         uint256 marketId
     )
         public
-        view
         returns (Types.Wei memory)
     {
-        Cache memory cache = cacheInitializeSingle(account);
-        return cacheGetWei(cache, 0, marketId);
+        updateIndex(marketId);
+        return getWei(account, marketId);
     }
 
     function getAccountStatus(
@@ -297,31 +279,27 @@ contract Queries is
         Acct.Info memory account
     )
         public
-        view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        Cache memory cache = cacheInitializeSingle(account);
-        return cacheGetAccountValues(cache, 0);
+        return getValues(account);
     }
 
     function getAccountBalances(
         Acct.Info memory account
     )
         public
-        view
         returns (Balance[] memory)
     {
         uint256 numMarkets = g_numMarkets;
 
         Balance[] memory balances = new Balance[](numMarkets);
 
-        Cache memory cache = cacheInitializeSingle(account);
-
         for (uint256 m = 0; m < numMarkets; m++) {
+            updateIndex(m);
             balances[m] = Balance({
-                tokenAddress: cacheGetToken(cache, m),
-                parBalance: cacheGetPar(cache, 0, m),
-                weiBalance: cacheGetWei(cache, 0, m)
+                tokenAddress: getToken(m),
+                parBalance: getPar(account, m),
+                weiBalance: getWei(account, m)
             });
         }
 

@@ -55,7 +55,7 @@ contract Admin is
     uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 110%
 
     uint256 constant MAX_LIQUIDATION_SPREAD = 115 * 10**16; // 115%
-    uint256 constant DEF_LIQUIDATION_SPREAD = 115 * 10**16; // 105%
+    uint256 constant DEF_LIQUIDATION_SPREAD = 105 * 10**16; // 105%
     uint256 constant MIN_LIQUIDATION_SPREAD = 101 * 10**16; // 101%
 
     uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
@@ -89,10 +89,9 @@ contract Admin is
         returns (uint256)
     {
         _validateMarketId(marketId);
-
-        Cache memory cache = cacheInitializeEmpty();
-        Types.Wei memory excessWei = cacheGetNumExcessTokens(cache, marketId);
-        Exchange.transferOut(cacheGetToken(cache, marketId), recipient, excessWei);
+        updateIndex(marketId);
+        Types.Wei memory excessWei = getNumExcessTokens(marketId);
+        Exchange.transferOut(getToken(marketId), recipient, excessWei);
         return excessWei.value;
     }
 

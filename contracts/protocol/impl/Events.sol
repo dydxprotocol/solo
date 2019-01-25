@@ -147,21 +147,17 @@ contract Events is
     }
 
     function logDeposit(
-        Cache memory cache,
         Actions.DepositArgs memory args,
         Types.Wei memory deltaWei
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
-
         emit LogDeposit(
-            account.owner,
-            account.number,
+            args.account.owner,
+            args.account.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.mkt,
                 deltaWei
             ),
@@ -170,21 +166,17 @@ contract Events is
     }
 
     function logWithdraw(
-        Cache memory cache,
         Actions.WithdrawArgs memory args,
         Types.Wei memory deltaWei
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
-
         emit LogWithdraw(
-            account.owner,
-            account.number,
+            args.account.owner,
+            args.account.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.mkt,
                 deltaWei
             ),
@@ -193,30 +185,24 @@ contract Events is
     }
 
     function logTransfer(
-        Cache memory cache,
         Actions.TransferArgs memory args,
         Types.Wei memory deltaWei
     )
         internal
     {
-        Acct.Info memory accountOne = cacheGetAcctInfo(cache, args.acctOne);
-        Acct.Info memory accountTwo = cacheGetAcctInfo(cache, args.acctTwo);
-
         emit LogTransfer(
-            accountOne.owner,
-            accountOne.number,
-            accountTwo.owner,
-            accountTwo.number,
+            args.accountOne.owner,
+            args.accountOne.number,
+            args.accountTwo.owner,
+            args.accountTwo.number,
             args.mkt,
             getBalanceUpdate(
-                cache,
-                args.acctOne,
+                args.accountOne,
                 args.mkt,
                 deltaWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acctTwo,
+                args.accountTwo,
                 args.mkt,
                 deltaWei.negative()
             )
@@ -224,29 +210,24 @@ contract Events is
     }
 
     function logBuy(
-        Cache memory cache,
         Actions.BuyArgs memory args,
         Types.Wei memory takerWei,
         Types.Wei memory makerWei
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
-
         emit LogBuy(
-            account.owner,
-            account.number,
+            args.account.owner,
+            args.account.number,
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.makerMkt,
                 makerWei
             ),
@@ -255,29 +236,24 @@ contract Events is
     }
 
     function logSell(
-        Cache memory cache,
         Actions.SellArgs memory args,
         Types.Wei memory takerWei,
         Types.Wei memory makerWei
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
-
         emit LogSell(
-            account.owner,
-            account.number,
+            args.account.owner,
+            args.account.number,
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
-                cache,
-                args.acct,
+                args.account,
                 args.makerMkt,
                 makerWei
             ),
@@ -286,50 +262,40 @@ contract Events is
     }
 
     function logTrade(
-        Cache memory cache,
         Actions.TradeArgs memory args,
         Types.Wei memory inputWei,
         Types.Wei memory outputWei
     )
         internal
     {
-        Acct.Info[2] memory accounts = [
-            cacheGetAcctInfo(cache, args.takerAcct),
-            cacheGetAcctInfo(cache, args.makerAcct)
-        ];
-
         BalanceUpdate[4] memory updates = [
             getBalanceUpdate(
-                cache,
-                args.takerAcct,
+                args.takerAccount,
                 args.inputMkt,
                 inputWei.negative()
             ),
             getBalanceUpdate(
-                cache,
-                args.takerAcct,
+                args.takerAccount,
                 args.outputMkt,
                 outputWei.negative()
             ),
             getBalanceUpdate(
-                cache,
-                args.makerAcct,
+                args.makerAccount,
                 args.inputMkt,
                 inputWei
             ),
             getBalanceUpdate(
-                cache,
-                args.makerAcct,
+                args.makerAccount,
                 args.outputMkt,
                 outputWei
             )
         ];
 
         emit LogTrade(
-            accounts[0].owner,
-            accounts[0].number,
-            accounts[1].owner,
-            accounts[1].number,
+            args.takerAccount.owner,
+            args.takerAccount.number,
+            args.makerAccount.owner,
+            args.makerAccount.number,
             args.inputMkt,
             args.outputMkt,
             updates[0],
@@ -341,61 +307,50 @@ contract Events is
     }
 
     function logCall(
-        Cache memory cache,
         Actions.CallArgs memory args
     )
         internal
     {
-        Acct.Info memory account = cacheGetAcctInfo(cache, args.acct);
-
         emit LogCall(
-            account.owner,
-            account.number,
+            args.account.owner,
+            args.account.number,
             args.callee
         );
     }
 
     function logLiquidate(
-        Cache memory cache,
         Actions.LiquidateArgs memory args,
         Types.Wei memory heldWei,
         Types.Wei memory owedWei
     )
         internal
     {
-        Acct.Info memory solidAccount = cacheGetAcctInfo(cache, args.solidAcct);
-        Acct.Info memory liquidAccount = cacheGetAcctInfo(cache, args.liquidAcct);
-
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.liquidAcct,
+            args.liquidAccount,
             args.heldMkt,
             heldWei
         );
         BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.liquidAcct,
+            args.liquidAccount,
             args.owedMkt,
             owedWei
         );
 
         emit LogLiquidate(
-            solidAccount.owner,
-            solidAccount.number,
-            liquidAccount.owner,
-            liquidAccount.number,
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.liquidAccount.owner,
+            args.liquidAccount.number,
             args.heldMkt,
             args.owedMkt,
             solidHeldUpdate,
@@ -406,40 +361,33 @@ contract Events is
     }
 
     function logVaporize(
-        Cache memory cache,
         Actions.VaporizeArgs memory args,
         Types.Wei memory heldWei,
         Types.Wei memory owedWei
     )
         internal
     {
-        Acct.Info memory solidAccount = cacheGetAcctInfo(cache, args.solidAcct);
-        Acct.Info memory vaporAccount = cacheGetAcctInfo(cache, args.vaporAcct);
-
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            cache,
-            args.solidAcct,
+            args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
-            cache,
-            args.vaporAcct,
+            args.vaporAccount,
             args.owedMkt,
             owedWei
         );
 
         emit LogVaporize(
-            solidAccount.owner,
-            solidAccount.number,
-            vaporAccount.owner,
-            vaporAccount.number,
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.vaporAccount.owner,
+            args.vaporAccount.number,
             args.heldMkt,
             args.owedMkt,
             solidHeldUpdate,
@@ -451,18 +399,17 @@ contract Events is
     // ============ Private Functions ============
 
     function getBalanceUpdate(
-        Cache memory cache,
-        uint256 acct,
+        Acct.Info memory account,
         uint256 mkt,
         Types.Wei memory deltaWei
     )
         private
-        pure
+        view
         returns (BalanceUpdate memory)
     {
         return BalanceUpdate({
             deltaWei: deltaWei,
-            newPar: cacheGetPar(cache, acct, mkt)
+            newPar: getPar(account, mkt)
         });
     }
 }
