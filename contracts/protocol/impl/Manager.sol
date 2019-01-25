@@ -459,13 +459,18 @@ contract Manager is
     {
         Monetary.Price memory heldPrice = fetchPrice(heldMarketId);
         Monetary.Price memory owedPrice = fetchPrice(owedMarketId);
-        return Decimal.D256({
+
+        // get the actual price ratio
+        Decimal.D256 memory priceRatio = Decimal.D256({
             value: Math.getPartial(
                 Decimal.one().value,
                 owedPrice.value,
                 heldPrice.value
             )
         });
+
+        // return the price ratio including the spread
+        return Decimal.mul(priceRatio, g_liquidationSpread);
     }
 
     function owedWeiToHeldWei(
@@ -473,13 +478,12 @@ contract Manager is
         Types.Wei memory owedWei
     )
         internal
-        view
+        pure
         returns (Types.Wei memory)
     {
-        // TODO: bug here?
         return Types.Wei({
             sign: false,
-            value: Decimal.mul(owedWei.value, Decimal.mul(priceRatio, g_liquidationSpread))
+            value: Decimal.mul(owedWei.value, priceRatio)
         });
     }
 
@@ -488,13 +492,12 @@ contract Manager is
         Types.Wei memory heldWei
     )
         internal
-        view
+        pure
         returns (Types.Wei memory)
     {
-        // TODO: bug here?
         return Types.Wei({
             sign: true,
-            value: Decimal.div(heldWei.value, Decimal.div(priceRatio, g_liquidationSpread))
+            value: Decimal.div(heldWei.value, priceRatio)
         });
     }
 }
