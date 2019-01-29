@@ -145,21 +145,21 @@ contract AdminLib is
         nonReentrant
     {
         Require.that(
-            ratio.value <= MAX_LIQUIDATION_RATIO,
+            ratio.value <= g_riskLimits.MAX_LIQUIDATION_RATIO,
             FILE,
             "Ratio too high"
         );
         Require.that(
-            ratio.value >= MIN_LIQUIDATION_RATIO,
+            ratio.value >= g_riskLimits.MIN_LIQUIDATION_RATIO,
             FILE,
             "Ratio too low"
         );
         Require.that(
-            ratio.value > g_liquidationSpread.value,
+            ratio.value > g_riskParams.liquidationSpread.value,
             FILE,
             "Ratio higher than spread"
         );
-        g_liquidationRatio = ratio;
+        g_riskParams.liquidationRatio = ratio;
     }
 
     function ownerSetLiquidationSpread(
@@ -170,21 +170,21 @@ contract AdminLib is
         nonReentrant
     {
         Require.that(
-            spread.value <= MAX_LIQUIDATION_SPREAD,
+            spread.value <= g_riskLimits.MAX_LIQUIDATION_SPREAD,
             FILE,
             "Spread too high"
         );
         Require.that(
-            spread.value >= MIN_LIQUIDATION_SPREAD,
+            spread.value >= g_riskLimits.MIN_LIQUIDATION_SPREAD,
             FILE,
             "Spread too low"
         );
         Require.that(
-            spread.value < g_liquidationRatio.value,
+            spread.value < g_riskParams.liquidationRatio.value,
             FILE,
             "Spread lower than ratio"
         );
-        g_liquidationSpread = spread;
+        g_riskParams.liquidationSpread = spread;
     }
 
     function ownerSetEarningsRate(
@@ -195,16 +195,16 @@ contract AdminLib is
         nonReentrant
     {
         Require.that(
-            earningsRate.value <= MAX_EARNINGS_RATE,
+            earningsRate.value <= g_riskLimits.MAX_EARNINGS_RATE,
             FILE,
             "Rate too high"
         );
         Require.that(
-            earningsRate.value >= MIN_EARNINGS_RATE,
+            earningsRate.value >= g_riskLimits.MIN_EARNINGS_RATE,
             FILE,
             "Rate too low"
         );
-        g_earningsRate = earningsRate;
+        g_riskParams.earningsRate = earningsRate;
     }
 
     function ownerSetMinBorrowedValue(
@@ -215,16 +215,16 @@ contract AdminLib is
         nonReentrant
     {
         Require.that(
-            minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE,
+            minBorrowedValue.value <= g_riskLimits.MAX_MIN_BORROWED_VALUE,
             FILE,
             "Value too high"
         );
         Require.that(
-            minBorrowedValue.value >= MIN_MIN_BORROWED_VALUE,
+            minBorrowedValue.value >= g_riskLimits.MIN_MIN_BORROWED_VALUE,
             FILE,
             "Value too low"
         );
-        g_minBorrowedValue = minBorrowedValue;
+        g_riskParams.minBorrowedValue = minBorrowedValue;
     }
 
     // ============ Private Functions ============

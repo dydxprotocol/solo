@@ -44,20 +44,23 @@ const MAX_MIN_BORROWED_VALUE = "100000000000000000000"; // $100
 const MIN_BORROWED_VALUE = "100000000000000000000"; // $5
 const MIN_MIN_BORROWED_VALUE = "1000000000000000000"; // $1
 
-const prodArgs = {
+const riskLimits = {
   MAX_INTEREST_RATE,
   MAX_LIQUIDATION_RATIO,
-  LIQUIDATION_RATIO,
   MIN_LIQUIDATION_RATIO,
   MAX_LIQUIDATION_SPREAD,
-  LIQUIDATION_SPREAD,
   MIN_LIQUIDATION_SPREAD,
   MIN_EARNINGS_RATE,
-  EARNINGS_RATE,
   MAX_EARNINGS_RATE,
   MAX_MIN_BORROWED_VALUE,
-  MIN_BORROWED_VALUE,
   MIN_MIN_BORROWED_VALUE,
+}
+
+const riskParams = {
+  liquidationRatio: { value: LIQUIDATION_RATIO },
+  liquidationSpread: { value: LIQUIDATION_SPREAD },
+  earningsRate: { value: EARNINGS_RATE },
+  minBorrowedValue: { value: MIN_BORROWED_VALUE },
 }
 
 async function maybeDeployTestContracts(deployer, network) {
@@ -66,7 +69,7 @@ async function maybeDeployTestContracts(deployer, network) {
   }
 
   await Promise.all([
-    deployer.deploy(TestSoloMargin, AdminLib.address, prodArgs),
+    deployer.deploy(TestSoloMargin, AdminLib.address, riskParams, riskLimits),
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
@@ -80,7 +83,7 @@ async function maybeDeployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer) {
-  await deployer.deploy(SoloMargin, AdminLib.address, prodArgs);
+  await deployer.deploy(SoloMargin, AdminLib.address, riskParams, riskLimits);
 }
 
 const migration = async (deployer, network) => {

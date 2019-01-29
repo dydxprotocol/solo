@@ -110,7 +110,7 @@ contract Interactions is
     )
         private
     {
-        Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
+        Monetary.Value memory minBorrowedValue = g_riskParams.minBorrowedValue;
 
         for (uint256 a = 0; a < accounts.length; a++) {
             Acct.Info memory account = accounts[a];

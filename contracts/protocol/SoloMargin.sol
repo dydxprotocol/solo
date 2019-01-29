@@ -23,8 +23,6 @@ import { Admin } from "./impl/Admin.sol";
 import { Interactions } from "./impl/Interactions.sol";
 import { Permissions } from "./impl/Permissions.sol";
 import { Queries } from "./impl/Queries.sol";
-import { Decimal } from "./lib/Decimal.sol";
-import { Monetary } from "./lib/Monetary.sol";
 
 
 /**
@@ -39,49 +37,17 @@ contract SoloMargin is
     Admin,
     Queries
 {
-    // ============ Structs ============
-
-    struct RiskParameters {
-        uint64 MAX_INTEREST_RATE;
-
-        uint64 MAX_LIQUIDATION_RATIO;
-        uint64 LIQUIDATION_RATIO;
-        uint64 MIN_LIQUIDATION_RATIO;
-
-        uint64 MAX_LIQUIDATION_SPREAD;
-        uint64 LIQUIDATION_SPREAD;
-        uint64 MIN_LIQUIDATION_SPREAD;
-
-        uint64 MIN_EARNINGS_RATE;
-        uint64 EARNINGS_RATE;
-        uint64 MAX_EARNINGS_RATE;
-
-        uint128 MAX_MIN_BORROWED_VALUE;
-        uint128 MIN_BORROWED_VALUE;
-        uint128 MIN_MIN_BORROWED_VALUE;
-    }
-
     // ============ Constructor ============
 
     constructor(
         address adminlib,
-        RiskParameters memory rp
+        RiskParams memory rp,
+        RiskLimits memory rl
     )
         public
     {
         g_adminlib = adminlib;
-        MAX_INTEREST_RATE = rp.MAX_INTEREST_RATE;
-        MAX_LIQUIDATION_RATIO = rp.MAX_LIQUIDATION_RATIO;
-        MIN_LIQUIDATION_RATIO = rp.MIN_LIQUIDATION_RATIO;
-        MAX_LIQUIDATION_SPREAD = rp.MAX_LIQUIDATION_SPREAD;
-        MIN_LIQUIDATION_SPREAD = rp.MIN_LIQUIDATION_SPREAD;
-        MAX_EARNINGS_RATE = rp.MAX_EARNINGS_RATE;
-        MIN_EARNINGS_RATE = rp.MIN_EARNINGS_RATE;
-        MAX_MIN_BORROWED_VALUE = rp.MAX_MIN_BORROWED_VALUE;
-        MIN_MIN_BORROWED_VALUE = rp.MIN_MIN_BORROWED_VALUE;
-        g_liquidationRatio =  Decimal.D256({ value: rp.LIQUIDATION_RATIO });
-        g_liquidationSpread = Decimal.D256({ value: rp.LIQUIDATION_SPREAD });
-        g_earningsRate =      Decimal.D256({ value: rp.EARNINGS_RATE });
-        g_minBorrowedValue =  Monetary.Value({ value: rp.MIN_BORROWED_VALUE });
+        g_riskParams = rp;
+        g_riskLimits = rl;
     }
 }

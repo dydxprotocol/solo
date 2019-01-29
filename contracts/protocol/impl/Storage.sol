@@ -62,6 +62,33 @@ contract Storage is
         bool isClosing;
     }
 
+    struct RiskParams {
+        // collateral ratio at which accounts can be liquidated
+        Decimal.D256 liquidationRatio;
+
+        // (1 - liquidationSpread) is the percentage penalty incurred by liquidated accounts
+        Decimal.D256 liquidationSpread;
+
+        // Percentage of the borrower's interest fee that gets passed to the suppliers
+        Decimal.D256 earningsRate;
+
+        // The minimum absolute borrow value of an account
+        // There must be sufficient incentivize to liquidate undercollateralized accounts
+        Monetary.Value minBorrowedValue;
+    }
+
+    struct RiskLimits {
+        uint64 MAX_INTEREST_RATE;
+        uint64 MAX_LIQUIDATION_RATIO;
+        uint64 MIN_LIQUIDATION_RATIO;
+        uint64 MAX_LIQUIDATION_SPREAD;
+        uint64 MIN_LIQUIDATION_SPREAD;
+        uint64 MIN_EARNINGS_RATE;
+        uint64 MAX_EARNINGS_RATE;
+        uint128 MAX_MIN_BORROWED_VALUE;
+        uint128 MIN_MIN_BORROWED_VALUE;
+    }
+
     // ============ Storage ============
 
     // number of markets
@@ -73,36 +100,11 @@ contract Storage is
     // owner => account number => Account
     mapping (address => mapping (uint256 => Account)) g_accounts;
 
-    // ============ Risk Parameters ============
+    // ============ Risk ============
 
-    // collateral ratio at which accounts can be liquidated
-    Decimal.D256 g_liquidationRatio;
+    RiskParams g_riskParams;
 
-    // (1 - g_liquidationSpread) is the percentage penalty incurred by liquidated accounts
-    Decimal.D256 g_liquidationSpread;
-
-    // Percentage of the borrower's interest fee that gets passed to the suppliers
-    Decimal.D256 g_earningsRate;
-
-    // The minimum absolute borrow value of an account
-    // There must be sufficient incentivize to liquidate undercollateralized accounts
-    Monetary.Value g_minBorrowedValue;
-
-    // ============ Limits ============
-
-    uint64 MAX_INTEREST_RATE;
-
-    uint64 MAX_LIQUIDATION_RATIO;
-    uint64 MIN_LIQUIDATION_RATIO;
-
-    uint64 MAX_LIQUIDATION_SPREAD;
-    uint64 MIN_LIQUIDATION_SPREAD;
-
-    uint64 MIN_EARNINGS_RATE;
-    uint64 MAX_EARNINGS_RATE;
-
-    uint128 MAX_MIN_BORROWED_VALUE;
-    uint128 MIN_MIN_BORROWED_VALUE;
+    RiskLimits g_riskLimits;
 
     // ============ Permissioning ============
 

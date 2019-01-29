@@ -47,7 +47,7 @@ contract Queries is
         view
         returns (Decimal.D256 memory)
     {
-        return g_liquidationRatio;
+        return g_riskParams.liquidationRatio;
     }
 
     function getLiquidationSpread()
@@ -55,7 +55,7 @@ contract Queries is
         view
         returns (Decimal.D256 memory)
     {
-        return g_liquidationSpread;
+        return g_riskParams.liquidationSpread;
     }
 
     function getEarningsRate()
@@ -63,7 +63,7 @@ contract Queries is
         view
         returns (Decimal.D256 memory)
     {
-        return g_earningsRate;
+        return g_riskParams.earningsRate;
     }
 
     function getMinBorrowedValue()
@@ -71,7 +71,7 @@ contract Queries is
         view
         returns (Monetary.Value memory)
     {
-        return g_minBorrowedValue;
+        return g_riskParams.minBorrowedValue;
     }
 
     // ============ Individual Variables ============

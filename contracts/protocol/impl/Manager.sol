@@ -169,7 +169,7 @@ contract Manager is
             index,
             rate,
             getTotalPar(marketId),
-            g_earningsRate
+            g_riskParams.earningsRate
         );
     }
 
@@ -226,7 +226,7 @@ contract Manager is
         view
         returns (bool)
     {
-        return rate.value <= MAX_INTEREST_RATE;
+        return rate.value <= g_riskLimits.MAX_INTEREST_RATE;
     }
 
     function setStatus(
@@ -395,7 +395,7 @@ contract Manager is
             return AccountStatus.Vapor;
         }
 
-        uint256 requiredSupply = Decimal.mul(borrowValue.value, g_liquidationRatio);
+        uint256 requiredSupply = Decimal.mul(borrowValue.value, g_riskParams.liquidationRatio);
         if (supplyValue.value >= requiredSupply) {
             return AccountStatus.Normal;
         } else {
@@ -447,7 +447,9 @@ contract Manager is
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        for (uint256 m = 0; m < g_numMarkets; m++) {
+        uint256 numMarkets = g_numMarkets;
+
+        for (uint256 m = 0; m < numMarkets; m++) {
             Types.Par memory userPar = getPar(account, m);
 
             if (userPar.isZero()) {
@@ -494,7 +496,7 @@ contract Manager is
         });
 
         // return the price ratio including the spread
-        return Decimal.mul(priceRatio, g_liquidationSpread);
+        return Decimal.mul(priceRatio, g_riskParams.liquidationSpread);
     }
 
     function owedWeiToHeldWei(

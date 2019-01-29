@@ -36,10 +36,11 @@ contract TestSoloMargin is
 
     constructor (
         address adminlib,
-        RiskParameters memory rp
+        RiskParams memory rp,
+        RiskLimits memory rl
     )
         public
-        SoloMargin(adminlib, rp)
+        SoloMargin(adminlib, rp, rl)
     {}
 
     // ============ Testing Functions ============
