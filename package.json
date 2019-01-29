@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
   "main": "dist/js/src/index.js",
   "files": [
