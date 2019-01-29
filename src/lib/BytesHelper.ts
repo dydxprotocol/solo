@@ -1,7 +1,6 @@
-import Web3 from 'web3';
+import BigNumber from 'bignumber.js';
 import { Integer } from '../types';
-
-const web3 = new Web3();
+import { hexToBytes, padLeft, toHex } from 'web3-utils';
 
 export function toBytes(...args: Integer[]): number[][] {
   return args.reduce(
@@ -12,7 +11,12 @@ export function toBytes(...args: Integer[]): number[][] {
 }
 
 function argToBytes(val: string | Integer) {
-  return web3.utils.hexToBytes(
-    web3.utils.padLeft(web3.utils.toHex(val), 64, '0'),
+  let v: any = val;
+  if (val instanceof BigNumber) {
+    v = val.toFixed();
+  }
+
+  return hexToBytes(
+    padLeft(toHex(v), 64, '0'),
   );
 }
