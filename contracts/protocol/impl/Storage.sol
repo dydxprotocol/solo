@@ -18,6 +18,8 @@
 
 pragma solidity ^0.5.0;
 
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
@@ -32,7 +34,10 @@ import { Types } from "../lib/Types.sol";
  *
  * Storing the state of the protocol
  */
-contract Storage {
+contract Storage is
+    Ownable,
+    ReentrancyGuard
+{
     // ============ Enums ============
 
     enum AccountStatus {
@@ -103,4 +108,9 @@ contract Storage {
 
     // Addresses that can control other users accounts
     mapping (address => mapping (address => bool)) g_operators;
+
+    // ============ External Libraries ============
+
+    // Addresses that can control other users accounts
+    address g_adminlib;
 }

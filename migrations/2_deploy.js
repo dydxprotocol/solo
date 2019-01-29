@@ -18,6 +18,7 @@
 
 const { isDevNetwork } = require('./helpers');
 
+const AdminLib = artifacts.require('AdminLib');
 const SoloMargin = artifacts.require('SoloMargin');
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
@@ -65,7 +66,7 @@ async function maybeDeployTestContracts(deployer, network) {
   }
 
   await Promise.all([
-    deployer.deploy(TestSoloMargin, prodArgs),
+    deployer.deploy(TestSoloMargin, AdminLib.address, prodArgs),
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
@@ -79,10 +80,11 @@ async function maybeDeployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer) {
-  await deployer.deploy(SoloMargin, prodArgs);
+  await deployer.deploy(SoloMargin, AdminLib.address, prodArgs);
 }
 
 const migration = async (deployer, network) => {
+  await deployer.deploy(AdminLib);
   await Promise.all([
     deployBaseProtocol(deployer),
     maybeDeployTestContracts(deployer, network),

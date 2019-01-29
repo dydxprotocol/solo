@@ -40,29 +40,6 @@ contract Queries is
     Storage,
     Manager
 {
-    // ============ Structs ============
-
-    struct MarketWithInfo {
-        Storage.Market market;
-        Interest.Index currentIndex;
-        Monetary.Price currentPrice;
-        Interest.Rate currentInterestRate;
-    }
-
-    struct Globals {
-        Decimal.D256 liquidationRatio;
-        Decimal.D256 liquidationSpread;
-        Decimal.D256 earningsRate;
-        Monetary.Value minBorrowedValue;
-        uint256 numMarkets;
-    }
-
-    struct Balance {
-        address tokenAddress;
-        Types.Par parBalance;
-        Types.Wei weiBalance;
-    }
-
     // ============ Admin Variables ============
 
     function getLiquidationRatio()
@@ -108,38 +85,6 @@ contract Queries is
     }
 
     // ============ Market-Based Variables ============
-
-    function getMarketWithInfo(
-        uint256 marketId
-    )
-        public
-        view
-        returns (MarketWithInfo memory)
-    {
-        return MarketWithInfo({
-            market: getMarket(marketId),
-            currentIndex: getMarketCurrentIndex(marketId),
-            currentPrice: getMarketPrice(marketId),
-            currentInterestRate: getMarketInterestRate(marketId)
-        });
-    }
-
-    function getMarket(
-        uint256 marketId
-    )
-        public
-        view
-        returns (Storage.Market memory)
-    {
-        return Market({
-            token: getMarketTokenAddress(marketId),
-            totalPar: getMarketTotalPar(marketId),
-            index: getMarketCachedIndex(marketId),
-            priceOracle: getMarketPriceOracle(marketId),
-            interestSetter: getMarketInterestSetter(marketId),
-            isClosing: getMarketIsClosing(marketId)
-        });
-    }
 
     function getMarketTokenAddress(
         uint256 marketId
@@ -287,27 +232,5 @@ contract Queries is
         returns (Monetary.Value memory, Monetary.Value memory)
     {
         return getValues(account);
-    }
-
-    function getAccountBalances(
-        Acct.Info memory account
-    )
-        public
-        returns (Balance[] memory)
-    {
-        uint256 numMarkets = g_numMarkets;
-
-        Balance[] memory balances = new Balance[](numMarkets);
-
-        for (uint256 m = 0; m < numMarkets; m++) {
-            updateIndex(m);
-            balances[m] = Balance({
-                tokenAddress: getToken(m),
-                parBalance: getPar(account, m),
-                weiBalance: getWei(account, m)
-            });
-        }
-
-        return balances;
     }
 }

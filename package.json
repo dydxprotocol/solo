@@ -25,6 +25,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts'",
     "lint:sol": "solium -d contracts/",
     "lint:dydx": "python util/lintcontracts.py",
+    "codesize": "jq '.deployedBytecode' build/contracts/SoloMargin.json | wc -m",
     "coverage": "./node_modules/.bin/solidity-coverage",
     "node": "ganache-cli",
     "debug": "truffle debug",

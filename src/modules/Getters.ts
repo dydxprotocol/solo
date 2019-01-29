@@ -15,24 +15,44 @@ export class Getters {
   public async getMarket(
     marketId: Integer,
   ): Promise<MarketWithInfo> {
-    const marketWithInfo = await this.contracts.soloMargin.methods
-      .getMarketWithInfo(marketId.toFixed(0)).call();
+    const mkt = marketId.toFixed(0);
+    const [
+      token,
+      totalPar,
+      index,
+      priceOracle,
+      interestSetter,
+      isClosing,
+      currentIndex,
+      currentPrice,
+      currentInterestRate,
+    ] = await Promise.all([
+      this.contracts.soloMargin.methods.getMarketTokenAddress(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketTotalPar(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketCachedIndex(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketPriceOracle(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketInterestSetter(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketIsClosing(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketCurrentIndex(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketPrice(mkt).call(),
+      this.contracts.soloMargin.methods.getMarketInterestRate(mkt).call(),
+    ]);
 
     return {
       market: {
-        token: marketWithInfo.market.token,
-        priceOracle: marketWithInfo.market.priceOracle,
-        interestSetter: marketWithInfo.market.interestSetter,
-        isClosing: marketWithInfo.market.isClosing,
+        token,
+        priceOracle,
+        interestSetter,
+        isClosing,
         totalPar: {
-          borrow: new BigNumber(marketWithInfo.market.totalPar.borrow),
-          supply: new BigNumber(marketWithInfo.market.totalPar.supply),
+          borrow: new BigNumber(totalPar.borrow),
+          supply: new BigNumber(totalPar.supply),
         },
-        index: this.parseIndex(marketWithInfo.market.index),
+        index: this.parseIndex(index),
       },
-      currentIndex: this.parseIndex(marketWithInfo.currentIndex),
-      currentPrice: new BigNumber(marketWithInfo.currentPrice.value),
-      currentInterestRate: new BigNumber(marketWithInfo.currentInterestRate.value).div(
+      currentIndex: this.parseIndex(currentIndex),
+      currentPrice: new BigNumber(currentPrice.value),
+      currentInterestRate: new BigNumber(currentInterestRate.value).div(
         INTEGERS.INTEREST_RATE_BASE,
       ),
     };
@@ -42,14 +62,31 @@ export class Getters {
     accountOwner: address,
     accountNumber: Integer,
   ): Promise<Balance[]> {
-    const balances = await this.contracts.soloMargin.methods
-      .getAccountBalances({ owner: accountOwner, number: accountNumber.toFixed(0) }).call();
+    const account = { owner: accountOwner, number: accountNumber.toFixed(0) };
+    const nm = await this.contracts.soloMargin.methods.getNumMarkets().call();
+    const numMarkets = new BigNumber(nm).toNumber();
 
-    return balances.map(b => ({
-      tokenAddress: b.tokenAddress,
-      par: this.parseValue(b.parBalance),
-      wei: this.parseValue(b.weiBalance),
-    }));
+    const queries = [];
+
+    for (let i = 0; i < numMarkets; i += 1) {
+      queries.push(this.contracts.soloMargin.methods.getAccountPar(account, i).call());
+      queries.push(this.contracts.soloMargin.methods.getAccountWei(account, i).call());
+      queries.push(this.contracts.soloMargin.methods.getMarketTokenAddress(i).call());
+    }
+
+    const retVals = await Promise.all(queries);
+
+    const result = [];
+
+    for (let i = 0; i < numMarkets; i += 1) {
+      result.push({
+        par: this.parseValue(retVals[i * 3 + 0]),
+        wei: this.parseValue(retVals[i * 3 + 1]),
+        tokenAddress: retVals[i * 3 + 2],
+      });
+    }
+
+    return result;
   }
 
   public async getAccountValues(
