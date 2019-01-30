@@ -19,7 +19,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Acct } from "./Acct.sol";
+import { Account } from "./Account.sol";
 import { Actions } from "./Actions.sol";
 import { Storage } from "./Storage.sol";
 import { Types } from "./Types.sol";
@@ -428,7 +428,7 @@ library Events {
 
     function getBalanceUpdate(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 mkt,
         Types.Wei memory deltaWei
     )

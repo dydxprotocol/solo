@@ -29,7 +29,7 @@ describe('Call', () => {
     const who = solo.getDefaultAccount();
     const accountNumber = INTEGERS.ONE;
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .call({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,

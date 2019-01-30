@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
-import { Acct } from "../protocol/lib/Acct.sol";
+import { Account } from "../protocol/lib/Account.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
@@ -47,7 +47,7 @@ contract TestSoloMargin is
     // ============ Testing Functions ============
 
     function setAccountBalance(
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 market,
         Types.Par memory newPar
     )
@@ -75,8 +75,8 @@ contract TestSoloMargin is
     }
 
     function setAccountStatus(
-        Acct.Info memory account,
-        Acct.Status status
+        Account.Info memory account,
+        Account.Status status
     )
         public
     {

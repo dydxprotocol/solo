@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
-import { Acct } from "../lib/Acct.sol";
+import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
@@ -33,25 +33,25 @@ import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title InteractionImpl
+ * @title OperationImpl
  * @author dYdX
  *
  * Logic for processing actions
  */
-library InteractionImpl {
+library OperationImpl {
     using Storage for Storage.State;
     using Types for Types.Wei;
 
     // ============ Constants ============
 
-    string constant FILE = "InteractionImpl";
+    string constant FILE = "OperationImpl";
 
     // ============ Public Functions ============
 
-    function transact(
+    function operate(
         Storage.State storage state,
-        Acct.Info[] memory accounts,
-        Actions.TransactionArgs[] memory args
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
     )
         public
     {
@@ -60,37 +60,37 @@ library InteractionImpl {
         bool[] memory primary = new bool[](accounts.length);
         bool[] memory traded = new bool[](accounts.length);
 
-        for (uint256 i = 0; i < args.length; i++) {
-            Actions.TransactionArgs memory arg = args[i];
-            Actions.TransactionType ttype = arg.transactionType;
+        for (uint256 i = 0; i < actions.length; i++) {
+            Actions.ActionArgs memory arg = actions[i];
+            Actions.ActionType ttype = arg.actionType;
 
-            if (ttype == Actions.TransactionType.Deposit) {
+            if (ttype == Actions.ActionType.Deposit) {
                 _deposit(state, Actions.parseDepositArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Withdraw) {
+            else if (ttype == Actions.ActionType.Withdraw) {
                 _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Transfer) {
+            else if (ttype == Actions.ActionType.Transfer) {
                 _transfer(state, Actions.parseTransferArgs(accounts, arg));
                 primary[arg.accountId] = true;
             }
-            else if (ttype == Actions.TransactionType.Buy) {
+            else if (ttype == Actions.ActionType.Buy) {
                 _buy(state, Actions.parseBuyArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Sell) {
+            else if (ttype == Actions.ActionType.Sell) {
                 _sell(state, Actions.parseSellArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Trade) {
+            else if (ttype == Actions.ActionType.Trade) {
                 _trade(state, Actions.parseTradeArgs(accounts, arg));
                 traded[arg.accountId] = true;
             }
-            else if (ttype == Actions.TransactionType.Liquidate) {
+            else if (ttype == Actions.ActionType.Liquidate) {
                 _liquidate(state, Actions.parseLiquidateArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Vaporize) {
+            else if (ttype == Actions.ActionType.Vaporize) {
                 _vaporize(state, Actions.parseVaporizeArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Call) {
+            else if (ttype == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, arg));
             }
             primary[arg.accountId] = true;
@@ -106,7 +106,7 @@ library InteractionImpl {
 
     function _verify(
         Storage.State storage state,
-        Acct.Info[] memory accounts,
+        Account.Info[] memory accounts,
         bool[] memory primary,
         bool[] memory traded
     )
@@ -115,7 +115,17 @@ library InteractionImpl {
         Monetary.Value memory minBorrowedValue = state.riskParams.minBorrowedValue;
 
         for (uint256 a = 0; a < accounts.length; a++) {
-            Acct.Info memory account = accounts[a];
+            for (uint256 b = a + 1; b < accounts.length; b++) {
+                Require.that(
+                    !Account.equals(accounts[a], accounts[b]),
+                    FILE,
+                    "Cannot duplicate accounts"
+                );
+            }
+        }
+
+        for (uint256 a = 0; a < accounts.length; a++) {
+            Account.Info memory account = accounts[a];
 
             (
                 Monetary.Value memory supplyValue,
@@ -133,13 +143,13 @@ library InteractionImpl {
             // check collateralization for non-liquidated accounts
             if (primary[a] || traded[a]) {
                 Require.that(
-                    state.valuesToStatus(supplyValue, borrowValue) == Acct.Status.Normal,
+                    state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
                     FILE,
                     "Undercollateralized account",
                     a
                 );
-                if (state.getStatus(account) != Acct.Status.Normal) {
-                    state.setStatus(account, Acct.Status.Normal);
+                if (state.getStatus(account) != Account.Status.Normal) {
+                    state.setStatus(account, Account.Status.Normal);
                 }
             }
 
@@ -474,17 +484,17 @@ library InteractionImpl {
         state.updateIndex(args.owedMkt);
 
         // verify liquidatable
-        if (Acct.Status.Liquid != state.getStatus(args.liquidAccount)) {
+        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
             ) = state.getValues(args.liquidAccount);
             Require.that(
-                Acct.Status.Liquid == state.valuesToStatus(supplyValue, borrowValue),
+                Account.Status.Liquid == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
                 "Unliquidatable account"
             );
-            state.setStatus(args.liquidAccount, Acct.Status.Liquid);
+            state.setStatus(args.liquidAccount, Account.Status.Liquid);
         }
 
         Types.Wei memory maxHeldWei = state.getWei(
@@ -569,17 +579,17 @@ library InteractionImpl {
         state.updateIndex(args.owedMkt);
 
         // verify vaporizable
-        if (Acct.Status.Vapor != state.getStatus(args.vaporAccount)) {
+        if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
             ) = state.getValues(args.vaporAccount);
             Require.that(
-                Acct.Status.Vapor == state.valuesToStatus(supplyValue, borrowValue),
+                Account.Status.Vapor == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
                 "Unvaporizable account"
             );
-            state.setStatus(args.vaporAccount, Acct.Status.Vapor);
+            state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
 
         // First, attempt to refund using the same token

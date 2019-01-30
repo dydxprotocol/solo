@@ -2,11 +2,11 @@ import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../../lib/Contracts';
 import {
-  AccountOperation,
+  AccountAction,
   Deposit,
   Withdraw,
-  TransactionType,
-  TransactionArgs,
+  ActionType,
+  ActionArgs,
   ContractCallOptions,
   TxResult,
   Buy,
@@ -25,8 +25,8 @@ import {
 import { toBytes } from '../../lib/BytesHelper';
 import { ADDRESSES } from '../../lib/Constants';
 
-interface OptionalTransactionArgs {
-  transactionType: number | string;
+interface OptionalActionArgs {
+  actionType: number | string;
   primaryMarketId?: number | string;
   secondaryMarketId?: number | string;
   otherAddress?: string;
@@ -35,9 +35,9 @@ interface OptionalTransactionArgs {
   amount?: Amount;
 }
 
-export class AccountTransaction {
+export class AccountOperation {
   private contracts: Contracts;
-  private operations: TransactionArgs[];
+  private actions: ActionArgs[];
   private committed: boolean;
   private orderMapper: OrderMapper;
   private accounts: AcctInfo[];
@@ -47,17 +47,17 @@ export class AccountTransaction {
     orderMapper: OrderMapper,
   ) {
     this.contracts = contracts;
-    this.operations = [];
+    this.actions = [];
     this.committed = false;
     this.orderMapper = orderMapper;
     this.accounts = [];
   }
 
-  public deposit(deposit: Deposit): AccountTransaction {
-    this.addTransactionArgs(
+  public deposit(deposit: Deposit): AccountOperation {
+    this.addActionArgs(
       deposit,
       {
-        transactionType: TransactionType.Deposit,
+        actionType: ActionType.Deposit,
         amount: deposit.amount,
         otherAddress: deposit.from,
         primaryMarketId: deposit.marketId.toFixed(0),
@@ -67,12 +67,12 @@ export class AccountTransaction {
     return this;
   }
 
-  public withdraw(withdraw: Withdraw): AccountTransaction {
-    this.addTransactionArgs(
+  public withdraw(withdraw: Withdraw): AccountOperation {
+    this.addActionArgs(
       withdraw,
       {
         amount: withdraw.amount,
-        transactionType: TransactionType.Withdraw,
+        actionType: ActionType.Withdraw,
         otherAddress: withdraw.to,
         primaryMarketId: withdraw.marketId.toFixed(0),
       },
@@ -81,11 +81,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public transfer(transfer: Transfer): AccountTransaction {
-    this.addTransactionArgs(
+  public transfer(transfer: Transfer): AccountOperation {
+    this.addActionArgs(
       transfer,
       {
-        transactionType: TransactionType.Transfer,
+        actionType: ActionType.Transfer,
         amount: transfer.amount,
         primaryMarketId: transfer.marketId.toFixed(0),
         otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
@@ -95,19 +95,19 @@ export class AccountTransaction {
     return this;
   }
 
-  public buy(buy: Buy): AccountTransaction {
-    return this.exchange(buy, TransactionType.Buy);
+  public buy(buy: Buy): AccountOperation {
+    return this.exchange(buy, ActionType.Buy);
   }
 
-  public sell(sell: Sell): AccountTransaction {
-    return this.exchange(sell, TransactionType.Sell);
+  public sell(sell: Sell): AccountOperation {
+    return this.exchange(sell, ActionType.Sell);
   }
 
-  public liquidate(liquidate: Liquidate): AccountTransaction {
-    this.addTransactionArgs(
+  public liquidate(liquidate: Liquidate): AccountOperation {
+    this.addActionArgs(
       liquidate,
       {
-        transactionType: TransactionType.Liquidate,
+        actionType: ActionType.Liquidate,
         amount: liquidate.amount,
         primaryMarketId: liquidate.liquidMarketId.toFixed(0),
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
@@ -118,11 +118,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public vaporize(vaporize: Vaporize): AccountTransaction {
-    this.addTransactionArgs(
+  public vaporize(vaporize: Vaporize): AccountOperation {
+    this.addActionArgs(
       vaporize,
       {
-        transactionType: TransactionType.Vaporize,
+        actionType: ActionType.Vaporize,
         amount: vaporize.amount,
         primaryMarketId: vaporize.vaporMarketId.toFixed(0),
         secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
@@ -133,11 +133,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public setExpiry(args: SetExpiry): AccountTransaction {
-    this.addTransactionArgs(
+  public setExpiry(args: SetExpiry): AccountOperation {
+    this.addActionArgs(
       args,
       {
-        transactionType: TransactionType.Call,
+        actionType: ActionType.Call,
         otherAddress: this.contracts.expiry.options.address,
         data: toBytes(args.marketId, args.expiryTime),
       },
@@ -146,11 +146,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public call(args: Call): AccountTransaction {
-    this.addTransactionArgs(
+  public call(args: Call): AccountOperation {
+    this.addActionArgs(
       args,
       {
-        transactionType: TransactionType.Call,
+        actionType: ActionType.Call,
         otherAddress: args.callee,
         data: args.data,
       },
@@ -159,11 +159,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public trade(trade: Trade): AccountTransaction {
-    this.addTransactionArgs(
+  public trade(trade: Trade): AccountOperation {
+    this.addActionArgs(
       trade,
       {
-        transactionType: TransactionType.Trade,
+        actionType: ActionType.Trade,
         amount: trade.amount,
         primaryMarketId: trade.inputMarketId.toFixed(0),
         secondaryMarketId: trade.outputMarketId.toFixed(0),
@@ -176,11 +176,11 @@ export class AccountTransaction {
     return this;
   }
 
-  public liquidateExpiredAccount(liquidate: Liquidate): AccountTransaction {
-    this.addTransactionArgs(
+  public liquidateExpiredAccount(liquidate: Liquidate): AccountOperation {
+    this.addActionArgs(
       liquidate,
       {
-        transactionType: TransactionType.Trade,
+        actionType: ActionType.Trade,
         amount: liquidate.amount,
         primaryMarketId: liquidate.liquidMarketId.toFixed(0),
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
@@ -196,18 +196,18 @@ export class AccountTransaction {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     if (this.committed) {
-      throw new Error('Transaction already committed');
+      throw new Error('Operation already committed');
     }
-    if (this.operations.length === 0) {
-      throw new Error('No operations have been added to transaction');
+    if (this.actions.length === 0) {
+      throw new Error('No actions have been added to operation');
     }
 
     this.committed = true;
 
     try {
-      const method: TransactionObject<void> = this.contracts.soloMargin.methods.transact(
+      const method: TransactionObject<void> = this.contracts.soloMargin.methods.operate(
         this.accounts,
-        this.operations,
+        this.actions,
       );
 
       return this.contracts.callContractFunction(
@@ -220,7 +220,7 @@ export class AccountTransaction {
     }
   }
 
-  private exchange(exchange: Exchange, transactionType: TransactionType): AccountTransaction {
+  private exchange(exchange: Exchange, actionType: ActionType): AccountOperation {
     const {
       bytes,
       exchangeWrapperAddress,
@@ -230,16 +230,16 @@ export class AccountTransaction {
     } = this.orderMapper.mapOrder(exchange.order);
 
     const [primaryMarketId, secondaryMarketId] =
-      transactionType === TransactionType.Buy ?
+      actionType === ActionType.Buy ?
       [exchange.makerMarketId, exchange.takerMarketId] :
       [exchange.takerMarketId, exchange.makerMarketId];
 
     const orderData = bytes.map((a :number): number[] => [a]);
 
-    this.addTransactionArgs(
+    this.addActionArgs(
       exchange,
       {
-        transactionType,
+        actionType,
         amount: exchange.amount,
         otherAddress: exchangeWrapperAddress,
         data: orderData,
@@ -251,9 +251,9 @@ export class AccountTransaction {
     return this;
   }
 
-  private addTransactionArgs(
-    operation: AccountOperation,
-    args: OptionalTransactionArgs,
+  private addActionArgs(
+    action: AccountAction,
+    args: OptionalActionArgs,
   ): void {
     if (this.committed) {
       throw new Error('Transaction already committed');
@@ -271,10 +271,10 @@ export class AccountTransaction {
       value: 0,
     };
 
-    const transactionArgs: TransactionArgs = {
+    const transactionArgs: ActionArgs = {
       amount,
-      accountId: this.getPrimaryAccountId(operation),
-      transactionType: args.transactionType,
+      accountId: this.getPrimaryAccountId(action),
+      actionType: args.actionType,
       primaryMarketId: args.primaryMarketId || '0',
       secondaryMarketId: args.secondaryMarketId || '0',
       otherAddress: args.otherAddress || ADDRESSES.ZERO,
@@ -282,10 +282,10 @@ export class AccountTransaction {
       data: args.data || [],
     };
 
-    this.operations.push(transactionArgs);
+    this.actions.push(transactionArgs);
   }
 
-  private getPrimaryAccountId(operation: AccountOperation): number {
+  private getPrimaryAccountId(operation: AccountAction): number {
     return this.getAccountId(operation.primaryAccountOwner, operation.primaryAccountId);
   }
 
@@ -295,7 +295,8 @@ export class AccountTransaction {
       number: accountNumber.toFixed(0),
     };
 
-    const correctIndex = i => (i.owner === accountInfo.owner && i.number === accountInfo.number);
+    const correctIndex = (i: AcctInfo) =>
+      (i.owner === accountInfo.owner && i.number === accountInfo.number);
     const index = this.accounts.findIndex(correctIndex);
 
     if (index >= 0) {

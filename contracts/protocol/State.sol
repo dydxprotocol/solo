@@ -19,8 +19,6 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./lib/Storage.sol";
 
 
@@ -30,9 +28,7 @@ import { Storage } from "./lib/Storage.sol";
  *
  * TODO
  */
-contract State is
-    Ownable,
-    ReentrancyGuard
+contract State
 {
     Storage.State g_state;
 }

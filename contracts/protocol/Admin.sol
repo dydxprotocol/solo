@@ -19,6 +19,8 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { State } from "./State.sol";
 import { AdminImpl } from "./impl/AdminImpl.sol";
 import { IInterestSetter } from "./interfaces/IInterestSetter.sol";
@@ -36,7 +38,9 @@ import { Token } from "./lib/Token.sol";
  * TODO
  */
 contract Admin is
-    State
+    State,
+    Ownable,
+    ReentrancyGuard
 {
     // ============ Admin Functions ============
 

@@ -18,7 +18,7 @@
 
 pragma solidity ^0.5.0;
 
-import { Acct } from "./Acct.sol";
+import { Account } from "./Account.sol";
 import { Require } from "./Require.sol";
 import { Types } from "./Types.sol";
 
@@ -37,7 +37,7 @@ library Actions {
 
     // ============ Enums ============
 
-    enum TransactionType {
+    enum ActionType {
         Deposit,   // supply tokens
         Withdraw,  // borrow tokens
         Transfer,  // transfer balance between accounts
@@ -68,8 +68,8 @@ library Actions {
         uint256 value;
     }
 
-    struct TransactionArgs {
-        TransactionType transactionType;
+    struct ActionArgs {
+        ActionType actionType;
         uint256 accountId;
         AssetAmount amount;
         uint256 primaryMarketId;
@@ -83,28 +83,28 @@ library Actions {
 
     struct DepositArgs {
         AssetAmount amount;
-        Acct.Info account;
+        Account.Info account;
         uint256 mkt;
         address from;
     }
 
     struct WithdrawArgs {
         AssetAmount amount;
-        Acct.Info account;
+        Account.Info account;
         uint256 mkt;
         address to;
     }
 
     struct TransferArgs {
         AssetAmount amount;
-        Acct.Info accountOne;
-        Acct.Info accountTwo;
+        Account.Info accountOne;
+        Account.Info accountTwo;
         uint256 mkt;
     }
 
     struct BuyArgs {
         AssetAmount amount;
-        Acct.Info account;
+        Account.Info account;
         uint256 makerMkt;
         uint256 takerMkt;
         address exchangeWrapper;
@@ -113,7 +113,7 @@ library Actions {
 
     struct SellArgs {
         AssetAmount amount;
-        Acct.Info account;
+        Account.Info account;
         uint256 takerMkt;
         uint256 makerMkt;
         address exchangeWrapper;
@@ -122,8 +122,8 @@ library Actions {
 
     struct TradeArgs {
         AssetAmount amount;
-        Acct.Info takerAccount;
-        Acct.Info makerAccount;
+        Account.Info takerAccount;
+        Account.Info makerAccount;
         uint256 inputMkt;
         uint256 outputMkt;
         address autoTrader;
@@ -132,22 +132,22 @@ library Actions {
 
     struct LiquidateArgs {
         AssetAmount amount;
-        Acct.Info solidAccount;
-        Acct.Info liquidAccount;
+        Account.Info solidAccount;
+        Account.Info liquidAccount;
         uint256 owedMkt;
         uint256 heldMkt;
     }
 
     struct VaporizeArgs {
         AssetAmount amount;
-        Acct.Info solidAccount;
-        Acct.Info vaporAccount;
+        Account.Info solidAccount;
+        Account.Info vaporAccount;
         uint256 owedMkt;
         uint256 heldMkt;
     }
 
     struct CallArgs {
-        Acct.Info account;
+        Account.Info account;
         address callee;
         bytes data;
     }
@@ -155,14 +155,14 @@ library Actions {
     // ============ Parsing Functions ============
 
     function parseDepositArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (DepositArgs memory)
     {
-        assert(args.transactionType == TransactionType.Deposit);
+        assert(args.actionType == ActionType.Deposit);
         return DepositArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -172,14 +172,14 @@ library Actions {
     }
 
     function parseWithdrawArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (WithdrawArgs memory)
     {
-        assert(args.transactionType == TransactionType.Withdraw);
+        assert(args.actionType == ActionType.Withdraw);
         return WithdrawArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -189,14 +189,14 @@ library Actions {
     }
 
     function parseTransferArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (TransferArgs memory)
     {
-        assert(args.transactionType == TransactionType.Transfer);
+        assert(args.actionType == ActionType.Transfer);
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
@@ -211,14 +211,14 @@ library Actions {
     }
 
     function parseBuyArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (BuyArgs memory)
     {
-        assert(args.transactionType == TransactionType.Buy);
+        assert(args.actionType == ActionType.Buy);
         return BuyArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -230,14 +230,14 @@ library Actions {
     }
 
     function parseSellArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (SellArgs memory)
     {
-        assert(args.transactionType == TransactionType.Sell);
+        assert(args.actionType == ActionType.Sell);
         return SellArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -249,14 +249,14 @@ library Actions {
     }
 
     function parseTradeArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (TradeArgs memory)
     {
-        assert(args.transactionType == TransactionType.Trade);
+        assert(args.actionType == ActionType.Trade);
         Require.that(
             args.accountId != args.otherAccountId,
             FILE,
@@ -274,14 +274,14 @@ library Actions {
     }
 
     function parseLiquidateArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (LiquidateArgs memory)
     {
-        assert(args.transactionType == TransactionType.Liquidate);
+        assert(args.actionType == ActionType.Liquidate);
         Require.that(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
@@ -302,14 +302,14 @@ library Actions {
     }
 
     function parseVaporizeArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (VaporizeArgs memory)
     {
-        assert(args.transactionType == TransactionType.Vaporize);
+        assert(args.actionType == ActionType.Vaporize);
         Require.that(
             args.primaryMarketId != args.secondaryMarketId,
             FILE,
@@ -330,14 +330,14 @@ library Actions {
     }
 
     function parseCallArgs(
-        Acct.Info[] memory accounts,
-        TransactionArgs memory args
+        Account.Info[] memory accounts,
+        ActionArgs memory args
     )
         internal
         pure
         returns (CallArgs memory)
     {
-        assert(args.transactionType == TransactionType.Call);
+        assert(args.actionType == ActionType.Call);
         return CallArgs({
             account: accounts[args.accountId],
             callee: args.otherAddress,

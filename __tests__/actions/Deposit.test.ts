@@ -38,7 +38,7 @@ describe('Deposit', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .deposit({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,

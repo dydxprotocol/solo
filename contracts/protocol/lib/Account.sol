@@ -19,14 +19,16 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { Types } from "./Types.sol";
+
 
 /**
- * @title Acct
+ * @title Account
  * @author dYdX
  *
  * TODO
  */
-library Acct {
+library Account {
     // ============ Enums ============
 
     enum Status {
@@ -40,6 +42,11 @@ library Acct {
     struct Info {
         address owner;
         uint256 number;
+    }
+
+    struct Storage {
+        mapping (uint256 => Types.Par) balances;
+        Status status;
     }
 
     // ============ Library Functions ============

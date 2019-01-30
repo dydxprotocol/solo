@@ -73,7 +73,7 @@ export enum AmountReference {
   Target = 1,
 }
 
-export enum TransactionType {
+export enum ActionType {
   Deposit = 0,
   Withdraw = 1,
   Transfer = 2,
@@ -97,12 +97,12 @@ export interface Amount {
   reference: AmountReference;
 }
 
-export interface AccountOperation {
+export interface AccountAction {
   primaryAccountOwner: address;
   primaryAccountId: Integer;
 }
 
-interface ExternalTransfer extends AccountOperation {
+interface ExternalTransfer extends AccountAction {
   marketId: Integer;
   amount: Amount;
 }
@@ -115,14 +115,14 @@ export interface Withdraw extends ExternalTransfer {
   to: address;
 }
 
-export interface Transfer extends AccountOperation {
+export interface Transfer extends AccountAction {
   marketId: Integer;
   toAccountOwner: address;
   toAccountId: Integer;
   amount: Amount;
 }
 
-export interface Exchange extends AccountOperation {
+export interface Exchange extends AccountAction {
   takerMarketId: Integer;
   makerMarketId: Integer;
   order: Order;
@@ -132,7 +132,7 @@ export interface Exchange extends AccountOperation {
 export interface Buy extends Exchange {}
 export interface Sell extends Exchange {}
 
-export interface Trade extends AccountOperation {
+export interface Trade extends AccountAction {
   autoTrader: address;
   inputMarketId: Integer;
   outputMarketId: Integer;
@@ -142,7 +142,7 @@ export interface Trade extends AccountOperation {
   data: (string | number[])[];
 }
 
-export interface Liquidate extends AccountOperation {
+export interface Liquidate extends AccountAction {
   liquidMarketId: Integer;
   payoutMarketId: Integer;
   liquidAccountOwner: address;
@@ -150,7 +150,7 @@ export interface Liquidate extends AccountOperation {
   amount: Amount;
 }
 
-export interface Vaporize extends AccountOperation {
+export interface Vaporize extends AccountAction {
   vaporMarketId: Integer;
   payoutMarketId: Integer;
   vaporAccountOwner: address;
@@ -158,12 +158,12 @@ export interface Vaporize extends AccountOperation {
   amount: Amount;
 }
 
-export interface SetExpiry extends AccountOperation {
+export interface SetExpiry extends AccountAction {
   marketId: Integer;
   expiryTime: Integer;
 }
 
-export interface Call extends AccountOperation {
+export interface Call extends AccountAction {
   callee: address;
   data: (string | number[])[];
 }
@@ -173,8 +173,8 @@ export interface AcctInfo {
   number: number | string;
 }
 
-export interface TransactionArgs {
-  transactionType: number | string;
+export interface ActionArgs {
+  actionType: number | string;
   accountId: number | string;
   amount: {
     sign: boolean;

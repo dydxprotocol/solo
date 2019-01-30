@@ -19,8 +19,7 @@
 const { isDevNetwork } = require('./helpers');
 
 const AdminImpl = artifacts.require('AdminImpl');
-const InteractionImpl = artifacts.require('InteractionImpl');
-const SoloMarginReader = artifacts.require('SoloMarginReader');
+const OperationImpl = artifacts.require('OperationImpl');
 const SoloMargin = artifacts.require('SoloMargin');
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
@@ -58,7 +57,7 @@ async function maybeDeployTestContracts(deployer, network) {
 
   await Promise.all([
     TestSoloMargin.link('AdminImpl', AdminImpl.address),
-    TestSoloMargin.link('InteractionImpl', InteractionImpl.address),
+    TestSoloMargin.link('OperationImpl', OperationImpl.address),
   ]);
 
   await Promise.all([
@@ -78,28 +77,20 @@ async function maybeDeployTestContracts(deployer, network) {
 async function deployBaseProtocol(deployer) {
   await Promise.all([
     SoloMargin.link('AdminImpl', AdminImpl.address),
-    SoloMargin.link('InteractionImpl', InteractionImpl.address),
+    SoloMargin.link('OperationImpl', OperationImpl.address),
   ]);
   await deployer.deploy(SoloMargin, riskParams, riskLimits);
-}
-
-async function deployReader(deployer, network) {
-  await deployer.deploy(
-    SoloMarginReader,
-    isDevNetwork(network) ? TestSoloMargin.address : SoloMargin.address,
-  );
 }
 
 const migration = async (deployer, network) => {
   await Promise.all([
     deployer.deploy(AdminImpl),
-    deployer.deploy(InteractionImpl)
+    deployer.deploy(OperationImpl)
   ]);
   await Promise.all([
     deployBaseProtocol(deployer),
     maybeDeployTestContracts(deployer, network),
   ]);
-  await deployReader(deployer, network);
 };
 
 module.exports = migration;

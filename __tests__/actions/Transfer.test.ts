@@ -45,7 +45,7 @@ describe('Transfer', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .transfer({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber1,

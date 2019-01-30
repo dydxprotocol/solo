@@ -20,7 +20,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Acct } from "./Acct.sol";
+import { Account } from "./Account.sol";
 import { Actions } from "./Actions.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
@@ -52,11 +52,6 @@ library Storage {
     string constant FILE = "Storage";
 
     // ============ Structs ============
-
-    struct Account {
-        mapping (uint256 => Types.Par) balances;
-        Acct.Status status;
-    }
 
     struct Market {
         address token;
@@ -102,7 +97,7 @@ library Storage {
         mapping (uint256 => Market) markets;
 
         // owner => account number => Account
-        mapping (address => mapping (uint256 => Account)) accounts;
+        mapping (address => mapping (uint256 => Account.Storage)) accounts;
 
         // Addresses that can control other users accounts
         mapping (address => mapping (address => bool)) operators;
@@ -177,18 +172,18 @@ library Storage {
 
     function getStatus(
         Storage.State storage state,
-        Acct.Info memory account
+        Account.Info memory account
     )
         internal
         view
-        returns (Acct.Status)
+        returns (Account.Status)
     {
         return state.accounts[account.owner][account.number].status;
     }
 
     function getPar(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId
     )
         internal
@@ -200,7 +195,7 @@ library Storage {
 
     function getWei(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId
     )
         internal
@@ -305,8 +300,8 @@ library Storage {
 
     function setStatus(
         Storage.State storage state,
-        Acct.Info memory account,
-        Acct.Status status
+        Account.Info memory account,
+        Account.Status status
     )
         internal
         returns (bool)
@@ -316,7 +311,7 @@ library Storage {
 
     function setPar(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId,
         Types.Par memory newPar
     )
@@ -354,7 +349,7 @@ library Storage {
      */
     function setParFromDeltaWei(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId,
         Types.Wei memory deltaWei
     )
@@ -377,7 +372,7 @@ library Storage {
      */
     function getNewParAndDeltaWei(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
     )
@@ -418,7 +413,7 @@ library Storage {
 
     function getNewParAndDeltaWeiForLiquidation(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
     )
@@ -465,29 +460,29 @@ library Storage {
     )
         internal
         view
-        returns (Acct.Status)
+        returns (Account.Status)
     {
         if (borrowValue.value == 0) {
-            return Acct.Status.Normal;
+            return Account.Status.Normal;
         }
 
         if (supplyValue.value == 0) {
-            return Acct.Status.Vapor;
+            return Account.Status.Vapor;
         }
 
         uint256 requiredSupply =
             Decimal.mul(borrowValue.value, state.riskParams.liquidationRatio);
 
         if (supplyValue.value >= requiredSupply) {
-            return Acct.Status.Normal;
+            return Account.Status.Normal;
         } else {
-            return Acct.Status.Liquid;
+            return Account.Status.Liquid;
         }
     }
 
     function vaporizeUsingExcess(
         Storage.State storage state,
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 owedMarketId
     )
         internal
@@ -523,7 +518,7 @@ library Storage {
 
     function getValues(
         Storage.State storage state,
-        Acct.Info memory account
+        Account.Info memory account
     )
         internal
         returns (Monetary.Value memory, Monetary.Value memory)

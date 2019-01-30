@@ -19,7 +19,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Acct } from "../lib/Acct.sol";
+import { Account } from "../lib/Account.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -36,8 +36,8 @@ contract IAutoTrader {
     function getTradeCost(
         uint256 inputMarketId,
         uint256 outputMarketId,
-        Acct.Info memory makerAccount,
-        Acct.Info memory takerAccount,
+        Account.Info memory makerAccount,
+        Account.Info memory takerAccount,
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,

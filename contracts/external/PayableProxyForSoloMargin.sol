@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
-import { Acct } from "../protocol/lib/Acct.sol";
+import { Account } from "../protocol/lib/Account.sol";
 import { Actions } from "../protocol/lib/Actions.sol";
 import { Token } from "../protocol/lib/Token.sol";
 import { IWeth } from "./interfaces/IWeth.sol";
@@ -51,9 +51,9 @@ contract PayableProxyForSoloMargin is
         WETH.approve(soloMargin, uint256(-1));
     }
 
-    function transact(
-        Acct.Info[] memory accounts,
-        Actions.TransactionArgs[] memory args
+    function operate(
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory args
     )
         public
         payable
@@ -67,18 +67,18 @@ contract PayableProxyForSoloMargin is
         // validate the input
         for (uint256 i = 0; i < args.length; i++) {
             // for each deposit, deposit.from must be this or msg.sender
-            if (args[i].transactionType == Actions.TransactionType.Deposit) {
+            if (args[i].actionType == Actions.ActionType.Deposit) {
                 address depositFrom = Actions.parseDepositArgs(accounts, args[i]).from;
                 require(depositFrom == msg.sender || depositFrom == address(this));
             }
 
             // for each non-liquidate, account owner must be msg.sender
-            if (args[i].transactionType != Actions.TransactionType.Liquidate) {
+            if (args[i].actionType != Actions.ActionType.Liquidate) {
                 require(accounts[args[i].accountId].owner == msg.sender);
             }
         }
 
-        SOLO_MARGIN.transact(accounts, args);
+        SOLO_MARGIN.operate(accounts, args);
 
         // return all remaining WETH to the msg.sender as ETH
         uint256 remainingWeth = WETH.balanceOf(address(this));

@@ -19,7 +19,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Acct } from "../lib/Acct.sol";
+import { Account } from "../lib/Account.sol";
 
 
 /**
@@ -34,7 +34,7 @@ contract ICallee {
 
     function callFunction(
         address sender,
-        Acct.Info memory accountInfo,
+        Account.Info memory accountInfo,
         bytes memory data
     )
         public;

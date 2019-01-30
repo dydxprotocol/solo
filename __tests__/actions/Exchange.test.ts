@@ -68,7 +68,7 @@ describe('Exchange', () => {
       takerAmount: tradeAmount,
     };
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .buy({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
@@ -165,7 +165,7 @@ describe('Exchange', () => {
       takerAmount: tradeAmount,
     };
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .sell({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,

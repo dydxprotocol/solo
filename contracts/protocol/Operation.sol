@@ -19,34 +19,36 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { State } from "./State.sol";
-import { InteractionImpl } from "./impl/InteractionImpl.sol";
-import { Acct } from "./lib/Acct.sol";
+import { OperationImpl } from "./impl/OperationImpl.sol";
+import { Account } from "./lib/Account.sol";
 import { Actions } from "./lib/Actions.sol";
 
 
 /**
- * @title Interaction
+ * @title Operation
  * @author dYdX
  *
  * TODO
  */
-contract Interaction is
-    State
+contract Operation is
+    State,
+    ReentrancyGuard
 {
     // ============ Public Functions ============
 
-    function transact(
-        Acct.Info[] memory accounts,
-        Actions.TransactionArgs[] memory args
+    function operate(
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
     )
         public
         nonReentrant
     {
-        InteractionImpl.transact(
+        OperationImpl.operate(
             g_state,
             accounts,
-            args
+            actions
         );
     }
 }

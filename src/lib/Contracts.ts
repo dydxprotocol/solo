@@ -23,7 +23,6 @@ import { TransactionReceipt } from 'web3/types';
 import { TransactionObject, Block } from 'web3/eth/types';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
-import { SoloMarginReader } from '../../build/wrappers/SoloMarginReader';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { Expiry } from '../../build/wrappers/Expiry';
 import { TestToken } from '../../build/wrappers/TestToken';
@@ -34,7 +33,6 @@ import { TestPriceOracle } from '../../build/wrappers/TestPriceOracle';
 import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
 import soloMarginJson from '../../build/contracts/SoloMargin.json';
 import testSoloMarginJson from '../../build/contracts/TestSoloMargin.json';
-import soloMarginReaderJson from '../../build/contracts/SoloMarginReader.json';
 import erc20Json from '../../build/contracts/IErc20.json';
 import expiryJson from '../../build/contracts/Expiry.json';
 import tokenAJson from '../../build/contracts/TokenA.json';
@@ -66,7 +64,6 @@ export class Contracts {
   public soloMargin: SoloMargin;
   public erc20: ERC20;
   public expiry: Expiry;
-  public soloMarginReader: SoloMarginReader;
 
   // Testing contract instances
   public testSoloMargin: TestSoloMargin;
@@ -94,8 +91,6 @@ export class Contracts {
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.testSoloMargin = new this.web3.eth.Contract(testSoloMarginJson.abi) as TestSoloMargin;
-    this.soloMarginReader = new this.web3.eth.Contract(
-      soloMarginReaderJson.abi) as SoloMarginReader;
     if (options.testing) {
       this.soloMargin = this.testSoloMargin;
     }
@@ -136,12 +131,6 @@ export class Contracts {
     this.setContractProvider(
       this.expiry,
       expiryJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.soloMarginReader,
-      soloMarginReaderJson,
       provider,
       networkId,
     );
@@ -206,7 +195,6 @@ export class Contracts {
   ): void {
     this.soloMargin.options.from = account;
     this.testSoloMargin.options.from = account;
-    this.soloMarginReader.options.from = account;
     this.erc20.options.from = account;
     this.expiry.options.from = account;
     this.tokenA.options.from = account;

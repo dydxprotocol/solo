@@ -56,7 +56,7 @@ describe('Liquidate', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .liquidate({
         primaryAccountOwner: who1,
         primaryAccountId: accountNumber1,

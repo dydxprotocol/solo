@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { State } from "./State.sol";
 import { IInterestSetter } from "./interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
-import { Acct } from "./lib/Acct.sol";
+import { Account } from "./lib/Account.sol";
 import { Decimal } from "./lib/Decimal.sol";
 import { Interest } from "./lib/Interest.sol";
 import { Monetary } from "./lib/Monetary.sol";
@@ -42,7 +42,7 @@ contract Getters is
 {
     using Storage for Storage.State;
 
-    // ============ Getters for Risk Parameters ============
+    // ============ Getters for Risk ============
 
     function getLiquidationRatio()
         public
@@ -76,7 +76,13 @@ contract Getters is
         return g_state.riskParams.minBorrowedValue;
     }
 
-    // ============ Getters for Risk Limits ============
+    function getRiskParams()
+        public
+        view
+        returns (Storage.RiskParams memory)
+    {
+        return g_state.riskParams;
+    }
 
     function getRiskLimits()
         public
@@ -189,10 +195,40 @@ contract Getters is
         );
     }
 
+    function getMarket(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Storage.Market memory)
+    {
+        return g_state.markets[marketId];
+    }
+
+    function getMarketWithInfo(
+        uint256 marketId
+    )
+        public
+        view
+        returns (
+            Storage.Market memory,
+            Interest.Index memory,
+            Monetary.Price memory,
+            Interest.Rate memory
+        )
+    {
+        return (
+            getMarket(marketId),
+            getMarketCurrentIndex(marketId),
+            getMarketPrice(marketId),
+            getMarketInterestRate(marketId)
+        );
+    }
+
     // ============ Getters for Accounts ============
 
     function getAccountPar(
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId
     )
         public
@@ -203,7 +239,7 @@ contract Getters is
     }
 
     function getAccountWei(
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId
     )
         public
@@ -217,21 +253,51 @@ contract Getters is
     }
 
     function getAccountStatus(
-        Acct.Info memory account
+        Account.Info memory account
     )
         public
         view
-        returns (Acct.Status)
+        returns (Account.Status)
     {
         return g_state.getStatus(account);
     }
 
     function getAccountValues(
-        Acct.Info memory account
+        Account.Info memory account
     )
         public
         returns (Monetary.Value memory, Monetary.Value memory)
     {
         return g_state.getValues(account);
+    }
+
+    function getAccountBalances(
+        Account.Info memory account
+    )
+        public
+        view
+        returns (
+            address[] memory,
+            Types.Par[] memory,
+            Types.Wei[] memory
+        )
+    {
+        uint256 numMarkets = getNumMarkets();
+
+        address[] memory tokens = new address[](numMarkets);
+        Types.Par[] memory pars = new Types.Par[](numMarkets);
+        Types.Wei[] memory weis = new Types.Wei[](numMarkets);
+
+        for (uint256 m = 0; m < numMarkets; m++) {
+            tokens[m] = getMarketTokenAddress(m);
+            pars[m] = getAccountPar(account, m);
+            weis[m] = getAccountWei(account, m);
+        }
+
+        return (
+            tokens,
+            pars,
+            weis
+        );
     }
 }

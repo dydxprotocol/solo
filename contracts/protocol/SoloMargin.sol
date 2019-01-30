@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Admin } from "./Admin.sol";
 import { Getters } from "./Getters.sol";
-import { Interaction } from "./Interaction.sol";
+import { Operation } from "./Operation.sol";
 import { Permission } from "./Permission.sol";
 import { State } from "./State.sol";
 import { Storage } from "./lib/Storage.sol";
@@ -37,7 +37,7 @@ contract SoloMargin is
     State,
     Admin,
     Getters,
-    Interaction,
+    Operation,
     Permission
 {
     // ============ Constructor ============
