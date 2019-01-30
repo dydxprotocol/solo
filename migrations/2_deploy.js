@@ -20,6 +20,7 @@ const { isDevNetwork } = require('./helpers');
 
 const AdminImpl = artifacts.require('AdminImpl');
 const InteractionImpl = artifacts.require('InteractionImpl');
+const SoloMarginReader = artifacts.require('SoloMarginReader');
 const SoloMargin = artifacts.require('SoloMargin');
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
@@ -41,14 +42,14 @@ const riskLimits = {
   earningsRateMax:       "1000000000000000000", // 100%
   minBorrowedValueMax: "100000000000000000000", // 100$
   minBorrowedValueMin:   "1000000000000000000", //   1$
-}
+};
 
 const riskParams = {
   liquidationRatio:  { value: "1250000000000000000" }, // 125%
   liquidationSpread: { value: "1050000000000000000" }, // 105%
   earningsRate:      { value:  "500000000000000000" }, //  50%
   minBorrowedValue:  { value: "5000000000000000000" }, //   5$
-}
+};
 
 async function maybeDeployTestContracts(deployer, network) {
   if (!isDevNetwork(network)) {
@@ -82,6 +83,13 @@ async function deployBaseProtocol(deployer) {
   await deployer.deploy(SoloMargin, riskParams, riskLimits);
 }
 
+async function deployReader(deployer, network) {
+  await deployer.deploy(
+    SoloMarginReader,
+    isDevNetwork(network) ? TestSoloMargin.address : SoloMargin.address,
+  );
+}
+
 const migration = async (deployer, network) => {
   await Promise.all([
     deployer.deploy(AdminImpl),
@@ -91,6 +99,7 @@ const migration = async (deployer, network) => {
     deployBaseProtocol(deployer),
     maybeDeployTestContracts(deployer, network),
   ]);
+  await deployReader(deployer, network);
 };
 
 module.exports = migration;

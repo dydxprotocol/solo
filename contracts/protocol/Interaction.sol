@@ -19,36 +19,34 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Admin } from "./Admin.sol";
-import { Getters } from "./Getters.sol";
-import { Interaction } from "./Interaction.sol";
-import { Permission } from "./Permission.sol";
 import { State } from "./State.sol";
-import { Storage } from "./lib/Storage.sol";
+import { InteractionImpl } from "./impl/InteractionImpl.sol";
+import { Acct } from "./lib/Acct.sol";
+import { Actions } from "./lib/Actions.sol";
 
 
 /**
- * @title SoloMargin
+ * @title Interaction
  * @author dYdX
  *
  * TODO
  */
-contract SoloMargin is
-    State,
-    Admin,
-    Getters,
-    Interaction,
-    Permission
+contract Interaction is
+    State
 {
-    // ============ Constructor ============
+    // ============ Public Functions ============
 
-    constructor(
-        Storage.RiskParams memory rp,
-        Storage.RiskLimits memory rl
+    function transact(
+        Acct.Info[] memory accounts,
+        Actions.TransactionArgs[] memory args
     )
         public
+        nonReentrant
     {
-        g_state.riskParams = rp;
-        g_state.riskLimits = rl;
+        InteractionImpl.transact(
+            g_state,
+            accounts,
+            args
+        );
     }
 }

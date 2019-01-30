@@ -11,9 +11,10 @@ describe('Solo', () => {
   });
 
   it('Has a bytecode that does not exceed the maximum', async () => {
-      const maxSize = 24000 * 2; // 2 characters per byte
-      expect(SoloMarginJson.deployedBytecode.length).toBeLessThan(maxSize);
-      expect(InteractionImplJson.deployedBytecode.length).toBeLessThan(maxSize);
-      expect(AdminImplJson.deployedBytecode.length).toBeLessThan(maxSize);
+    // Max size is 0x6000 (= 24576) bytes
+    const maxSize = 24576 * 2; // 2 characters per byte
+    expect(SoloMarginJson.deployedBytecode.length).toBeLessThan(maxSize);
+    expect(InteractionImplJson.deployedBytecode.length).toBeLessThan(maxSize);
+    expect(AdminImplJson.deployedBytecode.length).toBeLessThan(maxSize);
   });
 });

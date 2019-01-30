@@ -19,36 +19,45 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Admin } from "./Admin.sol";
-import { Getters } from "./Getters.sol";
-import { Interaction } from "./Interaction.sol";
-import { Permission } from "./Permission.sol";
 import { State } from "./State.sol";
-import { Storage } from "./lib/Storage.sol";
 
 
 /**
- * @title SoloMargin
+ * @title Permission
  * @author dYdX
  *
  * TODO
  */
-contract SoloMargin is
-    State,
-    Admin,
-    Getters,
-    Interaction,
-    Permission
+contract Permission is
+    State
 {
-    // ============ Constructor ============
+    // ============ Events ============
 
-    constructor(
-        Storage.RiskParams memory rp,
-        Storage.RiskLimits memory rl
+    event OperatorSet(
+        address indexed owner,
+        address operator,
+        bool trusted
+    );
+
+    // ============ Structs ============
+
+    struct OperatorArg {
+        address operator;
+        bool trusted;
+    }
+
+    // ============ Public Functions ============
+
+    function setOperators(
+        OperatorArg[] memory args
     )
         public
     {
-        g_state.riskParams = rp;
-        g_state.riskLimits = rl;
+        for (uint256 i = 0; i < args.length; i++) {
+            address operator = args[i].operator;
+            bool trusted = args[i].trusted;
+            g_state.operators[msg.sender][operator] = trusted;
+            emit OperatorSet(msg.sender, operator, trusted);
+        }
     }
 }

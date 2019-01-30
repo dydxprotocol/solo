@@ -19,36 +19,20 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Admin } from "./Admin.sol";
-import { Getters } from "./Getters.sol";
-import { Interaction } from "./Interaction.sol";
-import { Permission } from "./Permission.sol";
-import { State } from "./State.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { Storage } from "./lib/Storage.sol";
 
 
 /**
- * @title SoloMargin
+ * @title State
  * @author dYdX
  *
  * TODO
  */
-contract SoloMargin is
-    State,
-    Admin,
-    Getters,
-    Interaction,
-    Permission
+contract State is
+    Ownable,
+    ReentrancyGuard
 {
-    // ============ Constructor ============
-
-    constructor(
-        Storage.RiskParams memory rp,
-        Storage.RiskLimits memory rl
-    )
-        public
-    {
-        g_state.riskParams = rp;
-        g_state.riskLimits = rl;
-    }
+    Storage.State g_state;
 }
