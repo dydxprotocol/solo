@@ -20,29 +20,28 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Storage } from "./Storage.sol";
+import { Acct } from "./Acct.sol";
+import { Actions } from "./Actions.sol";
+import { Decimal } from "./Decimal.sol";
+import { Interest } from "./Interest.sol";
+import { Math } from "./Math.sol";
+import { Monetary } from "./Monetary.sol";
+import { Require } from "./Require.sol";
+import { Time } from "./Time.sol";
+import { Token } from "./Token.sol";
+import { Types } from "./Types.sol";
+import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Acct } from "../lib/Acct.sol";
-import { Actions } from "../lib/Actions.sol";
-import { Decimal } from "../lib/Decimal.sol";
-import { Interest } from "../lib/Interest.sol";
-import { Math } from "../lib/Math.sol";
-import { Monetary } from "../lib/Monetary.sol";
-import { Require } from "../lib/Require.sol";
-import { Time } from "../lib/Time.sol";
-import { Token } from "../lib/Token.sol";
-import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title Manager
+ * @title Storage
  * @author dYdX
  *
  * Functions for reading, writing, and verifying storage
  */
-contract Manager is
-    Storage
-{
+library Storage {
+    using Storage for Storage.State;
     using Math for uint256;
     using Types for Types.Par;
     using Types for Types.Wei;
@@ -50,51 +49,118 @@ contract Manager is
 
     // ============ Constants ============
 
-    string constant FILE = "Manager";
+    string constant FILE = "Storage";
+
+    // ============ Structs ============
+
+    struct Account {
+        mapping (uint256 => Types.Par) balances;
+        Acct.Status status;
+    }
+
+    struct Market {
+        address token;
+        Types.TotalPar totalPar;
+        Interest.Index index;
+        IPriceOracle priceOracle;
+        IInterestSetter interestSetter;
+        bool isClosing;
+    }
+
+    struct RiskParams {
+        // collateral ratio at which accounts can be liquidated
+        Decimal.D256 liquidationRatio;
+
+        // (1 - liquidationSpread) is the percentage penalty incurred by liquidated accounts
+        Decimal.D256 liquidationSpread;
+
+        // Percentage of the borrower's interest fee that gets passed to the suppliers
+        Decimal.D256 earningsRate;
+
+        // The minimum absolute borrow value of an account
+        // There must be sufficient incentivize to liquidate undercollateralized accounts
+        Monetary.Value minBorrowedValue;
+    }
+
+    struct RiskLimits {
+        uint64 interestRateMax;
+        uint64 liquidationRatioMax;
+        uint64 liquidationRatioMin;
+        uint64 liquidationSpreadMax;
+        uint64 liquidationSpreadMin;
+        uint64 earningsRateMin;
+        uint64 earningsRateMax;
+        uint128 minBorrowedValueMax;
+        uint128 minBorrowedValueMin;
+    }
+
+    struct State {
+        // number of markets
+        uint256 numMarkets;
+
+        // marketId => Market
+        mapping (uint256 => Market) markets;
+
+        // owner => account number => Account
+        mapping (address => mapping (uint256 => Account)) accounts;
+
+        // Addresses that can control other users accounts
+        mapping (address => mapping (address => bool)) operators;
+
+        // mutable risk parameters of the system
+        RiskParams riskParams;
+
+        // immutable risk limits of the system
+        RiskLimits riskLimits;
+    }
 
     // ============ Functions ============
 
     function getToken(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (address)
     {
-        return g_markets[marketId].token;
+        return state.markets[marketId].token;
     }
 
     function getTotalPar(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (Types.TotalPar memory)
     {
-        return g_markets[marketId].totalPar;
+        return state.markets[marketId].totalPar;
     }
 
     function getIndex(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (Interest.Index memory)
     {
-        return g_markets[marketId].index;
+        return state.markets[marketId].index;
     }
 
     function getNumExcessTokens(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (Types.Wei memory)
     {
-        Interest.Index memory index = getIndex(marketId);
-        Types.TotalPar memory totalPar = getTotalPar(marketId);
+        Interest.Index memory index = state.getIndex(marketId);
+        Types.TotalPar memory totalPar = state.getTotalPar(marketId);
 
-        address token = getToken(marketId);
+        address token = state.getToken(marketId);
 
         Types.Wei memory balanceWei = Types.Wei({
             sign: true,
@@ -110,16 +176,18 @@ contract Manager is
     }
 
     function getStatus(
+        Storage.State storage state,
         Acct.Info memory account
     )
         internal
         view
-        returns (AccountStatus)
+        returns (Acct.Status)
     {
-        return g_accounts[account.owner][account.number].status;
+        return state.accounts[account.owner][account.number].status;
     }
 
     function getPar(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId
     )
@@ -127,10 +195,11 @@ contract Manager is
         view
         returns (Types.Par memory)
     {
-        return g_accounts[account.owner][account.number].balances[marketId];
+        return state.accounts[account.owner][account.number].balances[marketId];
     }
 
     function getWei(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId
     )
@@ -138,28 +207,29 @@ contract Manager is
         view
         returns (Types.Wei memory)
     {
-        Types.Par memory par = getPar(account, marketId);
+        Types.Par memory par = state.getPar(account, marketId);
 
         if (par.isZero()) {
             return Types.zeroWei();
         }
 
-        Interest.Index memory index = getIndex(marketId);
+        Interest.Index memory index = state.getIndex(marketId);
         return Interest.parToWei(par, index);
     }
 
     function fetchNewIndex(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (Interest.Index memory)
     {
-        Interest.Index memory index = g_markets[marketId].index;
-        Interest.Rate memory rate = fetchInterestRate(marketId, index);
+        Interest.Index memory index = state.markets[marketId].index;
+        Interest.Rate memory rate = state.fetchInterestRate(marketId, index);
 
         Require.that(
-            isValidRate(rate),
+            state.isValidRate(rate),
             FILE,
             "Invalid interest rate",
             rate.value
@@ -168,12 +238,13 @@ contract Manager is
         return Interest.calculateNewIndex(
             index,
             rate,
-            getTotalPar(marketId),
-            g_riskParams.earningsRate
+            state.getTotalPar(marketId),
+            state.riskParams.earningsRate
         );
     }
 
     function fetchInterestRate(
+        Storage.State storage state,
         uint256 marketId,
         Interest.Index memory index
     )
@@ -181,79 +252,84 @@ contract Manager is
         view
         returns (Interest.Rate memory)
     {
-        Types.TotalPar memory totalPar = getTotalPar(marketId);
+        Types.TotalPar memory totalPar = state.getTotalPar(marketId);
         (
             Types.Wei memory borrowWei,
             Types.Wei memory supplyWei
         ) = Interest.totalParToWei(totalPar, index);
 
-        return g_markets[marketId].interestSetter.getInterestRate(
-            getToken(marketId),
+        return state.markets[marketId].interestSetter.getInterestRate(
+            state.getToken(marketId),
             borrowWei.value,
             supplyWei.value
         );
     }
 
     function fetchPrice(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
         view
         returns (Monetary.Price memory)
     {
-        IPriceOracle oracle = IPriceOracle(g_markets[marketId].priceOracle);
-        return oracle.getPrice(getToken(marketId));
+        IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
+        return oracle.getPrice(state.getToken(marketId));
     }
 
     // =============== Setter Functions ===============
 
     function updateIndex(
+        Storage.State storage state,
         uint256 marketId
     )
         internal
     {
-        if (Time.currentTime() == g_markets[marketId].index.lastUpdate) {
+        if (Time.currentTime() == state.markets[marketId].index.lastUpdate) {
             return;
         }
 
-        g_markets[marketId].index = fetchNewIndex(marketId);
+        state.markets[marketId].index = state.fetchNewIndex(marketId);
     }
 
     function isValidRate(
+        Storage.State storage state,
         Interest.Rate memory rate
     )
         internal
         view
         returns (bool)
     {
-        return rate.value <= g_riskLimits.MAX_INTEREST_RATE;
+        return rate.value <= state.riskLimits.interestRateMax;
     }
 
     function setStatus(
+        Storage.State storage state,
         Acct.Info memory account,
-        AccountStatus status
+        Acct.Status status
     )
         internal
         returns (bool)
     {
-        g_accounts[account.owner][account.number].status = status;
+        state.accounts[account.owner][account.number].status = status;
     }
 
     function setPar(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId,
         Types.Par memory newPar
     )
         internal
     {
-        Types.Par memory oldPar = getPar(account, marketId);
+        Types.Par memory oldPar = state.getPar(account, marketId);
 
         if (Types.equals(oldPar, newPar)) {
             return;
         }
 
         // updateTotalPar
-        Types.TotalPar memory totalPar = getTotalPar(marketId);
+        Types.TotalPar memory totalPar = state.getTotalPar(marketId);
 
         // roll-back oldPar
         if (oldPar.sign) {
@@ -269,25 +345,26 @@ contract Manager is
             totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
         }
 
-        g_markets[marketId].totalPar = totalPar;
-        g_accounts[account.owner][account.number].balances[marketId] = newPar;
+        state.markets[marketId].totalPar = totalPar;
+        state.accounts[account.owner][account.number].balances[marketId] = newPar;
     }
 
     /**
      * Determines and sets an account's balance based on a change in wei
      */
     function setParFromDeltaWei(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId,
         Types.Wei memory deltaWei
     )
         internal
     {
-        Interest.Index memory index = getIndex(marketId);
-        Types.Wei memory oldWei = getWei(account, marketId);
+        Interest.Index memory index = state.getIndex(marketId);
+        Types.Wei memory oldWei = state.getWei(account, marketId);
         Types.Wei memory newWei = oldWei.add(deltaWei);
         Types.Par memory newPar = Interest.weiToPar(newWei, index);
-        setPar(
+        state.setPar(
             account,
             marketId,
             newPar
@@ -299,6 +376,7 @@ contract Manager is
      * equivalent amount in wei
      */
     function getNewParAndDeltaWei(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
@@ -307,8 +385,8 @@ contract Manager is
         view
         returns (Types.Par memory, Types.Wei memory)
     {
-        Interest.Index memory index = getIndex(marketId);
-        Types.Par memory oldPar = getPar(account, marketId);
+        Interest.Index memory index = state.getIndex(marketId);
+        Types.Par memory oldPar = state.getPar(account, marketId);
         Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
 
         Types.Par memory newPar;
@@ -339,6 +417,7 @@ contract Manager is
     }
 
     function getNewParAndDeltaWeiForLiquidation(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 marketId,
         Actions.AssetAmount memory amount
@@ -348,7 +427,7 @@ contract Manager is
         returns (Types.Par memory, Types.Wei memory)
     {
         Require.that(
-            getPar(account, marketId).isNegative(),
+            state.getPar(account, marketId).isNegative(),
             FILE,
             "Balance must be negatives",
             account.number,
@@ -358,7 +437,7 @@ contract Manager is
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             account,
             marketId,
             amount
@@ -373,63 +452,67 @@ contract Manager is
         // if attempting to over-repay the owed asset, bound it by the maximum
         if (newPar.isPositive()) {
             newPar = Types.zeroPar();
-            deltaWei = getWei(account, marketId).negative();
+            deltaWei = state.getWei(account, marketId).negative();
         }
 
         return (newPar, deltaWei);
     }
 
     function valuesToStatus(
+        Storage.State storage state,
         Monetary.Value memory supplyValue,
         Monetary.Value memory borrowValue
     )
         internal
         view
-        returns (AccountStatus)
+        returns (Acct.Status)
     {
         if (borrowValue.value == 0) {
-            return AccountStatus.Normal;
+            return Acct.Status.Normal;
         }
 
         if (supplyValue.value == 0) {
-            return AccountStatus.Vapor;
+            return Acct.Status.Vapor;
         }
 
-        uint256 requiredSupply = Decimal.mul(borrowValue.value, g_riskParams.liquidationRatio);
+        uint256 requiredSupply =
+            Decimal.mul(borrowValue.value, state.riskParams.liquidationRatio);
+
         if (supplyValue.value >= requiredSupply) {
-            return AccountStatus.Normal;
+            return Acct.Status.Normal;
         } else {
-            return AccountStatus.Liquid;
+            return Acct.Status.Liquid;
         }
     }
 
     function vaporizeUsingExcess(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 owedMarketId
     )
         internal
         returns (bool)
     {
-        Types.Wei memory sameWei = getNumExcessTokens(owedMarketId);
+        Types.Wei memory sameWei = state.getNumExcessTokens(owedMarketId);
 
         if (!sameWei.isPositive()) {
             return false;
         }
 
-        Types.Wei memory toRefundWei = getWei(
+        Types.Wei memory toRefundWei = state.getWei(
             account,
             owedMarketId
         );
 
         if (sameWei.value >= toRefundWei.value) {
-            setPar(
+            state.setPar(
                 account,
                 owedMarketId,
                 Types.zeroPar()
             );
             return true;
         } else {
-            setParFromDeltaWei(
+            state.setParFromDeltaWei(
                 account,
                 owedMarketId,
                 sameWei
@@ -439,6 +522,7 @@ contract Manager is
     }
 
     function getValues(
+        Storage.State storage state,
         Acct.Info memory account
     )
         internal
@@ -447,21 +531,21 @@ contract Manager is
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        uint256 numMarkets = g_numMarkets;
+        uint256 numMarkets = state.numMarkets;
 
         for (uint256 m = 0; m < numMarkets; m++) {
-            Types.Par memory userPar = getPar(account, m);
+            Types.Par memory userPar = state.getPar(account, m);
 
             if (userPar.isZero()) {
                 continue;
             }
 
-            updateIndex(m);
-            Interest.Index memory index = getIndex(m);
+            state.updateIndex(m);
+            Interest.Index memory index = state.getIndex(m);
             Types.Wei memory userWei = Interest.parToWei(userPar, index);
 
             Monetary.Value memory overallValue = Monetary.getValue(
-                fetchPrice(m),
+                state.fetchPrice(m),
                 userWei.value
             );
 
@@ -476,6 +560,7 @@ contract Manager is
     }
 
     function fetchPriceRatio(
+        Storage.State storage state,
         uint256 heldMarketId,
         uint256 owedMarketId
     )
@@ -483,8 +568,8 @@ contract Manager is
         view
         returns (Decimal.D256 memory)
     {
-        Monetary.Price memory heldPrice = fetchPrice(heldMarketId);
-        Monetary.Price memory owedPrice = fetchPrice(owedMarketId);
+        Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
+        Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
 
         // get the actual price ratio
         Decimal.D256 memory priceRatio = Decimal.D256({
@@ -496,34 +581,6 @@ contract Manager is
         });
 
         // return the price ratio including the spread
-        return Decimal.mul(priceRatio, g_riskParams.liquidationSpread);
-    }
-
-    function owedWeiToHeldWei(
-        Decimal.D256 memory priceRatio,
-        Types.Wei memory owedWei
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: false,
-            value: Decimal.mul(owedWei.value, priceRatio)
-        });
-    }
-
-    function heldWeiToOwedWei(
-        Decimal.D256 memory priceRatio,
-        Types.Wei memory heldWei
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: true,
-            value: Decimal.div(heldWei.value, priceRatio)
-        });
+        return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
     }
 }

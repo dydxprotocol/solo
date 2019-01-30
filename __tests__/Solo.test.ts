@@ -1,7 +1,9 @@
 import { Solo } from '../src/Solo';
 import { provider } from './helpers/Provider';
 import { NETWORK_ID } from './helpers/Constants';
-import { deployedBytecode } from '../build/contracts/SoloMargin.json';
+import SoloMarginJson from '../build/contracts/SoloMargin.json';
+import InteractionImplJson from '../build/contracts/InteractionImpl.json';
+import AdminImplJson from '../build/contracts/AdminImpl.json';
 
 describe('Solo', () => {
   it('Initializes a new instance successfully', async () => {
@@ -9,6 +11,9 @@ describe('Solo', () => {
   });
 
   it('Has a bytecode that does not exceed the maximum', async () => {
-      expect(deployedBytecode.length).toBeLessThan(49000);
+      const maxSize = 24000 * 2; // 2 characters per byte
+      expect(SoloMarginJson.deployedBytecode.length).toBeLessThan(maxSize);
+      expect(InteractionImplJson.deployedBytecode.length).toBeLessThan(maxSize);
+      expect(AdminImplJson.deployedBytecode.length).toBeLessThan(maxSize);
   });
 });

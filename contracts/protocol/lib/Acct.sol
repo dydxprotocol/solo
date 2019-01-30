@@ -27,6 +27,13 @@ pragma experimental ABIEncoderV2;
  * TODO
  */
 library Acct {
+    // ============ Enums ============
+
+    enum Status {
+        Normal,
+        Liquid,
+        Vapor
+    }
 
     // ============ Structs ============
 

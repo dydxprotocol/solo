@@ -18,7 +18,8 @@
 
 const { isDevNetwork } = require('./helpers');
 
-const AdminLib = artifacts.require('AdminLib');
+const AdminImpl = artifacts.require('AdminImpl');
+const InteractionImpl = artifacts.require('InteractionImpl');
 const SoloMargin = artifacts.require('SoloMargin');
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
@@ -30,37 +31,23 @@ const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 
-const MAX_INTEREST_RATE = "31709791983"; // Max 100% per year
-const MAX_LIQUIDATION_RATIO = "2000000000000000000"; // 200%
-const LIQUIDATION_RATIO = "1250000000000000000"; // 125%
-const MIN_LIQUIDATION_RATIO = "1100000000000000000"; // 110%
-const MAX_LIQUIDATION_SPREAD = "1150000000000000000"; // 115%
-const LIQUIDATION_SPREAD = "1050000000000000000"; // 105%
-const MIN_LIQUIDATION_SPREAD = "1010000000000000000"; // 101%
-const MIN_EARNINGS_RATE = "500000000000000000"; // 50%
-const EARNINGS_RATE = "500000000000000000"; // 90%
-const MAX_EARNINGS_RATE = "1000000000000000000"; // 100%
-const MAX_MIN_BORROWED_VALUE = "100000000000000000000"; // $100
-const MIN_BORROWED_VALUE = "100000000000000000000"; // $5
-const MIN_MIN_BORROWED_VALUE = "1000000000000000000"; // $1
-
 const riskLimits = {
-  MAX_INTEREST_RATE,
-  MAX_LIQUIDATION_RATIO,
-  MIN_LIQUIDATION_RATIO,
-  MAX_LIQUIDATION_SPREAD,
-  MIN_LIQUIDATION_SPREAD,
-  MIN_EARNINGS_RATE,
-  MAX_EARNINGS_RATE,
-  MAX_MIN_BORROWED_VALUE,
-  MIN_MIN_BORROWED_VALUE,
+  interestRateMax:               "31709791983", // 100% APR
+  liquidationRatioMax:   "2000000000000000000", // 200%
+  liquidationRatioMin:   "1100000000000000000", // 110%
+  liquidationSpreadMax:  "1150000000000000000", // 115%
+  liquidationSpreadMin:  "1010000000000000000", // 101%
+  earningsRateMin:        "500000000000000000", //  50%
+  earningsRateMax:       "1000000000000000000", // 100%
+  minBorrowedValueMax: "100000000000000000000", // 100$
+  minBorrowedValueMin:   "1000000000000000000", //   1$
 }
 
 const riskParams = {
-  liquidationRatio: { value: LIQUIDATION_RATIO },
-  liquidationSpread: { value: LIQUIDATION_SPREAD },
-  earningsRate: { value: EARNINGS_RATE },
-  minBorrowedValue: { value: MIN_BORROWED_VALUE },
+  liquidationRatio:  { value: "1250000000000000000" }, // 125%
+  liquidationSpread: { value: "1050000000000000000" }, // 105%
+  earningsRate:      { value:  "500000000000000000" }, //  50%
+  minBorrowedValue:  { value: "5000000000000000000" }, //   5$
 }
 
 async function maybeDeployTestContracts(deployer, network) {
@@ -69,7 +56,12 @@ async function maybeDeployTestContracts(deployer, network) {
   }
 
   await Promise.all([
-    deployer.deploy(TestSoloMargin, AdminLib.address, riskParams, riskLimits),
+    TestSoloMargin.link('AdminImpl', AdminImpl.address),
+    TestSoloMargin.link('InteractionImpl', InteractionImpl.address),
+  ]);
+
+  await Promise.all([
+    deployer.deploy(TestSoloMargin, riskParams, riskLimits),
     deployer.deploy(TokenA),
     deployer.deploy(TokenB),
     deployer.deploy(TokenC),
@@ -83,11 +75,18 @@ async function maybeDeployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer) {
-  await deployer.deploy(SoloMargin, AdminLib.address, riskParams, riskLimits);
+  await Promise.all([
+    SoloMargin.link('AdminImpl', AdminImpl.address),
+    SoloMargin.link('InteractionImpl', InteractionImpl.address),
+  ]);
+  await deployer.deploy(SoloMargin, riskParams, riskLimits);
 }
 
 const migration = async (deployer, network) => {
-  await deployer.deploy(AdminLib);
+  await Promise.all([
+    deployer.deploy(AdminImpl),
+    deployer.deploy(InteractionImpl)
+  ]);
   await Promise.all([
     deployBaseProtocol(deployer),
     maybeDeployTestContracts(deployer, network),

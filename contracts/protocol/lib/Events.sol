@@ -19,10 +19,10 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Manager } from "./Manager.sol";
-import { Acct } from "../lib/Acct.sol";
-import { Actions } from "../lib/Actions.sol";
-import { Types } from "../lib/Types.sol";
+import { Acct } from "./Acct.sol";
+import { Actions } from "./Actions.sol";
+import { Storage } from "./Storage.sol";
+import { Types } from "./Types.sol";
 
 
 /**
@@ -31,9 +31,10 @@ import { Types } from "../lib/Types.sol";
  *
  * TODO
  */
-contract Events is
-    Manager
-{
+library Events {
+    using Types for Types.Wei;
+    using Storage for Storage.State;
+
     // ============ Events ============
 
     event LogTransaction(
@@ -147,6 +148,7 @@ contract Events is
     }
 
     function logDeposit(
+        Storage.State storage state,
         Actions.DepositArgs memory args,
         Types.Wei memory deltaWei
     )
@@ -157,6 +159,7 @@ contract Events is
             args.account.number,
             args.mkt,
             getBalanceUpdate(
+                state,
                 args.account,
                 args.mkt,
                 deltaWei
@@ -166,6 +169,7 @@ contract Events is
     }
 
     function logWithdraw(
+        Storage.State storage state,
         Actions.WithdrawArgs memory args,
         Types.Wei memory deltaWei
     )
@@ -176,6 +180,7 @@ contract Events is
             args.account.number,
             args.mkt,
             getBalanceUpdate(
+                state,
                 args.account,
                 args.mkt,
                 deltaWei
@@ -185,6 +190,7 @@ contract Events is
     }
 
     function logTransfer(
+        Storage.State storage state,
         Actions.TransferArgs memory args,
         Types.Wei memory deltaWei
     )
@@ -197,11 +203,13 @@ contract Events is
             args.accountTwo.number,
             args.mkt,
             getBalanceUpdate(
+                state,
                 args.accountOne,
                 args.mkt,
                 deltaWei
             ),
             getBalanceUpdate(
+                state,
                 args.accountTwo,
                 args.mkt,
                 deltaWei.negative()
@@ -210,6 +218,7 @@ contract Events is
     }
 
     function logBuy(
+        Storage.State storage state,
         Actions.BuyArgs memory args,
         Types.Wei memory takerWei,
         Types.Wei memory makerWei
@@ -222,11 +231,13 @@ contract Events is
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
+                state,
                 args.account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
+                state,
                 args.account,
                 args.makerMkt,
                 makerWei
@@ -236,6 +247,7 @@ contract Events is
     }
 
     function logSell(
+        Storage.State storage state,
         Actions.SellArgs memory args,
         Types.Wei memory takerWei,
         Types.Wei memory makerWei
@@ -248,11 +260,13 @@ contract Events is
             args.takerMkt,
             args.makerMkt,
             getBalanceUpdate(
+                state,
                 args.account,
                 args.takerMkt,
                 takerWei
             ),
             getBalanceUpdate(
+                state,
                 args.account,
                 args.makerMkt,
                 makerWei
@@ -262,6 +276,7 @@ contract Events is
     }
 
     function logTrade(
+        Storage.State storage state,
         Actions.TradeArgs memory args,
         Types.Wei memory inputWei,
         Types.Wei memory outputWei
@@ -270,21 +285,25 @@ contract Events is
     {
         BalanceUpdate[4] memory updates = [
             getBalanceUpdate(
+                state,
                 args.takerAccount,
                 args.inputMkt,
                 inputWei.negative()
             ),
             getBalanceUpdate(
+                state,
                 args.takerAccount,
                 args.outputMkt,
                 outputWei.negative()
             ),
             getBalanceUpdate(
+                state,
                 args.makerAccount,
                 args.inputMkt,
                 inputWei
             ),
             getBalanceUpdate(
+                state,
                 args.makerAccount,
                 args.outputMkt,
                 outputWei
@@ -319,6 +338,7 @@ contract Events is
     }
 
     function logLiquidate(
+        Storage.State storage state,
         Actions.LiquidateArgs memory args,
         Types.Wei memory heldWei,
         Types.Wei memory owedWei
@@ -326,21 +346,25 @@ contract Events is
         internal
     {
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
             args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
             args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
+            state,
             args.liquidAccount,
             args.heldMkt,
             heldWei
         );
         BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
+            state,
             args.liquidAccount,
             args.owedMkt,
             owedWei
@@ -361,6 +385,7 @@ contract Events is
     }
 
     function logVaporize(
+        Storage.State storage state,
         Actions.VaporizeArgs memory args,
         Types.Wei memory heldWei,
         Types.Wei memory owedWei
@@ -368,16 +393,19 @@ contract Events is
         internal
     {
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
             args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
             args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
         BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
+            state,
             args.vaporAccount,
             args.owedMkt,
             owedWei
@@ -399,6 +427,7 @@ contract Events is
     // ============ Private Functions ============
 
     function getBalanceUpdate(
+        Storage.State storage state,
         Acct.Info memory account,
         uint256 mkt,
         Types.Wei memory deltaWei
@@ -409,7 +438,7 @@ contract Events is
     {
         return BalanceUpdate({
             deltaWei: deltaWei,
-            newPar: getPar(account, mkt)
+            newPar: state.getPar(account, mkt)
         });
     }
 }
