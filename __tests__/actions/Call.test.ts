@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
 import { address } from '../../src/types';
-import { resetEVM } from '../helpers/EVM';
+import { mineAvgBlock, resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
@@ -19,6 +19,7 @@ describe('Call', () => {
 
   beforeEach(async () => {
     await resetEVM();
+    await mineAvgBlock();
   });
 
   it('Basic call test', async () => {
