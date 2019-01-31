@@ -19,30 +19,16 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Account } from "../lib/Account.sol";
-import { Types } from "../lib/Types.sol";
+import { Storage } from "./lib/Storage.sol";
 
 
 /**
- * @title IAutoTrader
+ * @title State
  * @author dYdX
  *
  * TODO
  */
-contract IAutoTrader {
-
-    // ============ Public Functions ============
-
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory oldInputPar,
-        Types.Par memory newInputPar,
-        Types.Wei memory inputWei,
-        bytes memory data
-    )
-        public
-        returns (Types.Wei memory);
+contract State
+{
+    Storage.State g_state;
 }

@@ -39,19 +39,6 @@ library Exchange {
 
     // ============ Library Functions ============
 
-    function thisBalance(
-        address token
-    )
-        internal
-        view
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: true,
-            value: Token.balanceOf(token, address(this))
-        });
-    }
-
     function transferOut(
         address token,
         address to,
@@ -62,7 +49,7 @@ library Exchange {
         Require.that(
             !deltaWei.sign,
             FILE,
-            "Cannot transferOut positive tokens"
+            "Cannot transferOut positive"
         );
 
         Token.transfer(
@@ -82,7 +69,7 @@ library Exchange {
         Require.that(
             deltaWei.sign,
             FILE,
-            "Cannot transferIn negative tokens"
+            "Cannot transferIn negative"
         );
 
         Token.transferFrom(
@@ -107,7 +94,7 @@ library Exchange {
         Require.that(
             desiredAmount.sign,
             FILE,
-            "Cannot getCost of negative tokens"
+            "Cannot getCost negative"
         );
 
         Types.Wei memory result;
@@ -136,7 +123,7 @@ library Exchange {
         Require.that(
             !requestedFillAmount.sign,
             FILE,
-            "Cannot exchange positive tokens"
+            "Cannot exchange positive"
         );
 
         transferOut(borrowToken, exchangeWrapper, requestedFillAmount);

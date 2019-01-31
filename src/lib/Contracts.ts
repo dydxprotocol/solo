@@ -134,7 +134,6 @@ export class Contracts {
       provider,
       networkId,
     );
-
     this.setContractProvider(
       this.testSoloMargin,
       testSoloMarginJson,

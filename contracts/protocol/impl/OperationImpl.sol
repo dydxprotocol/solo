@@ -19,132 +19,147 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { Events } from "./Events.sol";
-import { Manager } from "./Manager.sol";
-import { Storage } from "./Storage.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
-import { Acct } from "../lib/Acct.sol";
+import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
+import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
+import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title Transactions
+ * @title OperationImpl
  * @author dYdX
  *
- * Logic for processing transactions
+ * Logic for processing actions
  */
-contract Transactions is
-    ReentrancyGuard,
-    Storage,
-    Manager,
-    Events
-{
+library OperationImpl {
+    using Storage for Storage.State;
+    using Types for Types.Wei;
+
     // ============ Constants ============
 
-    string constant FILE = "Transactions";
+    string constant FILE = "OperationImpl";
 
     // ============ Public Functions ============
 
-    function transact(
-        Acct.Info[] memory accounts,
-        Actions.TransactionArgs[] memory args
+    function operate(
+        Storage.State storage state,
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
     )
         public
-        nonReentrant
     {
-        logTransaction();
+        Events.logTransaction();
 
         bool[] memory primary = new bool[](accounts.length);
         bool[] memory traded = new bool[](accounts.length);
 
-        for (uint256 i = 0; i < args.length; i++) {
-            Actions.TransactionArgs memory arg = args[i];
-            Actions.TransactionType ttype = arg.transactionType;
+        for (uint256 i = 0; i < actions.length; i++) {
+            Actions.ActionArgs memory arg = actions[i];
+            Actions.ActionType ttype = arg.actionType;
 
-            if (ttype == Actions.TransactionType.Deposit) {
-                _deposit(Actions.parseDepositArgs(accounts, arg));
+            if (ttype == Actions.ActionType.Deposit) {
+                _deposit(state, Actions.parseDepositArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Withdraw) {
-                _withdraw(Actions.parseWithdrawArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Withdraw) {
+                _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Transfer) {
-                _transfer(Actions.parseTransferArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Transfer) {
+                _transfer(state, Actions.parseTransferArgs(accounts, arg));
                 primary[arg.accountId] = true;
             }
-            else if (ttype == Actions.TransactionType.Buy) {
-                _buy(Actions.parseBuyArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Buy) {
+                _buy(state, Actions.parseBuyArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Sell) {
-                _sell(Actions.parseSellArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Sell) {
+                _sell(state, Actions.parseSellArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Trade) {
-                _trade(Actions.parseTradeArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Trade) {
+                _trade(state, Actions.parseTradeArgs(accounts, arg));
                 traded[arg.accountId] = true;
             }
-            else if (ttype == Actions.TransactionType.Liquidate) {
-                _liquidate(Actions.parseLiquidateArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Liquidate) {
+                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Vaporize) {
-                _vaporize(Actions.parseVaporizeArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Vaporize) {
+                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg));
             }
-            else if (ttype == Actions.TransactionType.Call) {
-                _call(Actions.parseCallArgs(accounts, arg));
+            else if (ttype == Actions.ActionType.Call) {
+                _call(state, Actions.parseCallArgs(accounts, arg));
             }
             primary[arg.accountId] = true;
         }
 
-        _verify(accounts, primary, traded);
+        _verify(
+            state,
+            accounts,
+            primary,
+            traded
+        );
     }
 
     function _verify(
-        Acct.Info[] memory accounts,
+        Storage.State storage state,
+        Account.Info[] memory accounts,
         bool[] memory primary,
         bool[] memory traded
     )
         private
     {
-        Monetary.Value memory minBorrowedValue = g_minBorrowedValue;
+        Monetary.Value memory minBorrowedValue = state.riskParams.minBorrowedValue;
 
         for (uint256 a = 0; a < accounts.length; a++) {
-            Acct.Info memory account = accounts[a];
+            for (uint256 b = a + 1; b < accounts.length; b++) {
+                Require.that(
+                    !Account.equals(accounts[a], accounts[b]),
+                    FILE,
+                    "Cannot duplicate accounts"
+                );
+            }
+        }
 
+        for (uint256 a = 0; a < accounts.length; a++) {
+            Account.Info memory account = accounts[a];
+            state.updateIndexesForAccount(account);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = getValues(account);
+            ) = state.getValues(account);
 
             // check minimum borrowed value for all accounts
             Require.that(
                 borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
                 FILE,
-                "Cannot leave account with borrow value less than minBorrowedValue",
+                "Borrow value too low",
                 a
             );
 
             // check collateralization for non-liquidated accounts
             if (primary[a] || traded[a]) {
                 Require.that(
-                    valuesToStatus(supplyValue, borrowValue) == AccountStatus.Normal,
+                    state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
                     FILE,
-                    "Cannot leave primary or traded account undercollateralized",
+                    "Undercollateralized account",
                     a
                 );
-                setStatus(account, AccountStatus.Normal);
+                if (state.getStatus(account) != Account.Status.Normal) {
+                    state.setStatus(account, Account.Status.Normal);
+                }
             }
 
             // check permissions for primary accounts
             if (primary[a]) {
                 Require.that(
-                    account.owner == msg.sender || g_operators[account.owner][msg.sender],
+                    account.owner == msg.sender || state.operators[account.owner][msg.sender],
                     FILE,
-                    "Must have permissions for primary accounts"
+                    "Unpermissioned account",
+                    a
                 );
             }
         }
@@ -153,28 +168,29 @@ contract Transactions is
     // ============ Private Functions ============
 
     function _deposit(
+        Storage.State storage state,
         Actions.DepositArgs memory args
     )
         private
     {
-        updateIndex(args.mkt);
+        state.updateIndex(args.mkt);
 
         Require.that(
             args.from == msg.sender || args.from == args.account.owner,
             FILE,
-            "Deposit must come from sender or owner"
+            "Invalid deposit source"
         );
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.account,
             args.mkt,
             args.amount
         );
 
-        setPar(
+        state.setPar(
             args.account,
             args.mkt,
             newPar
@@ -182,31 +198,36 @@ contract Transactions is
 
         // requires a positive deltaWei
         Exchange.transferIn(
-            getToken(args.mkt),
+            state.getToken(args.mkt),
             args.from,
             deltaWei
         );
 
-        logDeposit(args, deltaWei);
+        Events.logDeposit(
+            state,
+            args,
+            deltaWei
+        );
     }
 
     function _withdraw(
+        Storage.State storage state,
         Actions.WithdrawArgs memory args
     )
         private
     {
-        updateIndex(args.mkt);
+        state.updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.account,
             args.mkt,
             args.amount
         );
 
-        setPar(
+        state.setPar(
             args.account,
             args.mkt,
             newPar
@@ -214,63 +235,70 @@ contract Transactions is
 
         // requires a negative deltaWei
         Exchange.transferOut(
-            getToken(args.mkt),
+            state.getToken(args.mkt),
             args.to,
             deltaWei
         );
 
-        logWithdraw(args, deltaWei);
+        Events.logWithdraw(
+            state,
+            args,
+            deltaWei
+        );
     }
 
     function _transfer(
+        Storage.State storage state,
         Actions.TransferArgs memory args
     )
         private
     {
-        updateIndex(args.mkt);
+        state.updateIndex(args.mkt);
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.accountOne,
             args.mkt,
             args.amount
         );
 
-        setPar(
+        state.setPar(
             args.accountOne,
             args.mkt,
             newPar
         );
 
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.accountTwo,
             args.mkt,
             deltaWei.negative()
         );
 
-        logTransfer(
+        Events.logTransfer(
+            state,
             args,
             deltaWei
         );
     }
 
     function _buy(
+        Storage.State storage state,
         Actions.BuyArgs memory args
     )
         private
     {
-        updateIndex(args.takerMkt);
-        updateIndex(args.makerMkt);
+        state.updateIndex(args.takerMkt);
+        state.updateIndex(args.makerMkt);
 
-        address takerToken = getToken(args.takerMkt);
-        address makerToken = getToken(args.makerMkt);
+        address takerToken = state.getToken(args.takerMkt);
+        address makerToken = state.getToken(args.makerMkt);
 
         (
             Types.Par memory makerPar,
             Types.Wei memory makerWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.account,
             args.makerMkt,
             args.amount
@@ -296,22 +324,23 @@ contract Transactions is
         Require.that(
             tokensReceived.value >= makerWei.value,
             FILE,
-            "Exchange must receive more than expected from getCost"
+            "Buy amount less than promised"
         );
 
-        setPar(
+        state.setPar(
             args.account,
             args.makerMkt,
             makerPar
         );
 
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.account,
             args.takerMkt,
             takerWei
         );
 
-        logBuy(
+        Events.logBuy(
+            state,
             args,
             takerWei,
             makerWei
@@ -319,20 +348,21 @@ contract Transactions is
     }
 
     function _sell(
+        Storage.State storage state,
         Actions.SellArgs memory args
     )
         private
     {
-        updateIndex(args.takerMkt);
-        updateIndex(args.makerMkt);
+        state.updateIndex(args.takerMkt);
+        state.updateIndex(args.makerMkt);
 
-        address takerToken = getToken(args.takerMkt);
-        address makerToken = getToken(args.makerMkt);
+        address takerToken = state.getToken(args.takerMkt);
+        address makerToken = state.getToken(args.makerMkt);
 
         (
             Types.Par memory takerPar,
             Types.Wei memory takerWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.account,
             args.takerMkt,
             args.amount
@@ -347,19 +377,20 @@ contract Transactions is
             args.orderData
         );
 
-        setPar(
+        state.setPar(
             args.account,
             args.takerMkt,
             takerPar
         );
 
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.account,
             args.makerMkt,
             makerWei
         );
 
-        logSell(
+        Events.logSell(
+            state,
             args,
             takerWei,
             makerWei
@@ -367,27 +398,28 @@ contract Transactions is
     }
 
     function _trade(
+        Storage.State storage state,
         Actions.TradeArgs memory args
     )
         private
     {
-        updateIndex(args.inputMkt);
-        updateIndex(args.outputMkt);
+        state.updateIndex(args.inputMkt);
+        state.updateIndex(args.outputMkt);
 
         Require.that(
-            g_operators[args.makerAccount.owner][args.autoTrader],
+            state.operators[args.makerAccount.owner][args.autoTrader],
             FILE,
-            "AutoTrader not authorized"
+            "Unpermissioned AutoTrader"
         );
 
-        Types.Par memory oldInputPar = getPar(
+        Types.Par memory oldInputPar = state.getPar(
             args.makerAccount,
             args.inputMkt
         );
         (
             Types.Par memory newInputPar,
             Types.Wei memory inputWei
-        ) = getNewParAndDeltaWei(
+        ) = state.getNewParAndDeltaWei(
             args.makerAccount,
             args.inputMkt,
             args.amount
@@ -411,30 +443,31 @@ contract Transactions is
         );
 
         // set the balance for the maker
-        setPar(
+        state.setPar(
             args.makerAccount,
             args.inputMkt,
             newInputPar
         );
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.makerAccount,
             args.outputMkt,
             outputWei
         );
 
         // set the balance for the taker
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.takerAccount,
             args.inputMkt,
             inputWei.negative()
         );
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.takerAccount,
             args.outputMkt,
             outputWei.negative()
         );
 
-        logTrade(
+        Events.logTrade(
+            state,
             args,
             inputWei,
             outputWei
@@ -442,28 +475,30 @@ contract Transactions is
     }
 
     function _liquidate(
+        Storage.State storage state,
         Actions.LiquidateArgs memory args
     )
         private
     {
-        updateIndex(args.heldMkt);
-        updateIndex(args.owedMkt);
+        state.updateIndex(args.heldMkt);
+        state.updateIndex(args.owedMkt);
 
         // verify liquidatable
-        if (AccountStatus.Liquid != getStatus(args.liquidAccount)) {
+        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
+            state.updateIndexesForAccount(args.liquidAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = getValues(args.liquidAccount);
+            ) = state.getValues(args.liquidAccount);
             Require.that(
-                AccountStatus.Liquid == valuesToStatus(supplyValue, borrowValue),
+                Account.Status.Liquid == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Liquidation account must be undercollateralized"
+                "Unliquidatable account"
             );
-            setStatus(args.liquidAccount, AccountStatus.Liquid);
+            state.setStatus(args.liquidAccount, Account.Status.Liquid);
         }
 
-        Types.Wei memory maxHeldWei = getWei(
+        Types.Wei memory maxHeldWei = state.getWei(
             args.liquidAccount,
             args.heldMkt
         );
@@ -471,19 +506,19 @@ contract Transactions is
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Liquidation account must have positive collateral"
+            "Collateral must be positive"
         );
 
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
-        ) = getNewParAndDeltaWeiForLiquidation(
+        ) = state.getNewParAndDeltaWeiForLiquidation(
             args.liquidAccount,
             args.owedMkt,
             args.amount
         );
 
-        Decimal.D256 memory priceRatio = fetchPriceRatio(args.owedMkt, args.heldMkt);
+        Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
 
         Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
 
@@ -492,23 +527,23 @@ contract Transactions is
             heldWei = maxHeldWei.negative();
             owedWei = heldWeiToOwedWei(priceRatio, heldWei);
 
-            setPar(
+            state.setPar(
                 args.liquidAccount,
                 args.heldMkt,
                 Types.zeroPar()
             );
-            setParFromDeltaWei(
+            state.setParFromDeltaWei(
                 args.liquidAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
-            setPar(
+            state.setPar(
                 args.liquidAccount,
                 args.owedMkt,
                 owedPar
             );
-            setParFromDeltaWei(
+            state.setParFromDeltaWei(
                 args.liquidAccount,
                 args.heldMkt,
                 heldWei
@@ -516,18 +551,19 @@ contract Transactions is
         }
 
         // set the balances for the solid account
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
 
-        logLiquidate(
+        Events.logLiquidate(
+            state,
             args,
             heldWei,
             owedWei
@@ -535,50 +571,52 @@ contract Transactions is
     }
 
     function _vaporize(
+        Storage.State storage state,
         Actions.VaporizeArgs memory args
     )
         private
     {
-        updateIndex(args.heldMkt);
-        updateIndex(args.owedMkt);
+        state.updateIndex(args.heldMkt);
+        state.updateIndex(args.owedMkt);
 
         // verify vaporizable
-        if (AccountStatus.Vapor != getStatus(args.vaporAccount)) {
+        if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
+            state.updateIndexesForAccount(args.vaporAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = getValues(args.vaporAccount);
+            ) = state.getValues(args.vaporAccount);
             Require.that(
-                AccountStatus.Vapor == valuesToStatus(supplyValue, borrowValue),
+                Account.Status.Vapor == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Vaporization account must have only negative values"
+                "Unvaporizable account"
             );
-            setStatus(args.vaporAccount, AccountStatus.Vapor);
+            state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
 
         // First, attempt to refund using the same token
-        if (vaporizeUsingExcess(args.vaporAccount, args.owedMkt)) {
+        if (state.vaporizeUsingExcess(args.vaporAccount, args.owedMkt)) {
             return;
         }
 
-        Types.Wei memory maxHeldWei = getNumExcessTokens(args.heldMkt);
+        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMkt);
 
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Owner fund must have positive collateral"
+            "Excess token must be positive"
         );
 
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
-        ) = getNewParAndDeltaWeiForLiquidation(
+        ) = state.getNewParAndDeltaWeiForLiquidation(
             args.vaporAccount,
             args.owedMkt,
             args.amount
         );
 
-        Decimal.D256 memory priceRatio = fetchPriceRatio(args.owedMkt, args.heldMkt);
+        Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
 
         Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
 
@@ -587,13 +625,13 @@ contract Transactions is
             heldWei = maxHeldWei.negative();
             owedWei = heldWeiToOwedWei(priceRatio, heldWei);
 
-            setParFromDeltaWei(
+            state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMkt,
                 owedWei
             );
         } else {
-            setPar(
+            state.setPar(
                 args.vaporAccount,
                 args.owedMkt,
                 owedPar
@@ -601,18 +639,19 @@ contract Transactions is
         }
 
         // set the balances for the solid account
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.solidAccount,
             args.owedMkt,
             owedWei.negative()
         );
-        setParFromDeltaWei(
+        state.setParFromDeltaWei(
             args.solidAccount,
             args.heldMkt,
             heldWei.negative()
         );
 
-        logVaporize(
+        Events.logVaporize(
+            state,
             args,
             heldWei,
             owedWei
@@ -620,6 +659,7 @@ contract Transactions is
     }
 
     function _call(
+        Storage.State storage state,
         Actions.CallArgs memory args
     )
         private
@@ -630,6 +670,36 @@ contract Transactions is
             args.data
         );
 
-        logCall(args);
+        Events.logCall(args);
+    }
+
+    // ============ Private Functions ============
+
+    function owedWeiToHeldWei(
+        Decimal.D256 memory priceRatio,
+        Types.Wei memory owedWei
+    )
+        private
+        pure
+        returns (Types.Wei memory)
+    {
+        return Types.Wei({
+            sign: false,
+            value: Decimal.mul(owedWei.value, priceRatio)
+        });
+    }
+
+    function heldWeiToOwedWei(
+        Decimal.D256 memory priceRatio,
+        Types.Wei memory heldWei
+    )
+        private
+        pure
+        returns (Types.Wei memory)
+    {
+        return Types.Wei({
+            sign: true,
+            value: Decimal.div(heldWei.value, priceRatio)
+        });
     }
 }

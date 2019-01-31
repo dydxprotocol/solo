@@ -20,7 +20,7 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";
-import { Acct } from "../protocol/lib/Acct.sol";
+import { Account } from "../protocol/lib/Account.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -54,8 +54,8 @@ contract TestAutoTrader is
 
     uint256 public requireInputMarketId;
     uint256 public requireOutputMarketId;
-    Acct.Info public requireMakerAccount;
-    Acct.Info public requireTakerAccount;
+    Account.Info public requireMakerAccount;
+    Account.Info public requireTakerAccount;
     Types.Par public requireOldInputPar;
     Types.Par public requireNewInputPar;
     Types.Wei public requireInputWei;
@@ -88,7 +88,7 @@ contract TestAutoTrader is
     }
 
     function setrequireMakerAccount(
-        Acct.Info memory account
+        Account.Info memory account
     )
         public
     {
@@ -96,7 +96,7 @@ contract TestAutoTrader is
     }
 
     function setrequireTakerAccount(
-        Acct.Info memory account
+        Account.Info memory account
     )
         public
     {
@@ -132,8 +132,8 @@ contract TestAutoTrader is
     function getTradeCost(
         uint256 inputMarketId,
         uint256 outputMarketId,
-        Acct.Info memory makerAccount,
-        Acct.Info memory takerAccount,
+        Account.Info memory makerAccount,
+        Account.Info memory takerAccount,
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,

@@ -19,10 +19,6 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { Manager } from "./Manager.sol";
-import { Storage } from "./Storage.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
@@ -30,85 +26,54 @@ import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
+import { Storage } from "../lib/Storage.sol";
 import { Token } from "../lib/Token.sol";
 import { Types } from "../lib/Types.sol";
 
 
 /**
- * @title Admin
+ * @title AdminImpl
  * @author dYdX
  *
  * Administrative functions to keep the protocol updated
  */
-contract Admin is
-    Ownable,
-    ReentrancyGuard,
-    Storage,
-    Manager
-{
+library AdminImpl {
+    using Storage for Storage.State;
+
     // ============ Constants ============
 
-    string constant FILE = "Admin";
-
-    uint256 constant MAX_LIQUIDATION_RATIO  = 200 * 10**16; // 200%
-    uint256 constant DEF_LIQUIDATION_RATIO  = 125 * 10**16; // 125%
-    uint256 constant MIN_LIQUIDATION_RATIO  = 110 * 10**16; // 110%
-
-    uint256 constant MAX_LIQUIDATION_SPREAD = 115 * 10**16; // 115%
-    uint256 constant DEF_LIQUIDATION_SPREAD = 105 * 10**16; // 105%
-    uint256 constant MIN_LIQUIDATION_SPREAD = 101 * 10**16; // 101%
-
-    uint256 constant MIN_EARNINGS_RATE      =  50 * 10**16; // 50%
-    uint256 constant DEF_EARNINGS_RATE      =  50 * 10**16; // 90%
-    uint256 constant MAX_EARNINGS_RATE      = 100 * 10**16; // 100%
-
-    uint256 constant MAX_MIN_BORROWED_VALUE = 100 * 10**18; // $100
-    uint256 constant DEF_MIN_BORROWED_VALUE = 100 * 10**18; // $5
-    uint256 constant MIN_MIN_BORROWED_VALUE =   1 * 10**18; // $1
-
-    // ============ Constructor ============
-
-    constructor()
-        public
-    {
-        g_liquidationRatio =  Decimal.D256({ value: DEF_LIQUIDATION_RATIO });
-        g_liquidationSpread = Decimal.D256({ value: DEF_LIQUIDATION_SPREAD });
-        g_earningsRate =      Decimal.D256({ value: DEF_EARNINGS_RATE });
-        g_minBorrowedValue =  Monetary.Value({ value: DEF_MIN_BORROWED_VALUE });
-    }
+    string constant FILE = "AdminImpl";
 
     // ============ Owner-Only Functions ============
 
     function ownerWithdrawExcessTokens(
+        Storage.State storage state,
         uint256 marketId,
         address recipient
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
         returns (uint256)
     {
-        _validateMarketId(marketId);
-        updateIndex(marketId);
-        Types.Wei memory excessWei = getNumExcessTokens(marketId);
-        Exchange.transferOut(getToken(marketId), recipient, excessWei);
+        _validateMarketId(state, marketId);
+        state.updateIndex(marketId);
+        Types.Wei memory excessWei = state.getNumExcessTokens(marketId);
+        Exchange.transferOut(
+            state.getToken(marketId),
+            recipient,
+            excessWei
+        );
         return excessWei.value;
     }
 
     function ownerWithdrawUnsupportedTokens(
+        Storage.State storage state,
         address token,
         address recipient
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
         returns (uint256)
     {
-        Require.that(
-            !_marketExistsForToken(token),
-            FILE,
-            "Market exists"
-        );
+        _requireNoMarket(state, token);
 
         uint256 balance = Token.balanceOf(token, address(this));
         Token.transfer(token, recipient, balance);
@@ -116,186 +81,176 @@ contract Admin is
     }
 
     function ownerAddMarket(
+        Storage.State storage state,
         address token,
         IPriceOracle priceOracle,
         IInterestSetter interestSetter
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
     {
-        Require.that(
-            !_marketExistsForToken(token),
-            FILE,
-            "Market exists"
-        );
+        _requireNoMarket(state, token);
 
-        uint256 marketId = g_numMarkets;
+        uint256 marketId = state.numMarkets;
 
-        g_numMarkets++;
-        g_markets[marketId].token = token;
-        g_markets[marketId].index = Interest.newIndex();
+        state.numMarkets++;
+        state.markets[marketId].token = token;
+        state.markets[marketId].index = Interest.newIndex();
 
-        _setPriceOracle(marketId, priceOracle);
-        _setInterestSetter(marketId, interestSetter);
+        _setPriceOracle(state, marketId, priceOracle);
+        _setInterestSetter(state, marketId, interestSetter);
     }
 
     function ownerSetIsClosing(
+        Storage.State storage state,
         uint256 marketId,
         bool isClosing
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
     {
-        _validateMarketId(marketId);
-        g_markets[marketId].isClosing = isClosing;
+        _validateMarketId(state, marketId);
+        state.markets[marketId].isClosing = isClosing;
     }
 
     function ownerSetPriceOracle(
+        Storage.State storage state,
         uint256 marketId,
         IPriceOracle priceOracle
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
     {
-        _validateMarketId(marketId);
-        _setPriceOracle(marketId, priceOracle);
+        _validateMarketId(state, marketId);
+        _setPriceOracle(state, marketId, priceOracle);
     }
 
     function ownerSetInterestSetter(
+        Storage.State storage state,
         uint256 marketId,
         IInterestSetter interestSetter
     )
-        external
-        onlyOwner
-        nonReentrant
+        public
     {
-        _validateMarketId(marketId);
-        _setInterestSetter(marketId, interestSetter);
+        _validateMarketId(state, marketId);
+        _setInterestSetter(state, marketId, interestSetter);
     }
 
     function ownerSetLiquidationRatio(
+        Storage.State storage state,
         Decimal.D256 memory ratio
     )
         public
-        onlyOwner
-        nonReentrant
     {
         Require.that(
-            ratio.value <= MAX_LIQUIDATION_RATIO,
+            ratio.value <= state.riskLimits.liquidationRatioMax,
             FILE,
             "Ratio too high"
         );
         Require.that(
-            ratio.value >= MIN_LIQUIDATION_RATIO,
+            ratio.value >= state.riskLimits.liquidationRatioMin,
             FILE,
             "Ratio too low"
         );
         Require.that(
-            ratio.value > g_liquidationSpread.value,
+            ratio.value > state.riskParams.liquidationSpread.value,
             FILE,
             "Ratio higher than spread"
         );
-        g_liquidationRatio = ratio;
+        state.riskParams.liquidationRatio = ratio;
     }
 
     function ownerSetLiquidationSpread(
+        Storage.State storage state,
         Decimal.D256 memory spread
     )
         public
-        onlyOwner
-        nonReentrant
     {
         Require.that(
-            spread.value <= MAX_LIQUIDATION_SPREAD,
+            spread.value <= state.riskLimits.liquidationSpreadMax,
             FILE,
             "Spread too high"
         );
         Require.that(
-            spread.value >= MIN_LIQUIDATION_SPREAD,
+            spread.value >= state.riskLimits.liquidationSpreadMin,
             FILE,
             "Spread too low"
         );
         Require.that(
-            spread.value < g_liquidationRatio.value,
+            spread.value < state.riskParams.liquidationRatio.value,
             FILE,
             "Spread lower than ratio"
         );
-        g_liquidationSpread = spread;
+        state.riskParams.liquidationSpread = spread;
     }
 
     function ownerSetEarningsRate(
+        Storage.State storage state,
         Decimal.D256 memory earningsRate
     )
         public
-        onlyOwner
-        nonReentrant
     {
         Require.that(
-            earningsRate.value <= MAX_EARNINGS_RATE,
+            earningsRate.value <= state.riskLimits.earningsRateMax,
             FILE,
             "Rate too high"
         );
         Require.that(
-            earningsRate.value >= MIN_EARNINGS_RATE,
+            earningsRate.value >= state.riskLimits.earningsRateMin,
             FILE,
             "Rate too low"
         );
-        g_earningsRate = earningsRate;
+        state.riskParams.earningsRate = earningsRate;
     }
 
     function ownerSetMinBorrowedValue(
+        Storage.State storage state,
         Monetary.Value memory minBorrowedValue
     )
         public
-        onlyOwner
-        nonReentrant
     {
         Require.that(
-            minBorrowedValue.value <= MAX_MIN_BORROWED_VALUE,
+            minBorrowedValue.value <= state.riskLimits.minBorrowedValueMax,
             FILE,
             "Value too high"
         );
         Require.that(
-            minBorrowedValue.value >= MIN_MIN_BORROWED_VALUE,
+            minBorrowedValue.value >= state.riskLimits.minBorrowedValueMin,
             FILE,
             "Value too low"
         );
-        g_minBorrowedValue = minBorrowedValue;
+        state.riskParams.minBorrowedValue = minBorrowedValue;
     }
 
     // ============ Private Functions ============
 
     function _setInterestSetter(
+        Storage.State storage state,
         uint256 marketId,
         IInterestSetter interestSetter
     )
         private
     {
-        g_markets[marketId].interestSetter = interestSetter;
+        state.markets[marketId].interestSetter = interestSetter;
 
         // require current interestSetter can return a value
-        address token = g_markets[marketId].token;
+        address token = state.markets[marketId].token;
 
         Require.that(
-            Interest.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
+            interestSetter.getInterestRate(token, 0, 0).value <= state.riskLimits.interestRateMax,
             FILE,
             "Invalid interest rate"
         );
     }
 
     function _setPriceOracle(
+        Storage.State storage state,
         uint256 marketId,
         IPriceOracle priceOracle
     )
         private
     {
-        g_markets[marketId].priceOracle = priceOracle;
+        state.markets[marketId].priceOracle = priceOracle;
 
         // require oracle can return value for token
-        address token = g_markets[marketId].token;
+        address token = state.markets[marketId].token;
 
         Require.that(
             priceOracle.getPrice(token).value != 0,
@@ -304,34 +259,42 @@ contract Admin is
         );
     }
 
-    function _marketExistsForToken(
+    function _requireNoMarket(
+        Storage.State storage state,
         address token
     )
         private
         view
-        returns (bool)
     {
-        uint256 numMarkets = g_numMarkets;
+        uint256 numMarkets = state.numMarkets;
+
+        bool marketExists = false;
 
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (g_markets[m].token == token) {
-                return true;
+            if (state.markets[m].token == token) {
+                marketExists = true;
+                break;
             }
         }
 
-        return false;
+        Require.that(
+            !marketExists,
+            FILE,
+            "Market exists"
+        );
     }
 
     function _validateMarketId(
+        Storage.State storage state,
         uint256 marketId
     )
         private
         view
     {
         Require.that(
-            marketId < g_numMarkets,
+            marketId < state.numMarkets,
             FILE,
-            "Market out-of-bounds",
+            "Market OOB",
             marketId
         );
     }

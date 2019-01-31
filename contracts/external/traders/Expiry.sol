@@ -23,7 +23,7 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { OnlySolo } from "../helpers/OnlySolo.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
-import { Acct } from "../../protocol/lib/Acct.sol";
+import { Account } from "../../protocol/lib/Account.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
@@ -80,7 +80,7 @@ contract Expiry is
 
     function callFunction(
         address /* sender */,
-        Acct.Info memory account,
+        Account.Info memory account,
         bytes memory data
     )
         public
@@ -97,8 +97,8 @@ contract Expiry is
     function getTradeCost(
         uint256 inputMarketId,
         uint256 outputMarketId,
-        Acct.Info memory makerAccount,
-        Acct.Info memory /* takerAccount */,
+        Account.Info memory makerAccount,
+        Account.Info memory /* takerAccount */,
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,
@@ -113,7 +113,7 @@ contract Expiry is
         Require.that(
             oldInputPar.isNegative(),
             FILE,
-            "Only negative balances can be expired"
+            "Balance must be negative"
         );
         Require.that(
             newInputPar.isPositive(),
@@ -130,7 +130,7 @@ contract Expiry is
         Require.that(
             Time.hasHappened(getExpiry(makerAccount, inputMarketId)),
             FILE,
-            "Market not yet expired for account"
+            "Loan not yet expired"
         );
 
         // clear expiry if loan is fully repaid
@@ -143,7 +143,7 @@ contract Expiry is
         Require.that(
             maxOutputWei.isPositive(),
             FILE,
-            "Only positive balances can be used as collateral"
+            "Collateral must be positive"
         );
 
         // get return value
@@ -155,7 +155,7 @@ contract Expiry is
         Require.that(
             outputWei.value <= maxOutputWei.value,
             FILE,
-            "Collateral balance cannot be made negative"
+            "Collateral cannot be overtaken"
         );
 
         return outputWei;
@@ -164,7 +164,7 @@ contract Expiry is
     // ============ Private Functions ============
 
     function getExpiry(
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId
     )
         private
@@ -175,7 +175,7 @@ contract Expiry is
     }
 
     function setExpiry(
-        Acct.Info memory account,
+        Account.Info memory account,
         uint256 marketId,
         uint32 time
     )

@@ -19,17 +19,17 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Storage } from "./Storage.sol";
+import { State } from "./State.sol";
 
 
 /**
- * @title Permissions
+ * @title Permission
  * @author dYdX
  *
  * TODO
  */
-contract Permissions is
-    Storage
+contract Permission is
+    State
 {
     // ============ Events ============
 
@@ -56,7 +56,7 @@ contract Permissions is
         for (uint256 i = 0; i < args.length; i++) {
             address operator = args[i].operator;
             bool trusted = args[i].trusted;
-            g_operators[msg.sender][operator] = trusted;
+            g_state.operators[msg.sender][operator] = trusted;
             emit OperatorSet(msg.sender, operator, trusted);
         }
     }

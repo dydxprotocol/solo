@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { OnlySolo } from "../external/helpers/OnlySolo.sol";
 import { ICallee } from "../protocol/interfaces/ICallee.sol";
 import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";
-import { Acct } from "../protocol/lib/Acct.sol";
+import { Account } from "../protocol/lib/Account.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -74,7 +74,7 @@ contract TestCallee is
 
     function callFunction(
         address sender,
-        Acct.Info memory account,
+        Account.Info memory account,
         bytes memory data
     )
         public

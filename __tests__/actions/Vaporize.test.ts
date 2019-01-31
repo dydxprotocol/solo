@@ -54,7 +54,7 @@ describe('Vaporize', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .vaporize({
         primaryAccountOwner: who1,
         primaryAccountId: accountNumber1,

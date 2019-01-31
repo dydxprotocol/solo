@@ -40,7 +40,7 @@ describe('Integration', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .deposit({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
@@ -143,7 +143,7 @@ describe('Integration', () => {
       takerAmount: amount,
     };
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
@@ -268,7 +268,7 @@ describe('Integration', () => {
       takerAmount: amount,
     };
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .transfer({
         primaryAccountOwner: owner,
         primaryAccountId: oneNumber,

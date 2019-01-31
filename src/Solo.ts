@@ -19,7 +19,7 @@
 import Web3 from 'web3';
 import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
-import { Transaction } from './modules/transact/Transaction';
+import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
@@ -30,7 +30,7 @@ import { SoloOptions, address } from './types';
 export class Solo {
   public contracts: Contracts;
   public testing: Testing;
-  public transaction: Transaction;
+  public operation: Operation;
   public token: Token;
   public web3: Web3;
   public admin: Admin;
@@ -48,7 +48,7 @@ export class Solo {
     }
 
     this.contracts = new Contracts(provider, networkId, this.web3, options);
-    this.transaction = new Transaction(this.contracts, networkId);
+    this.operation = new Operation(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.testing = new Testing(provider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
@@ -63,7 +63,7 @@ export class Solo {
     this.web3.setProvider(provider);
     this.contracts.setProvider(provider, networkId);
     this.testing.setProvider(provider);
-    this.transaction.setNetworkId(networkId);
+    this.operation.setNetworkId(networkId);
   }
 
   public setDefaultAccount(

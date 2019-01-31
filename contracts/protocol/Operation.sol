@@ -19,30 +19,36 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import { Account } from "../lib/Account.sol";
-import { Types } from "../lib/Types.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { State } from "./State.sol";
+import { OperationImpl } from "./impl/OperationImpl.sol";
+import { Account } from "./lib/Account.sol";
+import { Actions } from "./lib/Actions.sol";
 
 
 /**
- * @title IAutoTrader
+ * @title Operation
  * @author dYdX
  *
  * TODO
  */
-contract IAutoTrader {
-
+contract Operation is
+    State,
+    ReentrancyGuard
+{
     // ============ Public Functions ============
 
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory oldInputPar,
-        Types.Par memory newInputPar,
-        Types.Wei memory inputWei,
-        bytes memory data
+    function operate(
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
     )
         public
-        returns (Types.Wei memory);
+        nonReentrant
+    {
+        OperationImpl.operate(
+            g_state,
+            accounts,
+            actions
+        );
+    }
 }

@@ -42,7 +42,7 @@ describe('Withdraw', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.transaction.initiate()
+    const { gasUsed } = await solo.operation.initiate()
       .withdraw({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
