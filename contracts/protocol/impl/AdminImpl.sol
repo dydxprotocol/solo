@@ -234,7 +234,7 @@ library AdminImpl {
         address token = state.markets[marketId].token;
 
         Require.that(
-            state.isValidRate(interestSetter.getInterestRate(token, 0, 0)),
+            interestSetter.getInterestRate(token, 0, 0).value <= state.riskLimits.interestRateMax,
             FILE,
             "Invalid interest rate"
         );

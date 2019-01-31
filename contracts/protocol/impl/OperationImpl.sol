@@ -126,7 +126,7 @@ library OperationImpl {
 
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
-
+            state.updateIndexesForAccount(account);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
@@ -485,6 +485,7 @@ library OperationImpl {
 
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
+            state.updateIndexesForAccount(args.liquidAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
@@ -580,6 +581,7 @@ library OperationImpl {
 
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
+            state.updateIndexesForAccount(args.vaporAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue

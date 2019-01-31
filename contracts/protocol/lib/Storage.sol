@@ -223,13 +223,6 @@ library Storage {
         Interest.Index memory index = state.markets[marketId].index;
         Interest.Rate memory rate = state.fetchInterestRate(marketId, index);
 
-        Require.that(
-            state.isValidRate(rate),
-            FILE,
-            "Invalid interest rate",
-            rate.value
-        );
-
         return Interest.calculateNewIndex(
             index,
             rate,
@@ -253,11 +246,17 @@ library Storage {
             Types.Wei memory supplyWei
         ) = Interest.totalParToWei(totalPar, index);
 
-        return state.markets[marketId].interestSetter.getInterestRate(
+        Interest.Rate memory rate = state.markets[marketId].interestSetter.getInterestRate(
             state.getToken(marketId),
             borrowWei.value,
             supplyWei.value
         );
+
+        if (rate.value > state.riskLimits.interestRateMax) {
+            rate.value = state.riskLimits.interestRateMax;
+        }
+
+        return rate;
     }
 
     function fetchPrice(
@@ -270,6 +269,66 @@ library Storage {
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
         return oracle.getPrice(state.getToken(marketId));
+    }
+
+    function getValues(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+        internal
+        view
+        returns (Monetary.Value memory, Monetary.Value memory)
+    {
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
+
+        uint256 numMarkets = state.numMarkets;
+
+        for (uint256 m = 0; m < numMarkets; m++) {
+            Types.Wei memory userWei = state.getWei(account, m);
+
+            if (userWei.isZero()) {
+                continue;
+            }
+
+            Monetary.Value memory overallValue = Monetary.getValue(
+                state.fetchPrice(m),
+                userWei.value
+            );
+
+            if (userWei.sign) {
+                supplyValue = Monetary.add(supplyValue, overallValue);
+            } else {
+                borrowValue = Monetary.add(borrowValue, overallValue);
+            }
+        }
+
+        return (supplyValue, borrowValue);
+    }
+
+    function fetchPriceRatio(
+        Storage.State storage state,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
+        Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
+
+        // get the actual price ratio
+        Decimal.D256 memory priceRatio = Decimal.D256({
+            value: Math.getPartial(
+                Decimal.one().value,
+                owedPrice.value,
+                heldPrice.value
+            )
+        });
+
+        // return the price ratio including the spread
+        return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
     }
 
     // =============== Setter Functions ===============
@@ -287,15 +346,19 @@ library Storage {
         state.markets[marketId].index = state.fetchNewIndex(marketId);
     }
 
-    function isValidRate(
+    function updateIndexesForAccount(
         Storage.State storage state,
-        Interest.Rate memory rate
+        Account.Info memory account
     )
         internal
-        view
-        returns (bool)
     {
-        return rate.value <= state.riskLimits.interestRateMax;
+        uint256 numMarkets = state.numMarkets;
+
+        for (uint256 m = 0; m < numMarkets; m++) {
+            if (!state.getPar(account, m).isZero()) {
+                state.updateIndex(m);
+            }
+        }
     }
 
     function setStatus(
@@ -514,68 +577,5 @@ library Storage {
             );
             return false;
         }
-    }
-
-    function getValues(
-        Storage.State storage state,
-        Account.Info memory account
-    )
-        internal
-        returns (Monetary.Value memory, Monetary.Value memory)
-    {
-        Monetary.Value memory supplyValue;
-        Monetary.Value memory borrowValue;
-
-        uint256 numMarkets = state.numMarkets;
-
-        for (uint256 m = 0; m < numMarkets; m++) {
-            Types.Par memory userPar = state.getPar(account, m);
-
-            if (userPar.isZero()) {
-                continue;
-            }
-
-            state.updateIndex(m);
-            Interest.Index memory index = state.getIndex(m);
-            Types.Wei memory userWei = Interest.parToWei(userPar, index);
-
-            Monetary.Value memory overallValue = Monetary.getValue(
-                state.fetchPrice(m),
-                userWei.value
-            );
-
-            if (userWei.sign) {
-                supplyValue = Monetary.add(supplyValue, overallValue);
-            } else {
-                borrowValue = Monetary.add(borrowValue, overallValue);
-            }
-        }
-
-        return (supplyValue, borrowValue);
-    }
-
-    function fetchPriceRatio(
-        Storage.State storage state,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (Decimal.D256 memory)
-    {
-        Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
-        Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
-
-        // get the actual price ratio
-        Decimal.D256 memory priceRatio = Decimal.D256({
-            value: Math.getPartial(
-                Decimal.one().value,
-                owedPrice.value,
-                heldPrice.value
-            )
-        });
-
-        // return the price ratio including the spread
-        return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
     }
 }
