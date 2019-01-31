@@ -102,6 +102,9 @@ library Storage {
         // Addresses that can control other users accounts
         mapping (address => mapping (address => bool)) operators;
 
+        // Addresses that can control all users accounts
+        mapping (address => bool) globalOperators;
+
         // mutable risk parameters of the system
         RiskParams riskParams;
 
@@ -329,6 +332,49 @@ library Storage {
 
         // return the price ratio including the spread
         return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
+    }
+
+    function isGlobalOperator(
+        Storage.State storage state,
+        address operator
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return state.globalOperators[operator];
+    }
+
+    function isLocalOperator(
+        Storage.State storage state,
+        Account.Info memory account,
+        address operator
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return state.operators[account.owner][operator];
+    }
+
+    function requireIsOperator(
+        Storage.State storage state,
+        Account.Info memory account,
+        address operator
+    )
+        internal
+        view
+    {
+        bool isValidOperator =
+            operator == account.owner
+            || state.isGlobalOperator(operator)
+            || state.isLocalOperator(account, operator);
+
+        Require.that(
+            isValidOperator,
+            FILE,
+            "Unpermissioned Operator"
+        );
     }
 
     // =============== Setter Functions ===============
