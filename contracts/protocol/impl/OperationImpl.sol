@@ -58,7 +58,6 @@ library OperationImpl {
         Events.logTransaction();
 
         bool[] memory primary = new bool[](accounts.length);
-        bool[] memory traded = new bool[](accounts.length);
 
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory arg = actions[i];
@@ -71,8 +70,8 @@ library OperationImpl {
                 _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Transfer) {
+                primary[arg.otherAccountId] = true;
                 _transfer(state, Actions.parseTransferArgs(accounts, arg));
-                primary[arg.accountId] = true;
             }
             else if (ttype == Actions.ActionType.Buy) {
                 _buy(state, Actions.parseBuyArgs(accounts, arg));
@@ -81,13 +80,15 @@ library OperationImpl {
                 _sell(state, Actions.parseSellArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Trade) {
+                primary[arg.otherAccountId] = true;
                 _trade(state, Actions.parseTradeArgs(accounts, arg));
-                traded[arg.accountId] = true;
             }
             else if (ttype == Actions.ActionType.Liquidate) {
+                _requireNonPrimary(arg.otherAccountId, primary);
                 _liquidate(state, Actions.parseLiquidateArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Vaporize) {
+                _requireNonPrimary(arg.otherAccountId, primary);
                 _vaporize(state, Actions.parseVaporizeArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Call) {
@@ -99,16 +100,29 @@ library OperationImpl {
         _verify(
             state,
             accounts,
-            primary,
-            traded
+            primary
+        );
+    }
+
+    function _requireNonPrimary(
+        uint256 accountId,
+        bool[] memory primary
+    )
+        private
+        pure
+    {
+        Require.that(
+            !primary[accountId],
+            FILE,
+            "Requires non-primary account",
+            accountId
         );
     }
 
     function _verify(
         Storage.State storage state,
         Account.Info[] memory accounts,
-        bool[] memory primary,
-        bool[] memory traded
+        bool[] memory primary
     )
         private
     {
@@ -141,7 +155,7 @@ library OperationImpl {
             );
 
             // check collateralization for non-liquidated accounts
-            if (primary[a] || traded[a]) {
+            if (primary[a]) {
                 Require.that(
                     state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
                     FILE,
@@ -151,16 +165,6 @@ library OperationImpl {
                 if (state.getStatus(account) != Account.Status.Normal) {
                     state.setStatus(account, Account.Status.Normal);
                 }
-            }
-
-            // check permissions for primary accounts
-            if (primary[a]) {
-                Require.that(
-                    account.owner == msg.sender || state.operators[account.owner][msg.sender],
-                    FILE,
-                    "Unpermissioned account",
-                    a
-                );
             }
         }
     }
@@ -174,6 +178,8 @@ library OperationImpl {
         private
     {
         state.updateIndex(args.mkt);
+
+        state.requireIsOperator(args.account, msg.sender);
 
         Require.that(
             args.from == msg.sender || args.from == args.account.owner,
@@ -218,6 +224,8 @@ library OperationImpl {
     {
         state.updateIndex(args.mkt);
 
+        state.requireIsOperator(args.account, msg.sender);
+
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
@@ -255,6 +263,9 @@ library OperationImpl {
     {
         state.updateIndex(args.mkt);
 
+        state.requireIsOperator(args.accountOne, msg.sender);
+        state.requireIsOperator(args.accountTwo, msg.sender);
+
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
@@ -291,6 +302,8 @@ library OperationImpl {
     {
         state.updateIndex(args.takerMkt);
         state.updateIndex(args.makerMkt);
+
+        state.requireIsOperator(args.account, msg.sender);
 
         address takerToken = state.getToken(args.takerMkt);
         address makerToken = state.getToken(args.makerMkt);
@@ -356,6 +369,8 @@ library OperationImpl {
         state.updateIndex(args.takerMkt);
         state.updateIndex(args.makerMkt);
 
+        state.requireIsOperator(args.account, msg.sender);
+
         address takerToken = state.getToken(args.takerMkt);
         address makerToken = state.getToken(args.makerMkt);
 
@@ -406,11 +421,8 @@ library OperationImpl {
         state.updateIndex(args.inputMkt);
         state.updateIndex(args.outputMkt);
 
-        Require.that(
-            state.operators[args.makerAccount.owner][args.autoTrader],
-            FILE,
-            "Unpermissioned AutoTrader"
-        );
+        state.requireIsOperator(args.takerAccount, msg.sender);
+        state.requireIsOperator(args.makerAccount, args.autoTrader);
 
         Types.Par memory oldInputPar = state.getPar(
             args.makerAccount,
@@ -482,6 +494,8 @@ library OperationImpl {
     {
         state.updateIndex(args.heldMkt);
         state.updateIndex(args.owedMkt);
+
+        state.requireIsOperator(args.solidAccount, msg.sender);
 
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
@@ -579,6 +593,8 @@ library OperationImpl {
         state.updateIndex(args.heldMkt);
         state.updateIndex(args.owedMkt);
 
+        state.requireIsOperator(args.solidAccount, msg.sender);
+
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
             state.updateIndexesForAccount(args.vaporAccount);
@@ -664,6 +680,8 @@ library OperationImpl {
     )
         private
     {
+        state.requireIsOperator(args.account, msg.sender);
+
         ICallee(args.callee).callFunction(
             msg.sender,
             args.account,
