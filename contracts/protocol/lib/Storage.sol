@@ -385,26 +385,10 @@ library Storage {
     )
         internal
     {
-        if (Time.currentTime() == state.markets[marketId].index.lastUpdate) {
+        if (Time.currentTime() == state.getIndex(marketId).lastUpdate) {
             return;
         }
-
         state.markets[marketId].index = state.fetchNewIndex(marketId);
-    }
-
-    function updateIndexesForAccount(
-        Storage.State storage state,
-        Account.Info memory account
-    )
-        internal
-    {
-        uint256 numMarkets = state.numMarkets;
-
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!state.getPar(account, m).isZero()) {
-                state.updateIndex(m);
-            }
-        }
     }
 
     function setStatus(

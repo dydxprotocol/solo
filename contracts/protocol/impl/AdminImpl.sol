@@ -55,7 +55,6 @@ library AdminImpl {
         returns (uint256)
     {
         _validateMarketId(state, marketId);
-        state.updateIndex(marketId);
         Types.Wei memory excessWei = state.getNumExcessTokens(marketId);
         Exchange.transferOut(
             state.getToken(marketId),

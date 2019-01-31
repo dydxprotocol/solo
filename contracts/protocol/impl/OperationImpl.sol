@@ -40,6 +40,7 @@ import { Types } from "../lib/Types.sol";
  */
 library OperationImpl {
     using Storage for Storage.State;
+    using Types for Types.Par;
     using Types for Types.Wei;
 
     // ============ Constants ============
@@ -55,9 +56,121 @@ library OperationImpl {
     )
         public
     {
-        Events.logTransaction();
+        (
+            bool[] memory primaryAccounts,
+            bool[] memory relevantMarkets
+        ) = _getAccountsAndMarkets(
+            state,
+            accounts,
+            actions
+        );
 
-        bool[] memory primary = new bool[](accounts.length);
+        _updateIndexesForMarkets(
+            state,
+            relevantMarkets
+        );
+
+        _runActions(
+            state,
+            accounts,
+            actions
+        );
+
+        _verify(
+            state,
+            accounts,
+            primaryAccounts
+        );
+    }
+
+    // ============ Helper Functions ============
+
+    function _getAccountsAndMarkets(
+        Storage.State storage state,
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+    )
+        private
+        view
+        returns (
+            bool[] memory,
+            bool[] memory
+        )
+    {
+        uint256 numMarkets = state.numMarkets;
+        bool[] memory relevantMarkets = new bool[](numMarkets);
+        bool[] memory primaryAccounts = new bool[](accounts.length);
+
+        for (uint256 i = 0; i < actions.length; i++) {
+            Actions.ActionArgs memory arg = actions[i];
+            Actions.ActionType ttype = arg.actionType;
+            Actions.MarketLayout marketLayout = Actions.getMarketLayout(ttype);
+            Actions.AccountLayout accountLayout = Actions.getAccountLayout(ttype);
+
+            // parse out primary accounts
+            if (accountLayout == Actions.AccountLayout.OnePrimary) {
+                primaryAccounts[arg.accountId] = true;
+            } else if (accountLayout == Actions.AccountLayout.TwoPrimary) {
+                primaryAccounts[arg.accountId] = true;
+                primaryAccounts[arg.otherAccountId] = true;
+            } else if (accountLayout == Actions.AccountLayout.PrimaryAndSecondary) {
+                primaryAccounts[arg.accountId] = true;
+                Require.that(
+                    !primaryAccounts[arg.otherAccountId],
+                    FILE,
+                    "Requires non-primary account",
+                    arg.otherAccountId
+                );
+            }
+
+            // keep track of indexes to update
+            if (marketLayout == Actions.MarketLayout.One) {
+                relevantMarkets[arg.primaryMarketId] = true;
+            } else if (marketLayout == Actions.MarketLayout.Two) {
+                relevantMarkets[arg.secondaryMarketId] = true;
+            } else {
+                assert(marketLayout == Actions.MarketLayout.Zero);
+            }
+        }
+
+        // get any other markets for which an account has a balance
+        for (uint256 m = 0; m < numMarkets; m++) {
+            if (!relevantMarkets[m]) {
+                continue;
+            }
+            for (uint256 a = 0; a < accounts.length; a++) {
+                if (!state.getPar(accounts[a], m).isZero()) {
+                    relevantMarkets[m] = true;
+                    break;
+                }
+            }
+        }
+
+        return (primaryAccounts, relevantMarkets);
+    }
+
+    function _updateIndexesForMarkets(
+        Storage.State storage state,
+        bool[] memory relevantMarkets
+    )
+        private
+    {
+        for (uint256 m = 0; m < relevantMarkets.length; m++) {
+            if (relevantMarkets[m]) {
+                state.updateIndex(m);
+                Events.logIndexUpdate(state, m);
+            }
+        }
+    }
+
+    function _runActions(
+        Storage.State storage state,
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+    )
+        private
+    {
+        Events.logTransaction();
 
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory arg = actions[i];
@@ -70,7 +183,6 @@ library OperationImpl {
                 _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Transfer) {
-                primary[arg.otherAccountId] = true;
                 _transfer(state, Actions.parseTransferArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Buy) {
@@ -80,49 +192,24 @@ library OperationImpl {
                 _sell(state, Actions.parseSellArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Trade) {
-                primary[arg.otherAccountId] = true;
                 _trade(state, Actions.parseTradeArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Liquidate) {
-                _requireNonPrimary(arg.otherAccountId, primary);
                 _liquidate(state, Actions.parseLiquidateArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Vaporize) {
-                _requireNonPrimary(arg.otherAccountId, primary);
                 _vaporize(state, Actions.parseVaporizeArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, arg));
             }
-            primary[arg.accountId] = true;
         }
-
-        _verify(
-            state,
-            accounts,
-            primary
-        );
-    }
-
-    function _requireNonPrimary(
-        uint256 accountId,
-        bool[] memory primary
-    )
-        private
-        pure
-    {
-        Require.that(
-            !primary[accountId],
-            FILE,
-            "Requires non-primary account",
-            accountId
-        );
     }
 
     function _verify(
         Storage.State storage state,
         Account.Info[] memory accounts,
-        bool[] memory primary
+        bool[] memory primaryAccounts
     )
         private
     {
@@ -140,7 +227,6 @@ library OperationImpl {
 
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
-            state.updateIndexesForAccount(account);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
@@ -155,7 +241,7 @@ library OperationImpl {
             );
 
             // check collateralization for non-liquidated accounts
-            if (primary[a]) {
+            if (primaryAccounts[a]) {
                 Require.that(
                     state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
                     FILE,
@@ -177,8 +263,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.mkt);
-
         state.requireIsOperator(args.account, msg.sender);
 
         Require.that(
@@ -222,8 +306,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.mkt);
-
         state.requireIsOperator(args.account, msg.sender);
 
         (
@@ -261,8 +343,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.mkt);
-
         state.requireIsOperator(args.accountOne, msg.sender);
         state.requireIsOperator(args.accountTwo, msg.sender);
 
@@ -300,9 +380,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.takerMkt);
-        state.updateIndex(args.makerMkt);
-
         state.requireIsOperator(args.account, msg.sender);
 
         address takerToken = state.getToken(args.takerMkt);
@@ -366,9 +443,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.takerMkt);
-        state.updateIndex(args.makerMkt);
-
         state.requireIsOperator(args.account, msg.sender);
 
         address takerToken = state.getToken(args.takerMkt);
@@ -418,9 +492,6 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.inputMkt);
-        state.updateIndex(args.outputMkt);
-
         state.requireIsOperator(args.takerAccount, msg.sender);
         state.requireIsOperator(args.makerAccount, args.autoTrader);
 
@@ -492,14 +563,10 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.heldMkt);
-        state.updateIndex(args.owedMkt);
-
         state.requireIsOperator(args.solidAccount, msg.sender);
 
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
-            state.updateIndexesForAccount(args.liquidAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
@@ -534,12 +601,12 @@ library OperationImpl {
 
         Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
 
-        Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
+        Types.Wei memory heldWei = _owedWeiToHeldWei(priceRatio, owedWei);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = heldWeiToOwedWei(priceRatio, heldWei);
+            owedWei = _heldWeiToOwedWei(priceRatio, heldWei);
 
             state.setPar(
                 args.liquidAccount,
@@ -590,14 +657,10 @@ library OperationImpl {
     )
         private
     {
-        state.updateIndex(args.heldMkt);
-        state.updateIndex(args.owedMkt);
-
         state.requireIsOperator(args.solidAccount, msg.sender);
 
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
-            state.updateIndexesForAccount(args.vaporAccount);
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
@@ -634,12 +697,12 @@ library OperationImpl {
 
         Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
 
-        Types.Wei memory heldWei = owedWeiToHeldWei(priceRatio, owedWei);
+        Types.Wei memory heldWei = _owedWeiToHeldWei(priceRatio, owedWei);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = heldWeiToOwedWei(priceRatio, heldWei);
+            owedWei = _heldWeiToOwedWei(priceRatio, heldWei);
 
             state.setParFromDeltaWei(
                 args.vaporAccount,
@@ -693,7 +756,7 @@ library OperationImpl {
 
     // ============ Private Functions ============
 
-    function owedWeiToHeldWei(
+    function _owedWeiToHeldWei(
         Decimal.D256 memory priceRatio,
         Types.Wei memory owedWei
     )
@@ -707,7 +770,7 @@ library OperationImpl {
         });
     }
 
-    function heldWeiToOwedWei(
+    function _heldWeiToOwedWei(
         Decimal.D256 memory priceRatio,
         Types.Wei memory heldWei
     )

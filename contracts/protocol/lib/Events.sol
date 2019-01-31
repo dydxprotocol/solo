@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Account } from "./Account.sol";
 import { Actions } from "./Actions.sol";
+import { Interest } from "./Interest.sol";
 import { Storage } from "./Storage.sol";
 import { Types } from "./Types.sol";
 
@@ -36,6 +37,11 @@ library Events {
     using Storage for Storage.State;
 
     // ============ Events ============
+
+    event LogIndexUpdate(
+        uint256 indexed market,
+        Interest.Index index
+    );
 
     event LogTransaction(
         address sender
@@ -140,6 +146,18 @@ library Events {
     }
 
     // ============ Internal Functions ============
+
+    function logIndexUpdate(
+        Storage.State storage state,
+        uint256 marketId
+    )
+        internal
+    {
+        emit LogIndexUpdate(
+            marketId,
+            state.getIndex(marketId)
+        );
+    }
 
     function logTransaction()
         internal
