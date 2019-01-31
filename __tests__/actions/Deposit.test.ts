@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
 import { address, AmountDenomination, AmountReference } from '../../src/types';
-import { resetEVM } from '../helpers/EVM';
+import { mineAvgBlock, resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 
@@ -18,6 +18,7 @@ describe('Deposit', () => {
 
   beforeEach(async () => {
     await resetEVM();
+    await mineAvgBlock();
   });
 
   it('Basic deposit test', async () => {

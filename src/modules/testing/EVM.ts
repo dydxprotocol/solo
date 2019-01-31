@@ -77,7 +77,11 @@ export class EVM {
     return this.callJsonrpcMethod('evm_mine');
   }
 
-  public async callJsonrpcMethod(method: string, params?: string[]): Promise<string> {
+  public async increaseTime(duration: number): Promise<string> {
+    return this.callJsonrpcMethod('evm_increaseTime', [duration]);
+  }
+
+  public async callJsonrpcMethod(method: string, params?: (any[])): Promise<string> {
     const args: JsonRPCRequest = {
       method,
       params,

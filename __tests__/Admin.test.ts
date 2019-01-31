@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { address, MarketWithInfo } from '../src/types';
-import { resetEVM } from './helpers/EVM';
+import { mineAvgBlock, resetEVM } from './helpers/EVM';
 import { INTEGERS } from '../src/lib/Constants';
 
 describe('Admin', () => {
@@ -17,6 +17,7 @@ describe('Admin', () => {
 
   beforeEach(async () => {
     await resetEVM();
+    await mineAvgBlock();
   });
 
   describe('#ownerAddMarket', () => {
