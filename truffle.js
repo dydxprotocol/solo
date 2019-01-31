@@ -1,7 +1,6 @@
 require('ts-node/register');
 require('dotenv').config();
 
-console.log(process.env.KOVAN_NODE_URI)
 module.exports = {
   compilers: {
     solc: {
@@ -38,11 +37,12 @@ module.exports = {
       gas: 7900000,
     },
     kovan: {
-      host: process.env.KOVAN_NODE_URI || '127.0.0.1',
-      port: 8545,
+      host: process.env.KOVAN_NODE_URI,
+      port: Number(process.env.KOVAN_NODE_PORT),
       network_id: '42',
       gasPrice: 1000000000, // 1 gwei
       gas: 7900000,
+      from: process.env.KOVAN_ACCOUNT,
     },
     dev: {
       host: 'localhost',
