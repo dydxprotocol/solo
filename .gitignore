@@ -6,6 +6,7 @@ coverage.json
 coverage/
 allFiredEvents
 config
+.env.local
 
 # VIM
 *.swo

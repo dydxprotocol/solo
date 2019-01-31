@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Ethereum Smart Contracts for the dYdX Solo Trading Protocol",
   "main": "dist/js/src/index.js",
   "files": [
@@ -31,7 +31,7 @@
     "build:js": "rm -rf dist/ && tsc",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache -l 0x1fffffffffffff --allowUnlimitedContractSize",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
-    "deploy": "truffle migrate --network=$NETWORK --reset && babel-node ./scripts/save-deployed-addresses.js",
+    "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_test": "npm run reset_test_evm && npm run migrate -- --network test --reset && npm run snapshot_test_evm",
@@ -40,7 +40,8 @@
     "ci_test": "NODE_ENV=test WS_NODE_URI=ws://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
-    "install_compiler": "docker pull ethereum/solc:0.5.2"
+    "install_compiler": "docker pull ethereum/solc:0.5.2",
+    "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts"
   },
   "repository": {
     "type": "git",
@@ -65,24 +66,24 @@
   },
   "devDependencies": {
     "@types/es6-promisify": "^6.0.0",
-    "@types/jest": "^23.3.12",
-    "@types/web3": "^1.0.14",
+    "@types/jest": "^23.3.13",
+    "@types/web3": "^1.0.18",
     "chai": "^4.1.2",
     "coveralls": "^3.0.2",
     "dotenv": "^6.2.0",
     "es6-promisify": "^6.0.1",
     "ethlint": "^1.2.2",
-    "ganache-cli": "^6.2.5",
+    "ganache-cli": "^6.3.0",
     "jest": "^23.6.0",
     "mocha-junit-reporter": "^1.18.0",
     "solidity-coverage": "^0.5.11",
-    "truffle": "^5.0.2",
+    "truffle": "^5.0.3",
     "ts-jest": "^23.10.5",
     "ts-node": "^7.0.1",
     "tslint": "^5.12.1",
     "tslint-config-airbnb": "^5.11.1",
     "tslint-no-focused-test": "^0.5.0",
     "typechain": "^0.3.11",
-    "typescript": "^3.2.2"
+    "typescript": "^3.2.4"
   }
 }

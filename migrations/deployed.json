@@ -1,1 +1,12 @@
-{}
+{
+    "SoloMargin": {
+        "42": {
+            "links": {
+                "AdminImpl": "0x9F019a84Ef36a9465c1CA23A129cCe7165e5f82e",
+                "OperationImpl": "0x14C61f3215B2558Cb50a1f865383b9f0907aD54C"
+            },
+            "address": "0x326bDa0b2a519d90b5d391a2fc7b6e1537816915",
+            "transactionHash": "0xee77d10b91a390be4cd59f1a2f5a2554ad1e467b0c8e9fd2c60447c0e3172bca"
+        }
+    }
+}
