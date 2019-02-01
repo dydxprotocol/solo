@@ -27,6 +27,18 @@ pragma solidity ^0.5.0;
  * transfer(), transferFrom(), or approve().
  */
 interface IErc20 {
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 value
+    );
+
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+
     function totalSupply(
     )
         external
