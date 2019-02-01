@@ -218,7 +218,18 @@ export class Contracts {
     }
 
     if (!options.gas) {
-      const gasEstimate: number = await method.estimateGas(options);
+      let gasEstimate: number;
+
+      try {
+        gasEstimate = await method.estimateGas(options);
+      } catch (error) {
+        const data = method.encodeABI();
+        const { from, value } = options;
+        const to = (method as any)._parent._address;
+        error.transactionData = { from, value, data, to };
+        throw error;
+      }
+
       const multiplier = autoGasMultiplier || this.autoGasMultiplier;
       const totalGas: number = Math.floor(gasEstimate * multiplier);
       txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
