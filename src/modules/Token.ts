@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { EventEmitter } from 'web3/types';
 import { Contracts } from '../lib/Contracts';
 import { INTEGERS } from '../lib/Constants';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
@@ -179,6 +180,64 @@ export class Token {
       ),
       { ...options, from: senderAddress },
     );
+  }
+
+  public subscribeToTransfers(
+    tokenAddress: address,
+    {
+      from,
+      to,
+      fromBlock,
+    }: {
+      from?: address,
+      to?: address,
+      fromBlock?: number,
+    } = {},
+  ): EventEmitter {
+    const token = this.getToken(tokenAddress);
+
+    const filter: { from?: address, to?: address } = {};
+
+    if (from) {
+      filter.from = from;
+    }
+    if (to) {
+      filter.to = to;
+    }
+
+    return token.events.Transfer({
+      filter,
+      fromBlock,
+    });
+  }
+
+  public subscribeToApprovals(
+    tokenAddress: address,
+    {
+      owner,
+      spender,
+      fromBlock,
+    }: {
+      owner?: address,
+      spender?: address,
+      fromBlock?: number,
+    } = {},
+  ): EventEmitter {
+    const token = this.getToken(tokenAddress);
+
+    const filter: { owner?: address, spender?: address } = {};
+
+    if (owner) {
+      filter.owner = owner;
+    }
+    if (spender) {
+      filter.spender = spender;
+    }
+
+    return token.events.Approval({
+      filter,
+      fromBlock,
+    });
   }
 
   private getToken(
