@@ -49,6 +49,18 @@ library Actions {
         Call       // send arbitrary data to an address
     }
 
+    enum AccountLayout {
+        OnePrimary,
+        TwoPrimary,
+        PrimaryAndSecondary
+    }
+
+    enum MarketLayout {
+        ZeroMarkets,
+        OneMarket,
+        TwoMarkets
+    }
+
     enum AssetDenomination {
         Wei, // the amount is denominated in token amount
         Par  // the amount is denominated in principal
@@ -150,6 +162,49 @@ library Actions {
         Account.Info account;
         address callee;
         bytes data;
+    }
+
+    // ============ Helper Functions ============
+
+    function getMarketLayout(
+        ActionType ttype
+    )
+        internal
+        pure
+        returns (MarketLayout)
+    {
+        if (
+            ttype == Actions.ActionType.Deposit
+            || ttype == Actions.ActionType.Withdraw
+            || ttype == Actions.ActionType.Transfer
+        ) {
+            return MarketLayout.OneMarket;
+        }
+        else if (ttype == Actions.ActionType.Call) {
+            return MarketLayout.ZeroMarkets;
+        }
+        return MarketLayout.TwoMarkets;
+    }
+
+    function getAccountLayout(
+        ActionType ttype
+    )
+        internal
+        pure
+        returns (AccountLayout)
+    {
+        if (
+            ttype == Actions.ActionType.Transfer
+            || ttype == Actions.ActionType.Trade
+        ) {
+            return AccountLayout.TwoPrimary;
+        } else if (
+            ttype == Actions.ActionType.Liquidate
+            || ttype == Actions.ActionType.Vaporize
+        ) {
+            return AccountLayout.PrimaryAndSecondary;
+        }
+        return AccountLayout.OnePrimary;
     }
 
     // ============ Parsing Functions ============

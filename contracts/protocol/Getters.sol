@@ -139,7 +139,7 @@ contract Getters is
         view
         returns (Interest.Index memory)
     {
-        return g_state.fetchNewIndex(marketId);
+        return g_state.fetchNewIndex(marketId, g_state.getIndex(marketId));
     }
 
     function getMarketPriceOracle(
@@ -248,7 +248,7 @@ contract Getters is
     {
         return Interest.parToWei(
             g_state.getPar(account, marketId),
-            g_state.fetchNewIndex(marketId)
+            g_state.fetchNewIndex(marketId, g_state.getIndex(marketId))
         );
     }
 
