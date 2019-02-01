@@ -61,7 +61,7 @@ export class Contracts {
   private web3: Web3;
 
   // Contract instances
-  public soloMargin: SoloMargin;
+  public soloMargin: (SoloMargin | TestSoloMargin);
   public erc20: ERC20;
   public expiry: Expiry;
 
