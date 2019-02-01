@@ -217,13 +217,13 @@ library Storage {
 
     function fetchNewIndex(
         Storage.State storage state,
-        uint256 marketId
+        uint256 marketId,
+        Interest.Index memory index
     )
         internal
         view
         returns (Interest.Index memory)
     {
-        Interest.Index memory index = state.markets[marketId].index;
         Interest.Rate memory rate = state.fetchInterestRate(marketId, index);
 
         return Interest.calculateNewIndex(
@@ -286,7 +286,6 @@ library Storage {
         Monetary.Value memory borrowValue;
 
         uint256 numMarkets = state.numMarkets;
-
         for (uint256 m = 0; m < numMarkets; m++) {
             Types.Wei memory userWei = state.getWei(account, m);
 
@@ -384,11 +383,13 @@ library Storage {
         uint256 marketId
     )
         internal
+        returns (Interest.Index memory)
     {
-        if (Time.currentTime() == state.getIndex(marketId).lastUpdate) {
-            return;
+        Interest.Index memory index = state.getIndex(marketId);
+        if (index.lastUpdate == Time.currentTime()) {
+            return index;
         }
-        state.markets[marketId].index = state.fetchNewIndex(marketId);
+        return state.markets[marketId].index = state.fetchNewIndex(marketId, index);
     }
 
     function setStatus(
@@ -581,18 +582,18 @@ library Storage {
         internal
         returns (bool)
     {
-        Types.Wei memory sameWei = state.getNumExcessTokens(owedMarketId);
+        Types.Wei memory excessWei = state.getNumExcessTokens(owedMarketId);
 
-        if (!sameWei.isPositive()) {
+        if (!excessWei.isPositive()) {
             return false;
         }
 
-        Types.Wei memory toRefundWei = state.getWei(
+        Types.Wei memory maxRefundWei = state.getWei(
             account,
             owedMarketId
         );
 
-        if (sameWei.value >= toRefundWei.value) {
+        if (excessWei.value >= maxRefundWei.value) {
             state.setPar(
                 account,
                 owedMarketId,
@@ -603,7 +604,7 @@ library Storage {
             state.setParFromDeltaWei(
                 account,
                 owedMarketId,
-                sameWei
+                excessWei
             );
             return false;
         }

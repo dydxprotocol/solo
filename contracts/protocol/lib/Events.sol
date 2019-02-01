@@ -148,14 +148,14 @@ library Events {
     // ============ Internal Functions ============
 
     function logIndexUpdate(
-        Storage.State storage state,
-        uint256 marketId
+        uint256 marketId,
+        Interest.Index memory index
     )
         internal
     {
         emit LogIndexUpdate(
             marketId,
-            state.getIndex(marketId)
+            index
         );
     }
 

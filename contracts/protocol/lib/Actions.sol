@@ -56,9 +56,9 @@ library Actions {
     }
 
     enum MarketLayout {
-        Zero,
-        One,
-        Two
+        ZeroMarkets,
+        OneMarket,
+        TwoMarkets
     }
 
     enum AssetDenomination {
@@ -178,12 +178,12 @@ library Actions {
             || ttype == Actions.ActionType.Withdraw
             || ttype == Actions.ActionType.Transfer
         ) {
-            return MarketLayout.One;
+            return MarketLayout.OneMarket;
         }
         else if (ttype == Actions.ActionType.Call) {
-            return MarketLayout.Zero;
+            return MarketLayout.ZeroMarkets;
         }
-        return MarketLayout.Two;
+        return MarketLayout.TwoMarkets;
     }
 
     function getAccountLayout(

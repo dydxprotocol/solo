@@ -59,7 +59,7 @@ library OperationImpl {
         (
             bool[] memory primaryAccounts,
             bool[] memory relevantMarkets
-        ) = _getAccountsAndMarkets(
+        ) = _getRelevantAccountsAndMarkets(
             state,
             accounts,
             actions
@@ -85,7 +85,7 @@ library OperationImpl {
 
     // ============ Helper Functions ============
 
-    function _getAccountsAndMarkets(
+    function _getRelevantAccountsAndMarkets(
         Storage.State storage state,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions
@@ -124,18 +124,18 @@ library OperationImpl {
             }
 
             // keep track of indexes to update
-            if (marketLayout == Actions.MarketLayout.One) {
+            if (marketLayout == Actions.MarketLayout.OneMarket) {
                 relevantMarkets[arg.primaryMarketId] = true;
-            } else if (marketLayout == Actions.MarketLayout.Two) {
+            } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
                 relevantMarkets[arg.secondaryMarketId] = true;
             } else {
-                assert(marketLayout == Actions.MarketLayout.Zero);
+                assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
         }
 
         // get any other markets for which an account has a balance
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (!relevantMarkets[m]) {
+            if (relevantMarkets[m]) {
                 continue;
             }
             for (uint256 a = 0; a < accounts.length; a++) {
@@ -157,8 +157,7 @@ library OperationImpl {
     {
         for (uint256 m = 0; m < relevantMarkets.length; m++) {
             if (relevantMarkets[m]) {
-                state.updateIndex(m);
-                Events.logIndexUpdate(state, m);
+                Events.logIndexUpdate(m, state.updateIndex(m));
             }
         }
     }
@@ -255,7 +254,7 @@ library OperationImpl {
         }
     }
 
-    // ============ Private Functions ============
+    // ============ Action Functions ============
 
     function _deposit(
         Storage.State storage state,
