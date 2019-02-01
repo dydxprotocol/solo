@@ -10,7 +10,7 @@ provider.send(
     jsonrpc: '2.0',
     id: new Date().getTime(),
   },
-  function(id) {
+  (id) => {
     if (id !== '0x1') {
       provider.send(
         {
@@ -19,7 +19,7 @@ provider.send(
           jsonrpc: '2.0',
           id: new Date().getTime(),
         },
-        function() {
+        () => {
           provider.send(
             {
               method: 'evm_snapshot',
@@ -27,10 +27,10 @@ provider.send(
               jsonrpc: '2.0',
               id: new Date().getTime(),
             },
-            function() { process.exit(0) }
+            () => { process.exit(0); },
           );
-        }
+        },
       );
     }
-  }
+  },
 );

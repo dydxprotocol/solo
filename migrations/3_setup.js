@@ -29,19 +29,15 @@ const INITIAL_TOKENS = new BigNumber('10e18');
 const BASE_INTEREST_RATE = new BigNumber('1e18').div(60 * 60 * 24 * 365 * 5); // 20% per year
 
 async function maybeSetupProtocol(deployer, network, accounts) {
-  if (network === 'docker') {
+  if (network === 'docker' || network === 'kovan') {
     const [
       soloMargin,
-      tokenA,
-      tokenB,
-      tokenC,
+      [tokenA, tokenB, tokenC],
       testPriceOracle,
       testInterestSetter,
     ] = await Promise.all([
       SoloMargin.deployed(),
-      TokenA.deployed(),
-      TokenB.deployed(),
-      TokenC.deployed(),
+      getTokens(network),
       TestPriceOracle.deployed(),
       TestInterestSetter.deployed(),
     ]);
@@ -53,6 +49,7 @@ async function maybeSetupProtocol(deployer, network, accounts) {
         tokenA,
         tokenB,
         tokenC,
+        network,
       ),
       setOraclePrices(
         testPriceOracle,
@@ -80,6 +77,22 @@ async function maybeSetupProtocol(deployer, network, accounts) {
   }
 }
 
+async function getTokens(network) {
+  if (network === 'docker') {
+    return Promise.all([
+      TokenA.deployed(),
+      TokenB.deployed(),
+      TokenC.deployed(),
+    ]);
+  }
+
+  return [
+    { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c' }, // Kovan WETH
+    { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' }, // Kovan DAI
+    { address: '0x2002d3812f58e35f0ea1ffbf80a75a38c32175fa' }, // Kovan ZRX
+  ];
+}
+
 async function addMarkets(
   soloMargin,
   tokenA,
@@ -92,17 +105,17 @@ async function addMarkets(
   await soloMargin.ownerAddMarket(
     tokenA.address,
     testPriceOracle.address,
-    testInterestSetter.address
+    testInterestSetter.address,
   );
   await soloMargin.ownerAddMarket(
     tokenB.address,
     testPriceOracle.address,
-    testInterestSetter.address
+    testInterestSetter.address,
   );
   await soloMargin.ownerAddMarket(
     tokenC.address,
     testPriceOracle.address,
-    testInterestSetter.address
+    testInterestSetter.address,
   );
 }
 
@@ -112,14 +125,17 @@ async function issueTokens(
   tokenA,
   tokenB,
   tokenC,
+  network,
 ) {
-  await Promise.all(accounts.map(function (account) {
-    return Promise.all([
-      tokenA.issueTo(account, amount),
-      tokenB.issueTo(account, amount),
-      tokenC.issueTo(account, amount),
-    ]);
-  }));
+  if (network !== 'docker') {
+    return;
+  }
+
+  await Promise.all(accounts.map(account => Promise.all([
+    tokenA.issueTo(account, amount),
+    tokenB.issueTo(account, amount),
+    tokenC.issueTo(account, amount),
+  ])));
 }
 
 async function setOraclePrices(
@@ -129,9 +145,9 @@ async function setOraclePrices(
   tokenC,
 ) {
   await Promise.all([
-    testPriceOracle.setPrice(TokenA.address, 1),
-    testPriceOracle.setPrice(TokenB.address, 2),
-    testPriceOracle.setPrice(TokenC.address, 3),
+    testPriceOracle.setPrice(tokenA.address, 1),
+    testPriceOracle.setPrice(tokenB.address, 2),
+    testPriceOracle.setPrice(tokenC.address, 3),
   ]);
 }
 
@@ -143,15 +159,15 @@ async function setInterestRates(
 ) {
   await Promise.all([
     testInterestSetter.setInterestRate(
-      TokenA.address,
+      tokenA.address,
       { value: BASE_INTEREST_RATE.toFixed(0) },
     ),
     testInterestSetter.setInterestRate(
-      TokenB.address,
+      tokenB.address,
       { value: BASE_INTEREST_RATE.times(2).toFixed(0) },
     ),
     testInterestSetter.setInterestRate(
-      TokenC.address,
+      tokenC.address,
       { value: BASE_INTEREST_RATE.times(3).toFixed(0) },
     ),
   ]);

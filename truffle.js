@@ -5,7 +5,8 @@ module.exports = {
   compilers: {
     solc: {
       version: '0.5.2',
-      docker: process.env.DOCKER_COMPILER !== undefined ? process.env.DOCKER_COMPILER === 'true' : true,
+      docker: process.env.DOCKER_COMPILER !== undefined
+        ? process.env.DOCKER_COMPILER === 'true' : true,
       settings: {
         optimizer: {
           enabled: true,
@@ -20,14 +21,12 @@ module.exports = {
       port: 8445,
       gasPrice: 1,
       network_id: '1001',
-      gas: 0x1fffffffffffff, // TODO reduce this when deploy gas costs go down
     },
     test_ci: {
       host: '0.0.0.0',
       port: 8545,
       gasPrice: 1,
       network_id: '1001',
-      gas: 0x1fffffffffffff, // TODO reduce this when deploy gas costs go down
     },
     mainnet: {
       host: '127.0.0.1',
@@ -63,7 +62,6 @@ module.exports = {
       network_id: '1313',
       port: 8545,
       gasPrice: 1,
-      gas: 0x1fffffffffffff,
     },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations

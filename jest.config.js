@@ -1,16 +1,16 @@
 module.exports = {
   roots: [
-    "<rootDir>/__tests__"
+    '<rootDir>/__tests__',
   ],
   transform: {
-    "^.+\\.ts$": "ts-jest"
+    '^.+\\.ts$': 'ts-jest',
   },
-  testRegex: "__tests__\\/.*\\.test\\.ts$",
+  testRegex: '__tests__\\/.*\\.test\\.ts$',
   moduleFileExtensions: [
-    "ts",
-    "js",
-    "json",
-    "node"
+    'ts',
+    'js',
+    'json',
+    'node',
   ],
-  setupTestFrameworkScriptFile: "./jest.setup.js",
+  setupTestFrameworkScriptFile: './jest.setup.js',
 };
