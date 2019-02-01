@@ -39,12 +39,13 @@ import { Types } from "../lib/Types.sol";
  */
 library AdminImpl {
     using Storage for Storage.State;
+    using Types for Types.Wei;
 
     // ============ Constants ============
 
     string constant FILE = "AdminImpl";
 
-    // ============ Owner-Only Functions ============
+    // ============ Token Functions ============
 
     function ownerWithdrawExcessTokens(
         Storage.State storage state,
@@ -56,6 +57,18 @@ library AdminImpl {
     {
         _validateMarketId(state, marketId);
         Types.Wei memory excessWei = state.getNumExcessTokens(marketId);
+
+        Require.that(
+            excessWei.isPositive(),
+            FILE,
+            "No excess tokens"
+        );
+
+        uint256 actualBalance = Token.balanceOf(state.getToken(marketId), address(this));
+        if (excessWei.value > actualBalance) {
+            excessWei.value = actualBalance;
+        }
+
         Exchange.transferOut(
             state.getToken(marketId),
             recipient,
@@ -78,6 +91,8 @@ library AdminImpl {
         Token.transfer(token, recipient, balance);
         return balance;
     }
+
+    // ============ Market Functions ============
 
     function ownerAddMarket(
         Storage.State storage state,
@@ -131,6 +146,8 @@ library AdminImpl {
         _validateMarketId(state, marketId);
         _setInterestSetter(state, marketId, interestSetter);
     }
+
+    // ============ Risk Functions ============
 
     function ownerSetLiquidationRatio(
         Storage.State storage state,
@@ -216,6 +233,18 @@ library AdminImpl {
             "Value too low"
         );
         state.riskParams.minBorrowedValue = minBorrowedValue;
+    }
+
+    // ============ Global Operator Functions ============
+
+    function ownerSetGlobalOperator(
+        Storage.State storage state,
+        address operator,
+        bool approved
+    )
+        public
+    {
+        state.globalOperators[operator] = approved;
     }
 
     // ============ Private Functions ============
