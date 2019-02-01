@@ -10,5 +10,5 @@ provider.send(
     jsonrpc: '2.0',
     id: new Date().getTime(),
   },
-  () => { process.exit(0); },
+  function() { process.exit(0) }
 );
