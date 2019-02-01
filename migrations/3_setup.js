@@ -145,9 +145,9 @@ async function setOraclePrices(
   tokenC,
 ) {
   await Promise.all([
-    testPriceOracle.setPrice(tokenA.address, 1),
-    testPriceOracle.setPrice(tokenB.address, 2),
-    testPriceOracle.setPrice(tokenC.address, 3),
+    testPriceOracle.setPrice(tokenA.address, '10000000000000000000'), // 1 ETH = 10 DAI
+    testPriceOracle.setPrice(tokenB.address, '1000000000000000000'), // DAI
+    testPriceOracle.setPrice(tokenC.address, '300000000000000000'), // 1 ZRX = .3 DAI
   ]);
 }
 
