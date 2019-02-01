@@ -4,4 +4,4 @@ services:
     image: trufflesuite/ganache-cli:v6.2.5
     ports:
       - 8445:8545
-    command: -d -i 1001 -l 0x1fffffffffffff --allowUnlimitedContractSize
+    command: -d -i 1001
