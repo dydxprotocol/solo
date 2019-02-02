@@ -673,7 +673,7 @@ library OperationImpl {
         }
 
         // First, attempt to refund using the same token
-        if (state.vaporizeUsingExcess(args.vaporAccount, args.owedMkt)) {
+        if (_vaporizeUsingExcess(state, args.vaporAccount, args.owedMkt)) {
             return;
         }
 
@@ -781,5 +781,41 @@ library OperationImpl {
             sign: true,
             value: Decimal.div(heldWei.value, priceRatio)
         });
+    }
+
+    function _vaporizeUsingExcess(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 owedMarketId
+    )
+        internal
+        returns (bool)
+    {
+        Types.Wei memory excessWei = state.getNumExcessTokens(owedMarketId);
+
+        if (!excessWei.isPositive()) {
+            return false;
+        }
+
+        Types.Wei memory maxRefundWei = state.getWei(
+            account,
+            owedMarketId
+        );
+
+        if (excessWei.value >= maxRefundWei.value) {
+            state.setPar(
+                account,
+                owedMarketId,
+                Types.zeroPar()
+            );
+            return true;
+        } else {
+            state.setParFromDeltaWei(
+                account,
+                owedMarketId,
+                excessWei
+            );
+            return false;
+        }
     }
 }

@@ -42,7 +42,7 @@ contract Admin is
     Ownable,
     ReentrancyGuard
 {
-    // ============ Admin Functions ============
+    // ============ Token Functions ============
 
     function ownerWithdrawExcessTokens(
         uint256 marketId,
@@ -75,6 +75,8 @@ contract Admin is
             recipient
         );
     }
+
+    // ============ Market Functions ============
 
     function ownerAddMarket(
         address token,
@@ -138,6 +140,8 @@ contract Admin is
         );
     }
 
+    // ============ Risk Functions ============
+
     function ownerSetLiquidationRatio(
         Decimal.D256 memory ratio
     )
@@ -187,6 +191,23 @@ contract Admin is
         AdminImpl.ownerSetMinBorrowedValue(
             g_state,
             minBorrowedValue
+        );
+    }
+
+    // ============ Global Operator Functions ============
+
+    function ownerSetGlobalOperator(
+        address operator,
+        bool approved
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetGlobalOperator(
+            g_state,
+            operator,
+            approved
         );
     }
 }

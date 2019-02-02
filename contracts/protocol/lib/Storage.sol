@@ -376,90 +376,6 @@ library Storage {
         );
     }
 
-    // =============== Setter Functions ===============
-
-    function updateIndex(
-        Storage.State storage state,
-        uint256 marketId
-    )
-        internal
-        returns (Interest.Index memory)
-    {
-        Interest.Index memory index = state.getIndex(marketId);
-        if (index.lastUpdate == Time.currentTime()) {
-            return index;
-        }
-        return state.markets[marketId].index = state.fetchNewIndex(marketId, index);
-    }
-
-    function setStatus(
-        Storage.State storage state,
-        Account.Info memory account,
-        Account.Status status
-    )
-        internal
-        returns (bool)
-    {
-        state.accounts[account.owner][account.number].status = status;
-    }
-
-    function setPar(
-        Storage.State storage state,
-        Account.Info memory account,
-        uint256 marketId,
-        Types.Par memory newPar
-    )
-        internal
-    {
-        Types.Par memory oldPar = state.getPar(account, marketId);
-
-        if (Types.equals(oldPar, newPar)) {
-            return;
-        }
-
-        // updateTotalPar
-        Types.TotalPar memory totalPar = state.getTotalPar(marketId);
-
-        // roll-back oldPar
-        if (oldPar.sign) {
-            totalPar.supply = uint256(totalPar.supply).sub(oldPar.value).to128();
-        } else {
-            totalPar.borrow = uint256(totalPar.borrow).sub(oldPar.value).to128();
-        }
-
-        // roll-forward newPar
-        if (newPar.sign) {
-            totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
-        } else {
-            totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
-        }
-
-        state.markets[marketId].totalPar = totalPar;
-        state.accounts[account.owner][account.number].balances[marketId] = newPar;
-    }
-
-    /**
-     * Determines and sets an account's balance based on a change in wei
-     */
-    function setParFromDeltaWei(
-        Storage.State storage state,
-        Account.Info memory account,
-        uint256 marketId,
-        Types.Wei memory deltaWei
-    )
-        internal
-    {
-        Interest.Index memory index = state.getIndex(marketId);
-        Types.Wei memory oldWei = state.getWei(account, marketId);
-        Types.Wei memory newWei = oldWei.add(deltaWei);
-        Types.Par memory newPar = Interest.weiToPar(newWei, index);
-        state.setPar(
-            account,
-            marketId,
-            newPar
-        );
-    }
-
     /**
      * Determines and sets an account's balance based on the intended balance change. Returns the
      * equivalent amount in wei
@@ -574,39 +490,87 @@ library Storage {
         }
     }
 
-    function vaporizeUsingExcess(
+    // =============== Setter Functions ===============
+
+    function updateIndex(
+        Storage.State storage state,
+        uint256 marketId
+    )
+        internal
+        returns (Interest.Index memory)
+    {
+        Interest.Index memory index = state.getIndex(marketId);
+        if (index.lastUpdate == Time.currentTime()) {
+            return index;
+        }
+        return state.markets[marketId].index = state.fetchNewIndex(marketId, index);
+    }
+
+    function setStatus(
         Storage.State storage state,
         Account.Info memory account,
-        uint256 owedMarketId
+        Account.Status status
     )
         internal
         returns (bool)
     {
-        Types.Wei memory excessWei = state.getNumExcessTokens(owedMarketId);
+        state.accounts[account.owner][account.number].status = status;
+    }
 
-        if (!excessWei.isPositive()) {
-            return false;
+    function setPar(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 marketId,
+        Types.Par memory newPar
+    )
+        internal
+    {
+        Types.Par memory oldPar = state.getPar(account, marketId);
+
+        if (Types.equals(oldPar, newPar)) {
+            return;
         }
 
-        Types.Wei memory maxRefundWei = state.getWei(
-            account,
-            owedMarketId
-        );
+        // updateTotalPar
+        Types.TotalPar memory totalPar = state.getTotalPar(marketId);
 
-        if (excessWei.value >= maxRefundWei.value) {
-            state.setPar(
-                account,
-                owedMarketId,
-                Types.zeroPar()
-            );
-            return true;
+        // roll-back oldPar
+        if (oldPar.sign) {
+            totalPar.supply = uint256(totalPar.supply).sub(oldPar.value).to128();
         } else {
-            state.setParFromDeltaWei(
-                account,
-                owedMarketId,
-                excessWei
-            );
-            return false;
+            totalPar.borrow = uint256(totalPar.borrow).sub(oldPar.value).to128();
         }
+
+        // roll-forward newPar
+        if (newPar.sign) {
+            totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
+        } else {
+            totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
+        }
+
+        state.markets[marketId].totalPar = totalPar;
+        state.accounts[account.owner][account.number].balances[marketId] = newPar;
+    }
+
+    /**
+     * Determines and sets an account's balance based on a change in wei
+     */
+    function setParFromDeltaWei(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 marketId,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        Interest.Index memory index = state.getIndex(marketId);
+        Types.Wei memory oldWei = state.getWei(account, marketId);
+        Types.Wei memory newWei = oldWei.add(deltaWei);
+        Types.Par memory newPar = Interest.weiToPar(newWei, index);
+        state.setPar(
+            account,
+            marketId,
+            newPar
+        );
     }
 }

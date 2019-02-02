@@ -301,4 +301,27 @@ contract Getters is
             weis
         );
     }
+
+    // ============ Getters for Permissions ============
+
+    function getIsLocalOperator(
+        Account.Info memory account,
+        address operator
+    )
+        public
+        view
+        returns (bool)
+    {
+        return g_state.isLocalOperator(account, operator);
+    }
+
+    function getIsGlobalOperator(
+        address operator
+    )
+        public
+        view
+        returns (bool)
+    {
+        return g_state.isGlobalOperator(operator);
+    }
 }
