@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Provider } from 'web3/providers';
 import { Contracts } from '../../lib/Contracts';
 import { EVM } from './EVM';
@@ -8,6 +9,7 @@ import { TestCallee } from './TestCallee';
 import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
 import { TestInterestSetter } from './TestInterestSetter';
+import { INTEGERS } from '../../lib/Constants';
 import {
   AccountStatus,
   ContractCallOptions,
@@ -98,12 +100,19 @@ export class Testing {
     index: Index,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    if (index.lastUpdate.isZero()) {
+      const currentIndex =  await this.contracts.testSoloMargin.methods.getMarketCachedIndex(
+          marketId.toFixed(0)
+        ).call();
+      index.lastUpdate = new BigNumber(currentIndex.lastUpdate);
+    }
+
     return this.contracts.callContractFunction(
       this.contracts.testSoloMargin.methods.setMarketIndex(
         marketId.toFixed(0),
         {
-          borrow: index.borrow.toFixed(0),
-          supply: index.supply.toFixed(0),
+          borrow: INTEGERS.INTEREST_RATE_BASE.times(index.borrow).toFixed(0),
+          supply: INTEGERS.INTEREST_RATE_BASE.times(index.supply).toFixed(0),
           lastUpdate: index.lastUpdate.toFixed(0),
         },
       ),
