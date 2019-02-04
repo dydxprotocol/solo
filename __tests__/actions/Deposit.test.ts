@@ -77,5 +77,35 @@ describe('Deposit', () => {
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });
+
+    //TODO: expect log
+  });
+
+  it('Succeeds for some non-one index', async () => {
+    //TODO
+  });
+
+  it('Succeeds for all kinds of amounts', async () => {
+    //TODO
+  });
+
+  it('Succeeds to pay back a withdrawal', async () => {
+    //TODO
+  });
+
+  it('Fails for non-operator', async () => {
+    //TODO
+  });
+
+  it('Fails for from random address', async () => {
+    //TODO
+  });
+
+  it('Fails for negative amount', async () => {
+    //TODO
+  });
+
+  it('Fails if depositing more tokens than owned', async () => {
+    //TODO
   });
 });

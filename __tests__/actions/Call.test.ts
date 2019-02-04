@@ -51,5 +51,15 @@ describe('Call', () => {
 
     expect(foundAccountData).toEqual(accountData.toFixed(0));
     expect(foundSenderData).toEqual(senderData.toFixed(0));
+
+    //TODO: expect log
+  });
+
+  it('Fails for non-operator', async () => {
+    //TODO
+  });
+
+  it('Fails for non-ICallee contract', async () => {
+    //TODO
   });
 });

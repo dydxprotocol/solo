@@ -81,5 +81,43 @@ describe('Withdraw', () => {
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });
+
+    // TODO: expect log
+  });
+
+  it('Succeeds for some non-one index', async () => {
+    //TODO
+  });
+
+  it('Succeeds for all kinds of amounts', async () => {
+    //TODO
+  });
+
+  it('Succeeds to go from zero to negative', async () => {
+    //TODO
+  });
+
+  it('Succeeds to go from positive to negative', async () => {
+    //TODO
+  });
+
+  it('Succeeds to withdraw to an external address', async () => {
+    //TODO
+  });
+
+  it('Succeeds to withdraw to the SoloMargin address', async () => {
+    //TODO
+  });
+
+  it('Fails for non-operator', async () => {
+    //TODO
+  });
+
+  it('Fails for positive amount', async () => {
+    //TODO
+  });
+
+  it('Fails if withdrawing more tokens than exist', async () => {
+    //TODO
   });
 });
