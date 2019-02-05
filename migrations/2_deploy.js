@@ -40,14 +40,14 @@ const riskLimits = {
   earningsRateMin: '500000000000000000', //  50%
   earningsRateMax: '1000000000000000000', // 100%
   minBorrowedValueMax: '100000000000000000000', // 100$
-  minBorrowedValueMin: '1000000000000000000', //   1$
+  minBorrowedValueMin: '10000000000000000', //   .01$
 };
 
 const riskParams = {
-  liquidationRatio: { value: '1250000000000000000' }, // 125%
+  liquidationRatio: { value: '1150000000000000000' }, // 115%
   liquidationSpread: { value: '1050000000000000000' }, // 105%
   earningsRate: { value: '500000000000000000' }, //  50%
-  minBorrowedValue: { value: '5000000000000000000' }, //   5$
+  minBorrowedValue: { value: '50000000000000000' }, //   .05$
 };
 
 async function maybeDeployTestContracts(deployer, network) {

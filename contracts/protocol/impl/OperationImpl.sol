@@ -219,7 +219,9 @@ library OperationImpl {
                 Require.that(
                     !Account.equals(accounts[a], accounts[b]),
                     FILE,
-                    "Cannot duplicate accounts"
+                    "Cannot duplicate accounts",
+                    a,
+                    b
                 );
             }
         }
@@ -236,7 +238,9 @@ library OperationImpl {
                 borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
                 FILE,
                 "Borrow value too low",
-                a
+                a,
+                borrowValue.value,
+                minBorrowedValue.value
             );
 
             // check collateralization for non-liquidated accounts
@@ -245,8 +249,11 @@ library OperationImpl {
                     state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
                     FILE,
                     "Undercollateralized account",
-                    a
+                    a,
+                    supplyValue.value,
+                    borrowValue.value
                 );
+
                 if (state.getStatus(account) != Account.Status.Normal) {
                     state.setStatus(account, Account.Status.Normal);
                 }
@@ -413,7 +420,9 @@ library OperationImpl {
         Require.that(
             tokensReceived.value >= makerWei.value,
             FILE,
-            "Buy amount less than promised"
+            "Buy amount less than promised",
+            tokensReceived.value,
+            makerWei.value
         );
 
         state.setPar(
@@ -586,7 +595,8 @@ library OperationImpl {
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Collateral must be positive"
+            "Collateral must be positive",
+            maxHeldWei.value
         );
 
         (
@@ -682,7 +692,8 @@ library OperationImpl {
         Require.that(
             maxHeldWei.isPositive(),
             FILE,
-            "Excess token must be positive"
+            "Excess token must be positive",
+            maxHeldWei.value
         );
 
         (
