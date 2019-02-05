@@ -105,7 +105,7 @@ describe('Integration', () => {
     const owedMkt = INTEGERS.ONE;
     const heldToken = solo.testing.tokenA;
     const owedToken = solo.testing.tokenB;
-    const collateralization = new BigNumber('1.2');
+    const collateralization = new BigNumber('1.1');
     const premium = new BigNumber('1.05');
 
     await Promise.all([
