@@ -22,7 +22,7 @@
     "develop": "truffle develop",
     "console": "truffle console",
     "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dydx",
-    "lint:ts": "tslint --project . -t verbose 'src/**/*.ts'",
+    "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' '__tests__/**/*.ts'",
     "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
     "lint:sol": "solium -d contracts/",
     "lint:dydx": "python util/lintcontracts.py",

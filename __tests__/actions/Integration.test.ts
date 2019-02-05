@@ -105,8 +105,8 @@ describe('Integration', () => {
     const owedMkt = INTEGERS.ONE;
     const heldToken = solo.testing.tokenA;
     const owedToken = solo.testing.tokenB;
-    const collateralization = new BigNumber("1.2");
-    const premium = new BigNumber("1.05");
+    const collateralization = new BigNumber('1.2');
+    const premium = new BigNumber('1.05');
 
     await Promise.all([
       // issue tokens
@@ -213,7 +213,7 @@ describe('Integration', () => {
     expect(soloOwedTokenBalance).toEqual(amount);
 
     solidBalances.forEach((balance, i) => {
-      let expected = INTEGERS.ZERO;
+      const expected = INTEGERS.ZERO;
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });
@@ -320,7 +320,7 @@ describe('Integration', () => {
     expect(soloOwedTokenBalance).toEqual(INTEGERS.ZERO);
 
     oneBalances.forEach((balance, i) => {
-      let expected = INTEGERS.ZERO;
+      const expected = INTEGERS.ZERO;
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });

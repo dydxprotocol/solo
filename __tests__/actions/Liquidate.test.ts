@@ -32,8 +32,8 @@ describe('Liquidate', () => {
     const accountNumber2 = INTEGERS.ONE;
     const marketA = INTEGERS.ZERO;
     const marketB = INTEGERS.ONE;
-    const collateralization = new BigNumber("1.2");
-    const premium = new BigNumber("1.05");
+    const collateralization = new BigNumber('1.1');
+    const premium = new BigNumber('1.05');
 
     await Promise.all([
       // set balances
