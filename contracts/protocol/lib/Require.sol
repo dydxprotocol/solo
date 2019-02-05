@@ -29,7 +29,9 @@ library Require {
 
     // ============ Constants ============
 
-    uint256 constant ASCII_ZERO = 48;
+    uint256 constant ASCII_ZERO = 48; // '0'
+    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
+    uint256 constant ASCII_LOWER_EX = 120; // 'x'
 
     // ============ Library Functions ============
 
@@ -145,7 +147,7 @@ library Require {
     )
         private
         pure
-        returns (string memory)
+        returns (bytes memory)
     {
         if (i == 0) {
             return "0";
@@ -167,6 +169,44 @@ library Require {
             bstr[k--] = byte(uint8(ASCII_ZERO + (j % 10)));
             j /= 10;
         }
-        return string(bstr);
+
+        return bstr;
+    }
+
+    function stringify(
+        address a
+    )
+        private
+        pure
+        returns (byte[42] memory)
+    {
+        uint256 z = uint256(a);
+
+        byte[42] memory result;
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        for (uint256 i = 0; i < 20; i++) {
+            uint256 shift = i * 2;
+            result[41 - shift] = char(z & 0xf);
+            z = z >> 4;
+            result[40 - shift] = char(z & 0xf);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function char(
+        uint256 b
+    )
+        private
+        pure
+        returns (byte)
+    {
+        if (b < 10) {
+            return byte(uint8(b + ASCII_ZERO));
+        }
+        return byte(uint8(b + ASCII_RELATIVE_ZERO));
     }
 }
