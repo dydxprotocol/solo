@@ -2,25 +2,25 @@
     "SoloMargin": {
         "42": {
             "links": {
-                "AdminImpl": "0x1Aa305d106923DeB03182DC3B72bB4bA9523f758",
-                "OperationImpl": "0x5C4eAFd5cb5E93e32c60AdF48B54004f7Bab1Af4"
+                "AdminImpl": "0x767DEb811D00985c887A8f24258712dE0451c40e",
+                "OperationImpl": "0x940ea330fdb247939F982a7a0eeB16a24329bC95"
             },
-            "address": "0x7584262256b8FBb0cC50BdCf188AEDEdaA5881fa",
-            "transactionHash": "0x4ce945d7d301f6a0012b43bc05ce470987e40b959cf069a78d8ef889c279774b"
+            "address": "0x8BA85A4637351997cc0a389CA883428cB93696ae",
+            "transactionHash": "0xc233afed045764193fef32919e27aa193c866999c5316b8ee0166a7c3441b091"
         }
     },
     "TestPriceOracle": {
         "42": {
             "links": {},
-            "address": "0x07A7030D34c28Acd4dD1344be75914C8fA50EbF0",
-            "transactionHash": "0x70896029bb03291a8615a81095bbe01ca4e1c6ea91d2f3f0e77818e8415cc243"
+            "address": "0xAf6353C3Bb4D697a413B871E8De25eEA6C75F6C4",
+            "transactionHash": "0xc566a5d2023ba2735a4c72710ab1977bba9b7bb8884bd82a9eaff946ba6c1b85"
         }
     },
     "TestInterestSetter": {
         "42": {
             "links": {},
-            "address": "0xB4da2F718702b6cEccD84b7671F6C219d41fCE24",
-            "transactionHash": "0x0f172a800baa348d64d1022d92d1bf1a4a9faa8bf56a7dab1e11a5dd0c0f02c7"
+            "address": "0x352dF080a4CdC8DDE172308F86Fba9a96E15e134",
+            "transactionHash": "0x88ba856da93eb9f876e42734fc46ec08ed6d97859282ae661f9f80d65c0f7f19"
         }
     }
 }

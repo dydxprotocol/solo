@@ -250,8 +250,8 @@ library OperationImpl {
                     FILE,
                     "Undercollateralized account",
                     a,
-                    supplyValue,
-                    borrowValue
+                    supplyValue.value,
+                    borrowValue.value
                 );
 
                 if (state.getStatus(account) != Account.Status.Normal) {
@@ -582,8 +582,7 @@ library OperationImpl {
             Require.that(
                 Account.Status.Liquid == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Unliquidatable account",
-                args.liquidAccount
+                "Unliquidatable account"
             );
             state.setStatus(args.liquidAccount, Account.Status.Liquid);
         }
@@ -678,8 +677,7 @@ library OperationImpl {
             Require.that(
                 Account.Status.Vapor == state.valuesToStatus(supplyValue, borrowValue),
                 FILE,
-                "Unvaporizable account",
-                args.vaporAccount
+                "Unvaporizable account"
             );
             state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
