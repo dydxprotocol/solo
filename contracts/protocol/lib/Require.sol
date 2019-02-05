@@ -70,7 +70,7 @@ library Require {
                         file,
                         ": ",
                         reason,
-                        "<",
+                        " <",
                         stringify(payloadA),
                         ">"
                     )
@@ -96,9 +96,9 @@ library Require {
                         file,
                         ": ",
                         reason,
-                        "<",
+                        " <",
                         stringify(payloadA),
-                        ",",
+                        ", ",
                         stringify(payloadB),
                         ">"
                     )
@@ -125,11 +125,11 @@ library Require {
                         file,
                         ": ",
                         reason,
-                        "<",
+                        " <",
                         stringify(payloadA),
-                        ",",
+                        ", ",
                         stringify(payloadB),
-                        ",",
+                        ", ",
                         stringify(payloadC),
                         ">"
                     )
