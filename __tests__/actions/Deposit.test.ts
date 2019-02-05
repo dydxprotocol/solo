@@ -6,9 +6,11 @@ import { mineAvgBlock, resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { Balance, Integer } from '../../src/types';
+import { Integer } from '../../src/types';
 
+let who: address;
 let solo: Solo;
+let accounts: address[];
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
 const collateralMarket = new BigNumber(2);
@@ -25,12 +27,27 @@ const index = {
   supply: wei.div(par),
 };
 let defaultGlob;
+const CANNOT_DEPOSIT_NEGATIVE = 'Exchange: Cannot transferIn negative';
+const cachedWeis = {
+  walletWei: zero,
+  soloWei: zero,
+};
 
-function expectBalances(
-  accountBalances: Balance[],
+async function expectBalances(
   expectedPar: Integer,
-  expectedWei: Integer
+  expectedWei: Integer,
+  walletWei: Integer,
+  soloWei: Integer,
 ) {
+  const [
+    accountBalances,
+    walletTokenBalance,
+    soloTokenBalance,
+  ] = await Promise.all([
+    solo.getters.getAccountBalances(who, accountNumber),
+    solo.testing.tokenA.getBalance(who),
+    solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
+  ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
     if (i == market.toNumber()) {
@@ -44,6 +61,10 @@ function expectBalances(
     expect(balance.par).toEqual(expected.par);
     expect(balance.wei).toEqual(expected.wei);
   });
+  expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
+  expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
+  cachedWeis.walletWei = walletTokenBalance;
+  cachedWeis.soloWei = soloTokenBalance;
 }
 
 async function expectDepositOkay(glob, options?) {
@@ -58,9 +79,6 @@ async function expectDepositRevert(glob, reason?, options?) {
 }
 
 describe('Deposit', () => {
-  let accounts: address[];
-  let who: address;
-
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
@@ -86,6 +104,9 @@ describe('Deposit', () => {
       solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
     ]);
     await mineAvgBlock();
+
+    cachedWeis.walletWei = zero;
+    cachedWeis.soloWei = zero;
   });
 
   it('Basic deposit test', async () => {
@@ -111,148 +132,245 @@ describe('Deposit', () => {
     const [
       walletTokenBalance,
       soloTokenBalance,
-      accountBalances,
     ] = await Promise.all([
       solo.testing.tokenA.getBalance(who),
       solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
     expect(walletTokenBalance).toEqual(INTEGERS.ZERO);
     expect(soloTokenBalance).toEqual(amount);
-    expectBalances(accountBalances, amount, amount);
+    await expectBalances(amount, amount, zero, amount);
 
-    //TODO: expect log
+    // TODO: expect log
   });
 
-  it('Succeeds for some non-one index', async () => {
-    await solo.testing.tokenA.issueTo(wei, who);
-
-    await expectDepositOkay({
-      ...defaultGlob,
-      amount: {
-        value: wei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
+  it('Succeeds for positive delta par/wei', async () => {
+    const globs = [
+      {
+        ...defaultGlob,
+        amount: {
+          value: par,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Delta,
+        },
       },
-    });
-
-    const [
-      walletTokenBalance,
-      soloTokenBalance,
-      accountBalances,
-    ] = await Promise.all([
-      solo.testing.tokenA.getBalance(who),
-      solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(who, accountNumber),
-    ]);
-
-    expect(walletTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(soloTokenBalance).toEqual(wei);
-    expectBalances(accountBalances, par, wei);
-  });
-
-  it('Succeeds for positive delta par', async () => {
-
-  });
-
-  it('Succeeds for positive delta wei', async () => {
-
-  });
-
-  it('Succeeds for zero delta par', async () => {
-    const glob = {
-      ...defaultGlob,
-      amount: {
-        value: zero,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Delta,
+      {
+        ...defaultGlob,
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
       },
-    };
+    ];
 
-    let accountBalances;
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, zero),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, wei);
 
-    // starting from zero
-    await solo.testing.setAccountBalance(who, accountNumber, market, zero);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, zero, zero);
+      // starting positive
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, par),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par.times(2), wei.times(2), zero, wei);
 
-    // starting positive
-    await solo.testing.setAccountBalance(who, accountNumber, market, par);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, par, wei);
-
-    // starting negative
-    await solo.testing.setAccountBalance(who, accountNumber, market, negPar);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, negPar, negWei);
+      // starting negative
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, negPar),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, wei);
+    }
   });
 
-  it('Succeeds for zero delta wei', async () => {
-    const glob = {
-      ...defaultGlob,
-      amount: {
-        value: zero,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
+  it('Succeeds for zero delta par/wei', async () => {
+    const globs = [
+      {
+        ...defaultGlob,
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Delta,
+        },
       },
-    };
+      {
+        ...defaultGlob,
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+    ];
 
-    let accountBalances;
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await solo.testing.setAccountBalance(who, accountNumber, market, zero);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, zero);
 
-    // starting from zero
-    await solo.testing.setAccountBalance(who, accountNumber, market, zero);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, zero, zero);
+      // starting positive
+      await solo.testing.setAccountBalance(who, accountNumber, market, par);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, zero);
 
-    // starting positive
-    await solo.testing.setAccountBalance(who, accountNumber, market, par);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, par, wei);
-
-    // starting negative
-    await solo.testing.setAccountBalance(who, accountNumber, market, negPar);
-    await expectDepositOkay(glob);
-    accountBalances = await solo.getters.getAccountBalances(who, accountNumber);
-    expectBalances(accountBalances, negPar, negWei);
+      // starting negative
+      await solo.testing.setAccountBalance(who, accountNumber, market, negPar);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(negPar, negWei, zero, zero);
+    }
   });
 
-  it('Mixed for positive target wei', async () => {
-    //TODO
+  it('Mixed for positive target par/wei', async () => {
+    const globs = [
+      {
+        ...defaultGlob,
+        amount: {
+          value: par,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        ...defaultGlob,
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
+    ];
+
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, zero),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, wei);
+
+      // starting positive < target
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, par.div(2)),
+        solo.testing.tokenA.issueTo(wei.div(2), who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, wei.div(2));
+
+      // starting positive = target
+      await solo.testing.setAccountBalance(who, accountNumber, market, par);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, zero);
+
+      // starting positive > target
+      await solo.testing.setAccountBalance(who, accountNumber, market, par.times(2));
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+
+      // starting negative
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, negPar),
+        solo.testing.tokenA.issueTo(wei.times(2), who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(par, wei, zero, wei.times(2));
+    }
   });
 
-  it('Mixed for positive target wei', async () => {
-    //TODO
+  it('Mixed for negative target par/wei', async () => {
+    const globs = [
+      {
+        ...defaultGlob,
+        amount: {
+          value: negPar,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        ...defaultGlob,
+        amount: {
+          value: negWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
+    ];
+
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await solo.testing.setAccountBalance(who, accountNumber, market, zero);
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+
+      // starting negative < target
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, negPar.times(2)),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(negPar, negWei, zero, wei);
+
+      // starting negative = target
+      await solo.testing.setAccountBalance(who, accountNumber, market, negPar);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(negPar, negWei, zero, zero);
+
+      // starting negative > target
+      await solo.testing.setAccountBalance(who, accountNumber, market, negPar.div(2));
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+
+      // starting positive
+      await solo.testing.setAccountBalance(who, accountNumber, market, par);
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+    }
   });
 
-  it('Mixed for negative target wei', async () => {
-    //TODO
-  });
+  it('Mixed for zero target par/wei', async () => {
+    const globs = [
+      {
+        ...defaultGlob,
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        ...defaultGlob,
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
+    ];
 
-  it('Mixed for negative target wei', async () => {
-    //TODO
-  });
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await solo.testing.setAccountBalance(who, accountNumber, market, zero),
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, zero);
 
-  it('Mixed for zero target wei', async () => {
-    //TODO
-  });
+      // starting positive
+      await solo.testing.setAccountBalance(who, accountNumber, market, par),
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
 
-  it('Mixed for zero target par', async () => {
-    //TODO
-  });
-
-  it('Succeeds for all kinds of amounts', async () => {
-    // positive target wei =>
-    // positive target par =>
-    // negative target wei =>
-    // negative target par =>
-    // zero target wei =>
-    // zero target par =>
+      // starting negative
+      await Promise.all([
+        solo.testing.setAccountBalance(who, accountNumber, market, negPar),
+        solo.testing.tokenA.issueTo(wei, who),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, wei);
+    }
   });
 
   it('Fails for non-operator', async () => {
@@ -289,7 +407,7 @@ describe('Deposit', () => {
   });
 
   it('Fails for negative delta wei', async () => {
-    const reason = 'Exchange: Cannot transferIn negative';
+    const reason = CANNOT_DEPOSIT_NEGATIVE;
     const glob = {
       ...defaultGlob,
       amount: {
@@ -315,7 +433,7 @@ describe('Deposit', () => {
   });
 
   it('Fails for negative delta par', async () => {
-    const reason = 'Exchange: Cannot transferIn negative';
+    const reason = CANNOT_DEPOSIT_NEGATIVE;
     const glob = {
       ...defaultGlob,
       amount: {

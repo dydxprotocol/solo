@@ -95,11 +95,7 @@ library Token {
     )
         internal
     {
-        address from = address(this);
-        if (
-            amount == 0
-            || from == to
-        ) {
+        if (amount == 0 || to == address(this)) {
             return;
         }
 
@@ -120,10 +116,7 @@ library Token {
     )
         internal
     {
-        if (
-            amount == 0
-            || from == to
-        ) {
+        if (amount == 0 || to == from) {
             return;
         }
 

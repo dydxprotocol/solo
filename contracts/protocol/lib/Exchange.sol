@@ -32,6 +32,7 @@ import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
  * the Wei struct directly.
  */
 library Exchange {
+    using Types for Types.Wei;
 
     // ============ Constants ============
 
@@ -47,9 +48,10 @@ library Exchange {
         internal
     {
         Require.that(
-            !deltaWei.sign,
+            !deltaWei.isPositive(),
             FILE,
-            "Cannot transferOut positive"
+            "Cannot transferOut positive",
+            deltaWei.value
         );
 
         Token.transfer(
@@ -67,9 +69,10 @@ library Exchange {
         internal
     {
         Require.that(
-            deltaWei.sign,
+            !deltaWei.isNegative(),
             FILE,
-            "Cannot transferIn negative"
+            "Cannot transferIn negative",
+            deltaWei.value
         );
 
         Token.transferFrom(
@@ -92,9 +95,10 @@ library Exchange {
         returns (Types.Wei memory)
     {
         Require.that(
-            desiredAmount.sign,
+            !desiredAmount.isNegative(),
             FILE,
-            "Cannot getCost negative"
+            "Cannot getCost negative",
+            desiredAmount.value
         );
 
         Types.Wei memory result;
@@ -121,9 +125,10 @@ library Exchange {
         returns (Types.Wei memory)
     {
         Require.that(
-            !requestedFillAmount.sign,
+            !requestedFillAmount.isPositive(),
             FILE,
-            "Cannot exchange positive"
+            "Cannot exchange positive",
+            requestedFillAmount.value
         );
 
         transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
