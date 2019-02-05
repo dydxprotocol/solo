@@ -46,7 +46,7 @@ describe('Call', () => {
       foundSenderData,
     ] = await Promise.all([
       solo.testing.callee.getAccountData(who, accountNumber),
-      solo.testing.callee.getSenderData(who), //TODO make sender a different address
+      solo.testing.callee.getSenderData(who), // TODO make sender a different address
     ]);
 
     expect(foundAccountData).toEqual(accountData.toFixed(0));
