@@ -20,11 +20,12 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { SoloMargin } from "../protocol/SoloMargin.sol";
-import { Account } from "../protocol/lib/Account.sol";
-import { Actions } from "../protocol/lib/Actions.sol";
-import { Token } from "../protocol/lib/Token.sol";
-import { IWeth } from "./interfaces/IWeth.sol";
+import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
+import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import { Account } from "../../protocol/lib/Account.sol";
+import { Actions } from "../../protocol/lib/Actions.sol";
+import { Token } from "../../protocol/lib/Token.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -36,9 +37,16 @@ import { IWeth } from "./interfaces/IWeth.sol";
 contract PayableProxyForSoloMargin is
     ReentrancyGuard
 {
+    // ============ Constants ============
+
+    string constant FILE = "PayableProxyForSoloMargin";
+
+    // ============ Storage ============
 
     SoloMargin public SOLO_MARGIN;
-    IWeth public WETH;
+    WETH9 public WETH;
+
+    // ============ Constructor ============
 
     constructor (
         address soloMargin,
@@ -47,8 +55,24 @@ contract PayableProxyForSoloMargin is
         public
     {
         SOLO_MARGIN = SoloMargin(soloMargin);
-        WETH = IWeth(weth);
+        WETH = WETH9(weth);
         WETH.approve(soloMargin, uint256(-1));
+    }
+
+    // ============ Public Functions ============
+
+    /**
+     * Fallback function. Disallows ether to be sent to this contract without data except when
+     * unwrapping WETH.
+     */
+    function ()
+        external
+        payable
+    {
+        require( // coverage-disable-line
+            msg.sender == address(WETH),
+            "Cannot recieve ETH"
+        );
     }
 
     function operate(
@@ -66,16 +90,28 @@ contract PayableProxyForSoloMargin is
 
         // validate the input
         for (uint256 i = 0; i < args.length; i++) {
-            // for each deposit, deposit.from must be this or msg.sender
-            if (args[i].actionType == Actions.ActionType.Deposit) {
-                address depositFrom = Actions.parseDepositArgs(accounts, args[i]).from;
-                require(depositFrom == msg.sender || depositFrom == address(this));
+            // For a transfer both accounts must be owned by msg.sender
+            if (args[i].actionType == Actions.ActionType.Transfer) {
+                address accountTwoOwner = Actions.parseTransferArgs(
+                    accounts,
+                    args[i]
+                ).accountTwo.owner;
+
+                Require.that(
+                    accountTwoOwner == msg.sender,
+                    FILE,
+                    "Sender must own account two",
+                    accountTwoOwner
+                );
             }
 
-            // for each non-liquidate, account owner must be msg.sender
-            if (args[i].actionType != Actions.ActionType.Liquidate) {
-                require(accounts[args[i].accountId].owner == msg.sender);
-            }
+            // Can only operate on accounts owned by msg.sender
+            Require.that(
+                accounts[args[i].accountId].owner == msg.sender,
+                FILE,
+                "Sender must own account",
+                accounts[args[i].accountId].owner
+            );
         }
 
         SOLO_MARGIN.operate(accounts, args);

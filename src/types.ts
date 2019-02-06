@@ -45,6 +45,10 @@ export interface ContractCallOptions extends Tx {
   autoGasMultiplier?: number;
 }
 
+export interface AccountOperationOptions {
+  usePayableProxy?: boolean;
+}
+
 export interface TxResult {
   transactionHash: string;
   transactionIndex?: number;

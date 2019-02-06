@@ -21,6 +21,7 @@ import {
   Call,
   Amount,
   Integer,
+  AccountOperationOptions,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
 import { ADDRESSES } from '../../lib/Constants';
@@ -41,16 +42,19 @@ export class AccountOperation {
   private committed: boolean;
   private orderMapper: OrderMapper;
   private accounts: AcctInfo[];
+  private usePayableProxy: boolean;
 
   constructor(
     contracts: Contracts,
     orderMapper: OrderMapper,
+    options: AccountOperationOptions = {},
   ) {
     this.contracts = contracts;
     this.actions = [];
     this.committed = false;
     this.orderMapper = orderMapper;
     this.accounts = [];
+    this.usePayableProxy = options.usePayableProxy;
   }
 
   public deposit(deposit: Deposit): AccountOperation {
@@ -205,10 +209,19 @@ export class AccountOperation {
     this.committed = true;
 
     try {
-      const method: TransactionObject<void> = this.contracts.soloMargin.methods.operate(
-        this.accounts,
-        this.actions,
-      );
+      let method: TransactionObject<void>;
+
+      if (!this.usePayableProxy) {
+        method = this.contracts.soloMargin.methods.operate(
+          this.accounts,
+          this.actions,
+        );
+      } else {
+        method = this.contracts.payableProxy.methods.operate(
+          this.accounts,
+          this.actions,
+        );
+      }
 
       return this.contracts.callContractFunction(
         method,

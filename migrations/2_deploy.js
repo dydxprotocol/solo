@@ -30,6 +30,8 @@ const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
+const WETH9 = artifacts.require('WETH9');
+const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 
 const riskLimits = {
   interestRateMax: '31709791983', // 100% APR
@@ -89,6 +91,28 @@ async function deployBaseProtocol(deployer) {
   await deployer.deploy(SoloMargin, riskParams, riskLimits);
 }
 
+async function deploySecondLayer(deployer, network) {
+  const wethAddress = await getOrDeployWeth(deployer, network);
+
+  await deployer.deploy(
+    PayableProxyForSoloMargin,
+    SoloMargin.address,
+    wethAddress,
+  );
+}
+
+async function getOrDeployWeth(deployer, network) {
+  switch (network) {
+    case 'mainnet':
+      return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+    case 'kovan':
+      return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+    default:
+      await deployer.deploy(WETH9);
+      return WETH9.address;
+  }
+}
+
 const migration = async (deployer, network) => {
   await Promise.all([
     deployer.deploy(AdminImpl),
@@ -98,6 +122,7 @@ const migration = async (deployer, network) => {
     deployBaseProtocol(deployer),
     maybeDeployTestContracts(deployer, network),
   ]);
+  await deploySecondLayer(deployer, network);
 };
 
 module.exports = migration;
