@@ -140,6 +140,31 @@ library Require {
         }
     }
 
+    function that(
+        bool must,
+        string memory file,
+        string memory reason,
+        address payloadA
+    )
+        internal
+        pure
+    {
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        file,
+                        ": ",
+                        reason,
+                        " <",
+                        stringify(payloadA),
+                        ">"
+                    )
+                )
+            );
+        }
+    }
+
     // ============ Private Functions ============
 
     function stringify(

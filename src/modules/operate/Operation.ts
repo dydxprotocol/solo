@@ -1,6 +1,7 @@
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../../lib/Contracts';
 import { AccountOperation } from './AccountOperation';
+import { AccountOperationOptions } from '../../types';
 
 export class Operation {
   private contracts: Contracts;
@@ -18,10 +19,11 @@ export class Operation {
     this.orderMapper.setNetworkId(networkId);
   }
 
-  public initiate(): AccountOperation {
+  public initiate(options?: AccountOperationOptions): AccountOperation {
     return new AccountOperation(
       this.contracts,
       this.orderMapper,
+      options,
     );
   }
 }

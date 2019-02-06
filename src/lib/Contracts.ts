@@ -25,6 +25,9 @@ import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { Expiry } from '../../build/wrappers/Expiry';
+import {
+  PayableProxyForSoloMargin as PayableProxy,
+} from '../../build/wrappers/PayableProxyForSoloMargin';
 import { TestToken } from '../../build/wrappers/TestToken';
 import { TestAutoTrader } from '../../build/wrappers/TestAutoTrader';
 import { TestCallee } from '../../build/wrappers/TestCallee';
@@ -35,6 +38,7 @@ import soloMarginJson from '../../build/contracts/SoloMargin.json';
 import testSoloMarginJson from '../../build/contracts/TestSoloMargin.json';
 import erc20Json from '../../build/contracts/IErc20.json';
 import expiryJson from '../../build/contracts/Expiry.json';
+import payableProxyJson from '../../build/contracts/PayableProxyForSoloMargin.json';
 import tokenAJson from '../../build/contracts/TokenA.json';
 import tokenBJson from '../../build/contracts/TokenB.json';
 import tokenCJson from '../../build/contracts/TokenC.json';
@@ -64,6 +68,7 @@ export class Contracts {
   public soloMargin: (SoloMargin | TestSoloMargin);
   public erc20: ERC20;
   public expiry: Expiry;
+  public payableProxy: PayableProxy;
 
   // Testing contract instances
   public testSoloMargin: TestSoloMargin;
@@ -87,9 +92,13 @@ export class Contracts {
     this.autoGasMultiplier = options.autoGasMultiplier || 1.5;
     this.confirmationType = options.confirmationType || ConfirmationType.Confirmed;
 
+    // Contracts
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
+    this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
+
+    // Testing Contracts
     this.testSoloMargin = new this.web3.eth.Contract(testSoloMarginJson.abi) as TestSoloMargin;
     if (options.testing) {
       this.soloMargin = this.testSoloMargin;
@@ -116,6 +125,7 @@ export class Contracts {
     this.networkId = networkId;
     this.soloMargin.setProvider(provider);
 
+    // Contracts
     this.setContractProvider(
       this.soloMargin,
       soloMarginJson,
@@ -134,6 +144,14 @@ export class Contracts {
       provider,
       networkId,
     );
+    this.setContractProvider(
+      this.payableProxy,
+      payableProxyJson,
+      provider,
+      networkId,
+    );
+
+    // Test contracts
     this.setContractProvider(
       this.testSoloMargin,
       testSoloMarginJson,
@@ -193,10 +211,14 @@ export class Contracts {
   public setDefaultAccount(
     account: address,
   ): void {
+    // Contracts
     this.soloMargin.options.from = account;
     this.testSoloMargin.options.from = account;
     this.erc20.options.from = account;
     this.expiry.options.from = account;
+    this.payableProxy.options.from = account;
+
+    // Test Contracts
     this.tokenA.options.from = account;
     this.tokenB.options.from = account;
     this.tokenC.options.from = account;
