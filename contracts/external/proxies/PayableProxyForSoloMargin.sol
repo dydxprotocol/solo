@@ -69,11 +69,9 @@ contract PayableProxyForSoloMargin is
         external
         payable
     {
-        Require.that( // coverage-disable-line
+        require( // coverage-disable-line
             msg.sender == address(WETH),
-            FILE,
-            "Cannot recieve ETH",
-            msg.sender
+            "Cannot recieve ETH"
         );
     }
 
@@ -92,17 +90,6 @@ contract PayableProxyForSoloMargin is
 
         // validate the input
         for (uint256 i = 0; i < args.length; i++) {
-            // for each deposit, deposit.from must be this or msg.sender
-            if (args[i].actionType == Actions.ActionType.Deposit) {
-                address depositFrom = Actions.parseDepositArgs(accounts, args[i]).from;
-                Require.that(
-                    depositFrom == msg.sender || depositFrom == address(this),
-                    FILE,
-                    "Cannot deposit from address",
-                    depositFrom
-                );
-            }
-
             // For a transfer both accounts must be owned by msg.sender
             if (args[i].actionType == Actions.ActionType.Transfer) {
                 address accountTwoOwner = Actions.parseTransferArgs(
