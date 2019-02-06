@@ -108,25 +108,36 @@ library OperationImpl {
             Actions.AccountLayout accountLayout = Actions.getAccountLayout(ttype);
 
             // parse out primary accounts
-            if (accountLayout == Actions.AccountLayout.OnePrimary) {
-                primaryAccounts[arg.accountId] = true;
-            } else if (accountLayout == Actions.AccountLayout.TwoPrimary) {
-                primaryAccounts[arg.accountId] = true;
-                primaryAccounts[arg.otherAccountId] = true;
-            } else if (accountLayout == Actions.AccountLayout.PrimaryAndSecondary) {
-                primaryAccounts[arg.accountId] = true;
+            if (accountLayout != Actions.AccountLayout.OnePrimary) {
                 Require.that(
-                    !primaryAccounts[arg.otherAccountId],
+                    arg.accountId != arg.otherAccountId,
                     FILE,
-                    "Requires non-primary account",
-                    arg.otherAccountId
+                    "Accounts must be distinct"
                 );
+                if (accountLayout == Actions.AccountLayout.TwoPrimary) {
+                    primaryAccounts[arg.otherAccountId] = true;
+                } else {
+                    assert(accountLayout == Actions.AccountLayout.PrimaryAndSecondary);
+                    Require.that(
+                        !primaryAccounts[arg.otherAccountId],
+                        FILE,
+                        "Requires non-primary account",
+                        arg.otherAccountId
+                    );
+                }
             }
+            primaryAccounts[arg.accountId] = true;
 
             // keep track of indexes to update
             if (marketLayout == Actions.MarketLayout.OneMarket) {
                 relevantMarkets[arg.primaryMarketId] = true;
             } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
+                Require.that(
+                    arg.primaryMarketId != arg.secondaryMarketId,
+                    FILE,
+                    "Markets must be distinct"
+                );
+                relevantMarkets[arg.primaryMarketId] = true;
                 relevantMarkets[arg.secondaryMarketId] = true;
             } else {
                 assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
@@ -670,15 +681,14 @@ library OperationImpl {
 
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
-            (
-                Monetary.Value memory supplyValue,
-                Monetary.Value memory borrowValue
-            ) = state.getValues(args.vaporAccount);
-            Require.that(
-                Account.Status.Vapor == state.valuesToStatus(supplyValue, borrowValue),
-                FILE,
-                "Unvaporizable account"
-            );
+            uint256 numMarkets = state.numMarkets;
+            for (uint256 m = 0; m < numMarkets; m++) {
+                Require.that(
+                    !state.getPar(args.vaporAccount, m).isPositive(),
+                    FILE,
+                    "Unvaporizable account"
+                );
+            }
             state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
 
