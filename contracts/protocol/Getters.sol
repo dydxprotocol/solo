@@ -269,7 +269,8 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        return g_state.getValues(account, false);
+        Monetary.Price[] memory priceCache = new Monetary.Price[](g_state.numMarkets);
+        return g_state.getValues(account, priceCache, false);
     }
 
     function getAccountBalances(

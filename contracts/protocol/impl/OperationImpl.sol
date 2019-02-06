@@ -60,28 +60,25 @@ library OperationImpl {
 
         (
             bool[] memory primaryAccounts,
-            bool[] memory relevantMarkets
+            Monetary.Price[] memory priceCache
         ) = _getRelevantAccountsAndMarkets(
             state,
             accounts,
             actions
         );
 
-        _updateIndexesForMarkets(
-            state,
-            relevantMarkets
-        );
-
         _runActions(
             state,
             accounts,
-            actions
+            actions,
+            priceCache
         );
 
         _verifyAccountCollateralization(
             state,
             accounts,
-            primaryAccounts
+            primaryAccounts,
+            priceCache
         );
     }
 
@@ -112,14 +109,13 @@ library OperationImpl {
         Actions.ActionArgs[] memory actions
     )
         private
-        view
         returns (
             bool[] memory,
-            bool[] memory
+            Monetary.Price[] memory
         )
     {
         uint256 numMarkets = state.numMarkets;
-        bool[] memory relevantMarkets = new bool[](numMarkets);
+        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
         bool[] memory primaryAccounts = new bool[](accounts.length);
 
         // keep track of primary accounts and indexes that need updating
@@ -152,15 +148,15 @@ library OperationImpl {
 
             // keep track of indexes to update
             if (marketLayout == Actions.MarketLayout.OneMarket) {
-                relevantMarkets[arg.primaryMarketId] = true;
+                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
             } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
                 Require.that(
                     arg.primaryMarketId != arg.secondaryMarketId,
                     FILE,
                     "Markets must be distinct"
                 );
-                relevantMarkets[arg.primaryMarketId] = true;
-                relevantMarkets[arg.secondaryMarketId] = true;
+                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
+                _updateIndexAndPrice(state, priceCache, arg.secondaryMarketId);
             } else {
                 assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
@@ -168,37 +164,39 @@ library OperationImpl {
 
         // get any other markets for which an account has a balance
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (relevantMarkets[m]) {
+            if (priceCache[m].value != 0) {
                 continue;
             }
             for (uint256 a = 0; a < accounts.length; a++) {
                 if (!state.getPar(accounts[a], m).isZero()) {
-                    relevantMarkets[m] = true;
+                    _updateIndexAndPrice(state, priceCache, m);
                     break;
                 }
             }
         }
 
-        return (primaryAccounts, relevantMarkets);
+        return (primaryAccounts, priceCache);
     }
 
-    function _updateIndexesForMarkets(
+    function _updateIndexAndPrice(
         Storage.State storage state,
-        bool[] memory relevantMarkets
+        Monetary.Price[] memory priceCache,
+        uint256 marketId
     )
         private
     {
-        for (uint256 m = 0; m < relevantMarkets.length; m++) {
-            if (relevantMarkets[m]) {
-                Events.logIndexUpdate(m, state.updateIndex(m));
-            }
+        if (priceCache[marketId].value != 0) {
+            return;
         }
+        priceCache[marketId] = state.fetchPrice(marketId);
+        Events.logIndexUpdate(marketId, state.updateIndex(marketId));
     }
 
     function _runActions(
         Storage.State storage state,
         Account.Info[] memory accounts,
-        Actions.ActionArgs[] memory actions
+        Actions.ActionArgs[] memory actions,
+        Monetary.Price[] memory priceCache
     )
         private
     {
@@ -227,10 +225,10 @@ library OperationImpl {
                 _trade(state, Actions.parseTradeArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg));
+                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg), priceCache);
             }
             else if (ttype == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg));
+                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), priceCache);
             }
             else if (ttype == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, arg));
@@ -241,7 +239,8 @@ library OperationImpl {
     function _verifyAccountCollateralization(
         Storage.State storage state,
         Account.Info[] memory accounts,
-        bool[] memory primaryAccounts
+        bool[] memory primaryAccounts,
+        Monetary.Price[] memory priceCache
     )
         private
     {
@@ -252,7 +251,7 @@ library OperationImpl {
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = state.getValues(account, true);
+            ) = state.getValues(account, priceCache, true);
 
             // don't check collateralization for non-primary accounts
             if (!primaryAccounts[a]) {
@@ -582,7 +581,8 @@ library OperationImpl {
 
     function _liquidate(
         Storage.State storage state,
-        Actions.LiquidateArgs memory args
+        Actions.LiquidateArgs memory args,
+        Monetary.Price[] memory priceCache
     )
         private
     {
@@ -593,7 +593,7 @@ library OperationImpl {
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = state.getValues(args.liquidAccount, false);
+            ) = state.getValues(args.liquidAccount, priceCache, false);
             Require.that(
                 !state.isCollateralized(supplyValue, borrowValue),
                 FILE,
@@ -680,7 +680,8 @@ library OperationImpl {
 
     function _vaporize(
         Storage.State storage state,
-        Actions.VaporizeArgs memory args
+        Actions.VaporizeArgs memory args,
+        Monetary.Price[] memory priceCache
     )
         private
     {
@@ -690,6 +691,9 @@ library OperationImpl {
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
             uint256 numMarkets = state.numMarkets;
             for (uint256 m = 0; m < numMarkets; m++) {
+                if (priceCache[m].value == 0) {
+                    continue;
+                }
                 Require.that(
                     !state.getPar(args.vaporAccount, m).isPositive(),
                     FILE,

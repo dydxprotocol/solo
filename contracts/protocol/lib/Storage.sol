@@ -277,6 +277,7 @@ library Storage {
     function getValues(
         Storage.State storage state,
         Account.Info memory account,
+        Monetary.Price[] memory priceCache,
         bool requireMinBorrow
     )
         internal
@@ -286,7 +287,7 @@ library Storage {
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        uint256 numMarkets = state.numMarkets;
+        uint256 numMarkets = priceCache.length;
         for (uint256 m = 0; m < numMarkets; m++) {
             Types.Wei memory userWei = state.getWei(account, m);
 
@@ -294,8 +295,12 @@ library Storage {
                 continue;
             }
 
+            if (priceCache[m].value == 0) {
+                priceCache[m] = state.fetchPrice(m);
+            }
+
             Monetary.Value memory overallValue = Monetary.getValue(
-                state.fetchPrice(m),
+                priceCache[m],
                 userWei.value
             );
 
