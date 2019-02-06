@@ -19,7 +19,6 @@
 pragma solidity ^0.5.0;
 
 import { Account } from "./Account.sol";
-import { Require } from "./Require.sol";
 import { Types } from "./Types.sol";
 
 
@@ -252,11 +251,6 @@ library Actions {
         returns (TransferArgs memory)
     {
         assert(args.actionType == ActionType.Transfer);
-        Require.that(
-            args.accountId != args.otherAccountId,
-            FILE,
-            "Transfer accounts match"
-        );
         return TransferArgs({
             amount: args.amount,
             accountOne: accounts[args.accountId],
@@ -312,11 +306,6 @@ library Actions {
         returns (TradeArgs memory)
     {
         assert(args.actionType == ActionType.Trade);
-        Require.that(
-            args.accountId != args.otherAccountId,
-            FILE,
-            "Trade accounts match"
-        );
         return TradeArgs({
             amount: args.amount,
             takerAccount: accounts[args.accountId],
@@ -337,16 +326,6 @@ library Actions {
         returns (LiquidateArgs memory)
     {
         assert(args.actionType == ActionType.Liquidate);
-        Require.that(
-            args.primaryMarketId != args.secondaryMarketId,
-            FILE,
-            "Liquidate markets match"
-        );
-        Require.that(
-            args.accountId != args.otherAccountId,
-            FILE,
-            "Liquidate accounts match"
-        );
         return LiquidateArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
@@ -365,16 +344,6 @@ library Actions {
         returns (VaporizeArgs memory)
     {
         assert(args.actionType == ActionType.Vaporize);
-        Require.that(
-            args.primaryMarketId != args.secondaryMarketId,
-            FILE,
-            "Vaporize markets match"
-        );
-        Require.that(
-            args.accountId != args.otherAccountId,
-            FILE,
-            "Vaporize accounts match"
-        );
         return VaporizeArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
