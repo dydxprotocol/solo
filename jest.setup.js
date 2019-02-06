@@ -1,2 +1,2 @@
 // this file runs before each test file
-jest.setTimeout(10000); // 10s
+jest.setTimeout(20000); // 20s
