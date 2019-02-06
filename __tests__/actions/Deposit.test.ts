@@ -1,12 +1,17 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { address, AmountDenomination, AmountReference } from '../../src/types';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { Integer, Deposit} from '../../src/types';
+import {
+  address,
+  AmountDenomination,
+  AmountReference,
+  Deposit,
+  Integer,
+} from '../../src/types';
 
 let who: address;
 let solo: Solo;
@@ -57,9 +62,9 @@ async function expectBalances(
   ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
-    if (i == market.toNumber()) {
+    if (i === market.toNumber()) {
       expected = { par: expectedPar, wei: expectedWei };
-    } else if (i == collateralMarket.toNumber()) {
+    } else if (i === collateralMarket.toNumber()) {
       expected = {
         par: collateralAmount,
         wei: collateralAmount,
@@ -76,7 +81,7 @@ async function expectBalances(
 
 async function expectDepositOkay(
   glob: Object,
-  options?: Object
+  options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
   return await solo.operation.initiate().deposit(combinedGlob).commit(options);
@@ -85,7 +90,7 @@ async function expectDepositOkay(
 async function expectDepositRevert(
   glob: Object,
   reason?: string,
-  options?: Object
+  options?: Object,
 ) {
   await expectThrow(expectDepositOkay(glob, options), reason);
 }
@@ -275,7 +280,7 @@ describe('Deposit', () => {
       await setAccountBalance(zero);
       await expectDepositRevert(globs[i], reason);
 
-      //starting positive
+      // starting positive
       await setAccountBalance(par);
       await expectDepositRevert(globs[i], reason);
 
@@ -437,7 +442,7 @@ describe('Deposit', () => {
           reference: AmountReference.Delta,
         },
       },
-      { from: operator }
+      { from: operator },
     );
   });
 
@@ -475,7 +480,7 @@ describe('Deposit', () => {
         value: wei,
         denomination: AmountDenomination.Actual,
         reference: AmountReference.Delta,
-      }
+      },
     };
     await expectDepositRevert(glob, 'Token: TransferFrom failed');
   });

@@ -89,22 +89,22 @@ describe('Transfer', () => {
       expect(balance.wei).toEqual(expected);
     });
 
-    //TODO: expect log
+    // TODO: expect log
   });
 
   it('Succeeds for positive, negative, and zero amounts', async () => {
-    //TODO
+    // TODO
   });
 
   it('Succeeds for operator between two owners', async () => {
-    //TODO
+    // TODO
   });
 
   it('Fails for non-operator on first account', async () => {
-    //TODO
+    // TODO
   });
 
   it('Fails for non-operator on second account', async () => {
-    //TODO
+    // TODO
   });
 });

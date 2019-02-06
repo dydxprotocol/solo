@@ -1,12 +1,17 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { address, AmountDenomination, AmountReference } from '../../src/types';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { Integer, Withdraw } from '../../src/types';
+import {
+  address,
+  AmountDenomination,
+  AmountReference,
+  Integer,
+  Withdraw,
+} from '../../src/types';
 
 let who: address;
 let solo: Solo;
@@ -57,9 +62,9 @@ async function expectBalances(
   ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
-    if (i == market.toNumber()) {
+    if (i === market.toNumber()) {
       expected = { par: expectedPar, wei: expectedWei };
-    } else if (i == collateralMarket.toNumber()) {
+    } else if (i === collateralMarket.toNumber()) {
       expected = {
         par: collateralAmount,
         wei: collateralAmount,
@@ -76,7 +81,7 @@ async function expectBalances(
 
 async function expectWithdrawOkay(
   glob: Object,
-  options?: Object
+  options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
   return await solo.operation.initiate().withdraw(combinedGlob).commit(options);
@@ -85,7 +90,7 @@ async function expectWithdrawOkay(
 async function expectWithdrawRevert(
   glob: Object,
   reason?: string,
-  options?: Object
+  options?: Object,
 ) {
   await expectThrow(expectWithdrawOkay(glob, options), reason);
 }
@@ -145,7 +150,7 @@ describe('Withdraw', () => {
         value: negAmt,
         denomination: AmountDenomination.Actual,
         reference: AmountReference.Delta,
-      }
+      },
     });
 
     await expectBalances(amt, amt, amt, zero);
@@ -277,7 +282,7 @@ describe('Withdraw', () => {
       await setAccountBalance(zero);
       await expectWithdrawRevert(globs[i], reason);
 
-      //starting positive
+      // starting positive
       await setAccountBalance(par);
       await expectWithdrawRevert(globs[i], reason);
 
@@ -482,12 +487,15 @@ describe('Withdraw', () => {
   });
 
   it('Fails if withdrawing more tokens than exist', async () => {
-    await expectWithdrawRevert({
-      amount: {
-        value: negWei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
+    await expectWithdrawRevert(
+      {
+        amount: {
+          value: negWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
       },
-    }, 'Token: Transfer failed');
+      'Token: Transfer failed',
+    );
   });
 });
