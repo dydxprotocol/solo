@@ -211,7 +211,7 @@ export class AccountOperation {
     try {
       let method: TransactionObject<void>;
 
-      if (this.usePayableProxy) {
+      if (!this.usePayableProxy) {
         method = this.contracts.soloMargin.methods.operate(
          this.accounts,
          this.actions,
