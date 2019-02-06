@@ -213,14 +213,14 @@ export class AccountOperation {
 
       if (!this.usePayableProxy) {
         method = this.contracts.soloMargin.methods.operate(
-         this.accounts,
-         this.actions,
-       );
+          this.accounts,
+          this.actions,
+        );
       } else {
         method = this.contracts.payableProxy.methods.operate(
-         this.accounts,
-         this.actions,
-       );
+          this.accounts,
+          this.actions,
+        );
       }
 
       return this.contracts.callContractFunction(
