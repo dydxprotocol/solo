@@ -25,6 +25,7 @@ import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Decimal } from "../lib/Decimal.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
@@ -626,7 +627,12 @@ library OperationImpl {
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = state.fetchLiquidationPrices(args.heldMkt, args.owedMkt);
+        ) = _fetchLiquidationPrices(
+            state,
+            priceCache,
+            args.heldMkt,
+            args.owedMkt
+        );
 
         Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
 
@@ -726,11 +732,15 @@ library OperationImpl {
             args.amount
         );
 
-
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = state.fetchLiquidationPrices(args.heldMkt, args.owedMkt);
+        ) = _fetchLiquidationPrices(
+            state,
+            priceCache,
+            args.heldMkt,
+            args.owedMkt
+        );
 
         Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
 
@@ -855,5 +865,24 @@ library OperationImpl {
             );
             return false;
         }
+    }
+
+    function _fetchLiquidationPrices(
+        Storage.State storage state,
+        Monetary.Price[] memory priceCache,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
+    {
+        Monetary.Price memory owedPrice = Monetary.Price({
+            value: Decimal.mul(priceCache[owedMarketId].value, state.riskParams.liquidationSpread)
+        });
+        return (priceCache[heldMarketId], owedPrice);
     }
 }

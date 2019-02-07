@@ -324,24 +324,6 @@ library Storage {
         return (supplyValue, borrowValue);
     }
 
-    function fetchLiquidationPrices(
-        Storage.State storage state,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
-        Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
-        owedPrice.value = Decimal.mul(owedPrice.value, state.riskParams.liquidationSpread);
-        return (heldPrice, owedPrice);
-    }
-
     function isGlobalOperator(
         Storage.State storage state,
         address operator
