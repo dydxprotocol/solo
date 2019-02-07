@@ -9,6 +9,13 @@
             "transactionHash": "0xf22f21ceca789c8bb59d61af92afc7fe143958cb3a14e24b1db0414b4b974fe0"
         }
     },
+    "PayableProxyForSoloMargin": {
+        "42": {
+            "links": {},
+            "address": "0xBE4988dF35504Cab4C530f0197b3660841C50d5D",
+            "transactionHash": "0x0a0a4a89681accc10dbbe9aa787c82ebf15bb58f1c92147c3d2828265d418047"
+        }
+    },
     "TestPriceOracle": {
         "42": {
             "links": {},
