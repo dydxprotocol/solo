@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -25,11 +25,6 @@ const par = new BigNumber(100);
 const wei = new BigNumber(150);
 const negPar = new BigNumber(-100);
 const negWei = new BigNumber(-150);
-const index = {
-  lastUpdate: INTEGERS.ZERO,
-  borrow: wei.div(par),
-  supply: wei.div(par),
-};
 let defaultGlob: Withdraw;
 const CANNOT_WITHDRAW_POSITIVE = 'Exchange: Cannot transferOut positive';
 const cachedWeis = {
@@ -118,10 +113,13 @@ describe('Withdraw', () => {
     await resetEVM();
     await setupMarkets(solo, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, index),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        borrow: wei.div(par),
+        supply: wei.div(par),
+      }),
       solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
     ]);
-    await mineAvgBlock();
     snapshotId = await snapshot();
   });
 
@@ -428,6 +426,10 @@ describe('Withdraw', () => {
       await setAccountBalance(negPar);
       await expectWithdrawRevert(globs[i], CANNOT_WITHDRAW_POSITIVE);
     }
+  });
+
+  it('Succeeds for some more specific indexes and values', async () => {
+    // TODO
   });
 
   it('Succeeds to withdraw to an external address', async () => {

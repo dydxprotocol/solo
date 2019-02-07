@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -25,11 +25,6 @@ const par = new BigNumber(100);
 const wei = new BigNumber(150);
 const negPar = new BigNumber(-100);
 const negWei = new BigNumber(-150);
-const index = {
-  lastUpdate: INTEGERS.ZERO,
-  borrow: wei.div(par),
-  supply: wei.div(par),
-};
 let defaultGlob: Deposit;
 const CANNOT_DEPOSIT_NEGATIVE = 'Exchange: Cannot transferIn negative';
 const cachedWeis = {
@@ -118,11 +113,14 @@ describe('Deposit', () => {
     await resetEVM();
     await setupMarkets(solo, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, index),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        borrow: wei.div(par),
+        supply: wei.div(par),
+      }),
       solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
       solo.testing.tokenA.setMaximumSoloAllowance(who),
     ]);
-    await mineAvgBlock();
     snapshotId = await snapshot();
   });
 
@@ -344,6 +342,44 @@ describe('Deposit', () => {
     }
   });
 
+  it('Mixed for zero target par/wei', async () => {
+    const globs = [
+      {
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
+    ];
+
+    for (let i = 0; i < globs.length; i += 1) {
+      // starting from zero
+      await setAccountBalance(zero),
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, zero);
+
+      // starting positive
+      await setAccountBalance(par),
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+
+      // starting negative
+      await Promise.all([
+        setAccountBalance(negPar),
+        issueTokensToUser(wei),
+      ]);
+      await expectDepositOkay(globs[i]);
+      await expectBalances(zero, zero, zero, wei);
+    }
+  });
+
   it('Mixed for negative target par/wei', async () => {
     const globs = [
       {
@@ -390,42 +426,8 @@ describe('Deposit', () => {
     }
   });
 
-  it('Mixed for zero target par/wei', async () => {
-    const globs = [
-      {
-        amount: {
-          value: zero,
-          denomination: AmountDenomination.Principal,
-          reference: AmountReference.Target,
-        },
-      },
-      {
-        amount: {
-          value: zero,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Target,
-        },
-      },
-    ];
-
-    for (let i = 0; i < globs.length; i += 1) {
-      // starting from zero
-      await setAccountBalance(zero),
-      await expectDepositOkay(globs[i]);
-      await expectBalances(zero, zero, zero, zero);
-
-      // starting positive
-      await setAccountBalance(par),
-      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
-
-      // starting negative
-      await Promise.all([
-        setAccountBalance(negPar),
-        issueTokensToUser(wei),
-      ]);
-      await expectDepositOkay(globs[i]);
-      await expectBalances(zero, zero, zero, wei);
-    }
+  it('Succeeds for some more specific indexes and values', async () => {
+    // TODO
   });
 
   it('Succeeds for operator', async () => {
