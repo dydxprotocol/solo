@@ -127,5 +127,27 @@ describe('Trade', () => {
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });
+
+    // TODO: expect log
+  });
+
+  it('Succeeds for all sorts of positive and negative amounts', async () => {
+    // TODO
+  });
+
+  it('Succeeds for zero amounts', async () => {
+    // TODO
+  });
+
+  it('Fails for non-operator sender', async () => {
+    // TODO
+  });
+
+  it('Fails for non-operator autoTrader', async () => {
+    // TODO
+  });
+
+  it('Fails for one-sided trades', async () => {
+    // TODO
   });
 });

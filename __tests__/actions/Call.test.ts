@@ -1,55 +1,116 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { address } from '../../src/types';
-import { mineAvgBlock, resetEVM } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
+import { expectThrow } from '../../src/lib/Expect';
+import { address, Call } from '../../src/types';
+
+let who: address;
+let operator: address;
+let solo: Solo;
+let accounts: address[];
+const accountNumber = INTEGERS.ZERO;
+const accountData = new BigNumber(100);
+const senderData = new BigNumber(50);
+let defaultGlob: Call;
+
+async function expectCallOkay(
+  glob: Object,
+  options?: Object,
+) {
+  const combinedGlob = { ...defaultGlob, ...glob };
+  return await solo.operation.initiate().call(combinedGlob).commit(options);
+}
+
+async function expectCallRevert(
+  glob: Object,
+  reason?: string,
+  options?: Object,
+) {
+  await expectThrow(expectCallOkay(glob, options), reason);
+}
+
+async function verifyDataIntegrity(sender: address) {
+  const [
+    foundAccountData,
+    foundSenderData,
+  ] = await Promise.all([
+    solo.testing.callee.getAccountData(who, accountNumber),
+    solo.testing.callee.getSenderData(sender),
+  ]);
+
+  expect(foundAccountData).toEqual(accountData.toFixed(0));
+  expect(foundSenderData).toEqual(senderData.toFixed(0));
+}
 
 describe('Call', () => {
-  let solo: Solo;
-  let accounts: address[];
+  let snapshotId: string;
 
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
     accounts = r.accounts;
+    who = solo.getDefaultAccount();
+    operator = accounts[5];
+    defaultGlob = {
+      primaryAccountOwner: who,
+      primaryAccountId: accountNumber,
+      callee: solo.testing.callee.getAddress(),
+      data: [],
+    };
+
+    await resetEVM();
+    await setupMarkets(solo, accounts);
+    snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
-    await resetEVM();
-    await mineAvgBlock();
+    await resetEVM(snapshotId);
   });
 
   it('Basic call test', async () => {
-    await setupMarkets(solo, accounts);
+    const txResult = await expectCallOkay({
+      data: toBytes(accountData, senderData),
+    });
 
-    const accountData = new BigNumber(100);
-    const senderData = new BigNumber(50);
-    const who = solo.getDefaultAccount();
-    const accountNumber = INTEGERS.ONE;
+    await verifyDataIntegrity(who);
 
-    const { gasUsed } = await solo.operation.initiate()
-      .call({
-        primaryAccountOwner: who,
-        primaryAccountId: accountNumber,
-        callee: solo.testing.callee.getAddress(),
+    // TODO: expect log
+
+    console.log(`\tCall gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Succeeds for operator', async () => {
+    await solo.permissions.approveOperator(operator, { from: who });
+    await expectCallOkay(
+      {
         data: toBytes(accountData, senderData),
-      })
-      .commit();
+      },
+      { from: operator },
+    );
+    await verifyDataIntegrity(operator);
+  });
 
-    console.log(`\tCall gas used: ${gasUsed}`);
+  it('Fails for non-operator', async () => {
+    await expectCallRevert(
+      {
+        data: toBytes(accountData, senderData),
+      },
+      'Storage: Unpermissioned Operator',
+      { from: operator },
+    );
+  });
 
-    const [
-      foundAccountData,
-      foundSenderData,
-    ] = await Promise.all([
-      solo.testing.callee.getAccountData(who, accountNumber),
-      solo.testing.callee.getSenderData(who), // TODO make sender a different address
-    ]);
-
-    expect(foundAccountData).toEqual(accountData.toFixed(0));
-    expect(foundSenderData).toEqual(senderData.toFixed(0));
+  it('Fails for non-ICallee contract', async () => {
+    await expectCallRevert(
+      {
+        data: toBytes(accountData, senderData),
+        callee: solo.testing.priceOracle.getAddress(),
+      },
+      'Returned error: VM Exception while processing transaction: revert',
+    );
   });
 });

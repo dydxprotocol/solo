@@ -69,7 +69,7 @@ contract TestToken {
 
     function transfer(address to, uint256 value) public returns (bool) {
         if (balances[msg.sender] >= value) {
-            balances[msg.sender] -= value;
+            balances[msg.sender] = balances[msg.sender].sub(value);
             balances[to] = balances[to].add(value);
             emit Transfer(
                 address(this),
