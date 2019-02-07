@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Solo } from '../../src/Solo';
 import { address } from '../../src/types';
+import { mineAvgBlock } from './EVM';
 
 export async function setupMarkets(solo: Solo, accounts: address[]): Promise<void> {
   const priceOracle = solo.testing.priceOracle.getAddress();
@@ -41,4 +42,6 @@ export async function setupMarkets(solo: Solo, accounts: address[]): Promise<voi
     interestSetter,
     { from: accounts[0] },
   );
+
+  await mineAvgBlock();
 }
