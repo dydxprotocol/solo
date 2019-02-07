@@ -99,6 +99,13 @@ async function deploySecondLayer(deployer, network) {
     SoloMargin.address,
     wethAddress,
   );
+
+  const soloMargin = await SoloMargin.deployed();
+
+  await soloMargin.ownerSetGlobalOperator(
+    PayableProxyForSoloMargin.address,
+    true,
+  );
 }
 
 async function getOrDeployWeth(deployer, network) {
