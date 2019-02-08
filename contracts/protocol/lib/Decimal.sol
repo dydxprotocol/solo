@@ -19,6 +19,7 @@
 pragma solidity ^0.5.0;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "./Math.sol";
 
 
 /**
@@ -50,73 +51,6 @@ library Decimal {
         pure
         returns (uint256)
     {
-        return target.mul(d.value).div(BASE);
-    }
-
-    function div(
-        uint256 target,
-        D256 memory d
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return target.mul(BASE).div(d.value);
-    }
-
-    // ============ Decimal <-> Decimal Functions ============
-
-    function mul(
-        D256 memory a,
-        D256 memory b
-    )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: a.value.mul(b.value).div(BASE) });
-    }
-
-    function div(
-        D256 memory a,
-        D256 memory b
-    )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: a.value.mul(BASE).div(b.value) });
-    }
-
-    function add(
-        D256 memory a,
-        D256 memory b
-    )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: a.value.add(b.value) });
-    }
-
-    function sub(
-        D256 memory a,
-        D256 memory b
-    )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: a.value.sub(b.value) });
-    }
-
-    // ============ Creator Functions ============
-
-    function one()
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: BASE });
+        return Math.getPartial(target, d.value, BASE);
     }
 }

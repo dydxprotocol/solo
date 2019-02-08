@@ -112,16 +112,15 @@ library Interest {
         pure
         returns (Types.Wei memory)
     {
-        uint256 inputValue = uint256(input.value);
         if (input.sign) {
             return Types.Wei({
                 sign: true,
-                value: inputValue.getPartial(index.supply, BASE)
+                value: Math.getPartialRoundUp(input.value, index.supply, BASE)
             });
         } else {
             return Types.Wei({
                 sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+                value: Math.getPartial(input.value, index.borrow, BASE)
             });
         }
     }
@@ -137,12 +136,12 @@ library Interest {
         if (input.sign) {
             return Types.Par({
                 sign: true,
-                value: input.value.getPartial(BASE, index.supply).to128()
+                value: Math.getPartial(input.value, BASE, index.supply).to128()
             });
         } else {
             return Types.Par({
                 sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+                value: Math.getPartialRoundUp(input.value, BASE, index.borrow).to128()
             });
         }
     }

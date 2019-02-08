@@ -271,12 +271,49 @@ library Storage {
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        return oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Require.that(
+            price.value != 0,
+            FILE,
+            "Invalid price",
+            marketId
+        );
+        return price;
+    }
+
+    function fetchPriceWithPremium(
+        Storage.State storage state,
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Monetary.Price memory)
+    {
+        Monetary.Price memory price = state.fetchPrice(marketId);
+        price.value = Decimal.mul(price.value, state.riskParams.liquidationSpread);
+        return price;
+    }
+
+    function isCollateralized(
+        Storage.State storage state,
+        Monetary.Value memory supplyValue,
+        Monetary.Value memory borrowValue
+    )
+        internal
+        view
+        returns (bool)
+    {
+        if (borrowValue.value == 0) {
+            return true;
+        }
+        return supplyValue.value >=
+            Decimal.mul(borrowValue.value, state.riskParams.liquidationRatio);
     }
 
     function getValues(
         Storage.State storage state,
-        Account.Info memory account
+        Account.Info memory account,
+        bool checkMinBorrow
     )
         internal
         view
@@ -301,6 +338,16 @@ library Storage {
             if (userWei.sign) {
                 supplyValue = Monetary.add(supplyValue, overallValue);
             } else {
+                if (checkMinBorrow) {
+                    Require.that(
+                        borrowValue.value == 0 ||
+                            borrowValue.value >= state.riskParams.minBorrowedValue.value,
+                        FILE,
+                        "Borrow value too low",
+                        m,
+                        borrowValue.value
+                    );
+                }
                 borrowValue = Monetary.add(borrowValue, overallValue);
             }
         }
@@ -320,17 +367,14 @@ library Storage {
         Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
         Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
 
-        // get the actual price ratio
-        Decimal.D256 memory priceRatio = Decimal.D256({
+        // get price ratio including the spread
+        return Decimal.D256({
             value: Math.getPartial(
-                Decimal.one().value,
+                state.riskParams.liquidationSpread.value,
                 owedPrice.value,
                 heldPrice.value
             )
         });
-
-        // return the price ratio including the spread
-        return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
     }
 
     function isGlobalOperator(
@@ -563,6 +607,9 @@ library Storage {
     )
         internal
     {
+        if (deltaWei.isZero()) {
+            return;
+        }
         Interest.Index memory index = state.getIndex(marketId);
         Types.Wei memory oldWei = state.getWei(account, marketId);
         Types.Wei memory newWei = oldWei.add(deltaWei);
