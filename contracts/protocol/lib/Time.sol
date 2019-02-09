@@ -31,7 +31,7 @@ library Time {
 
     // ============ Constants ============
 
-    string constant FILE = "Time";
+    bytes32 constant FILE = "Time";
 
     // ============ Library Functions ============
 

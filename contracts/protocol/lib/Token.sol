@@ -32,7 +32,7 @@ library Token {
 
     // ============ Constants ============
 
-    string constant FILE = "Token";
+    bytes32 constant FILE = "Token";
 
     // ============ Library Functions ============
 

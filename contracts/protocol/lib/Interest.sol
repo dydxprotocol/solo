@@ -37,7 +37,7 @@ library Interest {
 
     // ============ Constants ============
 
-    string constant FILE = "Interest";
+    bytes32 constant FILE = "Interest";
     uint64 constant BASE = 10**18;
 
     // ============ Structs ============

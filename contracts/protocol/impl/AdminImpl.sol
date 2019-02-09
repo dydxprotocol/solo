@@ -43,7 +43,7 @@ library AdminImpl {
 
     // ============ Constants ============
 
-    string constant FILE = "AdminImpl";
+    bytes32 constant FILE = "AdminImpl";
 
     // ============ Token Functions ============
 

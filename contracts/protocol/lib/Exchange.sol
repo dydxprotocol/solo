@@ -36,7 +36,7 @@ library Exchange {
 
     // ============ Constants ============
 
-    string constant FILE = "Exchange";
+    bytes32 constant FILE = "Exchange";
 
     // ============ Library Functions ============
 
