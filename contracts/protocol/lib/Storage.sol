@@ -289,23 +289,20 @@ library Storage {
 
         uint256 numMarkets = priceCache.length;
         for (uint256 m = 0; m < numMarkets; m++) {
+            if (priceCache[m].value == 0) {
+                continue;
+            }
+
             Types.Wei memory userWei = state.getWei(account, m);
 
             if (userWei.isZero()) {
                 continue;
             }
 
-            if (priceCache[m].value == 0) {
-                priceCache[m] = state.fetchPrice(m);
-            }
-
-            Monetary.Value memory overallValue = Monetary.getValue(
-                priceCache[m],
-                userWei.value
-            );
+            Monetary.Value memory assetValue = Monetary.getValue(priceCache[m], userWei.value);
 
             if (userWei.sign) {
-                supplyValue = Monetary.add(supplyValue, overallValue);
+                supplyValue = Monetary.add(supplyValue, assetValue);
             } else {
                 if (requireMinBorrow) {
                     Require.that(
@@ -317,7 +314,7 @@ library Storage {
                         borrowValue.value
                     );
                 }
-                borrowValue = Monetary.add(borrowValue, overallValue);
+                borrowValue = Monetary.add(borrowValue, assetValue);
             }
         }
 
