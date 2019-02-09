@@ -271,7 +271,14 @@ library Storage {
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        return oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Require.that(
+            price.value != 0,
+            FILE,
+            "Price cannot be zero",
+            marketId
+        );
+        return price;
     }
 
     function getValues(
