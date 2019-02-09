@@ -276,7 +276,8 @@ library Storage {
 
     function getValues(
         Storage.State storage state,
-        Account.Info memory account
+        Account.Info memory account,
+        bool requireMinBorrow
     )
         internal
         view
@@ -301,6 +302,16 @@ library Storage {
             if (userWei.sign) {
                 supplyValue = Monetary.add(supplyValue, overallValue);
             } else {
+                if (requireMinBorrow) {
+                    Require.that(
+                        borrowValue.value == 0 ||
+                        borrowValue.value >= state.riskParams.minBorrowedValue.value,
+                        FILE,
+                        "Borrow value too low",
+                        m,
+                        borrowValue.value
+                    );
+                }
                 borrowValue = Monetary.add(borrowValue, overallValue);
             }
         }
@@ -308,29 +319,22 @@ library Storage {
         return (supplyValue, borrowValue);
     }
 
-    function fetchPriceRatio(
+    function fetchLiquidationPrices(
         Storage.State storage state,
         uint256 heldMarketId,
         uint256 owedMarketId
     )
         internal
         view
-        returns (Decimal.D256 memory)
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
     {
         Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
         Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
-
-        // get the actual price ratio
-        Decimal.D256 memory priceRatio = Decimal.D256({
-            value: Math.getPartial(
-                Decimal.one().value,
-                owedPrice.value,
-                heldPrice.value
-            )
-        });
-
-        // return the price ratio including the spread
-        return Decimal.mul(priceRatio, state.riskParams.liquidationSpread);
+        owedPrice.value = Decimal.mul(owedPrice.value, state.riskParams.liquidationSpread);
+        return (heldPrice, owedPrice);
     }
 
     function isGlobalOperator(
@@ -463,31 +467,23 @@ library Storage {
         return (newPar, deltaWei);
     }
 
-    function valuesToStatus(
+    function isCollateralized(
         Storage.State storage state,
         Monetary.Value memory supplyValue,
         Monetary.Value memory borrowValue
     )
         internal
         view
-        returns (Account.Status)
+        returns (bool)
     {
         if (borrowValue.value == 0) {
-            return Account.Status.Normal;
-        }
-
-        if (supplyValue.value == 0) {
-            return Account.Status.Vapor;
+            return true;
         }
 
         uint256 requiredSupply =
             Decimal.mul(borrowValue.value, state.riskParams.liquidationRatio);
 
-        if (supplyValue.value >= requiredSupply) {
-            return Account.Status.Normal;
-        } else {
-            return Account.Status.Liquid;
-        }
+        return supplyValue.value >= requiredSupply;
     }
 
     // =============== Setter Functions ===============
@@ -563,6 +559,9 @@ library Storage {
     )
         internal
     {
+        if (deltaWei.isZero()) {
+            return;
+        }
         Interest.Index memory index = state.getIndex(marketId);
         Types.Wei memory oldWei = state.getWei(account, marketId);
         Types.Wei memory newWei = oldWei.add(deltaWei);

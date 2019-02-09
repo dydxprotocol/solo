@@ -23,9 +23,9 @@ import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
-import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
@@ -56,6 +56,8 @@ library OperationImpl {
     )
         public
     {
+        _verifyNoDuplicateAccounts(accounts);
+
         (
             bool[] memory primaryAccounts,
             bool[] memory relevantMarkets
@@ -76,7 +78,7 @@ library OperationImpl {
             actions
         );
 
-        _verify(
+        _verifyAccountCollateralization(
             state,
             accounts,
             primaryAccounts
@@ -84,6 +86,25 @@ library OperationImpl {
     }
 
     // ============ Helper Functions ============
+
+    function _verifyNoDuplicateAccounts(
+        Account.Info[] memory accounts
+    )
+        private
+        pure
+    {
+        for (uint256 a = 0; a < accounts.length; a++) {
+            for (uint256 b = a + 1; b < accounts.length; b++) {
+                Require.that(
+                    !Account.equals(accounts[a], accounts[b]),
+                    FILE,
+                    "Cannot duplicate accounts",
+                    a,
+                    b
+                );
+            }
+        }
+    }
 
     function _getRelevantAccountsAndMarkets(
         Storage.State storage state,
@@ -101,6 +122,7 @@ library OperationImpl {
         bool[] memory relevantMarkets = new bool[](numMarkets);
         bool[] memory primaryAccounts = new bool[](accounts.length);
 
+        // keep track of primary accounts and indexes that need updating
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory arg = actions[i];
             Actions.ActionType ttype = arg.actionType;
@@ -216,58 +238,40 @@ library OperationImpl {
         }
     }
 
-    function _verify(
+    function _verifyAccountCollateralization(
         Storage.State storage state,
         Account.Info[] memory accounts,
         bool[] memory primaryAccounts
     )
         private
     {
-        Monetary.Value memory minBorrowedValue = state.riskParams.minBorrowedValue;
-
-        for (uint256 a = 0; a < accounts.length; a++) {
-            for (uint256 b = a + 1; b < accounts.length; b++) {
-                Require.that(
-                    !Account.equals(accounts[a], accounts[b]),
-                    FILE,
-                    "Cannot duplicate accounts",
-                    a,
-                    b
-                );
-            }
-        }
-
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
+
+            // get borrow and supply values of the account; also validate minBorrowedValue
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = state.getValues(account);
+            ) = state.getValues(account, true);
 
-            // check minimum borrowed value for all accounts
+            // don't check collateralization for non-primary accounts
+            if (!primaryAccounts[a]) {
+                continue;
+            }
+
+            // check collateralization for primary accounts
             Require.that(
-                borrowValue.value == 0 || borrowValue.value >= minBorrowedValue.value,
+                state.isCollateralized(supplyValue, borrowValue),
                 FILE,
-                "Borrow value too low",
+                "Undercollateralized account",
                 a,
-                borrowValue.value,
-                minBorrowedValue.value
+                supplyValue.value,
+                borrowValue.value
             );
 
-            // check collateralization for non-liquidated accounts
-            if (primaryAccounts[a]) {
-                Require.that(
-                    state.valuesToStatus(supplyValue, borrowValue) == Account.Status.Normal,
-                    FILE,
-                    "Undercollateralized account",
-                    a,
-                    supplyValue.value,
-                    borrowValue.value
-                );
-
-                if (state.getStatus(account) != Account.Status.Normal) {
-                    state.setStatus(account, Account.Status.Normal);
-                }
+            // ensure status is normal for primary accounts
+            if (state.getStatus(account) != Account.Status.Normal) {
+                state.setStatus(account, Account.Status.Normal);
             }
         }
     }
@@ -589,9 +593,9 @@ library OperationImpl {
             (
                 Monetary.Value memory supplyValue,
                 Monetary.Value memory borrowValue
-            ) = state.getValues(args.liquidAccount);
+            ) = state.getValues(args.liquidAccount, false);
             Require.that(
-                Account.Status.Liquid == state.valuesToStatus(supplyValue, borrowValue),
+                !state.isCollateralized(supplyValue, borrowValue),
                 FILE,
                 "Unliquidatable account"
             );
@@ -619,14 +623,17 @@ library OperationImpl {
             args.amount
         );
 
-        Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
+        (
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPrice
+        ) = state.fetchLiquidationPrices(args.heldMkt, args.owedMkt);
 
-        Types.Wei memory heldWei = _owedWeiToHeldWei(priceRatio, owedWei);
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(priceRatio, heldWei);
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
             state.setPar(
                 args.liquidAccount,
@@ -715,14 +722,18 @@ library OperationImpl {
             args.amount
         );
 
-        Decimal.D256 memory priceRatio = state.fetchPriceRatio(args.owedMkt, args.heldMkt);
 
-        Types.Wei memory heldWei = _owedWeiToHeldWei(priceRatio, owedWei);
+        (
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPrice
+        ) = state.fetchLiquidationPrices(args.heldMkt, args.owedMkt);
+
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(priceRatio, heldWei);
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
             state.setParFromDeltaWei(
                 args.vaporAccount,
@@ -777,8 +788,9 @@ library OperationImpl {
     // ============ Private Functions ============
 
     function _owedWeiToHeldWei(
-        Decimal.D256 memory priceRatio,
-        Types.Wei memory owedWei
+        Types.Wei memory owedWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
     )
         private
         pure
@@ -786,13 +798,14 @@ library OperationImpl {
     {
         return Types.Wei({
             sign: false,
-            value: Decimal.mul(owedWei.value, priceRatio)
+            value: Math.getPartial(owedWei.value, owedPrice.value, heldPrice.value)
         });
     }
 
     function _heldWeiToOwedWei(
-        Decimal.D256 memory priceRatio,
-        Types.Wei memory heldWei
+        Types.Wei memory heldWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
     )
         private
         pure
@@ -800,7 +813,7 @@ library OperationImpl {
     {
         return Types.Wei({
             sign: true,
-            value: Decimal.div(heldWei.value, priceRatio)
+            value: Math.getPartialRoundUp(heldWei.value, heldPrice.value, owedPrice.value)
         });
     }
 
