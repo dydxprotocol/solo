@@ -58,7 +58,7 @@ library Math {
         pure
         returns (uint256)
     {
-        if (numerator == 0 || target == 0) {
+        if (target == 0 || numerator == 0) {
             // SafeMath will check for zero denominator
             return SafeMath.div(0, denominator);
         }

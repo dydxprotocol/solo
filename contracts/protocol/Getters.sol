@@ -269,7 +269,7 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        return g_state.getValues(account);
+        return g_state.getValues(account, false);
     }
 
     function getAccountBalances(
