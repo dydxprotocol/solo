@@ -41,6 +41,7 @@ contract Getters is
     State
 {
     using Storage for Storage.State;
+    using Types for Types.Par;
 
     // ============ Getters for Risk ============
 
@@ -269,7 +270,13 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        return g_state.getValues(account, false);
+        Monetary.Price[] memory priceCache = new Monetary.Price[](g_state.numMarkets);
+        for (uint256 m = 0; m < g_state.numMarkets; m++) {
+            if (!g_state.getPar(account, m).isZero()) {
+                priceCache[m] = g_state.fetchPrice(m);
+            }
+        }
+        return g_state.getValues(account, priceCache, false);
     }
 
     function getAccountBalances(

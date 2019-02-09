@@ -271,12 +271,20 @@ library Storage {
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        return oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Require.that(
+            price.value != 0,
+            FILE,
+            "Price cannot be zero",
+            marketId
+        );
+        return price;
     }
 
     function getValues(
         Storage.State storage state,
         Account.Info memory account,
+        Monetary.Price[] memory priceCache,
         bool requireMinBorrow
     )
         internal
@@ -286,21 +294,22 @@ library Storage {
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        uint256 numMarkets = state.numMarkets;
+        uint256 numMarkets = priceCache.length;
         for (uint256 m = 0; m < numMarkets; m++) {
+            if (priceCache[m].value == 0) {
+                continue;
+            }
+
             Types.Wei memory userWei = state.getWei(account, m);
 
             if (userWei.isZero()) {
                 continue;
             }
 
-            Monetary.Value memory overallValue = Monetary.getValue(
-                state.fetchPrice(m),
-                userWei.value
-            );
+            Monetary.Value memory assetValue = Monetary.getValue(priceCache[m], userWei.value);
 
             if (userWei.sign) {
-                supplyValue = Monetary.add(supplyValue, overallValue);
+                supplyValue = Monetary.add(supplyValue, assetValue);
             } else {
                 if (requireMinBorrow) {
                     Require.that(
@@ -312,29 +321,11 @@ library Storage {
                         borrowValue.value
                     );
                 }
-                borrowValue = Monetary.add(borrowValue, overallValue);
+                borrowValue = Monetary.add(borrowValue, assetValue);
             }
         }
 
         return (supplyValue, borrowValue);
-    }
-
-    function fetchLiquidationPrices(
-        Storage.State storage state,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        Monetary.Price memory heldPrice = state.fetchPrice(heldMarketId);
-        Monetary.Price memory owedPrice = state.fetchPrice(owedMarketId);
-        owedPrice.value = Decimal.mul(owedPrice.value, state.riskParams.liquidationSpread);
-        return (heldPrice, owedPrice);
     }
 
     function isGlobalOperator(
