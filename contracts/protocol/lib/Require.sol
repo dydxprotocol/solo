@@ -32,13 +32,17 @@ library Require {
     uint256 constant ASCII_ZERO = 48; // '0'
     uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
     uint256 constant ASCII_LOWER_EX = 120; // 'x'
+    bytes2 constant COLON = 0x3a20; // ': '
+    bytes2 constant COMMA = 0x2c20; // ', '
+    bytes2 constant LPAREN = 0x203c; // ' <'
+    byte constant RPAREN = 0x3e; // '>'
 
     // ============ Library Functions ============
 
     function that(
         bool must,
-        string memory file,
-        string memory reason
+        bytes32 file,
+        bytes32 reason
     )
         internal
         pure
@@ -47,9 +51,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        file,
-                        ": ",
-                        reason
+                        stringify(file),
+                        COLON,
+                        stringify(reason)
                     )
                 )
             );
@@ -58,8 +62,8 @@ library Require {
 
     function that(
         bool must,
-        string memory file,
-        string memory reason,
+        bytes32 file,
+        bytes32 reason,
         uint256 payloadA
     )
         internal
@@ -69,12 +73,12 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        file,
-                        ": ",
-                        reason,
-                        " <",
+                        stringify(file),
+                        COLON,
+                        stringify(reason),
+                        LPAREN,
                         stringify(payloadA),
-                        ">"
+                        RPAREN
                     )
                 )
             );
@@ -83,8 +87,8 @@ library Require {
 
     function that(
         bool must,
-        string memory file,
-        string memory reason,
+        bytes32 file,
+        bytes32 reason,
         uint256 payloadA,
         uint256 payloadB
     )
@@ -95,14 +99,14 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        file,
-                        ": ",
-                        reason,
-                        " <",
+                        stringify(file),
+                        COLON,
+                        stringify(reason),
+                        LPAREN,
                         stringify(payloadA),
-                        ", ",
+                        COMMA,
                         stringify(payloadB),
-                        ">"
+                        RPAREN
                     )
                 )
             );
@@ -111,8 +115,8 @@ library Require {
 
     function that(
         bool must,
-        string memory file,
-        string memory reason,
+        bytes32 file,
+        bytes32 reason,
         uint256 payloadA,
         uint256 payloadB,
         uint256 payloadC
@@ -124,16 +128,16 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        file,
-                        ": ",
-                        reason,
-                        " <",
+                        stringify(file),
+                        COLON,
+                        stringify(reason),
+                        LPAREN,
                         stringify(payloadA),
-                        ", ",
+                        COMMA,
                         stringify(payloadB),
-                        ", ",
+                        COMMA,
                         stringify(payloadC),
-                        ">"
+                        RPAREN
                     )
                 )
             );
@@ -142,8 +146,8 @@ library Require {
 
     function that(
         bool must,
-        string memory file,
-        string memory reason,
+        bytes32 file,
+        bytes32 reason,
         address payloadA
     )
         internal
@@ -154,11 +158,11 @@ library Require {
                 string(
                     abi.encodePacked(
                         file,
-                        ": ",
-                        reason,
-                        " <",
+                        COLON,
+                        stringify(reason),
+                        LPAREN,
                         stringify(payloadA),
-                        ">"
+                        RPAREN
                     )
                 )
             );
@@ -166,6 +170,26 @@ library Require {
     }
 
     // ============ Private Functions ============
+
+    function stringify(
+        bytes32 b
+    )
+        private
+        pure
+        returns (bytes memory)
+    {
+        bytes memory r = abi.encodePacked(b);
+        for (uint256 i = 0; i < 32; i++) {
+            if (r[i] == 0) {
+                /* solium-disable-next-line security/no-inline-assembly */
+                assembly {
+                    mstore(r, i) // r.length = i;
+                }
+                return r;
+            }
+        }
+        return r;
+    }
 
     function stringify(
         uint256 i
@@ -203,11 +227,11 @@ library Require {
     )
         private
         pure
-        returns (byte[42] memory)
+        returns (bytes memory)
     {
         uint256 z = uint256(a);
 
-        byte[42] memory result;
+        bytes memory result = new bytes(42);
         result[0] = byte(uint8(ASCII_ZERO));
         result[1] = byte(uint8(ASCII_LOWER_EX));
 

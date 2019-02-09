@@ -49,7 +49,7 @@ library Storage {
 
     // ============ Constants ============
 
-    string constant FILE = "Storage";
+    bytes32 constant FILE = "Storage";
 
     // ============ Structs ============
 

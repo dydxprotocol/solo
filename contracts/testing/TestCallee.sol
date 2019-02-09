@@ -41,7 +41,7 @@ contract TestCallee is
 {
     // ============ Constants ============
 
-    string constant FILE = "TestCallee";
+    bytes32 constant FILE = "TestCallee";
 
     // ============ Events ============
 

@@ -38,7 +38,7 @@ contract TestAutoTrader is
 {
     // ============ Constants ============
 
-    string constant FILE = "TestAutoTrader";
+    bytes32 constant FILE = "TestAutoTrader";
 
     // ============ Events ============
 

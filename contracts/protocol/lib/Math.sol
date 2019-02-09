@@ -33,7 +33,7 @@ library Math {
 
     // ============ Constants ============
 
-    string constant FILE = "Math";
+    bytes32 constant FILE = "Math";
 
     // ============ Library Functions ============
 

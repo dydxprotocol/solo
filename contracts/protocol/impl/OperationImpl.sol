@@ -46,7 +46,7 @@ library OperationImpl {
 
     // ============ Constants ============
 
-    string constant FILE = "OperationImpl";
+    bytes32 constant FILE = "OperationImpl";
 
     // ============ Public Functions ============
 

@@ -39,7 +39,7 @@ contract PayableProxyForSoloMargin is
 {
     // ============ Constants ============
 
-    string constant FILE = "PayableProxyForSoloMargin";
+    bytes32 constant FILE = "PayableProxyForSoloMargin";
 
     // ============ Storage ============
 

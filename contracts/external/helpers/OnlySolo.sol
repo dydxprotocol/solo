@@ -33,7 +33,7 @@ contract OnlySolo {
 
     // ============ Constants ============
 
-    string constant FILE = "OnlySolo";
+    bytes32 constant FILE = "OnlySolo";
 
     // ============ Storage ============
 
