@@ -384,10 +384,14 @@ library Storage {
         view
         returns (Types.Par memory, Types.Wei memory)
     {
-        Interest.Index memory index = state.getIndex(marketId);
         Types.Par memory oldPar = state.getPar(account, marketId);
-        Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
 
+        if (amount.value == 0 && amount.ref == Types.AssetReference.Delta) {
+            return (oldPar, Types.zeroWei());
+        }
+
+        Interest.Index memory index = state.getIndex(marketId);
+        Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
         Types.Par memory newPar;
         Types.Wei memory deltaWei;
 
@@ -400,8 +404,7 @@ library Storage {
                 deltaWei = deltaWei.sub(oldWei);
             }
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
-        }
-        else if (amount.denomination == Types.AssetDenomination.Par) {
+        } else { // AssetDenomination.Par
             newPar = Types.Par({
                 sign: amount.sign,
                 value: amount.value.to128()
