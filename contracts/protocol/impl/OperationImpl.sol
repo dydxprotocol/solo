@@ -531,7 +531,7 @@ library OperationImpl {
             args.amount
         );
 
-        Types.Wei memory outputWei = IAutoTrader(args.autoTrader).getTradeCost(
+        Actions.AssetAmount memory outputAmount = IAutoTrader(args.autoTrader).getTradeCost(
             args.inputMkt,
             args.outputMkt,
             args.makerAccount,
@@ -542,8 +542,17 @@ library OperationImpl {
             args.tradeData
         );
 
+        (
+            Types.Par memory newOutputPar,
+            Types.Wei memory outputWei
+        ) = state.getNewParAndDeltaWei(
+            args.makerAccount,
+            args.outputMkt,
+            outputAmount
+        );
+
         Require.that(
-            outputWei.sign != inputWei.sign,
+            outputWei.isZero() || inputWei.isZero() || outputWei.sign != inputWei.sign,
             FILE,
             "Trades cannot be one-sided"
         );
@@ -554,10 +563,10 @@ library OperationImpl {
             args.inputMkt,
             newInputPar
         );
-        state.setParFromDeltaWei(
+        state.setPar(
             args.makerAccount,
             args.outputMkt,
-            outputWei
+            newOutputPar
         );
 
         // set the balance for the taker

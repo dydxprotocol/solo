@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";
 import { Account } from "../protocol/lib/Account.sol";
+import { Actions } from "../protocol/lib/Actions.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -140,7 +141,7 @@ contract TestAutoTrader is
         bytes memory tradeData
     )
         public
-        returns (Types.Wei memory)
+        returns (Actions.AssetAmount memory)
     {
         if (requireInputMarketId != 0) {
             Require.that(
@@ -223,8 +224,10 @@ contract TestAutoTrader is
 
         setDataInternal(input, 0);
 
-        return Types.Wei({
+        return Actions.AssetAmount({
             sign: true,
+            denomination: Actions.AssetDenomination.Wei,
+            ref: Actions.AssetReference.Delta,
             value: output
         });
     }
