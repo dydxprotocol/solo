@@ -31,6 +31,25 @@ import { Math } from "./Math.sol";
 library Types {
     using Math for uint256;
 
+    // ============ AssetAmount ============
+
+    enum AssetDenomination {
+        Wei, // the amount is denominated in wei
+        Par  // the amount is denominated in par
+    }
+
+    enum AssetReference {
+        Delta, // the amount is given as a delta from the current value
+        Target // the amount is given as an exact number to end up at
+    }
+
+    struct AssetAmount {
+        bool sign;
+        AssetDenomination denomination;
+        AssetReference ref;
+        uint256 value;
+    }
+
     // ============ Par (Principal Amount) ============
 
     struct TotalPar {

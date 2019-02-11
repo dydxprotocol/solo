@@ -24,6 +24,7 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { Account } from "../../protocol/lib/Account.sol";
+import { Actions } from "../../protocol/lib/Actions.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
@@ -107,7 +108,7 @@ contract Expiry is
         public
         // view
         onlySolo(msg.sender)
-        returns (Types.Wei memory)
+        returns (Types.AssetAmount memory)
     {
         // input validation
         Require.that(
@@ -147,18 +148,18 @@ contract Expiry is
         );
 
         // get return value
-        Types.Wei memory outputWei = inputWeiToOutputWei(
+        Types.AssetAmount memory output = inputWeiToOutput(
             inputWei,
             inputMarketId,
             outputMarketId
         );
         Require.that(
-            outputWei.value <= maxOutputWei.value,
+            output.value <= maxOutputWei.value,
             FILE,
             "Collateral cannot be overtaken"
         );
 
-        return outputWei;
+        return output;
     }
 
     // ============ Private Functions ============
@@ -191,14 +192,14 @@ contract Expiry is
         );
     }
 
-    function inputWeiToOutputWei(
+    function inputWeiToOutput(
         Types.Wei memory inputWei,
         uint256 inputMarketId,
         uint256 outputMarketId
     )
         private
         view
-        returns (Types.Wei memory)
+        returns (Types.AssetAmount memory)
     {
         Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpread();
         uint256 nonSpreadValue = Math.getPartial(
@@ -206,8 +207,10 @@ contract Expiry is
             SOLO_MARGIN.getMarketPrice(inputMarketId).value,
             SOLO_MARGIN.getMarketPrice(outputMarketId).value
         );
-        return Types.Wei({
+        return Types.AssetAmount({
             sign: false,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
             value: Decimal.mul(nonSpreadValue, spread)
         });
     }

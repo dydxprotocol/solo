@@ -44,5 +44,5 @@ contract IAutoTrader {
         bytes memory data
     )
         public
-        returns (Types.Wei memory);
+        returns (Types.AssetAmount memory);
 }

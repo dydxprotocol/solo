@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
-import { Actions } from "./Actions.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
 import { Math } from "./Math.sol";
@@ -379,7 +378,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         uint256 marketId,
-        Actions.AssetAmount memory amount
+        Types.AssetAmount memory amount
     )
         internal
         view
@@ -392,22 +391,22 @@ library Storage {
         Types.Par memory newPar;
         Types.Wei memory deltaWei;
 
-        if (amount.denomination == Actions.AssetDenomination.Wei) {
+        if (amount.denomination == Types.AssetDenomination.Wei) {
             deltaWei = Types.Wei({
                 sign: amount.sign,
                 value: amount.value
             });
-            if (amount.ref == Actions.AssetReference.Target) {
+            if (amount.ref == Types.AssetReference.Target) {
                 deltaWei = deltaWei.sub(oldWei);
             }
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
         }
-        else if (amount.denomination == Actions.AssetDenomination.Par) {
+        else if (amount.denomination == Types.AssetDenomination.Par) {
             newPar = Types.Par({
                 sign: amount.sign,
                 value: amount.value.to128()
             });
-            if (amount.ref == Actions.AssetReference.Delta) {
+            if (amount.ref == Types.AssetReference.Delta) {
                 newPar = oldPar.add(newPar);
             }
             deltaWei = Interest.parToWei(newPar, index).sub(oldWei);
@@ -420,7 +419,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         uint256 marketId,
-        Actions.AssetAmount memory amount
+        Types.AssetAmount memory amount
     )
         internal
         view
