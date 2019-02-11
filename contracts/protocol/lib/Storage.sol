@@ -310,16 +310,14 @@ library Storage {
             if (userWei.sign) {
                 supplyValue = Monetary.add(supplyValue, assetValue);
             } else {
-                if (requireMinBorrow) {
-                    Require.that(
-                        borrowValue.value == 0 ||
-                        borrowValue.value >= state.riskParams.minBorrowedValue.value,
-                        FILE,
-                        "Borrow value too low",
-                        m,
-                        borrowValue.value
-                    );
-                }
+                Require.that(
+                    !requireMinBorrow
+                    || assetValue.value >= state.riskParams.minBorrowedValue.value,
+                    FILE,
+                    "Borrow value too low",
+                    m,
+                    assetValue.value
+                );
                 borrowValue = Monetary.add(borrowValue, assetValue);
             }
         }
