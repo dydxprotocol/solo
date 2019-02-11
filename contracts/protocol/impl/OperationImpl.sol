@@ -234,6 +234,9 @@ library OperationImpl {
             else if (ttype == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, arg));
             }
+            else {
+                assert(false);
+            }
         }
     }
 
