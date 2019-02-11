@@ -141,7 +141,7 @@ contract TestAutoTrader is
         bytes memory tradeData
     )
         public
-        returns (Actions.AssetAmount memory)
+        returns (Types.AssetAmount memory)
     {
         if (requireInputMarketId != 0) {
             Require.that(
@@ -224,10 +224,10 @@ contract TestAutoTrader is
 
         setDataInternal(input, 0);
 
-        return Actions.AssetAmount({
+        return Types.AssetAmount({
             sign: true,
-            denomination: Actions.AssetDenomination.Wei,
-            ref: Actions.AssetReference.Delta,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
             value: output
         });
     }

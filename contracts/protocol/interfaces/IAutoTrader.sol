@@ -20,7 +20,6 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import { Account } from "../lib/Account.sol";
-import { Actions } from "../lib/Actions.sol";
 import { Types } from "../lib/Types.sol";
 
 
@@ -45,5 +44,5 @@ contract IAutoTrader {
         bytes memory data
     )
         public
-        returns (Actions.AssetAmount memory);
+        returns (Types.AssetAmount memory);
 }

@@ -108,7 +108,7 @@ contract Expiry is
         public
         // view
         onlySolo(msg.sender)
-        returns (Actions.AssetAmount memory)
+        returns (Types.AssetAmount memory)
     {
         // input validation
         Require.that(
@@ -148,7 +148,7 @@ contract Expiry is
         );
 
         // get return value
-        Actions.AssetAmount memory output = inputWeiToOutput(
+        Types.AssetAmount memory output = inputWeiToOutput(
             inputWei,
             inputMarketId,
             outputMarketId
@@ -199,7 +199,7 @@ contract Expiry is
     )
         private
         view
-        returns (Actions.AssetAmount memory)
+        returns (Types.AssetAmount memory)
     {
         Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpread();
         uint256 nonSpreadValue = Math.getPartial(
@@ -207,10 +207,10 @@ contract Expiry is
             SOLO_MARGIN.getMarketPrice(inputMarketId).value,
             SOLO_MARGIN.getMarketPrice(outputMarketId).value
         );
-        return Actions.AssetAmount({
+        return Types.AssetAmount({
             sign: false,
-            denomination: Actions.AssetDenomination.Wei,
-            ref: Actions.AssetReference.Delta,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
             value: Decimal.mul(nonSpreadValue, spread)
         });
     }

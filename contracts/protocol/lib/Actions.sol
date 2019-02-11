@@ -60,29 +60,12 @@ library Actions {
         TwoMarkets
     }
 
-    enum AssetDenomination {
-        Wei, // the amount is denominated in token amount
-        Par  // the amount is denominated in principal
-    }
-
-    enum AssetReference {
-        Delta, // the amount is given as a delta from the current value
-        Target // the amount is given as an exact number to end up at
-    }
-
     // ============ Structs ============
-
-    struct AssetAmount {
-        bool sign;
-        AssetDenomination denomination;
-        AssetReference ref;
-        uint256 value;
-    }
 
     struct ActionArgs {
         ActionType actionType;
         uint256 accountId;
-        AssetAmount amount;
+        Types.AssetAmount amount;
         uint256 primaryMarketId;
         uint256 secondaryMarketId;
         address otherAddress;
@@ -93,28 +76,28 @@ library Actions {
     // ============ Action Types ============
 
     struct DepositArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info account;
         uint256 mkt;
         address from;
     }
 
     struct WithdrawArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info account;
         uint256 mkt;
         address to;
     }
 
     struct TransferArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info accountOne;
         Account.Info accountTwo;
         uint256 mkt;
     }
 
     struct BuyArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info account;
         uint256 makerMkt;
         uint256 takerMkt;
@@ -123,7 +106,7 @@ library Actions {
     }
 
     struct SellArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info account;
         uint256 takerMkt;
         uint256 makerMkt;
@@ -132,7 +115,7 @@ library Actions {
     }
 
     struct TradeArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info takerAccount;
         Account.Info makerAccount;
         uint256 inputMkt;
@@ -142,7 +125,7 @@ library Actions {
     }
 
     struct LiquidateArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info solidAccount;
         Account.Info liquidAccount;
         uint256 owedMkt;
@@ -150,7 +133,7 @@ library Actions {
     }
 
     struct VaporizeArgs {
-        AssetAmount amount;
+        Types.AssetAmount amount;
         Account.Info solidAccount;
         Account.Info vaporAccount;
         uint256 owedMkt;

@@ -531,7 +531,7 @@ library OperationImpl {
             args.amount
         );
 
-        Actions.AssetAmount memory outputAmount = IAutoTrader(args.autoTrader).getTradeCost(
+        Types.AssetAmount memory outputAmount = IAutoTrader(args.autoTrader).getTradeCost(
             args.inputMkt,
             args.outputMkt,
             args.makerAccount,
