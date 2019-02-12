@@ -244,8 +244,8 @@ library Storage {
     {
         Types.TotalPar memory totalPar = state.getTotalPar(marketId);
         (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
+            Types.Wei memory supplyWei,
+            Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
         Interest.Rate memory rate = state.markets[marketId].interestSetter.getInterestRate(

@@ -226,6 +226,16 @@ contract Getters is
         );
     }
 
+    function getNumExcessTokens(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Types.Wei memory)
+    {
+        return g_state.getNumExcessTokens(marketId);
+    }
+
     // ============ Getters for Accounts ============
 
     function getAccountPar(
