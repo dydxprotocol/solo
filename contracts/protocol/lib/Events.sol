@@ -406,7 +406,8 @@ library Events {
         Storage.State storage state,
         Actions.VaporizeArgs memory args,
         Types.Wei memory heldWei,
-        Types.Wei memory owedWei
+        Types.Wei memory owedWei,
+        Types.Wei memory excessWei
     )
         internal
     {
@@ -426,7 +427,7 @@ library Events {
             state,
             args.vaporAccount,
             args.owedMkt,
-            owedWei
+            owedWei.add(excessWei)
         );
 
         emit LogVaporize(

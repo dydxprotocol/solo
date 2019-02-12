@@ -621,9 +621,9 @@ library OperationImpl {
         );
 
         Require.that(
-            maxHeldWei.isPositive(),
+            !maxHeldWei.isNegative(),
             FILE,
-            "Collateral must be positive",
+            "Collateral cannot be negative",
             maxHeldWei.value
         );
 
@@ -639,7 +639,7 @@ library OperationImpl {
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = _fetchLiquidationPrices(
+        ) = _getLiquidationPrices(
             state,
             priceCache,
             args.heldMkt,
@@ -707,31 +707,36 @@ library OperationImpl {
 
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
-            uint256 numMarkets = state.numMarkets;
-            for (uint256 m = 0; m < numMarkets; m++) {
-                if (priceCache[m].value == 0) {
-                    continue;
-                }
-                Require.that(
-                    !state.getPar(args.vaporAccount, m).isPositive(),
-                    FILE,
-                    "Unvaporizable account"
-                );
-            }
+            Require.that(
+                state.isVaporizable(args.vaporAccount, priceCache),
+                FILE,
+                "Unvaporizable account"
+            );
             state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
 
         // First, attempt to refund using the same token
-        if (_vaporizeUsingExcess(state, args.vaporAccount, args.owedMkt)) {
+        (
+            bool fullyRepaid,
+            Types.Wei memory excessWei
+        ) = _vaporizeUsingExcess(state, args);
+        if (fullyRepaid) {
+            Events.logVaporize(
+                state,
+                args,
+                Types.zeroWei(),
+                Types.zeroWei(),
+                excessWei
+            );
             return;
         }
 
         Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMkt);
 
         Require.that(
-            maxHeldWei.isPositive(),
+            !maxHeldWei.isNegative(),
             FILE,
-            "Excess token must be positive",
+            "Excess cannot be negative",
             maxHeldWei.value
         );
 
@@ -747,7 +752,7 @@ library OperationImpl {
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = _fetchLiquidationPrices(
+        ) = _getLiquidationPrices(
             state,
             priceCache,
             args.heldMkt,
@@ -790,7 +795,8 @@ library OperationImpl {
             state,
             args,
             heldWei,
-            owedWei
+            owedWei,
+            excessWei
         );
     }
 
@@ -845,41 +851,38 @@ library OperationImpl {
 
     function _vaporizeUsingExcess(
         Storage.State storage state,
-        Account.Info memory account,
-        uint256 owedMarketId
+        Actions.VaporizeArgs memory args
     )
         internal
-        returns (bool)
+        returns (bool, Types.Wei memory)
     {
-        Types.Wei memory excessWei = state.getNumExcessTokens(owedMarketId);
+        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMkt);
 
         if (!excessWei.isPositive()) {
-            return false;
+            return (false, Types.zeroWei());
         }
 
-        Types.Wei memory maxRefundWei = state.getWei(
-            account,
-            owedMarketId
-        );
+        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMkt);
+        maxRefundWei.sign = true;
 
         if (excessWei.value >= maxRefundWei.value) {
             state.setPar(
-                account,
-                owedMarketId,
+                args.vaporAccount,
+                args.owedMkt,
                 Types.zeroPar()
             );
-            return true;
+            return (true, maxRefundWei);
         } else {
             state.setParFromDeltaWei(
-                account,
-                owedMarketId,
+                args.vaporAccount,
+                args.owedMkt,
                 excessWei
             );
-            return false;
+            return (false, excessWei);
         }
     }
 
-    function _fetchLiquidationPrices(
+    function _getLiquidationPrices(
         Storage.State storage state,
         Monetary.Price[] memory priceCache,
         uint256 heldMarketId,

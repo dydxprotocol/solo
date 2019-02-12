@@ -478,6 +478,33 @@ library Storage {
         return supplyValue.value >= requiredSupply;
     }
 
+    function isVaporizable(
+        Storage.State storage state,
+        Account.Info memory account,
+        Monetary.Price[] memory priceCache
+    )
+        internal
+        view
+        returns (bool)
+    {
+        bool hasNegative = false;
+        uint256 numMarkets = priceCache.length;
+        for (uint256 m = 0; m < numMarkets; m++) {
+            if (priceCache[m].value == 0) {
+                continue;
+            }
+            Types.Par memory par = state.getPar(account, m);
+            if (par.isZero()) {
+                continue;
+            } else if (par.sign) {
+                return false;
+            } else {
+                hasNegative = true;
+            }
+        }
+        return hasNegative;
+    }
+
     // =============== Setter Functions ===============
 
     function updateIndex(
