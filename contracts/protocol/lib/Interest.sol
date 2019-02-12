@@ -155,16 +155,16 @@ library Interest {
         pure
         returns (Types.Wei memory, Types.Wei memory)
     {
-        Types.Par memory borrowPar = Types.Par({
-            sign: false,
-            value: totalPar.borrow
-        });
         Types.Par memory supplyPar = Types.Par({
             sign: true,
             value: totalPar.supply
         });
-        Types.Wei memory borrowWei = parToWei(borrowPar, index);
+        Types.Par memory borrowPar = Types.Par({
+            sign: false,
+            value: totalPar.borrow
+        });
         Types.Wei memory supplyWei = parToWei(supplyPar, index);
-        return (borrowWei, supplyWei);
+        Types.Wei memory borrowWei = parToWei(borrowPar, index);
+        return (supplyWei, borrowWei);
     }
 }

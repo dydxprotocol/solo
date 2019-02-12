@@ -42,6 +42,14 @@ export class Getters {
     };
   }
 
+  public async getNumExcessTokens(
+    marketId: Integer,
+  ): Promise<Integer> {
+    const numExcessTokens = await this.contracts.soloMargin.methods
+      .getNumExcessTokens(marketId.toFixed(0)).call();
+    return this.parseValue(numExcessTokens);
+  }
+
   public async getAccountBalances(
     accountOwner: address,
     accountNumber: Integer,
