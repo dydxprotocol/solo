@@ -14,7 +14,6 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "test_cov": "npm run deploy_coverage && NETWORK_ID=1002 COVERAGE=true RPC_NODE_URI=http://0.0.0.0:8555 npm run test_only -- --forceExit",
     "build": "npm run compile && npm run copy_tew && npm run build:wrappers",
     "copy_tew": "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
@@ -38,13 +37,14 @@
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_test": "npm run reset_test_evm && npm run migrate -- --network test --reset && npm run snapshot_test_evm",
-    "deploy_coverage": "npm run reset_test_evm && npm run migrate -- --network coverage --reset && npm run snapshot_test_evm",
+    "deploy_coverage": "npm run reset_test_evm && npm run migrate -- --network coverage --reset && RPC_NODE_URI=http://0.0.0.0:8555 npm run snapshot_test_evm",
     "deploy_test_ci": "WS_NODE_URI=ws://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && WS_NODE_URI=ws://0.0.0.0:8545 npm run snapshot_test_evm",
     "test_only": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand",
-    "ci_test": "NODE_ENV=test WS_NODE_URI=ws://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
+    "test_cov": "npm run deploy_coverage && NETWORK_ID=1002 COVERAGE=true RPC_NODE_URI=http://0.0.0.0:8555 npm run test_only -- --forceExit",
+    "ci_test": "NODE_ENV=test WS_NODE_URI=ws://0.0.0.0:8545 RPC_NODE_URI=http://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
-    "install_compiler": "docker pull ethereum/solc:0.5.2",
+    "install_compiler": "docker pull ethereum/solc:0.5.3",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts"
   },
   "repository": {
