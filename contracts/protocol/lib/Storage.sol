@@ -169,7 +169,8 @@ library Storage {
             Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
-        return balanceWei.add(borrowWei).sub(supplyWei);
+        // borrowWei is negative, so subtracting it makes the value more positive
+        return balanceWei.sub(borrowWei).sub(supplyWei);
     }
 
     function getStatus(
