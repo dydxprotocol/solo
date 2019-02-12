@@ -63,6 +63,8 @@ export class Contracts {
   private defaultConfirmations: number;
   private confirmationType: ConfirmationType;
   private web3: Web3;
+  private defaultGas: string | number;
+  private defaultGasPrice: string | number;
 
   // Contract instances
   public soloMargin: (SoloMargin | TestSoloMargin);
@@ -91,6 +93,8 @@ export class Contracts {
     this.defaultConfirmations = options.defaultConfirmations;
     this.autoGasMultiplier = options.autoGasMultiplier || 1.5;
     this.confirmationType = options.confirmationType || ConfirmationType.Confirmed;
+    this.defaultGas = options.defaultGas;
+    this.defaultGasPrice = options.defaultGasPrice;
 
     // Contracts
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
@@ -239,22 +243,30 @@ export class Contracts {
       await this.setGasLimit();
     }
 
+    if (!txOptions.gasPrice && this.defaultGasPrice) {
+      txOptions.gasPrice = this.defaultGasPrice;
+    }
+
     if (!options.gas) {
-      let gasEstimate: number;
+      if (this.defaultGas) {
+        txOptions.gas = this.defaultGas;
+      } else {
+        let gasEstimate: number;
 
-      try {
-        gasEstimate = await method.estimateGas(options);
-      } catch (error) {
-        const data = method.encodeABI();
-        const { from, value } = options;
-        const to = (method as any)._parent._address;
-        error.transactionData = { from, value, data, to };
-        throw error;
+        try {
+          gasEstimate = await method.estimateGas(options);
+        } catch (error) {
+          const data = method.encodeABI();
+          const { from, value } = options;
+          const to = (method as any)._parent._address;
+          error.transactionData = { from, value, data, to };
+          throw error;
+        }
+
+        const multiplier = autoGasMultiplier || this.autoGasMultiplier;
+        const totalGas: number = Math.floor(gasEstimate * multiplier);
+        txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
       }
-
-      const multiplier = autoGasMultiplier || this.autoGasMultiplier;
-      const totalGas: number = Math.floor(gasEstimate * multiplier);
-      txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
     }
     if (!options.chainId) {
       txOptions.chainId = this.networkId;

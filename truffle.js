@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = {
   compilers: {
     solc: {
-      version: '0.5.2',
+      version: '0.5.3',
       docker: process.env.DOCKER_COMPILER !== undefined
         ? process.env.DOCKER_COMPILER === 'true' : true,
       settings: {
@@ -51,8 +51,8 @@ module.exports = {
       gas: 7900000,
     },
     coverage: {
-      host: 'localhost',
-      network_id: '*',
+      host: '0.0.0.0',
+      network_id: '1002',
       port: 8555,
       gas: 0xfffffffffff,
       gasPrice: 0x01,

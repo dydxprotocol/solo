@@ -1,7 +1,8 @@
 const Web3 = require('web3');
 require('dotenv').config();
 
-const provider = new Web3.providers.WebsocketProvider(process.env.WS_NODE_URI);
+// const provider = new Web3.providers.WebsocketProvider(process.env.WS_NODE_URI);
+const provider = new Web3.providers.HttpProvider(process.env.RPC_NODE_URI);
 
 provider.send(
   {

@@ -1,6 +1,7 @@
 module.exports = {
-  testCommand: 'node --max-old-space-size=4096 ../node_modules/.bin/truffle test --network coverage',
-  compileCommand: 'node --max-old-space-size=4096 ../node_modules/.bin/truffle compile --network coverage',
-  copyPackages: ['openzeppelin-solidity'],
-  skipFiles: ['external/', 'testing/']
+  compileCommand: 'npm run build',
+  copyPackages: ['openzeppelin-solidity', '@dydxprotocol/exchange-wrappers'],
+  skipFiles: ['testing/', 'Migrations.sol'],
+  testCommand: 'npm run test_cov',
+  testrpcOptions: '-d --port 8555 -i 1002',
 };
