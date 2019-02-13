@@ -1,14 +1,17 @@
 import { TxResult } from '../types';
 
+const REQUIRE_MSG = 'Returned error: VM Exception while processing transaction: revert';
+const ASSERT_MSG = 'Returned error: VM Exception while processing transaction: invalid opcode';
+
 // For solidity function calls that violate require()
 export async function expectThrow(promise: Promise<TxResult>, reason?: string) {
   try {
     await promise;
     throw new Error('Did not throw');
   } catch (e) {
-    assertCertainError(e, 'Exception while processing transaction: revert');
+    assertCertainError(e, REQUIRE_MSG);
     if (reason && process.env.COVERAGE !== 'true') {
-      assertCertainError(e, reason);
+      assertCertainError(e, `${REQUIRE_MSG} ${reason}`);
     }
   }
 }
@@ -19,7 +22,7 @@ export async function expectAssertFailure(promise: Promise<TxResult>) {
     await promise;
     throw new Error('Did not throw');
   } catch (e) {
-    assertCertainError(e, 'Exception while processing transaction: invalid opcode');
+    assertCertainError(e, ASSERT_MSG);
   }
 }
 
@@ -29,7 +32,7 @@ function assertCertainError(error: Error, expected_error_msg?: string) {
   const message = error.message;
   const matchedIndex = message.search(expected_error_msg);
   let matchedString = message;
-  if (matchedIndex >= 0) {
+  if (matchedIndex === 0) {
     matchedString = message.substring(matchedIndex, matchedIndex + expected_error_msg.length);
   }
   expect(matchedString).toEqual(expected_error_msg);

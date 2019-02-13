@@ -81,7 +81,6 @@ describe('Call', () => {
         data: toBytes(accountData, senderData),
         callee: solo.testing.priceOracle.getAddress(),
       },
-      'Returned error: VM Exception while processing transaction: revert',
     );
   });
 });

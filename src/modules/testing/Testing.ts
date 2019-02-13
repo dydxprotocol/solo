@@ -9,7 +9,7 @@ import { TestCallee } from './TestCallee';
 import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
 import { TestInterestSetter } from './TestInterestSetter';
-import { INTEGERS } from '../../lib/Constants';
+import { decimalToString } from '../../lib/Helpers';
 import {
   AccountStatus,
   ContractCallOptions,
@@ -111,8 +111,8 @@ export class Testing {
       this.contracts.testSoloMargin.methods.setMarketIndex(
         marketId.toFixed(0),
         {
-          borrow: INTEGERS.INTEREST_RATE_BASE.times(index.borrow).toFixed(0),
-          supply: INTEGERS.INTEREST_RATE_BASE.times(index.supply).toFixed(0),
+          borrow: decimalToString(index.borrow),
+          supply: decimalToString(index.supply),
           lastUpdate: index.lastUpdate.toFixed(0),
         },
       ),
