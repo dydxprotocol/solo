@@ -4,6 +4,7 @@ import mkdirp from 'mkdirp';
 import contracts from '../src/lib/Artifacts';
 import deployed from '../migrations/deployed.json';
 import externalDeployed from '../migrations/external-deployed.json';
+import { abi as eventsAbi } from '../build/contracts/Events.json';
 
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
@@ -37,6 +38,10 @@ async function clean(): Promise<void> {
         address: contract.networks[DOCKER_NETWORK_ID].address,
         transactionHash: contract.networks[DOCKER_NETWORK_ID].transactionHash,
       };
+    }
+
+    if (contractName === 'SoloMargin') {
+      cleaned.abi = cleaned.abi.concat(eventsAbi);
     }
 
     const json = JSON.stringify(cleaned, null, 4);
