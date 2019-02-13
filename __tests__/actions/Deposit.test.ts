@@ -32,64 +32,6 @@ const cachedWeis = {
   soloWei: zero,
 };
 
-async function setAccountBalance(amount: BigNumber) {
-  return solo.testing.setAccountBalance(who, accountNumber, market, amount);
-}
-
-async function issueTokensToUser(amount: BigNumber) {
-  return await solo.testing.tokenA.issueTo(amount, who);
-}
-
-async function expectBalances(
-  expectedPar: Integer,
-  expectedWei: Integer,
-  walletWei: Integer,
-  soloWei: Integer,
-) {
-  const [
-    accountBalances,
-    walletTokenBalance,
-    soloTokenBalance,
-  ] = await Promise.all([
-    solo.getters.getAccountBalances(who, accountNumber),
-    solo.testing.tokenA.getBalance(who),
-    solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-  ]);
-  accountBalances.forEach((balance, i) => {
-    let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
-      expected = { par: expectedPar, wei: expectedWei };
-    } else if (i === collateralMarket.toNumber()) {
-      expected = {
-        par: collateralAmount,
-        wei: collateralAmount,
-      };
-    }
-    expect(balance.par).toEqual(expected.par);
-    expect(balance.wei).toEqual(expected.wei);
-  });
-  expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
-  expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
-  cachedWeis.walletWei = walletTokenBalance;
-  cachedWeis.soloWei = soloTokenBalance;
-}
-
-async function expectDepositOkay(
-  glob: Object,
-  options?: Object,
-) {
-  const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().deposit(combinedGlob).commit(options);
-}
-
-async function expectDepositRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
-  await expectThrow(expectDepositOkay(glob, options), reason);
-}
-
 describe('Deposit', () => {
   let snapshotId: string;
 
@@ -487,3 +429,63 @@ describe('Deposit', () => {
     await expectDepositRevert(glob, 'Token: TransferFrom failed');
   });
 });
+
+// ============ Helper Functions ============
+
+async function setAccountBalance(amount: BigNumber) {
+  return solo.testing.setAccountBalance(who, accountNumber, market, amount);
+}
+
+async function issueTokensToUser(amount: BigNumber) {
+  return await solo.testing.tokenA.issueTo(amount, who);
+}
+
+async function expectBalances(
+  expectedPar: Integer,
+  expectedWei: Integer,
+  walletWei: Integer,
+  soloWei: Integer,
+) {
+  const [
+    accountBalances,
+    walletTokenBalance,
+    soloTokenBalance,
+  ] = await Promise.all([
+    solo.getters.getAccountBalances(who, accountNumber),
+    solo.testing.tokenA.getBalance(who),
+    solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
+  ]);
+  accountBalances.forEach((balance, i) => {
+    let expected = { par: zero, wei: zero };
+    if (i === market.toNumber()) {
+      expected = { par: expectedPar, wei: expectedWei };
+    } else if (i === collateralMarket.toNumber()) {
+      expected = {
+        par: collateralAmount,
+        wei: collateralAmount,
+      };
+    }
+    expect(balance.par).toEqual(expected.par);
+    expect(balance.wei).toEqual(expected.wei);
+  });
+  expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
+  expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
+  cachedWeis.walletWei = walletTokenBalance;
+  cachedWeis.soloWei = soloTokenBalance;
+}
+
+async function expectDepositOkay(
+  glob: Object,
+  options?: Object,
+) {
+  const combinedGlob = { ...defaultGlob, ...glob };
+  return await solo.operation.initiate().deposit(combinedGlob).commit(options);
+}
+
+async function expectDepositRevert(
+  glob: Object,
+  reason?: string,
+  options?: Object,
+) {
+  await expectThrow(expectDepositOkay(glob, options), reason);
+}

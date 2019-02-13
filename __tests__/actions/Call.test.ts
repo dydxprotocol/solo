@@ -17,35 +17,6 @@ const accountData = new BigNumber(100);
 const senderData = new BigNumber(50);
 let defaultGlob: Call;
 
-async function expectCallOkay(
-  glob: Object,
-  options?: Object,
-) {
-  const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().call(combinedGlob).commit(options);
-}
-
-async function expectCallRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
-  await expectThrow(expectCallOkay(glob, options), reason);
-}
-
-async function verifyDataIntegrity(sender: address) {
-  const [
-    foundAccountData,
-    foundSenderData,
-  ] = await Promise.all([
-    solo.testing.callee.getAccountData(who, accountNumber),
-    solo.testing.callee.getSenderData(sender),
-  ]);
-
-  expect(foundAccountData).toEqual(accountData.toFixed(0));
-  expect(foundSenderData).toEqual(senderData.toFixed(0));
-}
-
 describe('Call', () => {
   let snapshotId: string;
 
@@ -114,3 +85,34 @@ describe('Call', () => {
     );
   });
 });
+
+// ============ Helper Functions ============
+
+async function expectCallOkay(
+  glob: Object,
+  options?: Object,
+) {
+  const combinedGlob = { ...defaultGlob, ...glob };
+  return await solo.operation.initiate().call(combinedGlob).commit(options);
+}
+
+async function expectCallRevert(
+  glob: Object,
+  reason?: string,
+  options?: Object,
+) {
+  await expectThrow(expectCallOkay(glob, options), reason);
+}
+
+async function verifyDataIntegrity(sender: address) {
+  const [
+    foundAccountData,
+    foundSenderData,
+  ] = await Promise.all([
+    solo.testing.callee.getAccountData(who, accountNumber),
+    solo.testing.callee.getSenderData(sender),
+  ]);
+
+  expect(foundAccountData).toEqual(accountData.toFixed(0));
+  expect(foundSenderData).toEqual(senderData.toFixed(0));
+}
