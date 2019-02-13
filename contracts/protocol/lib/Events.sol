@@ -43,7 +43,7 @@ library Events {
         Interest.Index index
     );
 
-    event LogTransaction(
+    event LogOperation(
         address sender
     );
 
@@ -159,10 +159,10 @@ library Events {
         );
     }
 
-    function logTransaction()
+    function logOperation()
         internal
     {
-        emit LogTransaction(msg.sender);
+        emit LogOperation(msg.sender);
     }
 
     function logDeposit(

@@ -57,6 +57,8 @@ library OperationImpl {
     )
         public
     {
+        Events.logOperation();
+
         _verifyNoDuplicateAccounts(accounts);
 
         (
@@ -201,8 +203,6 @@ library OperationImpl {
     )
         private
     {
-        Events.logTransaction();
-
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory arg = actions[i];
             Actions.ActionType ttype = arg.actionType;
