@@ -1,6 +1,14 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { MarketWithInfo, Index, Integer, address, Balance, Values } from '../types';
+import {
+  AccountStatus,
+  MarketWithInfo,
+  Index,
+  Integer,
+  address,
+  Balance,
+  Values,
+} from '../types';
 import { INTEGERS } from '../lib/Constants';
 
 export class Getters {
@@ -48,6 +56,24 @@ export class Getters {
     const numExcessTokens = await this.contracts.soloMargin.methods
       .getNumExcessTokens(marketId.toFixed(0)).call();
     return this.parseValue(numExcessTokens);
+  }
+
+  public async getAccountStatus(
+    accountOwner: address,
+    accountNumber: Integer,
+  ): Promise<AccountStatus> {
+    const rawStatus = await this.contracts.soloMargin.methods
+      .getAccountStatus({ owner: accountOwner, number: accountNumber.toFixed(0) }).call();
+    switch (rawStatus) {
+      case '0':
+        return AccountStatus.Normal;
+      case '1':
+        return AccountStatus.Liquidating;
+      case '2':
+        return AccountStatus.Vaporizing;
+      default:
+        throw new Error('invalid account status ${rawStatus}');
+    }
   }
 
   public async getAccountBalances(
