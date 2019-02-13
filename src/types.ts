@@ -37,6 +37,8 @@ export interface SoloOptions {
   defaultConfirmations?: number;
   autoGasMultiplier?: number;
   testing?: boolean;
+  defaultGas?: number | string;
+  defaultGasPrice?: number | string;
 }
 
 export interface ContractCallOptions extends Tx {

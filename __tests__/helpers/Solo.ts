@@ -1,15 +1,20 @@
-import { NETWORK_ID } from './Constants';
 import { Solo } from '../../src/Solo';
 import { provider } from './Provider';
-import { address, ConfirmationType } from '../../src/types';
+import { address, ConfirmationType, SoloOptions } from '../../src/types';
 
+const soloOptions: SoloOptions = {
+  confirmationType: ConfirmationType.Confirmed,
+  testing: true,
+};
+
+if (process.env.COVERAGE === 'true') {
+  soloOptions.defaultGas = '0xfffffffffff';
+  soloOptions.defaultGasPrice = '0x01';
+}
 export const solo = new Solo(
   provider,
-  NETWORK_ID,
-  {
-    confirmationType: ConfirmationType.Confirmed,
-    testing: true,
-  },
+  Number(process.env.NETWORK_ID),
+  soloOptions,
 );
 let accounts: address[];
 

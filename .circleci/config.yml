@@ -99,7 +99,7 @@ jobs:
       - run:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
-          no_output_timeout: 40m
+          no_output_timeout: 60m
   build_js:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -158,10 +158,9 @@ workflows:
       - test:
           requires:
             - build_contracts
-      # TODO https://github.com/sc-forks/solidity-coverage/issues/258
-      # - coverage:
-      #     requires:
-      #       - checkout_and_install
+      - coverage:
+          requires:
+            - checkout_and_install
       - build_js:
           requires:
             - build_contracts

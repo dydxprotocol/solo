@@ -188,7 +188,7 @@ def main():
     for file in files:
         everythingOkay &= lintFunctionComments(dir_path, file)
         everythingOkay &= lintImports(dir_path, file)
-        everythingOkay &= lintCommentHeader(dir_path, file, "^0.5.0")
+        everythingOkay &= lintCommentHeader(dir_path, file, "0.5.3")
         everythingOkay &= lintRevertReasons(dir_path, file)
 
     if everythingOkay:

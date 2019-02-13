@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity ^0.5.0;
+pragma solidity 0.5.3;
 
 import { Require } from "./Require.sol";
 import { IErc20 } from "../interfaces/IErc20.sol";

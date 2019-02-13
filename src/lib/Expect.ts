@@ -7,7 +7,7 @@ export async function expectThrow(promise: Promise<TxResult>, reason?: string) {
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, 'Exception while processing transaction: revert');
-    if (reason) {
+    if (reason && process.env.COVERAGE !== 'true') {
       assertCertainError(e, reason);
     }
   }
