@@ -269,7 +269,7 @@ export class AccountOperation {
     args: OptionalActionArgs,
   ): void {
     if (this.committed) {
-      throw new Error('Transaction already committed');
+      throw new Error('Operation already committed');
     }
 
     const amount = args.amount ? {
@@ -284,7 +284,7 @@ export class AccountOperation {
       value: 0,
     };
 
-    const transactionArgs: ActionArgs = {
+    const actionArgs: ActionArgs = {
       amount,
       accountId: this.getPrimaryAccountId(action),
       actionType: args.actionType,
@@ -295,7 +295,7 @@ export class AccountOperation {
       data: args.data || [],
     };
 
-    this.actions.push(transactionArgs);
+    this.actions.push(actionArgs);
   }
 
   private getPrimaryAccountId(operation: AccountAction): number {

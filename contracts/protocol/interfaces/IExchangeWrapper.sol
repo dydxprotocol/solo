@@ -64,7 +64,7 @@ interface IExchangeWrapper {
      * @param  takerToken         Address of takerToken, the token to pay
      * @param  desiredMakerToken  Amount of makerToken requested
      * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
-     * @return                    Amount of takerToken the needed to complete the transaction
+     * @return                    Amount of takerToken the needed to complete the exchange
      */
     function getExchangeCost(
         address makerToken,
