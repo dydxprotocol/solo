@@ -28,66 +28,7 @@ const par = new BigNumber(100);
 const wei = new BigNumber(150);
 const negPar = new BigNumber(-100);
 const negWei = new BigNumber(-150);
-
 let defaultGlob: Transfer;
-
-async function setAccountBalances(amount1: BigNumber, amount2: BigNumber) {
-  await Promise.all([
-    solo.testing.setAccountBalance(owner1, accountNumber1, market, amount1),
-    solo.testing.setAccountBalance(owner2, accountNumber2, market, amount2),
-  ]);
-}
-
-async function expectBalances(
-  par1: Integer,
-  wei1: Integer,
-  par2: Integer,
-  wei2: Integer,
-) {
-  const [
-    accountBalances1,
-    accountBalances2,
-  ] = await Promise.all([
-    solo.getters.getAccountBalances(owner1, accountNumber1),
-    solo.getters.getAccountBalances(owner2, accountNumber2),
-  ]);
-  accountBalances1.forEach((balance, i) => {
-    let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
-      expected = { par: par1, wei: wei1 };
-    } else if (i === collateralMarket.toNumber()) {
-      expected = { par: collateralAmount, wei: collateralAmount };
-    }
-    expect(balance.par).toEqual(expected.par);
-    expect(balance.wei).toEqual(expected.wei);
-  });
-  accountBalances2.forEach((balance, i) => {
-    let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
-      expected = { par: par2, wei: wei2 };
-    } else if (i === collateralMarket.toNumber()) {
-      expected = { par: collateralAmount, wei: collateralAmount };
-    }
-    expect(balance.par).toEqual(expected.par);
-    expect(balance.wei).toEqual(expected.wei);
-  });
-}
-
-async function expectTransferOkay(
-  glob: Object,
-  options?: Object,
-) {
-  const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().transfer(combinedGlob).commit(options);
-}
-
-async function expectTransferRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
-  await expectThrow(expectTransferOkay(glob, options), reason);
-}
 
 describe('Transfer', () => {
   let snapshotId: string;
@@ -464,3 +405,63 @@ describe('Transfer', () => {
     );
   });
 });
+
+// ============ Helper Functions ============
+
+async function setAccountBalances(amount1: BigNumber, amount2: BigNumber) {
+  await Promise.all([
+    solo.testing.setAccountBalance(owner1, accountNumber1, market, amount1),
+    solo.testing.setAccountBalance(owner2, accountNumber2, market, amount2),
+  ]);
+}
+
+async function expectBalances(
+  par1: Integer,
+  wei1: Integer,
+  par2: Integer,
+  wei2: Integer,
+) {
+  const [
+    accountBalances1,
+    accountBalances2,
+  ] = await Promise.all([
+    solo.getters.getAccountBalances(owner1, accountNumber1),
+    solo.getters.getAccountBalances(owner2, accountNumber2),
+  ]);
+  accountBalances1.forEach((balance, i) => {
+    let expected = { par: zero, wei: zero };
+    if (i === market.toNumber()) {
+      expected = { par: par1, wei: wei1 };
+    } else if (i === collateralMarket.toNumber()) {
+      expected = { par: collateralAmount, wei: collateralAmount };
+    }
+    expect(balance.par).toEqual(expected.par);
+    expect(balance.wei).toEqual(expected.wei);
+  });
+  accountBalances2.forEach((balance, i) => {
+    let expected = { par: zero, wei: zero };
+    if (i === market.toNumber()) {
+      expected = { par: par2, wei: wei2 };
+    } else if (i === collateralMarket.toNumber()) {
+      expected = { par: collateralAmount, wei: collateralAmount };
+    }
+    expect(balance.par).toEqual(expected.par);
+    expect(balance.wei).toEqual(expected.wei);
+  });
+}
+
+async function expectTransferOkay(
+  glob: Object,
+  options?: Object,
+) {
+  const combinedGlob = { ...defaultGlob, ...glob };
+  return await solo.operation.initiate().transfer(combinedGlob).commit(options);
+}
+
+async function expectTransferRevert(
+  glob: Object,
+  reason?: string,
+  options?: Object,
+) {
+  await expectThrow(expectTransferOkay(glob, options), reason);
+}

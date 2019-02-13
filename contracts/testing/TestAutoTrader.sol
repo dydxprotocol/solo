@@ -45,13 +45,18 @@ contract TestAutoTrader is
 
     event DataSet(
         uint256 indexed input,
-        uint256 output
+        Types.AssetAmount output
+    );
+
+    event DataDeleted(
+        uint256 indexed input
     );
 
     // ============ Storage ============
 
     // input => output
-    mapping (uint256 => uint256) public data;
+    mapping (uint256 => Types.AssetAmount) public data;
+    mapping (uint256 => bool) public valid;
 
     uint256 public requireInputMarketId;
     uint256 public requireOutputMarketId;
@@ -65,14 +70,14 @@ contract TestAutoTrader is
 
     function setData(
         uint256 input,
-        uint256 output
+        Types.AssetAmount memory output
     )
         public
     {
         setDataInternal(input, output);
     }
 
-    function setrequireInputMarketId(
+    function setRequireInputMarketId(
         uint256 inputMarketId
     )
         public
@@ -80,7 +85,7 @@ contract TestAutoTrader is
         requireInputMarketId = inputMarketId;
     }
 
-    function setrequireOutputMarketId(
+    function setRequireOutputMarketId(
         uint256 outputMarketId
     )
         public
@@ -88,7 +93,7 @@ contract TestAutoTrader is
         requireOutputMarketId = outputMarketId;
     }
 
-    function setrequireMakerAccount(
+    function setRequireMakerAccount(
         Account.Info memory account
     )
         public
@@ -96,7 +101,7 @@ contract TestAutoTrader is
         requireMakerAccount = account;
     }
 
-    function setrequireTakerAccount(
+    function setRequireTakerAccount(
         Account.Info memory account
     )
         public
@@ -104,7 +109,7 @@ contract TestAutoTrader is
         requireTakerAccount = account;
     }
 
-    function setrequireOldInputPar(
+    function setRequireOldInputPar(
         Types.Par memory oldInputPar
     )
         public
@@ -112,7 +117,7 @@ contract TestAutoTrader is
         requireOldInputPar = oldInputPar;
     }
 
-    function setrequireNewInputPar(
+    function setRequireNewInputPar(
         Types.Par memory newInputPar
     )
         public
@@ -120,7 +125,7 @@ contract TestAutoTrader is
         requireNewInputPar = newInputPar;
     }
 
-    function setrequireInputWei(
+    function setRequireInputWei(
         Types.Wei memory inputWei
     )
         public
@@ -219,29 +224,38 @@ contract TestAutoTrader is
         }
 
         uint256 input = parseTradeData(tradeData);
-
-        uint256 output = data[input];
-
-        setDataInternal(input, 0);
-
-        return Types.AssetAmount({
-            sign: true,
-            denomination: Types.AssetDenomination.Wei,
-            ref: Types.AssetReference.Delta,
-            value: output
-        });
+        return deleteDataInternal(input);
     }
 
     // ============ Private Functions ============
 
     function setDataInternal(
         uint256 input,
-        uint256 output
+        Types.AssetAmount memory output
     )
         private
     {
-        emit DataSet(input, output);
         data[input] = output;
+        valid[input] = true;
+        emit DataSet(input, output);
+    }
+
+    function deleteDataInternal(
+        uint256 input
+    )
+        private
+        returns (Types.AssetAmount memory)
+    {
+        Require.that(
+            valid[input],
+            FILE,
+            "Trade does not exist"
+        );
+        Types.AssetAmount memory output = data[input];
+        delete data[input];
+        delete valid[input];
+        emit DataDeleted(input);
+        return output;
     }
 
     function parseTradeData(
