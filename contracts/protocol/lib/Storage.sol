@@ -427,10 +427,12 @@ library Storage {
         view
         returns (Types.Par memory, Types.Wei memory)
     {
+        Types.Par memory oldPar = state.getPar(account, marketId);
+
         Require.that(
-            state.getPar(account, marketId).isNegative(),
+            !oldPar.isPositive(),
             FILE,
-            "Balance must be negatives",
+            "Owed balance cannot be positive",
             account.number,
             marketId
         );
@@ -444,16 +446,21 @@ library Storage {
             amount
         );
 
-        Require.that(
-            deltaWei.isPositive(),
-            FILE,
-            "Balance must be repaid"
-        );
-
         // if attempting to over-repay the owed asset, bound it by the maximum
         if (newPar.isPositive()) {
             newPar = Types.zeroPar();
             deltaWei = state.getWei(account, marketId).negative();
+        }
+
+        Require.that(
+            !deltaWei.isNegative() && oldPar.value >= newPar.value,
+            FILE,
+            "Owed balance cannot increase"
+        );
+
+        // if not paying back enough wei to repay any par, then bound wei to zero
+        if (oldPar.equals(newPar)) {
+            deltaWei = Types.zeroWei();
         }
 
         return (newPar, deltaWei);
