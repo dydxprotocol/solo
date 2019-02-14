@@ -174,7 +174,7 @@ export interface Call extends AccountAction {
   data: (string | number[])[];
 }
 
-export interface AcctInfo {
+export interface AccountInfo {
   owner: string;
   number: number | string;
 }
@@ -224,4 +224,9 @@ export interface Balance {
 export interface Values {
   supply: Integer;
   borrow: Integer;
+}
+
+export interface BalanceUpdate {
+  deltaWei: Integer;
+  newPar: Integer;
 }

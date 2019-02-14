@@ -78,14 +78,14 @@ library Actions {
     struct DepositArgs {
         Types.AssetAmount amount;
         Account.Info account;
-        uint256 mkt;
+        uint256 market;
         address from;
     }
 
     struct WithdrawArgs {
         Types.AssetAmount amount;
         Account.Info account;
-        uint256 mkt;
+        uint256 market;
         address to;
     }
 
@@ -93,14 +93,14 @@ library Actions {
         Types.AssetAmount amount;
         Account.Info accountOne;
         Account.Info accountTwo;
-        uint256 mkt;
+        uint256 market;
     }
 
     struct BuyArgs {
         Types.AssetAmount amount;
         Account.Info account;
-        uint256 makerMkt;
-        uint256 takerMkt;
+        uint256 makerMarket;
+        uint256 takerMarket;
         address exchangeWrapper;
         bytes orderData;
     }
@@ -108,8 +108,8 @@ library Actions {
     struct SellArgs {
         Types.AssetAmount amount;
         Account.Info account;
-        uint256 takerMkt;
-        uint256 makerMkt;
+        uint256 takerMarket;
+        uint256 makerMarket;
         address exchangeWrapper;
         bytes orderData;
     }
@@ -118,8 +118,8 @@ library Actions {
         Types.AssetAmount amount;
         Account.Info takerAccount;
         Account.Info makerAccount;
-        uint256 inputMkt;
-        uint256 outputMkt;
+        uint256 inputMarket;
+        uint256 outputMarket;
         address autoTrader;
         bytes tradeData;
     }
@@ -128,16 +128,16 @@ library Actions {
         Types.AssetAmount amount;
         Account.Info solidAccount;
         Account.Info liquidAccount;
-        uint256 owedMkt;
-        uint256 heldMkt;
+        uint256 owedMarket;
+        uint256 heldMarket;
     }
 
     struct VaporizeArgs {
         Types.AssetAmount amount;
         Account.Info solidAccount;
         Account.Info vaporAccount;
-        uint256 owedMkt;
-        uint256 heldMkt;
+        uint256 owedMarket;
+        uint256 heldMarket;
     }
 
     struct CallArgs {
@@ -203,7 +203,7 @@ library Actions {
         return DepositArgs({
             amount: args.amount,
             account: accounts[args.accountId],
-            mkt: args.primaryMarketId,
+            market: args.primaryMarketId,
             from: args.otherAddress
         });
     }
@@ -220,7 +220,7 @@ library Actions {
         return WithdrawArgs({
             amount: args.amount,
             account: accounts[args.accountId],
-            mkt: args.primaryMarketId,
+            market: args.primaryMarketId,
             to: args.otherAddress
         });
     }
@@ -238,7 +238,7 @@ library Actions {
             amount: args.amount,
             accountOne: accounts[args.accountId],
             accountTwo: accounts[args.otherAccountId],
-            mkt: args.primaryMarketId
+            market: args.primaryMarketId
         });
     }
 
@@ -254,8 +254,8 @@ library Actions {
         return BuyArgs({
             amount: args.amount,
             account: accounts[args.accountId],
-            makerMkt: args.primaryMarketId,
-            takerMkt: args.secondaryMarketId,
+            makerMarket: args.primaryMarketId,
+            takerMarket: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.data
         });
@@ -273,8 +273,8 @@ library Actions {
         return SellArgs({
             amount: args.amount,
             account: accounts[args.accountId],
-            takerMkt: args.primaryMarketId,
-            makerMkt: args.secondaryMarketId,
+            takerMarket: args.primaryMarketId,
+            makerMarket: args.secondaryMarketId,
             exchangeWrapper: args.otherAddress,
             orderData: args.data
         });
@@ -293,8 +293,8 @@ library Actions {
             amount: args.amount,
             takerAccount: accounts[args.accountId],
             makerAccount: accounts[args.otherAccountId],
-            inputMkt: args.primaryMarketId,
-            outputMkt: args.secondaryMarketId,
+            inputMarket: args.primaryMarketId,
+            outputMarket: args.secondaryMarketId,
             autoTrader: args.otherAddress,
             tradeData: args.data
         });
@@ -313,8 +313,8 @@ library Actions {
             amount: args.amount,
             solidAccount: accounts[args.accountId],
             liquidAccount: accounts[args.otherAccountId],
-            owedMkt: args.primaryMarketId,
-            heldMkt: args.secondaryMarketId
+            owedMarket: args.primaryMarketId,
+            heldMarket: args.secondaryMarketId
         });
     }
 
@@ -331,8 +331,8 @@ library Actions {
             amount: args.amount,
             solidAccount: accounts[args.accountId],
             vaporAccount: accounts[args.otherAccountId],
-            owedMkt: args.primaryMarketId,
-            heldMkt: args.secondaryMarketId
+            owedMarket: args.primaryMarketId,
+            heldMarket: args.secondaryMarketId
         });
     }
 

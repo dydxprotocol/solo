@@ -16,7 +16,7 @@ import {
   Trade,
   Liquidate,
   Vaporize,
-  AcctInfo,
+  AccountInfo,
   SetExpiry,
   Call,
   Amount,
@@ -41,7 +41,7 @@ export class AccountOperation {
   private actions: ActionArgs[];
   private committed: boolean;
   private orderMapper: OrderMapper;
-  private accounts: AcctInfo[];
+  private accounts: AccountInfo[];
   private usePayableProxy: boolean;
 
   constructor(
@@ -303,12 +303,12 @@ export class AccountOperation {
   }
 
   private getAccountId(accountOwner: string, accountNumber: Integer): number {
-    const accountInfo: AcctInfo = {
+    const accountInfo: AccountInfo = {
       owner: accountOwner,
       number: accountNumber.toFixed(0),
     };
 
-    const correctIndex = (i: AcctInfo) =>
+    const correctIndex = (i: AccountInfo) =>
       (i.owner === accountInfo.owner && i.number === accountInfo.number);
     const index = this.accounts.findIndex(correctIndex);
 

@@ -65,7 +65,7 @@ contract Expiry is
 
     // ============ Storage ============
 
-    // owner => number => mkt => time
+    // owner => number => market => time
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
 
     // ============ Constructor ============
