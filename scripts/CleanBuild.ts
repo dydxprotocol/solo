@@ -12,6 +12,7 @@ const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
 
 const TEST_NETWORK_ID: string = '1001';
+const COVERAGE_NETWORK_ID: string = '1002';
 
 async function clean(): Promise<void> {
   const directory = `${__dirname}/../build/published_contracts/`;
@@ -39,6 +40,13 @@ async function clean(): Promise<void> {
         links: contract.networks[TEST_NETWORK_ID].links,
         address: contract.networks[TEST_NETWORK_ID].address,
         transactionHash: contract.networks[TEST_NETWORK_ID].transactionHash,
+      };
+    }
+    if (contract.networks[COVERAGE_NETWORK_ID]) {
+      cleaned.networks[COVERAGE_NETWORK_ID] = {
+        links: contract.networks[COVERAGE_NETWORK_ID].links,
+        address: contract.networks[COVERAGE_NETWORK_ID].address,
+        transactionHash: contract.networks[COVERAGE_NETWORK_ID].transactionHash,
       };
     }
 
