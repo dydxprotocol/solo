@@ -23,6 +23,7 @@ import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
+import { Logs } from './modules/Logs';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
 import { SoloOptions, address } from './types';
@@ -36,6 +37,7 @@ export class Solo {
   public admin: Admin;
   public getters: Getters;
   public permissions: Permissions;
+  public logs: Logs;
 
   constructor(
     provider: Provider,
@@ -54,6 +56,7 @@ export class Solo {
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
     this.permissions = new Permissions(this.contracts);
+    this.logs = new Logs(this.contracts, this.web3);
   }
 
   public setProvider(

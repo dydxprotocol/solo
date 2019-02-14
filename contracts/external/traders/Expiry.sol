@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.3;
+pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -65,7 +65,7 @@ contract Expiry is
 
     // ============ Storage ============
 
-    // owner => number => mkt => time
+    // owner => number => market => time
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
 
     // ============ Constructor ============

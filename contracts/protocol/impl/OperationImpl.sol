@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.3;
+pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
@@ -300,19 +300,19 @@ library OperationImpl {
             Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             args.account,
-            args.mkt,
+            args.market,
             args.amount
         );
 
         state.setPar(
             args.account,
-            args.mkt,
+            args.market,
             newPar
         );
 
         // requires a positive deltaWei
         Exchange.transferIn(
-            state.getToken(args.mkt),
+            state.getToken(args.market),
             args.from,
             deltaWei
         );
@@ -337,19 +337,19 @@ library OperationImpl {
             Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             args.account,
-            args.mkt,
+            args.market,
             args.amount
         );
 
         state.setPar(
             args.account,
-            args.mkt,
+            args.market,
             newPar
         );
 
         // requires a negative deltaWei
         Exchange.transferOut(
-            state.getToken(args.mkt),
+            state.getToken(args.market),
             args.to,
             deltaWei
         );
@@ -375,19 +375,19 @@ library OperationImpl {
             Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             args.accountOne,
-            args.mkt,
+            args.market,
             args.amount
         );
 
         state.setPar(
             args.accountOne,
-            args.mkt,
+            args.market,
             newPar
         );
 
         state.setParFromDeltaWei(
             args.accountTwo,
-            args.mkt,
+            args.market,
             deltaWei.negative()
         );
 
@@ -406,15 +406,15 @@ library OperationImpl {
     {
         state.requireIsOperator(args.account, msg.sender);
 
-        address takerToken = state.getToken(args.takerMkt);
-        address makerToken = state.getToken(args.makerMkt);
+        address takerToken = state.getToken(args.takerMarket);
+        address makerToken = state.getToken(args.makerMarket);
 
         (
             Types.Par memory makerPar,
             Types.Wei memory makerWei
         ) = state.getNewParAndDeltaWei(
             args.account,
-            args.makerMkt,
+            args.makerMarket,
             args.amount
         );
 
@@ -445,13 +445,13 @@ library OperationImpl {
 
         state.setPar(
             args.account,
-            args.makerMkt,
+            args.makerMarket,
             makerPar
         );
 
         state.setParFromDeltaWei(
             args.account,
-            args.takerMkt,
+            args.takerMarket,
             takerWei
         );
 
@@ -471,15 +471,15 @@ library OperationImpl {
     {
         state.requireIsOperator(args.account, msg.sender);
 
-        address takerToken = state.getToken(args.takerMkt);
-        address makerToken = state.getToken(args.makerMkt);
+        address takerToken = state.getToken(args.takerMarket);
+        address makerToken = state.getToken(args.makerMarket);
 
         (
             Types.Par memory takerPar,
             Types.Wei memory takerWei
         ) = state.getNewParAndDeltaWei(
             args.account,
-            args.takerMkt,
+            args.takerMarket,
             args.amount
         );
 
@@ -494,13 +494,13 @@ library OperationImpl {
 
         state.setPar(
             args.account,
-            args.takerMkt,
+            args.takerMarket,
             takerPar
         );
 
         state.setParFromDeltaWei(
             args.account,
-            args.makerMkt,
+            args.makerMarket,
             makerWei
         );
 
@@ -523,20 +523,20 @@ library OperationImpl {
 
         Types.Par memory oldInputPar = state.getPar(
             args.makerAccount,
-            args.inputMkt
+            args.inputMarket
         );
         (
             Types.Par memory newInputPar,
             Types.Wei memory inputWei
         ) = state.getNewParAndDeltaWei(
             args.makerAccount,
-            args.inputMkt,
+            args.inputMarket,
             args.amount
         );
 
         Types.AssetAmount memory outputAmount = IAutoTrader(args.autoTrader).getTradeCost(
-            args.inputMkt,
-            args.outputMkt,
+            args.inputMarket,
+            args.outputMarket,
             args.makerAccount,
             args.takerAccount,
             oldInputPar,
@@ -550,7 +550,7 @@ library OperationImpl {
             Types.Wei memory outputWei
         ) = state.getNewParAndDeltaWei(
             args.makerAccount,
-            args.outputMkt,
+            args.outputMarket,
             outputAmount
         );
 
@@ -563,24 +563,24 @@ library OperationImpl {
         // set the balance for the maker
         state.setPar(
             args.makerAccount,
-            args.inputMkt,
+            args.inputMarket,
             newInputPar
         );
         state.setPar(
             args.makerAccount,
-            args.outputMkt,
+            args.outputMarket,
             newOutputPar
         );
 
         // set the balance for the taker
         state.setParFromDeltaWei(
             args.takerAccount,
-            args.inputMkt,
+            args.inputMarket,
             inputWei.negative()
         );
         state.setParFromDeltaWei(
             args.takerAccount,
-            args.outputMkt,
+            args.outputMarket,
             outputWei.negative()
         );
 
@@ -617,7 +617,7 @@ library OperationImpl {
 
         Types.Wei memory maxHeldWei = state.getWei(
             args.liquidAccount,
-            args.heldMkt
+            args.heldMarket
         );
 
         Require.that(
@@ -632,7 +632,7 @@ library OperationImpl {
             Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.liquidAccount,
-            args.owedMkt,
+            args.owedMarket,
             args.amount
         );
 
@@ -642,8 +642,8 @@ library OperationImpl {
         ) = _getLiquidationPrices(
             state,
             priceCache,
-            args.heldMkt,
-            args.owedMkt
+            args.heldMarket,
+            args.owedMarket
         );
 
         Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
@@ -655,23 +655,23 @@ library OperationImpl {
 
             state.setPar(
                 args.liquidAccount,
-                args.heldMkt,
+                args.heldMarket,
                 Types.zeroPar()
             );
             state.setParFromDeltaWei(
                 args.liquidAccount,
-                args.owedMkt,
+                args.owedMarket,
                 owedWei
             );
         } else {
             state.setPar(
                 args.liquidAccount,
-                args.owedMkt,
+                args.owedMarket,
                 owedPar
             );
             state.setParFromDeltaWei(
                 args.liquidAccount,
-                args.heldMkt,
+                args.heldMarket,
                 heldWei
             );
         }
@@ -679,12 +679,12 @@ library OperationImpl {
         // set the balances for the solid account
         state.setParFromDeltaWei(
             args.solidAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei.negative()
         );
         state.setParFromDeltaWei(
             args.solidAccount,
-            args.heldMkt,
+            args.heldMarket,
             heldWei.negative()
         );
 
@@ -731,7 +731,7 @@ library OperationImpl {
             return;
         }
 
-        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMkt);
+        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMarket);
 
         Require.that(
             !maxHeldWei.isNegative(),
@@ -745,7 +745,7 @@ library OperationImpl {
             Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.vaporAccount,
-            args.owedMkt,
+            args.owedMarket,
             args.amount
         );
 
@@ -755,8 +755,8 @@ library OperationImpl {
         ) = _getLiquidationPrices(
             state,
             priceCache,
-            args.heldMkt,
-            args.owedMkt
+            args.heldMarket,
+            args.owedMarket
         );
 
         Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
@@ -768,13 +768,13 @@ library OperationImpl {
 
             state.setParFromDeltaWei(
                 args.vaporAccount,
-                args.owedMkt,
+                args.owedMarket,
                 owedWei
             );
         } else {
             state.setPar(
                 args.vaporAccount,
-                args.owedMkt,
+                args.owedMarket,
                 owedPar
             );
         }
@@ -782,12 +782,12 @@ library OperationImpl {
         // set the balances for the solid account
         state.setParFromDeltaWei(
             args.solidAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei.negative()
         );
         state.setParFromDeltaWei(
             args.solidAccount,
-            args.heldMkt,
+            args.heldMarket,
             heldWei.negative()
         );
 
@@ -856,26 +856,26 @@ library OperationImpl {
         internal
         returns (bool, Types.Wei memory)
     {
-        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMkt);
+        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMarket);
 
         if (!excessWei.isPositive()) {
             return (false, Types.zeroWei());
         }
 
-        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMkt);
+        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
         maxRefundWei.sign = true;
 
         if (excessWei.value >= maxRefundWei.value) {
             state.setPar(
                 args.vaporAccount,
-                args.owedMkt,
+                args.owedMarket,
                 Types.zeroPar()
             );
             return (true, maxRefundWei);
         } else {
             state.setParFromDeltaWei(
                 args.vaporAccount,
-                args.owedMkt,
+                args.owedMarket,
                 excessWei
             );
             return (false, excessWei);

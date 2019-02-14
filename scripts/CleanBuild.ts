@@ -11,10 +11,10 @@ import { abi as permissionAbi } from '../build/contracts/Permission.json';
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
 
-const DOCKER_NETWORK_ID: string = '1313';
+const TEST_NETWORK_ID: string = '1001';
 
 async function clean(): Promise<void> {
-  const directory = `${__dirname}/../build/test/`;
+  const directory = `${__dirname}/../build/published_contracts/`;
   await mkdirAsync(directory);
 
   const promises = Object.keys(contracts).map(async (contractName) => {
@@ -34,15 +34,15 @@ async function clean(): Promise<void> {
       cleaned.networks = deployed[contractName];
     }
 
-    if (contract.networks[DOCKER_NETWORK_ID]) {
-      cleaned.networks[DOCKER_NETWORK_ID] = {
-        links: contract.networks[DOCKER_NETWORK_ID].links,
-        address: contract.networks[DOCKER_NETWORK_ID].address,
-        transactionHash: contract.networks[DOCKER_NETWORK_ID].transactionHash,
+    if (contract.networks[TEST_NETWORK_ID]) {
+      cleaned.networks[TEST_NETWORK_ID] = {
+        links: contract.networks[TEST_NETWORK_ID].links,
+        address: contract.networks[TEST_NETWORK_ID].address,
+        transactionHash: contract.networks[TEST_NETWORK_ID].transactionHash,
       };
     }
 
-    if (contractName === 'SoloMargin') {
+    if (contractName === 'SoloMargin' || contractName === 'TestSoloMargin') {
       cleaned.abi = cleaned.abi
         .concat(eventsAbi.filter(e => e.type === 'event'))
         .concat(adminAbi.filter(e => e.type === 'event'))

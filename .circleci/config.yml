@@ -46,6 +46,9 @@ jobs:
       - run:
           name: Generate wrappers
           command: npm run build:wrappers
+      - run:
+          name: Clean contract json
+          command: npm run clean_contract_json
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:

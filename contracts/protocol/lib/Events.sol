@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.3;
+pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
 import { Account } from "./Account.sol";
@@ -48,58 +48,58 @@ library Events {
     );
 
     event LogDeposit(
-        address indexed acctOwner,
-        uint256 acctNumber,
-        uint256 mkt,
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
         BalanceUpdate update,
         address from
     );
 
     event LogWithdraw(
-        address indexed acctOwner,
-        uint256 acctNumber,
-        uint256 mkt,
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
         BalanceUpdate update,
         address to
     );
 
     event LogTransfer(
-        address indexed acctOneOwner,
-        uint256 acctOneNumber,
-        address indexed acctTwoOwner,
-        uint256 acctTwoNumber,
-        uint256 mkt,
+        address indexed accountOneOwner,
+        uint256 accountOneNumber,
+        address indexed accountTwoOwner,
+        uint256 accountTwoNumber,
+        uint256 market,
         BalanceUpdate updateOne,
         BalanceUpdate updateTwo
     );
 
     event LogBuy(
-        address indexed acctOwner,
-        uint256 acctNumber,
-        uint256 takerMkt,
-        uint256 makerMkt,
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
         BalanceUpdate takerUpdate,
         BalanceUpdate makerUpdate,
         address exchangeWrapper
     );
 
     event LogSell(
-        address indexed acctOwner,
-        uint256 acctNumber,
-        uint256 takerMkt,
-        uint256 makerMkt,
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
         BalanceUpdate takerUpdate,
         BalanceUpdate makerUpdate,
         address exchangeWrapper
     );
 
     event LogTrade(
-        address indexed takerAcctOwner,
-        uint256 takerAcctNumber,
-        address indexed makerAcctOwner,
-        uint256 makerAcctNumber,
-        uint256 inputMkt,
-        uint256 outputMkt,
+        address indexed takerAccountOwner,
+        uint256 takerAccountNumber,
+        address indexed makerAccountOwner,
+        uint256 makerAccountNumber,
+        uint256 inputMarket,
+        uint256 outputMarket,
         BalanceUpdate takerInputUpdate,
         BalanceUpdate takerOutputUpdate,
         BalanceUpdate traderInputUpdate,
@@ -108,18 +108,18 @@ library Events {
     );
 
     event LogCall(
-        address indexed acctOwner,
-        uint256 acctNumber,
+        address indexed accountOwner,
+        uint256 accountNumber,
         address callee
     );
 
     event LogLiquidate(
-        address indexed solidAcctOwner,
-        uint256 solidAcctNumber,
-        address indexed liquidAcctOwner,
-        uint256 liquidAcctNumber,
-        uint256 heldMkt,
-        uint256 owedMkt,
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed liquidAccountOwner,
+        uint256 liquidAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
         BalanceUpdate solidHeldUpdate,
         BalanceUpdate solidOwedUpdate,
         BalanceUpdate liquidHeldUpdate,
@@ -127,12 +127,12 @@ library Events {
     );
 
     event LogVaporize(
-        address indexed solidAcctOwner,
-        uint256 solidAcctNumber,
-        address indexed vaporAcctOwner,
-        uint256 vaporAcctNumber,
-        uint256 heldMkt,
-        uint256 owedMkt,
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed vaporAccountOwner,
+        uint256 vaporAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
         BalanceUpdate solidHeldUpdate,
         BalanceUpdate solidOwedUpdate,
         BalanceUpdate vaporOwedUpdate
@@ -175,11 +175,11 @@ library Events {
         emit LogDeposit(
             args.account.owner,
             args.account.number,
-            args.mkt,
+            args.market,
             getBalanceUpdate(
                 state,
                 args.account,
-                args.mkt,
+                args.market,
                 deltaWei
             ),
             args.from
@@ -196,11 +196,11 @@ library Events {
         emit LogWithdraw(
             args.account.owner,
             args.account.number,
-            args.mkt,
+            args.market,
             getBalanceUpdate(
                 state,
                 args.account,
-                args.mkt,
+                args.market,
                 deltaWei
             ),
             args.to
@@ -219,17 +219,17 @@ library Events {
             args.accountOne.number,
             args.accountTwo.owner,
             args.accountTwo.number,
-            args.mkt,
+            args.market,
             getBalanceUpdate(
                 state,
                 args.accountOne,
-                args.mkt,
+                args.market,
                 deltaWei
             ),
             getBalanceUpdate(
                 state,
                 args.accountTwo,
-                args.mkt,
+                args.market,
                 deltaWei.negative()
             )
         );
@@ -246,18 +246,18 @@ library Events {
         emit LogBuy(
             args.account.owner,
             args.account.number,
-            args.takerMkt,
-            args.makerMkt,
+            args.takerMarket,
+            args.makerMarket,
             getBalanceUpdate(
                 state,
                 args.account,
-                args.takerMkt,
+                args.takerMarket,
                 takerWei
             ),
             getBalanceUpdate(
                 state,
                 args.account,
-                args.makerMkt,
+                args.makerMarket,
                 makerWei
             ),
             args.exchangeWrapper
@@ -275,18 +275,18 @@ library Events {
         emit LogSell(
             args.account.owner,
             args.account.number,
-            args.takerMkt,
-            args.makerMkt,
+            args.takerMarket,
+            args.makerMarket,
             getBalanceUpdate(
                 state,
                 args.account,
-                args.takerMkt,
+                args.takerMarket,
                 takerWei
             ),
             getBalanceUpdate(
                 state,
                 args.account,
-                args.makerMkt,
+                args.makerMarket,
                 makerWei
             ),
             args.exchangeWrapper
@@ -305,25 +305,25 @@ library Events {
             getBalanceUpdate(
                 state,
                 args.takerAccount,
-                args.inputMkt,
+                args.inputMarket,
                 inputWei.negative()
             ),
             getBalanceUpdate(
                 state,
                 args.takerAccount,
-                args.outputMkt,
+                args.outputMarket,
                 outputWei.negative()
             ),
             getBalanceUpdate(
                 state,
                 args.makerAccount,
-                args.inputMkt,
+                args.inputMarket,
                 inputWei
             ),
             getBalanceUpdate(
                 state,
                 args.makerAccount,
-                args.outputMkt,
+                args.outputMarket,
                 outputWei
             )
         ];
@@ -333,8 +333,8 @@ library Events {
             args.takerAccount.number,
             args.makerAccount.owner,
             args.makerAccount.number,
-            args.inputMkt,
-            args.outputMkt,
+            args.inputMarket,
+            args.outputMarket,
             updates[0],
             updates[1],
             updates[2],
@@ -366,25 +366,25 @@ library Events {
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
             state,
             args.solidAccount,
-            args.heldMkt,
+            args.heldMarket,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
             state,
             args.solidAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei.negative()
         );
         BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
             state,
             args.liquidAccount,
-            args.heldMkt,
+            args.heldMarket,
             heldWei
         );
         BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
             state,
             args.liquidAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei
         );
 
@@ -393,8 +393,8 @@ library Events {
             args.solidAccount.number,
             args.liquidAccount.owner,
             args.liquidAccount.number,
-            args.heldMkt,
-            args.owedMkt,
+            args.heldMarket,
+            args.owedMarket,
             solidHeldUpdate,
             solidOwedUpdate,
             liquidHeldUpdate,
@@ -414,19 +414,19 @@ library Events {
         BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
             state,
             args.solidAccount,
-            args.heldMkt,
+            args.heldMarket,
             heldWei.negative()
         );
         BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
             state,
             args.solidAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei.negative()
         );
         BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
             state,
             args.vaporAccount,
-            args.owedMkt,
+            args.owedMarket,
             owedWei.add(excessWei)
         );
 
@@ -435,8 +435,8 @@ library Events {
             args.solidAccount.number,
             args.vaporAccount.owner,
             args.vaporAccount.number,
-            args.heldMkt,
-            args.owedMkt,
+            args.heldMarket,
+            args.owedMarket,
             solidHeldUpdate,
             solidOwedUpdate,
             vaporOwedUpdate
@@ -448,7 +448,7 @@ library Events {
     function getBalanceUpdate(
         Storage.State storage state,
         Account.Info memory account,
-        uint256 mkt,
+        uint256 market,
         Types.Wei memory deltaWei
     )
         private
@@ -457,7 +457,7 @@ library Events {
     {
         return BalanceUpdate({
             deltaWei: deltaWei,
-            newPar: state.getPar(account, mkt)
+            newPar: state.getPar(account, market)
         });
     }
 }

@@ -101,8 +101,8 @@ describe('Integration', () => {
     expect(solidOwner).not.toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
-    const heldMkt = INTEGERS.ZERO;
-    const owedMkt = INTEGERS.ONE;
+    const heldMarket = INTEGERS.ZERO;
+    const owedMarket = INTEGERS.ONE;
     const heldToken = solo.testing.tokenA;
     const owedToken = solo.testing.tokenB;
     const collateralization = new BigNumber('1.1');
@@ -123,13 +123,13 @@ describe('Integration', () => {
       solo.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
-        heldMkt,
+        heldMarket,
         amount.times(collateralization),
       ),
       solo.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
-        owedMkt,
+        owedMarket,
         amount.times(-1),
       ),
     ]);
@@ -150,8 +150,8 @@ describe('Integration', () => {
         primaryAccountId: solidNumber,
         liquidAccountOwner: liquidOwner,
         liquidAccountId: liquidNumber,
-        liquidMarketId: owedMkt,
-        payoutMarketId: heldMkt,
+        liquidMarketId: owedMarket,
+        payoutMarketId: heldMarket,
         amount: {
           value: INTEGERS.ZERO,
           denomination: AmountDenomination.Actual,
@@ -161,8 +161,8 @@ describe('Integration', () => {
       .buy({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
-        takerMarketId: heldMkt,
-        makerMarketId: owedMkt,
+        takerMarketId: heldMarket,
+        makerMarketId: owedMarket,
         order: testOrder,
         amount: {
           value: INTEGERS.ZERO,
@@ -173,7 +173,7 @@ describe('Integration', () => {
       .withdraw({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
-        marketId: heldMkt,
+        marketId: heldMarket,
         amount: {
           value: INTEGERS.ZERO,
           denomination: AmountDenomination.Actual,
@@ -219,7 +219,7 @@ describe('Integration', () => {
     });
     liquidBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMkt.toNumber()) {
+      if (i === heldMarket.toNumber()) {
         expected = amount.times(collateralization.minus(premium));
       }
       expect(balance.par).toEqual(expected);
@@ -234,8 +234,8 @@ describe('Integration', () => {
     const owner = solo.getDefaultAccount();
     const oneNumber = INTEGERS.ZERO;
     const twoNumber = INTEGERS.ONE;
-    const heldMkt = INTEGERS.ZERO;
-    const owedMkt = INTEGERS.ONE;
+    const heldMarket = INTEGERS.ZERO;
+    const owedMarket = INTEGERS.ONE;
     const heldToken = solo.testing.tokenA;
     const owedToken = solo.testing.tokenB;
 
@@ -254,7 +254,7 @@ describe('Integration', () => {
       solo.testing.setAccountBalance(
         owner,
         oneNumber,
-        heldMkt,
+        heldMarket,
         amount,
       ),
     ]);
@@ -275,7 +275,7 @@ describe('Integration', () => {
         primaryAccountId: oneNumber,
         toAccountOwner: owner,
         toAccountId: twoNumber,
-        marketId: heldMkt,
+        marketId: heldMarket,
         amount: {
           value: amount.times(-1),
           denomination: AmountDenomination.Actual,
@@ -285,8 +285,8 @@ describe('Integration', () => {
       .sell({
         primaryAccountOwner: owner,
         primaryAccountId: twoNumber,
-        takerMarketId: owedMkt,
-        makerMarketId: heldMkt,
+        takerMarketId: owedMarket,
+        makerMarketId: heldMarket,
         order: testOrder,
         amount: {
           value: amount.times(-1),
@@ -327,10 +327,10 @@ describe('Integration', () => {
 
     twoBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMkt.toNumber()) {
+      if (i === heldMarket.toNumber()) {
         expected = amount.times(2);
       }
-      if (i === owedMkt.toNumber()) {
+      if (i === owedMarket.toNumber()) {
         expected = amount.times(-1);
       }
       expect(balance.par).toEqual(expected);
