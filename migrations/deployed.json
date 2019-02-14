@@ -2,32 +2,32 @@
     "SoloMargin": {
         "42": {
             "links": {
-                "AdminImpl": "0x45B0A77D55F05a22D5f7B46F15cDda2A7E621Ba8",
-                "OperationImpl": "0xEA348AA32Db177CC97F5D543961ae03A815776e5"
+                "AdminImpl": "0xA23C81493e124342Da05963D8826EF44c0d5eCA0",
+                "OperationImpl": "0xa0B8EF792e6F53D60e61B6fE5664Abf7592ec09B"
             },
-            "address": "0xBFA1e73370321284ac09dF050d6924f8a84f84f0",
-            "transactionHash": "0xf22f21ceca789c8bb59d61af92afc7fe143958cb3a14e24b1db0414b4b974fe0"
+            "address": "0x2F4B5AE942BAC819fa25085D1b82300FeA0DdF70",
+            "transactionHash": "0xb7ba804c53d123ffc9e9eb1ba15c09b38f4a8450ea0ac54f52bbba57c44e6db9"
         }
     },
     "PayableProxyForSoloMargin": {
         "42": {
             "links": {},
-            "address": "0xBE4988dF35504Cab4C530f0197b3660841C50d5D",
-            "transactionHash": "0x0a0a4a89681accc10dbbe9aa787c82ebf15bb58f1c92147c3d2828265d418047"
+            "address": "0x7483bD85c091848097466f4c3fD519dD81840D33",
+            "transactionHash": "0x5ce0faacd462215ced9db4fca889d8f04e38c31ef2b28cf1c0d549c7066ff5c0"
         }
     },
     "TestPriceOracle": {
         "42": {
             "links": {},
-            "address": "0x55665B35a997bD7458F053b36786859B6dCbbC72",
-            "transactionHash": "0xabf87dbcd33c8fa76ec4fb510a4d67587084e77e6e61b72f3a566607bf8122ac"
+            "address": "0x9ebD5b618073b9D3C30f72fEC7F6533eCb558c6b",
+            "transactionHash": "0x21cd74ab35812b57afb45b9c435da9452caefbafa8d77098813adb07bb3045ce"
         }
     },
     "TestInterestSetter": {
         "42": {
             "links": {},
-            "address": "0xD8603ceDeabd9b6f37E7da3C5389A1bcd791B60d",
-            "transactionHash": "0xd7865b69a3b8cf07c739eb84250f6a46349cb9eeef030cec719960387759a9ce"
+            "address": "0x1e5b6e89B4d10ee850e1893Efc587353149790C4",
+            "transactionHash": "0x55de1ad13b892812389490e7f75a34081736405340ca286d2f7812028f7a0046"
         }
     }
 }
