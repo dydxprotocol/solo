@@ -130,7 +130,7 @@ describe('Deposit', () => {
     cachedWeis.soloWei = zero;
   });
 
-  it('Basic deposit test', async () => {
+  it.only('Basic deposit test', async () => {
     const amount = new BigNumber(100);
     await Promise.all([
       solo.testing.setMarketIndex(market, {
@@ -149,7 +149,14 @@ describe('Deposit', () => {
       },
     });
 
-    await expectBalances(amount, amount, zero, amount);
+    const decoded = solo.logs.parseLogs(txResult);
+
+    // console.log(Object.values(txResult.events).map(e => e.event));
+    // console.log(Object.values(txResult.events).map(e => e.returnValues));
+
+    console.log(decoded)
+
+    // await expectBalances(amount, amount, zero, amount);
     // TODO: expect log
 
     console.log(`\tDeposit gas used: ${txResult.gasUsed}`);

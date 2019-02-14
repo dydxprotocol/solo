@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "build": "npm run compile && npm run copy_tew && npm run build:wrappers",
+    "build": "npm run compile && npm run copy_tew && npm run build:wrappers && npm run clean_contract_json",
     "copy_tew": "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "compile": "node_modules/.bin/truffle compile",
@@ -44,7 +44,7 @@
     "ci_test": "NODE_ENV=test RPC_NODE_URI=http://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
-    "install_compiler": "docker pull ethereum/solc:0.5.3",
+    "install_compiler": "docker pull ethereum/solc:0.5.4",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts"
   },
   "repository": {

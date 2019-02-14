@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.3;
+pragma solidity 0.5.4;
 
 import { Require } from "./Require.sol";
 import { Token } from "./Token.sol";
