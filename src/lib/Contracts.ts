@@ -441,14 +441,14 @@ export class Contracts {
         case 'LogTrade': {
           signature = this.web3.eth.abi.encodeEventSignature(
             /* tslint:disable-next-line */
-            'LogSell(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,address)',
+            'LogTrade(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,address)',
           );
           break;
         }
         case 'LogCall': {
           signature = this.web3.eth.abi.encodeEventSignature(
             /* tslint:disable-next-line */
-            'LogSell(address,uint256,address)',
+            'LogCall(address,uint256,address)',
           );
           break;
         }
