@@ -1,7 +1,6 @@
-import BigNumber from 'bignumber.js';
 import { Contracts } from '../../lib/Contracts';
 import { ContractCallOptions, TxResult, address, Decimal } from '../../types';
-import { INTEGERS } from '../../lib/Constants';
+import { decimalToString } from '../../lib/Helpers';
 
 export class TestInterestSetter {
   private contracts: Contracts;
@@ -24,12 +23,7 @@ export class TestInterestSetter {
     return this.contracts.callContractFunction(
       this.contracts.testInterestSetter.methods.setInterestRate(
         token,
-        {
-          value: interestRate
-            .times(INTEGERS.INTEREST_RATE_BASE)
-            .integerValue(BigNumber.ROUND_DOWN)
-            .toFixed(0),
-        },
+        { value: decimalToString(interestRate) },
       ),
       options,
     );

@@ -3,7 +3,11 @@ import { Solo } from '../../src/Solo';
 import { address } from '../../src/types';
 import { mineAvgBlock } from './EVM';
 
-export async function setupMarkets(solo: Solo, accounts: address[]): Promise<void> {
+export async function setupMarkets(
+  solo: Solo,
+  accounts: address[],
+  numMarkets: number = 3,
+): Promise<void> {
   const priceOracle = solo.testing.priceOracle.getAddress();
   const interestSetter = solo.testing.interestSetter.getAddress();
   const price = new BigNumber('1e40'); // large to prevent hitting minBorrowValue check
@@ -23,25 +27,20 @@ export async function setupMarkets(solo: Solo, accounts: address[]): Promise<voi
     ),
   ]);
 
-  // Done in sequence so token A is always market 0
-  await solo.admin.addMarket(
+  const tokens = [
     solo.testing.tokenA.getAddress(),
-    priceOracle,
-    interestSetter,
-    { from: accounts[0] },
-  );
-  await solo.admin.addMarket(
     solo.testing.tokenB.getAddress(),
-    priceOracle,
-    interestSetter,
-    { from: accounts[0] },
-  );
-  await solo.admin.addMarket(
     solo.testing.tokenC.getAddress(),
-    priceOracle,
-    interestSetter,
-    { from: accounts[0] },
-  );
+  ];
+
+  for (let i = 0; i < numMarkets && i < tokens.length; i += 1) {
+    await solo.admin.addMarket(
+      tokens[i],
+      priceOracle,
+      interestSetter,
+      { from: accounts[0] },
+    );
+  }
 
   await mineAvgBlock();
 }

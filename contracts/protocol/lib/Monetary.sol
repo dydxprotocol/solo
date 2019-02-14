@@ -68,17 +68,4 @@ library Monetary {
             value: a.value.add(b.value)
         });
     }
-
-    function sub(
-        Value memory a,
-        Value memory b
-    )
-        internal
-        pure
-        returns (Value memory)
-    {
-        return Value({
-            value: a.value.sub(b.value)
-        });
-    }
 }

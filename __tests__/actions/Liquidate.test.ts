@@ -173,7 +173,7 @@ describe('Liquidate', () => {
       expectSolidPars(zero, par),
       expectLiquidPars(collatPar, negPar),
     ]);
-    const totalOtherPar = await solo.getters.getMarket(otherMarket);
+    const totalOtherPar = await solo.getters.getMarketWithInfo(otherMarket);
     expect(totalOtherPar.market.totalPar.supply).toEqual(zero);
     expect(totalOtherPar.market.totalPar.borrow).toEqual(zero);
   });
@@ -186,7 +186,7 @@ describe('Liquidate', () => {
       expectSolidPars(zero, par),
       expectLiquidPars(collatPar, negPar),
     ]);
-    const totalOtherPar = await solo.getters.getMarket(otherMarket);
+    const totalOtherPar = await solo.getters.getMarketWithInfo(otherMarket);
     expect(totalOtherPar.market.totalPar.supply).toEqual(zero);
     expect(totalOtherPar.market.totalPar.borrow).toEqual(zero);
   });

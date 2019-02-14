@@ -97,22 +97,6 @@ library Math {
         return r;
     }
 
-    function to64(
-        uint256 x
-    )
-        internal
-        pure
-        returns (uint64)
-    {
-        uint64 r = uint64(x);
-        Require.that(
-            r == x,
-            FILE,
-            "Unsafe cast to uint64"
-        );
-        return r;
-    }
-
     function to32(
         uint256 x
     )

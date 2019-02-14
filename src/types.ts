@@ -201,18 +201,44 @@ export interface Index {
   lastUpdate: Integer;
 }
 
+export interface TotalPar {
+  borrow: Integer;
+  supply: Integer;
+}
+
+export interface Market {
+  token: address;
+  totalPar: TotalPar;
+  index: Index;
+  priceOracle: address;
+  interestSetter: address;
+  isClosing: boolean;
+}
+
 export interface MarketWithInfo {
-  market: {
-    token: address;
-    totalPar: { borrow: Integer; supply: Integer };
-    index: Index;
-    priceOracle: address;
-    interestSetter: address;
-    isClosing: boolean;
-  };
+  market: Market;
   currentIndex: Index;
   currentPrice: Integer;
   currentInterestRate: Decimal;
+}
+
+export interface RiskLimits {
+  interestRateMax: Decimal;
+  liquidationRatioMax: Decimal;
+  liquidationRatioMin: Decimal;
+  liquidationSpreadMax: Decimal;
+  liquidationSpreadMin: Decimal;
+  earningsRateMin: Decimal;
+  earningsRateMax: Decimal;
+  minBorrowedValueMax: Integer;
+  minBorrowedValueMin: Integer;
+}
+
+export interface RiskParams {
+  liquidationRatio: Decimal;
+  liquidationSpread: Decimal;
+  earningsRate: Decimal;
+  minBorrowedValue: Integer;
 }
 
 export interface Balance {

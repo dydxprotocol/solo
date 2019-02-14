@@ -22,7 +22,6 @@ pragma experimental ABIEncoderV2;
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
-import { Exchange } from "../lib/Exchange.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
@@ -39,6 +38,7 @@ import { Types } from "../lib/Types.sol";
  */
 library AdminImpl {
     using Storage for Storage.State;
+    using Token for address;
     using Types for Types.Wei;
 
     // ============ Constants ============
@@ -59,21 +59,20 @@ library AdminImpl {
         Types.Wei memory excessWei = state.getNumExcessTokens(marketId);
 
         Require.that(
-            excessWei.isPositive(),
+            !excessWei.isNegative(),
             FILE,
-            "No excess tokens"
+            "Negative excess"
         );
 
-        uint256 actualBalance = Token.balanceOf(state.getToken(marketId), address(this));
+        address token = state.getToken(marketId);
+
+        uint256 actualBalance = token.balanceOf(address(this));
         if (excessWei.value > actualBalance) {
             excessWei.value = actualBalance;
         }
 
-        Exchange.transferOut(
-            state.getToken(marketId),
-            recipient,
-            excessWei
-        );
+        token.transfer(recipient, excessWei.value);
+
         return excessWei.value;
     }
 
@@ -87,8 +86,8 @@ library AdminImpl {
     {
         _requireNoMarket(state, token);
 
-        uint256 balance = Token.balanceOf(token, address(this));
-        Token.transfer(token, recipient, balance);
+        uint256 balance = token.balanceOf(address(this));
+        token.transfer(recipient, balance);
         return balance;
     }
 
@@ -168,7 +167,7 @@ library AdminImpl {
         Require.that(
             ratio.value > state.riskParams.liquidationSpread.value,
             FILE,
-            "Ratio higher than spread"
+            "Ratio cannot be <= spread"
         );
         state.riskParams.liquidationRatio = ratio;
     }
@@ -192,7 +191,7 @@ library AdminImpl {
         Require.that(
             spread.value < state.riskParams.liquidationRatio.value,
             FILE,
-            "Spread lower than ratio"
+            "Spread cannot be >= ratio"
         );
         state.riskParams.liquidationSpread = spread;
     }
