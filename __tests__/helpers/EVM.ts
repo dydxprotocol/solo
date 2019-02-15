@@ -13,3 +13,7 @@ export async function mineAvgBlock() {
 export async function snapshot() {
   return solo.testing.evm.snapshot();
 }
+
+export async function fastForward(seconds: number) {
+  return solo.testing.evm.increaseTime(seconds);
+}

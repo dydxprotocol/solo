@@ -65,30 +65,30 @@ library Interest {
         returns (Index memory)
     {
         (
-            Types.Wei memory borrowWei,
-            Types.Wei memory supplyWei
+            Types.Wei memory supplyWei,
+            Types.Wei memory borrowWei
         ) = totalParToWei(totalPar, index);
-        uint32 timeDelta = uint256(Time.currentTime()).sub(index.lastUpdate).to32();
 
         // calculate the interest accrued by
-        uint96 borrowInterest = rate.value.mul(timeDelta).to96();
+        uint32 currentTime = Time.currentTime();
+        uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
 
         // adjust the interest by the earningsRate, then prorate the interest across all suppliers
-        uint96 supplyInterest;
+        uint256 supplyInterest;
         if (Types.isZero(supplyWei)) {
             supplyInterest = 0;
         } else {
-            supplyInterest = Math.getPartial(
-                Decimal.mul(borrowInterest, earningsRate),
-                borrowWei.value,
-                supplyWei.value
-            ).to96();
+            supplyInterest = Decimal.mul(borrowInterest, earningsRate);
+            if (borrowWei.value < supplyWei.value) {
+                supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
+            }
         }
+        assert(supplyInterest <= borrowInterest);
 
         return Index({
             borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
             supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
-            lastUpdate: Time.currentTime()
+            lastUpdate: currentTime
         });
     }
 

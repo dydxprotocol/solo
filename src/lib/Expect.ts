@@ -1,10 +1,8 @@
-import { TxResult } from '../types';
-
 const REQUIRE_MSG = 'Returned error: VM Exception while processing transaction: revert';
 const ASSERT_MSG = 'Returned error: VM Exception while processing transaction: invalid opcode';
 
 // For solidity function calls that violate require()
-export async function expectThrow(promise: Promise<TxResult>, reason?: string) {
+export async function expectThrow(promise: Promise<any>, reason?: string) {
   try {
     await promise;
     throw new Error('Did not throw');
@@ -17,7 +15,7 @@ export async function expectThrow(promise: Promise<TxResult>, reason?: string) {
 }
 
 // For solidity function calls that violate assert()
-export async function expectAssertFailure(promise: Promise<TxResult>) {
+export async function expectAssertFailure(promise: Promise<any>) {
   try {
     await promise;
     throw new Error('Did not throw');

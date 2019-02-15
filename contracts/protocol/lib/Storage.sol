@@ -339,14 +339,14 @@ library Storage {
 
     function isLocalOperator(
         Storage.State storage state,
-        Account.Info memory account,
+        address owner,
         address operator
     )
         internal
         view
         returns (bool)
     {
-        return state.operators[account.owner][operator];
+        return state.operators[owner][operator];
     }
 
     function requireIsOperator(
@@ -360,7 +360,7 @@ library Storage {
         bool isValidOperator =
             operator == account.owner
             || state.isGlobalOperator(operator)
-            || state.isLocalOperator(account, operator);
+            || state.isLocalOperator(account.owner, operator);
 
         Require.that(
             isValidOperator,

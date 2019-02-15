@@ -104,8 +104,8 @@ export class Getters {
         marketId.toFixed(0),
       ).call();
     return {
-      borrow: result[0],
-      supply: result[1],
+      borrow: new BigNumber(result[0]),
+      supply: new BigNumber(result[1]),
     };
   }
 
@@ -142,7 +142,7 @@ export class Getters {
     marketId: Integer,
   ): Promise<address> {
     return this.contracts.soloMargin.methods
-      .getMarketPriceOracle(
+      .getMarketInterestSetter(
         marketId.toFixed(0),
       ).call();
   }
@@ -200,14 +200,8 @@ export class Getters {
 
     return {
       market: {
-        token: market.token,
-        priceOracle: market.priceOracle,
-        interestSetter: market.interestSetter,
-        isClosing: market.isClosing,
-        totalPar: {
-          borrow: new BigNumber(market.totalPar.borrow),
-          supply: new BigNumber(market.totalPar.supply),
-        },
+        ...market,
+        totalPar: this.parseTotalPar(market.totalPar),
         index: this.parseIndex(market.index),
       },
       currentIndex: this.parseIndex(currentIndex),
@@ -321,18 +315,11 @@ export class Getters {
   // ============ Getters for Permissions ============
 
   public async getIsLocalOperator(
-    accountOwner: address,
-    accountNumber: Integer,
+    owner: address,
     operator: address,
   ): Promise<boolean> {
     return this.contracts.soloMargin.methods
-      .getIsLocalOperator(
-      {
-        owner: accountOwner,
-        number: accountNumber.toFixed(0),
-      },
-      operator,
-    ).call();
+      .getIsLocalOperator(owner, operator).call();
   }
 
   public async getIsGlobalOperator(
