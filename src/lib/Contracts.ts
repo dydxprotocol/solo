@@ -257,7 +257,7 @@ export class Contracts {
         let gasEstimate: number;
 
         try {
-          gasEstimate = await method.estimateGas(options);
+          gasEstimate = await method.estimateGas(txOptions);
         } catch (error) {
           const data = method.encodeABI();
           const { from, value } = options;
