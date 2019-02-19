@@ -26,6 +26,7 @@ import { Account } from "./lib/Account.sol";
 import { Decimal } from "./lib/Decimal.sol";
 import { Interest } from "./lib/Interest.sol";
 import { Monetary } from "./lib/Monetary.sol";
+import { Require } from "./lib/Require.sol";
 import { Storage } from "./lib/Storage.sol";
 import { Token } from "./lib/Token.sol";
 import { Types } from "./lib/Types.sol";
@@ -42,6 +43,10 @@ contract Getters is
 {
     using Storage for Storage.State;
     using Types for Types.Par;
+
+    // ============ Constants ============
+
+    bytes32 FILE = "Getters";
 
     // ============ Getters for Risk ============
 
@@ -110,6 +115,7 @@ contract Getters is
         view
         returns (address)
     {
+        _requireValidMarket(marketId);
         return g_state.getToken(marketId);
     }
 
@@ -120,6 +126,7 @@ contract Getters is
         view
         returns (Types.TotalPar memory)
     {
+        _requireValidMarket(marketId);
         return g_state.getTotalPar(marketId);
     }
 
@@ -130,6 +137,7 @@ contract Getters is
         view
         returns (Interest.Index memory)
     {
+        _requireValidMarket(marketId);
         return g_state.getIndex(marketId);
     }
 
@@ -140,6 +148,7 @@ contract Getters is
         view
         returns (Interest.Index memory)
     {
+        _requireValidMarket(marketId);
         return g_state.fetchNewIndex(marketId, g_state.getIndex(marketId));
     }
 
@@ -150,6 +159,7 @@ contract Getters is
         view
         returns (IPriceOracle)
     {
+        _requireValidMarket(marketId);
         return g_state.markets[marketId].priceOracle;
     }
 
@@ -160,6 +170,7 @@ contract Getters is
         view
         returns (IInterestSetter)
     {
+        _requireValidMarket(marketId);
         return g_state.markets[marketId].interestSetter;
     }
 
@@ -170,6 +181,7 @@ contract Getters is
         view
         returns (bool)
     {
+        _requireValidMarket(marketId);
         return g_state.markets[marketId].isClosing;
     }
 
@@ -180,6 +192,7 @@ contract Getters is
         view
         returns (Monetary.Price memory)
     {
+        _requireValidMarket(marketId);
         return g_state.fetchPrice(marketId);
     }
 
@@ -190,6 +203,7 @@ contract Getters is
         view
         returns (Interest.Rate memory)
     {
+        _requireValidMarket(marketId);
         return g_state.fetchInterestRate(
             marketId,
             g_state.getIndex(marketId)
@@ -203,6 +217,7 @@ contract Getters is
         view
         returns (Storage.Market memory)
     {
+        _requireValidMarket(marketId);
         return g_state.markets[marketId];
     }
 
@@ -218,6 +233,7 @@ contract Getters is
             Interest.Rate memory
         )
     {
+        _requireValidMarket(marketId);
         return (
             getMarket(marketId),
             getMarketCurrentIndex(marketId),
@@ -233,6 +249,7 @@ contract Getters is
         view
         returns (Types.Wei memory)
     {
+        _requireValidMarket(marketId);
         return g_state.getNumExcessTokens(marketId);
     }
 
@@ -246,6 +263,7 @@ contract Getters is
         view
         returns (Types.Par memory)
     {
+        _requireValidMarket(marketId);
         return g_state.getPar(account, marketId);
     }
 
@@ -257,6 +275,7 @@ contract Getters is
         view
         returns (Types.Wei memory)
     {
+        _requireValidMarket(marketId);
         return Interest.parToWei(
             g_state.getPar(account, marketId),
             g_state.fetchNewIndex(marketId, g_state.getIndex(marketId))
@@ -280,12 +299,16 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        Monetary.Price[] memory priceCache = new Monetary.Price[](g_state.numMarkets);
-        for (uint256 m = 0; m < g_state.numMarkets; m++) {
+        uint256 numMarkets = g_state.numMarkets;
+
+        // populate price cache
+        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
+        for (uint256 m = 0; m < numMarkets; m++) {
             if (!g_state.getPar(account, m).isZero()) {
                 priceCache[m] = g_state.fetchPrice(m);
             }
         }
+
         return g_state.getValues(account, priceCache, false);
     }
 
@@ -300,8 +323,7 @@ contract Getters is
             Types.Wei[] memory
         )
     {
-        uint256 numMarkets = getNumMarkets();
-
+        uint256 numMarkets = g_state.numMarkets;
         address[] memory tokens = new address[](numMarkets);
         Types.Par[] memory pars = new Types.Par[](numMarkets);
         Types.Wei[] memory weis = new Types.Wei[](numMarkets);
@@ -322,14 +344,14 @@ contract Getters is
     // ============ Getters for Permissions ============
 
     function getIsLocalOperator(
-        Account.Info memory account,
+        address owner,
         address operator
     )
         public
         view
         returns (bool)
     {
-        return g_state.isLocalOperator(account, operator);
+        return g_state.isLocalOperator(owner, operator);
     }
 
     function getIsGlobalOperator(
@@ -340,5 +362,20 @@ contract Getters is
         returns (bool)
     {
         return g_state.isGlobalOperator(operator);
+    }
+
+    // ============ Private Helper Functions ============
+
+    function _requireValidMarket(
+        uint256 marketId
+    )
+        private
+        view
+    {
+        Require.that(
+            marketId < g_state.numMarkets,
+            FILE,
+            "Market OOB"
+        );
     }
 }

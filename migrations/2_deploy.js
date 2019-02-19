@@ -39,8 +39,8 @@ const riskLimits = {
   liquidationRatioMin: '1100000000000000000', // 110%
   liquidationSpreadMax: '1150000000000000000', // 115%
   liquidationSpreadMin: '1010000000000000000', // 101%
-  earningsRateMin: '500000000000000000', //  50%
   earningsRateMax: '1000000000000000000', // 100%
+  earningsRateMin: '500000000000000000', //  50%
   minBorrowedValueMax: '100000000000000000000', // 100$
   minBorrowedValueMin: '10000000000000000', //   .01$
 };
@@ -48,7 +48,7 @@ const riskLimits = {
 const riskParams = {
   liquidationRatio: { value: '1150000000000000000' }, // 115%
   liquidationSpread: { value: '1050000000000000000' }, // 105%
-  earningsRate: { value: '500000000000000000' }, //  50%
+  earningsRate: { value: '900000000000000000' }, //  90%
   minBorrowedValue: { value: '50000000000000000' }, //   .05$
 };
 

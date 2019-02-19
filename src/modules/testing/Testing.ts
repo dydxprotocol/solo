@@ -101,7 +101,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     if (index.lastUpdate.isZero()) {
-      const currentIndex =  await this.contracts.testSoloMargin.methods.getMarketCachedIndex(
+      const currentIndex = await this.contracts.testSoloMargin.methods.getMarketCachedIndex(
           marketId.toFixed(0),
         ).call();
       index.lastUpdate = new BigNumber(currentIndex.lastUpdate);
