@@ -101,7 +101,7 @@ jobs:
           command: npm run install_compiler
       - run:
           name: Coverage
-          command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
+          command: python util/fix_contracts_for_coverage.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
           no_output_timeout: 60m
   build_js:
     docker:
