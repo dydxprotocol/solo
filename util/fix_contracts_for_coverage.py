@@ -38,45 +38,44 @@ def hideAsserts(dir, filepath):
 
 def fixRequires(dir, filepath):
     oldRequire = 'Require.that('
-    newRequire = 'require('
     allLines = []
     numRequiresChanged = 0
     inARequire = False
-    inArgs = False
-    file = 'FILE_UNKOWN'
+    inMessage = False
+    ifStatement = ''
+    lineNumber = 0
     # parse entire file
     for line in open(filepath, 'r').readlines():
         builder = line.rstrip();
 
-        fileLine = builder.find('FILE = ')
-        if fileLine >= 0:
-            file = builder[fileLine+8:-2]
+        indexOfFile = builder.find('FILE,')
+        if inARequire and indexOfFile >= 0:
+            inMessage = True
+
+        if inARequire and not inMessage:
+            ifStatement += builder.lstrip();
 
         indexOfOldRequire = line.find(oldRequire)
         if not inARequire and indexOfOldRequire >= 0:
             inARequire = True
+            requireLine = lineNumber
             numRequiresChanged += 1
-            builder = builder.replace(oldRequire, newRequire)
-
-        indexOfFile = builder.find('FILE,')
-        if inARequire and indexOfFile >= 0:
-            builder = builder.replace('FILE,', '// FILE,')
-
-        indexOfReasonEnd = builder.find('",')
-        if inARequire and indexOfReasonEnd >= 0:
-            inArgs = True
-            builder = builder.replace(' "', ' "' + file + ': ')
-            builder = builder.replace('",', '"/*')
 
         indexOfEnd = builder.find(');')
         if (inARequire and indexOfEnd >= 0):
-            if inArgs:
-                builder = builder[:indexOfEnd] + '*/' + builder[indexOfEnd:]
+            numLeadingSpaces = len(builder) - 2
+            allLines[requireLine] = (' ' * numLeadingSpaces) \
+            + 'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
+            allLines[requireLine + 1] = (' ' * numLeadingSpaces) \
+            + 'Require.that(' + allLines[requireLine + 1].lstrip()
             inARequire = False
-            inArgs = False
+            inMessage = False
+            ifStatement = ''
+            requireLine = -1
 
         builder += '\n'
         allLines.append(builder)
+        lineNumber += 1
 
     with open(filepath, 'w') as output:
         output.writelines(allLines)
