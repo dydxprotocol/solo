@@ -534,7 +534,6 @@ library Storage {
         Account.Status status
     )
         internal
-        returns (bool)
     {
         state.accounts[account.owner][account.number].status = status;
     }
