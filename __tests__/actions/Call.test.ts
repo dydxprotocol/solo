@@ -6,7 +6,11 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
-import { address, Call } from '../../src/types';
+import {
+  address,
+  AccountStatus,
+  Call,
+} from '../../src/types';
 
 let who: address;
 let operator: address;
@@ -54,8 +58,29 @@ describe('Call', () => {
     console.log(`\tCall gas used: ${txResult.gasUsed}`);
   });
 
-  it('Succeeds for operator', async () => {
+  it('Succeeds and sets status to Normal', async () => {
+    await solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating);
+    await expectCallOkay({
+      data: toBytes(accountData, senderData),
+    });
+    await verifyDataIntegrity(who);
+    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
     await solo.permissions.approveOperator(operator, { from: who });
+    await expectCallOkay(
+      {
+        data: toBytes(accountData, senderData),
+      },
+      { from: operator },
+    );
+    await verifyDataIntegrity(operator);
+  });
+
+  it('Succeeds for global operator', async () => {
+    await solo.admin.setGlobalOperator(operator, true, { from: accounts[0] });
     await expectCallOkay(
       {
         data: toBytes(accountData, senderData),

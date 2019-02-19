@@ -155,10 +155,25 @@ describe('Liquidate', () => {
     ]);
   });
 
-  it('Succeeds for operator', async () => {
+  it('Succeeds and sets status to Normal', async () => {
+    await solo.testing.setAccountStatus(solidOwner, solidAccountNumber, AccountStatus.Liquidating);
+    await expectLiquidateOkay({});
+    const status = await solo.getters.getAccountStatus(solidOwner, solidAccountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
     await solo.permissions.approveOperator(operator, { from: solidOwner });
     await expectLiquidateOkay({}, { from: operator });
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero),
+    ]);
+  });
 
+  it('Succeeds for global operator', async () => {
+    await solo.admin.setGlobalOperator(operator, true, { from: accounts[0] });
+    await expectLiquidateOkay({}, { from: operator });
     await Promise.all([
       expectSolidPars(par.times(premium), zero),
       expectLiquidPars(par.times(remaining), zero),

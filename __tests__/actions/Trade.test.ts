@@ -8,6 +8,7 @@ import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
+  AccountStatus,
   AmountDenomination,
   AmountReference,
   Balance,
@@ -728,10 +729,42 @@ describe('Trade', () => {
     ]);
   });
 
-  it('Succeeds for operator sender', async () => {
+  it('Succeeds and sets status to Normal', async () => {
+    await Promise.all([
+      solo.testing.setAccountStatus(who1, accountNumber1, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(who2, accountNumber2, AccountStatus.Liquidating),
+      approveTrader(),
+      setTradeData(),
+    ]);
+    await expectTradeOkay({});
+    const [
+      status1,
+      status2,
+    ] = await Promise.all([
+      solo.getters.getAccountStatus(who1, accountNumber1),
+      solo.getters.getAccountStatus(who2, accountNumber2),
+    ]);
+    expect(status1).toEqual(AccountStatus.Normal);
+    expect(status2).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator sender', async () => {
     await Promise.all([
       approveTrader(),
       approveOperator(),
+      setTradeData(),
+    ]);
+    await expectTradeOkay({}, { from: operator });
+    await Promise.all([
+      expectBalances1(par, negPar),
+      expectBalances2(negPar, par),
+    ]);
+  });
+
+  it('Succeeds for global operator sender', async () => {
+    await Promise.all([
+      approveTrader(),
+      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
       setTradeData(),
     ]);
     await expectTradeOkay({}, { from: operator });

@@ -7,6 +7,7 @@ import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
+  AccountStatus,
   AmountDenomination,
   AmountReference,
   Deposit,
@@ -14,6 +15,7 @@ import {
 } from '../../src/types';
 
 let who: address;
+let operator: address;
 let solo: Solo;
 let accounts: address[];
 const accountNumber = INTEGERS.ZERO;
@@ -31,6 +33,11 @@ const cachedWeis = {
   walletWei: zero,
   soloWei: zero,
 };
+const defaultIndex = {
+  lastUpdate: INTEGERS.ZERO,
+  borrow: wei.div(par),
+  supply: wei.div(par),
+};
 
 describe('Deposit', () => {
   let snapshotId: string;
@@ -40,26 +47,23 @@ describe('Deposit', () => {
     solo = r.solo;
     accounts = r.accounts;
     who = solo.getDefaultAccount();
+    operator = accounts[6];
     defaultGlob = {
       primaryAccountOwner: who,
       primaryAccountId: accountNumber,
       marketId: market,
       from: who,
       amount: {
-        value: zero,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
+        value: wei,
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
       },
     };
 
     await resetEVM();
     await setupMarkets(solo, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
-        lastUpdate: INTEGERS.ZERO,
-        borrow: wei.div(par),
-        supply: wei.div(par),
-      }),
+      solo.testing.setMarketIndex(market, defaultIndex),
       solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
       solo.testing.tokenA.setMaximumSoloAllowance(who),
     ]);
@@ -73,28 +77,57 @@ describe('Deposit', () => {
   });
 
   it('Basic deposit test', async () => {
-    const amount = new BigNumber(100);
+    await issueTokensToUser(wei);
+    const txResult = await expectDepositOkay({});
+    await expectBalances(par, wei, zero, wei);
+    console.log(`\tDeposit gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Succeeds for events', async () => {
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
-        lastUpdate: INTEGERS.ZERO,
-        borrow: INTEGERS.ONE,
-        supply: INTEGERS.ONE,
-      }),
-      issueTokensToUser(amount),
+      solo.testing.tokenA.issueTo(wei, operator),
+      solo.testing.tokenA.setMaximumSoloAllowance(operator),
+      solo.permissions.approveOperator(operator, { from: who }),
+      solo.testing.setAccountBalance(who, accountNumber, market, par),
+    ]);
+    const txResult = await expectDepositOkay(
+      { from: operator },
+      { from: operator },
+    );
+    await expectBalances(par.times(2), wei.times(2), zero, wei);
+
+    const [
+      mIndex,
+      cIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(market),
+      solo.getters.getMarketCachedIndex(collateralMarket),
     ]);
 
-    const txResult = await expectDepositOkay({
-      amount: {
-        value: amount,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-    });
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
 
-    await expectBalances(amount, amount, zero, amount);
-    // TODO: expect log
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
 
-    console.log(`\tDeposit gas used: ${txResult.gasUsed}`);
+    const mIndexLog = logs[1];
+    expect(mIndexLog.name).toEqual('LogIndexUpdate');
+    expect(mIndexLog.args.market).toEqual(market);
+    expect(mIndexLog.args.index).toEqual(mIndex);
+
+    const cIndexLog = logs[2];
+    expect(cIndexLog.name).toEqual('LogIndexUpdate');
+    expect(cIndexLog.args.market).toEqual(collateralMarket);
+    expect(cIndexLog.args.index).toEqual(cIndex);
+
+    const depositLog = logs[3];
+    expect(depositLog.name).toEqual('LogDeposit');
+    expect(depositLog.args.accountOwner).toEqual(who);
+    expect(depositLog.args.accountNumber).toEqual(accountNumber);
+    expect(depositLog.args.market).toEqual(market);
+    expect(depositLog.args.update).toEqual({ newPar: par.times(2), deltaWei: wei });
+    expect(depositLog.args.from).toEqual(operator);
   });
 
   it('Succeeds for positive delta par/wei', async () => {
@@ -372,50 +405,46 @@ describe('Deposit', () => {
     // TODO
   });
 
-  it('Succeeds for operator', async () => {
-    const operator = accounts[2];
+  it('Succeeds and sets status to Normal', async () => {
+    await Promise.all([
+      issueTokensToUser(wei),
+      solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
+    ]);
+    await expectDepositOkay({});
+    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
     await Promise.all([
       issueTokensToUser(wei),
       solo.permissions.approveOperator(operator),
     ]);
-    await expectDepositOkay(
-      {
-        amount: {
-          value: wei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-      },
-      { from: operator },
-    );
+    await expectDepositOkay({}, { from: operator });
+  });
+
+  it('Succeeds for global operator', async () => {
+    await Promise.all([
+      issueTokensToUser(wei),
+      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+    ]);
+    await expectDepositOkay({}, { from: operator });
   });
 
   it('Fails for non-operator', async () => {
     await issueTokensToUser(wei);
     await expectDepositRevert(
-      {
-        amount: {
-          value: wei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-      },
+      {},
       'Storage: Unpermissioned Operator',
-      { from: accounts[2] },
+      { from: operator },
     );
   });
 
   it('Fails for from random address', async () => {
-    const glob = {
-      amount: {
-        value: wei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-      from: accounts[2],
-    };
-
-    await expectDepositRevert(glob, 'OperationImpl: Invalid deposit source');
+    await expectDepositRevert(
+      { from: operator },
+      'OperationImpl: Invalid deposit source',
+    );
   });
 
   it('Fails if depositing more tokens than owned', async () => {

@@ -7,6 +7,7 @@ import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
+  AccountStatus,
   AmountDenomination,
   AmountReference,
   Integer,
@@ -46,9 +47,9 @@ describe('Withdraw', () => {
       marketId: market,
       to: who,
       amount: {
-        value: zero,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
+        value: negWei,
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
       },
     };
 
@@ -72,28 +73,13 @@ describe('Withdraw', () => {
   });
 
   it('Basic withdraw test', async () => {
-    const amt = new BigNumber(100);
-    const negAmt = new BigNumber(-100);
-
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
-        lastUpdate: INTEGERS.ZERO,
-        borrow: INTEGERS.ONE,
-        supply: INTEGERS.ONE,
-      }),
-      issueTokensToSolo(amt),
-      setAccountBalance(amt.times(2)),
+      issueTokensToSolo(wei),
+      setAccountBalance(par.times(2)),
     ]);
+    const txResult = await expectWithdrawOkay({});
 
-    const txResult = await expectWithdrawOkay({
-      amount: {
-        value: negAmt,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-    });
-
-    await expectBalances(amt, amt, amt, zero);
+    await expectBalances(par, wei, wei, zero);
     // TODO: expect log
 
     console.log(`\tWithdraw gas used: ${txResult.gasUsed}`);
@@ -376,41 +362,45 @@ describe('Withdraw', () => {
 
   it('Succeeds to withdraw to an external address', async () => {
     await issueTokensToSolo(wei);
-    await expectWithdrawOkay({
-      amount: {
-        value: negWei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-      to: accounts[2],
-    });
+    await expectWithdrawOkay({ to: accounts[2] });
+    // TODO check balances
   });
 
   it('Succeeds to withdraw to the SoloMargin address', async () => {
-    await expectWithdrawOkay({
-      amount: {
-        value: negWei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-      to: solo.contracts.soloMargin.options.address,
-    });
+    await expectWithdrawOkay({ to: solo.contracts.soloMargin.options.address });
+    // TODO check balances
   });
 
-  it('Succeeds for operator', async () => {
+  it('Succeeds and sets status to Normal', async () => {
+    await Promise.all([
+      issueTokensToSolo(wei),
+      solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
+    ]);
+    await expectWithdrawOkay({});
+    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
     const operator = accounts[2];
     await Promise.all([
       issueTokensToSolo(wei),
       solo.permissions.approveOperator(operator),
     ]);
     await expectWithdrawOkay(
-      {
-        amount: {
-          value: negWei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-      },
+      {},
+      { from: operator },
+    );
+  });
+
+  it('Succeeds for global operator', async () => {
+    const operator = accounts[2];
+    await Promise.all([
+      issueTokensToSolo(wei),
+      solo.permissions.approveOperator(operator),
+    ]);
+    await expectWithdrawOkay(
+      {},
       { from: operator },
     );
   });
@@ -418,13 +408,7 @@ describe('Withdraw', () => {
   it('Fails for non-operator', async () => {
     await issueTokensToSolo(wei);
     await expectWithdrawRevert(
-      {
-        amount: {
-          value: negWei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-      },
+      {},
       'Storage: Unpermissioned Operator',
       { from: accounts[2] },
     );
@@ -432,13 +416,7 @@ describe('Withdraw', () => {
 
   it('Fails if withdrawing more tokens than exist', async () => {
     await expectWithdrawRevert(
-      {
-        amount: {
-          value: negWei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-      },
+      {},
       'Token: Transfer failed',
     );
   });
