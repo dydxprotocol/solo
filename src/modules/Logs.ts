@@ -3,6 +3,7 @@ import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import { TxResult, Index, BalanceUpdate } from '../types';
+import { stringToDecimal } from '../lib/Helpers';
 
 export class Logs {
   private contracts: Contracts;
@@ -56,20 +57,8 @@ export class Logs {
         const eventArgs =  this.web3.eth.abi.decodeLog(
           eventJson.inputs,
           log.data,
-          log.topics,
+          log.topics.splice(1),
         );
-
-        // This is a workaround for a bug in web3
-        let indexed = 0;
-        eventJson.inputs.forEach((input) => {
-          if (input.indexed) {
-            indexed += 1;
-          }
-
-          if (input.type.match(/^uint[0-9]*$/) && input.indexed) {
-            eventArgs[input.name] = new BigNumber(log.topics[indexed]).toFixed(0);
-          }
-        });
 
         return {
           ...log,
@@ -145,8 +134,8 @@ export class Logs {
 
   private parseIndex(index): Index {
     return {
-      borrow: new BigNumber(index.borrow),
-      supply: new BigNumber(index.supply),
+      borrow: stringToDecimal(index.borrow),
+      supply: stringToDecimal(index.supply),
       lastUpdate: new BigNumber(index.lastUpdate),
     };
   }

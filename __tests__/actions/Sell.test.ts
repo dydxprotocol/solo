@@ -9,6 +9,7 @@ import { expectThrow } from '../../src/lib/Expect';
 import { TestToken } from '../../src/modules/testing/TestToken';
 import {
   address,
+  AccountStatus,
   AmountDenomination,
   AmountReference,
   Integer,
@@ -155,13 +156,42 @@ describe('Sell', () => {
     ]);
   });
 
-  it('Succeeds for operator', async () => {
+  it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
       issueTakerTokenToSolo(takerWei),
       setTakerBalance(takerPar),
+      solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
     ]);
-    await solo.permissions.approveOperator(operator, { from: who });
+    await expectSellOkay({});
+    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
+    await Promise.all([
+      issueMakerTokenToWrapper(makerWei),
+      issueTakerTokenToSolo(takerWei),
+      setTakerBalance(takerPar),
+      solo.permissions.approveOperator(operator, { from: who }),
+    ]);
+    await expectSellOkay({}, { from: operator });
+
+    await Promise.all([
+      await expectPars(makerPar, zero),
+      await expectSoloBalances(makerWei, zero),
+      await expectWrapperBalances(zero, zero),
+      await expectExchangeBalances(zero, takerWei),
+    ]);
+  });
+
+  it('Succeeds for global operator', async () => {
+    await Promise.all([
+      issueMakerTokenToWrapper(makerWei),
+      issueTakerTokenToSolo(takerWei),
+      setTakerBalance(takerPar),
+      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+    ]);
     await expectSellOkay({}, { from: operator });
 
     await Promise.all([

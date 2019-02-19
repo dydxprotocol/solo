@@ -1,11 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { address, AmountDenomination, AmountReference } from '../../src/types';
 import { mineAvgBlock, resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
+import {
+  address,
+  AmountDenomination,
+  AmountReference,
+} from '../../src/types';
 
 describe('Integration', () => {
   let solo: Solo;
@@ -212,7 +216,7 @@ describe('Integration', () => {
     expect(soloHeldTokenBalance).toEqual(amount.times(collateralization.minus(premium)));
     expect(soloOwedTokenBalance).toEqual(amount);
 
-    solidBalances.forEach((balance, i) => {
+    solidBalances.forEach((balance, _) => {
       const expected = INTEGERS.ZERO;
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
@@ -319,7 +323,7 @@ describe('Integration', () => {
     expect(soloHeldTokenBalance).toEqual(amount);
     expect(soloOwedTokenBalance).toEqual(INTEGERS.ZERO);
 
-    oneBalances.forEach((balance, i) => {
+    oneBalances.forEach((balance, _) => {
       const expected = INTEGERS.ZERO;
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);

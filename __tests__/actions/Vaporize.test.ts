@@ -213,11 +213,36 @@ describe('Vaporize', () => {
     ]);
   });
 
-  it('Succeeds for operator', async () => {
+  it('Succeeds and sets status to Normal', async () => {
+    const payoutAmount = wei.times(premium);
+    await Promise.all([
+      issueHeldTokensToSolo(payoutAmount),
+      solo.testing.setAccountStatus(solidOwner, solidAccountNumber, AccountStatus.Liquidating),
+    ]);
+    await expectVaporizeOkay({});
+    const status = await solo.getters.getAccountStatus(solidOwner, solidAccountNumber);
+    expect(status).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for local operator', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
       issueHeldTokensToSolo(payoutAmount),
       solo.permissions.approveOperator(operator, { from: solidOwner }),
+    ]);
+    await expectVaporizeOkay({}, { from: operator });
+    await Promise.all([
+      expectExcessHeldToken(zero),
+      expectVaporPars(zero, zero),
+      expectSolidPars(par.times(premium), zero),
+    ]);
+  });
+
+  it('Succeeds for global operator', async () => {
+    const payoutAmount = wei.times(premium);
+    await Promise.all([
+      issueHeldTokensToSolo(payoutAmount),
+      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
     ]);
     await expectVaporizeOkay({}, { from: operator });
     await Promise.all([

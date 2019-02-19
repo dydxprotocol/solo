@@ -7,6 +7,7 @@ import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
+  AccountStatus,
   AmountDenomination,
   AmountReference,
   Integer,
@@ -375,6 +376,38 @@ describe('Transfer', () => {
 
   it('Succeeds for some more specific indexes and values', async () => {
     // TODO
+  });
+
+  it('Succeeds and sets status to Normal', async () => {
+    await Promise.all([
+      solo.testing.setAccountStatus(owner1, accountNumber1, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(owner2, accountNumber2, AccountStatus.Liquidating),
+    ]);
+    await expectTransferOkay({});
+    const [
+      status1,
+      status2,
+    ] = await Promise.all([
+      solo.getters.getAccountStatus(owner1, accountNumber1),
+      solo.getters.getAccountStatus(owner2, accountNumber2),
+    ]);
+    expect(status1).toEqual(AccountStatus.Normal);
+    expect(status2).toEqual(AccountStatus.Normal);
+  });
+
+  it('Succeeds for global operator', async () => {
+    await Promise.all([
+      solo.permissions.disapproveOperator(operator, { from: owner1 }),
+      solo.permissions.disapproveOperator(operator, { from: owner2 }),
+      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+    ]);
+    await expectTransferOkay({});
+  });
+
+  it('Succeeds for owner of both accounts', async () => {
+    await expectTransferOkay({
+      toAccountOwner: owner1,
+    });
   });
 
   it('Fails for non-operator on first account', async () => {
