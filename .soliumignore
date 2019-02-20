@@ -1,4 +1,3 @@
 node_modules
-contracts/external
 contracts/testing
 contracts/Migrations.sol
