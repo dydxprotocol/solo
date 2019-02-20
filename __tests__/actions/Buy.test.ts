@@ -209,6 +209,19 @@ describe('Buy', () => {
     );
   });
 
+  it('Fails for negative makerAmount', async () => {
+    await expectBuyRevert(
+      {
+        amount: {
+          value: makerWei.times(-1),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+      'Exchange: Cannot getCost negative',
+    );
+  });
+
   it('Fails for takerToken equals makerToken', async () => {
     await expectBuyRevert(
       {

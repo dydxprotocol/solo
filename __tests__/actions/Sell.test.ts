@@ -210,6 +210,19 @@ describe('Sell', () => {
     );
   });
 
+  it('Fails for positive takerAmount', async () => {
+    await expectSellRevert(
+      {
+        amount: {
+          value: takerWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+      'Exchange: Cannot exchange positive',
+    );
+  });
+
   it('Fails for takerToken equals makerToken', async () => {
     await expectSellRevert(
       {

@@ -18,7 +18,7 @@
 
 pragma solidity 0.5.4;
 
-import { Require } from "./Require.sol";
+import { Math } from "./Math.sol";
 
 
 /**
@@ -29,10 +29,6 @@ import { Require } from "./Require.sol";
  */
 library Time {
 
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Time";
-
     // ============ Library Functions ============
 
     function currentTime()
@@ -40,15 +36,7 @@ library Time {
         view
         returns (uint32)
     {
-        uint32 timestamp = uint32(block.timestamp);
-
-        Require.that(
-            uint256(timestamp) == block.timestamp,
-            FILE,
-            "We live in the future"
-        );
-
-        return timestamp;
+        return Math.to32(block.timestamp);
     }
 
     function hasHappened(

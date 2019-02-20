@@ -437,6 +437,16 @@ describe('Transfer', () => {
       'Storage: Unpermissioned Operator',
     );
   });
+
+  it('Fails to transfer to same account', async () => {
+    await expectTransferRevert(
+      {
+        toAccountOwner: owner1,
+        toAccountId: accountNumber1,
+      },
+      'OperationImpl: Accounts must be distinct',
+    );
+  });
 });
 
 // ============ Helper Functions ============

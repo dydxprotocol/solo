@@ -291,6 +291,16 @@ describe('Liquidate', () => {
       'Storage: Owed balance cannot increase',
     );
   });
+
+  it('Fails to liquidate the same account', async () => {
+    await expectLiquidateRevert(
+      {
+        liquidAccountOwner: solidOwner,
+        liquidAccountId: solidAccountNumber,
+      },
+      'OperationImpl: Accounts must be distinct',
+    );
+  });
 });
 
 // ============ Helper Functions ============

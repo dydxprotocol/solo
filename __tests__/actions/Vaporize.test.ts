@@ -341,6 +341,16 @@ describe('Vaporize', () => {
       'Storage: Owed balance cannot increase',
     );
   });
+
+  it('Fails to vaporize the same account', async () => {
+    await expectVaporizeRevert(
+      {
+        vaporAccountOwner: solidOwner,
+        vaporAccountId: solidAccountNumber,
+      },
+      'OperationImpl: Accounts must be distinct',
+    );
+  });
 });
 
 // ============ Helper Functions ============

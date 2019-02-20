@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
-import { snapshot, resetEVM } from './helpers/EVM';
+import { snapshot, resetEVM, fastForward } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { expectThrow } from '../src/lib/Expect';
-import { ADDRESSES } from '../src/lib/Constants';
+import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import {
   address,
   ActionArgs,
@@ -16,10 +16,12 @@ import {
 let solo: Solo;
 let accounts: address[];
 let owner1: address;
-let account1;
+let account1: any;
 const accountNumber1 = new BigNumber(11);
 const market1 = new BigNumber(1);
+const market2 = new BigNumber(2);
 const wei = new BigNumber(150);
+const zero = new BigNumber(0);
 const zeroAction: ActionArgs = {
   amount: {
     sign: false,
@@ -76,7 +78,7 @@ describe('Invalid', () => {
         },
         from: owner1,
       })
-      .commit(),
+      .commit({ from: owner1 }),
     );
   });
 
@@ -99,7 +101,7 @@ describe('Invalid', () => {
         },
         from: owner1,
       })
-      .commit(),
+      .commit({ from: owner1 }),
     );
   });
 
@@ -150,6 +152,98 @@ describe('Invalid', () => {
     await expectThrow(
       operate([account1, account1], [zeroAction]),
       'OperationImpl: Cannot duplicate accounts',
+    );
+  });
+
+  it('Fails for zero price', async () => {
+    await Promise.all([
+      solo.testing.tokenA.issueTo(wei, owner1),
+      solo.testing.tokenA.setMaximumSoloAllowance(owner1),
+      solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), zero),
+    ]);
+    await expectThrow(
+      operate([account1], [zeroAction]),
+      'Storage: Price cannot be zero',
+    );
+  });
+
+  it('Fails for time past max uint32', async () => {
+    await fastForward(4294967296); // 2^32
+    await expectThrow(
+      operate([account1], [zeroAction]),
+      'Math: Unsafe cast to uint32',
+    );
+  });
+
+  it('Fails for borrow amount less than the minimum', async () => {
+    await Promise.all([
+      solo.testing.tokenB.issueTo(wei.times(2), owner1),
+      solo.testing.tokenB.setMaximumSoloAllowance(owner1),
+      solo.testing.tokenC.issueTo(wei, solo.contracts.soloMargin.options.address),
+      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), INTEGERS.ONE),
+      solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), INTEGERS.ONE),
+    ]);
+    await expectThrow(
+      solo.operation.initiate()
+      .deposit({
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        marketId: market1,
+        amount: {
+          value: wei.times(2),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+        from: owner1,
+      })
+      .withdraw({
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        marketId: market2,
+        amount: {
+          value: wei.times(-1),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+        to: owner1,
+      })
+      .commit({ from: owner1 }),
+      'Storage: Borrow value too low',
+    );
+  });
+
+  it('Fails for undercollateralized account', async () => {
+    await Promise.all([
+      solo.testing.tokenB.issueTo(wei, owner1),
+      solo.testing.tokenB.setMaximumSoloAllowance(owner1),
+      solo.testing.tokenC.issueTo(wei, solo.contracts.soloMargin.options.address),
+    ]);
+    await expectThrow(
+      solo.operation.initiate()
+      .deposit({
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        marketId: market1,
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+        from: owner1,
+      })
+      .withdraw({
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        marketId: market2,
+        amount: {
+          value: wei.times(-1),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+        to: owner1,
+      })
+      .commit({ from: owner1 }),
+      'OperationImpl: Undercollateralized account',
     );
   });
 });
