@@ -56,6 +56,8 @@ describe('Sell', () => {
       takerToken: takerToken.getAddress(),
       makerAmount: makerWei,
       takerAmount: takerWei,
+      allegedTakerAmount: takerWei,
+      desiredMakerAmount: makerWei,
     };
     defaultGlob = {
       primaryAccountOwner: who,

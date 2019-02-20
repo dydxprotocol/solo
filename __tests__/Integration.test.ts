@@ -146,6 +146,8 @@ describe('Integration', () => {
       takerToken: heldToken.getAddress(),
       makerAmount: amount,
       takerAmount: amount,
+      allegedTakerAmount: amount,
+      desiredMakerAmount: amount,
     };
 
     const { gasUsed } = await solo.operation.initiate()
@@ -271,6 +273,8 @@ describe('Integration', () => {
       takerToken: owedToken.getAddress(),
       makerAmount: amount,
       takerAmount: amount,
+      allegedTakerAmount: amount,
+      desiredMakerAmount: amount,
     };
 
     const { gasUsed } = await solo.operation.initiate()
