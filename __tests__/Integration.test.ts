@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
-import { mineAvgBlock, resetEVM } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
+import { getSolo } from './helpers/Solo';
+import { Solo } from '../src/Solo';
+import { mineAvgBlock, resetEVM } from './helpers/EVM';
+import { setupMarkets } from './helpers/SoloHelpers';
+import { INTEGERS } from '../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import {
   address,
   AmountDenomination,
   AmountReference,
-} from '../../src/types';
+} from '../src/types';
 
 describe('Integration', () => {
   let solo: Solo;
