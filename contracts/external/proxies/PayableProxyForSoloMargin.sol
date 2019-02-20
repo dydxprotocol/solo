@@ -19,12 +19,11 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import { SoloMargin } from "../../protocol/SoloMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
-import { Token } from "../../protocol/lib/Token.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
 

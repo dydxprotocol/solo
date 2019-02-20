@@ -20,17 +20,15 @@ pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
-import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
+import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
-import { Actions } from "../../protocol/lib/Actions.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
-import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
+import { OnlySolo } from "../helpers/OnlySolo.sol";
 
 
 /**
