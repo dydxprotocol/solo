@@ -59,7 +59,7 @@ library OperationImpl {
     {
         Events.logOperation();
 
-        _verifyNoDuplicateAccounts(accounts);
+        _verifyInputs(accounts, actions);
 
         (
             bool[] memory primaryAccounts,
@@ -87,12 +87,25 @@ library OperationImpl {
 
     // ============ Helper Functions ============
 
-    function _verifyNoDuplicateAccounts(
-        Account.Info[] memory accounts
+    function _verifyInputs(
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
     )
         private
         pure
     {
+        Require.that(
+            actions.length != 0,
+            FILE,
+            "Cannot have zero actions"
+        );
+
+        Require.that(
+            accounts.length != 0,
+            FILE,
+            "Cannot have zero accounts"
+        );
+
         for (uint256 a = 0; a < accounts.length; a++) {
             for (uint256 b = a + 1; b < accounts.length; b++) {
                 Require.that(

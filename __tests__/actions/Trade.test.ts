@@ -895,6 +895,16 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert({}, 'OperationImpl: Trades cannot be one-sided');
   });
+
+  it('Fails to trade to same account', async () => {
+    await expectTradeRevert(
+      {
+        otherAccountOwner: who1,
+        otherAccountId: accountNumber1,
+      },
+      'OperationImpl: Accounts must be distinct',
+    );
+  });
 });
 
 // ============ Helper Functions ============

@@ -56,6 +56,8 @@ describe('Sell', () => {
       takerToken: takerToken.getAddress(),
       makerAmount: makerWei,
       takerAmount: takerWei,
+      allegedTakerAmount: takerWei,
+      desiredMakerAmount: makerWei,
     };
     defaultGlob = {
       primaryAccountOwner: who,
@@ -207,6 +209,19 @@ describe('Sell', () => {
       {},
       'Storage: Unpermissioned Operator',
       { from: operator },
+    );
+  });
+
+  it('Fails for positive takerAmount', async () => {
+    await expectSellRevert(
+      {
+        amount: {
+          value: takerWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+      'Exchange: Cannot exchange positive',
     );
   });
 

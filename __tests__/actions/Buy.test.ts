@@ -56,6 +56,8 @@ describe('Buy', () => {
       takerToken: takerToken.getAddress(),
       makerAmount: makerWei,
       takerAmount: takerWei,
+      allegedTakerAmount: takerWei,
+      desiredMakerAmount: makerWei,
     };
     defaultGlob = {
       primaryAccountOwner: who,
@@ -119,6 +121,7 @@ describe('Buy', () => {
       order: {
         ...testOrder,
         makerAmount: zero,
+        desiredMakerAmount: zero,
       },
       amount: {
         value: zero,
@@ -144,6 +147,7 @@ describe('Buy', () => {
       order: {
         ...testOrder,
         takerAmount: zero,
+        allegedTakerAmount: zero,
       },
     });
 
@@ -209,6 +213,19 @@ describe('Buy', () => {
     );
   });
 
+  it('Fails for negative makerAmount', async () => {
+    await expectBuyRevert(
+      {
+        amount: {
+          value: makerWei.times(-1),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+      'Exchange: Cannot getCost negative',
+    );
+  });
+
   it('Fails for takerToken equals makerToken', async () => {
     await expectBuyRevert(
       {
@@ -245,7 +262,20 @@ describe('Buy', () => {
   });
 
   it('Fails for non-truthful exchangeWrapper', async () => {
-    // TODO get the following error: 'OperationImpl: Buy amount less than promised'
+    await Promise.all([
+      issueMakerTokenToWrapper(makerWei.div(2)),
+      issueTakerTokenToSolo(takerWei),
+      setTakerBalance(takerPar),
+    ]);
+    await expectBuyRevert(
+      {
+        order: {
+          ...testOrder,
+          makerAmount: makerWei.div(2),
+        },
+      },
+      'OperationImpl: Buy amount less than promised',
+    );
   });
 });
 
