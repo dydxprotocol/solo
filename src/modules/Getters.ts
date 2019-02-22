@@ -28,9 +28,9 @@ export class Getters {
 
   // ============ Getters for Risk ============
 
-  public async getLiquidationRatio(): Promise<Decimal> {
+  public async getMarginRatio(): Promise<Decimal> {
     const result = await this.contracts.soloMargin.methods
-      .getLiquidationRatio().call();
+      .getMarginRatio().call();
     return stringToDecimal(result.value);
   }
 
@@ -56,7 +56,7 @@ export class Getters {
     const result = await this.contracts.soloMargin.methods
       .getRiskParams().call();
     return {
-      liquidationRatio: stringToDecimal(result[0].value),
+      marginRatio: stringToDecimal(result[0].value),
       liquidationSpread: stringToDecimal(result[1].value),
       earningsRate: stringToDecimal(result[2].value),
       minBorrowedValue: new BigNumber(result[3].value),
@@ -67,15 +67,10 @@ export class Getters {
     const result = await this.contracts.soloMargin.methods
       .getRiskLimits().call();
     return {
-      interestRateMax: stringToDecimal(result[0]),
-      liquidationRatioMax: stringToDecimal(result[1]),
-      liquidationRatioMin: stringToDecimal(result[2]),
-      liquidationSpreadMax: stringToDecimal(result[3]),
-      liquidationSpreadMin: stringToDecimal(result[4]),
-      earningsRateMin: stringToDecimal(result[5]),
-      earningsRateMax: stringToDecimal(result[6]),
-      minBorrowedValueMax: new BigNumber(result[7]),
-      minBorrowedValueMin: new BigNumber(result[8]),
+      marginRatioMax: stringToDecimal(result[0]),
+      liquidationSpreadMax: stringToDecimal(result[1]),
+      earningsRateMax: stringToDecimal(result[2]),
+      minBorrowedValueMax: new BigNumber(result[3]),
     };
   }
 

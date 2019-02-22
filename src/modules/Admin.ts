@@ -109,12 +109,12 @@ export class Admin {
 
   // ============ Risk Functions ============
 
-  public async setLiquidationRatio(
+  public async setMarginRatio(
     ratio: Decimal,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetLiquidationRatio(
+      this.contracts.soloMargin.methods.ownerSetMarginRatio(
         { value: decimalToString(ratio) },
       ),
       options,

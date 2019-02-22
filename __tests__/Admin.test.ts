@@ -29,7 +29,6 @@ const smallestDecimal = stringToDecimal('1');
 const defaultPrice = new BigNumber(999);
 const invalidPrice = new BigNumber(0);
 const defaultRate = new BigNumber(0);
-const invalidRate = new BigNumber(2);
 const defaultMarket = new BigNumber(1);
 const invalidMarket = new BigNumber(101);
 
@@ -293,20 +292,6 @@ describe('Admin', () => {
       );
     });
 
-    it('Fails for broken interest rate', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
-      await solo.testing.interestSetter.setInterestRate(token, invalidRate);
-      await expectThrow(
-        solo.admin.addMarket(
-          token,
-          oracleAddress,
-          setterAddress,
-          { from: admin },
-        ),
-        'AdminImpl: Invalid interest rate',
-      );
-    });
-
     it('Fails for non-admin', async () => {
       await Promise.all([
         solo.testing.priceOracle.setPrice(token, defaultPrice),
@@ -434,19 +419,6 @@ describe('Admin', () => {
       );
     });
 
-    it('Fails for broken interest rate', async () => {
-      const token = await solo.getters.getMarketTokenAddress(defaultMarket);
-      await solo.testing.interestSetter.setInterestRate(token, invalidRate);
-      await expectThrow(
-        solo.admin.setInterestSetter(
-          defaultMarket,
-          setterAddress,
-          { from: admin },
-        ),
-        'AdminImpl: Invalid interest rate',
-      );
-    });
-
     it('Fails for contract without proper function', async () => {
       await expectThrow(
         solo.admin.setInterestSetter(
@@ -482,49 +454,45 @@ describe('Admin', () => {
 
   // ============ Risk Functions ============
 
-  describe('#ownerSetLiquidationRatio', () => {
+  describe('#ownerSetMarginRatio', () => {
     it('Succeeds', async () => {
-      await expectLiquidationRatio(riskParams.liquidationRatio);
+      await expectMarginRatio(riskParams.marginRatio);
 
       // keep same
-      await solo.admin.setLiquidationRatio(riskParams.liquidationRatio, { from: admin });
-      await expectLiquidationRatio(riskParams.liquidationRatio);
+      await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      await expectMarginRatio(riskParams.marginRatio);
 
       // set to max
-      await solo.admin.setLiquidationRatio(riskLimits.liquidationRatioMax, { from: admin });
-      await expectLiquidationRatio(riskLimits.liquidationRatioMax);
-
-      // set to min
-      await solo.admin.setLiquidationRatio(riskLimits.liquidationRatioMin, { from: admin });
-      await expectLiquidationRatio(riskLimits.liquidationRatioMin);
+      await solo.admin.setMarginRatio(riskLimits.marginRatioMax, { from: admin });
+      await expectMarginRatio(riskLimits.marginRatioMax);
 
       // set back to original
-      await solo.admin.setLiquidationRatio(riskParams.liquidationRatio, { from: admin });
-      await expectLiquidationRatio(riskParams.liquidationRatio);
+      await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      await expectMarginRatio(riskParams.marginRatio);
     });
 
     it('Fails for value <= spread', async () => {
       // setup
       const error = 'AdminImpl: Ratio cannot be <= spread';
-      const liquidationSpread = riskLimits.liquidationRatioMin.plus(smallestDecimal.times(10));
+      const liquidationSpread = smallestDecimal.times(10);
       await solo.admin.setLiquidationSpread(liquidationSpread, { from: admin });
 
       // passes when above the spread
-      await solo.admin.setLiquidationRatio(
+      await solo.admin.setMarginRatio(
         liquidationSpread.plus(smallestDecimal),
         { from: admin },
       );
-      await expectLiquidationRatio(liquidationSpread.plus(smallestDecimal));
+      await expectMarginRatio(liquidationSpread.plus(smallestDecimal));
 
       // revert when equal to the spread
       await expectThrow(
-        solo.admin.setLiquidationRatio(liquidationSpread, { from: admin }),
+        solo.admin.setMarginRatio(liquidationSpread, { from: admin }),
         error,
       );
 
       // revert when below the spread
       await expectThrow(
-        solo.admin.setLiquidationRatio(
+        solo.admin.setMarginRatio(
           liquidationSpread.minus(smallestDecimal),
           { from: admin },
         ),
@@ -534,32 +502,22 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setLiquidationRatio(
-          riskLimits.liquidationRatioMax.plus(smallestDecimal),
+        solo.admin.setMarginRatio(
+          riskLimits.marginRatioMax.plus(smallestDecimal),
           { from: admin },
         ),
         'AdminImpl: Ratio too high',
       );
     });
 
-    it('Fails for too-low value', async () => {
-      await expectThrow(
-        solo.admin.setLiquidationRatio(
-          riskLimits.liquidationRatioMin.minus(smallestDecimal),
-          { from: admin },
-        ),
-        'AdminImpl: Ratio too low',
-      );
-    });
-
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setLiquidationRatio(riskParams.liquidationRatio, { from: nonAdmin }),
+        solo.admin.setMarginRatio(riskParams.marginRatio, { from: nonAdmin }),
       );
     });
 
-    async function expectLiquidationRatio(e: Integer) {
-      const result = await solo.getters.getLiquidationRatio();
+    async function expectMarginRatio(e: Integer) {
+      const result = await solo.getters.getMarginRatio();
       expect(result).toEqual(e);
     }
   });
@@ -567,8 +525,8 @@ describe('Admin', () => {
   describe('#ownerSetLiquidationSpread', () => {
     it('Succeeds', async () => {
       // setup
-      await solo.admin.setLiquidationRatio(
-        riskLimits.liquidationRatioMax,
+      await solo.admin.setMarginRatio(
+        riskLimits.marginRatioMax,
         { from: admin },
       );
       await expectLiquidationSpread(riskParams.liquidationSpread);
@@ -581,10 +539,6 @@ describe('Admin', () => {
       await solo.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax, { from: admin });
       await expectLiquidationSpread(riskLimits.liquidationSpreadMax);
 
-      // set to min
-      await solo.admin.setLiquidationSpread(riskLimits.liquidationSpreadMin, { from: admin });
-      await expectLiquidationSpread(riskLimits.liquidationSpreadMin);
-
       // set back to original
       await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
       await expectLiquidationSpread(riskParams.liquidationSpread);
@@ -593,23 +547,23 @@ describe('Admin', () => {
     it('Fails for value >= ratio', async () => {
       // setup
       const error = 'AdminImpl: Spread cannot be >= ratio';
-      const liquidationRatio = riskLimits.liquidationRatioMin;
-      await solo.admin.setLiquidationRatio(
-        liquidationRatio,
+      const marginRatio = new BigNumber('0.1');
+      await solo.admin.setMarginRatio(
+        marginRatio,
         { from: admin },
       );
 
       // passes when below the ratio
       await solo.admin.setLiquidationSpread(
-        liquidationRatio.minus(smallestDecimal),
+        marginRatio.minus(smallestDecimal),
         { from: admin },
       );
-      await expectLiquidationSpread(liquidationRatio.minus(smallestDecimal));
+      await expectLiquidationSpread(marginRatio.minus(smallestDecimal));
 
       // reverts when equal to the ratio
       await expectThrow(
         solo.admin.setLiquidationSpread(
-          liquidationRatio,
+          marginRatio,
           { from: admin },
         ),
         error,
@@ -618,7 +572,7 @@ describe('Admin', () => {
       // reverts when above the ratio
       await expectThrow(
         solo.admin.setLiquidationSpread(
-          liquidationRatio.plus(smallestDecimal),
+          marginRatio.plus(smallestDecimal),
           { from: admin },
         ),
         error,
@@ -632,16 +586,6 @@ describe('Admin', () => {
           { from: admin },
         ),
         'AdminImpl: Spread too high',
-      );
-    });
-
-    it('Fails for too-low value', async () => {
-      await expectThrow(
-        solo.admin.setLiquidationSpread(
-          riskLimits.liquidationSpreadMin.minus(smallestDecimal),
-          { from: admin },
-        ),
-        'AdminImpl: Spread too low',
       );
     });
 
@@ -678,13 +622,6 @@ describe('Admin', () => {
       );
       await expectEarningsRate(riskLimits.earningsRateMax);
 
-      // set to min
-      await solo.admin.setEarningsRate(
-        riskLimits.earningsRateMin,
-        { from: admin },
-      );
-      await expectEarningsRate(riskLimits.earningsRateMin);
-
       // set back to original
       await solo.admin.setEarningsRate(
         riskParams.earningsRate,
@@ -700,16 +637,6 @@ describe('Admin', () => {
           { from: admin },
         ),
         'AdminImpl: Rate too high',
-      );
-    });
-
-    it('Fails for too-low value', async () => {
-      await expectThrow(
-        solo.admin.setEarningsRate(
-          riskLimits.earningsRateMin.minus(tenToNeg18),
-          { from: admin },
-        ),
-        'AdminImpl: Rate too low',
       );
     });
 
@@ -742,10 +669,6 @@ describe('Admin', () => {
       await solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax, { from: admin });
       await expectMinBorrowedValue(riskLimits.minBorrowedValueMax);
 
-      // set to min
-      await solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMin, { from: admin });
-      await expectMinBorrowedValue(riskLimits.minBorrowedValueMin);
-
       // set back to original
       await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
       await expectMinBorrowedValue(riskParams.minBorrowedValue);
@@ -755,13 +678,6 @@ describe('Admin', () => {
       await expectThrow(
         solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax.plus(1), { from: admin }),
         'AdminImpl: Value too high',
-      );
-    });
-
-    it('Fails for too-low value', async () => {
-      await expectThrow(
-        solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMin.minus(1), { from: admin }),
-        'AdminImpl: Value too low',
       );
     });
 

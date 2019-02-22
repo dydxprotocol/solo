@@ -148,28 +148,23 @@ library AdminImpl {
 
     // ============ Risk Functions ============
 
-    function ownerSetLiquidationRatio(
+    function ownerSetMarginRatio(
         Storage.State storage state,
         Decimal.D256 memory ratio
     )
         public
     {
         Require.that(
-            ratio.value <= state.riskLimits.liquidationRatioMax,
+            ratio.value <= state.riskLimits.marginRatioMax,
             FILE,
             "Ratio too high"
-        );
-        Require.that(
-            ratio.value >= state.riskLimits.liquidationRatioMin,
-            FILE,
-            "Ratio too low"
         );
         Require.that(
             ratio.value > state.riskParams.liquidationSpread.value,
             FILE,
             "Ratio cannot be <= spread"
         );
-        state.riskParams.liquidationRatio = ratio;
+        state.riskParams.marginRatio = ratio;
     }
 
     function ownerSetLiquidationSpread(
@@ -184,12 +179,7 @@ library AdminImpl {
             "Spread too high"
         );
         Require.that(
-            spread.value >= state.riskLimits.liquidationSpreadMin,
-            FILE,
-            "Spread too low"
-        );
-        Require.that(
-            spread.value < state.riskParams.liquidationRatio.value,
+            spread.value < state.riskParams.marginRatio.value,
             FILE,
             "Spread cannot be >= ratio"
         );
@@ -207,11 +197,6 @@ library AdminImpl {
             FILE,
             "Rate too high"
         );
-        Require.that(
-            earningsRate.value >= state.riskLimits.earningsRateMin,
-            FILE,
-            "Rate too low"
-        );
         state.riskParams.earningsRate = earningsRate;
     }
 
@@ -225,11 +210,6 @@ library AdminImpl {
             minBorrowedValue.value <= state.riskLimits.minBorrowedValueMax,
             FILE,
             "Value too high"
-        );
-        Require.that(
-            minBorrowedValue.value >= state.riskLimits.minBorrowedValueMin,
-            FILE,
-            "Value too low"
         );
         state.riskParams.minBorrowedValue = minBorrowedValue;
     }
@@ -257,14 +237,9 @@ library AdminImpl {
     {
         state.markets[marketId].interestSetter = interestSetter;
 
-        // require current interestSetter can return a value
+        // ensure interestSetter can return a value without reverting
         address token = state.markets[marketId].token;
-
-        Require.that(
-            interestSetter.getInterestRate(token, 0, 0).value <= state.riskLimits.interestRateMax,
-            FILE,
-            "Invalid interest rate"
-        );
+        interestSetter.getInterestRate(token, 0, 0);
     }
 
     function _setPriceOracle(
@@ -276,7 +251,7 @@ library AdminImpl {
     {
         state.markets[marketId].priceOracle = priceOracle;
 
-        // require oracle can return value for token
+        // require oracle can return non-zero price
         address token = state.markets[marketId].token;
 
         Require.that(

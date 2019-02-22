@@ -62,10 +62,10 @@ library Storage {
     }
 
     struct RiskParams {
-        // collateral ratio at which accounts can be liquidated
-        Decimal.D256 liquidationRatio;
+        // Require ratio of over-collateralization
+        Decimal.D256 marginRatio;
 
-        // (1 - liquidationSpread) is the percentage penalty incurred by liquidated accounts
+        // Percentage penalty incurred by liquidated accounts
         Decimal.D256 liquidationSpread;
 
         // Percentage of the borrower's interest fee that gets passed to the suppliers
@@ -77,15 +77,10 @@ library Storage {
     }
 
     struct RiskLimits {
-        uint64 interestRateMax;
-        uint64 liquidationRatioMax;
-        uint64 liquidationRatioMin;
+        uint64 marginRatioMax;
         uint64 liquidationSpreadMax;
-        uint64 liquidationSpreadMin;
-        uint64 earningsRateMin;
         uint64 earningsRateMax;
         uint128 minBorrowedValueMax;
-        uint128 minBorrowedValueMin;
     }
 
     struct State {
@@ -254,10 +249,6 @@ library Storage {
             borrowWei.value,
             supplyWei.value
         );
-
-        if (rate.value > state.riskLimits.interestRateMax) {
-            rate.value = state.riskLimits.interestRateMax;
-        }
 
         return rate;
     }
@@ -478,11 +469,8 @@ library Storage {
         if (borrowValue.value == 0) {
             return true;
         }
-
-        uint256 requiredSupply =
-            Decimal.mul(borrowValue.value, state.riskParams.liquidationRatio);
-
-        return supplyValue.value >= requiredSupply;
+        uint256 requiredMargin = Decimal.mul(borrowValue.value, state.riskParams.marginRatio);
+        return supplyValue.value >= borrowValue.value.add(requiredMargin);
     }
 
     function isVaporizable(
