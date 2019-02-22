@@ -1,40 +1,88 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
-import { mineAvgBlock, resetEVM } from './helpers/EVM';
+import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
+import { stringToDecimal } from '../src/lib/Helpers';
 import {
   address,
   AmountDenomination,
   AmountReference,
+  TxResult,
 } from '../src/types';
+
+const accountNumber = INTEGERS.ZERO;
+const market = INTEGERS.ZERO;
+const amount1 = new BigNumber(100);
+const amount2 = new BigNumber(50);
+const zero = new BigNumber(0);
 
 describe('Integration', () => {
   let solo: Solo;
   let accounts: address[];
+  let snapshotId: string;
+  let who:address;
 
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
     accounts = r.accounts;
+    who = solo.getDefaultAccount();
+    await resetEVM();
+    await setupMarkets(solo, accounts);
+    snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
-    await resetEVM();
-    await mineAvgBlock();
+    await resetEVM(snapshotId);
+  });
+
+  it('No interest increase when index update was this block', async () => {
+    const blob = {
+      primaryAccountOwner: who,
+      primaryAccountId: accountNumber,
+      marketId: market,
+      amount: {
+        value: zero,
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
+      },
+      from: who,
+    };
+    const actualRate = stringToDecimal('1234');
+    await solo.testing.interestSetter.setInterestRate(solo.testing.tokenA.getAddress(), actualRate);
+
+    let result1: TxResult;
+    let result2: TxResult;
+    let block1: any;
+    let block2: any;
+
+    let numTries = 0;
+    do {
+      await solo.testing.evm.stopMining();
+      const tx1 = solo.operation.initiate().deposit(blob).commit();
+      const tx2 = solo.operation.initiate().deposit(blob).commit();
+      await solo.testing.evm.startMining();
+      [result1, result2] = await Promise.all([tx1, tx2]);
+      [block1, block2] = await Promise.all([
+        solo.web3.eth.getBlock(result1.blockNumber),
+        solo.web3.eth.getBlock(result2.blockNumber),
+      ]);
+      numTries += 1;
+    }
+    while (block1.timestamp !== block2.timestamp || numTries > 10);
+
+    expect(block1.timestamp).toEqual(block2.timestamp);
+    expect(
+      result1.events.LogIndexUpdate.returnValues,
+    ).toEqual(
+      result2.events.LogIndexUpdate.returnValues,
+    );
   });
 
   it('Deposit then Withdraw', async () => {
-    await setupMarkets(solo, accounts);
-
-    const amount1 = new BigNumber(100);
-    const amount2 = new BigNumber(50);
-    const who = solo.getDefaultAccount();
-    const accountNumber = INTEGERS.ZERO;
-    const market = INTEGERS.ZERO;
-
     await Promise.all([
       solo.testing.tokenA.issueTo(
         amount1,
@@ -97,8 +145,6 @@ describe('Integration', () => {
   });
 
   it('Liquidate => Exchange => Withdraw', async () => {
-    await setupMarkets(solo, accounts);
-
     const amount = new BigNumber(100);
     const solidOwner = solo.getDefaultAccount();
     const liquidOwner = accounts[2];
@@ -234,8 +280,6 @@ describe('Integration', () => {
   });
 
   it('Opening a new short position (deposit in heldToken)', async () => {
-    await setupMarkets(solo, accounts);
-
     const amount = new BigNumber(100);
     const owner = solo.getDefaultAccount();
     const oneNumber = INTEGERS.ZERO;

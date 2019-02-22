@@ -244,11 +244,9 @@ library OperationImpl {
             else if (ttype == Actions.ActionType.Vaporize) {
                 _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), priceCache);
             }
-            else if (ttype == Actions.ActionType.Call) {
+            else  {
+                assert(ttype == Actions.ActionType.Call);
                 _call(state, Actions.parseCallArgs(accounts, arg));
-            }
-            else {
-                assert(false);
             }
         }
     }
