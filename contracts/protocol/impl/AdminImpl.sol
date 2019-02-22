@@ -97,7 +97,9 @@ library AdminImpl {
         Storage.State storage state,
         address token,
         IPriceOracle priceOracle,
-        IInterestSetter interestSetter
+        IInterestSetter interestSetter,
+        Decimal.D256 memory marginPremium,
+        Decimal.D256 memory spreadPremium
     )
         public
     {
@@ -111,6 +113,8 @@ library AdminImpl {
 
         _setPriceOracle(state, marketId, priceOracle);
         _setInterestSetter(state, marketId, interestSetter);
+        _setMarginPremium(state, marketId, marginPremium);
+        _setSpreadPremium(state, marketId, spreadPremium);
     }
 
     function ownerSetIsClosing(
@@ -144,6 +148,28 @@ library AdminImpl {
     {
         _validateMarketId(state, marketId);
         _setInterestSetter(state, marketId, interestSetter);
+    }
+
+    function ownerSetMarginPremium(
+        Storage.State storage state,
+        uint256 marketId,
+        Decimal.D256 memory marginPremium
+    )
+        public
+    {
+        _validateMarketId(state, marketId);
+        _setMarginPremium(state, marketId, marginPremium);
+    }
+
+    function ownerSetSpreadPremium(
+        Storage.State storage state,
+        uint256 marketId,
+        Decimal.D256 memory spreadPremium
+    )
+        public
+    {
+        _validateMarketId(state, marketId);
+        _setSpreadPremium(state, marketId, spreadPremium);
     }
 
     // ============ Risk Functions ============
@@ -228,20 +254,6 @@ library AdminImpl {
 
     // ============ Private Functions ============
 
-    function _setInterestSetter(
-        Storage.State storage state,
-        uint256 marketId,
-        IInterestSetter interestSetter
-    )
-        private
-    {
-        state.markets[marketId].interestSetter = interestSetter;
-
-        // ensure interestSetter can return a value without reverting
-        address token = state.markets[marketId].token;
-        interestSetter.getInterestRate(token, 0, 0);
-    }
-
     function _setPriceOracle(
         Storage.State storage state,
         uint256 marketId,
@@ -259,6 +271,50 @@ library AdminImpl {
             FILE,
             "Invalid oracle price"
         );
+    }
+
+    function _setInterestSetter(
+        Storage.State storage state,
+        uint256 marketId,
+        IInterestSetter interestSetter
+    )
+        private
+    {
+        state.markets[marketId].interestSetter = interestSetter;
+
+        // ensure interestSetter can return a value without reverting
+        address token = state.markets[marketId].token;
+        interestSetter.getInterestRate(token, 0, 0);
+    }
+
+    function _setMarginPremium(
+        Storage.State storage state,
+        uint256 marketId,
+        Decimal.D256 memory marginPremium
+    )
+        private
+    {
+        Require.that(
+            marginPremium.value <= state.riskLimits.marginPremiumMax,
+            FILE,
+            "Margin premium too high"
+        );
+        state.markets[marketId].marginPremium = marginPremium;
+    }
+
+    function _setSpreadPremium(
+        Storage.State storage state,
+        uint256 marketId,
+        Decimal.D256 memory spreadPremium
+    )
+        private
+    {
+        Require.that(
+            spreadPremium.value <= state.riskLimits.spreadPremiumMax,
+            FILE,
+            "Spread premium too high"
+        );
+        state.markets[marketId].spreadPremium = spreadPremium;
     }
 
     function _requireNoMarket(

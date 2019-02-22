@@ -101,21 +101,30 @@ async function addMarkets(
   testPriceOracle,
   testInterestSetter,
 ) {
+  const marginPremium = new BigNumber(0);
+  const spreadPremium = new BigNumber(0);
+
   // Do these in sequence so they are always ordered
   await soloMargin.ownerAddMarket(
     tokenA.address,
     testPriceOracle.address,
     testInterestSetter.address,
+    marginPremium,
+    spreadPremium,
   );
   await soloMargin.ownerAddMarket(
     tokenB.address,
     testPriceOracle.address,
     testInterestSetter.address,
+    marginPremium,
+    spreadPremium,
   );
   await soloMargin.ownerAddMarket(
     tokenC.address,
     testPriceOracle.address,
     testInterestSetter.address,
+    marginPremium,
+    spreadPremium,
   );
 }
 

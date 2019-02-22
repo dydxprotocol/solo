@@ -40,32 +40,4 @@ library Monetary {
     struct Value {
         uint256 value;
     }
-
-    // ============ Library Functions ============
-
-    function getValue(
-        Price memory price,
-        uint256 amount
-    )
-        internal
-        pure
-        returns (Value memory)
-    {
-        return Value({
-            value: amount.mul(price.value)
-        });
-    }
-
-    function add(
-        Value memory a,
-        Value memory b
-    )
-        internal
-        pure
-        returns (Value memory)
-    {
-        return Value({
-            value: a.value.add(b.value)
-        });
-    }
 }

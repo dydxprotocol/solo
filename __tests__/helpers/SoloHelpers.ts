@@ -11,6 +11,8 @@ export async function setupMarkets(
   const priceOracle = solo.testing.priceOracle.getAddress();
   const interestSetter = solo.testing.interestSetter.getAddress();
   const price = new BigNumber('1e40'); // large to prevent hitting minBorrowValue check
+  const marginPremium = new BigNumber(0);
+  const spreadPremium = new BigNumber(0);
 
   await Promise.all([
     solo.testing.priceOracle.setPrice(
@@ -38,6 +40,8 @@ export async function setupMarkets(
       tokens[i],
       priceOracle,
       interestSetter,
+      marginPremium,
+      spreadPremium,
       { from: accounts[0] },
     );
   }

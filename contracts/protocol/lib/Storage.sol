@@ -53,16 +53,33 @@ library Storage {
     // ============ Structs ============
 
     struct Market {
+        // Contract address of the associated ERC20 token
         address token;
+
+        // Total aggregated supply and borrow amount of the entire market
         Types.TotalPar totalPar;
+
+        // Interest index of the market
         Interest.Index index;
+
+        // Contract address of the price oracle for this market
         IPriceOracle priceOracle;
+
+        // Contract address of the interest setter for this market
         IInterestSetter interestSetter;
+
+        // Multiplier on the marginRatio for this market
+        Decimal.D256 marginPremium;
+
+        // Multiplier on the liquidationSpread for this market
+        Decimal.D256 spreadPremium;
+
+        // Whether additional borrows are allowed for this market
         bool isClosing;
     }
 
     struct RiskParams {
-        // Require ratio of over-collateralization
+        // Required ratio of over-collateralization
         Decimal.D256 marginRatio;
 
         // Percentage penalty incurred by liquidated accounts
@@ -80,6 +97,8 @@ library Storage {
         uint64 marginRatioMax;
         uint64 liquidationSpreadMax;
         uint64 earningsRateMax;
+        uint64 marginPremiumMax;
+        uint64 spreadPremiumMax;
         uint128 minBorrowedValueMax;
     }
 
@@ -276,7 +295,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         Monetary.Price[] memory priceCache,
-        bool requireMinBorrow
+        bool adjustForLiquidity
     )
         internal
         view
@@ -297,24 +316,53 @@ library Storage {
                 continue;
             }
 
-            Monetary.Value memory assetValue = Monetary.getValue(priceCache[m], userWei.value);
+            uint256 assetValue = userWei.value.mul(priceCache[m].value);
+            Decimal.D256 memory adjust = Decimal.one();
+            if (adjustForLiquidity) {
+                adjust = Decimal.add(adjust, state.markets[m].marginPremium);
+            }
 
             if (userWei.sign) {
-                supplyValue = Monetary.add(supplyValue, assetValue);
+                supplyValue.value = supplyValue.value.add(Decimal.div(assetValue, adjust));
             } else {
-                Require.that(
-                    !requireMinBorrow
-                    || assetValue.value >= state.riskParams.minBorrowedValue.value,
-                    FILE,
-                    "Borrow value too low",
-                    m,
-                    assetValue.value
-                );
-                borrowValue = Monetary.add(borrowValue, assetValue);
+                borrowValue.value = borrowValue.value.add(Decimal.mul(assetValue, adjust));
             }
         }
 
         return (supplyValue, borrowValue);
+    }
+
+    function isCollateralized(
+        Storage.State storage state,
+        Account.Info memory account,
+        Monetary.Price[] memory priceCache,
+        bool requireMinBorrow
+    )
+        internal
+        view
+        returns (bool)
+    {
+        (
+            Monetary.Value memory supplyValue,
+            Monetary.Value memory borrowValue
+        ) = state.getValues(account, priceCache, true);
+
+        if (borrowValue.value == 0) {
+            return true;
+        }
+
+        if (requireMinBorrow) {
+            Require.that(
+                borrowValue.value >= state.riskParams.minBorrowedValue.value,
+                FILE,
+                "Borrow value too low",
+                borrowValue.value
+            );
+        }
+
+        uint256 requiredMargin = Decimal.mul(borrowValue.value, state.riskParams.marginRatio);
+
+        return supplyValue.value >= borrowValue.value.add(requiredMargin);
     }
 
     function isGlobalOperator(
@@ -455,22 +503,6 @@ library Storage {
         }
 
         return (newPar, deltaWei);
-    }
-
-    function isCollateralized(
-        Storage.State storage state,
-        Monetary.Value memory supplyValue,
-        Monetary.Value memory borrowValue
-    )
-        internal
-        view
-        returns (bool)
-    {
-        if (borrowValue.value == 0) {
-            return true;
-        }
-        uint256 requiredMargin = Decimal.mul(borrowValue.value, state.riskParams.marginRatio);
-        return supplyValue.value >= borrowValue.value.add(requiredMargin);
     }
 
     function isVaporizable(

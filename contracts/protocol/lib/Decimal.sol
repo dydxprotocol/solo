@@ -43,6 +43,25 @@ library Decimal {
 
     // ============ Functions ============
 
+    function one()
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: BASE });
+    }
+
+    function add(
+        D256 memory a,
+        D256 memory b
+    )
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: a.value.add(b.value) });
+    }
+
     function mul(
         uint256 target,
         D256 memory d
@@ -52,5 +71,16 @@ library Decimal {
         returns (uint256)
     {
         return Math.getPartial(target, d.value, BASE);
+    }
+
+    function div(
+        uint256 target,
+        D256 memory d
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return Math.getPartial(target, BASE, d.value);
     }
 }

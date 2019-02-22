@@ -37,6 +37,8 @@ const riskLimits = {
   marginRatioMax: '2000000000000000000', // 200%
   liquidationSpreadMax: '500000000000000000', // 50%
   earningsRateMax: '1000000000000000000', // 100%
+  marginPremiumMax: '2000000000000000000', // 200%
+  spreadPremiumMax: '2000000000000000000', // 200%
   minBorrowedValueMax: '100000000000000000000', // 100$
 };
 

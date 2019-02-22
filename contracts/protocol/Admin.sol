@@ -81,7 +81,9 @@ contract Admin is
     function ownerAddMarket(
         address token,
         IPriceOracle priceOracle,
-        IInterestSetter interestSetter
+        IInterestSetter interestSetter,
+        Decimal.D256 memory marginPremium,
+        Decimal.D256 memory spreadPremium
     )
         public
         onlyOwner
@@ -91,7 +93,9 @@ contract Admin is
             g_state,
             token,
             priceOracle,
-            interestSetter
+            interestSetter,
+            marginPremium,
+            spreadPremium
         );
     }
 
@@ -137,6 +141,36 @@ contract Admin is
             g_state,
             marketId,
             interestSetter
+        );
+    }
+
+    function ownerSetMarginPremium(
+        uint256 marketId,
+        Decimal.D256 memory marginPremium
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetMarginPremium(
+            g_state,
+            marketId,
+            marginPremium
+        );
+    }
+
+    function ownerSetSpreadPremium(
+        uint256 marketId,
+        Decimal.D256 memory spreadPremium
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetSpreadPremium(
+            g_state,
+            marketId,
+            spreadPremium
         );
     }
 

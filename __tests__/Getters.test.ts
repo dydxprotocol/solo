@@ -34,6 +34,8 @@ const rates = [
   new BigNumber(202).div(INTEGERS.INTEREST_RATE_BASE),
   new BigNumber(303).div(INTEGERS.INTEREST_RATE_BASE),
 ];
+const defaultPremium = new BigNumber(0);
+const highPremium = new BigNumber('.2');
 const market1 = new BigNumber(0);
 const market2 = new BigNumber(1);
 const market3 = new BigNumber(2);
@@ -110,6 +112,8 @@ describe('Getters', () => {
       marginRatioMax: new BigNumber('2.0'),
       liquidationSpreadMax: new BigNumber('0.5'),
       earningsRateMax: new BigNumber('1.0'),
+      marginPremiumMax: new BigNumber('2.0'),
+      spreadPremiumMax: new BigNumber('2.0'),
       minBorrowedValueMax: new BigNumber('100e18'),
     };
 
@@ -173,6 +177,8 @@ describe('Getters', () => {
         expect(limits.marginRatioMax).toEqual(defaultLimits.marginRatioMax);
         expect(limits.liquidationSpreadMax).toEqual(defaultLimits.liquidationSpreadMax);
         expect(limits.earningsRateMax).toEqual(defaultLimits.earningsRateMax);
+        expect(limits.marginPremiumMax).toEqual(defaultLimits.marginPremiumMax);
+        expect(limits.spreadPremiumMax).toEqual(defaultLimits.spreadPremiumMax);
         expect(limits.minBorrowedValueMax).toEqual(defaultLimits.minBorrowedValueMax);
       });
     });
@@ -188,7 +194,14 @@ describe('Getters', () => {
 
         const token = ADDRESSES.TEST[0];
         await solo.testing.priceOracle.setPrice(token, prices[0]);
-        await solo.admin.addMarket(token, oracleAddress, setterAddress, { from: admin });
+        await solo.admin.addMarket(
+          token,
+          oracleAddress,
+          setterAddress,
+          defaultPremium,
+          defaultPremium,
+          { from: admin },
+        );
         const nm2 = await solo.getters.getNumMarkets();
         expect(nm2).toEqual(nm1.plus(1));
       });
@@ -354,6 +367,48 @@ describe('Getters', () => {
       });
     });
 
+    describe('#getMarketMarginPremium', () => {
+      it('Succeeds', async () => {
+        await solo.admin.setMarginPremium(market2, highPremium, { from: admin });
+        const result = await Promise.all([
+          solo.getters.getMarketMarginPremium(market1),
+          solo.getters.getMarketMarginPremium(market2),
+          solo.getters.getMarketMarginPremium(market3),
+        ]);
+        expect(result[0]).toEqual(defaultPremium);
+        expect(result[1]).toEqual(highPremium);
+        expect(result[2]).toEqual(defaultPremium);
+      });
+
+      it('Fails for market OOB', async () => {
+        await expectThrow(
+          solo.getters.getMarketMarginPremium(invalidMarket),
+          MARKET_OOB_ERROR,
+        );
+      });
+    });
+
+    describe('#getMarketSpreadPremium', () => {
+      it('Succeeds', async () => {
+        await solo.admin.setSpreadPremium(market2, highPremium, { from: admin });
+        const result = await Promise.all([
+          solo.getters.getMarketSpreadPremium(market1),
+          solo.getters.getMarketSpreadPremium(market2),
+          solo.getters.getMarketSpreadPremium(market3),
+        ]);
+        expect(result[0]).toEqual(defaultPremium);
+        expect(result[1]).toEqual(highPremium);
+        expect(result[2]).toEqual(defaultPremium);
+      });
+
+      it('Fails for market OOB', async () => {
+        await expectThrow(
+          solo.getters.getMarketSpreadPremium(invalidMarket),
+          MARKET_OOB_ERROR,
+        );
+      });
+    });
+
     describe('#getMarketIsClosing', () => {
       it('Succeeds', async () => {
         await solo.admin.setIsClosing(market2, true, { from: admin });
@@ -426,6 +481,8 @@ describe('Getters', () => {
         };
         await Promise.all([
           solo.admin.setIsClosing(market2, true, { from: admin }),
+          solo.admin.setMarginPremium(market2, highPremium, { from: admin }),
+          solo.admin.setSpreadPremium(market2, highPremium.div(2), { from: admin }),
           solo.testing.setMarketIndex(market2, index),
           solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
           solo.testing.setAccountBalance(owner2, account2, market2, par.times(-1)),
@@ -435,6 +492,8 @@ describe('Getters', () => {
         const market = await solo.getters.getMarket(market2);
         expect(market.index).toEqual(index);
         expect(market.interestSetter).toEqual(setterAddress);
+        expect(market.marginPremium).toEqual(highPremium);
+        expect(market.spreadPremium).toEqual(highPremium.div(2));
         expect(market.isClosing).toEqual(true);
         expect(market.priceOracle).toEqual(oracleAddress);
         expect(market.token).toEqual(tokens[1]);
@@ -464,6 +523,8 @@ describe('Getters', () => {
         };
         await Promise.all([
           solo.admin.setIsClosing(market2, true, { from: admin }),
+          solo.admin.setMarginPremium(market2, highPremium, { from: admin }),
+          solo.admin.setSpreadPremium(market2, highPremium.div(2), { from: admin }),
           solo.testing.setMarketIndex(market2, index),
           solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
           solo.testing.setAccountBalance(owner2, account2, market2, par.times(-1)),
@@ -745,6 +806,30 @@ describe('Getters', () => {
         ]);
         expect(values1.borrow).toEqual(prices[1].times(wei.div(2)));
         expect(values1.supply).toEqual(prices[0].times(wei));
+        expect(values2.borrow).toEqual(zero);
+        expect(values2.supply).toEqual(zero);
+      });
+    });
+
+    describe('#getAdjustedAccountValues', () => {
+      it('Succeeds', async () => {
+        const rating1 = new BigNumber('1.2');
+        const rating2 = new BigNumber('1.5');
+        await Promise.all([
+          solo.admin.setMarginPremium(market1, rating1.minus(1), { from: admin }),
+          solo.admin.setMarginPremium(market2, rating2.minus(1), { from: admin }),
+          solo.testing.setAccountBalance(owner1, account1, market1, par),
+          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+        ]);
+        const [
+          values1,
+          values2,
+        ] = await Promise.all([
+          solo.getters.getAdjustedAccountValues(owner1, account1),
+          solo.getters.getAdjustedAccountValues(owner2, account2),
+        ]);
+        expect(values1.borrow).toEqual(prices[1].times(wei.div(2)).times(rating2));
+        expect(values1.supply).toEqual(prices[0].times(wei).div(rating1));
         expect(values2.borrow).toEqual(zero);
         expect(values2.supply).toEqual(zero);
       });

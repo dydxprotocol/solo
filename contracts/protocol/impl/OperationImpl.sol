@@ -41,6 +41,7 @@ import { Types } from "../lib/Types.sol";
  * Logic for processing actions
  */
 library OperationImpl {
+    using Decimal for uint256;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
@@ -264,11 +265,8 @@ library OperationImpl {
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
 
-            // get borrow and supply values of the account; also validate minBorrowedValue
-            (
-                Monetary.Value memory supplyValue,
-                Monetary.Value memory borrowValue
-            ) = state.getValues(account, priceCache, true);
+            // validate minBorrowedValue
+            bool collateralized = state.isCollateralized(account, priceCache, true);
 
             // don't check collateralization for non-primary accounts
             if (!primaryAccounts[a]) {
@@ -277,12 +275,10 @@ library OperationImpl {
 
             // check collateralization for primary accounts
             Require.that(
-                state.isCollateralized(supplyValue, borrowValue),
+                collateralized,
                 FILE,
                 "Undercollateralized account",
-                a,
-                supplyValue.value,
-                borrowValue.value
+                a
             );
 
             // ensure status is normal for primary accounts
@@ -616,12 +612,8 @@ library OperationImpl {
 
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
-            (
-                Monetary.Value memory supplyValue,
-                Monetary.Value memory borrowValue
-            ) = state.getValues(args.liquidAccount, priceCache, false);
             Require.that(
-                !state.isCollateralized(supplyValue, borrowValue),
+                !state.isCollateralized(args.liquidAccount, priceCache, false),
                 FILE,
                 "Unliquidatable account"
             );
@@ -909,10 +901,17 @@ library OperationImpl {
         )
     {
         uint256 originalPrice = priceCache[owedMarketId].value;
-        uint256 pricePremium = Decimal.mul(originalPrice, state.riskParams.liquidationSpread);
+        Decimal.D256 memory heldPremium =
+            Decimal.add(Decimal.one(), state.markets[heldMarketId].spreadPremium);
+        Decimal.D256 memory owedPremium =
+            Decimal.add(Decimal.one(), state.markets[owedMarketId].spreadPremium);
+        uint256 adjustedSpread =
+            originalPrice.mul(state.riskParams.liquidationSpread).mul(heldPremium).mul(owedPremium);
+
         Monetary.Price memory owedPrice = Monetary.Price({
-            value: originalPrice.add(pricePremium)
+            value: originalPrice.add(adjustedSpread)
         });
+
         return (priceCache[heldMarketId], owedPrice);
     }
 }
