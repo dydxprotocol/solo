@@ -223,19 +223,14 @@ export interface MarketWithInfo {
 }
 
 export interface RiskLimits {
-  interestRateMax: Decimal;
-  liquidationRatioMax: Decimal;
-  liquidationRatioMin: Decimal;
+  marginRatioMax: Decimal;
   liquidationSpreadMax: Decimal;
-  liquidationSpreadMin: Decimal;
-  earningsRateMin: Decimal;
   earningsRateMax: Decimal;
   minBorrowedValueMax: Integer;
-  minBorrowedValueMin: Integer;
 }
 
 export interface RiskParams {
-  liquidationRatio: Decimal;
+  marginRatio: Decimal;
   liquidationSpread: Decimal;
   earningsRate: Decimal;
   minBorrowedValue: Integer;

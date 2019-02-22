@@ -50,12 +50,12 @@ contract Getters is
 
     // ============ Getters for Risk ============
 
-    function getLiquidationRatio()
+    function getMarginRatio()
         public
         view
         returns (Decimal.D256 memory)
     {
-        return g_state.riskParams.liquidationRatio;
+        return g_state.riskParams.marginRatio;
     }
 
     function getLiquidationSpread()

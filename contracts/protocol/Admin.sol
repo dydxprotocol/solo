@@ -142,14 +142,14 @@ contract Admin is
 
     // ============ Risk Functions ============
 
-    function ownerSetLiquidationRatio(
+    function ownerSetMarginRatio(
         Decimal.D256 memory ratio
     )
         public
         onlyOwner
         nonReentrant
     {
-        AdminImpl.ownerSetLiquidationRatio(
+        AdminImpl.ownerSetMarginRatio(
             g_state,
             ratio
         );

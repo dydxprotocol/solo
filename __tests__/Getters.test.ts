@@ -102,30 +102,25 @@ describe('Getters', () => {
   describe('Risk', () => {
     const defaultParams = {
       earningsRate: new BigNumber('0.9'),
-      liquidationRatio: new BigNumber('1.15'),
-      liquidationSpread: new BigNumber('1.05'),
+      marginRatio: new BigNumber('0.15'),
+      liquidationSpread: new BigNumber('0.05'),
       minBorrowedValue: new BigNumber('5e16'),
     };
     const defaultLimits = {
-      interestRateMax: new BigNumber('31709791983').div(INTEGERS.INTEREST_RATE_BASE),
-      liquidationRatioMin: new BigNumber('1.1'),
-      liquidationRatioMax: new BigNumber('2.0'),
-      liquidationSpreadMin: new BigNumber('1.01'),
-      liquidationSpreadMax: new BigNumber('1.15'),
-      earningsRateMin: new BigNumber('0.5'),
+      marginRatioMax: new BigNumber('2.0'),
+      liquidationSpreadMax: new BigNumber('0.5'),
       earningsRateMax: new BigNumber('1.0'),
-      minBorrowedValueMin: new BigNumber('1e16'),
       minBorrowedValueMax: new BigNumber('100e18'),
     };
 
-    describe('#getLiquidationRatio', () => {
+    describe('#getMarginRatio', () => {
       it('Succeeds', async () => {
-        const value1 = await solo.getters.getLiquidationRatio();
-        expect(value1).toEqual(defaultParams.liquidationRatio);
+        const value1 = await solo.getters.getMarginRatio();
+        expect(value1).toEqual(defaultParams.marginRatio);
 
-        await solo.admin.setLiquidationRatio(defaultLimits.liquidationRatioMin, { from: admin });
-        const value2 = await solo.getters.getLiquidationRatio();
-        expect(value2).toEqual(defaultLimits.liquidationRatioMin);
+        await solo.admin.setMarginRatio(defaultLimits.marginRatioMax, { from: admin });
+        const value2 = await solo.getters.getMarginRatio();
+        expect(value2).toEqual(defaultLimits.marginRatioMax);
       });
     });
 
@@ -133,10 +128,10 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         const value1 = await solo.getters.getLiquidationSpread();
         expect(value1).toEqual(defaultParams.liquidationSpread);
-
-        await solo.admin.setLiquidationSpread(defaultLimits.liquidationSpreadMin, { from: admin });
+        const doubledSpread = value1.times(2);
+        await solo.admin.setLiquidationSpread(doubledSpread, { from: admin });
         const value2 = await solo.getters.getLiquidationSpread();
-        expect(value2).toEqual(defaultLimits.liquidationSpreadMin);
+        expect(value2).toEqual(doubledSpread);
       });
     });
 
@@ -145,9 +140,9 @@ describe('Getters', () => {
         const value1 = await solo.getters.getEarningsRate();
         expect(value1).toEqual(defaultParams.earningsRate);
 
-        await solo.admin.setEarningsRate(defaultLimits.earningsRateMin, { from: admin });
+        await solo.admin.setEarningsRate(defaultLimits.earningsRateMax, { from: admin });
         const value2 = await solo.getters.getEarningsRate();
-        expect(value2).toEqual(defaultLimits.earningsRateMin);
+        expect(value2).toEqual(defaultLimits.earningsRateMax);
       });
     });
 
@@ -156,9 +151,9 @@ describe('Getters', () => {
         const value1 = await solo.getters.getMinBorrowedValue();
         expect(value1).toEqual(defaultParams.minBorrowedValue);
 
-        await solo.admin.setMinBorrowedValue(defaultLimits.minBorrowedValueMin, { from: admin });
+        await solo.admin.setMinBorrowedValue(defaultLimits.minBorrowedValueMax, { from: admin });
         const value2 = await solo.getters.getMinBorrowedValue();
-        expect(value2).toEqual(defaultLimits.minBorrowedValueMin);
+        expect(value2).toEqual(defaultLimits.minBorrowedValueMax);
       });
     });
 
@@ -166,7 +161,7 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         const params = await solo.getters.getRiskParams();
         expect(params.earningsRate).toEqual(defaultParams.earningsRate);
-        expect(params.liquidationRatio).toEqual(defaultParams.liquidationRatio);
+        expect(params.marginRatio).toEqual(defaultParams.marginRatio);
         expect(params.liquidationSpread).toEqual(defaultParams.liquidationSpread);
         expect(params.minBorrowedValue).toEqual(defaultParams.minBorrowedValue);
       });
@@ -175,14 +170,9 @@ describe('Getters', () => {
     describe('#getRiskLimits', () => {
       it('Succeeds', async () => {
         const limits = await solo.getters.getRiskLimits();
-        expect(limits.interestRateMax).toEqual(defaultLimits.interestRateMax);
-        expect(limits.liquidationRatioMin).toEqual(defaultLimits.liquidationRatioMin);
-        expect(limits.liquidationRatioMax).toEqual(defaultLimits.liquidationRatioMax);
-        expect(limits.liquidationSpreadMin).toEqual(defaultLimits.liquidationSpreadMin);
+        expect(limits.marginRatioMax).toEqual(defaultLimits.marginRatioMax);
         expect(limits.liquidationSpreadMax).toEqual(defaultLimits.liquidationSpreadMax);
-        expect(limits.earningsRateMin).toEqual(defaultLimits.earningsRateMin);
         expect(limits.earningsRateMax).toEqual(defaultLimits.earningsRateMax);
-        expect(limits.minBorrowedValueMin).toEqual(defaultLimits.minBorrowedValueMin);
         expect(limits.minBorrowedValueMax).toEqual(defaultLimits.minBorrowedValueMax);
       });
     });

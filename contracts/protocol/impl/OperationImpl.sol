@@ -19,6 +19,7 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";
@@ -40,6 +41,7 @@ import { Types } from "../lib/Types.sol";
  * Logic for processing actions
  */
 library OperationImpl {
+    using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
     using Types for Types.Wei;
@@ -908,8 +910,10 @@ library OperationImpl {
             Monetary.Price memory
         )
     {
+        uint256 originalPrice = priceCache[owedMarketId].value;
+        uint256 pricePremium = Decimal.mul(originalPrice, state.riskParams.liquidationSpread);
         Monetary.Price memory owedPrice = Monetary.Price({
-            value: Decimal.mul(priceCache[owedMarketId].value, state.riskParams.liquidationSpread)
+            value: originalPrice.add(pricePremium)
         });
         return (priceCache[heldMarketId], owedPrice);
     }
