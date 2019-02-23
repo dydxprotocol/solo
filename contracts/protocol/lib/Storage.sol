@@ -291,7 +291,7 @@ library Storage {
         return price;
     }
 
-    function getValues(
+    function getAccountValues(
         Storage.State storage state,
         Account.Info memory account,
         Monetary.Price[] memory priceCache,
@@ -345,7 +345,7 @@ library Storage {
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = state.getValues(account, priceCache, true);
+        ) = state.getAccountValues(account, priceCache, true);
 
         if (borrowValue.value == 0) {
             return true;

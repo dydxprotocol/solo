@@ -419,6 +419,6 @@ contract Getters is
             }
         }
 
-        return g_state.getValues(account, priceCache, adjustForLiquidity);
+        return g_state.getAccountValues(account, priceCache, adjustForLiquidity);
     }
 }
