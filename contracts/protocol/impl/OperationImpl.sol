@@ -66,7 +66,8 @@ library OperationImpl {
 
         (
             bool[] memory primaryAccounts,
-            Monetary.Price[] memory priceCache
+            Monetary.Price[] memory priceCache,
+            Types.TotalPar[] memory totalPars
         ) = _getRelevantAccountsAndMarkets(
             state,
             accounts,
@@ -78,6 +79,11 @@ library OperationImpl {
             accounts,
             actions,
             priceCache
+        );
+
+        _verifyTotalPars(
+            state,
+            totalPars
         );
 
         _verifyAccountCollateralization(
@@ -130,12 +136,14 @@ library OperationImpl {
         private
         returns (
             bool[] memory,
-            Monetary.Price[] memory
+            Monetary.Price[] memory,
+            Types.TotalPar[] memory
         )
     {
         uint256 numMarkets = state.numMarkets;
-        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
         bool[] memory primaryAccounts = new bool[](accounts.length);
+        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
+        Types.TotalPar[] memory totalPars = new Types.TotalPar[](numMarkets);
 
         // keep track of primary accounts and indexes that need updating
         for (uint256 i = 0; i < actions.length; i++) {
@@ -186,6 +194,10 @@ library OperationImpl {
             if (priceCache[m].value != 0) {
                 continue;
             }
+            if (state.markets[m].isClosing) {
+                totalPars[m] = state.getTotalPar(m);
+                totalPars[m].supply = 1;
+            }
             for (uint256 a = 0; a < accounts.length; a++) {
                 if (!state.getPar(accounts[a], m).isZero()) {
                     _updateIndexAndPrice(state, priceCache, m);
@@ -194,7 +206,7 @@ library OperationImpl {
             }
         }
 
-        return (primaryAccounts, priceCache);
+        return (primaryAccounts, priceCache, totalPars);
     }
 
     function _updateIndexAndPrice(
@@ -250,6 +262,26 @@ library OperationImpl {
             else  {
                 assert(ttype == Actions.ActionType.Call);
                 _call(state, Actions.parseCallArgs(accounts, arg));
+            }
+        }
+    }
+
+    function _verifyTotalPars(
+        Storage.State storage state,
+        Types.TotalPar[] memory totalPars
+    )
+        private
+        view
+    {
+        for (uint256 m = 0; m < totalPars.length; m++) {
+            Types.TotalPar memory totalPar = totalPars[m];
+            if (totalPar.supply > 0) {
+                Require.that(
+                    state.getTotalPar(m).borrow <= totalPar.borrow,
+                    FILE,
+                    "Market is closing",
+                    m
+                );
             }
         }
     }
