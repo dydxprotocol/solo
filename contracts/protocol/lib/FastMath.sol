@@ -39,9 +39,15 @@ library FastMath {
     {
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            if a {
+            switch a
+            case 0 {}
+            default {
               r := mul(a, b)
-              if iszero(eq(div(r, a), b)) { revert(0, 0) }
+
+              switch iszero(eq(div(r, a), b))
+              case 1 {
+                  revert(0, 0)
+              }
             }
         }
     }
@@ -57,7 +63,10 @@ library FastMath {
     {
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            if iszero(b) { revert(0, 0) }
+            switch b
+            case 0 {
+                revert(0, 0)
+            }
             r := div(a, b)
         }
     }
@@ -73,7 +82,10 @@ library FastMath {
     {
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            if lt(a, b) { revert(0, 0) }
+            switch lt(a, b)
+            case 1 {
+                revert(0, 0)
+            }
             r := sub(a, b)
         }
     }
@@ -90,7 +102,10 @@ library FastMath {
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             r := add(a, b)
-            if lt(r, a) { revert(0, 0) }
+            switch lt(r, a)
+            case 1 {
+                revert(0, 0)
+            }
         }
     }
 }
