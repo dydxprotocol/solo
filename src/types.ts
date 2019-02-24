@@ -212,6 +212,8 @@ export interface Market {
   index: Index;
   priceOracle: address;
   interestSetter: address;
+  marginPremium: Decimal;
+  spreadPremium: Decimal;
   isClosing: boolean;
 }
 
@@ -226,6 +228,8 @@ export interface RiskLimits {
   marginRatioMax: Decimal;
   liquidationSpreadMax: Decimal;
   earningsRateMax: Decimal;
+  marginPremiumMax: Decimal;
+  spreadPremiumMax: Decimal;
   minBorrowedValueMax: Integer;
 }
 

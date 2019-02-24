@@ -53,6 +53,8 @@ export class Admin {
     token: address,
     priceOracle: address,
     interestSetter: address,
+    marginPremium: Decimal,
+    spreadPremium: Decimal,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
@@ -60,6 +62,8 @@ export class Admin {
         token,
         priceOracle,
         interestSetter,
+        { value: decimalToString(marginPremium) },
+        { value: decimalToString(spreadPremium) },
       ),
       options,
     );
@@ -74,6 +78,34 @@ export class Admin {
       this.contracts.soloMargin.methods.ownerSetIsClosing(
         marketId.toFixed(0),
         isClosing,
+      ),
+      options,
+    );
+  }
+
+  public async setMarginPremium(
+    marketId: Integer,
+    marginPremium: Decimal,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.soloMargin.methods.ownerSetMarginPremium(
+        marketId.toFixed(0),
+        { value: decimalToString(marginPremium) },
+      ),
+      options,
+    );
+  }
+
+  public async setSpreadPremium(
+    marketId: Integer,
+    spreadPremium: Decimal,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.soloMargin.methods.ownerSetSpreadPremium(
+        marketId.toFixed(0),
+        { value: decimalToString(spreadPremium) },
       ),
       options,
     );

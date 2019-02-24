@@ -117,37 +117,6 @@ library Require {
         bool must,
         bytes32 file,
         bytes32 reason,
-        uint256 payloadA,
-        uint256 payloadB,
-        uint256 payloadC
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringify(file),
-                        COLON,
-                        stringify(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
         address payloadA
     )
         internal

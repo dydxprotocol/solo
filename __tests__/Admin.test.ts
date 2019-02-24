@@ -29,6 +29,8 @@ const smallestDecimal = stringToDecimal('1');
 const defaultPrice = new BigNumber(999);
 const invalidPrice = new BigNumber(0);
 const defaultRate = new BigNumber(0);
+const defaultPremium = new BigNumber(0);
+const highPremium = new BigNumber('0.2');
 const defaultMarket = new BigNumber(1);
 const invalidMarket = new BigNumber(101);
 
@@ -241,6 +243,8 @@ describe('Admin', () => {
         token,
         oracleAddress,
         setterAddress,
+        defaultPremium,
+        defaultPremium,
         { from: admin },
       );
 
@@ -252,6 +256,8 @@ describe('Admin', () => {
       expect(marketInfo.market.token).toBe(token);
       expect(marketInfo.market.priceOracle).toBe(oracleAddress);
       expect(marketInfo.market.interestSetter).toBe(setterAddress);
+      expect(marketInfo.market.marginPremium).toEqual(defaultPremium);
+      expect(marketInfo.market.spreadPremium).toEqual(defaultPremium);
       expect(marketInfo.market.isClosing).toBe(false);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
@@ -273,6 +279,8 @@ describe('Admin', () => {
           token,
           oracleAddress,
           setterAddress,
+          defaultPremium,
+          defaultPremium,
           { from: admin },
         ),
         'AdminImpl: Market exists',
@@ -286,9 +294,47 @@ describe('Admin', () => {
           token,
           oracleAddress,
           setterAddress,
+          defaultPremium,
+          defaultPremium,
           { from: admin },
         ),
         'AdminImpl: Invalid oracle price',
+      );
+    });
+
+    it('Fails for broken marginPremium', async () => {
+      await Promise.all([
+        solo.testing.priceOracle.setPrice(token, defaultPrice),
+        solo.testing.interestSetter.setInterestRate(token, defaultRate),
+      ]);
+      await expectThrow(
+        solo.admin.addMarket(
+          token,
+          oracleAddress,
+          setterAddress,
+          riskLimits.marginPremiumMax.plus(smallestDecimal),
+          defaultPremium,
+          { from: admin },
+        ),
+        'AdminImpl: Margin premium too high',
+      );
+    });
+
+    it('Fails for broken spreadPremium', async () => {
+      await Promise.all([
+        solo.testing.priceOracle.setPrice(token, defaultPrice),
+        solo.testing.interestSetter.setInterestRate(token, defaultRate),
+      ]);
+      await expectThrow(
+        solo.admin.addMarket(
+          token,
+          oracleAddress,
+          setterAddress,
+          defaultPremium,
+          riskLimits.spreadPremiumMax.plus(smallestDecimal),
+          { from: admin },
+        ),
+        'AdminImpl: Spread premium too high',
       );
     });
 
@@ -302,6 +348,8 @@ describe('Admin', () => {
           token,
           oracleAddress,
           setterAddress,
+          defaultPremium,
+          defaultPremium,
           { from: nonAdmin },
         ),
       );
@@ -448,6 +496,114 @@ describe('Admin', () => {
           setterAddress,
           { from: nonAdmin },
         ),
+      );
+    });
+  });
+
+  describe('#ownerSetMarginPremium', () => {
+    it('Succeeds', async () => {
+      let premium: Decimal;
+
+      // check is default
+      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+
+      // set to default
+      await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+
+      // set risky
+      await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(highPremium);
+
+      // set to risky again
+      await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(highPremium);
+
+      // set back to default
+      await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+    });
+
+    it('Fails for index OOB', async () => {
+      await expectThrow(
+        solo.admin.setMarginPremium(invalidMarket, highPremium, { from: admin }),
+        'AdminImpl: Market OOB',
+      );
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(
+        solo.admin.setMarginPremium(defaultMarket, highPremium, { from: nonAdmin }),
+      );
+    });
+
+    it('Fails for too-high value', async () => {
+      await expectThrow(
+        solo.admin.setMarginPremium(
+          defaultMarket,
+          riskLimits.marginPremiumMax.plus(smallestDecimal),
+          { from: admin },
+        ),
+        'AdminImpl: Margin premium too high',
+      );
+    });
+  });
+
+  describe('#ownerSetSpreadPremium', () => {
+    it('Succeeds', async () => {
+      let premium: Decimal;
+
+      // check is default
+      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+
+      // set to default
+      await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+
+      // set risky
+      await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(highPremium);
+
+      // set to risky again
+      await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(highPremium);
+
+      // set back to default
+      await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(defaultPremium);
+    });
+
+    it('Fails for index OOB', async () => {
+      await expectThrow(
+        solo.admin.setSpreadPremium(invalidMarket, highPremium, { from: admin }),
+        'AdminImpl: Market OOB',
+      );
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(
+        solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: nonAdmin }),
+      );
+    });
+
+    it('Fails for too-high value', async () => {
+      await expectThrow(
+        solo.admin.setSpreadPremium(
+          defaultMarket,
+          riskLimits.spreadPremiumMax.plus(smallestDecimal),
+          { from: admin },
+        ),
+        'AdminImpl: Spread premium too high',
       );
     });
   });

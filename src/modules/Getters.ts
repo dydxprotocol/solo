@@ -70,7 +70,9 @@ export class Getters {
       marginRatioMax: stringToDecimal(result[0]),
       liquidationSpreadMax: stringToDecimal(result[1]),
       earningsRateMax: stringToDecimal(result[2]),
-      minBorrowedValueMax: new BigNumber(result[3]),
+      marginPremiumMax: stringToDecimal(result[3]),
+      spreadPremiumMax: stringToDecimal(result[4]),
+      minBorrowedValueMax: new BigNumber(result[5]),
     };
   }
 
@@ -142,10 +144,30 @@ export class Getters {
       ).call();
   }
 
+  public async getMarketMarginPremium(
+    marketId: Integer,
+  ): Promise<Decimal> {
+    const marginPremium = await this.contracts.soloMargin.methods
+      .getMarketMarginPremium(
+        marketId.toFixed(0),
+      ).call();
+    return stringToDecimal(marginPremium.value);
+  }
+
+  public async getMarketSpreadPremium(
+    marketId: Integer,
+  ): Promise<Decimal> {
+    const spreadPremium = await this.contracts.soloMargin.methods
+      .getMarketSpreadPremium(
+        marketId.toFixed(0),
+      ).call();
+    return stringToDecimal(spreadPremium.value);
+  }
+
   public async getMarketIsClosing(
     marketId: Integer,
   ): Promise<boolean> {
-    return this.contracts.soloMargin.methods
+    return await this.contracts.soloMargin.methods
       .getMarketIsClosing(
         marketId.toFixed(0),
       ).call();
@@ -180,6 +202,8 @@ export class Getters {
       ...market,
       totalPar: this.parseTotalPar(market.totalPar),
       index: this.parseIndex(market.index),
+      marginPremium: stringToDecimal(market.marginPremium.value),
+      spreadPremium: stringToDecimal(market.spreadPremium.value),
     };
   }
 
@@ -198,6 +222,8 @@ export class Getters {
         ...market,
         totalPar: this.parseTotalPar(market.totalPar),
         index: this.parseIndex(market.index),
+        marginPremium: stringToDecimal(market.marginPremium.value),
+        spreadPremium: stringToDecimal(market.spreadPremium.value),
       },
       currentIndex: this.parseIndex(currentIndex),
       currentPrice: new BigNumber(currentPrice.value),
@@ -274,6 +300,21 @@ export class Getters {
   ): Promise<Values> {
     const result = await this.contracts.soloMargin.methods
       .getAccountValues({
+        owner: accountOwner,
+        number: accountNumber.toFixed(0),
+      }).call();
+    return {
+      supply: new BigNumber(result[0].value),
+      borrow: new BigNumber(result[1].value),
+    };
+  }
+
+  public async getAdjustedAccountValues(
+    accountOwner: address,
+    accountNumber: Integer,
+  ): Promise<Values> {
+    const result = await this.contracts.soloMargin.methods
+      .getAdjustedAccountValues({
         owner: accountOwner,
         number: accountNumber.toFixed(0),
       }).call();

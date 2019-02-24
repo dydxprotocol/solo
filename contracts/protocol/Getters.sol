@@ -174,6 +174,28 @@ contract Getters is
         return g_state.markets[marketId].interestSetter;
     }
 
+    function getMarketMarginPremium(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Decimal.D256 memory)
+    {
+        _requireValidMarket(marketId);
+        return g_state.markets[marketId].marginPremium;
+    }
+
+    function getMarketSpreadPremium(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Decimal.D256 memory)
+    {
+        _requireValidMarket(marketId);
+        return g_state.markets[marketId].spreadPremium;
+    }
+
     function getMarketIsClosing(
         uint256 marketId
     )
@@ -299,17 +321,17 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        uint256 numMarkets = g_state.numMarkets;
+        return getAccountValuesInternal(account, false);
+    }
 
-        // populate price cache
-        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!g_state.getPar(account, m).isZero()) {
-                priceCache[m] = g_state.fetchPrice(m);
-            }
-        }
-
-        return g_state.getValues(account, priceCache, false);
+    function getAdjustedAccountValues(
+        Account.Info memory account
+    )
+        public
+        view
+        returns (Monetary.Value memory, Monetary.Value memory)
+    {
+        return getAccountValuesInternal(account, true);
     }
 
     function getAccountBalances(
@@ -377,5 +399,26 @@ contract Getters is
             FILE,
             "Market OOB"
         );
+    }
+
+    function getAccountValuesInternal(
+        Account.Info memory account,
+        bool adjustForLiquidity
+    )
+        private
+        view
+        returns (Monetary.Value memory, Monetary.Value memory)
+    {
+        uint256 numMarkets = g_state.numMarkets;
+
+        // populate price cache
+        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
+        for (uint256 m = 0; m < numMarkets; m++) {
+            if (!g_state.getPar(account, m).isZero()) {
+                priceCache[m] = g_state.fetchPrice(m);
+            }
+        }
+
+        return g_state.getAccountValues(account, priceCache, adjustForLiquidity);
     }
 }
