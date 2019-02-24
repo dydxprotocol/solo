@@ -27,7 +27,7 @@ import { Types } from "../lib/Types.sol";
  * @title IAutoTrader
  * @author dYdX
  *
- * TODO
+ * Interface that Auto-Traders for Solo must implement
  */
 contract IAutoTrader {
 

@@ -26,7 +26,9 @@ import { IErc20 } from "../interfaces/IErc20.sol";
  * @title Token
  * @author dYdX
  *
- * This library contains basic functions for interacting with ERC20 tokens
+ * This library contains basic functions for interacting with ERC20 tokens. Modified to work with
+ * tokens that don't adhere strictly to the ERC20 standard (for example tokens that don't return a
+ * boolean value on success).
  */
 library Token {
 

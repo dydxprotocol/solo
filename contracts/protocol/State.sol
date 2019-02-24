@@ -26,7 +26,7 @@ import { Storage } from "./lib/Storage.sol";
  * @title State
  * @author dYdX
  *
- * TODO
+ * Base-level contract that holds the state of Solo
  */
 contract State
 {

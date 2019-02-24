@@ -25,7 +25,7 @@ import { Math } from "./Math.sol";
  * @title Time
  * @author dYdX
  *
- * TODO
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
  */
 library Time {
 

@@ -26,7 +26,7 @@ import { Require } from "./Require.sol";
  * @title Math
  * @author dYdX
  *
- * TODO
+ * Library for non-standard Math functions
  */
 library Math {
     using SafeMath for uint256;

@@ -26,7 +26,7 @@ import { Monetary } from "../lib/Monetary.sol";
  * @title IPriceOracle
  * @author dYdX
  *
- * TODO
+ * Interface that Price Oracles for Solo must implement
  */
 contract IPriceOracle {
 

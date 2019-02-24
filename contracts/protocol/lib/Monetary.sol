@@ -26,7 +26,7 @@ import { Math } from "./Math.sol";
  * @title Monetary
  * @author dYdX
  *
- * TODO
+ * Library for types involving money
  */
 library Monetary {
     using SafeMath for uint256;

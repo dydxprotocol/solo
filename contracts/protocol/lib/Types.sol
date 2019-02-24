@@ -26,7 +26,7 @@ import { Math } from "./Math.sol";
  * @title Types
  * @author dYdX
  *
- * TODO
+ * Library for interacting with the basic structs used in Solo
  */
 library Types {
     using Math for uint256;

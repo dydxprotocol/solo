@@ -37,7 +37,7 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
  * @title Storage
  * @author dYdX
  *
- * Functions for reading, writing, and verifying storage
+ * Functions for reading, writing, and verifying state in Solo
  */
 library Storage {
     using Storage for Storage.State;

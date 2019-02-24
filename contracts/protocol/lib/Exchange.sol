@@ -28,8 +28,7 @@ import { IExchangeWrapper } from "../interfaces/IExchangeWrapper.sol";
  * @title Exchange
  * @author dYdX
  *
- * This library contains wrapper functionsf for interacting with tokens and ExchangeWrappers using
- * the Wei struct directly.
+ * Library for transferring tokens and interacting with ExchangeWrappers by using the Wei struct
  */
 library Exchange {
     using Types for Types.Wei;

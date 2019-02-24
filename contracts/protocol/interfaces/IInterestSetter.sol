@@ -26,7 +26,7 @@ import { Interest } from "../lib/Interest.sol";
  * @title IInterestSetter
  * @author dYdX
  *
- * TODO
+ * Interface that Interest Setters for Solo must implement
  */
 contract IInterestSetter {
 

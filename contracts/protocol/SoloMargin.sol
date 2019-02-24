@@ -31,7 +31,7 @@ import { Storage } from "./lib/Storage.sol";
  * @title SoloMargin
  * @author dYdX
  *
- * TODO
+ * Main contract that inherets from other contracts
  */
 contract SoloMargin is
     State,
@@ -43,12 +43,12 @@ contract SoloMargin is
     // ============ Constructor ============
 
     constructor(
-        Storage.RiskParams memory rp,
-        Storage.RiskLimits memory rl
+        Storage.RiskParams memory riskParams,
+        Storage.RiskLimits memory riskLimits
     )
         public
     {
-        g_state.riskParams = rp;
-        g_state.riskLimits = rl;
+        g_state.riskParams = riskParams;
+        g_state.riskLimits = riskLimits;
     }
 }

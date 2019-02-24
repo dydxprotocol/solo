@@ -26,7 +26,7 @@ import { Account } from "../lib/Account.sol";
  * @title ICallee
  * @author dYdX
  *
- * TODO
+ * Interface that Callees for Solo must implement
  */
 contract ICallee {
 

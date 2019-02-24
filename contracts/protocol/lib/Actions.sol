@@ -26,7 +26,7 @@ import { Types } from "./Types.sol";
  * @title Actions
  * @author dYdX
  *
- * TODO
+ * Library that defines and parses valid Actions
  */
 library Actions {
 

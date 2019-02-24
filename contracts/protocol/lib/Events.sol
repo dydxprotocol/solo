@@ -30,7 +30,7 @@ import { Types } from "./Types.sol";
  * @title Events
  * @author dYdX
  *
- * TODO
+ * Library to parse and emit logs from which the state of all accounts and indexes can be followed
  */
 library Events {
     using Types for Types.Wei;
