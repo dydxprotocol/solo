@@ -19,9 +19,9 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
 import { Decimal } from "./Decimal.sol";
-import { FastMath } from "./FastMath.sol";
 import { Interest } from "./Interest.sol";
 import { Math } from "./Math.sol";
 import { Monetary } from "./Monetary.sol";
@@ -44,7 +44,7 @@ library Storage {
     using Math for uint256;
     using Types for Types.Par;
     using Types for Types.Wei;
-    using FastMath for uint256;
+    using SafeMath for uint256;
 
     // ============ Constants ============
 

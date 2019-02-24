@@ -19,8 +19,8 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IInterestSetter } from "../protocol/interfaces/IInterestSetter.sol";
-import { FastMath } from "../protocol/lib/FastMath.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
 
 

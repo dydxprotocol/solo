@@ -19,11 +19,11 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
-import { FastMath } from "../../protocol/lib/FastMath.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
@@ -44,7 +44,7 @@ contract Expiry is
     ICallee,
     IAutoTrader
 {
-    using FastMath for uint256;
+    using SafeMath for uint256;
     using Types for Types.Par;
     using Types for Types.Wei;
 

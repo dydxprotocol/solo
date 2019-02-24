@@ -18,7 +18,7 @@
 
 pragma solidity 0.5.4;
 
-import { FastMath } from "./FastMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "./Math.sol";
 
 
@@ -29,7 +29,7 @@ import { Math } from "./Math.sol";
  * Library for types involving money
  */
 library Monetary {
-    using FastMath for uint256;
+    using SafeMath for uint256;
 
     // ============ Structs ============
 

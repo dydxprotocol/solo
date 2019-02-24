@@ -18,7 +18,7 @@
 
 pragma solidity 0.5.4;
 
-import { FastMath } from "./FastMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Require } from "./Require.sol";
 
 
@@ -29,7 +29,7 @@ import { Require } from "./Require.sol";
  * Library for non-standard Math functions
  */
 library Math {
-    using FastMath for uint256;
+    using SafeMath for uint256;
 
     // ============ Constants ============
 
@@ -59,8 +59,8 @@ library Math {
         returns (uint256)
     {
         if (target == 0 || numerator == 0) {
-            // FastMath will check for zero denominator
-            return FastMath.div(0, denominator);
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
         }
         return numerator.mul(target).sub(1).div(denominator).add(1);
     }
