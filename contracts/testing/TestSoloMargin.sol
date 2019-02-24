@@ -19,9 +19,9 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
 import { Account } from "../protocol/lib/Account.sol";
+import { FastMath } from "../protocol/lib/FastMath.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
@@ -32,7 +32,7 @@ contract TestSoloMargin is
     SoloMargin
 {
     using Math for uint256;
-    using SafeMath for uint256;
+    using FastMath for uint256;
 
     // ============ Constructor ============
 

@@ -18,11 +18,11 @@
 
 pragma solidity 0.5.4;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { FastMath } from "../protocol/lib/FastMath.sol";
 
 
 contract OmiseToken {
-    using SafeMath for uint256;
+    using FastMath for uint256;
 
     uint256 supply;
     mapping (address => uint256) balances;

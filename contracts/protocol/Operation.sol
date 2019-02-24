@@ -30,7 +30,7 @@ import { Actions } from "./lib/Actions.sol";
  * @title Operation
  * @author dYdX
  *
- * TODO
+ * Primary public function for allowing users and contracts to manage accounts within Solo
  */
 contract Operation is
     State,

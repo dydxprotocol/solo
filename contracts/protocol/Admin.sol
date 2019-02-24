@@ -35,7 +35,7 @@ import { Token } from "./lib/Token.sol";
  * @title Admin
  * @author dYdX
  *
- * TODO
+ * Public functions that allow the privileged owner address to manage Solo
  */
 contract Admin is
     State,

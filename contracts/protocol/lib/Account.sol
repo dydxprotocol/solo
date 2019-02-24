@@ -26,7 +26,7 @@ import { Types } from "./Types.sol";
  * @title Account
  * @author dYdX
  *
- * TODO
+ * Library of structs and functions that represent an account
  */
 library Account {
     // ============ Enums ============

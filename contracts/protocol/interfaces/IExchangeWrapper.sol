@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title IExchangeWrapper
  * @author dYdX
  *
- * TODO
+ * Interface that Exchange Wrappers for Solo must implement
  */
 interface IExchangeWrapper {
 

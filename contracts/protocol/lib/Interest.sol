@@ -18,8 +18,8 @@
 
 pragma solidity 0.5.4;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
+import { FastMath } from "./FastMath.sol";
 import { Math } from "./Math.sol";
 import { Time } from "./Time.sol";
 import { Types } from "./Types.sol";
@@ -29,11 +29,11 @@ import { Types } from "./Types.sol";
  * @title Interest
  * @author dYdX
  *
- * TODO
+ * Library for managing the interest rate and indexes of Solo
  */
 library Interest {
     using Math for uint256;
-    using SafeMath for uint256;
+    using FastMath for uint256;
 
     // ============ Constants ============
 

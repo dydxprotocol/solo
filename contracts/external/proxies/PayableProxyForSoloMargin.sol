@@ -31,7 +31,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * @title PayableProxyForSoloMargin
  * @author dYdX
  *
- * TODO
+ * Contract for wrapping/unwrapping ETH before/after interacting with Solo
  */
 contract PayableProxyForSoloMargin is
     ReentrancyGuard

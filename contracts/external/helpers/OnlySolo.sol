@@ -27,7 +27,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * @title OnlySolo
  * @author dYdX
  *
- * TODO
+ * Inheritable contract that restricts the calling of certain functions to Solo only
  */
 contract OnlySolo {
 

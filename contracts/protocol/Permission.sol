@@ -26,7 +26,7 @@ import { State } from "./State.sol";
  * @title Permission
  * @author dYdX
  *
- * TODO
+ * Public function that allows other addresses to manage accounts
  */
 contract Permission is
     State

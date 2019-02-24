@@ -18,7 +18,7 @@
 
 pragma solidity 0.5.4;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { FastMath } from "./FastMath.sol";
 import { Math } from "./Math.sol";
 
 
@@ -26,7 +26,7 @@ import { Math } from "./Math.sol";
  * @title Types
  * @author dYdX
  *
- * TODO
+ * Library for interacting with the basic structs used in Solo
  */
 library Types {
     using Math for uint256;
@@ -95,14 +95,14 @@ library Types {
         Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = SafeMath.add(uint256(a.value), uint256(b.value)).to128();
+            result.value = FastMath.add(uint256(a.value), uint256(b.value)).to128();
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = SafeMath.sub(uint256(a.value), uint256(b.value)).to128();
+                result.value = FastMath.sub(uint256(a.value), uint256(b.value)).to128();
             } else {
                 result.sign = b.sign;
-                result.value = SafeMath.sub(uint256(b.value), uint256(a.value)).to128();
+                result.value = FastMath.sub(uint256(b.value), uint256(a.value)).to128();
             }
         }
         return result;
@@ -205,15 +205,15 @@ library Types {
         Wei memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value);
+            result.value = FastMath.add(a.value, b.value);
         } else {
             result.sign = (a.value >= b.value);
             if (a.value > b.value) {
                 result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value);
+                result.value = FastMath.sub(a.value, b.value);
             } else {
                 result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value);
+                result.value = FastMath.sub(b.value, a.value);
             }
         }
         return result;

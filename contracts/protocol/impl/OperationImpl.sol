@@ -19,7 +19,6 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";
@@ -27,6 +26,7 @@ import { Actions } from "../lib/Actions.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { FastMath } from "../lib/FastMath.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
@@ -42,7 +42,7 @@ import { Types } from "../lib/Types.sol";
  */
 library OperationImpl {
     using Decimal for uint256;
-    using SafeMath for uint256;
+    using FastMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
     using Types for Types.Wei;

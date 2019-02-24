@@ -23,7 +23,7 @@ pragma solidity 0.5.4;
  * @title Require
  * @author dYdX
  *
- * TODO
+ * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
  */
 library Require {
 

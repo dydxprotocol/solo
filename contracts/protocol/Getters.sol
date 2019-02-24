@@ -36,7 +36,7 @@ import { Types } from "./lib/Types.sol";
  * @title Getters
  * @author dYdX
  *
- * TODO
+ * Public read-only functions that allow transparency into the state of Solo
  */
 contract Getters is
     State
