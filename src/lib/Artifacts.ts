@@ -7,6 +7,9 @@ import {
 import { default as TokenA } from '../../build/contracts/TokenA.json';
 import { default as TokenB } from '../../build/contracts/TokenB.json';
 import { default as TokenC } from '../../build/contracts/TokenC.json';
+import { default as ErroringToken } from '../../build/contracts/ErroringToken.json';
+import { default as OmiseToken } from '../../build/contracts/OmiseToken.json';
+import { default as TestLib } from '../../build/contracts/TestLib.json';
 import { default as TestAutoTrader } from '../../build/contracts/TestAutoTrader.json';
 import { default as TestCallee } from '../../build/contracts/TestCallee.json';
 import { default as TestExchangeWrapper } from '../../build/contracts/TestExchangeWrapper.json';
@@ -22,6 +25,9 @@ export default {
   TokenA,
   TokenB,
   TokenC,
+  ErroringToken,
+  OmiseToken,
+  TestLib,
   TestPriceOracle,
   TestInterestSetter,
   TestSoloMargin,

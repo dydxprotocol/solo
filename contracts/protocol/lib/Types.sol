@@ -95,14 +95,14 @@ library Types {
         Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = SafeMath.add(uint256(a.value), uint256(b.value)).to128();
+            result.value = SafeMath.add(a.value, b.value).to128();
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = SafeMath.sub(uint256(a.value), uint256(b.value)).to128();
+                result.value = SafeMath.sub(a.value, b.value).to128();
             } else {
                 result.sign = b.sign;
-                result.value = SafeMath.sub(uint256(b.value), uint256(a.value)).to128();
+                result.value = SafeMath.sub(b.value, a.value).to128();
             }
         }
         return result;
@@ -116,10 +116,13 @@ library Types {
         pure
         returns (bool)
     {
-        if (a.value == 0 && b.value == 0) {
-            return true;
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
         }
-        return (a.value == b.value) && (a.sign == b.sign);
+        return false;
     }
 
     function negative(
@@ -207,8 +210,7 @@ library Types {
             result.sign = a.sign;
             result.value = SafeMath.add(a.value, b.value);
         } else {
-            result.sign = (a.value >= b.value);
-            if (a.value > b.value) {
+            if (a.value >= b.value) {
                 result.sign = a.sign;
                 result.value = SafeMath.sub(a.value, b.value);
             } else {
@@ -217,6 +219,23 @@ library Types {
             }
         }
         return result;
+    }
+
+    function equals(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
+        }
+        return false;
     }
 
     function negative(

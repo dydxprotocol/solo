@@ -215,7 +215,7 @@ describe('Liquidate', () => {
   it('Fails for non-operator', async () => {
     await expectLiquidateRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });

@@ -29,6 +29,7 @@ import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
 import { TestToken } from '../../build/wrappers/TestToken';
+import { TestLib } from '../../build/wrappers/TestLib';
 import { TestAutoTrader } from '../../build/wrappers/TestAutoTrader';
 import { TestCallee } from '../../build/wrappers/TestCallee';
 import { TestExchangeWrapper } from '../../build/wrappers/TestExchangeWrapper';
@@ -42,6 +43,9 @@ import payableProxyJson from '../../build/published_contracts/PayableProxyForSol
 import tokenAJson from '../../build/published_contracts/TokenA.json';
 import tokenBJson from '../../build/published_contracts/TokenB.json';
 import tokenCJson from '../../build/published_contracts/TokenC.json';
+import erroringTokenJson from '../../build/published_contracts/ErroringToken.json';
+import omiseTokenJson from '../../build/published_contracts/OmiseToken.json';
+import testLibJson from '../../build/published_contracts/TestLib.json';
 import testAutoTraderJson from '../../build/published_contracts/TestAutoTrader.json';
 import testCalleeJson from '../../build/published_contracts/TestCallee.json';
 import testExchangeWrapperJson from '../../build/published_contracts/TestExchangeWrapper.json';
@@ -77,6 +81,9 @@ export class Contracts {
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
+  public erroringToken: TestToken;
+  public omiseToken: TestToken;
+  public testLib: TestLib;
   public testAutoTrader: TestAutoTrader;
   public testCallee: TestCallee;
   public testExchangeWrapper: TestExchangeWrapper;
@@ -110,6 +117,9 @@ export class Contracts {
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
+    this.erroringToken = new this.web3.eth.Contract(erroringTokenJson.abi) as TestToken;
+    this.omiseToken = new this.web3.eth.Contract(omiseTokenJson.abi) as TestToken;
+    this.testLib = new this.web3.eth.Contract(testLibJson.abi) as TestLib;
     this.testAutoTrader = new this.web3.eth.Contract(testAutoTraderJson.abi) as TestAutoTrader;
     this.testCallee = new this.web3.eth.Contract(testCalleeJson.abi) as TestCallee;
     this.testExchangeWrapper = new this.web3.eth.Contract(
@@ -184,6 +194,24 @@ export class Contracts {
       networkId,
     );
     this.setContractProvider(
+      this.erroringToken,
+      erroringTokenJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.omiseToken,
+      omiseTokenJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.testLib,
+      testLibJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
       this.testAutoTrader,
       testAutoTraderJson,
       provider,
@@ -229,6 +257,9 @@ export class Contracts {
     this.tokenA.options.from = account;
     this.tokenB.options.from = account;
     this.tokenC.options.from = account;
+    this.erroringToken.options.from = account;
+    this.omiseToken.options.from = account;
+    this.testLib.options.from = account;
     this.testAutoTrader.options.from = account;
     this.testCallee.options.from = account;
     this.testExchangeWrapper.options.from = account;

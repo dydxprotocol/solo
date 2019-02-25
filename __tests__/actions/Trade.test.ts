@@ -869,7 +869,7 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });
@@ -879,7 +879,7 @@ describe('Trade', () => {
       approveOperator(),
       setTradeData(),
     ]);
-    await expectTradeRevert({}, 'Storage: Unpermissioned Operator');
+    await expectTradeRevert({}, 'Storage: Unpermissioned operator');
   });
 
   it('Fails for wrong-contract autoTrader', async () => {

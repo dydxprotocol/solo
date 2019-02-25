@@ -409,7 +409,7 @@ describe('Withdraw', () => {
     await issueTokensToSolo(wei);
     await expectWithdrawRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: accounts[2] },
     );
   });
