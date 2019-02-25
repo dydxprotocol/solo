@@ -404,7 +404,8 @@ library Storage {
         Require.that(
             isValidOperator,
             FILE,
-            "Unpermissioned Operator"
+            "Unpermissioned operator",
+            operator
         );
     }
 

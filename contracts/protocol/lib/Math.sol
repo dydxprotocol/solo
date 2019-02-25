@@ -62,7 +62,7 @@ library Math {
             // SafeMath will check for zero denominator
             return SafeMath.div(0, denominator);
         }
-        return numerator.mul(target).sub(1).div(denominator).add(1);
+        return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
     function to128(

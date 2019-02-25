@@ -435,7 +435,7 @@ describe('Deposit', () => {
     await issueTokensToUser(wei);
     await expectDepositRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });

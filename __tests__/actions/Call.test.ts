@@ -95,7 +95,7 @@ describe('Call', () => {
       {
         data: toBytes(accountData, senderData),
       },
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });

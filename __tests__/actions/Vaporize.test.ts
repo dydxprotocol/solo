@@ -280,7 +280,7 @@ describe('Vaporize', () => {
     await issueHeldTokensToSolo(payoutAmount);
     await expectVaporizeRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });

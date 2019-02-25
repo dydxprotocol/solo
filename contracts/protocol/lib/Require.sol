@@ -126,7 +126,7 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        file,
+                        stringify(file),
                         COLON,
                         stringify(reason),
                         LPAREN,

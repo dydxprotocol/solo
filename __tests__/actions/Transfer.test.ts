@@ -420,7 +420,7 @@ describe('Transfer', () => {
           reference: AmountReference.Delta,
         },
       },
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
     );
   });
 
@@ -434,7 +434,7 @@ describe('Transfer', () => {
           reference: AmountReference.Delta,
         },
       },
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
     );
   });
 

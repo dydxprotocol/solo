@@ -207,7 +207,7 @@ describe('Sell', () => {
   it('Fails for non-operator', async () => {
     await expectSellRevert(
       {},
-      'Storage: Unpermissioned Operator',
+      'Storage: Unpermissioned operator',
       { from: operator },
     );
   });

@@ -73,7 +73,7 @@ library Token {
         Require.that(
             checkSuccess(),
             FILE,
-            "Approval failed"
+            "Approve failed"
         );
     }
 

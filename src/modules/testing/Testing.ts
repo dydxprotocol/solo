@@ -25,6 +25,8 @@ export class Testing {
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
+  public erroringToken: TestToken;
+  public omiseToken: TestToken;
   public autoTrader: TestAutoTrader;
   public callee: TestCallee;
   public exchangeWrapper: TestExchangeWrapper;
@@ -41,6 +43,8 @@ export class Testing {
     this.tokenA = new TestToken(contracts, token, contracts.tokenA);
     this.tokenB = new TestToken(contracts, token, contracts.tokenB);
     this.tokenC = new TestToken(contracts, token, contracts.tokenC);
+    this.erroringToken = new TestToken(contracts, token, contracts.erroringToken);
+    this.omiseToken = new TestToken(contracts, token, contracts.omiseToken);
     this.autoTrader = new TestAutoTrader(contracts);
     this.callee = new TestCallee(contracts);
     this.exchangeWrapper = new TestExchangeWrapper(contracts);

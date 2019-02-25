@@ -253,12 +253,12 @@ describe('Admin', () => {
       const numMarkets = await solo.getters.getNumMarkets();
       const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(numMarkets.minus(1));
 
-      expect(marketInfo.market.token).toBe(token);
-      expect(marketInfo.market.priceOracle).toBe(oracleAddress);
-      expect(marketInfo.market.interestSetter).toBe(setterAddress);
+      expect(marketInfo.market.token.toLowerCase()).toEqual(token.toLowerCase());
+      expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
+      expect(marketInfo.market.interestSetter).toEqual(setterAddress);
       expect(marketInfo.market.marginPremium).toEqual(defaultPremium);
       expect(marketInfo.market.spreadPremium).toEqual(defaultPremium);
-      expect(marketInfo.market.isClosing).toBe(false);
+      expect(marketInfo.market.isClosing).toEqual(false);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
