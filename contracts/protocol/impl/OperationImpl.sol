@@ -24,6 +24,7 @@ import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
+import { Cache } from "../lib/Cache.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
@@ -41,6 +42,7 @@ import { Types } from "../lib/Types.sol";
  * Logic for processing actions
  */
 library OperationImpl {
+    using Cache for Cache.MarketCache;
     using Decimal for uint256;
     using SafeMath for uint256;
     using Storage for Storage.State;
@@ -66,8 +68,8 @@ library OperationImpl {
 
         (
             bool[] memory primaryAccounts,
-            Monetary.Price[] memory priceCache
-        ) = _getRelevantAccountsAndMarkets(
+            Cache.MarketCache memory cache
+        ) = _runPreprocessing(
             state,
             accounts,
             actions
@@ -77,14 +79,14 @@ library OperationImpl {
             state,
             accounts,
             actions,
-            priceCache
+            cache
         );
 
-        _verifyAccountCollateralization(
+        _verifyFinalState(
             state,
             accounts,
             primaryAccounts,
-            priceCache
+            cache
         );
     }
 
@@ -122,7 +124,7 @@ library OperationImpl {
         }
     }
 
-    function _getRelevantAccountsAndMarkets(
+    function _runPreprocessing(
         Storage.State storage state,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions
@@ -130,12 +132,12 @@ library OperationImpl {
         private
         returns (
             bool[] memory,
-            Monetary.Price[] memory
+            Cache.MarketCache memory
         )
     {
         uint256 numMarkets = state.numMarkets;
-        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
         bool[] memory primaryAccounts = new bool[](accounts.length);
+        Cache.MarketCache memory cache = Cache.create(numMarkets);
 
         // keep track of primary accounts and indexes that need updating
         for (uint256 i = 0; i < actions.length; i++) {
@@ -167,15 +169,15 @@ library OperationImpl {
 
             // keep track of indexes to update
             if (marketLayout == Actions.MarketLayout.OneMarket) {
-                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
+                _updateMarket(state, cache, arg.primaryMarketId);
             } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
                 Require.that(
                     arg.primaryMarketId != arg.secondaryMarketId,
                     FILE,
                     "Markets must be distinct"
                 );
-                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
-                _updateIndexAndPrice(state, priceCache, arg.secondaryMarketId);
+                _updateMarket(state, cache, arg.primaryMarketId);
+                _updateMarket(state, cache, arg.secondaryMarketId);
             } else {
                 assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
@@ -183,39 +185,38 @@ library OperationImpl {
 
         // get any other markets for which an account has a balance
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (priceCache[m].value != 0) {
+            if (cache.hasMarket(m)) {
                 continue;
             }
             for (uint256 a = 0; a < accounts.length; a++) {
                 if (!state.getPar(accounts[a], m).isZero()) {
-                    _updateIndexAndPrice(state, priceCache, m);
+                    _updateMarket(state, cache, m);
                     break;
                 }
             }
         }
 
-        return (primaryAccounts, priceCache);
+        return (primaryAccounts, cache);
     }
 
-    function _updateIndexAndPrice(
+    function _updateMarket(
         Storage.State storage state,
-        Monetary.Price[] memory priceCache,
+        Cache.MarketCache memory cache,
         uint256 marketId
     )
         private
     {
-        if (priceCache[marketId].value != 0) {
-            return;
+        bool updated = cache.addMarket(state, marketId);
+        if (updated) {
+            Events.logIndexUpdate(marketId, state.updateIndex(marketId));
         }
-        priceCache[marketId] = state.fetchPrice(marketId);
-        Events.logIndexUpdate(marketId, state.updateIndex(marketId));
     }
 
     function _runActions(
         Storage.State storage state,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions,
-        Monetary.Price[] memory priceCache
+        Cache.MarketCache memory cache
     )
         private
     {
@@ -242,10 +243,10 @@ library OperationImpl {
                 _trade(state, Actions.parseTradeArgs(accounts, arg));
             }
             else if (ttype == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg), priceCache);
+                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg), cache);
             }
             else if (ttype == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), priceCache);
+                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), cache);
             }
             else  {
                 assert(ttype == Actions.ActionType.Call);
@@ -254,19 +255,33 @@ library OperationImpl {
         }
     }
 
-    function _verifyAccountCollateralization(
+    function _verifyFinalState(
         Storage.State storage state,
         Account.Info[] memory accounts,
         bool[] memory primaryAccounts,
-        Monetary.Price[] memory priceCache
+        Cache.MarketCache memory cache
     )
         private
     {
+        // verify no increase in borrowPar for closing markets
+        uint256 numMarkets = cache.getNumMarkets();
+        for (uint256 m = 0; m < numMarkets; m++) {
+            if (cache.getIsClosing(m)) {
+                Require.that(
+                    state.getTotalPar(m).borrow <= cache.getBorrowPar(m),
+                    FILE,
+                    "Market is closing",
+                    m
+                );
+            }
+        }
+
+        // verify account collateralization
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
 
             // validate minBorrowedValue
-            bool collateralized = state.isCollateralized(account, priceCache, true);
+            bool collateralized = state.isCollateralized(account, cache, true);
 
             // don't check collateralization for non-primary accounts
             if (!primaryAccounts[a]) {
@@ -604,7 +619,7 @@ library OperationImpl {
     function _liquidate(
         Storage.State storage state,
         Actions.LiquidateArgs memory args,
-        Monetary.Price[] memory priceCache
+        Cache.MarketCache memory cache
     )
         private
     {
@@ -613,7 +628,7 @@ library OperationImpl {
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
             Require.that(
-                !state.isCollateralized(args.liquidAccount, priceCache, false),
+                !state.isCollateralized(args.liquidAccount, cache, false),
                 FILE,
                 "Unliquidatable account"
             );
@@ -646,7 +661,7 @@ library OperationImpl {
             Monetary.Price memory owedPrice
         ) = _getLiquidationPrices(
             state,
-            priceCache,
+            cache,
             args.heldMarket,
             args.owedMarket
         );
@@ -704,7 +719,7 @@ library OperationImpl {
     function _vaporize(
         Storage.State storage state,
         Actions.VaporizeArgs memory args,
-        Monetary.Price[] memory priceCache
+        Cache.MarketCache memory cache
     )
         private
     {
@@ -713,7 +728,7 @@ library OperationImpl {
         // verify vaporizable
         if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
             Require.that(
-                state.isVaporizable(args.vaporAccount, priceCache),
+                state.isVaporizable(args.vaporAccount, cache),
                 FILE,
                 "Unvaporizable account"
             );
@@ -759,7 +774,7 @@ library OperationImpl {
             Monetary.Price memory owedPrice
         ) = _getLiquidationPrices(
             state,
-            priceCache,
+            cache,
             args.heldMarket,
             args.owedMarket
         );
@@ -889,7 +904,7 @@ library OperationImpl {
 
     function _getLiquidationPrices(
         Storage.State storage state,
-        Monetary.Price[] memory priceCache,
+        Cache.MarketCache memory cache,
         uint256 heldMarketId,
         uint256 owedMarketId
     )
@@ -900,7 +915,7 @@ library OperationImpl {
             Monetary.Price memory
         )
     {
-        uint256 originalPrice = priceCache[owedMarketId].value;
+        uint256 originalPrice = cache.getPrice(owedMarketId).value;
         Decimal.D256 memory heldPremium =
             Decimal.add(Decimal.one(), state.markets[heldMarketId].spreadPremium);
         Decimal.D256 memory owedPremium =
@@ -912,6 +927,6 @@ library OperationImpl {
             value: originalPrice.add(adjustedSpread)
         });
 
-        return (priceCache[heldMarketId], owedPrice);
+        return (cache.getPrice(heldMarketId), owedPrice);
     }
 }

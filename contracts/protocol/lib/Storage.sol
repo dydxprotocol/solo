@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
+import { Cache } from "./Cache.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
 import { Math } from "./Math.sol";
@@ -40,6 +41,7 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
  * Functions for reading, writing, and verifying state in Solo
  */
 library Storage {
+    using Cache for Cache.MarketCache;
     using Storage for Storage.State;
     using Math for uint256;
     using Types for Types.Par;
@@ -294,7 +296,7 @@ library Storage {
     function getAccountValues(
         Storage.State storage state,
         Account.Info memory account,
-        Monetary.Price[] memory priceCache,
+        Cache.MarketCache memory cache,
         bool adjustForLiquidity
     )
         internal
@@ -304,9 +306,9 @@ library Storage {
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
 
-        uint256 numMarkets = priceCache.length;
+        uint256 numMarkets = cache.getNumMarkets();
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (priceCache[m].value == 0) {
+            if (!cache.hasMarket(m)) {
                 continue;
             }
 
@@ -316,7 +318,7 @@ library Storage {
                 continue;
             }
 
-            uint256 assetValue = userWei.value.mul(priceCache[m].value);
+            uint256 assetValue = userWei.value.mul(cache.getPrice(m).value);
             Decimal.D256 memory adjust = Decimal.one();
             if (adjustForLiquidity) {
                 adjust = Decimal.add(adjust, state.markets[m].marginPremium);
@@ -335,7 +337,7 @@ library Storage {
     function isCollateralized(
         Storage.State storage state,
         Account.Info memory account,
-        Monetary.Price[] memory priceCache,
+        Cache.MarketCache memory cache,
         bool requireMinBorrow
     )
         internal
@@ -345,7 +347,7 @@ library Storage {
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = state.getAccountValues(account, priceCache, true);
+        ) = state.getAccountValues(account, cache, true);
 
         if (borrowValue.value == 0) {
             return true;
@@ -509,16 +511,16 @@ library Storage {
     function isVaporizable(
         Storage.State storage state,
         Account.Info memory account,
-        Monetary.Price[] memory priceCache
+        Cache.MarketCache memory cache
     )
         internal
         view
         returns (bool)
     {
         bool hasNegative = false;
-        uint256 numMarkets = priceCache.length;
+        uint256 numMarkets = cache.getNumMarkets();
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (priceCache[m].value == 0) {
+            if (!cache.hasMarket(m)) {
                 continue;
             }
             Types.Par memory par = state.getPar(account, m);

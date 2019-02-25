@@ -23,6 +23,7 @@ import { State } from "./State.sol";
 import { IInterestSetter } from "./interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
 import { Account } from "./lib/Account.sol";
+import { Cache } from "./lib/Cache.sol";
 import { Decimal } from "./lib/Decimal.sol";
 import { Interest } from "./lib/Interest.sol";
 import { Monetary } from "./lib/Monetary.sol";
@@ -41,6 +42,7 @@ import { Types } from "./lib/Types.sol";
 contract Getters is
     State
 {
+    using Cache for Cache.MarketCache;
     using Storage for Storage.State;
     using Types for Types.Par;
 
@@ -411,14 +413,14 @@ contract Getters is
     {
         uint256 numMarkets = g_state.numMarkets;
 
-        // populate price cache
-        Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
+        // populate cache
+        Cache.MarketCache memory cache = Cache.create(numMarkets);
         for (uint256 m = 0; m < numMarkets; m++) {
             if (!g_state.getPar(account, m).isZero()) {
-                priceCache[m] = g_state.fetchPrice(m);
+                cache.addMarket(g_state, m);
             }
         }
 
-        return g_state.getAccountValues(account, priceCache, adjustForLiquidity);
+        return g_state.getAccountValues(account, cache, adjustForLiquidity);
     }
 }
