@@ -67,8 +67,8 @@ library OperationImpl {
         (
             bool[] memory primaryAccounts,
             Monetary.Price[] memory priceCache,
-            Types.TotalPar[] memory totalPars
-        ) = _getRelevantAccountsAndMarkets(
+            Types.TotalPar[] memory parCache
+        ) = _doPreprocessing(
             state,
             accounts,
             actions
@@ -81,16 +81,12 @@ library OperationImpl {
             priceCache
         );
 
-        _verifyTotalPars(
-            state,
-            totalPars
-        );
-
-        _verifyAccountCollateralization(
+        _verifyState(
             state,
             accounts,
             primaryAccounts,
-            priceCache
+            priceCache,
+            parCache
         );
     }
 
@@ -128,7 +124,7 @@ library OperationImpl {
         }
     }
 
-    function _getRelevantAccountsAndMarkets(
+    function _doPreprocessing(
         Storage.State storage state,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions
@@ -143,7 +139,7 @@ library OperationImpl {
         uint256 numMarkets = state.numMarkets;
         bool[] memory primaryAccounts = new bool[](accounts.length);
         Monetary.Price[] memory priceCache = new Monetary.Price[](numMarkets);
-        Types.TotalPar[] memory totalPars = new Types.TotalPar[](numMarkets);
+        Types.TotalPar[] memory parCache = new Types.TotalPar[](numMarkets);
 
         // keep track of primary accounts and indexes that need updating
         for (uint256 i = 0; i < actions.length; i++) {
@@ -175,15 +171,30 @@ library OperationImpl {
 
             // keep track of indexes to update
             if (marketLayout == Actions.MarketLayout.OneMarket) {
-                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
+                _updateIndexAndPrice(
+                    state,
+                    priceCache,
+                    parCache,
+                    arg.primaryMarketId
+                );
             } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
                 Require.that(
                     arg.primaryMarketId != arg.secondaryMarketId,
                     FILE,
                     "Markets must be distinct"
                 );
-                _updateIndexAndPrice(state, priceCache, arg.primaryMarketId);
-                _updateIndexAndPrice(state, priceCache, arg.secondaryMarketId);
+                _updateIndexAndPrice(
+                    state,
+                    priceCache,
+                    parCache,
+                    arg.primaryMarketId
+                );
+                _updateIndexAndPrice(
+                    state,
+                    priceCache,
+                    parCache,
+                    arg.secondaryMarketId
+                );
             } else {
                 assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
@@ -194,30 +205,36 @@ library OperationImpl {
             if (priceCache[m].value != 0) {
                 continue;
             }
-            if (state.markets[m].isClosing) {
-                totalPars[m] = state.getTotalPar(m);
-                totalPars[m].supply = 1;
-            }
             for (uint256 a = 0; a < accounts.length; a++) {
                 if (!state.getPar(accounts[a], m).isZero()) {
-                    _updateIndexAndPrice(state, priceCache, m);
+                    _updateIndexAndPrice(
+                        state,
+                        priceCache,
+                        parCache,
+                        m
+                    );
                     break;
                 }
             }
         }
 
-        return (primaryAccounts, priceCache, totalPars);
+        return (primaryAccounts, priceCache, parCache);
     }
 
     function _updateIndexAndPrice(
         Storage.State storage state,
         Monetary.Price[] memory priceCache,
+        Types.TotalPar[] memory parCache,
         uint256 marketId
     )
         private
     {
         if (priceCache[marketId].value != 0) {
             return;
+        }
+        if (state.markets[marketId].isClosing) {
+            parCache[marketId] = state.getTotalPar(marketId);
+            parCache[marketId].supply = 1;
         }
         priceCache[marketId] = state.fetchPrice(marketId);
         Events.logIndexUpdate(marketId, state.updateIndex(marketId));
@@ -266,15 +283,18 @@ library OperationImpl {
         }
     }
 
-    function _verifyTotalPars(
+    function _verifyState(
         Storage.State storage state,
-        Types.TotalPar[] memory totalPars
+        Account.Info[] memory accounts,
+        bool[] memory primaryAccounts,
+        Monetary.Price[] memory priceCache,
+        Types.TotalPar[] memory parCache
     )
         private
-        view
     {
-        for (uint256 m = 0; m < totalPars.length; m++) {
-            Types.TotalPar memory totalPar = totalPars[m];
+        // verify any closing markets
+        for (uint256 m = 0; m < parCache.length; m++) {
+            Types.TotalPar memory totalPar = parCache[m];
             if (totalPar.supply > 0) {
                 Require.that(
                     state.getTotalPar(m).borrow <= totalPar.borrow,
@@ -284,16 +304,8 @@ library OperationImpl {
                 );
             }
         }
-    }
 
-    function _verifyAccountCollateralization(
-        Storage.State storage state,
-        Account.Info[] memory accounts,
-        bool[] memory primaryAccounts,
-        Monetary.Price[] memory priceCache
-    )
-        private
-    {
+        // verify account collateralization
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
 
