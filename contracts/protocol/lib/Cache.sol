@@ -70,9 +70,7 @@ library Cache {
         if (cache.hasMarket(marketId)) {
             return false;
         }
-        Monetary.Price memory price = state.fetchPrice(marketId);
-        assert(price.value != 0);
-        cache.markets[marketId].price = price;
+        cache.markets[marketId].price = state.fetchPrice(marketId);
         if (state.markets[marketId].isClosing) {
             cache.markets[marketId].isClosing = true;
             cache.markets[marketId].borrowPar = state.getTotalPar(marketId).borrow;
@@ -103,7 +101,7 @@ library Cache {
         return cache.markets[marketId].price.value != 0;
     }
 
-    function isClosing(
+    function getIsClosing(
         MarketCache memory cache,
         uint256 marketId
     )
@@ -122,7 +120,6 @@ library Cache {
         pure
         returns (Monetary.Price memory)
     {
-        assert(cache.hasMarket(marketId));
         return cache.markets[marketId].price;
     }
 
@@ -134,7 +131,6 @@ library Cache {
         pure
         returns (uint128)
     {
-        assert(cache.hasMarket(marketId));
         return cache.markets[marketId].borrowPar;
     }
 }

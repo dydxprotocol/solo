@@ -169,15 +169,15 @@ library OperationImpl {
 
             // keep track of indexes to update
             if (marketLayout == Actions.MarketLayout.OneMarket) {
-                _cacheMarket(state, cache, arg.primaryMarketId);
+                _updateMarket(state, cache, arg.primaryMarketId);
             } else if (marketLayout == Actions.MarketLayout.TwoMarkets) {
                 Require.that(
                     arg.primaryMarketId != arg.secondaryMarketId,
                     FILE,
                     "Markets must be distinct"
                 );
-                _cacheMarket(state, cache, arg.primaryMarketId);
-                _cacheMarket(state, cache, arg.secondaryMarketId);
+                _updateMarket(state, cache, arg.primaryMarketId);
+                _updateMarket(state, cache, arg.secondaryMarketId);
             } else {
                 assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
@@ -190,7 +190,7 @@ library OperationImpl {
             }
             for (uint256 a = 0; a < accounts.length; a++) {
                 if (!state.getPar(accounts[a], m).isZero()) {
-                    _cacheMarket(state, cache, m);
+                    _updateMarket(state, cache, m);
                     break;
                 }
             }
@@ -199,7 +199,7 @@ library OperationImpl {
         return (primaryAccounts, cache);
     }
 
-    function _cacheMarket(
+    function _updateMarket(
         Storage.State storage state,
         Cache.MarketCache memory cache,
         uint256 marketId
@@ -266,7 +266,7 @@ library OperationImpl {
         // verify no increase in borrowPar for closing markets
         uint256 numMarkets = cache.getNumMarkets();
         for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.isClosing(m)) {
+            if (cache.getIsClosing(m)) {
                 Require.that(
                     state.getTotalPar(m).borrow <= cache.getBorrowPar(m),
                     FILE,
