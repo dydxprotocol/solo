@@ -25,8 +25,8 @@ const collateralAmount = new BigNumber(1000000);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const wei = new BigNumber(150);
-const negPar = new BigNumber(-100);
-const negWei = new BigNumber(-150);
+const negPar = par.times(-1);
+const negWei = wei.times(-1);
 let defaultGlob: Deposit;
 const CANNOT_DEPOSIT_NEGATIVE = 'Exchange: Cannot transferIn negative';
 const cachedWeis = {
@@ -94,14 +94,14 @@ describe('Deposit', () => {
       { from: operator },
       { from: operator },
     );
-    await expectBalances(par.times(2), wei.times(2), zero, wei);
 
     const [
-      mIndex,
-      cIndex,
+      marketIndex,
+      collateralIndex,
     ] = await Promise.all([
       solo.getters.getMarketCachedIndex(market),
       solo.getters.getMarketCachedIndex(collateralMarket),
+      expectBalances(par.times(2), wei.times(2), zero, wei),
     ]);
 
     const logs = solo.logs.parseLogs(txResult);
@@ -111,15 +111,15 @@ describe('Deposit', () => {
     expect(operationLog.name).toEqual('LogOperation');
     expect(operationLog.args.sender).toEqual(operator);
 
-    const mIndexLog = logs[1];
-    expect(mIndexLog.name).toEqual('LogIndexUpdate');
-    expect(mIndexLog.args.market).toEqual(market);
-    expect(mIndexLog.args.index).toEqual(mIndex);
+    const marketIndexLog = logs[1];
+    expect(marketIndexLog.name).toEqual('LogIndexUpdate');
+    expect(marketIndexLog.args.market).toEqual(market);
+    expect(marketIndexLog.args.index).toEqual(marketIndex);
 
-    const cIndexLog = logs[2];
-    expect(cIndexLog.name).toEqual('LogIndexUpdate');
-    expect(cIndexLog.args.market).toEqual(collateralMarket);
-    expect(cIndexLog.args.index).toEqual(cIndex);
+    const collateralIndexLog = logs[2];
+    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market).toEqual(collateralMarket);
+    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
 
     const depositLog = logs[3];
     expect(depositLog.name).toEqual('LogDeposit');
@@ -402,7 +402,7 @@ describe('Deposit', () => {
   });
 
   it('Succeeds for some more specific indexes and values', async () => {
-    // TODO
+    // TODO: values
   });
 
   it('Succeeds and sets status to Normal', async () => {

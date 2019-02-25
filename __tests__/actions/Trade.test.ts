@@ -30,8 +30,8 @@ const collateralAmount = new BigNumber(1000000);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const wei = new BigNumber(150);
-const negPar = new BigNumber(-100);
-const negWei = new BigNumber(-150);
+const negPar = par.times(-1);
+const negWei = wei.times(-1);
 let defaultGlob: Trade;
 const defaultData = {
   value: wei,
@@ -97,17 +97,72 @@ describe('Trade', () => {
       approveTrader(),
       setTradeData(),
     ]);
-
     const txResult = await expectTradeOkay({});
-
     console.log(`\tTrade gas used: ${txResult.gasUsed}`);
-
     await Promise.all([
       expectBalances1(par, negPar),
       expectBalances2(negPar, par),
     ]);
+  });
 
-    // TODO: expect log
+  it('Succeeds for events', async () => {
+    await Promise.all([
+      solo.permissions.approveOperator(operator, { from: who1 }),
+      approveTrader(),
+      setTradeData(),
+    ]);
+    const txResult = await expectTradeOkay(
+      {},
+      { from: operator },
+    );
+
+    const [
+      inputIndex,
+      outputIndex,
+      collateralIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(inputMkt),
+      solo.getters.getMarketCachedIndex(outputMkt),
+      solo.getters.getMarketCachedIndex(collateralMkt),
+      expectBalances1(par, negPar),
+      expectBalances2(negPar, par),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(5);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const inputIndexLog = logs[1];
+    expect(inputIndexLog.name).toEqual('LogIndexUpdate');
+    expect(inputIndexLog.args.market).toEqual(inputMkt);
+    expect(inputIndexLog.args.index).toEqual(inputIndex);
+
+    const outputIndexLog = logs[2];
+    expect(outputIndexLog.name).toEqual('LogIndexUpdate');
+    expect(outputIndexLog.args.market).toEqual(outputMkt);
+    expect(outputIndexLog.args.index).toEqual(outputIndex);
+
+    const collateralIndexLog = logs[3];
+    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market).toEqual(collateralMkt);
+    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
+
+    const tradeLog = logs[4];
+    expect(tradeLog.name).toEqual('LogTrade');
+    expect(tradeLog.args.takerAccountOwner).toEqual(who1);
+    expect(tradeLog.args.takerAccountNumber).toEqual(accountNumber1);
+    expect(tradeLog.args.makerAccountOwner).toEqual(who2);
+    expect(tradeLog.args.makerAccountNumber).toEqual(accountNumber2);
+    expect(tradeLog.args.inputMarket).toEqual(inputMkt);
+    expect(tradeLog.args.outputMarket).toEqual(outputMkt);
+    expect(tradeLog.args.takerInputUpdate).toEqual({ newPar: par, deltaWei: wei });
+    expect(tradeLog.args.takerOutputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
+    expect(tradeLog.args.traderInputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
+    expect(tradeLog.args.traderOutputUpdate).toEqual({ newPar: par, deltaWei: wei });
+    expect(tradeLog.args.autoTrader).toEqual(solo.testing.autoTrader.getAddress());
   });
 
   it('Succeeds for positive delta par/wei', async () => {

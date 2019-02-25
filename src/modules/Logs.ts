@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import { TxResult, Index, BalanceUpdate } from '../types';
-import { stringToDecimal } from '../lib/Helpers';
+import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 
 export class Logs {
   private contracts: Contracts;
@@ -142,8 +142,8 @@ export class Logs {
 
   private parseBalanceUpdate(update): BalanceUpdate {
     return {
-      deltaWei: new BigNumber(`${update.deltaWei.sign ? '' : '-'}${update.deltaWei.value}`),
-      newPar: new BigNumber(`${update.newPar.sign ? '' : '-'}${update.newPar.value}`),
+      deltaWei: valueToInteger(update.deltaWei),
+      newPar: valueToInteger(update.newPar),
     };
   }
 }

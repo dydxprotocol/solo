@@ -34,8 +34,6 @@ import { Types } from "../protocol/lib/Types.sol";
  */
 contract TestLib {
 
-    // TODO: other libraries
-
     // ============ Constants ============
 
     bytes32 constant FILE = "TestLib";
