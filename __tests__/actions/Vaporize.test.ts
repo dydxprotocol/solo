@@ -77,21 +77,74 @@ describe('Vaporize', () => {
   });
 
   it('Basic vaporize test', async () => {
-    const payoutAmount = wei.times(premium);
-    await issueHeldTokensToSolo(payoutAmount);
-    await expectExcessHeldToken(payoutAmount);
-
+    await issueHeldTokensToSolo(wei.times(premium));
+    await expectExcessHeldToken(wei.times(premium));
     const txResult = await expectVaporizeOkay({});
-
     console.log(`\tVaporize gas used: ${txResult.gasUsed}`);
-
     await Promise.all([
       expectExcessHeldToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(par.times(premium), zero),
     ]);
+  });
 
-    // TODO: expect log
+  it('Succeeds for events', async () => {
+    await Promise.all([
+      issueHeldTokensToSolo(wei.times(premium)),
+      solo.permissions.approveOperator(operator, { from: solidOwner }),
+    ]);
+    const txResult = await expectVaporizeOkay(
+      {},
+      { from: operator },
+    );
+    const [
+      heldIndex,
+      owedIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(heldMarket),
+      solo.getters.getMarketCachedIndex(owedMarket),
+      expectExcessHeldToken(zero),
+      expectVaporPars(zero, zero),
+      expectSolidPars(par.times(premium), zero),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const owedIndexLog = logs[1];
+    expect(owedIndexLog.name).toEqual('LogIndexUpdate');
+    expect(owedIndexLog.args.market).toEqual(owedMarket);
+    expect(owedIndexLog.args.index).toEqual(owedIndex);
+
+    const heldIndexLog = logs[2];
+    expect(heldIndexLog.name).toEqual('LogIndexUpdate');
+    expect(heldIndexLog.args.market).toEqual(heldMarket);
+    expect(heldIndexLog.args.index).toEqual(heldIndex);
+
+    const vaporizeLog = logs[3];
+    expect(vaporizeLog.name).toEqual('LogVaporize');
+    expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
+    expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
+    expect(vaporizeLog.args.vaporAccountOwner).toEqual(vaporOwner);
+    expect(vaporizeLog.args.vaporAccountNumber).toEqual(vaporAccountNumber);
+    expect(vaporizeLog.args.heldMarket).toEqual(heldMarket);
+    expect(vaporizeLog.args.owedMarket).toEqual(owedMarket);
+    expect(vaporizeLog.args.solidHeldUpdate).toEqual({
+      newPar: par.times(premium),
+      deltaWei: wei.times(premium),
+    });
+    expect(vaporizeLog.args.solidOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: negWei,
+    });
+    expect(vaporizeLog.args.vaporOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: wei,
+    });
   });
 
   it('Fails for unvaporizable account', async () => {
@@ -103,15 +156,56 @@ describe('Vaporize', () => {
     await issueOwedTokensToSolo(wei);
     await expectExcessOwedToken(wei);
 
-    await expectVaporizeOkay({});
+    const txResult = await expectVaporizeOkay({});
 
-    await Promise.all([
+    const [
+      heldIndex,
+      owedIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(heldMarket),
+      solo.getters.getMarketCachedIndex(owedMarket),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(zero, par),
     ]);
 
-    // TODO: expect log
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(solidOwner);
+
+    const owedIndexLog = logs[1];
+    expect(owedIndexLog.name).toEqual('LogIndexUpdate');
+    expect(owedIndexLog.args.market).toEqual(owedMarket);
+    expect(owedIndexLog.args.index).toEqual(owedIndex);
+
+    const heldIndexLog = logs[2];
+    expect(heldIndexLog.name).toEqual('LogIndexUpdate');
+    expect(heldIndexLog.args.market).toEqual(heldMarket);
+    expect(heldIndexLog.args.index).toEqual(heldIndex);
+
+    const vaporizeLog = logs[3];
+    expect(vaporizeLog.name).toEqual('LogVaporize');
+    expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
+    expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
+    expect(vaporizeLog.args.vaporAccountOwner).toEqual(vaporOwner);
+    expect(vaporizeLog.args.vaporAccountNumber).toEqual(vaporAccountNumber);
+    expect(vaporizeLog.args.heldMarket).toEqual(heldMarket);
+    expect(vaporizeLog.args.owedMarket).toEqual(owedMarket);
+    expect(vaporizeLog.args.solidHeldUpdate).toEqual({
+      newPar: zero,
+      deltaWei: zero,
+    });
+    expect(vaporizeLog.args.solidOwedUpdate).toEqual({
+      newPar: par,
+      deltaWei: zero,
+    });
+    expect(vaporizeLog.args.vaporOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: wei,
+    });
   });
 
   it('Succeeds if half excess owedTokens', async () => {
@@ -121,16 +215,57 @@ describe('Vaporize', () => {
       issueOwedTokensToSolo(wei.div(2)),
     ]);
 
-    await expectVaporizeOkay({});
+    const txResult = await expectVaporizeOkay({});
 
-    await Promise.all([
+    const [
+      heldIndex,
+      owedIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(heldMarket),
+      solo.getters.getMarketCachedIndex(owedMarket),
       expectExcessHeldToken(payoutAmount.div(2)),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(par.times(premium).div(2), par.div(2)),
     ]);
 
-    // TODO: expect log
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(solidOwner);
+
+    const owedIndexLog = logs[1];
+    expect(owedIndexLog.name).toEqual('LogIndexUpdate');
+    expect(owedIndexLog.args.market).toEqual(owedMarket);
+    expect(owedIndexLog.args.index).toEqual(owedIndex);
+
+    const heldIndexLog = logs[2];
+    expect(heldIndexLog.name).toEqual('LogIndexUpdate');
+    expect(heldIndexLog.args.market).toEqual(heldMarket);
+    expect(heldIndexLog.args.index).toEqual(heldIndex);
+
+    const vaporizeLog = logs[3];
+    expect(vaporizeLog.name).toEqual('LogVaporize');
+    expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
+    expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
+    expect(vaporizeLog.args.vaporAccountOwner).toEqual(vaporOwner);
+    expect(vaporizeLog.args.vaporAccountNumber).toEqual(vaporAccountNumber);
+    expect(vaporizeLog.args.heldMarket).toEqual(heldMarket);
+    expect(vaporizeLog.args.owedMarket).toEqual(owedMarket);
+    expect(vaporizeLog.args.solidHeldUpdate).toEqual({
+      newPar: par.times(premium).div(2),
+      deltaWei: wei.times(premium).div(2),
+    });
+    expect(vaporizeLog.args.solidOwedUpdate).toEqual({
+      newPar: par.div(2),
+      deltaWei: negWei.div(2),
+    });
+    expect(vaporizeLog.args.vaporOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: wei,
+    });
   });
 
   it('Succeeds when bound by owedToken', async () => {

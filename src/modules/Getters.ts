@@ -14,8 +14,7 @@ import {
   TotalPar,
   Values,
 } from '../types';
-import { INTEGERS } from '../lib/Constants';
-import { stringToDecimal } from '../lib/Helpers';
+import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 
 export class Getters {
   private contracts: Contracts;
@@ -236,7 +235,7 @@ export class Getters {
   ): Promise<Integer> {
     const numExcessTokens = await this.contracts.soloMargin.methods
       .getNumExcessTokens(marketId.toFixed(0)).call();
-    return this.parseValue(numExcessTokens);
+    return valueToInteger(numExcessTokens);
   }
 
   // ============ Getters for Accounts ============
@@ -254,7 +253,7 @@ export class Getters {
         },
         marketId.toFixed(0),
       ).call();
-    return this.parseValue(result);
+    return valueToInteger(result);
   }
 
   public async getAccountWei(
@@ -270,7 +269,7 @@ export class Getters {
         },
         marketId.toFixed(0),
       ).call();
-    return this.parseValue(result);
+    return valueToInteger(result);
   }
 
   public async getAccountStatus(
@@ -341,8 +340,8 @@ export class Getters {
     for (let i = 0; i < tokens.length; i += 1) {
       result.push({
         tokenAddress: tokens[i],
-        par: this.parseValue(pars[i]),
-        wei: this.parseValue(weis[i]),
+        par: valueToInteger(pars[i]),
+        wei: valueToInteger(weis[i]),
       });
     }
     return result;
@@ -384,15 +383,5 @@ export class Getters {
       borrow: new BigNumber(borrow),
       supply: new BigNumber(supply),
     };
-  }
-
-  private parseValue({ value, sign }: { value: string, sign: boolean }): Integer {
-    const absolute = new BigNumber(value);
-
-    if (!sign && !absolute.eq(INTEGERS.ZERO)) {
-      return absolute.times(new BigNumber(-1));
-    }
-
-    return absolute;
   }
 }

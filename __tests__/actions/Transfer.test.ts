@@ -16,6 +16,7 @@ import {
 
 let owner1: address;
 let owner2: address;
+let admin: address;
 let operator: address;
 const accountNumber1 = new BigNumber(133);
 const accountNumber2 = new BigNumber(244);
@@ -27,8 +28,8 @@ const collateralAmount = new BigNumber(1000000);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const wei = new BigNumber(150);
-const negPar = new BigNumber(-100);
-const negWei = new BigNumber(-150);
+const negPar = par.times(-1);
+const negWei = wei.times(-1);
 let defaultGlob: Transfer;
 
 describe('Transfer', () => {
@@ -38,6 +39,7 @@ describe('Transfer', () => {
     const r = await getSolo();
     solo = r.solo;
     accounts = r.accounts;
+    admin = accounts[0];
     owner1 = accounts[5];
     owner2 = accounts[6];
     operator = solo.getDefaultAccount();
@@ -113,9 +115,58 @@ describe('Transfer', () => {
       fullAmount.minus(halfAmount),
     );
 
-    // TODO: expect log
-
     console.log(`\tTransfer gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Succeeds for events', async () => {
+    await solo.admin.setGlobalOperator(operator, true, { from: admin });
+
+    const txResult = await expectTransferOkay(
+      {
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
+      { from: operator },
+    );
+
+    const [
+      marketIndex,
+      collateralIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(market),
+      solo.getters.getMarketCachedIndex(collateralMarket),
+      expectBalances(par, wei, negPar, negWei),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const marketIndexLog = logs[1];
+    expect(marketIndexLog.name).toEqual('LogIndexUpdate');
+    expect(marketIndexLog.args.market).toEqual(market);
+    expect(marketIndexLog.args.index).toEqual(marketIndex);
+
+    const collateralIndexLog = logs[2];
+    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market).toEqual(collateralMarket);
+    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
+
+    const transferLog = logs[3];
+    expect(transferLog.name).toEqual('LogTransfer');
+    expect(transferLog.args.accountOneOwner).toEqual(owner1);
+    expect(transferLog.args.accountOneNumber).toEqual(accountNumber1);
+    expect(transferLog.args.accountTwoOwner).toEqual(owner2);
+    expect(transferLog.args.accountTwoNumber).toEqual(accountNumber2);
+    expect(transferLog.args.market).toEqual(market);
+    expect(transferLog.args.updateOne).toEqual({ newPar: par, deltaWei: wei });
+    expect(transferLog.args.updateTwo).toEqual({ newPar: negPar, deltaWei: negWei });
   });
 
   it('Succeeds for positive delta par/wei', async () => {
@@ -375,7 +426,7 @@ describe('Transfer', () => {
   });
 
   it('Succeeds for some more specific indexes and values', async () => {
-    // TODO
+    // TODO: values
   });
 
   it('Succeeds and sets status to Normal', async () => {
@@ -399,7 +450,7 @@ describe('Transfer', () => {
     await Promise.all([
       solo.permissions.disapproveOperator(operator, { from: owner1 }),
       solo.permissions.disapproveOperator(operator, { from: owner2 }),
-      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+      solo.admin.setGlobalOperator(operator, true, { from: admin }),
     ]);
     await expectTransferOkay({});
   });

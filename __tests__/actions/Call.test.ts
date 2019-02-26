@@ -50,12 +50,30 @@ describe('Call', () => {
     const txResult = await expectCallOkay({
       data: toBytes(accountData, senderData),
     });
-
     await verifyDataIntegrity(who);
-
-    // TODO: expect log
-
     console.log(`\tCall gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Succeeds for events', async () => {
+    await solo.permissions.approveOperator(operator, { from: who });
+    const txResult = await expectCallOkay(
+      { data: toBytes(accountData, senderData) },
+      { from: operator },
+    );
+    await verifyDataIntegrity(operator);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(2);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const callLog = logs[1];
+    expect(callLog.name).toEqual('LogCall');
+    expect(callLog.args.accountOwner).toEqual(who);
+    expect(callLog.args.accountNumber).toEqual(accountNumber);
+    expect(callLog.args.callee).toEqual(solo.testing.callee.getAddress());
   });
 
   it('Succeeds and sets status to Normal', async () => {

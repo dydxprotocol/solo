@@ -97,19 +97,72 @@ describe('Buy', () => {
       issueTakerTokenToSolo(takerWei),
       setTakerBalance(takerPar),
     ]);
-
     const txResult = await expectBuyOkay({});
-
     console.log(`\tBuy gas used: ${txResult.gasUsed}`);
-
     await Promise.all([
       await expectPars(makerPar, zero),
       await expectSoloBalances(makerWei, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, takerWei),
     ]);
+  });
 
-    // TODO: expect log
+  it('Succeeds for events', async () => {
+    await Promise.all([
+      solo.permissions.approveOperator(operator, { from: who }),
+      issueMakerTokenToWrapper(makerWei),
+      issueTakerTokenToSolo(takerWei),
+      setTakerBalance(takerPar),
+    ]);
+    const txResult = await expectBuyOkay(
+      {},
+      { from: operator },
+    );
+    const [
+      makerIndex,
+      takerIndex,
+      collateralIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(makerMarket),
+      solo.getters.getMarketCachedIndex(takerMarket),
+      solo.getters.getMarketCachedIndex(collateralMarket),
+      expectPars(makerPar, zero),
+      expectSoloBalances(makerWei, zero),
+      expectWrapperBalances(zero, zero),
+      expectExchangeBalances(zero, takerWei),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(5);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const makerIndexLog = logs[1];
+    expect(makerIndexLog.name).toEqual('LogIndexUpdate');
+    expect(makerIndexLog.args.market).toEqual(makerMarket);
+    expect(makerIndexLog.args.index).toEqual(makerIndex);
+
+    const takerIndexLog = logs[2];
+    expect(takerIndexLog.name).toEqual('LogIndexUpdate');
+    expect(takerIndexLog.args.market).toEqual(takerMarket);
+    expect(takerIndexLog.args.index).toEqual(takerIndex);
+
+    const collateralIndexLog = logs[3];
+    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market).toEqual(collateralMarket);
+    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
+
+    const buyLog = logs[4];
+    expect(buyLog.name).toEqual('LogBuy');
+    expect(buyLog.args.accountOwner).toEqual(who);
+    expect(buyLog.args.accountNumber).toEqual(accountNumber);
+    expect(buyLog.args.takerMarket).toEqual(takerMarket);
+    expect(buyLog.args.makerMarket).toEqual(makerMarket);
+    expect(buyLog.args.takerUpdate).toEqual({ newPar: zero, deltaWei: takerWei.times(-1) });
+    expect(buyLog.args.makerUpdate).toEqual({ newPar: makerPar, deltaWei: makerWei });
+    expect(buyLog.args.exchangeWrapper).toEqual(solo.testing.exchangeWrapper.getAddress());
   });
 
   it('Succeeds for zero makerAmount', async () => {
@@ -258,7 +311,7 @@ describe('Buy', () => {
   });
 
   it('Succeeds for all sorts of amounts', async () => {
-    // TODO
+    // TODO: values
   });
 
   it('Fails for non-truthful exchangeWrapper', async () => {

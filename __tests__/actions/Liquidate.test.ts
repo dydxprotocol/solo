@@ -27,7 +27,8 @@ const otherMarket = new BigNumber(2);
 const zero = new BigNumber(0);
 const par = new BigNumber(10000);
 const wei = new BigNumber(15000);
-const negPar = new BigNumber(-10000);
+const negPar = par.times(-1);
+const negWei = wei.times(-1);
 const collateralization = new BigNumber('1.1');
 const collatPar = par.times(collateralization);
 const premium = new BigNumber('1.05');
@@ -81,15 +82,70 @@ describe('Liquidate', () => {
 
   it('Basic liquidate test', async () => {
     const txResult = await expectLiquidateOkay({});
-
     console.log(`\tLiquidate gas used: ${txResult.gasUsed}`);
-
     await Promise.all([
       expectSolidPars(par.times(premium), zero),
       expectLiquidPars(par.times(remaining), zero),
     ]);
+  });
 
-    // TODO: check log
+  it('Succeeds for events', async () => {
+    await solo.permissions.approveOperator(operator, { from: solidOwner });
+    const txResult = await expectLiquidateOkay(
+      {},
+      { from: operator },
+    );
+    const [
+      heldIndex,
+      owedIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(heldMarket),
+      solo.getters.getMarketCachedIndex(owedMarket),
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const owedIndexLog = logs[1];
+    expect(owedIndexLog.name).toEqual('LogIndexUpdate');
+    expect(owedIndexLog.args.market).toEqual(owedMarket);
+    expect(owedIndexLog.args.index).toEqual(owedIndex);
+
+    const heldIndexLog = logs[2];
+    expect(heldIndexLog.name).toEqual('LogIndexUpdate');
+    expect(heldIndexLog.args.market).toEqual(heldMarket);
+    expect(heldIndexLog.args.index).toEqual(heldIndex);
+
+    const liquidateLog = logs[3];
+    expect(liquidateLog.name).toEqual('LogLiquidate');
+    expect(liquidateLog.args.solidAccountOwner).toEqual(solidOwner);
+    expect(liquidateLog.args.solidAccountNumber).toEqual(solidAccountNumber);
+    expect(liquidateLog.args.liquidAccountOwner).toEqual(liquidOwner);
+    expect(liquidateLog.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(liquidateLog.args.heldMarket).toEqual(heldMarket);
+    expect(liquidateLog.args.owedMarket).toEqual(owedMarket);
+    expect(liquidateLog.args.solidHeldUpdate).toEqual({
+      newPar: par.times(premium),
+      deltaWei: wei.times(premium),
+    });
+    expect(liquidateLog.args.solidOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: negWei,
+    });
+    expect(liquidateLog.args.liquidHeldUpdate).toEqual({
+      newPar: par.times(remaining),
+      deltaWei: negWei.times(premium),
+    });
+    expect(liquidateLog.args.liquidOwedUpdate).toEqual({
+      newPar: zero,
+      deltaWei: wei,
+    });
   });
 
   it('Succeeds when partially liquidating', async () => {

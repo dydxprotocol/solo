@@ -17,6 +17,7 @@ import {
 let who: address;
 let solo: Solo;
 let accounts: address[];
+let operator: address;
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
 const collateralMarket = new BigNumber(2);
@@ -24,8 +25,8 @@ const collateralAmount = new BigNumber(1000000);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const wei = new BigNumber(150);
-const negPar = new BigNumber(-100);
-const negWei = new BigNumber(-150);
+const negPar = par.times(-1);
+const negWei = wei.times(-1);
 let defaultGlob: Withdraw;
 const CANNOT_WITHDRAW_POSITIVE = 'Exchange: Cannot transferOut positive';
 const cachedWeis = {
@@ -41,6 +42,7 @@ describe('Withdraw', () => {
     solo = r.solo;
     accounts = r.accounts;
     who = solo.getDefaultAccount();
+    operator = accounts[6];
     defaultGlob = {
       primaryAccountOwner: who,
       primaryAccountId: accountNumber,
@@ -78,11 +80,54 @@ describe('Withdraw', () => {
       setAccountBalance(par.times(2)),
     ]);
     const txResult = await expectWithdrawOkay({});
-
     await expectBalances(par, wei, wei, zero);
-    // TODO: expect log
-
     console.log(`\tWithdraw gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Succeeds for events', async () => {
+    await Promise.all([
+      issueTokensToSolo(wei),
+      setAccountBalance(par.times(2)),
+      solo.permissions.approveOperator(operator, { from: who }),
+    ]);
+    const txResult = await expectWithdrawOkay(
+      { to: operator },
+      { from: operator },
+    );
+
+    const [
+      marketIndex,
+      collateralIndex,
+    ] = await Promise.all([
+      solo.getters.getMarketCachedIndex(market),
+      solo.getters.getMarketCachedIndex(collateralMarket),
+      expectBalances(par, wei, zero, zero, wei),
+    ]);
+
+    const logs = solo.logs.parseLogs(txResult);
+    expect(logs.length).toEqual(4);
+
+    const operationLog = logs[0];
+    expect(operationLog.name).toEqual('LogOperation');
+    expect(operationLog.args.sender).toEqual(operator);
+
+    const marketIndexLog = logs[1];
+    expect(marketIndexLog.name).toEqual('LogIndexUpdate');
+    expect(marketIndexLog.args.market).toEqual(market);
+    expect(marketIndexLog.args.index).toEqual(marketIndex);
+
+    const collateralIndexLog = logs[2];
+    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market).toEqual(collateralMarket);
+    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
+
+    const withdrawLog = logs[3];
+    expect(withdrawLog.name).toEqual('LogWithdraw');
+    expect(withdrawLog.args.accountOwner).toEqual(who);
+    expect(withdrawLog.args.accountNumber).toEqual(accountNumber);
+    expect(withdrawLog.args.market).toEqual(market);
+    expect(withdrawLog.args.update).toEqual({ newPar: par, deltaWei: negWei });
+    expect(withdrawLog.args.to).toEqual(operator);
   });
 
   it('Succeeds for negative delta par/wei', async () => {
@@ -357,18 +402,25 @@ describe('Withdraw', () => {
   });
 
   it('Succeeds for some more specific indexes and values', async () => {
-    // TODO
+    // TODO: values
   });
 
   it('Succeeds to withdraw to an external address', async () => {
-    await issueTokensToSolo(wei);
-    await expectWithdrawOkay({ to: accounts[2] });
-    // TODO check balances
+    await Promise.all([
+      setAccountBalance(par),
+      issueTokensToSolo(wei),
+    ]);
+    await expectWithdrawOkay({ to: operator });
+    await expectBalances(zero, zero, zero, zero, wei);
   });
 
   it('Succeeds to withdraw to the SoloMargin address', async () => {
+    await Promise.all([
+      setAccountBalance(par),
+      issueTokensToSolo(wei),
+    ]);
     await expectWithdrawOkay({ to: solo.contracts.soloMargin.options.address });
-    // TODO check balances
+    await expectBalances(zero, zero, zero, wei);
   });
 
   it('Succeeds and sets status to Normal', async () => {
@@ -382,7 +434,6 @@ describe('Withdraw', () => {
   });
 
   it('Succeeds for local operator', async () => {
-    const operator = accounts[2];
     await Promise.all([
       issueTokensToSolo(wei),
       solo.permissions.approveOperator(operator),
@@ -394,7 +445,6 @@ describe('Withdraw', () => {
   });
 
   it('Succeeds for global operator', async () => {
-    const operator = accounts[2];
     await Promise.all([
       issueTokensToSolo(wei),
       solo.permissions.approveOperator(operator),
@@ -410,7 +460,7 @@ describe('Withdraw', () => {
     await expectWithdrawRevert(
       {},
       'Storage: Unpermissioned operator',
-      { from: accounts[2] },
+      { from: operator },
     );
   });
 
@@ -437,15 +487,18 @@ async function expectBalances(
   expectedWei: Integer,
   walletWei: Integer,
   soloWei: Integer,
+  operatorWei: Integer = zero,
 ) {
   const [
     accountBalances,
-    walletTokenBalance,
     soloTokenBalance,
+    walletTokenBalance,
+    operatorTokenBalance,
   ] = await Promise.all([
     solo.getters.getAccountBalances(who, accountNumber),
-    solo.testing.tokenA.getBalance(who),
     solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
+    solo.testing.tokenA.getBalance(who),
+    solo.testing.tokenA.getBalance(operator),
   ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
@@ -464,6 +517,7 @@ async function expectBalances(
   expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
   cachedWeis.walletWei = walletTokenBalance;
   cachedWeis.soloWei = soloTokenBalance;
+  expect(operatorTokenBalance).toEqual(operatorWei);
 }
 
 async function expectWithdrawOkay(
