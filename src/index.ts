@@ -15,5 +15,10 @@
     limitations under the License.
 
 */
+import Web3 from 'web3';
+import { Solo } from './Solo';
 
-export { Solo } from './Solo';
+module.exports = {
+  Web3,
+  Solo,
+};
