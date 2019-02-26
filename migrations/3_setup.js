@@ -101,8 +101,8 @@ async function addMarkets(
   testPriceOracle,
   testInterestSetter,
 ) {
-  const marginPremium = new BigNumber(0);
-  const spreadPremium = new BigNumber(0);
+  const marginPremium = { value: '0' };
+  const spreadPremium = { value: '0' };
 
   // Do these in sequence so they are always ordered
   await soloMargin.ownerAddMarket(
