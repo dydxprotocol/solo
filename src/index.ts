@@ -15,10 +15,13 @@
     limitations under the License.
 
 */
+
 import Web3 from 'web3';
 import { Solo } from './Solo';
+import BigNumber from 'bignumber.js';
 
 module.exports = {
   Web3,
   Solo,
+  BigNumber,
 };
