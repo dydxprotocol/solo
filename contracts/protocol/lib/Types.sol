@@ -97,12 +97,12 @@ library Types {
             result.sign = a.sign;
             result.value = SafeMath.add(a.value, b.value).to128();
         } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value).to128();
-            } else {
+            if (b.value > a.value) {
                 result.sign = b.sign;
                 result.value = SafeMath.sub(b.value, a.value).to128();
+            } else {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value).to128();
             }
         }
         return result;
@@ -145,7 +145,7 @@ library Types {
         pure
         returns (bool)
     {
-        return !a.sign && a.value > 0;
+        return !a.sign && a.value != 0;
     }
 
     function isPositive(
@@ -155,7 +155,7 @@ library Types {
         pure
         returns (bool)
     {
-        return a.sign && a.value > 0;
+        return a.sign && a.value != 0;
     }
 
     function isZero(
@@ -210,12 +210,12 @@ library Types {
             result.sign = a.sign;
             result.value = SafeMath.add(a.value, b.value);
         } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value);
-            } else {
+            if (b.value > a.value) {
                 result.sign = b.sign;
                 result.value = SafeMath.sub(b.value, a.value);
+            } else {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value);
             }
         }
         return result;
@@ -258,7 +258,7 @@ library Types {
         pure
         returns (bool)
     {
-        return !a.sign && a.value > 0;
+        return !a.sign && a.value != 0;
     }
 
     function isPositive(
@@ -268,7 +268,7 @@ library Types {
         pure
         returns (bool)
     {
-        return a.sign && a.value > 0;
+        return a.sign && a.value != 0;
     }
 
     function isZero(
