@@ -91,20 +91,6 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     return everythingOkay
 
 
-def lintRevertReasons(dir, filepath):
-    everythingOkay = True
-    fileName = os.path.basename(filepath)
-    i = 0
-    for line in open(filepath, 'r').readlines():
-        i = i+1
-        start = line.find('    "')
-        end = line.rfind('"')
-        if start >= 0 and end-start > 32 + 4:
-            print 'Revert reason too long [' + fileName + ', ' + str(i) + ']'
-            everythingOkay = False
-    return everythingOkay
-
-
 def lintFunctionComments(dir, filepath):
     fileName = os.path.basename(filepath)
     everythingOkay = True
@@ -189,7 +175,6 @@ def main():
         everythingOkay &= lintFunctionComments(dir_path, file)
         everythingOkay &= lintImports(dir_path, file)
         everythingOkay &= lintCommentHeader(dir_path, file, "0.5.4")
-        everythingOkay &= lintRevertReasons(dir_path, file)
 
     if everythingOkay:
         print "No contract linting issues found."

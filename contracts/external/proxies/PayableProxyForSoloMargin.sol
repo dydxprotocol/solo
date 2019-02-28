@@ -89,28 +89,27 @@ contract PayableProxyForSoloMargin is
 
         // validate the input
         for (uint256 i = 0; i < args.length; i++) {
-            // For a transfer both accounts must be owned by msg.sender
-            if (args[i].actionType == Actions.ActionType.Transfer) {
-                address accountTwoOwner = Actions.parseTransferArgs(
-                    accounts,
-                    args[i]
-                ).accountTwo.owner;
-
-                Require.that(
-                    accountTwoOwner == msg.sender,
-                    FILE,
-                    "Sender must own account two",
-                    accountTwoOwner
-                );
-            }
+            Actions.ActionArgs memory operation = args[i];
 
             // Can only operate on accounts owned by msg.sender
+            address owner1 = accounts[operation.accountId].owner;
             Require.that(
-                accounts[args[i].accountId].owner == msg.sender,
+                owner1 == msg.sender,
                 FILE,
-                "Sender must own account",
-                accounts[args[i].accountId].owner
+                "Sender must be primary account",
+                owner1
             );
+
+            // For a transfer both accounts must be owned by msg.sender
+            if (operation.actionType == Actions.ActionType.Transfer) {
+                address owner2 = accounts[operation.otherAccountId].owner;
+                Require.that(
+                    owner2 == msg.sender,
+                    FILE,
+                    "Sender must be secondary account",
+                    owner2
+                );
+            }
         }
 
         SOLO_MARGIN.operate(accounts, args);

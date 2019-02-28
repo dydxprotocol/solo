@@ -111,10 +111,16 @@ async function deploySecondLayer(deployer, network) {
     ),
   ]);
 
-  await soloMargin.ownerSetGlobalOperator(
-    PayableProxyForSoloMargin.address,
-    true,
-  );
+  await Promise.all([
+    soloMargin.ownerSetGlobalOperator(
+      PayableProxyForSoloMargin.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      Expiry.address,
+      true,
+    ),
+  ]);
 }
 
 async function getSoloMargin(network) {
@@ -125,14 +131,17 @@ async function getSoloMargin(network) {
 }
 
 async function getOrDeployWeth(deployer, network) {
+  if (isDevNetwork(network)) {
+    await deployer.deploy(WETH9);
+    return WETH9.address;
+  }
   switch (network) {
     case 'mainnet':
       return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     case 'kovan':
       return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
     default:
-      await deployer.deploy(WETH9);
-      return WETH9.address;
+      throw new Error('Cannot find WETH');
   }
 }
 
