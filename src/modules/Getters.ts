@@ -364,6 +364,24 @@ export class Getters {
       .getIsGlobalOperator(operator).call();
   }
 
+  // ============ Getters for Expiry ============
+
+  public async getExpiry(
+    accountOwner: address,
+    accountNumber: Integer,
+    marketId: Integer,
+  ): Promise<Integer> {
+    const result = await this.contracts.expiry.methods
+      .getExpiry(
+        {
+          owner: accountOwner,
+          number: accountNumber.toFixed(0),
+        },
+        marketId.toFixed(0),
+      ).call();
+    return new BigNumber(result);
+  }
+
   // ============ Helper Functions ============
 
   private parseIndex(

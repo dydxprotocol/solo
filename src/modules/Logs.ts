@@ -38,39 +38,6 @@ export class Logs {
     throw new Error('Receipt has no logs');
   }
 
-  private parseLog(log: Log) {
-    switch (log.address) {
-      case this.contracts.soloMargin.options.address:
-      case this.contracts.testSoloMargin.options.address: {
-        const events = this.contracts.soloMargin.options.jsonInterface.filter(
-          e => e.type === 'event',
-        );
-
-        const eventJson = events.find(
-          (e: any) => e.signature.toLowerCase() === log.topics[0].toLowerCase(),
-        );
-
-        if (!eventJson) {
-          throw new Error('Event type not found');
-        }
-
-        const eventArgs =  this.web3.eth.abi.decodeLog(
-          eventJson.inputs,
-          log.data,
-          log.topics.splice(1),
-        );
-
-        return {
-          ...log,
-          name: eventJson.name,
-          args: this.parse(eventJson, eventArgs),
-        };
-      }
-    }
-
-    return null;
-  }
-
   private parseEvent(event: EventLog) {
     return this.parseLog({
       address: event.address,
@@ -84,7 +51,47 @@ export class Logs {
     });
   }
 
-  private parse(eventJson, eventArgs) {
+  private parseLog(log: Log) {
+    switch (log.address) {
+      case this.contracts.soloMargin.options.address:
+      case this.contracts.testSoloMargin.options.address: {
+        return this.parseLogWithContract(this.contracts.soloMargin, log);
+      }
+      case this.contracts.expiry.options.address: {
+        return this.parseLogWithContract(this.contracts.expiry, log);
+      }
+    }
+
+    return null;
+  }
+
+  private parseLogWithContract(contract: any, log: Log) {
+    const events = contract.options.jsonInterface.filter(
+      (e: any) => e.type === 'event',
+    );
+
+    const eventJson = events.find(
+      (e: any) => e.signature.toLowerCase() === log.topics[0].toLowerCase(),
+    );
+
+    if (!eventJson) {
+      throw new Error('Event type not found');
+    }
+
+    const eventArgs =  this.web3.eth.abi.decodeLog(
+      eventJson.inputs,
+      log.data,
+      log.topics.splice(1),
+    );
+
+    return {
+      ...log,
+      name: eventJson.name,
+      args: this.parseArgs(eventJson, eventArgs),
+    };
+  }
+
+  private parseArgs(eventJson, eventArgs) {
     const parsed = {};
 
     eventJson.inputs.forEach((input) => {

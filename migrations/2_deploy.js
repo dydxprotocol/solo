@@ -35,6 +35,7 @@ const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
+const Expiry = artifacts.require('Expiry');
 
 const riskLimits = {
   marginRatioMax: '2000000000000000000', // 200%
@@ -96,19 +97,31 @@ async function deployBaseProtocol(deployer) {
 
 async function deploySecondLayer(deployer, network) {
   const wethAddress = await getOrDeployWeth(deployer, network);
+  const soloMargin = await getSoloMargin(network);
 
-  await deployer.deploy(
-    PayableProxyForSoloMargin,
-    SoloMargin.address,
-    wethAddress,
-  );
-
-  const soloMargin = await SoloMargin.deployed();
+  await Promise.all([
+    deployer.deploy(
+      PayableProxyForSoloMargin,
+      soloMargin.address,
+      wethAddress,
+    ),
+    deployer.deploy(
+      Expiry,
+      soloMargin.address,
+    ),
+  ]);
 
   await soloMargin.ownerSetGlobalOperator(
     PayableProxyForSoloMargin.address,
     true,
   );
+}
+
+async function getSoloMargin(network) {
+  if (isDevNetwork(network)) {
+    return TestSoloMargin.deployed();
+  }
+  return SoloMargin.deployed();
 }
 
 async function getOrDeployWeth(deployer, network) {
