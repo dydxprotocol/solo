@@ -13,6 +13,7 @@ import {
   RiskParams,
   TotalPar,
   Values,
+  ContractConstantCallOptions,
 } from '../types';
 import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 
@@ -27,9 +28,10 @@ export class Getters {
 
   // ============ Getters for Risk ============
 
-  public async getMarginRatio(): Promise<Decimal> {
+  public async getMarginRatio(options?: ContractConstantCallOptions): Promise<Decimal> {
+    const { blockNumber, ...txOptions } = options;
     const result = await this.contracts.soloMargin.methods
-      .getMarginRatio().call();
+      .getMarginRatio().call(txOptions, blockNumber);
     return stringToDecimal(result.value);
   }
 

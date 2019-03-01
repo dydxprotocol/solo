@@ -16,7 +16,7 @@
 
 */
 
-import { Provider, JsonRPCRequest, JsonRPCResponse } from 'web3/providers';
+import { Provider } from '../../types';
 
 export class EVM {
   private provider: Provider;
@@ -82,32 +82,8 @@ export class EVM {
   }
 
   public async callJsonrpcMethod(method: string, params?: (any[])): Promise<string> {
-    const args: JsonRPCRequest = {
-      method,
-      params,
-      jsonrpc: '2.0',
-      id: new Date().getTime(),
-    };
+    const response = await this.provider.send(method, params);
 
-    const response = await this.send(args);
-
-    return response.result;
-  }
-
-  private async send(args: JsonRPCRequest): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const callback: any = (error: Error, val: JsonRPCResponse): void => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(val);
-        }
-      };
-
-      this.provider.send(
-        args,
-        callback,
-      );
-    });
+    return (response as any).result;
   }
 }

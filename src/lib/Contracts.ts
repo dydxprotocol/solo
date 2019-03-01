@@ -16,11 +16,9 @@
 
 */
 
-import { Provider } from 'web3/providers';
 import Web3 from 'web3';
-import PromiEvent from 'web3/promiEvent';
-import { TransactionReceipt } from 'web3/types';
-import { TransactionObject, Block } from 'web3/eth/types';
+import { PromiEvent, TransactionReceipt, BlockHeader } from 'web3-core';
+import { TransactionObject, BlockHeader } from 'web3/eth/types';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
@@ -58,6 +56,7 @@ import {
   address,
   SoloOptions,
   ConfirmationType,
+  Provider,
 } from '../types';
 
 export class Contracts {
