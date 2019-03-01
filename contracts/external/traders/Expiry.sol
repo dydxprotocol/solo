@@ -77,6 +77,17 @@ contract Expiry is
 
     // ============ Public Functions ============
 
+    function getExpiry(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        public
+        view
+        returns (uint32)
+    {
+        return g_expiries[account.owner][account.number][marketId];
+    }
+
     function callFunction(
         address /* sender */,
         Account.Info memory account,
@@ -161,17 +172,6 @@ contract Expiry is
     }
 
     // ============ Private Functions ============
-
-    function getExpiry(
-        Account.Info memory account,
-        uint256 marketId
-    )
-        private
-        view
-        returns (uint32)
-    {
-        return g_expiries[account.owner][account.number][marketId];
-    }
 
     function setExpiry(
         Account.Info memory account,
