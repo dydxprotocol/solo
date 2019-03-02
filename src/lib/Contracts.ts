@@ -20,7 +20,7 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 import PromiEvent from 'web3/promiEvent';
 import { TransactionReceipt } from 'web3/types';
-import { TransactionObject, Block } from 'web3/eth/types';
+import { TransactionObject, Block, Tx } from 'web3/eth/types';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
@@ -58,7 +58,12 @@ import {
   address,
   SoloOptions,
   ConfirmationType,
+  ContractConstantCallOptions,
 } from '../types';
+
+interface CallableTransactionObject<T> {
+  call(tx?: Tx, blockNumber?: number): Promise<T>;
+}
 
 export class Contracts {
   private networkId: number;
@@ -405,6 +410,15 @@ export class Contracts {
     };
   }
 
+  public async callConstantContractFunction<T>(
+    method: TransactionObject<T>,
+    options: ContractConstantCallOptions = {},
+  ): Promise<T> {
+    const m2 = method as CallableTransactionObject<T>;
+    const { blockNumber, ...txOptions } = options;
+    return m2.call(txOptions, blockNumber);
+  }
+
   private async setGasLimit(): Promise<void> {
     const block: Block = await this.web3.eth.getBlock('latest');
     this.blockGasLimit = block.gasLimit - SUBTRACT_GAS_LIMIT;
@@ -422,87 +436,88 @@ export class Contracts {
   }
 
   private fixSoloMarginEventSignatures(contract) {
-    contract.options.jsonInterface.forEach((e, i) => {
-      if (e.type !== 'event') {
-        return;
-      }
+    contract.options.jsonInterface.forEach(
+      (e: { type: string; name: any; }, i: string | number) => {
+        if (e.type !== 'event') {
+          return;
+        }
 
-      let signature: string;
+        let signature: string;
 
-      switch (e.name) {
-        case 'LogIndexUpdate': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            'LogIndexUpdate(uint256,Interest.Index)',
-          );
-          break;
+        switch (e.name) {
+          case 'LogIndexUpdate': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              'LogIndexUpdate(uint256,Interest.Index)',
+            );
+            break;
+          }
+          case 'LogDeposit': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              'LogDeposit(address,uint256,uint256,Events.BalanceUpdate,address)',
+            );
+            break;
+          }
+          case 'LogWithdraw': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              'LogWithdraw(address,uint256,uint256,Events.BalanceUpdate,address)',
+            );
+            break;
+          }
+          case 'LogTransfer': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogTransfer(address,uint256,address,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate)',
+            );
+            break;
+          }
+          case 'LogBuy': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogBuy(address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,address)',
+            );
+            break;
+          }
+          case 'LogSell': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogSell(address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,address)',
+            );
+            break;
+          }
+          case 'LogTrade': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogTrade(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,address)',
+            );
+            break;
+          }
+          case 'LogCall': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogCall(address,uint256,address)',
+            );
+            break;
+          }
+          case 'LogLiquidate': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogLiquidate(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate)',
+            );
+            break;
+          }
+          case 'LogVaporize': {
+            signature = this.web3.eth.abi.encodeEventSignature(
+              /* tslint:disable-next-line */
+              'LogVaporize(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate)',
+            );
+            break;
+          }
         }
-        case 'LogDeposit': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            'LogDeposit(address,uint256,uint256,Events.BalanceUpdate,address)',
-          );
-          break;
-        }
-        case 'LogWithdraw': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            'LogWithdraw(address,uint256,uint256,Events.BalanceUpdate,address)',
-          );
-          break;
-        }
-        case 'LogTransfer': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogTransfer(address,uint256,address,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate)',
-          );
-          break;
-        }
-        case 'LogBuy': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogBuy(address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,address)',
-          );
-          break;
-        }
-        case 'LogSell': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogSell(address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,address)',
-          );
-          break;
-        }
-        case 'LogTrade': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogTrade(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,address)',
-          );
-          break;
-        }
-        case 'LogCall': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogCall(address,uint256,address)',
-          );
-          break;
-        }
-        case 'LogLiquidate': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogLiquidate(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate)',
-          );
-          break;
-        }
-        case 'LogVaporize': {
-          signature = this.web3.eth.abi.encodeEventSignature(
-            /* tslint:disable-next-line */
-            'LogVaporize(address,uint256,address,uint256,uint256,uint256,Events.BalanceUpdate,Events.BalanceUpdate,Events.BalanceUpdate)',
-          );
-          break;
-        }
-      }
 
-      if (signature) {
-        contract.options.jsonInterface[i].signature = signature;
-      }
-    });
+        if (signature) {
+          contract.options.jsonInterface[i].signature = signature;
+        }
+      });
 
     return contract;
   }

@@ -47,6 +47,10 @@ export interface ContractCallOptions extends Tx {
   autoGasMultiplier?: number;
 }
 
+export interface ContractConstantCallOptions extends Tx {
+  blockNumber?: number;
+}
+
 export interface AccountOperationOptions {
   usePayableProxy?: boolean;
 }

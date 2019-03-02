@@ -1,5 +1,5 @@
 import { Contracts } from '../../lib/Contracts';
-import { address, Integer } from '../../types';
+import { address, Integer, ContractConstantCallOptions } from '../../types';
 
 export class TestCallee {
   private contracts: Contracts;
@@ -17,18 +17,26 @@ export class TestCallee {
   public async getAccountData(
     accountOwner: address,
     accountNumber: Integer,
+    options?: ContractConstantCallOptions,
   ): Promise<string> {
-    return this.contracts.testCallee.methods.accountData(
-      accountOwner,
-      accountNumber.toFixed(0),
-    ).call();
+    return this.contracts.callConstantContractFunction(
+      this.contracts.testCallee.methods.accountData(
+        accountOwner,
+        accountNumber.toFixed(0),
+      ),
+      options,
+    );
   }
 
   public async getSenderData(
     sender: address,
+    options?: ContractConstantCallOptions,
   ): Promise<string> {
-    return this.contracts.testCallee.methods.senderData(
-      sender,
-    ).call();
+    return this.contracts.callConstantContractFunction(
+      this.contracts.testCallee.methods.senderData(
+        sender,
+      ),
+      options,
+    );
   }
 }
