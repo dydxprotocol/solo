@@ -3,7 +3,13 @@ import { EventEmitter } from 'web3/types';
 import { Contracts } from '../lib/Contracts';
 import { INTEGERS } from '../lib/Constants';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
-import { ContractCallOptions, TxResult, address, Integer } from '../types';
+import {
+  ContractCallOptions,
+  TxResult,
+  address,
+  Integer,
+  ContractConstantCallOptions,
+} from '../types';
 
 export class Token {
   private contracts: Contracts;
@@ -20,51 +26,85 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
+    options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const allowStr: string = await token.methods.allowance(ownerAddress, spenderAddress).call();
+    const allowStr: string = await this.contracts.callConstantContractFunction(
+      token.methods.allowance(ownerAddress, spenderAddress),
+      options,
+    );
     return new BigNumber(allowStr);
   }
 
   public async getBalance(
     tokenAddress: address,
     ownerAddress: address,
+    options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const balStr: string = await token.methods.balanceOf(ownerAddress).call();
+    const balStr: string = await this.contracts.callConstantContractFunction(
+      token.methods.balanceOf(ownerAddress),
+      options,
+    );
     return new BigNumber(balStr);
   }
 
-  public async getTotalSupply(tokenAddress: address): Promise<Integer> {
+  public async getTotalSupply(
+    tokenAddress: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const supplyStr: string = await token.methods.totalSupply().call();
+    const supplyStr: string = await this.contracts.callConstantContractFunction(
+      token.methods.totalSupply(),
+      options,
+    );
     return new BigNumber(supplyStr);
   }
 
-  public async getName(tokenAddress: address): Promise<string> {
+  public async getName(
+    tokenAddress: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<string> {
     const token = this.getToken(tokenAddress);
-    return token.methods.name().call();
+    return this.contracts.callConstantContractFunction(
+      token.methods.name(),
+      options,
+    );
   }
 
-  public async getSymbol(tokenAddress: address): Promise<string> {
+  public async getSymbol(
+    tokenAddress: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<string> {
     const token = this.getToken(tokenAddress);
-    return token.methods.symbol().call();
+    return this.contracts.callConstantContractFunction(
+      token.methods.symbol(),
+      options,
+    );
   }
 
-  public async getDecimals(tokenAddress: address): Promise<Integer> {
+  public async getDecimals(
+    tokenAddress: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const decStr: string = await token.methods.decimals().call();
+    const decStr: string = await this.contracts.callConstantContractFunction(
+      token.methods.decimals(),
+      options,
+    );
     return new BigNumber(decStr);
   }
 
   public async getSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
+    options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.getAllowance(
       tokenAddress,
       ownerAddress,
       this.contracts.soloMargin.options.address,
+      options,
     );
   }
 
