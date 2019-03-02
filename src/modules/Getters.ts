@@ -451,15 +451,18 @@ export class Getters {
     accountOwner: address,
     accountNumber: Integer,
     marketId: Integer,
+    options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    const result = await this.contracts.expiry.methods
-      .getExpiry(
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.getExpiry(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
         },
         marketId.toFixed(0),
-      ).call();
+      ),
+      options,
+    );
     return new BigNumber(result);
   }
 
