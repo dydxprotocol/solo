@@ -16,39 +16,37 @@
 
 */
 
-pragma solidity 0.5.6;
+pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
- * @title IPriceOracle
+ * @title UsdcPriceOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement
+ * PriceOracle that returns the price of USDC in USD
  */
-contract IPriceOracle {
+contract UsdCPriceOracle is
+    IPriceOracle
+{
+    // ============ Storage ============
 
-    // ============ Constants ============
+    uint256 constant DECIMALS = 6;
 
-    uint256 public constant ONE_DOLLAR = 10 ** 36;
+    uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
 
-    // ============ Public Functions ============
+    // ============ IPriceOracle Functions =============
 
-    /**
-     * Get the price of a token
-     *
-     * @return  The USD price of a base unit of the token, then multiplied by 10^36.
-     *          So a USD-stable coin with 18 decimal places would return 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
-     */
     function getPrice(
-        address token
+        /* address token */
     )
         public
-        view
-        returns (Monetary.Price memory);
-
+        pure
+        returns (Monetary.Price memory)
+    {
+        return Monetary.Price({ value: EXPECTED_PRICE });
+    }
 }
