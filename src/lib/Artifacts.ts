@@ -7,6 +7,7 @@ import {
 import { default as TokenA } from '../../build/contracts/TokenA.json';
 import { default as TokenB } from '../../build/contracts/TokenB.json';
 import { default as TokenC } from '../../build/contracts/TokenC.json';
+import { default as Weth } from '../../build/contracts/WETH9.json';
 import { default as ErroringToken } from '../../build/contracts/ErroringToken.json';
 import { default as OmiseToken } from '../../build/contracts/OmiseToken.json';
 import { default as TestLib } from '../../build/contracts/TestLib.json';
@@ -25,6 +26,7 @@ export default {
   TokenA,
   TokenB,
   TokenC,
+  Weth,
   ErroringToken,
   OmiseToken,
   TestLib,
