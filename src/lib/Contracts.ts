@@ -28,6 +28,7 @@ import { Expiry } from '../../build/wrappers/Expiry';
 import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
+import { WETH9 as Weth } from '../../build/wrappers/WETH9';
 import { TestToken } from '../../build/wrappers/TestToken';
 import { TestLib } from '../../build/wrappers/TestLib';
 import { TestAutoTrader } from '../../build/wrappers/TestAutoTrader';
@@ -40,6 +41,7 @@ import testSoloMarginJson from '../../build/published_contracts/TestSoloMargin.j
 import erc20Json from '../../build/published_contracts/IErc20.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
+import wethJson from '../../build/published_contracts/Weth.json';
 import tokenAJson from '../../build/published_contracts/TokenA.json';
 import tokenBJson from '../../build/published_contracts/TokenB.json';
 import tokenCJson from '../../build/published_contracts/TokenC.json';
@@ -80,6 +82,7 @@ export class Contracts {
   public erc20: ERC20;
   public expiry: Expiry;
   public payableProxy: PayableProxy;
+  public weth: Weth;
 
   // Testing contract instances
   public testSoloMargin: TestSoloMargin;
@@ -113,6 +116,7 @@ export class Contracts {
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
+    this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
     // Testing Contracts
     this.testSoloMargin = new this.web3.eth.Contract(testSoloMarginJson.abi) as TestSoloMargin;
@@ -169,6 +173,12 @@ export class Contracts {
     this.setContractProvider(
       this.payableProxy,
       payableProxyJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.weth,
+      wethJson,
       provider,
       networkId,
     );
@@ -257,6 +267,7 @@ export class Contracts {
     this.erc20.options.from = account;
     this.expiry.options.from = account;
     this.payableProxy.options.from = account;
+    this.weth.options.from = account;
 
     // Test Contracts
     this.tokenA.options.from = account;
@@ -435,7 +446,7 @@ export class Contracts {
       && contractJson.networks[networkId].address;
   }
 
-  private fixSoloMarginEventSignatures(contract) {
+  private fixSoloMarginEventSignatures(contract: any) {
     contract.options.jsonInterface.forEach(
       (e: { type: string; name: any; }, i: string | number) => {
         if (e.type !== 'event') {

@@ -17,15 +17,18 @@ import {
 let solo: Solo;
 let accounts: address[];
 let snapshotId: string;
+let admin: address;
 let owner1: address;
 let owner2: address;
 let operator: address;
 let testOrder: TestOrder;
 
+const amount = new BigNumber(10000);
 const accountNumber1 = new BigNumber(111);
 const accountNumber2 = new BigNumber(222);
 const market1 = INTEGERS.ZERO;
 const market2 = INTEGERS.ONE;
+const wethMarket = new BigNumber(3);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const negPar = par.times(-1);
@@ -35,7 +38,7 @@ const SECONDARY_REVERT_REASON = 'PayableProxyForSoloMargin: Sender must be secon
 
 const tradeId = new BigNumber('5678');
 
-const amount: Amount = {
+const amountBlob: Amount = {
   value: zero,
   reference: AmountReference.Target,
   denomination: AmountDenomination.Principal,
@@ -49,6 +52,7 @@ describe('PayableProxy', () => {
     const r = await getSolo();
     solo = r.solo;
     accounts = r.accounts;
+    admin = accounts[0];
     owner1 = accounts[2];
     owner2 = accounts[3];
     operator = accounts[6];
@@ -64,7 +68,8 @@ describe('PayableProxy', () => {
       desiredMakerAmount: zero,
     };
     bigBlob = {
-      amount,
+      amount: amountBlob,
+
       primaryAccountOwner: owner1,
       primaryAccountId: accountNumber1,
 
@@ -97,8 +102,17 @@ describe('PayableProxy', () => {
     await resetEVM();
     await Promise.all([
       setupMarkets(solo, accounts),
-      solo.testing.autoTrader.setData(tradeId, amount),
+      solo.testing.autoTrader.setData(tradeId, amountBlob),
+      solo.testing.priceOracle.setPrice(solo.weth.getAddress(), new BigNumber('1e40')),
     ]);
+    await solo.admin.addMarket(
+      solo.weth.getAddress(),
+      solo.testing.priceOracle.getAddress(),
+      solo.testing.interestSetter.getAddress(),
+      zero,
+      zero,
+      { from: admin },
+    );
     snapshotId = await snapshot();
   });
 
@@ -213,6 +227,50 @@ describe('PayableProxy', () => {
     await newOperation().liquidate(bigBlob).commit({ from: owner1 });
 
     await newOperation().vaporize(bigBlob).commit({ from: owner1 });
+  });
+
+  it('Succeeds for wrapping ETH', async () => {
+    await newOperation().deposit({
+      ...bigBlob,
+      amount: {
+        value: amount,
+        reference: AmountReference.Delta,
+        denomination: AmountDenomination.Actual,
+      },
+      marketId: wethMarket,
+      from: solo.contracts.payableProxy.options.address,
+    }).commit({ from: owner1, value: amount.toNumber() });
+  });
+
+  it('Succeeds for un-wrapping ETH', async () => {
+    await solo.weth.wrap(owner1, amount);
+    await Promise.all([
+      solo.weth.transfer(owner1, solo.contracts.soloMargin.options.address, amount),
+      solo.testing.setAccountBalance(owner1, accountNumber1, wethMarket, amount),
+    ]);
+    await newOperation().withdraw({
+      ...bigBlob,
+      amount: {
+        value: amount.times(-1),
+        reference: AmountReference.Delta,
+        denomination: AmountDenomination.Actual,
+      },
+      marketId: wethMarket,
+      to: solo.contracts.payableProxy.options.address,
+    }).commit({ from: owner1, value: amount.toNumber() });
+  });
+
+  it('Succeeds for wrapping and un-wrapping ETH', async () => {
+    await newOperation().deposit({
+      ...bigBlob,
+      amount: {
+        value: amount,
+        reference: AmountReference.Delta,
+        denomination: AmountDenomination.Actual,
+      },
+      marketId: wethMarket,
+      from: solo.contracts.payableProxy.options.address,
+    }).commit({ from: owner1, value: amount.times(2).toNumber() });
   });
 });
 

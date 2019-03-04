@@ -91,11 +91,11 @@ export class Logs {
     };
   }
 
-  private parseArgs(eventJson, eventArgs) {
+  private parseArgs(eventJson: any, eventArgs: any) {
     const parsed = {};
 
-    eventJson.inputs.forEach((input) => {
-      let val;
+    eventJson.inputs.forEach((input: any) => {
+      let val: any;
 
       if (input.type === 'address') {
         val = eventArgs[input.name];
@@ -116,7 +116,7 @@ export class Logs {
     return parsed;
   }
 
-  private parseTuple(input, eventArgs) {
+  private parseTuple(input: any, eventArgs: any) {
     if (
       Array.isArray(input.components)
       && input.components.length === 2
@@ -139,7 +139,7 @@ export class Logs {
     throw new Error('Unknown tuple type in event');
   }
 
-  private parseIndex(index): Index {
+  private parseIndex(index: any): Index {
     return {
       borrow: stringToDecimal(index.borrow),
       supply: stringToDecimal(index.supply),
@@ -147,7 +147,7 @@ export class Logs {
     };
   }
 
-  private parseBalanceUpdate(update): BalanceUpdate {
+  private parseBalanceUpdate(update: any): BalanceUpdate {
     return {
       deltaWei: valueToInteger(update.deltaWei),
       newPar: valueToInteger(update.newPar),

@@ -21,6 +21,7 @@ import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
+import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
 import { Logs } from './modules/Logs';
@@ -33,6 +34,7 @@ export class Solo {
   public testing: Testing;
   public operation: Operation;
   public token: Token;
+  public weth: Weth;
   public web3: Web3;
   public admin: Admin;
   public getters: Getters;
@@ -52,6 +54,7 @@ export class Solo {
     this.contracts = new Contracts(provider, networkId, this.web3, options);
     this.operation = new Operation(this.contracts, networkId);
     this.token = new Token(this.contracts);
+    this.weth = new Weth(this.contracts, this.token);
     this.testing = new Testing(provider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);

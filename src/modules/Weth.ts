@@ -1,57 +1,60 @@
-import { Contracts } from '../../lib/Contracts';
-import { Token } from '../Token';
-import { TestToken as TestTokenContract } from '../../../build/wrappers/TestToken';
+import { Contracts } from '../lib/Contracts';
+import { Token } from './Token';
+import { WETH9 as WethContract } from '../../build/wrappers/WETH9';
 import {
   ContractCallOptions,
   ContractConstantCallOptions,
   TxResult,
   address,
   Integer,
-} from '../../types';
+} from '../types';
 
-export class TestToken {
+export class Weth {
   private contracts: Contracts;
   private token: Token;
-  private testTokenContract: TestTokenContract;
+  private weth: WethContract;
 
   constructor(
     contracts: Contracts,
     token: Token,
-    testTokenContract: TestTokenContract,
   ) {
     this.contracts = contracts;
     this.token = token;
-    this.testTokenContract = testTokenContract;
+    this.weth = contracts.weth;
   }
 
   public getAddress(): string {
-    return this.testTokenContract.options.address;
+    return this.weth.options.address;
   }
 
-  public issue(
+  public async wrap(
+    ownerAddress: address,
     amount: Integer,
-    from: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.testTokenContract.methods.issue(
-        amount.toFixed(0),
-      ),
-      { ...options, from },
+      this.weth.methods.deposit(),
+      {
+        ...options,
+        from: ownerAddress,
+        value: amount.toFixed(0),
+      },
     );
   }
 
-  public issueTo(
+  public async unwrap(
+    ownerAddress: address,
     amount: Integer,
-    who: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.testTokenContract.methods.issueTo(
-        who,
+      this.weth.methods.withdraw(
         amount.toFixed(0),
       ),
-      { ...options },
+      {
+        ...options,
+        from: ownerAddress,
+      },
     );
   }
 
@@ -61,7 +64,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.token.getAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       spenderAddress,
       options,
@@ -73,7 +76,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.token.getBalance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       options,
     );
@@ -83,7 +86,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.token.getTotalSupply(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       options,
     );
   }
@@ -92,7 +95,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<string> {
     return this.token.getName(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       options,
     );
   }
@@ -101,7 +104,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<string> {
     return this.token.getSymbol(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       options,
     );
   }
@@ -110,7 +113,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.token.getDecimals(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       options,
     );
   }
@@ -120,7 +123,7 @@ export class TestToken {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     return this.token.getSoloAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       options,
     );
@@ -133,7 +136,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       spenderAddress,
       amount,
@@ -147,7 +150,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setSolollowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       amount,
       options,
@@ -160,7 +163,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       spenderAddress,
       options,
@@ -172,7 +175,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumSoloAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       options,
     );
@@ -183,7 +186,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.unsetSoloAllowance(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       ownerAddress,
       options,
     );
@@ -196,7 +199,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transfer(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       fromAddress,
       toAddress,
       amount,
@@ -212,7 +215,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.token.transferFrom(
-      this.testTokenContract.options.address,
+      this.weth.options.address,
       fromAddress,
       toAddress,
       senderAddress,
