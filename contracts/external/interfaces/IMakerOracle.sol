@@ -19,31 +19,30 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
-import { Monetary } from "../lib/Monetary.sol";
-
 
 /**
- * @title IPriceOracle
+ * @title IMakerOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement
+ * Interface for the price oracles run by MakerDao
  */
-contract IPriceOracle {
+interface IMakerOracle {
 
-    // ============ Public Functions ============
-
-    /**
-     * Get the price of a token
-     *
-     * @return  The wei price of 10^18 of a token. For example, the price of WETH is 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
-    )
-        public
+    // returns the current value (ETH/USD * 10**18) as a bytes32
+    function peek()
+        external
         view
-        returns (Monetary.Price memory);
+        returns (bytes32, bool);
 
+    // returns the upcoming price value
+    function peep()
+        external
+        view
+        returns (bytes32, bool);
+
+    // requires a fresh price and then returns the current value
+    function read()
+        external
+        view
+        returns (bytes32);
 }

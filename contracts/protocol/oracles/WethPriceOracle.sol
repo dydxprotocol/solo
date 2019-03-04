@@ -19,31 +19,42 @@
 pragma solidity 0.5.4;
 pragma experimental ABIEncoderV2;
 
+import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Monetary } from "../lib/Monetary.sol";
 
 
 /**
- * @title IPriceOracle
+ * @title WethPriceOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement
+ * PriceOracle that returns the price of Wei in USD
  */
-contract IPriceOracle {
+contract WethPriceOracle is
+    IPriceOracle
+{
+    // ============ Storage ============
 
-    // ============ Public Functions ============
+    address public WETH;
 
-    /**
-     * Get the price of a token
-     *
-     * @return  The wei price of 10^18 of a token. For example, the price of WETH is 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
+    // ============ Constructor =============
+
+    constructor(
+        address weth
     )
         public
-        view
-        returns (Monetary.Price memory);
+    {
+        WETH = weth;
+    }
 
+    // ============ IPriceOracle Functions =============
+
+    function getPrice(
+        /* address token */
+    )
+        public
+        pure
+        returns (Monetary.Price memory)
+    {
+        return Monetary.Price({ value: 10 ** 18 });
+    }
 }
