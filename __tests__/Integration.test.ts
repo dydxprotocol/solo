@@ -15,8 +15,8 @@ import {
 
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
-const amount1 = new BigNumber(100);
-const amount2 = new BigNumber(50);
+const amount = new BigNumber(10000);
+const halfAmount = amount.div(2);
 const zero = new BigNumber(0);
 
 describe('Integration', () => {
@@ -85,7 +85,7 @@ describe('Integration', () => {
   it('Deposit then Withdraw', async () => {
     await Promise.all([
       solo.testing.tokenA.issueTo(
-        amount1,
+        amount,
         who,
       ),
       solo.testing.tokenA.setMaximumSoloAllowance(
@@ -99,7 +99,7 @@ describe('Integration', () => {
         primaryAccountId: accountNumber,
         marketId: market,
         amount: {
-          value: amount1,
+          value: amount,
           denomination: AmountDenomination.Actual,
           reference: AmountReference.Delta,
         },
@@ -110,7 +110,7 @@ describe('Integration', () => {
         primaryAccountId: accountNumber,
         marketId: market,
         amount: {
-          value: amount2.times(-1),
+          value: halfAmount.times(-1),
           denomination: AmountDenomination.Actual,
           reference: AmountReference.Delta,
         },
@@ -130,15 +130,108 @@ describe('Integration', () => {
       solo.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    expect(walletTokenBalance).toEqual(amount2);
-    expect(soloTokenBalance).toEqual(amount2);
+    expect(walletTokenBalance).toEqual(halfAmount);
+    expect(soloTokenBalance).toEqual(halfAmount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
       if (i === market.toNumber()) {
-        expected = amount2;
+        expected = halfAmount;
       }
 
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
+  });
+
+  it('Liquidate => Vaporize', async () => {
+    const solidOwner = solo.getDefaultAccount();
+    const liquidOwner = accounts[2];
+    expect(solidOwner).not.toEqual(liquidOwner);
+    const solidNumber = INTEGERS.ZERO;
+    const liquidNumber = INTEGERS.ONE;
+    const heldMarket = INTEGERS.ZERO;
+    const owedMarket = INTEGERS.ONE;
+    const heldToken = solo.testing.tokenA;
+    const premium = new BigNumber('1.05');
+
+    await Promise.all([
+      // issue tokens
+      heldToken.issueTo(
+        amount.times(2),
+        solo.contracts.soloMargin.options.address,
+      ),
+
+      // set balances
+      solo.testing.setAccountBalance(
+        solidOwner,
+        solidNumber,
+        owedMarket,
+        amount,
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidNumber,
+        heldMarket,
+        amount.times(premium).div(2),
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidNumber,
+        owedMarket,
+        amount.times(-1),
+      ),
+    ]);
+
+    const { gasUsed } = await solo.operation.initiate()
+      .liquidate({
+        primaryAccountOwner: solidOwner,
+        primaryAccountId: solidNumber,
+        liquidAccountOwner: liquidOwner,
+        liquidAccountId: liquidNumber,
+        liquidMarketId: owedMarket,
+        payoutMarketId: heldMarket,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      })
+      .vaporize({
+        primaryAccountOwner: solidOwner,
+        primaryAccountId: solidNumber,
+        vaporAccountOwner: liquidOwner,
+        vaporAccountId: liquidNumber,
+        vaporMarketId: owedMarket,
+        payoutMarketId: heldMarket,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      })
+      .commit();
+
+    console.log(`\tLiquidate => Vaporize gas used: ${gasUsed}`);
+
+    const [
+      solidBalances,
+      liquidBalances,
+    ] = await Promise.all([
+      solo.getters.getAccountBalances(solidOwner, solidNumber),
+      solo.getters.getAccountBalances(liquidOwner, liquidNumber),
+    ]);
+
+    solidBalances.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (i === heldMarket.toNumber()) {
+        expected = amount.times(premium);
+      }
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
+    liquidBalances.forEach((balance, _) => {
+      const expected = INTEGERS.ZERO;
       expect(balance.par).toEqual(expected);
       expect(balance.wei).toEqual(expected);
     });

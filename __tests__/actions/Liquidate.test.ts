@@ -198,6 +198,29 @@ describe('Liquidate', () => {
     ]);
   });
 
+  it('Succeeds for liquidating twice', async () => {
+    const amount = par.times(2);
+    await Promise.all([
+      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount),
+      solo.testing.setAccountStatus(liquidOwner, liquidAccountNumber, AccountStatus.Liquidating),
+    ]);
+    await await solo.operation.initiate()
+      .liquidate({
+        ...defaultGlob,
+        amount: {
+          value: negPar.div(5),
+          reference: AmountReference.Target,
+          denomination: AmountDenomination.Principal,
+        },
+      })
+      .liquidate(defaultGlob)
+      .commit();
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(amount.minus(par.times(premium)), zero),
+    ]);
+  });
+
   it('Succeeds for account already marked with liquidating flag', async () => {
     const amount = par.times(2);
     await Promise.all([
