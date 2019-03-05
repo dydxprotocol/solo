@@ -22,6 +22,7 @@ import {
   Amount,
   Integer,
   AccountOperationOptions,
+  address,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
 import { ADDRESSES } from '../../lib/Constants';
@@ -43,6 +44,7 @@ export class AccountOperation {
   private orderMapper: OrderMapper;
   private accounts: AccountInfo[];
   private usePayableProxy: boolean;
+  private sendEthTo: address;
 
   constructor(
     contracts: Contracts,
@@ -55,6 +57,7 @@ export class AccountOperation {
     this.orderMapper = orderMapper;
     this.accounts = [];
     this.usePayableProxy = options.usePayableProxy;
+    this.sendEthTo = options.sendEthTo;
   }
 
   public deposit(deposit: Deposit): AccountOperation {
@@ -220,6 +223,7 @@ export class AccountOperation {
         method = this.contracts.payableProxy.methods.operate(
           this.accounts,
           this.actions,
+          this.sendEthTo || options.from || this.contracts.payableProxy.options.from,
         );
       }
 
