@@ -76,7 +76,8 @@ contract PayableProxyForSoloMargin is
 
     function operate(
         Account.Info[] memory accounts,
-        Actions.ActionArgs[] memory args
+        Actions.ActionArgs[] memory args,
+        address payable sendEthTo
     )
         public
         payable
@@ -114,11 +115,17 @@ contract PayableProxyForSoloMargin is
 
         SOLO_MARGIN.operate(accounts, args);
 
-        // return all remaining WETH to the msg.sender as ETH
+        // return all remaining WETH to the sendEthTo as ETH
         uint256 remainingWeth = WETH.balanceOf(address(this));
         if (remainingWeth != 0) {
+            Require.that(
+                sendEthTo != address(0),
+                FILE,
+                "Must set sendEthTo"
+            );
+
             WETH.withdraw(remainingWeth);
-            msg.sender.transfer(remainingWeth);
+            sendEthTo.transfer(remainingWeth);
         }
     }
 }

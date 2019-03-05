@@ -53,6 +53,7 @@ export interface ContractConstantCallOptions extends Tx {
 
 export interface AccountOperationOptions {
   usePayableProxy?: boolean;
+  sendEthTo?: address;
 }
 
 export interface TxResult {
