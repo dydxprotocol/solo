@@ -240,6 +240,21 @@ export class Getters {
     return stringToDecimal(result.value);
   }
 
+  public async getLiquidationSpreadForPair(
+    heldMarketId: Integer,
+    owedMarketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
+    const spread = await this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.getLiquidationSpreadForPair(
+        heldMarketId.toFixed(0),
+        owedMarketId.toFixed(0),
+      ),
+      options,
+    );
+    return stringToDecimal(spread.value);
+  }
+
   public async getMarket(
     marketId: Integer,
     options?: ContractConstantCallOptions,

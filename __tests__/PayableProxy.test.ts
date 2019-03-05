@@ -3,7 +3,7 @@ import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
-import { INTEGERS } from '../src/lib/Constants';
+import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
 import { toBytes } from '../src/lib/BytesHelper';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
@@ -53,7 +53,7 @@ describe('PayableProxy', () => {
     solo = r.solo;
     accounts = r.accounts;
     admin = accounts[0];
-    owner1 = accounts[2];
+    owner1 = solo.getDefaultAccount();
     owner2 = accounts[3];
     operator = accounts[6];
     testOrder = {
@@ -139,7 +139,7 @@ describe('PayableProxy', () => {
       PRIMARY_REVERT_REASON,
     );
     await expectThrow(
-      newOperation().transfer(bigBlob).commit({ from: owner1 }),
+      newOperation().transfer(bigBlob).commit(),
       SECONDARY_REVERT_REASON,
     );
     await expectThrow(
@@ -184,6 +184,22 @@ describe('PayableProxy', () => {
     );
   });
 
+  it('Fails for withdrawing to zero', async () => {
+    await solo.weth.wrap(owner1, amount);
+    await Promise.all([
+      solo.weth.transfer(owner1, solo.contracts.soloMargin.options.address, amount),
+      solo.testing.setAccountBalance(owner1, accountNumber1, wethMarket, amount),
+    ]);
+    await expectThrow(
+      newOperation(ADDRESSES.ZERO).withdraw({
+        ...bigBlob,
+        marketId: wethMarket,
+        to: solo.contracts.payableProxy.options.address,
+      }).commit(),
+      'PayableProxyForSoloMargin: Must set sendEthTo',
+    );
+  });
+
   it('Succeeds for other accounts', async () => {
     await Promise.all([
       solo.permissions.approveOperator(solo.testing.autoTrader.getAddress(), { from: owner1 }),
@@ -192,15 +208,15 @@ describe('PayableProxy', () => {
       solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
       solo.testing.setAccountBalance(owner2, accountNumber2, market2, par),
     ]);
-    await newOperation().deposit(bigBlob).commit({ from: owner1 });
+    await newOperation().deposit(bigBlob).commit();
 
-    await newOperation().withdraw(bigBlob).commit({ from: owner1 });
+    await newOperation().withdraw(bigBlob).commit();
 
     await newOperation().transfer({
       ...bigBlob,
       toAccountOwner: owner1,
       toAccountId: accountNumber2,
-    }).commit({ from: owner1 });
+    }).commit();
 
     const exchangeBlob = {
       ...bigBlob,
@@ -209,24 +225,24 @@ describe('PayableProxy', () => {
         originator: owner1,
       },
     };
-    await newOperation().buy(exchangeBlob).commit({ from: owner1 });
+    await newOperation().buy(exchangeBlob).commit();
 
-    await newOperation().sell(exchangeBlob).commit({ from: owner1 });
+    await newOperation().sell(exchangeBlob).commit();
 
     await newOperation().trade({
       ...bigBlob,
       otherAccountOwner: owner1,
       otherAccountId: accountNumber2,
-    }).commit({ from: owner1 });
+    }).commit();
 
     await newOperation().call({
       ...bigBlob,
       data: toBytes(tradeId, tradeId),
-    }).commit({ from: owner1 });
+    }).commit();
 
-    await newOperation().liquidate(bigBlob).commit({ from: owner1 });
+    await newOperation().liquidate(bigBlob).commit();
 
-    await newOperation().vaporize(bigBlob).commit({ from: owner1 });
+    await newOperation().vaporize(bigBlob).commit();
   });
 
   it('Succeeds for wrapping ETH', async () => {
@@ -276,6 +292,6 @@ describe('PayableProxy', () => {
 
 // ============ Helper Functions ============
 
-function newOperation() {
-  return solo.operation.initiate({ usePayableProxy: true });
+function newOperation(sendEthTo?: address) {
+  return solo.operation.initiate({ usePayableProxy: true, sendEthTo: sendEthTo || owner1 });
 }
