@@ -160,8 +160,8 @@ describe('Trade', () => {
     expect(tradeLog.args.outputMarket).toEqual(outputMkt);
     expect(tradeLog.args.takerInputUpdate).toEqual({ newPar: par, deltaWei: wei });
     expect(tradeLog.args.takerOutputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
-    expect(tradeLog.args.traderInputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
-    expect(tradeLog.args.traderOutputUpdate).toEqual({ newPar: par, deltaWei: wei });
+    expect(tradeLog.args.makerInputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
+    expect(tradeLog.args.makerOutputUpdate).toEqual({ newPar: par, deltaWei: wei });
     expect(tradeLog.args.autoTrader).toEqual(solo.testing.autoTrader.getAddress());
   });
 
