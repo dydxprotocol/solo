@@ -51,15 +51,14 @@ library Decimal {
         return D256({ value: BASE });
     }
 
-    function add(
-        D256 memory a,
-        D256 memory b
+    function onePlus(
+        D256 memory d
     )
         internal
         pure
         returns (D256 memory)
     {
-        return D256({ value: a.value.add(b.value) });
+        return D256({ value: d.value.add(BASE) });
     }
 
     function mul(

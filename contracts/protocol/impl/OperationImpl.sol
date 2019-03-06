@@ -43,7 +43,6 @@ import { Types } from "../lib/Types.sol";
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
-    using Decimal for uint256;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
@@ -916,15 +915,13 @@ library OperationImpl {
         )
     {
         uint256 originalPrice = cache.getPrice(owedMarketId).value;
-        Decimal.D256 memory heldPremium =
-            Decimal.add(Decimal.one(), state.markets[heldMarketId].spreadPremium);
-        Decimal.D256 memory owedPremium =
-            Decimal.add(Decimal.one(), state.markets[owedMarketId].spreadPremium);
-        uint256 adjustedSpread =
-            originalPrice.mul(state.riskParams.liquidationSpread).mul(heldPremium).mul(owedPremium);
+        Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
+            heldMarketId,
+            owedMarketId
+        );
 
         Monetary.Price memory owedPrice = Monetary.Price({
-            value: originalPrice.add(adjustedSpread)
+            value: originalPrice.add(Decimal.mul(originalPrice, spread))
         });
 
         return (cache.getPrice(heldMarketId), owedPrice);
