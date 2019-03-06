@@ -102,8 +102,8 @@ library Events {
         uint256 outputMarket,
         BalanceUpdate takerInputUpdate,
         BalanceUpdate takerOutputUpdate,
-        BalanceUpdate traderInputUpdate,
-        BalanceUpdate traderOutputUpdate,
+        BalanceUpdate makerInputUpdate,
+        BalanceUpdate makerOutputUpdate,
         address autoTrader
     );
 
