@@ -231,6 +231,23 @@ library Storage {
         return Interest.parToWei(par, index);
     }
 
+    function getLiquidationSpreadForPair(
+        Storage.State storage state,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        internal
+        view
+        returns (Decimal.D256 memory)
+    {
+        uint256 result = state.riskParams.liquidationSpread.value;
+        result = Decimal.mul(result, Decimal.onePlus(state.markets[heldMarketId].spreadPremium));
+        result = Decimal.mul(result, Decimal.onePlus(state.markets[owedMarketId].spreadPremium));
+        return Decimal.D256({
+            value: result
+        });
+    }
+
     function fetchNewIndex(
         Storage.State storage state,
         uint256 marketId,
@@ -321,7 +338,7 @@ library Storage {
             uint256 assetValue = userWei.value.mul(cache.getPrice(m).value);
             Decimal.D256 memory adjust = Decimal.one();
             if (adjustForLiquidity) {
-                adjust = Decimal.add(adjust, state.markets[m].marginPremium);
+                adjust = Decimal.onePlus(state.markets[m].marginPremium);
             }
 
             if (userWei.sign) {

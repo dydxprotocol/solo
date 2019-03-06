@@ -234,6 +234,19 @@ contract Getters is
         );
     }
 
+    function getLiquidationSpreadForPair(
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+        public
+        view
+        returns (Decimal.D256 memory)
+    {
+        _requireValidMarket(heldMarketId);
+        _requireValidMarket(owedMarketId);
+        return g_state.getLiquidationSpreadForPair(heldMarketId, owedMarketId);
+    }
+
     function getMarket(
         uint256 marketId
     )
