@@ -126,7 +126,7 @@ contract Expiry is
             "Balance must be negative"
         );
         Require.that(
-            newInputPar.isPositive(),
+            !newInputPar.isPositive(),
             FILE,
             "Loans cannot be overpaid"
         );
@@ -199,17 +199,24 @@ contract Expiry is
         view
         returns (Types.AssetAmount memory)
     {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpread();
+        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+            outputMarketId,
+            inputMarketId
+        );
+        uint256 inputPrice = SOLO_MARGIN.getMarketPrice(inputMarketId).value;
+        uint256 outputPrice = SOLO_MARGIN.getMarketPrice(outputMarketId).value;
+        inputPrice = inputPrice.add(Decimal.mul(inputPrice, spread));
+
         uint256 nonSpreadValue = Math.getPartial(
             inputWei.value,
-            SOLO_MARGIN.getMarketPrice(inputMarketId).value,
-            SOLO_MARGIN.getMarketPrice(outputMarketId).value
+            inputPrice,
+            outputPrice
         );
         return Types.AssetAmount({
             sign: false,
             denomination: Types.AssetDenomination.Wei,
             ref: Types.AssetReference.Delta,
-            value: Decimal.mul(nonSpreadValue, spread)
+            value: nonSpreadValue
         });
     }
 

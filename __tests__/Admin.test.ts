@@ -32,6 +32,7 @@ const defaultRate = new BigNumber(0);
 const defaultPremium = new BigNumber(0);
 const highPremium = new BigNumber('0.2');
 const defaultMarket = new BigNumber(1);
+const secondaryMarket = new BigNumber(0);
 const invalidMarket = new BigNumber(101);
 
 describe('Admin', () => {
@@ -581,6 +582,28 @@ describe('Admin', () => {
       await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
       premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
       expect(premium).toEqual(defaultPremium);
+    });
+
+    it('Succeeds for two markets', async () => {
+      const premium1 = new BigNumber('0.2');
+      const premium2 = new BigNumber('0.3');
+
+      await Promise.all([
+        solo.admin.setSpreadPremium(defaultMarket, premium1, { from: admin }),
+        solo.admin.setSpreadPremium(secondaryMarket, premium2, { from: admin }),
+      ]);
+
+      const result = await solo.getters.getLiquidationSpreadForPair(
+        defaultMarket,
+        secondaryMarket,
+      );
+
+      const expected = riskParams.liquidationSpread.times(
+        premium1.plus(1),
+      ).times(
+        premium2.plus(1),
+      );
+      expect(result).toEqual(expected);
     });
 
     it('Fails for index OOB', async () => {
