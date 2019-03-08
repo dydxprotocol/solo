@@ -12,6 +12,8 @@ module.exports = {
     'json',
     'node',
   ],
-  setupTestFrameworkScriptFile: './jest.setup.js',
+  setupFilesAfterEnv: [
+    './jest.setup.js',
+  ],
   testEnvironment: 'node',
 };
