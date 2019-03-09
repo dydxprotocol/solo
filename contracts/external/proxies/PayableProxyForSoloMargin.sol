@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.5;
 pragma experimental ABIEncoderV2;
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";

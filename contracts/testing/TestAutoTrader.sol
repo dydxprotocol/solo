@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.5;
 pragma experimental ABIEncoderV2;
 
 import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";

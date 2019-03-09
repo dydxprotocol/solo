@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.5;
 
 import { Monetary } from "./Monetary.sol";
 import { Storage } from "./Storage.sol";
