@@ -8,6 +8,7 @@ import { TestAutoTrader } from './TestAutoTrader';
 import { TestCallee } from './TestCallee';
 import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
+import { TestPolynomialInterestSetter } from './TestPolynomialInterestSetter';
 import { TestInterestSetter } from './TestInterestSetter';
 import { decimalToString } from '../../lib/Helpers';
 import {
@@ -31,6 +32,7 @@ export class Testing {
   public callee: TestCallee;
   public exchangeWrapper: TestExchangeWrapper;
   public priceOracle: TestPriceOracle;
+  public polynomialInterestSetter: TestPolynomialInterestSetter;
   public interestSetter: TestInterestSetter;
 
   constructor(
@@ -49,6 +51,7 @@ export class Testing {
     this.callee = new TestCallee(contracts);
     this.exchangeWrapper = new TestExchangeWrapper(contracts);
     this.priceOracle = new TestPriceOracle(contracts);
+    this.polynomialInterestSetter = new TestPolynomialInterestSetter(contracts);
     this.interestSetter = new TestInterestSetter(contracts);
   }
 

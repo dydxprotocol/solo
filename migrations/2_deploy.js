@@ -16,7 +16,7 @@
 
 */
 
-const { isDevNetwork } = require('./helpers');
+const { isDevNetwork, isKovan, isMainNet } = require('./helpers');
 
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
@@ -32,10 +32,12 @@ const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
+const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
+const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 const riskLimits = {
   marginRatioMax: '2000000000000000000', // 200%
@@ -53,11 +55,17 @@ const riskParams = {
   minBorrowedValue: { value: '50000000000000000' }, //   .05$
 };
 
+const polynomialParams = {
+  maxAPR: '1000000000000000000', // 100%
+  coefficients: '343597386250', // [10, 10, 0, 0, 80]
+};
+
 async function maybeDeployTestContracts(deployer, network) {
-  if (network === 'kovan') {
+  if (isKovan(network)) {
     await Promise.all([
       deployer.deploy(TestPriceOracle),
       deployer.deploy(TestInterestSetter),
+      deployer.deploy(PolynomialInterestSetter, polynomialParams),
     ]);
   }
 
@@ -82,6 +90,7 @@ async function maybeDeployTestContracts(deployer, network) {
     deployer.deploy(TestExchangeWrapper),
     deployer.deploy(TestPriceOracle),
     deployer.deploy(TestInterestSetter),
+    deployer.deploy(TestPolynomialInterestSetter, polynomialParams),
   ]);
 
   await deployer.deploy(TestCallee, TestSoloMargin.address);
@@ -135,14 +144,13 @@ async function getOrDeployWeth(deployer, network) {
     await deployer.deploy(WETH9);
     return WETH9.address;
   }
-  switch (network) {
-    case 'mainnet':
-      return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-    case 'kovan':
-      return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
-    default:
-      throw new Error('Cannot find WETH');
+  if (isMainNet(network)) {
+    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   }
+  if (isKovan(network)) {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+  throw new Error('Cannot find WETH');
 }
 
 const migration = async (deployer, network) => {

@@ -28,7 +28,7 @@ import { Interest } from "../lib/Interest.sol";
  *
  * Interface that Interest Setters for Solo must implement
  */
-contract IInterestSetter {
+interface IInterestSetter {
 
     // ============ Public Functions ============
 
@@ -42,7 +42,7 @@ contract IInterestSetter {
         uint256 borrowWei,
         uint256 supplyWei
     )
-        public
+        external
         view
         returns (Interest.Rate memory);
 }
