@@ -16,7 +16,8 @@
 
 */
 
-const { isDevNetwork } = require('./helpers');
+const { isDevNetwork, isKovan, isMainNet } = require('./helpers');
+const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts');
 
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
@@ -32,32 +33,40 @@ const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
+const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
+const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 const riskLimits = {
-  marginRatioMax: '2000000000000000000', // 200%
-  liquidationSpreadMax: '500000000000000000', // 50%
-  earningsRateMax: '1000000000000000000', // 100%
-  marginPremiumMax: '2000000000000000000', // 200%
-  spreadPremiumMax: '2000000000000000000', // 200%
-  minBorrowedValueMax: '100000000000000000000', // 100$
+  marginRatioMax: decimalToString('2.00'),
+  liquidationSpreadMax: decimalToString('0.50'),
+  earningsRateMax: decimalToString('1.00'),
+  marginPremiumMax: decimalToString('2.00'),
+  spreadPremiumMax: decimalToString('2.00'),
+  minBorrowedValueMax: decimalToString('100.00'),
 };
 
 const riskParams = {
-  marginRatio: { value: '150000000000000000' }, // 15%
-  liquidationSpread: { value: '50000000000000000' }, // 5%
-  earningsRate: { value: '900000000000000000' }, //  90%
-  minBorrowedValue: { value: '50000000000000000' }, //   .05$
+  marginRatio: { value: decimalToString('0.15') },
+  liquidationSpread: { value: decimalToString('0.05') },
+  earningsRate: { value: decimalToString('0.90') },
+  minBorrowedValue: { value: decimalToString('0.05') },
+};
+
+const polynomialParams = {
+  maxAPR: decimalToString('1.00'), // 100%
+  coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
 };
 
 async function maybeDeployTestContracts(deployer, network) {
-  if (network === 'kovan') {
+  if (isKovan(network)) {
     await Promise.all([
       deployer.deploy(TestPriceOracle),
       deployer.deploy(TestInterestSetter),
+      deployer.deploy(PolynomialInterestSetter, polynomialParams),
     ]);
   }
 
@@ -82,6 +91,7 @@ async function maybeDeployTestContracts(deployer, network) {
     deployer.deploy(TestExchangeWrapper),
     deployer.deploy(TestPriceOracle),
     deployer.deploy(TestInterestSetter),
+    deployer.deploy(TestPolynomialInterestSetter, polynomialParams),
   ]);
 
   await deployer.deploy(TestCallee, TestSoloMargin.address);
@@ -135,14 +145,13 @@ async function getOrDeployWeth(deployer, network) {
     await deployer.deploy(WETH9);
     return WETH9.address;
   }
-  switch (network) {
-    case 'mainnet':
-      return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-    case 'kovan':
-      return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
-    default:
-      throw new Error('Cannot find WETH');
+  if (isMainNet(network)) {
+    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   }
+  if (isKovan(network)) {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+  throw new Error('Cannot find WETH');
 }
 
 const migration = async (deployer, network) => {

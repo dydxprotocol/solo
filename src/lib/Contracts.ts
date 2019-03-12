@@ -28,6 +28,7 @@ import { Expiry } from '../../build/wrappers/Expiry';
 import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
+import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { WETH9 as Weth } from '../../build/wrappers/WETH9';
 import { TestToken } from '../../build/wrappers/TestToken';
 import { TestLib } from '../../build/wrappers/TestLib';
@@ -36,11 +37,14 @@ import { TestCallee } from '../../build/wrappers/TestCallee';
 import { TestExchangeWrapper } from '../../build/wrappers/TestExchangeWrapper';
 import { TestPriceOracle } from '../../build/wrappers/TestPriceOracle';
 import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
+import { TestPolynomialInterestSetter } from '../../build/wrappers/TestPolynomialInterestSetter';
 import soloMarginJson from '../../build/published_contracts/SoloMargin.json';
 import testSoloMarginJson from '../../build/published_contracts/TestSoloMargin.json';
 import erc20Json from '../../build/published_contracts/IErc20.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
+import polynomialInterestSetterJson
+  from '../../build/published_contracts/PolynomialInterestSetter.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import tokenAJson from '../../build/published_contracts/TokenA.json';
 import tokenBJson from '../../build/published_contracts/TokenB.json';
@@ -52,6 +56,8 @@ import testAutoTraderJson from '../../build/published_contracts/TestAutoTrader.j
 import testCalleeJson from '../../build/published_contracts/TestCallee.json';
 import testExchangeWrapperJson from '../../build/published_contracts/TestExchangeWrapper.json';
 import testPriceOracleJson from '../../build/published_contracts/TestPriceOracle.json';
+import testPolynomialInterestSetterJson
+  from '../../build/published_contracts/TestPolynomialInterestSetter.json';
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -82,6 +88,7 @@ export class Contracts {
   public erc20: ERC20;
   public expiry: Expiry;
   public payableProxy: PayableProxy;
+  public polynomialInterestSetter: PolynomialInterestSetter;
   public weth: Weth;
 
   // Testing contract instances
@@ -96,6 +103,7 @@ export class Contracts {
   public testCallee: TestCallee;
   public testExchangeWrapper: TestExchangeWrapper;
   public testPriceOracle: TestPriceOracle;
+  public testPolynomialInterestSetter: TestPolynomialInterestSetter;
   public testInterestSetter: TestInterestSetter;
 
   constructor(
@@ -116,6 +124,8 @@ export class Contracts {
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
+    this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
+      PolynomialInterestSetter;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
     // Testing Contracts
@@ -136,6 +146,8 @@ export class Contracts {
     this.testPriceOracle = new this.web3.eth.Contract(testPriceOracleJson.abi) as TestPriceOracle;
     this.testInterestSetter = new this.web3.eth.Contract(
       testInterestSetterJson.abi) as TestInterestSetter;
+    this.testPolynomialInterestSetter = new this.web3.eth.Contract(
+      testPolynomialInterestSetterJson.abi) as TestPolynomialInterestSetter;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -170,6 +182,12 @@ export class Contracts {
     this.setContractProvider(
       this.payableProxy,
       payableProxyJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
+      this.polynomialInterestSetter,
+      polynomialInterestSetterJson,
       provider,
       networkId,
     );
@@ -248,6 +266,12 @@ export class Contracts {
       networkId,
     );
     this.setContractProvider(
+      this.testPolynomialInterestSetter,
+      testPolynomialInterestSetterJson,
+      provider,
+      networkId,
+    );
+    this.setContractProvider(
       this.testInterestSetter,
       testInterestSetterJson,
       provider,
@@ -264,6 +288,7 @@ export class Contracts {
     this.erc20.options.from = account;
     this.expiry.options.from = account;
     this.payableProxy.options.from = account;
+    this.polynomialInterestSetter.options.from = account;
     this.weth.options.from = account;
 
     // Test Contracts
@@ -277,6 +302,7 @@ export class Contracts {
     this.testCallee.options.from = account;
     this.testExchangeWrapper.options.from = account;
     this.testPriceOracle.options.from = account;
+    this.testPolynomialInterestSetter.options.from = account;
     this.testInterestSetter.options.from = account;
   }
 

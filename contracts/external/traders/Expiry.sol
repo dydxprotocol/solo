@@ -73,7 +73,7 @@ contract Expiry is
     )
         public
         OnlySolo(soloMargin)
-    {}
+    {} /* solium-disable-line no-empty-blocks */
 
     // ============ Public Functions ============
 
