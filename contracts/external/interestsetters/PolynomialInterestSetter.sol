@@ -56,7 +56,7 @@ contract PolynomialInterestSetter is
 
     // ============ Storage ============
 
-    PolyStorage state;
+    PolyStorage g_storage;
 
     // ============ Constructor ============
 
@@ -67,7 +67,11 @@ contract PolynomialInterestSetter is
     {
         // verify that all coefficients add up to 100%
         uint256 sumOfCoefficients = 0;
-        for (uint256 coefficients = params.coefficients; coefficients != 0; coefficients >>= BYTE) {
+        for (
+            uint256 coefficients = params.coefficients;
+            coefficients != 0;
+            coefficients >>= BYTE
+        ) {
             sumOfCoefficients += coefficients % 256;
         }
         require(
@@ -76,7 +80,7 @@ contract PolynomialInterestSetter is
         );
 
         // store the params
-        state = params;
+        g_storage = params;
     }
 
     // ============ Public Functions ============
@@ -105,7 +109,7 @@ contract PolynomialInterestSetter is
             });
         }
 
-        PolyStorage memory s = state;
+        PolyStorage memory s = g_storage;
         uint256 maxAPR = s.maxAPR;
 
         if (borrowWei >= supplyWei) {
@@ -118,20 +122,29 @@ contract PolynomialInterestSetter is
         uint256 polynomial = BASE;
 
         // for each non-zero coefficient...
-        for (uint256 coefficients = s.coefficients; coefficients != 0; coefficients >>= BYTE) {
+        uint256 coefficients = s.coefficients;
+        while (true) {
             // gets the lowest-order byte
             uint256 coefficient = coefficients % 256;
+
+            // if non-zero, add to result
+            if (coefficient != 0) {
+                // no safeAdd since there are at most 16 coefficients
+                // no safeMul since (coefficient < 256 && polynomial <= 10**18)
+                result += coefficient * polynomial;
+
+                // break if this is the last non-zero coefficient
+                if (coefficient == coefficients) {
+                    break;
+                }
+            }
 
             // increase the order of the polynomial term
             // no safeDiv since supplyWei must be stricly larger than borrowWei
             polynomial = polynomial.mul(borrowWei) / supplyWei;
 
-            // if non-zero, add to result
-            if (coefficient != 0) {
-                // no safeAdd since there are at most 16 coefficients
-                // no safeMul since (coefficient < 256 && polynomial < 10**18)
-                result += coefficient * polynomial;
-            }
+            // move to next coefficient
+            coefficients >>= BYTE;
         }
 
         // normalize the result
@@ -153,14 +166,14 @@ contract PolynomialInterestSetter is
         view
         returns (uint256)
     {
-        return state.maxAPR;
+        return g_storage.maxAPR;
     }
 
     /**
-     * Returns all of the coefficients of the interest calculation, starting from the coefficent for
+     * Returns all of the coefficients of the interest calculation, starting from the coefficient for
      * the first-order utilization variable.
      *
-     * @return The coefficents
+     * @return The coefficients
      */
     function getCoefficients()
         external
@@ -170,9 +183,13 @@ contract PolynomialInterestSetter is
         // allocate new array with maximum of 16 coefficients
         uint256[] memory result = new uint256[](16);
 
-        // add the coefficents to the array
+        // add the coefficients to the array
         uint256 numCoefficients = 0;
-        for (uint256 coefficients = state.coefficients; coefficients != 0; coefficients >>= BYTE) {
+        for (
+            uint256 coefficients = g_storage.coefficients;
+            coefficients != 0;
+            coefficients >>= BYTE
+        ) {
             result[numCoefficients] = coefficients % 256;
             numCoefficients++;
         }

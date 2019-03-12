@@ -17,6 +17,7 @@
 */
 
 const { isDevNetwork, isKovan, isMainNet } = require('./helpers');
+const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts');
 
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
@@ -40,24 +41,24 @@ const Expiry = artifacts.require('Expiry');
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 const riskLimits = {
-  marginRatioMax: '2000000000000000000', // 200%
-  liquidationSpreadMax: '500000000000000000', // 50%
-  earningsRateMax: '1000000000000000000', // 100%
-  marginPremiumMax: '2000000000000000000', // 200%
-  spreadPremiumMax: '2000000000000000000', // 200%
-  minBorrowedValueMax: '100000000000000000000', // 100$
+  marginRatioMax: decimalToString('2.00'),
+  liquidationSpreadMax: decimalToString('0.50'),
+  earningsRateMax: decimalToString('1.00'),
+  marginPremiumMax: decimalToString('2.00'),
+  spreadPremiumMax: decimalToString('2.00'),
+  minBorrowedValueMax: decimalToString('100.00'),
 };
 
 const riskParams = {
-  marginRatio: { value: '150000000000000000' }, // 15%
-  liquidationSpread: { value: '50000000000000000' }, // 5%
-  earningsRate: { value: '900000000000000000' }, //  90%
-  minBorrowedValue: { value: '50000000000000000' }, //   .05$
+  marginRatio: { value: decimalToString('0.15') },
+  liquidationSpread: { value: decimalToString('0.05') },
+  earningsRate: { value: decimalToString('0.90') },
+  minBorrowedValue: { value: decimalToString('0.05') },
 };
 
 const polynomialParams = {
-  maxAPR: '1000000000000000000', // 100%
-  coefficients: '343597386250', // [10, 10, 0, 0, 80]
+  maxAPR: decimalToString('1.00'), // 100%
+  coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
 };
 
 async function maybeDeployTestContracts(deployer, network) {

@@ -44,7 +44,7 @@ contract TestPolynomialInterestSetter is
     )
         public
     {
-        state = parameters;
+        g_storage = parameters;
     }
 
     function createNew(

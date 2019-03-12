@@ -5,6 +5,7 @@ import { resetEVM, snapshot } from './helpers/EVM';
 import { ADDRESSES } from '../src/lib/Constants';
 import { address } from '../src/types';
 import { expectThrow } from '../src/lib/Expect';
+import { coefficientsToString } from '../src/lib/Helpers';
 
 let solo: Solo;
 let owner: address;
@@ -16,7 +17,7 @@ const par = new BigNumber(10000);
 const negPar = par.times(-1);
 const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
-const defaultCoefficients = [10, 10, 0, 0, 80];
+const defaultCoefficients = [0, 10, 10, 0, 0, 80];
 const SECONDS_IN_A_YEAR = new BigNumber('31536000');
 
 describe('PolynomialInterestSetter', () => {
@@ -180,16 +181,11 @@ async function setCoefficients(
   maximumRate: BigNumber,
   coefficients: number[],
 ) {
-  let m = new BigNumber(1);
-  let arg = new BigNumber(0);
-  for (let i = 0; i < coefficients.length; i += 1) {
-    arg = arg.plus(m.times(coefficients[i]));
-    m = m.times(256);
-  }
+  const coefficientsString = coefficientsToString(coefficients);
   await solo.contracts.callContractFunction(
     solo.contracts.testPolynomialInterestSetter.methods.setParameters({
       maxAPR: maximumRate.toFixed(0),
-      coefficients: arg.toFixed(0),
+      coefficients: coefficientsString,
     }),
   );
 }
@@ -198,7 +194,7 @@ function getExpected(
   coefficients: number[],
   utilization: BigNumber,
 ) {
-  let m = utilization;
+  let m = new BigNumber(1);
   let result = zero;
   for (let i = 0; i < coefficients.length; i += 1) {
     result = result.plus(m.times(coefficients[i]).times('1e18').div(100));
