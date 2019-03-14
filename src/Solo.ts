@@ -17,7 +17,6 @@
 */
 
 import Web3 from 'web3';
-import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
@@ -27,7 +26,7 @@ import { Getters } from './modules/Getters';
 import { Logs } from './modules/Logs';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
-import { SoloOptions, address } from './types';
+import { SoloOptions, address, Provider } from './types';
 
 export class Solo {
   public contracts: Contracts;

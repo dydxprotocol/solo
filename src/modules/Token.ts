@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { EventEmitter } from 'web3/types';
+import { EventEmitter } from 'events';
 import { Contracts } from '../lib/Contracts';
 import { INTEGERS } from '../lib/Constants';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
@@ -247,7 +247,7 @@ export class Token {
 
     return token.events.Transfer({
       filter,
-      fromBlock,
+      fromBlock: (fromBlock as any), // https://github.com/ethereum-ts/TypeChain/issues/143
     });
   }
 
@@ -276,7 +276,7 @@ export class Token {
 
     return token.events.Approval({
       filter,
-      fromBlock,
+      fromBlock: (fromBlock as any), // https://github.com/ethereum-ts/TypeChain/issues/143
     });
   }
 

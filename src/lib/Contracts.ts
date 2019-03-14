@@ -16,11 +16,9 @@
 
 */
 
-import { Provider } from 'web3/providers';
 import Web3 from 'web3';
-import PromiEvent from 'web3/promiEvent';
-import { TransactionReceipt } from 'web3/types';
-import { TransactionObject, Block, Tx } from 'web3/eth/types';
+import { PromiEvent, TransactionReceipt, Transaction } from 'web3-core';
+import { Block } from 'web3-eth';
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
@@ -67,10 +65,12 @@ import {
   SoloOptions,
   ConfirmationType,
   ContractConstantCallOptions,
+  Provider,
+  TransactionObject,
 } from '../types';
 
 interface CallableTransactionObject<T> {
-  call(tx?: Tx, blockNumber?: number): Promise<T>;
+  call(tx?: Transaction, blockNumber?: number): Promise<T>;
 }
 
 export class Contracts {
@@ -120,161 +120,145 @@ export class Contracts {
     this.defaultGasPrice = options.defaultGasPrice;
 
     // Contracts
-    this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
-    this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
-    this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
-    this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
-    this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
+    this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi as any) as SoloMargin;
+    this.erc20 = new this.web3.eth.Contract(erc20Json.abi as any) as ERC20;
+    this.expiry = new this.web3.eth.Contract(expiryJson.abi as any) as Expiry;
+    this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi as any) as PayableProxy;
+    this.polynomialInterestSetter = new this.web3.eth.Contract(
+      polynomialInterestSetterJson.abi as any) as
       PolynomialInterestSetter;
-    this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
+    this.weth = new this.web3.eth.Contract(wethJson.abi as any) as Weth;
 
     // Testing Contracts
-    this.testSoloMargin = new this.web3.eth.Contract(testSoloMarginJson.abi) as TestSoloMargin;
+    this.testSoloMargin = new this.web3.eth.Contract(
+      testSoloMarginJson.abi as any) as TestSoloMargin;
     if (options.testing) {
       this.soloMargin = this.testSoloMargin;
     }
-    this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
-    this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
-    this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
-    this.erroringToken = new this.web3.eth.Contract(erroringTokenJson.abi) as TestToken;
-    this.omiseToken = new this.web3.eth.Contract(omiseTokenJson.abi) as TestToken;
-    this.testLib = new this.web3.eth.Contract(testLibJson.abi) as TestLib;
-    this.testAutoTrader = new this.web3.eth.Contract(testAutoTraderJson.abi) as TestAutoTrader;
-    this.testCallee = new this.web3.eth.Contract(testCalleeJson.abi) as TestCallee;
+    this.tokenA = new this.web3.eth.Contract(tokenAJson.abi as any) as TestToken;
+    this.tokenB = new this.web3.eth.Contract(tokenBJson.abi as any) as TestToken;
+    this.tokenC = new this.web3.eth.Contract(tokenCJson.abi as any) as TestToken;
+    this.erroringToken = new this.web3.eth.Contract(erroringTokenJson.abi as any) as TestToken;
+    this.omiseToken = new this.web3.eth.Contract(omiseTokenJson.abi as any) as TestToken;
+    this.testLib = new this.web3.eth.Contract(testLibJson.abi as any) as TestLib;
+    this.testAutoTrader = new this.web3.eth.Contract(
+      testAutoTraderJson.abi as any) as TestAutoTrader;
+    this.testCallee = new this.web3.eth.Contract(testCalleeJson.abi as any) as TestCallee;
     this.testExchangeWrapper = new this.web3.eth.Contract(
-      testExchangeWrapperJson.abi) as TestExchangeWrapper;
-    this.testPriceOracle = new this.web3.eth.Contract(testPriceOracleJson.abi) as TestPriceOracle;
+      testExchangeWrapperJson.abi as any) as TestExchangeWrapper;
+    this.testPriceOracle = new this.web3.eth.Contract(
+      testPriceOracleJson.abi as any) as TestPriceOracle;
     this.testInterestSetter = new this.web3.eth.Contract(
-      testInterestSetterJson.abi) as TestInterestSetter;
+      testInterestSetterJson.abi as any) as TestInterestSetter;
     this.testPolynomialInterestSetter = new this.web3.eth.Contract(
-      testPolynomialInterestSetterJson.abi) as TestPolynomialInterestSetter;
+      testPolynomialInterestSetterJson.abi as any) as TestPolynomialInterestSetter;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
   public setProvider(
-    provider: Provider,
+    _provider: Provider,
     networkId: number,
   ): void {
     this.networkId = networkId;
-    this.soloMargin.setProvider(provider);
 
     // Contracts
-    this.setContractProvider(
+    this.updateContractAddress(
       this.soloMargin,
       soloMarginJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.erc20,
       erc20Json,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.expiry,
       expiryJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.payableProxy,
       payableProxyJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.polynomialInterestSetter,
       polynomialInterestSetterJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.weth,
       wethJson,
-      provider,
       networkId,
     );
 
     // Test contracts
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testSoloMargin,
       testSoloMarginJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.tokenA,
       tokenAJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.tokenB,
       tokenBJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.tokenC,
       tokenCJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.erroringToken,
       erroringTokenJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.omiseToken,
       omiseTokenJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testLib,
       testLibJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testAutoTrader,
       testAutoTraderJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testCallee,
       testCalleeJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testExchangeWrapper,
       testExchangeWrapperJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testPriceOracle,
       testPriceOracleJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testPolynomialInterestSetter,
       testPolynomialInterestSetterJson,
-      provider,
       networkId,
     );
-    this.setContractProvider(
+    this.updateContractAddress(
       this.testInterestSetter,
       testInterestSetterJson,
-      provider,
       networkId,
     );
   }
@@ -317,7 +301,7 @@ export class Contracts {
     }
 
     if (!txOptions.gasPrice && this.defaultGasPrice) {
-      txOptions.gasPrice = this.defaultGasPrice;
+      txOptions.gasPrice = `${this.defaultGasPrice}`;
     }
 
     if (!options.gas) {
@@ -458,13 +442,11 @@ export class Contracts {
     this.blockGasLimit = block.gasLimit - SUBTRACT_GAS_LIMIT;
   }
 
-  private setContractProvider(
+  private updateContractAddress(
     contract: any,
     contractJson: any,
-    provider: Provider,
     networkId: number,
   ): void {
-    contract.setProvider(provider);
     contract.options.address = contractJson.networks[networkId]
       && contractJson.networks[networkId].address;
   }

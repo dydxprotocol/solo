@@ -18,8 +18,8 @@
 
 import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
-import { Tx } from 'web3/eth/types';
-import { TransactionReceipt, Log, EventLog } from 'web3/types';
+import { HttpProvider, AbstractSocketProvider, EthereumProvider } from 'web3-providers';
+import { TransactionReceipt, Log, EventLog, Transaction, PromiEvent } from 'web3-core';
 
 export type address = string;
 export type Integer = BigNumber;
@@ -41,13 +41,13 @@ export interface SoloOptions {
   defaultGasPrice?: number | string;
 }
 
-export interface ContractCallOptions extends Tx {
+export interface ContractCallOptions extends Transaction {
   confirmations?: number;
   confirmationType?: ConfirmationType;
   autoGasMultiplier?: number;
 }
 
-export interface ContractConstantCallOptions extends Tx {
+export interface ContractConstantCallOptions extends Transaction {
   blockNumber?: number;
 }
 
@@ -259,4 +259,14 @@ export interface Values {
 export interface BalanceUpdate {
   deltaWei: Integer;
   newPar: Integer;
+}
+
+export type Provider = HttpProvider | AbstractSocketProvider | EthereumProvider;
+
+export interface TransactionObject<T> {
+  arguments: any[];
+  call(tx?: Transaction): Promise<T>;
+  send(tx?: Transaction): PromiEvent<T>;
+  estimateGas(tx?: Transaction): Promise<number>;
+  encodeABI(): string;
 }

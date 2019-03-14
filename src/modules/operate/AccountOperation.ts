@@ -1,4 +1,3 @@
-import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../../lib/Contracts';
 import {
@@ -23,6 +22,7 @@ import {
   Integer,
   AccountOperationOptions,
   address,
+  TransactionObject,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
 import { ADDRESSES } from '../../lib/Constants';
@@ -223,7 +223,7 @@ export class AccountOperation {
         method = this.contracts.payableProxy.methods.operate(
           this.accounts,
           this.actions,
-          this.sendEthTo || options.from || this.contracts.payableProxy.options.from,
+          this.sendEthTo || `${options.from}` || this.contracts.payableProxy.options.from,
         );
       }
 

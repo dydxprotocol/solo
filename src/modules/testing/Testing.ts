@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { Provider } from 'web3/providers';
 import { Contracts } from '../../lib/Contracts';
 import { EVM } from './EVM';
 import { TestToken } from './TestToken';
@@ -18,6 +17,7 @@ import {
   Integer,
   TxResult,
   address,
+  Provider,
 } from '../../types';
 
 export class Testing {

@@ -1,4 +1,4 @@
-import { Log, EventLog } from 'web3/types';
+import { Log, EventLog } from 'web3-core';
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
@@ -71,7 +71,7 @@ export class Logs {
     );
 
     const eventJson = events.find(
-      (e: any) => e.signature.toLowerCase() === log.topics[0].toLowerCase(),
+      (e: any) => e.signature.toLowerCase() === (log.topics[0] as string).toLowerCase(),
     );
 
     if (!eventJson) {
@@ -81,7 +81,7 @@ export class Logs {
     const eventArgs =  this.web3.eth.abi.decodeLog(
       eventJson.inputs,
       log.data,
-      log.topics.splice(1),
+      (log.topics as string[]).splice(1),
     );
 
     return {
