@@ -18,6 +18,7 @@ const negPar = par.times(-1);
 const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
 const defaultCoefficients = [0, 10, 10, 0, 0, 80];
+const defaultMaxAPR = new BigNumber('1.00');
 
 describe('PolynomialInterestSetter', () => {
   let snapshotId: string;
@@ -89,7 +90,11 @@ describe('PolynomialInterestSetter', () => {
     ]);
     const rate = await solo.getters.getMarketInterestRate(zero);
     expect(rate).toEqual(
-      getInterestPerSecond(defaultCoefficients, { totalBorrowed: par.div(2), totalSupply: par }),
+      getInterestPerSecond(
+        defaultMaxAPR,
+        defaultCoefficients,
+        { totalBorrowed: par.div(2), totalSupply: par },
+      ),
     );
   });
 
@@ -115,6 +120,7 @@ describe('PolynomialInterestSetter', () => {
       const rate = await solo.getters.getMarketInterestRate(zero);
       expect(rate).toEqual(
         getInterestPerSecond(
+          defaultMaxAPR,
           defaultCoefficients,
           {
             totalBorrowed: par.times(utilization),
@@ -165,7 +171,7 @@ describe('PolynomialInterestSetter', () => {
     await expectThrow(
       solo.contracts.testPolynomialInterestSetter.methods.createNew({
         maxAPR: '0',
-        coefficients: '655370', // [10, 0, 10]
+        coefficients: coefficientsToString([10, 0, 10]),
       }).call(),
       'Coefficients must sum to 100',
     );

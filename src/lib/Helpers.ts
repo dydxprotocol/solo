@@ -39,40 +39,26 @@ export function coefficientsToString(
   return result.toFixed(0);
 }
 
-export function getInterestPerSecondByMarket(
-  marketName: string,
-  totals: { totalBorrowed: BigNumber, totalSupply: BigNumber },
-) {
-  let coefficients = [];
-
-  switch (marketName) {
-    case 'WETH':
-    case 'DAI':
-    case 'USDC':
-    default:
-      coefficients = [0, 10, 10, 0, 0, 80];
-  }
-
-  return getInterestPerSecond(coefficients, totals);
-}
-
 export function getInterestPerSecond(
-  coefficients: (number | string | Integer)[],
-  totals: { totalBorrowed: BigNumber, totalSupply: BigNumber },
+  maxAPR: Decimal,
+  coefficients: number[],
+  totals: { totalBorrowed: Integer, totalSupply: Integer },
 ) {
   if (totals.totalBorrowed.isZero()) {
     return new BigNumber(0);
   }
 
-  const base = new BigNumber('1e18');
+  const PERCENT = new BigNumber('100');
+  const BASE = new BigNumber('1e18');
   let result = new BigNumber(0);
 
   if (totals.totalBorrowed.gt(totals.totalSupply)) {
-    result = base;
+    result = BASE;
   } else {
-    let polynomial = base;
+    let polynomial = BASE;
     for (let i = 0; i < coefficients.length; i += 1) {
-      const term = polynomial.times(coefficients[i]).div(100);
+      const coefficient = new BigNumber(coefficients[i]);
+      const term = polynomial.times(coefficient);
       result = result.plus(term);
       polynomial =
         polynomial.times(
@@ -83,5 +69,10 @@ export function getInterestPerSecond(
     }
   }
 
-  return result.div(INTEGERS.ONE_YEAR_IN_SECONDS).integerValue(BigNumber.ROUND_DOWN).div(base);
+  return result
+    .times(maxAPR)
+    .div(INTEGERS.ONE_YEAR_IN_SECONDS)
+    .div(PERCENT)
+    .integerValue(BigNumber.ROUND_DOWN)
+    .div(BASE);
 }
