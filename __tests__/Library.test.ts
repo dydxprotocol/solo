@@ -387,8 +387,9 @@ describe('Library', () => {
     const negHi = { sign: false, value: hi };
     const posHi = { sign: true, value: hi };
 
-    it('zeroPar', async () => {
+    it.only('zeroPar', async () => {
       const result = await solo.contracts.testLib.methods.TypesZeroPar().call();
+      console.log(result)
       expect(result.sign).toStrictEqual(false);
       expect(result.value).toEqual(zero);
     });

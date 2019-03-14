@@ -315,8 +315,9 @@ export class Contracts {
         } catch (error) {
           const data = method.encodeABI();
           const { from, value } = options;
-          const to = (method as any)._parent._address;
-          error.transactionData = { from, value, data, to };
+          // TODO
+          // const to = (method as any)._parent._address;
+          error.transactionData = { from, value, data/*, to */ };
           throw error;
         }
 
