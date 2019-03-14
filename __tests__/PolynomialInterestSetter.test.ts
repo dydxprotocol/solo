@@ -5,7 +5,7 @@ import { resetEVM, snapshot } from './helpers/EVM';
 import { ADDRESSES } from '../src/lib/Constants';
 import { address } from '../src/types';
 import { expectThrow } from '../src/lib/Expect';
-import { coefficientsToString } from '../src/lib/Helpers';
+import { coefficientsToString, getInterestPerSecond } from '../src/lib/Helpers';
 
 let solo: Solo;
 let owner: address;
@@ -18,7 +18,6 @@ const negPar = par.times(-1);
 const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
 const defaultCoefficients = [0, 10, 10, 0, 0, 80];
-const SECONDS_IN_A_YEAR = new BigNumber('31536000');
 
 describe('PolynomialInterestSetter', () => {
   let snapshotId: string;
@@ -90,7 +89,7 @@ describe('PolynomialInterestSetter', () => {
     ]);
     const rate = await solo.getters.getMarketInterestRate(zero);
     expect(rate).toEqual(
-      getExpected(defaultCoefficients, new BigNumber('0.5')),
+      getInterestPerSecond(defaultCoefficients, { totalBorrowed: par.div(2), totalSupply: par }),
     );
   });
 
@@ -115,7 +114,13 @@ describe('PolynomialInterestSetter', () => {
       ]);
       const rate = await solo.getters.getMarketInterestRate(zero);
       expect(rate).toEqual(
-        getExpected(defaultCoefficients, utilization),
+        getInterestPerSecond(
+          defaultCoefficients,
+          {
+            totalBorrowed: par.times(utilization),
+            totalSupply: par,
+          },
+        ),
       );
     }
   });
@@ -160,7 +165,7 @@ describe('PolynomialInterestSetter', () => {
     await expectThrow(
       solo.contracts.testPolynomialInterestSetter.methods.createNew({
         maxAPR: '0',
-        coefficients: '99',
+        coefficients: '655370', // [10, 0, 10]
       }).call(),
       'Coefficients must sum to 100',
     );
@@ -188,17 +193,4 @@ async function setCoefficients(
       coefficients: coefficientsString,
     }),
   );
-}
-
-function getExpected(
-  coefficients: number[],
-  utilization: BigNumber,
-) {
-  let m = new BigNumber(1);
-  let result = zero;
-  for (let i = 0; i < coefficients.length; i += 1) {
-    result = result.plus(m.times(coefficients[i]).times('1e18').div(100));
-    m = m.times(utilization);
-  }
-  return result.div(SECONDS_IN_A_YEAR).integerValue(BigNumber.ROUND_DOWN).div('1e18');
 }

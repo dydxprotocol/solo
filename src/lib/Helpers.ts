@@ -38,3 +38,50 @@ export function coefficientsToString(
   }
   return result.toFixed(0);
 }
+
+export function getInterestPerSecondByMarket(
+  marketName: string,
+  totals: { totalBorrowed: BigNumber, totalSupply: BigNumber },
+) {
+  let coefficients = [];
+
+  switch (marketName) {
+    case 'WETH':
+    case 'DAI':
+    case 'USDC':
+    default:
+      coefficients = [0, 10, 10, 0, 0, 80];
+  }
+
+  return getInterestPerSecond(coefficients, totals);
+}
+
+export function getInterestPerSecond(
+  coefficients: (number | string | Integer)[],
+  totals: { totalBorrowed: BigNumber, totalSupply: BigNumber },
+) {
+  if (totals.totalBorrowed.isZero()) {
+    return new BigNumber(0);
+  }
+
+  const base = new BigNumber('1e18');
+  let result = new BigNumber(0);
+
+  if (totals.totalBorrowed.gt(totals.totalSupply)) {
+    result = base;
+  } else {
+    let polynomial = base;
+    for (let i = 0; i < coefficients.length; i += 1) {
+      const term = polynomial.times(coefficients[i]).div(100);
+      result = result.plus(term);
+      polynomial =
+        polynomial.times(
+          totals.totalBorrowed,
+        ).div(
+          totals.totalSupply,
+        ).integerValue(BigNumber.ROUND_DOWN);
+    }
+  }
+
+  return result.div(INTEGERS.ONE_YEAR_IN_SECONDS).integerValue(BigNumber.ROUND_DOWN).div(base);
+}
