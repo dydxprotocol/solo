@@ -17,7 +17,7 @@
 */
 
 import { BigNumber } from 'bignumber.js';
-import { Integer } from '../types';
+import { Decimal, Integer } from '../types';
 import { getInterestPerSecond } from './Helpers';
 import interestConstants from './interest-constants.json';
 
@@ -36,23 +36,21 @@ export class Interest {
     this.networkId = networkId;
   }
 
-  public getInterestPerSecondByMarket(
-    marketId: Integer,
-    totals: { totalBorrowed: Integer, totalSupply: Integer },
-  ) {
-    // make sure the appropriate constants exists
-    const networkConstants = interestConstants[this.networkId];
-    if (!networkConstants) {
-      throw new Error(`No interest constants for network: ${this.networkId}`);
-    }
+  public getEarningsRate(): Decimal {
+    const networkConstants = this.getNetworkConstants();
     const earningsRate = new BigNumber(networkConstants.earningsRate);
     if (!earningsRate) {
       throw new Error(`No earnings rate for network: ${this.networkId}`);
     }
-    const constants = networkConstants[marketId.toFixed(0)];
-    if (!constants) {
-      throw new Error(`No interest constants for marketId: ${marketId.toFixed(0)}`);
-    }
+    return new BigNumber(earningsRate);
+  }
+
+  public getInterestPerSecondByMarket(
+    marketId: Integer,
+    totals: { totalBorrowed: Integer, totalSupply: Integer },
+  ) {
+    const earningsRate = this.getEarningsRate();
+    const constants = this.getMarketConstants(marketId);
 
     // determine the borrow interest rate (capped at 18 decimal places)
     const borrowInterestRate = getInterestPerSecond(
@@ -71,5 +69,26 @@ export class Interest {
       borrowInterestRate,
       supplyInterestRate,
     };
+  }
+
+  // ============ Private Helper Functions ============
+
+  private getNetworkConstants() {
+    const networkConstants = interestConstants[this.networkId];
+    if (!networkConstants) {
+      throw new Error(`No interest constants for network: ${this.networkId}`);
+    }
+    return networkConstants;
+  }
+
+  private getMarketConstants(
+    marketId: Integer,
+  ) {
+    const networkConstants = this.getNetworkConstants();
+    const constants = networkConstants[marketId.toFixed(0)];
+    if (!constants) {
+      throw new Error(`No interest constants for marketId: ${marketId.toFixed(0)}`);
+    }
+    return constants;
   }
 }
