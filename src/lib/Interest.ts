@@ -40,20 +40,36 @@ export class Interest {
     marketId: Integer,
     totals: { totalBorrowed: Integer, totalSupply: Integer },
   ) {
+    // make sure the appropriate constants exists
     const networkConstants = interestConstants[this.networkId];
     if (!networkConstants) {
       throw new Error(`No interest constants for network: ${this.networkId}`);
     }
-
+    const earningsRate = new BigNumber(networkConstants.earningsRate);
+    if (!earningsRate) {
+      throw new Error(`No earnings rate for network: ${this.networkId}`);
+    }
     const constants = networkConstants[marketId.toFixed(0)];
     if (!constants) {
       throw new Error(`No interest constants for marketId: ${marketId.toFixed(0)}`);
     }
 
-    return getInterestPerSecond(
+    // determine the borrow interest rate (capped at 18 decimal places)
+    const borrowInterestRate = getInterestPerSecond(
       new BigNumber(constants.maxAPR),
       constants.coefficients,
       totals,
     );
+
+    // determine the supply interest rate (uncapped decimal places)
+    let supplyInterestRate = borrowInterestRate.times(earningsRate);
+    if (totals.totalBorrowed.lt(totals.totalSupply)) {
+      supplyInterestRate = supplyInterestRate.times(totals.totalBorrowed).div(totals.totalSupply);
+    }
+
+    return {
+      borrowInterestRate,
+      supplyInterestRate,
+    };
   }
 }
