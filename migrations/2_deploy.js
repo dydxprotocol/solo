@@ -63,38 +63,31 @@ const polynomialParams = {
 
 async function maybeDeployTestContracts(deployer, network) {
   if (isKovan(network)) {
+    await deployer.deploy(TestPriceOracle);
+  }
+
+  if (isDevNetwork(network)) {
     await Promise.all([
+      TestSoloMargin.link('AdminImpl', AdminImpl.address),
+      TestSoloMargin.link('OperationImpl', OperationImpl.address),
+    ]);
+    await Promise.all([
+      deployer.deploy(TestSoloMargin, riskParams, riskLimits),
+      deployer.deploy(TokenA),
+      deployer.deploy(TokenB),
+      deployer.deploy(TokenC),
+      deployer.deploy(ErroringToken),
+      deployer.deploy(OmiseToken),
+      deployer.deploy(TestLib),
+      deployer.deploy(TestAutoTrader),
+      deployer.deploy(TestExchangeWrapper),
       deployer.deploy(TestPriceOracle),
       deployer.deploy(TestInterestSetter),
-      deployer.deploy(PolynomialInterestSetter, polynomialParams),
+      deployer.deploy(TestPolynomialInterestSetter, polynomialParams),
     ]);
+
+    await deployer.deploy(TestCallee, TestSoloMargin.address);
   }
-
-  if (!isDevNetwork(network)) {
-    return;
-  }
-
-  await Promise.all([
-    TestSoloMargin.link('AdminImpl', AdminImpl.address),
-    TestSoloMargin.link('OperationImpl', OperationImpl.address),
-  ]);
-
-  await Promise.all([
-    deployer.deploy(TestSoloMargin, riskParams, riskLimits),
-    deployer.deploy(TokenA),
-    deployer.deploy(TokenB),
-    deployer.deploy(TokenC),
-    deployer.deploy(ErroringToken),
-    deployer.deploy(OmiseToken),
-    deployer.deploy(TestLib),
-    deployer.deploy(TestAutoTrader),
-    deployer.deploy(TestExchangeWrapper),
-    deployer.deploy(TestPriceOracle),
-    deployer.deploy(TestInterestSetter),
-    deployer.deploy(TestPolynomialInterestSetter, polynomialParams),
-  ]);
-
-  await deployer.deploy(TestCallee, TestSoloMargin.address);
 }
 
 async function deployBaseProtocol(deployer) {
@@ -103,6 +96,10 @@ async function deployBaseProtocol(deployer) {
     SoloMargin.link('OperationImpl', OperationImpl.address),
   ]);
   await deployer.deploy(SoloMargin, riskParams, riskLimits);
+}
+
+async function deployInterestSetters(deployer) {
+  await deployer.deploy(PolynomialInterestSetter, polynomialParams);
 }
 
 async function deploySecondLayer(deployer, network) {
@@ -161,6 +158,7 @@ const migration = async (deployer, network) => {
   ]);
   await Promise.all([
     deployBaseProtocol(deployer),
+    deployInterestSetters(deployer),
     maybeDeployTestContracts(deployer, network),
   ]);
   await deploySecondLayer(deployer, network);

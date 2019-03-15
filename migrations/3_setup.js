@@ -23,10 +23,9 @@ const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
-const TestInterestSetter = artifacts.require('TestInterestSetter');
+const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 const INITIAL_TOKENS = new BigNumber('10e18');
-const BASE_INTEREST_RATE = new BigNumber('1e18').div(60 * 60 * 24 * 365 * 5); // 20% per year
 
 async function maybeSetupProtocol(deployer, network, accounts) {
   if (network === 'docker' || network === 'kovan') {
@@ -34,12 +33,12 @@ async function maybeSetupProtocol(deployer, network, accounts) {
       soloMargin,
       [tokenA, tokenB, tokenC],
       testPriceOracle,
-      testInterestSetter,
+      polynomialInterestSetter,
     ] = await Promise.all([
       SoloMargin.deployed(),
       getTokens(network),
       TestPriceOracle.deployed(),
-      TestInterestSetter.deployed(),
+      PolynomialInterestSetter.deployed(),
     ]);
 
     await Promise.all([
@@ -57,12 +56,6 @@ async function maybeSetupProtocol(deployer, network, accounts) {
         tokenB,
         tokenC,
       ),
-      setInterestRates(
-        testInterestSetter,
-        tokenA,
-        tokenB,
-        tokenC,
-      ),
     ]);
 
     // Price oracle must return valid amount to add market
@@ -72,7 +65,7 @@ async function maybeSetupProtocol(deployer, network, accounts) {
       tokenB,
       tokenC,
       testPriceOracle,
-      testInterestSetter,
+      polynomialInterestSetter,
     );
   }
 }
@@ -99,7 +92,7 @@ async function addMarkets(
   tokenB,
   tokenC,
   testPriceOracle,
-  testInterestSetter,
+  interestSetter,
 ) {
   const marginPremium = { value: '0' };
   const spreadPremium = { value: '0' };
@@ -108,21 +101,21 @@ async function addMarkets(
   await soloMargin.ownerAddMarket(
     tokenA.address,
     testPriceOracle.address,
-    testInterestSetter.address,
+    interestSetter.address,
     marginPremium,
     spreadPremium,
   );
   await soloMargin.ownerAddMarket(
     tokenB.address,
     testPriceOracle.address,
-    testInterestSetter.address,
+    interestSetter.address,
     marginPremium,
     spreadPremium,
   );
   await soloMargin.ownerAddMarket(
     tokenC.address,
     testPriceOracle.address,
-    testInterestSetter.address,
+    interestSetter.address,
     marginPremium,
     spreadPremium,
   );
@@ -157,28 +150,6 @@ async function setOraclePrices(
     testPriceOracle.setPrice(tokenA.address, '100000000000000000000'), // 1 ETH = 100 DAI
     testPriceOracle.setPrice(tokenB.address, '1000000000000000000'), // DAI
     testPriceOracle.setPrice(tokenC.address, '300000000000000000'), // 1 ZRX = .3 DAI
-  ]);
-}
-
-async function setInterestRates(
-  testInterestSetter,
-  tokenA,
-  tokenB,
-  tokenC,
-) {
-  await Promise.all([
-    testInterestSetter.setInterestRate(
-      tokenA.address,
-      { value: BASE_INTEREST_RATE.toFixed(0) },
-    ),
-    testInterestSetter.setInterestRate(
-      tokenB.address,
-      { value: BASE_INTEREST_RATE.times(2).toFixed(0) },
-    ),
-    testInterestSetter.setInterestRate(
-      tokenC.address,
-      { value: BASE_INTEREST_RATE.times(3).toFixed(0) },
-    ),
   ]);
 }
 

@@ -16,6 +16,13 @@
             "transactionHash": "0x5ce0faacd462215ced9db4fca889d8f04e38c31ef2b28cf1c0d549c7066ff5c0"
         }
     },
+    "PolynomialInterestSetter": {
+        "42": {
+            "links": {},
+            "address": "0x1e250C026Bf26791De074630f4D058C168296cF6",
+            "transactionHash": "0xa31a73f1426b7ceb71f4fa5a355139fc3f7a7f9f6d4f685b20ebf91951953888"
+        }
+    },
     "TestPriceOracle": {
         "42": {
             "links": {},

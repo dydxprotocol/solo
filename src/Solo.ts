@@ -19,6 +19,7 @@
 import Web3 from 'web3';
 import { Provider } from 'web3/providers';
 import { Contracts } from './lib/Contracts';
+import { Interest } from './lib/Interest';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
 import { Weth } from './modules/Weth';
@@ -31,6 +32,7 @@ import { SoloOptions, address } from './types';
 
 export class Solo {
   public contracts: Contracts;
+  public interest: Interest;
   public testing: Testing;
   public operation: Operation;
   public token: Token;
@@ -52,6 +54,7 @@ export class Solo {
     }
 
     this.contracts = new Contracts(provider, networkId, this.web3, options);
+    this.interest = new Interest(networkId);
     this.operation = new Operation(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
@@ -68,6 +71,7 @@ export class Solo {
   ): void {
     this.web3.setProvider(provider);
     this.contracts.setProvider(provider, networkId);
+    this.interest.setNetworkId(networkId);
     this.testing.setProvider(provider);
     this.operation.setNetworkId(networkId);
   }

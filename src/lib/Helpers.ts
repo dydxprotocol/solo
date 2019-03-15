@@ -38,3 +38,41 @@ export function coefficientsToString(
   }
   return result.toFixed(0);
 }
+
+export function getInterestPerSecond(
+  maxAPR: Decimal,
+  coefficients: number[],
+  totals: { totalBorrowed: Integer, totalSupply: Integer },
+) {
+  if (totals.totalBorrowed.isZero()) {
+    return new BigNumber(0);
+  }
+
+  const PERCENT = new BigNumber('100');
+  const BASE = new BigNumber('1e18');
+  let result = new BigNumber(0);
+
+  if (totals.totalBorrowed.gt(totals.totalSupply)) {
+    result = BASE;
+  } else {
+    let polynomial = BASE;
+    for (let i = 0; i < coefficients.length; i += 1) {
+      const coefficient = new BigNumber(coefficients[i]);
+      const term = polynomial.times(coefficient);
+      result = result.plus(term);
+      polynomial =
+        polynomial.times(
+          totals.totalBorrowed,
+        ).div(
+          totals.totalSupply,
+        ).integerValue(BigNumber.ROUND_DOWN);
+    }
+  }
+
+  return result
+    .times(maxAPR)
+    .div(INTEGERS.ONE_YEAR_IN_SECONDS)
+    .div(PERCENT)
+    .integerValue(BigNumber.ROUND_DOWN)
+    .div(BASE);
+}
