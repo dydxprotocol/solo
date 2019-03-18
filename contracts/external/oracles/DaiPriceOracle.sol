@@ -16,19 +16,18 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.6;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { IMakerOracle } from "../../external/interfaces/IMakerOracle.sol";
-import { IOasisDex } from "../../external/interfaces/IOasisDex.sol";
-import { IErc20 } from "../interfaces/IErc20.sol";
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Math } from "../lib/Math.sol";
-import { Monetary } from "../lib/Monetary.sol";
-import { Require } from "../lib/Require.sol";
-import { Time } from "../lib/Time.sol";
+import { IErc20 } from "../../protocol/interfaces/IErc20.sol";
+import { IPriceOracle } from "../../protocol/interfaces/IPriceOracle.sol";
+import { Math } from "../../protocol/lib/Math.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
+import { Time } from "../../protocol/lib/Time.sol";
+import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
+import { IOasisDex } from "../interfaces/IOasisDex.sol";
 
 
 /**

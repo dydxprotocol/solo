@@ -16,10 +16,10 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.6;
 pragma experimental ABIEncoderV2;
 
-import { DaiPriceOracle } from "../protocol/oracles/DaiPriceOracle.sol";
+import { DaiPriceOracle } from "../external/oracles/DaiPriceOracle.sol";
 
 
 /**

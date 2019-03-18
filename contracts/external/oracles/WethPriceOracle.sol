@@ -16,12 +16,12 @@
 
 */
 
-pragma solidity 0.5.4;
+pragma solidity 0.5.6;
 pragma experimental ABIEncoderV2;
 
-import { IMakerOracle } from "../../external/interfaces/IMakerOracle.sol";
-import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
-import { Monetary } from "../lib/Monetary.sol";
+import { IPriceOracle } from "../../protocol//interfaces/IPriceOracle.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
+import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
 
 
 /**
