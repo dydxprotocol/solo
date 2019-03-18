@@ -13,5 +13,20 @@
       "maxAPR": "1.00",
       "coefficients": [0, 10, 10, 0, 0, 80]
     }
+  },
+  "1001": {
+    "earningsRate": "0.9",
+    "0": {
+      "maxAPR": "1.00",
+      "coefficients": [0, 10, 10, 0, 0, 80]
+    },
+    "1": {
+      "maxAPR": "1.00",
+      "coefficients": [0, 10, 10, 0, 0, 80]
+    },
+    "2": {
+      "maxAPR": "1.00",
+      "coefficients": [0, 10, 10, 0, 0, 80]
+    }
   }
 }
