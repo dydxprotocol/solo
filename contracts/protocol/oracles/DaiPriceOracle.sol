@@ -65,9 +65,8 @@ contract DaiPriceOracle is
     // ============ Structs ============
 
     struct PriceInfo {
-        bool byOwner;
-        uint32 lastUpdate;
         uint128 price;
+        uint32 lastUpdate;
     }
 
     // ============ Events ============
@@ -108,7 +107,6 @@ contract DaiPriceOracle is
         UNISWAP = uniswap;
 
         priceInfo = PriceInfo({
-            byOwner: false,
             lastUpdate: uint32(block.timestamp),
             price: uint128(EXPECTED_PRICE)
         });
@@ -118,32 +116,12 @@ contract DaiPriceOracle is
 
     function updatePrice()
         external
+        onlyOwner
         returns (uint256)
     {
-        Require.that(
-            msg.sender == tx.origin, // solium-disable-line security/no-tx-origin
-            FILE,
-            "Cannot be called by contract"
-        );
+        uint256 newPrice = getBoundedTargetPrice();
 
-        PriceInfo memory oldInfo = priceInfo;
-        uint256 timeDelta = uint256(Time.currentTime()).sub(oldInfo.lastUpdate);
-
-        Require.that(
-            isOwner() || timeDelta >= OWNER_GRACE_PERIOD,
-            FILE,
-            "Cannot be called in grace period"
-        );
-
-        uint256 targetPrice = getTargetPrice();
-
-        // bound the price change by the maximum percentage change allowed
-        (uint256 minPrice, uint256 maxPrice) = getPriceBounds(oldInfo.price, timeDelta);
-        uint256 newPrice = boundValue(targetPrice, minPrice, maxPrice);
-
-        // update the price
         priceInfo = PriceInfo({
-            byOwner: isOwner(),
             price: Math.to128(newPrice),
             lastUpdate: Time.currentTime()
         });
@@ -167,6 +145,22 @@ contract DaiPriceOracle is
     }
 
     // ============ Price-Query Functions ============
+
+    /**
+     * Gets the new price that would be stored if updated right now
+     */
+    function getBoundedTargetPrice()
+        public
+        view
+        returns (uint256)
+    {
+        uint256 targetPrice = getTargetPrice();
+
+        PriceInfo memory oldInfo = priceInfo;
+        uint256 timeDelta = uint256(Time.currentTime()).sub(oldInfo.lastUpdate);
+        (uint256 minPrice, uint256 maxPrice) = getPriceBounds(oldInfo.price, timeDelta);
+        return boundValue(targetPrice, minPrice, maxPrice);
+    }
 
     /**
      * Gets the USD price of DAI
