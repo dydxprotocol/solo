@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = {
   compilers: {
     solc: {
-      version: '0.5.5',
+      version: '0.5.6',
       docker: process.env.DOCKER_COMPILER !== undefined
         ? process.env.DOCKER_COMPILER === 'true' : true,
       settings: {
