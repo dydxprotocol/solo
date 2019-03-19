@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.5;
+pragma solidity 0.5.6;
 
 import { Account } from "./Account.sol";
 import { Types } from "./Types.sol";

@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.5;
+pragma solidity 0.5.6;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
