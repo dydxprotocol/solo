@@ -18,143 +18,183 @@
 
 const BigNumber = require('bignumber.js');
 
+const {
+  isDevNetwork,
+  isKovan,
+  isMainNet,
+  isDocker,
+} = require('./helpers');
+
+// ============ Contracts ============
+
 const SoloMargin = artifacts.require('SoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
+
+// Interest Setters
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
+// Oracles
+const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const WethPriceOracle = artifacts.require('WethPriceOracle');
+
+// ============ Constants ============
+
 const INITIAL_TOKENS = new BigNumber('10e18');
+const ONE_DOLLAR = new BigNumber('1e18');
 
-async function maybeSetupProtocol(deployer, network, accounts) {
-  if (network === 'docker' || network === 'kovan') {
-    const [
-      soloMargin,
-      [tokenA, tokenB, tokenC],
-      testPriceOracle,
-      polynomialInterestSetter,
-    ] = await Promise.all([
-      SoloMargin.deployed(),
-      getTokens(network),
-      TestPriceOracle.deployed(),
-      PolynomialInterestSetter.deployed(),
-    ]);
+// ============ Main Migration ============
 
+const migration = async (deployer, network, accounts) => {
+  await setupProtocol(deployer, network, accounts);
+};
+
+module.exports = migration;
+
+// ============ Setup Functions ============
+
+async function setupProtocol(deployer, network, accounts) {
+  if (isDevNetwork(network) && !isDocker(network)) {
+    return;
+  }
+
+  const [
+    soloMargin,
+    tokens,
+    oracles,
+    setters,
+  ] = await Promise.all([
+    SoloMargin.deployed(),
+    getTokens(network),
+    getOracles(network),
+    getSetters(network),
+  ]);
+
+  if (isKovan(network)) {
+    const testPriceOracle = await TestPriceOracle.deployed();
+    await testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed()); // ZRX
+  }
+
+  if (isDocker(network)) {
+    // issue tokens to accounts
+    await Promise.all(
+      accounts.map(
+        account => Promise.all([
+          tokens.map(
+            t => t.issueTo(account, INITIAL_TOKENS),
+          ),
+        ]),
+      ),
+    );
+    const testPriceOracle = await TestPriceOracle.deployed();
     await Promise.all([
-      issueTokens(
-        [accounts[1], accounts[2], accounts[3]],
-        INITIAL_TOKENS.toFixed(0),
-        tokenA,
-        tokenB,
-        tokenC,
-        network,
-      ),
-      setOraclePrices(
-        testPriceOracle,
-        tokenA,
-        tokenB,
-        tokenC,
-      ),
+      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed()), // WETH
+      testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed()), // DAI
+      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed()), // ZRX
     ]);
+  }
 
-    // Price oracle must return valid amount to add market
-    await addMarkets(
-      soloMargin,
-      tokenA,
-      tokenB,
-      tokenC,
-      testPriceOracle,
-      polynomialInterestSetter,
+  await addMarkets(
+    soloMargin,
+    tokens,
+    oracles,
+    setters,
+  );
+}
+
+async function addMarkets(
+  soloMargin,
+  tokens,
+  priceOracles,
+  interestSetters,
+) {
+  const marginPremium = { value: '0' };
+  const spreadPremium = { value: '0' };
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    await soloMargin.ownerAddMarket(
+      tokens[i].address,
+      priceOracles[i].address,
+      interestSetters[i].address,
+      marginPremium,
+      spreadPremium,
     );
   }
 }
 
+// ============ Network Getter Functions ============
+
 async function getTokens(network) {
-  if (network === 'docker') {
+  if (isDocker(network)) {
     return Promise.all([
       TokenA.deployed(),
       TokenB.deployed(),
       TokenC.deployed(),
     ]);
   }
-
-  return [
-    { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c' }, // Kovan WETH
-    { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' }, // Kovan DAI
-    { address: '0x2002d3812f58e35f0ea1ffbf80a75a38c32175fa' }, // Kovan ZRX
-  ];
-}
-
-async function addMarkets(
-  soloMargin,
-  tokenA,
-  tokenB,
-  tokenC,
-  testPriceOracle,
-  interestSetter,
-) {
-  const marginPremium = { value: '0' };
-  const spreadPremium = { value: '0' };
-
-  // Do these in sequence so they are always ordered
-  await soloMargin.ownerAddMarket(
-    tokenA.address,
-    testPriceOracle.address,
-    interestSetter.address,
-    marginPremium,
-    spreadPremium,
-  );
-  await soloMargin.ownerAddMarket(
-    tokenB.address,
-    testPriceOracle.address,
-    interestSetter.address,
-    marginPremium,
-    spreadPremium,
-  );
-  await soloMargin.ownerAddMarket(
-    tokenC.address,
-    testPriceOracle.address,
-    interestSetter.address,
-    marginPremium,
-    spreadPremium,
-  );
-}
-
-async function issueTokens(
-  accounts,
-  amount,
-  tokenA,
-  tokenB,
-  tokenC,
-  network,
-) {
-  if (network !== 'docker') {
-    return;
+  if (isKovan(network)) {
+    return [
+      { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c' }, // Kovan WETH
+      { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' }, // Kovan DAI
+      { address: '0x2002d3812f58e35f0ea1ffbf80a75a38c32175fa' }, // Kovan ZRX
+    ];
   }
-
-  await Promise.all(accounts.map(account => Promise.all([
-    tokenA.issueTo(account, amount),
-    tokenB.issueTo(account, amount),
-    tokenC.issueTo(account, amount),
-  ])));
+  if (isMainNet(network)) {
+    return [
+      { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' }, // Main WETH
+      { address: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359' }, // Main DAI
+    ];
+  }
+  throw new Error('Cannot find Tokens');
 }
 
-async function setOraclePrices(
-  testPriceOracle,
-  tokenA,
-  tokenB,
-  tokenC,
-) {
-  await Promise.all([
-    testPriceOracle.setPrice(tokenA.address, '100000000000000000000'), // 1 ETH = 100 DAI
-    testPriceOracle.setPrice(tokenB.address, '1000000000000000000'), // DAI
-    testPriceOracle.setPrice(tokenC.address, '300000000000000000'), // 1 ZRX = .3 DAI
-  ]);
+async function getOracles(network) {
+  if (isDocker(network)) {
+    return Promise.all([
+      { address: TestPriceOracle.address },
+      { address: TestPriceOracle.address },
+      { address: TestPriceOracle.address },
+    ]);
+  }
+  if (isKovan(network)) {
+    return [
+      { address: WethPriceOracle.address },
+      { address: DaiPriceOracle.address },
+      { address: TestPriceOracle.address },
+    ];
+  }
+  if (isMainNet(network)) {
+    return [
+      { address: WethPriceOracle.address },
+      { address: DaiPriceOracle.address },
+    ];
+  }
+  throw new Error('Cannot find Oracles');
 }
 
-const migration = async (deployer, network, accounts) => {
-  await maybeSetupProtocol(deployer, network, accounts);
-};
-
-module.exports = migration;
+async function getSetters(network) {
+  if (isDocker(network)) {
+    return Promise.all([
+      { address: PolynomialInterestSetter.address },
+      { address: PolynomialInterestSetter.address },
+      { address: PolynomialInterestSetter.address },
+    ]);
+  }
+  if (isKovan(network)) {
+    return [
+      { address: PolynomialInterestSetter.address },
+      { address: PolynomialInterestSetter.address },
+      { address: PolynomialInterestSetter.address },
+    ];
+  }
+  if (isMainNet(network)) {
+    return [
+      { address: PolynomialInterestSetter.address },
+      { address: PolynomialInterestSetter.address },
+    ];
+  }
+  throw new Error('Cannot find Setters');
+}

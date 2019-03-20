@@ -16,6 +16,10 @@ function isKovan(network) {
   return network === 'kovan';
 }
 
+function isDocker(network) {
+  return network === 'docker';
+}
+
 const MULTISIG = {
   KOVAN: {
   },
@@ -27,5 +31,6 @@ module.exports = {
   isDevNetwork,
   isMainNet,
   isKovan,
+  isDocker,
   MULTISIG,
 };

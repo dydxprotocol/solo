@@ -50,14 +50,13 @@ contract WethPriceOracle is
     // ============ IPriceOracle Functions =============
 
     function getPrice(
-        /* address token */
+        address /* token */
     )
         public
         view
         returns (Monetary.Price memory)
     {
         (bytes32 value, /* bool fresh */) = MEDIANIZER.peek();
-        // TODO: require if the price is not fresh? this will lock the protocol
         return Monetary.Price({ value: uint256(value) });
     }
 }

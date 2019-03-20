@@ -27,7 +27,7 @@ import { Types } from "../protocol/lib/Types.sol";
 
 
 /**
- * @title TestCallee
+ * @title TestLib
  * @author dYdX
  *
  * Contract for testing pure library functions

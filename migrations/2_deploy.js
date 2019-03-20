@@ -18,10 +18,16 @@
 
 const { isDevNetwork, isKovan, isMainNet } = require('./helpers');
 const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts');
+const { ADDRESSES } = require('../src/lib/Constants.ts');
 
+// ============ Contracts ============
+
+// Base Protocol
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
 const SoloMargin = artifacts.require('SoloMargin');
+
+// Test Contracts
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
@@ -32,64 +38,125 @@ const TestLib = artifacts.require('TestLib');
 const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
+const TestMakerOracle = artifacts.require('TestMakerOracle');
+const TestOasisDex = artifacts.require('TestOasisDex');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
+
+// Second-Layer Contracts
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
+
+// Interest Setters
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
-async function maybeDeployTestContracts(deployer, network) {
-  if (isKovan(network)) {
-    await deployer.deploy(TestPriceOracle);
-  }
+// Oracles
+const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
+const WethPriceOracle = artifacts.require('WethPriceOracle');
 
+// ============ Main Migration ============
+
+const migration = async (deployer, network) => {
+  await Promise.all([
+    deployTestContracts(deployer, network),
+    deployBaseProtocol(deployer, network),
+  ]);
+  await Promise.all([
+    deployInterestSetters(deployer, network),
+    deployPriceOracles(deployer, network),
+    deploySecondLayer(deployer, network),
+  ]);
+};
+
+module.exports = migration;
+
+// ============ Deploy Functions ============
+
+async function deployTestContracts(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
-      TestSoloMargin.link('AdminImpl', AdminImpl.address),
-      TestSoloMargin.link('OperationImpl', OperationImpl.address),
-    ]);
-    await Promise.all([
-      deployer.deploy(TestSoloMargin, getRiskParams(network), getRiskLimits()),
       deployer.deploy(TokenA),
       deployer.deploy(TokenB),
       deployer.deploy(TokenC),
+      deployer.deploy(WETH9),
       deployer.deploy(ErroringToken),
       deployer.deploy(OmiseToken),
       deployer.deploy(TestLib),
       deployer.deploy(TestAutoTrader),
       deployer.deploy(TestExchangeWrapper),
-      deployer.deploy(TestPriceOracle),
-      deployer.deploy(TestInterestSetter),
       deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams()),
+      deployer.deploy(TestMakerOracle),
+      deployer.deploy(TestOasisDex),
     ]);
-
-    await deployer.deploy(TestCallee, TestSoloMargin.address);
   }
 }
 
 async function deployBaseProtocol(deployer, network) {
   await Promise.all([
-    SoloMargin.link('AdminImpl', AdminImpl.address),
-    SoloMargin.link('OperationImpl', OperationImpl.address),
+    deployer.deploy(AdminImpl),
+    deployer.deploy(OperationImpl),
   ]);
-  await deployer.deploy(SoloMargin, getRiskParams(network), getRiskLimits());
+
+  let soloMargin;
+  if (isDevNetwork(network)) {
+    soloMargin = TestSoloMargin;
+  } else if (isKovan(network) || isMainNet(network)) {
+    soloMargin = SoloMargin;
+  } else {
+    throw new Error('Cannot deploy SoloMargin');
+  }
+
+  await Promise.all([
+    soloMargin.link('AdminImpl', AdminImpl.address),
+    soloMargin.link('OperationImpl', OperationImpl.address),
+  ]);
+  await deployer.deploy(soloMargin, getRiskParams(network), getRiskLimits());
 }
 
-async function deployInterestSetters(deployer) {
+async function deployInterestSetters(deployer, network) {
+  if (isDevNetwork(network)) {
+    await deployer.deploy(TestInterestSetter);
+  }
   await deployer.deploy(PolynomialInterestSetter, getPolynomialParams());
 }
 
+async function deployPriceOracles(deployer, network) {
+  if (
+    isDevNetwork(network)
+    || isKovan(network)
+  ) {
+    await deployer.deploy(TestPriceOracle);
+  }
+
+  await Promise.all([
+    deployer.deploy(
+      DaiPriceOracle,
+      getWethAddress(network),
+      getDaiAddress(network),
+      getMedianizerAddress(network),
+      getOasisAddress(network),
+      getUniswapAddress(network),
+    ),
+    deployer.deploy(UsdcPriceOracle),
+    deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
+  ]);
+}
+
 async function deploySecondLayer(deployer, network) {
-  const wethAddress = await getOrDeployWeth(deployer, network);
   const soloMargin = await getSoloMargin(network);
+
+  if (isDevNetwork(network)) {
+    await deployer.deploy(TestCallee, soloMargin.address);
+  }
 
   await Promise.all([
     deployer.deploy(
       PayableProxyForSoloMargin,
       soloMargin.address,
-      wethAddress,
+      getWethAddress(network),
     ),
     deployer.deploy(
       Expiry,
@@ -116,9 +183,62 @@ async function getSoloMargin(network) {
   return SoloMargin.deployed();
 }
 
-async function getOrDeployWeth(deployer, network) {
+// ============ Network Getter Functions ============
+
+function getMedianizerAddress(network) {
   if (isDevNetwork(network)) {
-    await deployer.deploy(WETH9);
+    return TestMakerOracle.address;
+  }
+  if (isMainNet(network)) {
+    return '0x729D19f657BD0614b4985Cf1D82531c67569197B';
+  }
+  if (isKovan(network)) {
+    return '0xa5aA4e07F5255E14F02B385b1f04b35cC50bdb66';
+  }
+  throw new Error('Cannot find Medianizer');
+}
+
+function getDaiAddress(network) {
+  if (isDevNetwork(network)) {
+    return TokenB.address;
+  }
+  if (isMainNet(network)) {
+    return '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359';
+  }
+  if (isKovan(network)) {
+    return '0xC4375B7De8af5a38a93548eb8453a498222C4fF2';
+  }
+  throw new Error('Cannot find Dai');
+}
+
+function getOasisAddress(network) {
+  if (isDevNetwork(network)) {
+    return TestOasisDex.address;
+  }
+  if (isMainNet(network)) {
+    return '0x39755357759cE0d7f32dC8dC45414CCa409AE24e';
+  }
+  if (isKovan(network)) {
+    return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
+  }
+  throw new Error('Cannot find OasisDex');
+}
+
+function getUniswapAddress(network) {
+  if (isDevNetwork(network)) {
+    return ADDRESSES.TEST_UNISWAP; // for testing
+  }
+  if (isMainNet(network)) {
+    return '0x09cabec1ead1c0ba254b09efb3ee13841712be14';
+  }
+  if (isKovan(network)) {
+    return '0x47D4Af3BBaEC0dE4dba5F44ae8Ed2761977D32d6';
+  }
+  throw new Error('Cannot find Uniswap');
+}
+
+function getWethAddress(network) {
+  if (isDevNetwork(network)) {
     return WETH9.address;
   }
   if (isMainNet(network)) {
@@ -127,23 +247,8 @@ async function getOrDeployWeth(deployer, network) {
   if (isKovan(network)) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
   }
-  throw new Error('Cannot find WETH');
+  throw new Error('Cannot find Weth');
 }
-
-const migration = async (deployer, network) => {
-  await Promise.all([
-    deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl),
-  ]);
-  await Promise.all([
-    deployBaseProtocol(deployer, network),
-    deployInterestSetters(deployer),
-    maybeDeployTestContracts(deployer, network),
-  ]);
-  await deploySecondLayer(deployer, network);
-};
-
-module.exports = migration;
 
 async function getRiskLimits() {
   return {

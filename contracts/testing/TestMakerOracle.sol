@@ -18,24 +18,39 @@
 
 pragma solidity 0.5.6;
 
+import { IMakerOracle } from "../external/interfaces/IMakerOracle.sol";
 
-/**
- * @title IMakerOracle
- * @author dYdX
- *
- * Interface for the price oracles run by MakerDao
- */
-interface IMakerOracle {
 
-    // returns the current value (ETH/USD * 10**18) as a bytes32
+contract TestMakerOracle is
+    IMakerOracle
+{
+    uint256 public price;
+    bool public valid;
+
+    function setValues(
+        uint256 _price,
+        bool _valid
+    )
+        external
+    {
+        price = _price;
+        valid = _valid;
+    }
+
     function peek()
         external
         view
-        returns (bytes32, bool);
+        returns (bytes32, bool)
+    {
+        return (bytes32(price), valid);
+    }
 
-    // requires a fresh price and then returns the current value
     function read()
         external
         view
-        returns (bytes32);
+        returns (bytes32)
+    {
+        require(valid);
+        return bytes32(price);
+    }
 }

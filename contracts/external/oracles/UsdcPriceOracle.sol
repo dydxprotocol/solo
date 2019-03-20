@@ -29,7 +29,7 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
  *
  * PriceOracle that returns the price of USDC in USD
  */
-contract UsdCPriceOracle is
+contract UsdcPriceOracle is
     IPriceOracle
 {
     // ============ Storage ============
@@ -41,10 +41,10 @@ contract UsdCPriceOracle is
     // ============ IPriceOracle Functions =============
 
     function getPrice(
-        /* address token */
+        address /* token */
     )
         public
-        pure
+        view
         returns (Monetary.Price memory)
     {
         return Monetary.Price({ value: EXPECTED_PRICE });

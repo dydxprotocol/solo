@@ -71,16 +71,16 @@ contract DaiPriceOracle is
     // ============ Events ============
 
     event PriceSet(
-        uint256 newPrice
+        PriceInfo newPriceInfo
     );
 
     // ============ Storage ============
 
+    PriceInfo public priceInfo;
+
     IErc20 public WETH;
 
     IErc20 public DAI;
-
-    PriceInfo public priceInfo;
 
     IMakerOracle public MEDIANIZER;
 
@@ -116,7 +116,7 @@ contract DaiPriceOracle is
     function updatePrice()
         external
         onlyOwner
-        returns (uint256)
+        returns (PriceInfo memory)
     {
         uint256 newPrice = getBoundedTargetPrice();
 
@@ -125,8 +125,8 @@ contract DaiPriceOracle is
             lastUpdate: Time.currentTime()
         });
 
-        emit PriceSet(newPrice);
-        return newPrice;
+        emit PriceSet(priceInfo);
+        return priceInfo;
     }
 
     // ============ IPriceOracle Functions ============
@@ -205,11 +205,11 @@ contract DaiPriceOracle is
 
         // if exchange is not operational, return old value
         if (
-            OASIS.isClosed()
-            || OASIS.buyEnabled()
-            || !OASIS.matchingEnabled()
-            || offerEthDai == 0
+            offerEthDai == 0
             || offerDaiEth == 0
+            || OASIS.isClosed()
+            || !OASIS.buyEnabled()
+            || !OASIS.matchingEnabled()
         ) {
             return priceInfo.price;
         }
