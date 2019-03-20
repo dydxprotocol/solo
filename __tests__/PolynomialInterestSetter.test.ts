@@ -98,6 +98,21 @@ describe('PolynomialInterestSetter', () => {
     );
   });
 
+  it('Succeeds for 100% (javscript)', async () => {
+    const res1 = getInterestPerSecond(
+      defaultMaxAPR,
+      defaultCoefficients,
+      { totalBorrowed: par, totalSupply: par },
+    );
+    const res2 = getInterestPerSecond(
+      defaultMaxAPR,
+      defaultCoefficients,
+      { totalBorrowed: par.times(2), totalSupply: par },
+    );
+    expect(maximumRate).toEqual(res1);
+    expect(maximumRate).toEqual(res2);
+  });
+
   it('Succeeds for gas', async () => {
     const baseGasCost = 21000;
     const getRateFunction = solo.contracts.testPolynomialInterestSetter.methods.getInterestRate;
