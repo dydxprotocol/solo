@@ -2,32 +2,32 @@
     "SoloMargin": {
         "42": {
             "links": {
-                "AdminImpl": "0xA23C81493e124342Da05963D8826EF44c0d5eCA0",
-                "OperationImpl": "0xa0B8EF792e6F53D60e61B6fE5664Abf7592ec09B"
+                "AdminImpl": "0x50180CF70b462356fc07CC40Be26ecfd692C189D",
+                "OperationImpl": "0x8727525EB2B43E91601cCF017FDa6c716EEf8B48"
             },
-            "address": "0x2F4B5AE942BAC819fa25085D1b82300FeA0DdF70",
-            "transactionHash": "0xb7ba804c53d123ffc9e9eb1ba15c09b38f4a8450ea0ac54f52bbba57c44e6db9"
+            "address": "0x05DD9Eeb753aB7160F5b8dd2bC51cab9b3342B82",
+            "transactionHash": "0xdca067efadf8353bbe812445d050cb0b8bee3b6287cba224f361a485641b0fbf"
         }
     },
     "PayableProxyForSoloMargin": {
         "42": {
             "links": {},
-            "address": "0x7483bD85c091848097466f4c3fD519dD81840D33",
-            "transactionHash": "0x5ce0faacd462215ced9db4fca889d8f04e38c31ef2b28cf1c0d549c7066ff5c0"
+            "address": "0xA430f0E98F0627D8f28b42993cC73A35708D7641",
+            "transactionHash": "0x6bc8ce82f2d1fa5ab51301432842adbea78d0ed040f687e80d41c3d3dd485ae0"
         }
     },
     "PolynomialInterestSetter": {
         "42": {
             "links": {},
-            "address": "0x1e250C026Bf26791De074630f4D058C168296cF6",
-            "transactionHash": "0xa31a73f1426b7ceb71f4fa5a355139fc3f7a7f9f6d4f685b20ebf91951953888"
+            "address": "0xef4b567e71Aa46Dc5336D93EBf4f8087a3672b1b",
+            "transactionHash": "0xeaca0bd802f2f003c34220f38f8c8192e9b289ca19578f6732e5a9c5d077d379"
         }
     },
     "TestPriceOracle": {
         "42": {
             "links": {},
-            "address": "0x9ebD5b618073b9D3C30f72fEC7F6533eCb558c6b",
-            "transactionHash": "0x21cd74ab35812b57afb45b9c435da9452caefbafa8d77098813adb07bb3045ce"
+            "address": "0x79a7EF444Eb7031b4ED271B28D1A152717bEC97a",
+            "transactionHash": "0x08780306a504c32fd12056f77855b58e3381eef727d5ba3938962a83d6c2aa93"
         }
     },
     "TestInterestSetter": {
@@ -35,6 +35,13 @@
             "links": {},
             "address": "0x1e5b6e89B4d10ee850e1893Efc587353149790C4",
             "transactionHash": "0x55de1ad13b892812389490e7f75a34081736405340ca286d2f7812028f7a0046"
+        }
+    },
+    "Expiry": {
+        "42": {
+            "links": {},
+            "address": "0x1B4918De46b7102e116C391BDAD350265B206978",
+            "transactionHash": "0xd524298e58d0d225a177ab1efd41a42b652f718c53aa2695150d210610b40eae"
         }
     }
 }
