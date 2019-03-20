@@ -53,7 +53,7 @@ export function getInterestPerSecond(
   let result = new BigNumber(0);
 
   if (totals.totalBorrowed.gt(totals.totalSupply)) {
-    result = BASE;
+    result = BASE.times(PERCENT);
   } else {
     let polynomial = BASE;
     for (let i = 0; i < coefficients.length; i += 1) {
