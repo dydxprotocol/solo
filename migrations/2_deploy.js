@@ -40,27 +40,6 @@ const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin')
 const Expiry = artifacts.require('Expiry');
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
-const riskLimits = {
-  marginRatioMax: decimalToString('2.00'),
-  liquidationSpreadMax: decimalToString('0.50'),
-  earningsRateMax: decimalToString('1.00'),
-  marginPremiumMax: decimalToString('2.00'),
-  spreadPremiumMax: decimalToString('2.00'),
-  minBorrowedValueMax: decimalToString('100.00'),
-};
-
-const riskParams = {
-  marginRatio: { value: decimalToString('0.15') },
-  liquidationSpread: { value: decimalToString('0.05') },
-  earningsRate: { value: decimalToString('0.90') },
-  minBorrowedValue: { value: decimalToString('0.05') },
-};
-
-const polynomialParams = {
-  maxAPR: decimalToString('1.00'), // 100%
-  coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
-};
-
 async function maybeDeployTestContracts(deployer, network) {
   if (isKovan(network)) {
     await deployer.deploy(TestPriceOracle);
@@ -72,7 +51,7 @@ async function maybeDeployTestContracts(deployer, network) {
       TestSoloMargin.link('OperationImpl', OperationImpl.address),
     ]);
     await Promise.all([
-      deployer.deploy(TestSoloMargin, riskParams, riskLimits),
+      deployer.deploy(TestSoloMargin, getRiskParams(network), getRiskLimits()),
       deployer.deploy(TokenA),
       deployer.deploy(TokenB),
       deployer.deploy(TokenC),
@@ -83,23 +62,23 @@ async function maybeDeployTestContracts(deployer, network) {
       deployer.deploy(TestExchangeWrapper),
       deployer.deploy(TestPriceOracle),
       deployer.deploy(TestInterestSetter),
-      deployer.deploy(TestPolynomialInterestSetter, polynomialParams),
+      deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams()),
     ]);
 
     await deployer.deploy(TestCallee, TestSoloMargin.address);
   }
 }
 
-async function deployBaseProtocol(deployer) {
+async function deployBaseProtocol(deployer, network) {
   await Promise.all([
     SoloMargin.link('AdminImpl', AdminImpl.address),
     SoloMargin.link('OperationImpl', OperationImpl.address),
   ]);
-  await deployer.deploy(SoloMargin, riskParams, riskLimits);
+  await deployer.deploy(SoloMargin, getRiskParams(network), getRiskLimits());
 }
 
 async function deployInterestSetters(deployer) {
-  await deployer.deploy(PolynomialInterestSetter, polynomialParams);
+  await deployer.deploy(PolynomialInterestSetter, getPolynomialParams());
 }
 
 async function deploySecondLayer(deployer, network) {
@@ -157,7 +136,7 @@ const migration = async (deployer, network) => {
     deployer.deploy(OperationImpl),
   ]);
   await Promise.all([
-    deployBaseProtocol(deployer),
+    deployBaseProtocol(deployer, network),
     deployInterestSetters(deployer),
     maybeDeployTestContracts(deployer, network),
   ]);
@@ -165,3 +144,34 @@ const migration = async (deployer, network) => {
 };
 
 module.exports = migration;
+
+async function getRiskLimits() {
+  return {
+    marginRatioMax: decimalToString('2.00'),
+    liquidationSpreadMax: decimalToString('0.50'),
+    earningsRateMax: decimalToString('1.00'),
+    marginPremiumMax: decimalToString('2.00'),
+    spreadPremiumMax: decimalToString('2.00'),
+    minBorrowedValueMax: decimalToString('100.00'),
+  };
+}
+
+async function getRiskParams(network) {
+  let mbv = '0.00';
+  if (isDevNetwork(network)) {
+    mbv = '0.05';
+  }
+  return {
+    marginRatio: { value: decimalToString('0.15') },
+    liquidationSpread: { value: decimalToString('0.05') },
+    earningsRate: { value: decimalToString('0.90') },
+    minBorrowedValue: { value: decimalToString(mbv) },
+  };
+}
+
+async function getPolynomialParams() {
+  return {
+    maxAPR: decimalToString('1.00'), // 100%
+    coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
+  };
+}
