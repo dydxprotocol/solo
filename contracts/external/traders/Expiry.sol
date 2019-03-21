@@ -101,6 +101,11 @@ contract Expiry is
             uint32 expiryTime
         ) = parseCallArgs(data);
 
+        // don't set expiry time for accounts with positive balance
+        if (expiryTime != 0 && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
+            return;
+        }
+
         setExpiry(account, marketId, expiryTime);
     }
 
