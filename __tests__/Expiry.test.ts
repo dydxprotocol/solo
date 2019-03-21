@@ -56,11 +56,11 @@ describe('Expiry', () => {
     await resetEVM();
     await Promise.all([
       setupMarkets(solo, accounts),
-      setExpiry(),
       solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par.times(-1)),
       solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(2)),
       solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
     ]);
+    await setExpiry();
     snapshotId = await snapshot();
   });
 
@@ -69,9 +69,10 @@ describe('Expiry', () => {
   });
 
   it('Succeeds in setting expiry', async () => {
-    const txResult = await setExpiry();
+    const newTime = defaultTime.plus(1000);
+    const txResult = await setExpiry(newTime);
     const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
-    expect(expiry).toEqual(defaultTime);
+    expect(expiry).toEqual(newTime);
 
     const logs = solo.logs.parseLogs(txResult);
     expect(logs.length).toEqual(5);
@@ -81,9 +82,24 @@ describe('Expiry', () => {
     expect(expirySetLog.args.owner).toEqual(owner2);
     expect(expirySetLog.args.number).toEqual(accountNumber2);
     expect(expirySetLog.args.marketId).toEqual(owedMarket);
-    expect(expirySetLog.args.time).toEqual(defaultTime);
+    expect(expirySetLog.args.time).toEqual(newTime);
 
     console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
+  });
+
+  it('Doesnt set expiry for non-negative balances', async () => {
+    const newTime = defaultTime.plus(1000);
+    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+    await setExpiry(newTime);
+    const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+    expect(expiry).toEqual(defaultTime);
+  });
+
+  it('Allows setting expiry back to zero even for non-negative balances', async () => {
+    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+    await setExpiry(zero);
+    const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+    expect(expiry).toEqual(zero);
   });
 
   it('Succeeds in expiring', async () => {
