@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
 import { snapshot, resetEVM } from '../helpers/EVM';
-import { INTEGERS } from '../../src/lib/Constants';
+import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 
 let solo: Solo;
@@ -29,14 +29,18 @@ describe('WethPriceOracle', () => {
 
   it('Returns the correct value', async () => {
     await setPrice(defaultPrice, true);
-    const price = await solo.priceOracle.getWethPrice();
-    expect(price).toEqual(defaultPrice);
+    const price = await solo.contracts.callConstantContractFunction(
+      solo.contracts.wethPriceOracle.methods.getPrice(ADDRESSES.ZERO),
+    );
+    expect(new BigNumber(price.value)).toEqual(defaultPrice);
   });
 
   it('Returns the correct value even when stale', async () => {
     await setPrice(defaultPrice, false);
-    const price = await solo.priceOracle.getWethPrice();
-    expect(price).toEqual(defaultPrice);
+    const price = await solo.contracts.callConstantContractFunction(
+      solo.contracts.wethPriceOracle.methods.getPrice(ADDRESSES.ZERO),
+    );
+    expect(new BigNumber(price.value)).toEqual(defaultPrice);
   });
 
   it('Can be set as the oracle for a market', async () => {

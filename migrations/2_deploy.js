@@ -16,8 +16,15 @@
 
 */
 
-const { isDevNetwork, isKovan, isMainNet } = require('./helpers');
-const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts');
+const {
+  isDevNetwork,
+  isKovan,
+  isMainNet,
+  getPolynomialParams,
+  getRiskLimits,
+  getRiskParams,
+  getDaiPriceOracleParams,
+} = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
 
 // ============ Contracts ============
@@ -131,6 +138,8 @@ async function deployPriceOracles(deployer, network) {
     await deployer.deploy(TestPriceOracle);
   }
 
+  const daiPriceOracleParams = getDaiPriceOracleParams();
+
   await Promise.all([
     deployer.deploy(
       DaiPriceOracle,
@@ -139,6 +148,8 @@ async function deployPriceOracles(deployer, network) {
       getMedianizerAddress(network),
       getOasisAddress(network),
       getUniswapAddress(network),
+      daiPriceOracleParams.oasisEthAmount,
+      daiPriceOracleParams.deviationParams,
     ),
     deployer.deploy(UsdcPriceOracle),
     deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
@@ -183,7 +194,7 @@ async function getSoloMargin(network) {
   return SoloMargin.deployed();
 }
 
-// ============ Network Getter Functions ============
+// ============ Address Helper Functions ============
 
 function getMedianizerAddress(network) {
   if (isDevNetwork(network)) {
@@ -248,35 +259,4 @@ function getWethAddress(network) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
   }
   throw new Error('Cannot find Weth');
-}
-
-async function getRiskLimits() {
-  return {
-    marginRatioMax: decimalToString('2.00'),
-    liquidationSpreadMax: decimalToString('0.50'),
-    earningsRateMax: decimalToString('1.00'),
-    marginPremiumMax: decimalToString('2.00'),
-    spreadPremiumMax: decimalToString('2.00'),
-    minBorrowedValueMax: decimalToString('100.00'),
-  };
-}
-
-async function getRiskParams(network) {
-  let mbv = '0.00';
-  if (isDevNetwork(network)) {
-    mbv = '0.05';
-  }
-  return {
-    marginRatio: { value: decimalToString('0.15') },
-    liquidationSpread: { value: decimalToString('0.05') },
-    earningsRate: { value: decimalToString('0.90') },
-    minBorrowedValue: { value: decimalToString(mbv) },
-  };
-}
-
-async function getPolynomialParams() {
-  return {
-    maxAPR: decimalToString('1.00'), // 100%
-    coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
-  };
 }

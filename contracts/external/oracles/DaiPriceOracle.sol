@@ -44,28 +44,21 @@ contract DaiPriceOracle is
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "DaiPriceOracle";
-
     uint256 constant DECIMALS = 18;
 
     uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
-
-    uint64 constant DEVIATION_DENOMINATOR = 100 * 10000; // measured in 0.0001%
-
-    // maximum price deviation per second
-    uint64 constant MAX_DEVIATION_PER_SEC = 100; // 0.01%
-
-    // maximum price deviation per update
-    uint64 constant MAX_DEVIATION_ABSOLUTE = 10000; // 1%
-
-    // after an owner call, the number of seconds before any address can start updating the oracle
-    uint32 constant OWNER_GRACE_PERIOD = 60 * 60; // 60 minutes
 
     // ============ Structs ============
 
     struct PriceInfo {
         uint128 price;
         uint32 lastUpdate;
+    }
+
+    struct DeviationParams {
+        uint64 denominator;
+        uint64 maximumPerSecond;
+        uint64 maximumAbsolute;
     }
 
     // ============ Events ============
@@ -76,17 +69,21 @@ contract DaiPriceOracle is
 
     // ============ Storage ============
 
-    PriceInfo public priceInfo;
+    PriceInfo public g_priceInfo;
 
-    IErc20 public WETH;
+    DeviationParams public g_deviationParams;
 
-    IErc20 public DAI;
+    uint256 public g_oasisEthAmount;
 
-    IMakerOracle public MEDIANIZER;
+    IErc20 public g_weth;
 
-    IOasisDex public OASIS;
+    IErc20 public g_dai;
 
-    address public UNISWAP;
+    IMakerOracle public g_medianizer;
+
+    IOasisDex public g_oasis;
+
+    address public g_uniswap;
 
     // ============ Constructor =============
 
@@ -95,17 +92,20 @@ contract DaiPriceOracle is
         address dai,
         address medianizer,
         address oasis,
-        address uniswap
+        address uniswap,
+        uint256 oasisEthAmount,
+        DeviationParams memory deviationParams
     )
         public
     {
-        MEDIANIZER = IMakerOracle(medianizer);
-        WETH = IErc20(weth);
-        DAI = IErc20(dai);
-        OASIS = IOasisDex(oasis);
-        UNISWAP = uniswap;
-
-        priceInfo = PriceInfo({
+        g_medianizer = IMakerOracle(medianizer);
+        g_weth = IErc20(weth);
+        g_dai = IErc20(dai);
+        g_oasis = IOasisDex(oasis);
+        g_uniswap = uniswap;
+        g_deviationParams = deviationParams;
+        g_oasisEthAmount = oasisEthAmount;
+        g_priceInfo = PriceInfo({
             lastUpdate: uint32(block.timestamp),
             price: uint128(EXPECTED_PRICE)
         });
@@ -120,13 +120,13 @@ contract DaiPriceOracle is
     {
         uint256 newPrice = getBoundedTargetPrice();
 
-        priceInfo = PriceInfo({
+        g_priceInfo = PriceInfo({
             price: Math.to128(newPrice),
             lastUpdate: Time.currentTime()
         });
 
-        emit PriceSet(priceInfo);
-        return priceInfo;
+        emit PriceSet(g_priceInfo);
+        return g_priceInfo;
     }
 
     // ============ IPriceOracle Functions ============
@@ -139,14 +139,14 @@ contract DaiPriceOracle is
         returns (Monetary.Price memory)
     {
         return Monetary.Price({
-            value: priceInfo.price
+            value: g_priceInfo.price
         });
     }
 
     // ============ Price-Query Functions ============
 
     /**
-     * Gets the new price that would be stored if updated right now
+     * Gets the new price that would be stored if updated right now.
      */
     function getBoundedTargetPrice()
         public
@@ -155,14 +155,15 @@ contract DaiPriceOracle is
     {
         uint256 targetPrice = getTargetPrice();
 
-        PriceInfo memory oldInfo = priceInfo;
+        PriceInfo memory oldInfo = g_priceInfo;
         uint256 timeDelta = uint256(Time.currentTime()).sub(oldInfo.lastUpdate);
         (uint256 minPrice, uint256 maxPrice) = getPriceBounds(oldInfo.price, timeDelta);
         return boundValue(targetPrice, minPrice, maxPrice);
     }
 
     /**
-     * Gets the USD price of DAI
+     * Gets the USD price of DAI that this contract will move towards when updated. This price is
+     * not bounded by the varaibles governing the maximum deviation from the old price.
      */
     function getTargetPrice()
         public
@@ -179,7 +180,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Gets the USD price of ETH
+     * Gets the USD price of ETH according the Maker Medianizer contract.
      */
     function getMedianizerPrice()
         public
@@ -187,11 +188,11 @@ contract DaiPriceOracle is
         returns (uint256)
     {
         // throws if the price is not fresh
-        return uint256(MEDIANIZER.read());
+        return uint256(g_medianizer.read());
     }
 
     /**
-     * Gets the USD price of DAI according to OasisDEX given the USD price of ETH
+     * Gets the USD price of DAI according to OasisDEX given the USD price of ETH.
      */
     function getOasisPrice(
         uint256 ethUsd
@@ -200,29 +201,34 @@ contract DaiPriceOracle is
         view
         returns (uint256)
     {
-        uint256 offerEthDai = OASIS.getBestOffer(address(WETH), address(DAI));
-        uint256 offerDaiEth = OASIS.getBestOffer(address(DAI), address(WETH));
+        IOasisDex oasis = g_oasis;
 
-        // if exchange is not operational, return old value
+        // If exchange is not operational, return old value.
+        // This allows the price to move only towards 1 USD
         if (
-            offerEthDai == 0
-            || offerDaiEth == 0
-            || OASIS.isClosed()
-            || !OASIS.buyEnabled()
-            || !OASIS.matchingEnabled()
+            oasis.isClosed()
+            || !oasis.buyEnabled()
+            || !oasis.matchingEnabled()
         ) {
-            return priceInfo.price;
+            return g_priceInfo.price;
         }
 
-        (uint256 ethAmt1, , uint256 daiAmt1, ) = OASIS.getOffer(offerEthDai);
-        (uint256 daiAmt2, , uint256 ethAmt2, ) = OASIS.getOffer(offerDaiEth);
-        uint256 num = ethAmt1.mul(daiAmt2).add(ethAmt2.mul(daiAmt1));
+        uint256 numWei = g_oasisEthAmount;
+        address dai = address(g_dai);
+        address weth = address(g_weth);
+
+        // Assumes at least `numWei` of depth on both sides of the book if the exchange is active.
+        // Will revert if not enough depth.
+        uint256 daiAmt1 = oasis.getBuyAmount(dai, weth, numWei);
+        uint256 daiAmt2 = oasis.getPayAmount(dai, weth, numWei);
+
+        uint256 num = numWei.mul(daiAmt2).add(numWei.mul(daiAmt1));
         uint256 den = daiAmt1.mul(daiAmt2).mul(2);
         return Math.getPartial(ethUsd, num, den);
     }
 
     /**
-     * Gets the USD price of DAI according to Uniswap given the USD price of ETH
+     * Gets the USD price of DAI according to Uniswap given the USD price of ETH.
      */
     function getUniswapPrice(
         uint256 ethUsd
@@ -231,9 +237,9 @@ contract DaiPriceOracle is
         view
         returns (uint256)
     {
-        address uniswap = UNISWAP;
+        address uniswap = address(g_uniswap);
         uint256 ethAmt = uniswap.balance;
-        uint256 daiAmt = DAI.balanceOf(uniswap);
+        uint256 daiAmt = g_dai.balanceOf(uniswap);
         return Math.getPartial(ethUsd, ethAmt, daiAmt);
     }
 
@@ -244,13 +250,15 @@ contract DaiPriceOracle is
         uint256 timeDelta
     )
         private
-        pure
+        view
         returns (uint256, uint256)
     {
+        DeviationParams memory deviation = g_deviationParams;
+
         uint256 maxDeviation = Math.getPartial(
             oldPrice,
-            Math.min(MAX_DEVIATION_ABSOLUTE, timeDelta.mul(MAX_DEVIATION_PER_SEC)),
-            DEVIATION_DENOMINATOR
+            Math.min(deviation.maximumAbsolute, timeDelta.mul(deviation.maximumPerSecond)),
+            deviation.denominator
         );
 
         return (
@@ -287,6 +295,7 @@ contract DaiPriceOracle is
         pure
         returns (uint256)
     {
+        assert(minimum <= maximum);
         return Math.max(minimum, Math.min(maximum, value));
     }
 }

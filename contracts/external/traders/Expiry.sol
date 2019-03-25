@@ -102,7 +102,7 @@ contract Expiry is
         ) = parseCallArgs(data);
 
         // don't set expiry time for accounts with positive balance
-        if (expiryTime != 0 && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
+        if (expiryTime != 0 && !g_soloMargin.getAccountPar(account, marketId).isNegative()) {
             return;
         }
 
@@ -154,7 +154,7 @@ contract Expiry is
         }
 
         // get maximum acceptable return value
-        Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
+        Types.Wei memory maxOutputWei = g_soloMargin.getAccountWei(makerAccount, outputMarketId);
         Require.that(
             maxOutputWei.isPositive(),
             FILE,
@@ -204,12 +204,12 @@ contract Expiry is
         view
         returns (Types.AssetAmount memory)
     {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+        Decimal.D256 memory spread = g_soloMargin.getLiquidationSpreadForPair(
             outputMarketId,
             inputMarketId
         );
-        uint256 inputPrice = SOLO_MARGIN.getMarketPrice(inputMarketId).value;
-        uint256 outputPrice = SOLO_MARGIN.getMarketPrice(outputMarketId).value;
+        uint256 inputPrice = g_soloMargin.getMarketPrice(inputMarketId).value;
+        uint256 outputPrice = g_soloMargin.getMarketPrice(outputMarketId).value;
         inputPrice = inputPrice.add(Decimal.mul(inputPrice, spread));
 
         uint256 nonSpreadValue = Math.getPartial(

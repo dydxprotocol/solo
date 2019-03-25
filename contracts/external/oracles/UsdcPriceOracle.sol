@@ -32,7 +32,7 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 contract UsdcPriceOracle is
     IPriceOracle
 {
-    // ============ Storage ============
+    // ============ Constants ============
 
     uint256 constant DECIMALS = 6;
 

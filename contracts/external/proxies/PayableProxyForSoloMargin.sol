@@ -25,6 +25,7 @@ import { SoloMargin } from "../../protocol/SoloMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { OnlySolo } from "../helpers/OnlySolo.sol";
 
 
 /**
@@ -34,6 +35,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * Contract for wrapping/unwrapping ETH before/after interacting with Solo
  */
 contract PayableProxyForSoloMargin is
+    OnlySolo,
     ReentrancyGuard
 {
     // ============ Constants ============
@@ -42,8 +44,7 @@ contract PayableProxyForSoloMargin is
 
     // ============ Storage ============
 
-    SoloMargin public SOLO_MARGIN;
-    WETH9 public WETH;
+    WETH9 public g_weth;
 
     // ============ Constructor ============
 
@@ -52,10 +53,10 @@ contract PayableProxyForSoloMargin is
         address payable weth
     )
         public
+        OnlySolo(soloMargin)
     {
-        SOLO_MARGIN = SoloMargin(soloMargin);
-        WETH = WETH9(weth);
-        WETH.approve(soloMargin, uint256(-1));
+        g_weth = WETH9(weth);
+        g_weth.approve(soloMargin, uint256(-1));
     }
 
     // ============ Public Functions ============
@@ -69,7 +70,7 @@ contract PayableProxyForSoloMargin is
         payable
     {
         require( // coverage-disable-line
-            msg.sender == address(WETH),
+            msg.sender == address(g_weth),
             "Cannot recieve ETH"
         );
     }
@@ -83,9 +84,11 @@ contract PayableProxyForSoloMargin is
         payable
         nonReentrant
     {
+        WETH9 weth = g_weth;
+
         // create WETH from ETH
         if (msg.value != 0) {
-            WETH.deposit.value(msg.value)();
+            weth.deposit.value(msg.value)();
         }
 
         // validate the input
@@ -113,10 +116,10 @@ contract PayableProxyForSoloMargin is
             }
         }
 
-        SOLO_MARGIN.operate(accounts, args);
+        g_soloMargin.operate(accounts, args);
 
         // return all remaining WETH to the sendEthTo as ETH
-        uint256 remainingWeth = WETH.balanceOf(address(this));
+        uint256 remainingWeth = weth.balanceOf(address(this));
         if (remainingWeth != 0) {
             Require.that(
                 sendEthTo != address(0),
@@ -124,7 +127,7 @@ contract PayableProxyForSoloMargin is
                 "Must set sendEthTo"
             );
 
-            WETH.withdraw(remainingWeth);
+            weth.withdraw(remainingWeth);
             sendEthTo.transfer(remainingWeth);
         }
     }

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
 import { snapshot, resetEVM } from '../helpers/EVM';
-import { INTEGERS } from '../../src/lib/Constants';
+import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 
 let solo: Solo;
@@ -28,8 +28,10 @@ describe('UsdcPriceOracle', () => {
   });
 
   it('Returns the correct value', async () => {
-    const price = await solo.priceOracle.getUsdcPrice();
-    expect(price).toEqual(USDC_PRICE);
+    const price = await solo.contracts.callConstantContractFunction(
+      solo.contracts.usdcPriceOracle.methods.getPrice(ADDRESSES.ZERO),
+    );
+    expect(new BigNumber(price.value)).toEqual(USDC_PRICE);
   });
 
   it('Can be set as the oracle for a market', async () => {
