@@ -353,11 +353,14 @@ export class Contracts {
       REJECTED: 2,
     };
 
-    let receivedOutcome = OUTCOMES.INITIAL;
+    let hashOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
 
-    const t = confirmationType
-      || (confirmationType === undefined && this.confirmationType);
+    const t = confirmationType !== undefined ? confirmationType : this.confirmationType;
+
+    if (!Object.values(ConfirmationType).includes(t)) {
+      throw new Error(`Invalid confirmation type: ${t}`);
+    }
 
     let hashPromise: Promise<string>;
     let confirmationPromise: Promise<TransactionReceipt>;
@@ -366,8 +369,8 @@ export class Contracts {
       hashPromise = new Promise(
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
-            if (receivedOutcome === OUTCOMES.INITIAL) {
-              receivedOutcome = OUTCOMES.REJECTED;
+            if (hashOutcome === OUTCOMES.INITIAL) {
+              hashOutcome = OUTCOMES.REJECTED;
               reject(error);
               const anyPromi = promi as any;
               anyPromi.off();
@@ -375,8 +378,8 @@ export class Contracts {
           });
 
           promi.on('transactionHash', (txHash: string) => {
-            if (receivedOutcome === OUTCOMES.INITIAL) {
-              receivedOutcome = OUTCOMES.RESOLVED;
+            if (hashOutcome === OUTCOMES.INITIAL) {
+              hashOutcome = OUTCOMES.RESOLVED;
               resolve(txHash);
               if (t !== ConfirmationType.Both) {
                 const anyPromi = promi as any;
@@ -393,7 +396,7 @@ export class Contracts {
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
             if (
-              (t === ConfirmationType.Confirmed || receivedOutcome === OUTCOMES.RESOLVED)
+              (t === ConfirmationType.Confirmed || hashOutcome === OUTCOMES.RESOLVED)
               && confirmationOutcome === OUTCOMES.INITIAL
             ) {
               confirmationOutcome = OUTCOMES.REJECTED;
