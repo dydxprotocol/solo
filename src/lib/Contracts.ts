@@ -371,7 +371,6 @@ export class Contracts {
           promi.on('error', (error: Error) => {
             if (hashOutcome === OUTCOMES.INITIAL) {
               hashOutcome = OUTCOMES.REJECTED;
-              console.error(error);
               reject(error);
               const anyPromi = promi as any;
               anyPromi.off();
