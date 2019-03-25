@@ -235,29 +235,31 @@ describe('DaiPriceOracle', () => {
     });
 
     it('Upper-bounded by maximum deviation per second', async () => {
-      await mineAvgBlock();
-
       await Promise.all([
         setOasisLowPrice('1.10'),
         setOasisHighPrice('1.11'),
         setUniswapPrice('1.10'),
       ]);
-      const price = await getBoundedTargetPrice();
-      expect(price.gt(defaultPrice)).toEqual(true);
-      expect(price.lt(defaultPrice.times('1.01'))).toEqual(true);
+      await updateDaiPrice();
+      await mineAvgBlock();
+      const price = await solo.priceOracle.getDaiPrice();
+      const boundedPrice = await getBoundedTargetPrice();
+      expect(boundedPrice.gt(price)).toEqual(true);
+      expect(boundedPrice.lt(price.times('1.01'))).toEqual(true);
     });
 
     it('Lower-bounded by maximum deviation per second', async () => {
-      await mineAvgBlock();
-
       await Promise.all([
         setOasisLowPrice('0.90'),
         setOasisHighPrice('0.91'),
         setUniswapPrice('0.90'),
       ]);
-      const price = await getBoundedTargetPrice();
-      expect(price.lt(defaultPrice)).toEqual(true);
-      expect(price.gt(defaultPrice.times('0.99'))).toEqual(true);
+      await updateDaiPrice();
+      await mineAvgBlock();
+      const price = await solo.priceOracle.getDaiPrice();
+      const boundedPrice = await getBoundedTargetPrice();
+      expect(boundedPrice.lt(price)).toEqual(true);
+      expect(boundedPrice.gt(price.times('0.99'))).toEqual(true);
     });
   });
 
