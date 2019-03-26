@@ -29,8 +29,8 @@ export class DaiPriceOracle {
     const maximumArg = maximum ? maximum : INTEGERS.ONES_255;
     return this.contracts.callContractFunction(
       this.contracts.daiPriceOracle.methods.updatePrice(
-        minimumArg.toFixed(0),
-        maximumArg.toFixed(0),
+        { value: minimumArg.toFixed(0) },
+        { value: maximumArg.toFixed(0) },
       ),
       options,
     );
@@ -68,7 +68,7 @@ export class DaiPriceOracle {
       this.contracts.daiPriceOracle.methods.getBoundedTargetPrice(),
       options,
     );
-    return new BigNumber(price);
+    return new BigNumber(price.value);
   }
 
   public async getTargetPrice(
@@ -78,7 +78,7 @@ export class DaiPriceOracle {
       this.contracts.daiPriceOracle.methods.getTargetPrice(),
       options,
     );
-    return new BigNumber(price);
+    return new BigNumber(price.value);
   }
 
   public async getMedianizerPrice(
@@ -88,7 +88,7 @@ export class DaiPriceOracle {
       this.contracts.daiPriceOracle.methods.getMedianizerPrice(),
       options,
     );
-    return new BigNumber(price);
+    return new BigNumber(price.value);
   }
 
   public async getOasisPrice(
@@ -98,11 +98,11 @@ export class DaiPriceOracle {
     const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
       this.contracts.daiPriceOracle.methods.getOasisPrice(
-        queryPrice.toFixed(0),
+        { value: queryPrice.toFixed(0) },
       ),
       options,
     );
-    return new BigNumber(price);
+    return new BigNumber(price.value);
   }
 
   public async getUniswapPrice(
@@ -112,11 +112,11 @@ export class DaiPriceOracle {
     const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
       this.contracts.daiPriceOracle.methods.getUniswapPrice(
-        queryPrice.toFixed(0),
+        { value: queryPrice.toFixed(0) },
       ),
       options,
     );
-    return new BigNumber(price);
+    return new BigNumber(price.value);
   }
 
   public async getDeviationParams(

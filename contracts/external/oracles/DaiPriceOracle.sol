@@ -117,33 +117,33 @@ contract DaiPriceOracle is
     // ============ Public Functions ============
 
     function updatePrice(
-        uint256 minimum,
-        uint256 maximum
+        Monetary.Price memory minimum,
+        Monetary.Price memory maximum
     )
-        external
+        public
         onlyOwner
         returns (PriceInfo memory)
     {
-        uint256 newPrice = getBoundedTargetPrice();
+        Monetary.Price memory newPrice = getBoundedTargetPrice();
 
         Require.that(
-            newPrice >= minimum,
+            newPrice.value >= minimum.value,
             FILE,
             "newPrice below minimum",
-            newPrice,
-            minimum
+            newPrice.value,
+            minimum.value
         );
 
         Require.that(
-            newPrice <= maximum,
+            newPrice.value <= maximum.value,
             FILE,
             "newPrice above maximum",
-            newPrice,
-            maximum
+            newPrice.value,
+            maximum.value
         );
 
         g_priceInfo = PriceInfo({
-            price: Math.to128(newPrice),
+            price: Math.to128(newPrice.value),
             lastUpdate: Time.currentTime()
         });
 
@@ -173,14 +173,18 @@ contract DaiPriceOracle is
     function getBoundedTargetPrice()
         public
         view
-        returns (uint256)
+        returns (Monetary.Price memory)
     {
-        uint256 targetPrice = getTargetPrice();
+        Monetary.Price memory targetPrice = getTargetPrice();
 
         PriceInfo memory oldInfo = g_priceInfo;
         uint256 timeDelta = uint256(Time.currentTime()).sub(oldInfo.lastUpdate);
         (uint256 minPrice, uint256 maxPrice) = getPriceBounds(oldInfo.price, timeDelta);
-        return boundValue(targetPrice, minPrice, maxPrice);
+        uint256 boundedTargetPrice = boundValue(targetPrice.value, minPrice, maxPrice);
+
+        return Monetary.Price({
+            value: boundedTargetPrice
+        });
     }
 
     /**
@@ -190,15 +194,19 @@ contract DaiPriceOracle is
     function getTargetPrice()
         public
         view
-        returns (uint256)
+        returns (Monetary.Price memory)
     {
-        uint256 ethUsd = getMedianizerPrice();
+        Monetary.Price memory ethUsd = getMedianizerPrice();
 
-        return getMidValue(
+        uint256 targetPrice = getMidValue(
             EXPECTED_PRICE,
-            getOasisPrice(ethUsd),
-            getUniswapPrice(ethUsd)
+            getOasisPrice(ethUsd).value,
+            getUniswapPrice(ethUsd).value
         );
+
+        return Monetary.Price({
+            value: targetPrice
+        });
     }
 
     /**
@@ -207,21 +215,23 @@ contract DaiPriceOracle is
     function getMedianizerPrice()
         public
         view
-        returns (uint256)
+        returns (Monetary.Price memory)
     {
         // throws if the price is not fresh
-        return uint256(MEDIANIZER.read());
+        return Monetary.Price({
+            value: uint256(MEDIANIZER.read())
+        });
     }
 
     /**
      * Gets the USD price of DAI according to OasisDEX given the USD price of ETH.
      */
     function getOasisPrice(
-        uint256 ethUsd
+        Monetary.Price memory ethUsd
     )
         public
         view
-        returns (uint256)
+        returns (Monetary.Price memory)
     {
         IOasisDex oasis = OASIS;
 
@@ -232,7 +242,9 @@ contract DaiPriceOracle is
             || !oasis.buyEnabled()
             || !oasis.matchingEnabled()
         ) {
-            return g_priceInfo.price;
+            return Monetary.Price({
+                value: g_priceInfo.price
+            });
         }
 
         uint256 numWei = OASIS_ETH_AMOUNT;
@@ -246,23 +258,31 @@ contract DaiPriceOracle is
 
         uint256 num = numWei.mul(daiAmt2).add(numWei.mul(daiAmt1));
         uint256 den = daiAmt1.mul(daiAmt2).mul(2);
-        return Math.getPartial(ethUsd, num, den);
+        uint256 oasisPrice = Math.getPartial(ethUsd.value, num, den);
+
+        return Monetary.Price({
+            value: oasisPrice
+        });
     }
 
     /**
      * Gets the USD price of DAI according to Uniswap given the USD price of ETH.
      */
     function getUniswapPrice(
-        uint256 ethUsd
+        Monetary.Price memory ethUsd
     )
         public
         view
-        returns (uint256)
+        returns (Monetary.Price memory)
     {
         address uniswap = address(UNISWAP);
         uint256 ethAmt = uniswap.balance;
         uint256 daiAmt = DAI.balanceOf(uniswap);
-        return Math.getPartial(ethUsd, ethAmt, daiAmt);
+        uint256 uniswapPrice = Math.getPartial(ethUsd.value, ethAmt, daiAmt);
+
+        return Monetary.Price({
+            value: uniswapPrice
+        });
     }
 
     // ============ Helper Functions ============
