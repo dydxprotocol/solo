@@ -25,6 +25,7 @@ import { IErc20 } from "../../protocol/interfaces/IErc20.sol";
 import { IPriceOracle } from "../../protocol/interfaces/IPriceOracle.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
 import { IOasisDex } from "../interfaces/IOasisDex.sol";
@@ -43,6 +44,8 @@ contract DaiPriceOracle is
     using SafeMath for uint256;
 
     // ============ Constants ============
+
+    bytes32 constant FILE = "DaiPriceOracle";
 
     uint256 constant DECIMALS = 18;
 
@@ -113,12 +116,31 @@ contract DaiPriceOracle is
 
     // ============ Public Functions ============
 
-    function updatePrice()
+    function updatePrice(
+        uint256 minimum,
+        uint256 maximum
+    )
         external
         onlyOwner
         returns (PriceInfo memory)
     {
         uint256 newPrice = getBoundedTargetPrice();
+
+        Require.that(
+            newPrice >= minimum,
+            FILE,
+            "newPrice below minimum",
+            newPrice,
+            minimum
+        );
+
+        Require.that(
+            newPrice <= maximum,
+            FILE,
+            "newPrice above maximum",
+            newPrice,
+            maximum
+        );
 
         g_priceInfo = PriceInfo({
             price: Math.to128(newPrice),

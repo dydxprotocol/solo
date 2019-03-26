@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { ADDRESSES } from '../../lib/Constants';
+import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
 import {
   Decimal,
@@ -21,10 +21,17 @@ export class DaiPriceOracle {
   // ============ Setters ============
 
   public async updatePrice(
+    minimum?: Decimal,
+    maximum?: Decimal,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    const minimumArg = minimum ? minimum : INTEGERS.ZERO;
+    const maximumArg = maximum ? maximum : INTEGERS.ONES_255;
     return this.contracts.callContractFunction(
-      this.contracts.daiPriceOracle.methods.updatePrice(),
+      this.contracts.daiPriceOracle.methods.updatePrice(
+        minimumArg.toFixed(0),
+        maximumArg.toFixed(0),
+      ),
       options,
     );
   }
@@ -39,6 +46,19 @@ export class DaiPriceOracle {
       options,
     );
     return new BigNumber(price.value);
+  }
+
+  public async getPriceInfo(
+    options?: ContractConstantCallOptions,
+  ): Promise<{ price: Decimal, lastUpdate: Integer }> {
+    const priceInfo = await this.contracts.callConstantContractFunction(
+      this.contracts.daiPriceOracle.methods.g_priceInfo(),
+      options,
+    );
+    return {
+      price: new BigNumber(priceInfo.price),
+      lastUpdate: new BigNumber(priceInfo.lastUpdate),
+    };
   }
 
   public async getBoundedTargetPrice(

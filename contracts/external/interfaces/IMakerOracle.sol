@@ -27,6 +27,16 @@ pragma solidity 0.5.6;
  */
 interface IMakerOracle {
 
+    // Event that is logged when the `note` modifier is used
+    event LogNote(
+        bytes4 indexed msgSig,
+        address indexed msgSender,
+        bytes32 indexed arg1,
+        bytes32 indexed arg2,
+        uint256 msgValue,
+        bytes msgData
+    ) anonymous;
+
     // returns the current value (ETH/USD * 10**18) as a bytes32
     function peek()
         external
