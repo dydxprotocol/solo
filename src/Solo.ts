@@ -22,6 +22,7 @@ import { Contracts } from './lib/Contracts';
 import { Interest } from './lib/Interest';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
+import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
@@ -36,6 +37,7 @@ export class Solo {
   public testing: Testing;
   public operation: Operation;
   public token: Token;
+  public oracle: Oracle;
   public weth: Weth;
   public web3: Web3;
   public admin: Admin;
@@ -57,6 +59,7 @@ export class Solo {
     this.interest = new Interest(networkId);
     this.operation = new Operation(this.contracts, networkId);
     this.token = new Token(this.contracts);
+    this.oracle = new Oracle(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
     this.testing = new Testing(provider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);

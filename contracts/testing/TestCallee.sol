@@ -64,10 +64,10 @@ contract TestCallee is
     // ============ Constructor ============
 
     constructor(
-        address SOLO_MARGIN
+        address soloMargin
     )
         public
-        OnlySolo(SOLO_MARGIN)
+        OnlySolo(soloMargin)
     {}
 
     // ============ ICallee Functions ============
