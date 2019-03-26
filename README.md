@@ -1,3 +1,5 @@
+# dYdX Solo-Margin
+
 <p align="center"><img src="https://dydx.exchange/images/logo.png" width="256" /></p>
 
 <p align="center">
@@ -15,7 +17,23 @@
   </a>
 </p>
 
-Source code for Ethereum Smart Contracts used by the dYdX Solo-Margin Trading Protocol
+> Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol
+
+## Table of Contents
+
+ - [Security](#security)
+ - [Development](#development)
+ - [Maintainers](#maintainers)
+ - [Contributing](#contributing)
+ - [License](#license)
+
+## Security
+
+The smart contracts were audited independently by Bramah Systems and Zeppelin.
+
+All production smart contracts are tested and have 100% branching code-coverage.
+
+Please email any of the [maintainers](#Maintainers) if any security issues are found or suspected.
 
 ## Development
 
@@ -57,3 +75,12 @@ Just deploy contracts to test node:
 ```
 npm run deploy_test
 ```
+
+## Maintainers
+
+ - **Brendan Chou** `brendan@dydx.exchange`
+ - **Antonio Juliano** `antonio@dydx.exchange`
+
+## License
+
+[Apache-2.0](./blob/master/LICENSE)
