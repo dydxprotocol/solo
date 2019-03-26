@@ -37,7 +37,7 @@ contract OnlySolo {
 
     // ============ Storage ============
 
-    SoloMargin g_soloMargin;
+    SoloMargin public SOLO_MARGIN;
 
     // ============ Constructor ============
 
@@ -46,27 +46,17 @@ contract OnlySolo {
     )
         public
     {
-        g_soloMargin = SoloMargin(soloMargin);
+        SOLO_MARGIN = SoloMargin(soloMargin);
     }
 
     // ============ Modifiers ============
 
     modifier onlySolo(address from) {
         Require.that(
-            from == address(g_soloMargin),
+            from == address(SOLO_MARGIN),
             FILE,
             "Only Solo can call function"
         );
         _;
-    }
-
-    // ============ Read-Only Functions ============
-
-    function soloMarginAddress()
-        public
-        view
-        returns (address)
-    {
-        return address(g_soloMargin);
     }
 }

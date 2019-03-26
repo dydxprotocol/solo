@@ -71,19 +71,19 @@ contract DaiPriceOracle is
 
     PriceInfo public g_priceInfo;
 
-    DeviationParams public g_deviationParams;
+    DeviationParams public DEVIATION_PARAMS;
 
-    uint256 public g_oasisEthAmount;
+    uint256 public OASIS_ETH_AMOUNT;
 
-    IErc20 public g_weth;
+    IErc20 public WETH;
 
-    IErc20 public g_dai;
+    IErc20 public DAI;
 
-    IMakerOracle public g_medianizer;
+    IMakerOracle public MEDIANIZER;
 
-    IOasisDex public g_oasis;
+    IOasisDex public OASIS;
 
-    address public g_uniswap;
+    address public UNISWAP;
 
     // ============ Constructor =============
 
@@ -98,13 +98,13 @@ contract DaiPriceOracle is
     )
         public
     {
-        g_medianizer = IMakerOracle(medianizer);
-        g_weth = IErc20(weth);
-        g_dai = IErc20(dai);
-        g_oasis = IOasisDex(oasis);
-        g_uniswap = uniswap;
-        g_deviationParams = deviationParams;
-        g_oasisEthAmount = oasisEthAmount;
+        MEDIANIZER = IMakerOracle(medianizer);
+        WETH = IErc20(weth);
+        DAI = IErc20(dai);
+        OASIS = IOasisDex(oasis);
+        UNISWAP = uniswap;
+        DEVIATION_PARAMS = deviationParams;
+        OASIS_ETH_AMOUNT = oasisEthAmount;
         g_priceInfo = PriceInfo({
             lastUpdate: uint32(block.timestamp),
             price: uint128(EXPECTED_PRICE)
@@ -188,7 +188,7 @@ contract DaiPriceOracle is
         returns (uint256)
     {
         // throws if the price is not fresh
-        return uint256(g_medianizer.read());
+        return uint256(MEDIANIZER.read());
     }
 
     /**
@@ -201,7 +201,7 @@ contract DaiPriceOracle is
         view
         returns (uint256)
     {
-        IOasisDex oasis = g_oasis;
+        IOasisDex oasis = OASIS;
 
         // If exchange is not operational, return old value.
         // This allows the price to move only towards 1 USD
@@ -213,9 +213,9 @@ contract DaiPriceOracle is
             return g_priceInfo.price;
         }
 
-        uint256 numWei = g_oasisEthAmount;
-        address dai = address(g_dai);
-        address weth = address(g_weth);
+        uint256 numWei = OASIS_ETH_AMOUNT;
+        address dai = address(DAI);
+        address weth = address(WETH);
 
         // Assumes at least `numWei` of depth on both sides of the book if the exchange is active.
         // Will revert if not enough depth.
@@ -237,9 +237,9 @@ contract DaiPriceOracle is
         view
         returns (uint256)
     {
-        address uniswap = address(g_uniswap);
+        address uniswap = address(UNISWAP);
         uint256 ethAmt = uniswap.balance;
-        uint256 daiAmt = g_dai.balanceOf(uniswap);
+        uint256 daiAmt = DAI.balanceOf(uniswap);
         return Math.getPartial(ethUsd, ethAmt, daiAmt);
     }
 
@@ -253,7 +253,7 @@ contract DaiPriceOracle is
         view
         returns (uint256, uint256)
     {
-        DeviationParams memory deviation = g_deviationParams;
+        DeviationParams memory deviation = DEVIATION_PARAMS;
 
         uint256 maxDeviation = Math.getPartial(
             oldPrice,

@@ -42,7 +42,7 @@ describe('DaiPriceOracle', () => {
 
   describe('getPrice', () => {
     it('Returns the default value', async () => {
-      const price = await solo.daiPriceOracle.getPrice();
+      const price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(defaultPrice);
     });
 
@@ -67,7 +67,7 @@ describe('DaiPriceOracle', () => {
       ]);
       await updateDaiPrice();
       const priceInfo = await getPriceInfo();
-      const price = await solo.daiPriceOracle.getPrice();
+      const price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(priceInfo.price);
     });
   });
@@ -120,9 +120,9 @@ describe('DaiPriceOracle', () => {
         setUniswapPrice('1.07'),
       ]);
       await fastForward(1000);
-      const boundedPrice = await solo.daiPriceOracle.getBoundedTargetPrice();
+      const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
       await updateDaiPrice();
-      const price = await solo.daiPriceOracle.getPrice();
+      const price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(boundedPrice);
     });
 
@@ -133,21 +133,21 @@ describe('DaiPriceOracle', () => {
         setUniswapPrice('1.04'),
       ]);
       let price: any;
-      const targetPrice = await solo.daiPriceOracle.getTargetPrice();
+      const targetPrice = await solo.oracle.daiPriceOracle.getTargetPrice();
 
       await fastForward(1000);
       await updateDaiPrice();
-      price = await solo.daiPriceOracle.getPrice();
+      price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).not.toEqual(targetPrice);
 
       await fastForward(1000);
       await updateDaiPrice();
-      price = await solo.daiPriceOracle.getPrice();
+      price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).not.toEqual(targetPrice);
 
       await fastForward(1000);
       await updateDaiPrice();
-      price = await solo.daiPriceOracle.getPrice();
+      price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(targetPrice);
     });
   });
@@ -161,7 +161,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('1.02'),
         setUniswapPrice('0.99'),
       ]);
-      price = await solo.daiPriceOracle.getTargetPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice);
 
       await Promise.all([
@@ -169,7 +169,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
         setUniswapPrice('1.01'),
       ]);
-      price = await solo.daiPriceOracle.getTargetPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice);
     });
 
@@ -181,12 +181,12 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.97'),
         setUniswapPrice('0.98'),
       ]);
-      price = await solo.daiPriceOracle.getTargetPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice.times('0.98'));
 
       await setUniswapPrice('0.50');
-      const oasisPrice = await solo.daiPriceOracle.getOasisPrice();
-      price = await solo.daiPriceOracle.getTargetPrice();
+      const oasisPrice = await solo.oracle.daiPriceOracle.getOasisPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(oasisPrice);
     });
 
@@ -198,12 +198,12 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('1.06'),
         setUniswapPrice('1.02'),
       ]);
-      price = await solo.daiPriceOracle.getTargetPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice.times('1.02'));
 
       await setUniswapPrice('2.00');
-      const oasisPrice = await solo.daiPriceOracle.getOasisPrice();
-      price = await solo.daiPriceOracle.getTargetPrice();
+      const oasisPrice = await solo.oracle.daiPriceOracle.getOasisPrice();
+      price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(oasisPrice);
     });
   });
@@ -218,7 +218,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('1.11'),
         setUniswapPrice('1.10'),
       ]);
-      const price = await solo.daiPriceOracle.getBoundedTargetPrice();
+      const price = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
       expect(price).toEqual(defaultPrice.times('1.01'));
     });
 
@@ -231,7 +231,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.91'),
         setUniswapPrice('0.90'),
       ]);
-      const price = await solo.daiPriceOracle.getBoundedTargetPrice();
+      const price = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
       expect(price).toEqual(defaultPrice.times('0.99'));
     });
 
@@ -243,8 +243,8 @@ describe('DaiPriceOracle', () => {
       ]);
       await updateDaiPrice();
       await mineAvgBlock();
-      const price = await solo.daiPriceOracle.getPrice();
-      const boundedPrice = await solo.daiPriceOracle.getBoundedTargetPrice();
+      const price = await solo.oracle.daiPriceOracle.getPrice();
+      const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
       expect(boundedPrice.gt(price)).toEqual(true);
       expect(boundedPrice.lt(price.times('1.01'))).toEqual(true);
     });
@@ -257,8 +257,8 @@ describe('DaiPriceOracle', () => {
       ]);
       await updateDaiPrice();
       await mineAvgBlock();
-      const price = await solo.daiPriceOracle.getPrice();
-      const boundedPrice = await solo.daiPriceOracle.getBoundedTargetPrice();
+      const price = await solo.oracle.daiPriceOracle.getPrice();
+      const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
       expect(boundedPrice.lt(price)).toEqual(true);
       expect(boundedPrice.gt(price.times('0.99'))).toEqual(true);
     });
@@ -268,12 +268,12 @@ describe('DaiPriceOracle', () => {
     it('Fails for stale ETH price', async () => {
       await setEthPrice(defaultEthPrice, false);
       await expectThrow(
-        solo.daiPriceOracle.getMedianizerPrice(),
+        solo.oracle.daiPriceOracle.getMedianizerPrice(),
       );
     });
 
     it('Succeeds for normal eth price', async () => {
-      const price = await solo.daiPriceOracle.getMedianizerPrice();
+      const price = await solo.oracle.daiPriceOracle.getMedianizerPrice();
       expect(price).toEqual(defaultEthPrice);
     });
   });
@@ -281,21 +281,21 @@ describe('DaiPriceOracle', () => {
   describe('getOasisPrice', () => {
     it('Throws for no liquidity', async () => {
       await expectThrow(
-        solo.daiPriceOracle.getOasisPrice(),
+        solo.oracle.daiPriceOracle.getOasisPrice(),
       );
     });
 
     it('Throws for no liquidity on WETH/DAI side', async () => {
       await Promise.all([setOasisHighPrice('1.01')]);
       await expectThrow(
-        solo.daiPriceOracle.getOasisPrice(),
+        solo.oracle.daiPriceOracle.getOasisPrice(),
       );
     });
 
     it('Throws for no liquidity on DAI/WETH side', async () => {
       await Promise.all([setOasisLowPrice('0.99')]);
       await expectThrow(
-        solo.daiPriceOracle.getOasisPrice(),
+        solo.oracle.daiPriceOracle.getOasisPrice(),
       );
     });
 
@@ -303,7 +303,7 @@ describe('DaiPriceOracle', () => {
       const lowPrice = '0.984';
       const highPrice = '0.985';
       await Promise.all([setOasisLowPrice(lowPrice), setOasisHighPrice(highPrice)]);
-      const price = await solo.daiPriceOracle.getOasisPrice();
+      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
       expect(price.gt(defaultPrice.times(lowPrice))).toEqual(true);
       expect(price.lt(defaultPrice.times(highPrice))).toEqual(true);
     });
@@ -316,11 +316,11 @@ describe('DaiPriceOracle', () => {
       ]);
       await mineAvgBlock();
       await updateDaiPrice();
-      const currentPrice = await solo.daiPriceOracle.getPrice();
+      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.stop(),
       );
-      const price = await solo.daiPriceOracle.getOasisPrice();
+      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
       expect(price).toEqual(currentPrice);
     });
 
@@ -332,11 +332,11 @@ describe('DaiPriceOracle', () => {
       ]);
       await mineAvgBlock();
       await updateDaiPrice();
-      const currentPrice = await solo.daiPriceOracle.getPrice();
+      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.setBuyEnabled(false),
       );
-      const price = await solo.daiPriceOracle.getOasisPrice();
+      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
       expect(price).toEqual(currentPrice);
     });
 
@@ -348,11 +348,11 @@ describe('DaiPriceOracle', () => {
       ]);
       await mineAvgBlock();
       await updateDaiPrice();
-      const currentPrice = await solo.daiPriceOracle.getPrice();
+      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.setMatchingEnabled(false),
       );
-      const price = await solo.daiPriceOracle.getOasisPrice();
+      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
       expect(price).toEqual(currentPrice);
     });
   });
@@ -360,7 +360,7 @@ describe('DaiPriceOracle', () => {
   describe('getUniswapPrice', () => {
     it('Fails for zero liquidity', async () => {
       await expectThrow(
-        solo.daiPriceOracle.getUniswapPrice(),
+        solo.oracle.daiPriceOracle.getUniswapPrice(),
       );
     });
 
@@ -368,7 +368,7 @@ describe('DaiPriceOracle', () => {
       const ethAmt = new BigNumber(4444);
       const daiAmt = new BigNumber(4444);
       await setUniswapBalances(ethAmt, daiAmt);
-      const price = await solo.daiPriceOracle.getUniswapPrice();
+      const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
       expect(price).toEqual(defaultEthPrice);
     });
 
@@ -376,7 +376,7 @@ describe('DaiPriceOracle', () => {
       const ethAmt = new BigNumber(4321);
       const daiAmt = new BigNumber(1234);
       await setUniswapBalances(ethAmt, daiAmt);
-      const price = await solo.daiPriceOracle.getUniswapPrice();
+      const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
       const expected = defaultEthPrice.times(ethAmt).div(daiAmt).integerValue(BigNumber.ROUND_DOWN);
       expect(price).toEqual(expected);
     });
@@ -385,7 +385,7 @@ describe('DaiPriceOracle', () => {
       const ethAmt = new BigNumber(1234);
       const daiAmt = new BigNumber(4321);
       await setUniswapBalances(ethAmt, daiAmt);
-      const price = await solo.daiPriceOracle.getUniswapPrice();
+      const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
       const expected = defaultEthPrice.times(ethAmt).div(daiAmt).integerValue(BigNumber.ROUND_DOWN);
       expect(price).toEqual(expected);
     });
@@ -397,8 +397,8 @@ describe('DaiPriceOracle', () => {
       const price1 = defaultPrice;
       const price2 = defaultPrice.times(2);
       const [daiPrice1, daiPrice2] = await Promise.all([
-        solo.daiPriceOracle.getUniswapPrice(price1),
-        solo.daiPriceOracle.getUniswapPrice(price2),
+        solo.oracle.daiPriceOracle.getUniswapPrice(price1),
+        solo.oracle.daiPriceOracle.getUniswapPrice(price2),
       ]);
       expect(new BigNumber(daiPrice2)).toEqual(new BigNumber(daiPrice1).times(2));
     });

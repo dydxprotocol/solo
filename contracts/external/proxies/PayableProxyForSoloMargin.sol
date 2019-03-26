@@ -44,7 +44,7 @@ contract PayableProxyForSoloMargin is
 
     // ============ Storage ============
 
-    WETH9 public g_weth;
+    WETH9 public WETH;
 
     // ============ Constructor ============
 
@@ -55,8 +55,8 @@ contract PayableProxyForSoloMargin is
         public
         OnlySolo(soloMargin)
     {
-        g_weth = WETH9(weth);
-        g_weth.approve(soloMargin, uint256(-1));
+        WETH = WETH9(weth);
+        WETH.approve(soloMargin, uint256(-1));
     }
 
     // ============ Public Functions ============
@@ -70,7 +70,7 @@ contract PayableProxyForSoloMargin is
         payable
     {
         require( // coverage-disable-line
-            msg.sender == address(g_weth),
+            msg.sender == address(WETH),
             "Cannot recieve ETH"
         );
     }
@@ -84,7 +84,7 @@ contract PayableProxyForSoloMargin is
         payable
         nonReentrant
     {
-        WETH9 weth = g_weth;
+        WETH9 weth = WETH;
 
         // create WETH from ETH
         if (msg.value != 0) {
@@ -116,7 +116,7 @@ contract PayableProxyForSoloMargin is
             }
         }
 
-        g_soloMargin.operate(accounts, args);
+        SOLO_MARGIN.operate(accounts, args);
 
         // return all remaining WETH to the sendEthTo as ETH
         uint256 remainingWeth = weth.balanceOf(address(this));

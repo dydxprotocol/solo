@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
-import { ADDRESSES } from '../lib/Constants';
-import { Contracts } from '../lib/Contracts';
+import { ADDRESSES } from '../../lib/Constants';
+import { Contracts } from '../../lib/Contracts';
 import {
   Decimal,
   Integer,
   ContractConstantCallOptions,
   ContractCallOptions,
   TxResult,
-} from '../types';
+} from '../../types';
 
 export class DaiPriceOracle {
   private contracts: Contracts;
@@ -106,7 +106,7 @@ export class DaiPriceOracle {
     maximumAbsolute: Decimal,
   }> {
     const params = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.g_deviationParams(),
+      this.contracts.daiPriceOracle.methods.DEVIATION_PARAMS(),
       options,
     );
     return {
