@@ -310,10 +310,6 @@ describe('Buy', () => {
     await expectBuyRevert({}, 'Token: TransferFrom failed');
   });
 
-  it('Succeeds for all sorts of amounts', async () => {
-    // TODO: values
-  });
-
   it('Fails for non-truthful exchangeWrapper', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei.div(2)),

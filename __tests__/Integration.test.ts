@@ -144,6 +144,99 @@ describe('Integration', () => {
     });
   });
 
+  it('Liquidate multiple times', async () => {
+    const solidOwner = solo.getDefaultAccount();
+    const liquidOwner = accounts[2];
+    expect(solidOwner).not.toEqual(liquidOwner);
+    const solidNumber = INTEGERS.ZERO;
+    const liquidNumber = INTEGERS.ONE;
+    const heldMarket1 = INTEGERS.ZERO;
+    const heldMarket2 = new BigNumber(2);
+    const owedMarket = INTEGERS.ONE;
+    const premium = new BigNumber('1.05');
+
+    await Promise.all([
+      solo.testing.setAccountBalance(
+        solidOwner,
+        solidNumber,
+        owedMarket,
+        amount,
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidNumber,
+        heldMarket1,
+        amount.times(premium).div(2),
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidNumber,
+        heldMarket2,
+        amount.times(premium).div(2),
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidNumber,
+        owedMarket,
+        amount.times(-1),
+      ),
+    ]);
+
+    await solo.operation.initiate()
+      .liquidate({
+        primaryAccountOwner: solidOwner,
+        primaryAccountId: solidNumber,
+        liquidAccountOwner: liquidOwner,
+        liquidAccountId: liquidNumber,
+        liquidMarketId: owedMarket,
+        payoutMarketId: heldMarket1,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      })
+      .liquidate({
+        primaryAccountOwner: solidOwner,
+        primaryAccountId: solidNumber,
+        liquidAccountOwner: liquidOwner,
+        liquidAccountId: liquidNumber,
+        liquidMarketId: owedMarket,
+        payoutMarketId: heldMarket2,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      })
+      .commit();
+
+    const [
+      solidBalances,
+      liquidBalances,
+    ] = await Promise.all([
+      solo.getters.getAccountBalances(solidOwner, solidNumber),
+      solo.getters.getAccountBalances(liquidOwner, liquidNumber),
+    ]);
+
+    solidBalances.forEach((balance, i) => {
+      let expected = INTEGERS.ZERO;
+      if (
+          i === heldMarket1.toNumber()
+          || i === heldMarket2.toNumber()
+      ) {
+        expected = amount.times(premium).div(2);
+      }
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
+    liquidBalances.forEach((balance, _) => {
+      const expected = INTEGERS.ZERO;
+      expect(balance.par).toEqual(expected);
+      expect(balance.wei).toEqual(expected);
+    });
+  });
+
   it('Liquidate => Vaporize', async () => {
     const solidOwner = solo.getDefaultAccount();
     const liquidOwner = accounts[2];

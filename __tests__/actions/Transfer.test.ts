@@ -425,10 +425,6 @@ describe('Transfer', () => {
     }
   });
 
-  it('Succeeds for some more specific indexes and values', async () => {
-    // TODO: values
-  });
-
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       solo.testing.setAccountStatus(owner1, accountNumber1, AccountStatus.Liquidating),

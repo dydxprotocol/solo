@@ -401,8 +401,90 @@ describe('Withdraw', () => {
     }
   });
 
-  it('Succeeds for some more specific indexes and values', async () => {
-    // TODO: values
+  it('Succeeds for withdrawing in par', async () => {
+    const supplyIndex = new BigNumber('1.99');
+    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
+    await Promise.all([
+      issueTokensToSolo(expectedWei),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        supply: supplyIndex,
+        borrow: INTEGERS.ONE,
+      }),
+      solo.testing.setAccountBalance(who, accountNumber, market, par),
+    ]);
+    await expectWithdrawOkay({
+      amount: {
+        value: negPar,
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+    await expectBalances(zero, zero, expectedWei, zero);
+  });
+
+  it('Succeeds for withdrawing in wei', async () => {
+    const supplyIndex = new BigNumber('1.99');
+    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
+    await Promise.all([
+      issueTokensToSolo(expectedWei),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        supply: supplyIndex,
+        borrow: INTEGERS.ONE,
+      }),
+      solo.testing.setAccountBalance(who, accountNumber, market, par),
+    ]);
+    await expectWithdrawOkay({
+      amount: {
+        value: expectedWei.times(-1),
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
+      },
+    });
+    await expectBalances(zero, zero, expectedWei, zero);
+  });
+
+  it('Succeeds for borrowing in par', async () => {
+    const borrowIndex = new BigNumber('3.99');
+    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_DOWN);
+    await Promise.all([
+      issueTokensToSolo(expectedWei),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        supply: INTEGERS.ONE,
+        borrow: borrowIndex,
+      }),
+    ]);
+    await expectWithdrawOkay({
+      amount: {
+        value: negPar,
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+    await expectBalances(negPar, expectedWei.times(-1), expectedWei, zero);
+  });
+
+  it('Succeeds for borrowing in wei', async () => {
+    const borrowIndex = new BigNumber('3.99');
+    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_DOWN);
+    await Promise.all([
+      issueTokensToSolo(expectedWei),
+      solo.testing.setMarketIndex(market, {
+        lastUpdate: INTEGERS.ZERO,
+        supply: INTEGERS.ONE,
+        borrow: borrowIndex,
+      }),
+    ]);
+    await expectWithdrawOkay({
+      amount: {
+        value: expectedWei.times(-1),
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
+      },
+    });
+    await expectBalances(negPar, expectedWei.times(-1), expectedWei, zero);
   });
 
   it('Succeeds to withdraw to an external address', async () => {
