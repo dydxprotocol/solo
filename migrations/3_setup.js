@@ -27,7 +27,11 @@ const {
 
 // ============ Contracts ============
 
+// Base Protocol
 const SoloMargin = artifacts.require('SoloMargin');
+
+// Test Contracts
+const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
@@ -66,7 +70,7 @@ async function setupProtocol(deployer, network, accounts) {
     oracles,
     setters,
   ] = await Promise.all([
-    SoloMargin.deployed(),
+    getSoloMargin(network),
     getTokens(network),
     getOracles(network),
     getSetters(network),
@@ -126,6 +130,13 @@ async function addMarkets(
 }
 
 // ============ Network Getter Functions ============
+
+async function getSoloMargin(network) {
+  if (isDevNetwork(network)) {
+    return TestSoloMargin.deployed();
+  }
+  return SoloMargin.deployed();
+}
 
 async function getTokens(network) {
   if (isDocker(network)) {
