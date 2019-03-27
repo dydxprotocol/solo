@@ -138,7 +138,7 @@ async function deployPriceOracles(deployer, network) {
     await deployer.deploy(TestPriceOracle);
   }
 
-  const daiPriceOracleParams = getDaiPriceOracleParams();
+  const daiPriceOracleParams = getDaiPriceOracleParams(network);
 
   await Promise.all([
     deployer.deploy(
