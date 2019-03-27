@@ -47,6 +47,7 @@ async function getRiskLimits() {
 }
 
 async function getRiskParams(network) {
+  verifyNetwork(network);
   let mbv = '0.00';
   if (isDevNetwork(network)) {
     mbv = '0.05';
@@ -66,7 +67,18 @@ async function getPolynomialParams() {
   };
 }
 
-function getDaiPriceOracleParams() {
+function getDaiPriceOracleParams(network) {
+  verifyNetwork(network);
+  if (isDevNetwork) {
+    return {
+      oasisEthAmount: decimalToString('0.01'),
+      deviationParams: {
+        denominator: decimalToString('1.00'),
+        maximumPerSecond: decimalToString('0.0001'),
+        maximumAbsolute: decimalToString('0.01'),
+      },
+    };
+  }
   return {
     oasisEthAmount: decimalToString('1.00'),
     deviationParams: {

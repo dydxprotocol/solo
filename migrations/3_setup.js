@@ -41,8 +41,9 @@ const TestPriceOracle = artifacts.require('TestPriceOracle');
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 // Oracles
-const DaiPriceOracle = artifacts.require('DaiPriceOracle');
 const WethPriceOracle = artifacts.require('WethPriceOracle');
+const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 
 // ============ Constants ============
 
@@ -150,7 +151,7 @@ async function getTokens(network) {
     return [
       { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c' }, // Kovan WETH
       { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' }, // Kovan DAI
-      { address: '0x2002d3812f58e35f0ea1ffbf80a75a38c32175fa' }, // Kovan ZRX
+      { address: '0x03226d9241875DbFBfE0e814ADF54151e4F3fd4B' }, // Kovan USDC
     ];
   }
   if (isMainNet(network)) {
@@ -174,7 +175,7 @@ async function getOracles(network) {
     return [
       { address: WethPriceOracle.address },
       { address: DaiPriceOracle.address },
-      { address: TestPriceOracle.address },
+      { address: UsdcPriceOracle.address },
     ];
   }
   if (isMainNet(network)) {

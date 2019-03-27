@@ -43,5 +43,12 @@
             "address": "0x1B4918De46b7102e116C391BDAD350265B206978",
             "transactionHash": "0xd524298e58d0d225a177ab1efd41a42b652f718c53aa2695150d210610b40eae"
         }
+    },
+    "DaiPriceOracle": {
+        "42": {
+            "links": {},
+            "address": "0x5EA76C00c63C089689BAA54a29F2052EF27f6912",
+            "transactionHash": "0x979455326e769c2f4b18be9bc7b4a91115b2cd815a786b2c2a20c6cbae2efac6"
+        }
     }
 }
