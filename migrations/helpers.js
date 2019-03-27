@@ -3,6 +3,7 @@ const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts
 // ============ Network Helper Functions ============
 
 function isDevNetwork(network) {
+  verifyNetwork(network);
   return network === 'development'
       || network === 'test'
       || network === 'test_ci'
@@ -13,14 +14,17 @@ function isDevNetwork(network) {
 }
 
 function isMainNet(network) {
+  verifyNetwork(network);
   return network === 'mainnet';
 }
 
 function isKovan(network) {
+  verifyNetwork(network);
   return network === 'kovan';
 }
 
 function isDocker(network) {
+  verifyNetwork(network);
   return network === 'docker';
 }
 
@@ -71,6 +75,12 @@ function getDaiPriceOracleParams() {
       maximumAbsolute: decimalToString('0.01'),
     },
   };
+}
+
+function verifyNetwork(network) {
+  if (!network) {
+    throw new Error('No network provided');
+  }
 }
 
 module.exports = {
