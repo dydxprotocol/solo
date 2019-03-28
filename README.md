@@ -42,7 +42,6 @@ Please email any of the [maintainers](#Maintainers) if any security issues are f
 You must be running Docker
 
 ```
-npm run install_compiler
 npm run build
 ```
 

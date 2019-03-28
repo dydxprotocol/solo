@@ -292,7 +292,8 @@ library OperationImpl {
                 collateralized,
                 FILE,
                 "Undercollateralized account",
-                a
+                account.owner,
+                account.number
             );
 
             // ensure status is normal for primary accounts
