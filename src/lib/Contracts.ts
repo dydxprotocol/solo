@@ -422,9 +422,6 @@ export class Contracts {
         txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
       }
     }
-    if (!options.chainId) {
-      txOptions.chainId = this.networkId;
-    }
 
     const promi: PromiEvent<T> = method.send(txOptions);
 
