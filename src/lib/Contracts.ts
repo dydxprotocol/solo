@@ -92,7 +92,6 @@ interface CallableTransactionObject<T> {
 }
 
 export class Contracts {
-  private networkId: number;
   private blockGasLimit: number;
   private autoGasMultiplier: number;
   private defaultConfirmations: number;
@@ -189,7 +188,6 @@ export class Contracts {
     provider: Provider,
     networkId: number,
   ): void {
-    this.networkId = networkId;
     this.soloMargin.setProvider(provider);
 
     // Contracts
@@ -421,9 +419,6 @@ export class Contracts {
         const totalGas: number = Math.floor(gasEstimate * multiplier);
         txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
       }
-    }
-    if (!options.chainId) {
-      txOptions.chainId = this.networkId;
     }
 
     const promi: PromiEvent<T> = method.send(txOptions);
