@@ -124,6 +124,23 @@ contract TestLib {
         );
     }
 
+    function RequireThat1A(
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB
+    )
+        external
+        pure
+    {
+        Require.that(
+            false,
+            FILE,
+            reason,
+            payloadA,
+            payloadB
+        );
+    }
+
     function RequireThat2(
         bytes32 reason,
         uint256 payloadA,

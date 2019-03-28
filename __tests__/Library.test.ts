@@ -147,6 +147,17 @@ describe('Library', () => {
       );
     });
 
+    it('that (1 address, 1 number)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThat1A(
+          reason2,
+          addr,
+          arg1,
+        ).call(),
+        `TestLib: ${reasonString2} <${addr}, ${arg1}>`,
+      );
+    });
+
     it('that (2 args)', async () => {
       await expectThrow(
         solo.contracts.testLib.methods.RequireThat2(
