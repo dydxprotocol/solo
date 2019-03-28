@@ -92,7 +92,6 @@ interface CallableTransactionObject<T> {
 }
 
 export class Contracts {
-  private networkId: number;
   private blockGasLimit: number;
   private autoGasMultiplier: number;
   private defaultConfirmations: number;
@@ -189,7 +188,6 @@ export class Contracts {
     provider: Provider,
     networkId: number,
   ): void {
-    this.networkId = networkId;
     this.soloMargin.setProvider(provider);
 
     // Contracts
