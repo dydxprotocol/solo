@@ -16,6 +16,7 @@
 
 */
 
+import BigNumber from 'bignumber.js';
 import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 import PromiEvent from 'web3/promiEvent';
@@ -419,6 +420,12 @@ export class Contracts {
         const totalGas: number = Math.floor(gasEstimate * multiplier);
         txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
       }
+    }
+
+    if (txOptions.value) {
+      txOptions.value = new BigNumber(txOptions.value).toFixed(0);
+    } else {
+      txOptions.value = '0';
     }
 
     const promi: PromiEvent<T> = method.send(txOptions);
