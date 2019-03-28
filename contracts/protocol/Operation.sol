@@ -38,6 +38,10 @@ contract Operation is
 {
     // ============ Public Functions ============
 
+    /**
+     * Takes one or more actions on one or more accounts. The msg.sender must be the owner or
+     * operator of all accounts except for those being liquidated, vaporized, or traded with.
+     */
     function operate(
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions

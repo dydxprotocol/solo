@@ -48,6 +48,9 @@ contract Permission is
 
     // ============ Public Functions ============
 
+    /**
+     * Approves/disapproves any external addresses to control any accounts attributed to msg.sender.
+     */
     function setOperators(
         OperatorArg[] memory args
     )
