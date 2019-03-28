@@ -55,7 +55,8 @@ contract OnlySolo {
         Require.that(
             from == address(SOLO_MARGIN),
             FILE,
-            "Only Solo can call function"
+            "Only Solo can call function",
+            from
         );
         _;
     }

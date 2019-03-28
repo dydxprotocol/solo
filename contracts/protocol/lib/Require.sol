@@ -138,6 +138,34 @@ library Require {
         }
     }
 
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB
+    )
+        internal
+        pure
+    {
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringify(file),
+                        COLON,
+                        stringify(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        RPAREN
+                    )
+                )
+            );
+        }
+    }
+
     // ============ Private Functions ============
 
     function stringify(
