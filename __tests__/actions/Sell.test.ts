@@ -308,10 +308,6 @@ describe('Sell', () => {
     ]);
     await expectSellRevert({}, 'Token: TransferFrom failed');
   });
-
-  it('Succeeds for all sorts of amounts', async () => {
-    // : values
-  });
 });
 
 // ============ Helper Functions ============
