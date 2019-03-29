@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-require('dotenv').config();
+require('dotenv-flow').config();
 
 const provider = new Web3.providers.HttpProvider(process.env.RPC_NODE_URI);
 
