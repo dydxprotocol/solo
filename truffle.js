@@ -1,5 +1,6 @@
 require('ts-node/register');
-require('dotenv').config();
+require('dotenv-flow').config();
+const HDWalletProvider = require('truffle-hdwallet-provider');
 
 module.exports = {
   compilers: {
@@ -29,19 +30,30 @@ module.exports = {
       network_id: '1001',
     },
     mainnet: {
-      host: '127.0.0.1',
-      port: 8545,
       network_id: '1',
-      gasPrice: process.env.GAS_PRICE,
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        'https://parity.expotrading.com',
+        0,
+        1,
+      ),
+      gasPrice: Number(process.env.GAS_PRICE),
       gas: 7900000,
+      from: process.env.DEPLOYER_ACCOUNT,
+      timeoutBlocks: 500,
     },
     kovan: {
-      host: process.env.KOVAN_NODE_URI,
-      port: Number(process.env.KOVAN_NODE_PORT),
       network_id: '42',
-      gasPrice: 1000000000, // 1 gwei
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        'http://18.209.161.23:8545',
+        0,
+        1,
+      ),
+      gasPrice: 10000000000, // 10 gwei
       gas: 7900000,
-      from: process.env.KOVAN_ACCOUNT,
+      from: process.env.DEPLOYER_ACCOUNT,
+      timeoutBlocks: 500,
     },
     dev: {
       host: 'localhost',
