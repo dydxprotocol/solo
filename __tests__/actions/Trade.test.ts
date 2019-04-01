@@ -957,7 +957,7 @@ describe('Trade', () => {
         otherAccountOwner: who1,
         otherAccountId: accountNumber1,
       },
-      'OperationImpl: Accounts must be distinct',
+      'OperationImpl: Duplicate accounts in action',
     );
   });
 });

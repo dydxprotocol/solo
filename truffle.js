@@ -67,7 +67,7 @@ module.exports = {
       network_id: '1002',
       port: 8555,
       gas: 0xfffffffffff,
-      gasPrice: 0x01,
+      gasPrice: 1,
     },
     docker: {
       host: 'localhost',

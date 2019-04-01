@@ -160,11 +160,34 @@ describe('Library', () => {
 
     it('that (address arg)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatA(
+        solo.contracts.testLib.methods.RequireThatA0(
           reason2,
           addr,
         ).call(),
         `TestLib: ${reasonString2} <${addr}>`,
+      );
+    });
+
+    it('that (1 address, 1 number)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThatA1(
+          reason2,
+          addr,
+          arg1,
+        ).call(),
+        `TestLib: ${reasonString2} <${addr}, ${arg1}>`,
+      );
+    });
+
+    it('that (1 address, 2 numbers)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThatA2(
+          reason2,
+          addr,
+          arg1,
+          arg3,
+        ).call(),
+        `TestLib: ${reasonString2} <${addr}, ${arg1}, ${arg3}>`,
       );
     });
   });

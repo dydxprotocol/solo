@@ -287,7 +287,7 @@ describe('Sell', () => {
           takerToken: makerToken.getAddress(),
         },
       },
-      'OperationImpl: Markets must be distinct',
+      'OperationImpl: Duplicate markets in action',
     );
   });
 
