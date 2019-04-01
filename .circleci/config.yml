@@ -67,7 +67,7 @@ jobs:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
       - image: trufflesuite/ganache-cli:v6.2.5
-        command: -d -i 1001 --gasLimit 7900000
+        command: -d -i 1001
     working_directory: ~/build
     parallelism: 3
     steps:
