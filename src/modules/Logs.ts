@@ -81,7 +81,6 @@ export class Logs {
     );
 
     if (!eventJson) {
-      console.log(log);
       throw new Error('Event type not found');
     }
 
@@ -158,8 +157,6 @@ export class Logs {
       }
       return this.parseIntegerValue(eventArgs[input.name]);
     }
-
-    console.log(input.components); // TODO: remove
 
     throw new Error('Unknown tuple type in event');
   }
