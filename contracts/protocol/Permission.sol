@@ -33,7 +33,7 @@ contract Permission is
 {
     // ============ Events ============
 
-    event OperatorSet(
+    event LogOperatorSet(
         address indexed owner,
         address operator,
         bool trusted
@@ -60,7 +60,7 @@ contract Permission is
             address operator = args[i].operator;
             bool trusted = args[i].trusted;
             g_state.operators[msg.sender][operator] = trusted;
-            emit OperatorSet(msg.sender, operator, trusted);
+            emit LogOperatorSet(msg.sender, operator, trusted);
         }
     }
 }

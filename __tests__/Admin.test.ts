@@ -15,6 +15,7 @@ import {
   RiskParams,
  } from '../src/types';
 
+let txr: any;
 let solo: Solo;
 let accounts: address[];
 let admin: address;
@@ -89,8 +90,8 @@ describe('Admin', () => {
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
-      await expectBalances(amount, amount);
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      await expectBalances(txr, amount, amount);
     });
 
     it('Succeeds even if existing tokens arent enough', async () => {
@@ -103,8 +104,8 @@ describe('Admin', () => {
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount.times(3));
 
-      await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
-      await expectBalances(INTEGERS.ZERO, amount);
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      await expectBalances(txr, INTEGERS.ZERO, amount);
     });
 
     it('Succeeds for zero available', async () => {
@@ -115,8 +116,8 @@ describe('Admin', () => {
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
-      await expectBalances(INTEGERS.ZERO, INTEGERS.ZERO);
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      await expectBalances(txr, INTEGERS.ZERO, INTEGERS.ZERO);
     });
 
     it('Succeeds for zero excess', async () => {
@@ -127,8 +128,8 @@ describe('Admin', () => {
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(INTEGERS.ZERO);
-      await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
-      await expectBalances(amount, INTEGERS.ZERO);
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      await expectBalances(txr, amount, INTEGERS.ZERO);
     });
 
     it('Fails for negative excess', async () => {
@@ -158,7 +159,20 @@ describe('Admin', () => {
       );
     });
 
-    async function expectBalances(expectedSolo: Integer, expectedRecipient: Integer) {
+    async function expectBalances(
+      txResult: any,
+      expectedSolo: Integer,
+      expectedRecipient: Integer,
+    ) {
+      if (txResult) {
+        const token = solo.testing.tokenA.getAddress();
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogWithdrawExcessTokens');
+        expect(log.args.token).toEqual(token);
+        expect(log.args.amount).toEqual(expectedRecipient);
+      }
       const [
         soloBalance,
         recipientBalance,
@@ -177,22 +191,22 @@ describe('Admin', () => {
     it('Succeeds', async () => {
       const amount = new BigNumber(100);
       await solo.testing.tokenC.issueTo(amount, soloAddress);
-      await expectBalances(amount, INTEGERS.ZERO);
-      await solo.admin.withdrawUnsupportedTokens(
+      await expectBalances(null, amount, INTEGERS.ZERO);
+      txr = await solo.admin.withdrawUnsupportedTokens(
         solo.testing.tokenC.getAddress(),
         recipient,
         { from: admin },
       );
-      await expectBalances(INTEGERS.ZERO, amount);
+      await expectBalances(txr, INTEGERS.ZERO, amount);
     });
 
     it('Succeeds for zero tokens', async () => {
-      await solo.admin.withdrawUnsupportedTokens(
+      txr = await solo.admin.withdrawUnsupportedTokens(
         solo.testing.tokenC.getAddress(),
         recipient,
         { from: admin },
       );
-      await expectBalances(INTEGERS.ZERO, INTEGERS.ZERO);
+      await expectBalances(txr, INTEGERS.ZERO, INTEGERS.ZERO);
     });
 
     it('Fails for token with existing market', async () => {
@@ -216,7 +230,20 @@ describe('Admin', () => {
       );
     });
 
-    async function expectBalances(expectedSolo: Integer, expectedRecipient: Integer) {
+    async function expectBalances(
+      txResult: any,
+      expectedSolo: Integer,
+      expectedRecipient: Integer,
+    ) {
+      if (txResult) {
+        const token = solo.testing.tokenC.getAddress();
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogWithdrawExcessTokens');
+        expect(log.args.token).toEqual(token);
+        expect(log.args.amount).toEqual(expectedRecipient);
+      }
       const [
         soloBalance,
         recipientBalance,
@@ -240,25 +267,29 @@ describe('Admin', () => {
         defaultPrice,
       );
 
+      const marginPremium = new BigNumber('0.11');
+      const spreadPremium = new BigNumber('0.22');
+
       const txResult = await solo.admin.addMarket(
         token,
         oracleAddress,
         setterAddress,
-        defaultPremium,
-        defaultPremium,
+        marginPremium,
+        spreadPremium,
         { from: admin },
       );
 
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
 
       const numMarkets = await solo.getters.getNumMarkets();
-      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(numMarkets.minus(1));
+      const marketId = numMarkets.minus(1);
+      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(marketId);
 
-      expect(marketInfo.market.token.toLowerCase()).toEqual(token.toLowerCase());
+      expect(marketInfo.market.token.toLowerCase()).toEqual(token);
       expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
       expect(marketInfo.market.interestSetter).toEqual(setterAddress);
-      expect(marketInfo.market.marginPremium).toEqual(defaultPremium);
-      expect(marketInfo.market.spreadPremium).toEqual(defaultPremium);
+      expect(marketInfo.market.marginPremium).toEqual(marginPremium);
+      expect(marketInfo.market.spreadPremium).toEqual(spreadPremium);
       expect(marketInfo.market.isClosing).toEqual(false);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
@@ -270,6 +301,34 @@ describe('Admin', () => {
       expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
       expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(5);
+
+      const addLog = logs[0];
+      expect(addLog.name).toEqual('LogAddMarket');
+      expect(addLog.args.marketId).toEqual(marketId);
+      expect(addLog.args.token.toLowerCase()).toEqual(token);
+
+      const oracleLog = logs[1];
+      expect(oracleLog.name).toEqual('LogSetPriceOracle');
+      expect(oracleLog.args.marketId).toEqual(marketId);
+      expect(oracleLog.args.priceOracle).toEqual(oracleAddress);
+
+      const setterLog = logs[2];
+      expect(setterLog.name).toEqual('LogSetInterestSetter');
+      expect(setterLog.args.marketId).toEqual(marketId);
+      expect(setterLog.args.interestSetter).toEqual(setterAddress);
+
+      const marginPremiumLog = logs[3];
+      expect(marginPremiumLog.name).toEqual('LogSetMarginPremium');
+      expect(marginPremiumLog.args.marketId).toEqual(marketId);
+      expect(marginPremiumLog.args.marginPremium).toEqual(marginPremium);
+
+      const spreadPremiumLog = logs[4];
+      expect(spreadPremiumLog.name).toEqual('LogSetSpreadPremium');
+      expect(spreadPremiumLog.args.marketId).toEqual(marketId);
+      expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
     });
 
     it('Fails to add a market of the same token', async () => {
@@ -359,31 +418,23 @@ describe('Admin', () => {
 
   describe('#ownerSetIsClosing', () => {
     it('Succeeds', async () => {
-      let isClosing: boolean;
-
-      // check is false
-      isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
-      expect(isClosing).toEqual(false);
+      await expectIsClosing(null, false);
 
       // set to false again
-      await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
-      isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
-      expect(isClosing).toEqual(false);
+      txr = await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
+      await expectIsClosing(txr, false);
 
       // set to true
-      await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
-      isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
-      expect(isClosing).toEqual(true);
+      txr = await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
+      await expectIsClosing(txr, true);
 
       // set to true again
-      await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
-      isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
-      expect(isClosing).toEqual(true);
+      txr = await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
+      await expectIsClosing(txr, true);
 
       // set to false
-      await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
-      isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
-      expect(isClosing).toEqual(false);
+      txr = await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
+      await expectIsClosing(txr, false);
     });
 
     it('Fails for index OOB', async () => {
@@ -398,17 +449,36 @@ describe('Admin', () => {
         solo.admin.setIsClosing(defaultMarket, true, { from: nonAdmin }),
       );
     });
+
+    async function expectIsClosing(txResult: any, b: boolean) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetIsClosing');
+        expect(log.args.marketId).toEqual(defaultMarket);
+        expect(log.args.isClosing).toEqual(b);
+      }
+      const isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
+      expect(isClosing).toEqual(b);
+    }
   });
 
   describe('#ownerSetPriceOracle', () => {
     it('Succeeds', async () => {
       const token = await solo.getters.getMarketTokenAddress(defaultMarket);
       await solo.testing.priceOracle.setPrice(token, defaultPrice);
-      await solo.admin.setPriceOracle(
+      txr = await solo.admin.setPriceOracle(
         defaultMarket,
         oracleAddress,
         { from: admin },
       );
+      const logs = solo.logs.parseLogs(txr);
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.name).toEqual('LogSetPriceOracle');
+      expect(log.args.marketId).toEqual(defaultMarket);
+      expect(log.args.priceOracle).toEqual(oracleAddress);
     });
 
     it('Fails for broken price', async () => {
@@ -461,11 +531,17 @@ describe('Admin', () => {
     it('Succeeds', async () => {
       const token = await solo.getters.getMarketTokenAddress(defaultMarket);
       await solo.testing.interestSetter.setInterestRate(token, defaultRate);
-      await solo.admin.setInterestSetter(
+      txr = await solo.admin.setInterestSetter(
         defaultMarket,
         setterAddress,
         { from: admin },
       );
+      const logs = solo.logs.parseLogs(txr);
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.name).toEqual('LogSetInterestSetter');
+      expect(log.args.marketId).toEqual(defaultMarket);
+      expect(log.args.interestSetter).toEqual(setterAddress);
     });
 
     it('Fails for contract without proper function', async () => {
@@ -503,31 +579,23 @@ describe('Admin', () => {
 
   describe('#ownerSetMarginPremium', () => {
     it('Succeeds', async () => {
-      let premium: Decimal;
-
-      // check is default
-      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      await expectMarginPremium(null, defaultPremium);
 
       // set to default
-      await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
-      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      await expectMarginPremium(txr, defaultPremium);
 
       // set risky
-      await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
-      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
-      expect(premium).toEqual(highPremium);
+      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      await expectMarginPremium(txr, highPremium);
 
       // set to risky again
-      await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
-      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
-      expect(premium).toEqual(highPremium);
+      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      await expectMarginPremium(txr, highPremium);
 
       // set back to default
-      await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
-      premium = await solo.getters.getMarketMarginPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      await expectMarginPremium(txr, defaultPremium);
     });
 
     it('Fails for index OOB', async () => {
@@ -553,35 +621,39 @@ describe('Admin', () => {
         'AdminImpl: Margin premium too high',
       );
     });
+
+    async function expectMarginPremium(txResult: any, e: Decimal) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetMarginPremium');
+        expect(log.args.marginPremium).toEqual(e);
+      }
+      const premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      expect(premium).toEqual(e);
+    }
   });
 
   describe('#ownerSetSpreadPremium', () => {
     it('Succeeds', async () => {
-      let premium: Decimal;
-
-      // check is default
-      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      await expectSpreadPremium(null, defaultPremium);
 
       // set to default
-      await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
-      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      await expectSpreadPremium(txr, defaultPremium);
 
       // set risky
-      await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
-      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
-      expect(premium).toEqual(highPremium);
+      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      await expectSpreadPremium(txr, highPremium);
 
       // set to risky again
-      await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
-      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
-      expect(premium).toEqual(highPremium);
+      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      await expectSpreadPremium(txr, highPremium);
 
       // set back to default
-      await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
-      premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
-      expect(premium).toEqual(defaultPremium);
+      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      await expectSpreadPremium(txr, defaultPremium);
     });
 
     it('Succeeds for two markets', async () => {
@@ -629,25 +701,37 @@ describe('Admin', () => {
         'AdminImpl: Spread premium too high',
       );
     });
+
+    async function expectSpreadPremium(txResult: any, e: Decimal) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetSpreadPremium');
+        expect(log.args.spreadPremium).toEqual(e);
+      }
+      const premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      expect(premium).toEqual(e);
+    }
   });
 
   // ============ Risk Functions ============
 
   describe('#ownerSetMarginRatio', () => {
     it('Succeeds', async () => {
-      await expectMarginRatio(riskParams.marginRatio);
+      await expectMarginRatio(null, riskParams.marginRatio);
 
       // keep same
-      await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
-      await expectMarginRatio(riskParams.marginRatio);
+      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      await expectMarginRatio(txr, riskParams.marginRatio);
 
       // set to max
-      await solo.admin.setMarginRatio(riskLimits.marginRatioMax, { from: admin });
-      await expectMarginRatio(riskLimits.marginRatioMax);
+      txr = await solo.admin.setMarginRatio(riskLimits.marginRatioMax, { from: admin });
+      await expectMarginRatio(txr, riskLimits.marginRatioMax);
 
       // set back to original
-      await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
-      await expectMarginRatio(riskParams.marginRatio);
+      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      await expectMarginRatio(txr, riskParams.marginRatio);
     });
 
     it('Fails for value <= spread', async () => {
@@ -657,11 +741,11 @@ describe('Admin', () => {
       await solo.admin.setLiquidationSpread(liquidationSpread, { from: admin });
 
       // passes when above the spread
-      await solo.admin.setMarginRatio(
+      txr = await solo.admin.setMarginRatio(
         liquidationSpread.plus(smallestDecimal),
         { from: admin },
       );
-      await expectMarginRatio(liquidationSpread.plus(smallestDecimal));
+      await expectMarginRatio(txr, liquidationSpread.plus(smallestDecimal));
 
       // revert when equal to the spread
       await expectThrow(
@@ -695,7 +779,14 @@ describe('Admin', () => {
       );
     });
 
-    async function expectMarginRatio(e: Integer) {
+    async function expectMarginRatio(txResult: any, e: Integer) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetMarginRatio');
+        expect(log.args.marginRatio).toEqual(e);
+      }
       const result = await solo.getters.getMarginRatio();
       expect(result).toEqual(e);
     }
@@ -708,19 +799,19 @@ describe('Admin', () => {
         riskLimits.marginRatioMax,
         { from: admin },
       );
-      await expectLiquidationSpread(riskParams.liquidationSpread);
+      await expectLiquidationSpread(null, riskParams.liquidationSpread);
 
       // keep same
-      await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
-      await expectLiquidationSpread(riskParams.liquidationSpread);
+      txr = await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
+      await expectLiquidationSpread(txr, riskParams.liquidationSpread);
 
       // set to max
-      await solo.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax, { from: admin });
-      await expectLiquidationSpread(riskLimits.liquidationSpreadMax);
+      txr = await solo.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax, { from: admin });
+      await expectLiquidationSpread(txr, riskLimits.liquidationSpreadMax);
 
       // set back to original
-      await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
-      await expectLiquidationSpread(riskParams.liquidationSpread);
+      txr = await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
+      await expectLiquidationSpread(txr, riskParams.liquidationSpread);
     });
 
     it('Fails for value >= ratio', async () => {
@@ -733,11 +824,11 @@ describe('Admin', () => {
       );
 
       // passes when below the ratio
-      await solo.admin.setLiquidationSpread(
+      txr = await solo.admin.setLiquidationSpread(
         marginRatio.minus(smallestDecimal),
         { from: admin },
       );
-      await expectLiquidationSpread(marginRatio.minus(smallestDecimal));
+      await expectLiquidationSpread(txr, marginRatio.minus(smallestDecimal));
 
       // reverts when equal to the ratio
       await expectThrow(
@@ -777,7 +868,14 @@ describe('Admin', () => {
       );
     });
 
-    async function expectLiquidationSpread(e: Integer) {
+    async function expectLiquidationSpread(txResult: any, e: Integer) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetLiquidationSpread');
+        expect(log.args.liquidationSpread).toEqual(e);
+      }
       const result = await solo.getters.getLiquidationSpread();
       expect(result).toEqual(e);
     }
@@ -785,28 +883,28 @@ describe('Admin', () => {
 
   describe('#ownerSetEarningsRate', () => {
     it('Succeeds', async () => {
-      await expectEarningsRate(riskParams.earningsRate);
+      await expectEarningsRate(null, riskParams.earningsRate);
 
       // keep same
-      await solo.admin.setEarningsRate(
+      txr = await solo.admin.setEarningsRate(
         riskParams.earningsRate,
         { from: admin },
       );
-      await expectEarningsRate(riskParams.earningsRate);
+      await expectEarningsRate(txr, riskParams.earningsRate);
 
       // set to max
-      await solo.admin.setEarningsRate(
+      txr = await solo.admin.setEarningsRate(
         riskLimits.earningsRateMax,
         { from: admin },
       );
-      await expectEarningsRate(riskLimits.earningsRateMax);
+      await expectEarningsRate(txr, riskLimits.earningsRateMax);
 
       // set back to original
-      await solo.admin.setEarningsRate(
+      txr = await solo.admin.setEarningsRate(
         riskParams.earningsRate,
         { from: admin },
       );
-      await expectEarningsRate(riskParams.earningsRate);
+      await expectEarningsRate(txr, riskParams.earningsRate);
     });
 
     it('Fails for too-high value', async () => {
@@ -830,7 +928,14 @@ describe('Admin', () => {
 
     const tenToNeg18 = '0.000000000000000001';
 
-    async function expectEarningsRate(e: Decimal) {
+    async function expectEarningsRate(txResult: any, e: Decimal) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetEarningsRate');
+        expect(log.args.earningsRate).toEqual(e);
+      }
       const result = await solo.getters.getEarningsRate();
       expect(result).toEqual(e);
     }
@@ -838,19 +943,19 @@ describe('Admin', () => {
 
   describe('#ownerSetMinBorrowedValue', () => {
     it('Succeeds', async () => {
-      await expectMinBorrowedValue(riskParams.minBorrowedValue);
+      await expectMinBorrowedValue(null, riskParams.minBorrowedValue);
 
       // keep same
-      await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
-      await expectMinBorrowedValue(riskParams.minBorrowedValue);
+      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
+      await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
 
       // set to max
-      await solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax, { from: admin });
-      await expectMinBorrowedValue(riskLimits.minBorrowedValueMax);
+      txr = await solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax, { from: admin });
+      await expectMinBorrowedValue(txr, riskLimits.minBorrowedValueMax);
 
       // set back to original
-      await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
-      await expectMinBorrowedValue(riskParams.minBorrowedValue);
+      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
+      await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
     });
 
     it('Fails for too-high value', async () => {
@@ -866,7 +971,14 @@ describe('Admin', () => {
       );
     });
 
-    async function expectMinBorrowedValue(e: Integer) {
+    async function expectMinBorrowedValue(txResult: any, e: Integer) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetMinBorrowedValue');
+        expect(log.args.minBorrowedValue).toEqual(e);
+      }
       const result = await solo.getters.getMinBorrowedValue();
       expect(result).toEqual(e);
     }
@@ -876,15 +988,15 @@ describe('Admin', () => {
 
   describe('#ownerSetGlobalOperator', () => {
     it('Succeeds', async () => {
-      await expectGlobalOperatorToBe(false);
-      await solo.admin.setGlobalOperator(operator, false, { from: admin });
-      await expectGlobalOperatorToBe(false);
-      await solo.admin.setGlobalOperator(operator, true, { from: admin });
-      await expectGlobalOperatorToBe(true);
-      await solo.admin.setGlobalOperator(operator, true, { from: admin });
-      await expectGlobalOperatorToBe(true);
-      await solo.admin.setGlobalOperator(operator, false, { from: admin });
-      await expectGlobalOperatorToBe(false);
+      await expectGlobalOperatorToBe(null, false);
+      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      await expectGlobalOperatorToBe(txr, false);
+      txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
+      await expectGlobalOperatorToBe(txr, true);
+      txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
+      await expectGlobalOperatorToBe(txr, true);
+      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      await expectGlobalOperatorToBe(txr, false);
     });
 
     it('Fails for non-admin', async () => {
@@ -893,7 +1005,15 @@ describe('Admin', () => {
       );
     });
 
-    async function expectGlobalOperatorToBe(b: boolean) {
+    async function expectGlobalOperatorToBe(txResult: any, b: boolean) {
+      if (txResult) {
+        const logs = solo.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetGlobalOperator');
+        expect(log.args.operator).toEqual(operator);
+        expect(log.args.approved).toEqual(b);
+      }
       const result = await solo.getters.getIsGlobalOperator(operator);
       expect(result).toEqual(b);
     }
