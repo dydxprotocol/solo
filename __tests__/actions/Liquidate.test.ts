@@ -333,7 +333,7 @@ describe('Liquidate', () => {
   it('Fails for repeated market', async () => {
     await expectLiquidateRevert(
       { payoutMarketId: owedMarket },
-      'OperationImpl: Markets must be distinct',
+      'OperationImpl: Duplicate markets in action',
     );
   });
 
@@ -377,7 +377,7 @@ describe('Liquidate', () => {
         liquidAccountOwner: solidOwner,
         liquidAccountId: solidAccountNumber,
       },
-      'OperationImpl: Accounts must be distinct',
+      'OperationImpl: Duplicate accounts in action',
     );
   });
 });

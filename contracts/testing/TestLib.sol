@@ -124,23 +124,6 @@ contract TestLib {
         );
     }
 
-    function RequireThat1A(
-        bytes32 reason,
-        address payloadA,
-        uint256 payloadB
-    )
-        external
-        pure
-    {
-        Require.that(
-            false,
-            FILE,
-            reason,
-            payloadA,
-            payloadB
-        );
-    }
-
     function RequireThat2(
         bytes32 reason,
         uint256 payloadA,
@@ -158,7 +141,7 @@ contract TestLib {
         );
     }
 
-    function RequireThatA(
+    function RequireThatA0(
         bytes32 reason,
         address payloadA
     )
@@ -170,6 +153,42 @@ contract TestLib {
             FILE,
             reason,
             payloadA
+        );
+    }
+
+    function RequireThatA1(
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB
+    )
+        external
+        pure
+    {
+        Require.that(
+            false,
+            FILE,
+            reason,
+            payloadA,
+            payloadB
+        );
+    }
+
+    function RequireThatA2(
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+        external
+        pure
+    {
+        Require.that(
+            false,
+            FILE,
+            reason,
+            payloadA,
+            payloadB,
+            payloadC
         );
     }
 

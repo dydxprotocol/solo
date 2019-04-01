@@ -4,4 +4,4 @@ services:
     image: trufflesuite/ganache-cli:v6.2.5
     ports:
       - 8445:8545
-    command: -d -i 1001
+    command: -d -i 1001 --gasLimit 7900000

@@ -31,7 +31,7 @@
     "node": "ganache-cli",
     "debug": "truffle debug",
     "build:js": "rm -rf dist/ && tsc",
-    "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
+    "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache --gasLimit 7900000",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",

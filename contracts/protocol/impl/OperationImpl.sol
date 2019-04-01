@@ -150,7 +150,8 @@ library OperationImpl {
                 Require.that(
                     arg.accountId != arg.otherAccountId,
                     FILE,
-                    "Accounts must be distinct"
+                    "Duplicate accounts in action",
+                    i
                 );
                 if (accountLayout == Actions.AccountLayout.TwoPrimary) {
                     primaryAccounts[arg.otherAccountId] = true;
@@ -173,7 +174,8 @@ library OperationImpl {
                 Require.that(
                     arg.primaryMarketId != arg.secondaryMarketId,
                     FILE,
-                    "Markets must be distinct"
+                    "Duplicate markets in action",
+                    i
                 );
                 _updateMarket(state, cache, arg.primaryMarketId);
                 _updateMarket(state, cache, arg.secondaryMarketId);
@@ -316,7 +318,8 @@ library OperationImpl {
         Require.that(
             args.from == msg.sender || args.from == args.account.owner,
             FILE,
-            "Invalid deposit source"
+            "Invalid deposit source",
+            args.from
         );
 
         (
@@ -630,7 +633,9 @@ library OperationImpl {
             Require.that(
                 !state.isCollateralized(args.liquidAccount, cache, false),
                 FILE,
-                "Unliquidatable account"
+                "Unliquidatable account",
+                args.liquidAccount.owner,
+                args.liquidAccount.number
             );
             state.setStatus(args.liquidAccount, Account.Status.Liquid);
         }
@@ -644,7 +649,9 @@ library OperationImpl {
             !maxHeldWei.isNegative(),
             FILE,
             "Collateral cannot be negative",
-            maxHeldWei.value
+            args.liquidAccount.owner,
+            args.liquidAccount.number,
+            args.heldMarket
         );
 
         (
@@ -730,7 +737,9 @@ library OperationImpl {
             Require.that(
                 state.isVaporizable(args.vaporAccount, cache),
                 FILE,
-                "Unvaporizable account"
+                "Unvaporizable account",
+                args.vaporAccount.owner,
+                args.vaporAccount.number
             );
             state.setStatus(args.vaporAccount, Account.Status.Vapor);
         }
@@ -757,7 +766,7 @@ library OperationImpl {
             !maxHeldWei.isNegative(),
             FILE,
             "Excess cannot be negative",
-            maxHeldWei.value
+            args.heldMarket
         );
 
         (

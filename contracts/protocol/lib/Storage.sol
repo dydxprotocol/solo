@@ -375,6 +375,8 @@ library Storage {
                 borrowValue.value >= state.riskParams.minBorrowedValue.value,
                 FILE,
                 "Borrow value too low",
+                account.owner,
+                account.number,
                 borrowValue.value
             );
         }
@@ -492,6 +494,7 @@ library Storage {
             !oldPar.isPositive(),
             FILE,
             "Owed balance cannot be positive",
+            account.owner,
             account.number,
             marketId
         );
@@ -514,7 +517,10 @@ library Storage {
         Require.that(
             !deltaWei.isNegative() && oldPar.value >= newPar.value,
             FILE,
-            "Owed balance cannot increase"
+            "Owed balance cannot increase",
+            account.owner,
+            account.number,
+            marketId
         );
 
         // if not paying back enough wei to repay any par, then bound wei to zero

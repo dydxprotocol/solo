@@ -491,7 +491,7 @@ describe('Transfer', () => {
         toAccountOwner: owner1,
         toAccountId: accountNumber1,
       },
-      'OperationImpl: Accounts must be distinct',
+      'OperationImpl: Duplicate accounts in action',
     );
   });
 });

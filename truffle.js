@@ -21,12 +21,14 @@ module.exports = {
       host: '0.0.0.0',
       port: 8445,
       gasPrice: 1,
+      gas: 7900000,
       network_id: '1001',
     },
     test_ci: {
       host: '0.0.0.0',
       port: 8545,
       gasPrice: 1,
+      gas: 7900000,
       network_id: '1001',
     },
     mainnet: {
@@ -38,7 +40,6 @@ module.exports = {
         1,
       ),
       gasPrice: Number(process.env.GAS_PRICE),
-      gas: 7900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,
     },
@@ -51,7 +52,6 @@ module.exports = {
         1,
       ),
       gasPrice: 10000000000, // 10 gwei
-      gas: 7900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,
     },
@@ -67,13 +67,14 @@ module.exports = {
       network_id: '1002',
       port: 8555,
       gas: 0xfffffffffff,
-      gasPrice: 0x01,
+      gasPrice: 1,
     },
     docker: {
       host: 'localhost',
       network_id: '1313',
       port: 8545,
       gasPrice: 1,
+      gas: 7900000,
     },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations
