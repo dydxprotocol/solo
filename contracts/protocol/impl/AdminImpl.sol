@@ -353,12 +353,11 @@ library AdminImpl {
         IInterestSetter interestSetter
     )
         private
-    {
-        state.markets[marketId].interestSetter = interestSetter;
-
-        // ensure interestSetter can return a value without reverting
+    {// ensure interestSetter can return a value without reverting
         address token = state.markets[marketId].token;
         interestSetter.getInterestRate(token, 0, 0);
+
+        state.markets[marketId].interestSetter = interestSetter;
 
         emit LogSetInterestSetter(marketId, address(interestSetter));
     }
