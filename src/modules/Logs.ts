@@ -7,9 +7,14 @@ import {
   Integer,
   BalanceUpdate,
   Index,
+  LogParsingOptions,
   TxResult,
 } from '../types';
 import { stringToDecimal, valueToInteger } from '../lib/Helpers';
+import { abi as operationAbi } from '../../build/contracts/Events.json';
+import { abi as adminAbi } from '../../build/contracts/AdminImpl.json';
+import { abi as permissionAbi } from '../../build/contracts/Permission.json';
+import { abi as expiryAbi } from '../../build/contracts/Expiry.json';
 
 export class Logs {
   private contracts: Contracts;
@@ -23,7 +28,33 @@ export class Logs {
     this.web3 = web3;
   }
 
-  public parseLogs(receipt: TxResult): any {
+  public parseLogs(
+    receipt: TxResult,
+    options: LogParsingOptions = {},
+  ): any {
+    let logs = this.parseAllLogs(receipt);
+
+    if (options.skipAdminLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, adminAbi));
+    }
+    if (options.skipOperationLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, operationAbi));
+    }
+    if (options.skipPermissionLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, permissionAbi));
+    }
+    if (options.skipExpiryLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, expiryAbi));
+    }
+
+    return logs;
+  }
+
+  private logIsFrom(log: any, abi: any) {
+    return abi.filter((e: any) => e.name === log.name).length !== 0;
+  }
+
+  private parseAllLogs(receipt: TxResult): any {
     if (receipt.logs) {
       return receipt.logs.map(l => this.parseLog(l)).filter(l => !!l);
     }
