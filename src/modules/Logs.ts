@@ -2,7 +2,13 @@ import { Log, EventLog } from 'web3/types';
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
-import { TxResult, Index, BalanceUpdate } from '../types';
+import {
+  Decimal,
+  Integer,
+  BalanceUpdate,
+  Index,
+  TxResult,
+} from '../types';
 import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 
 export class Logs {
@@ -136,6 +142,22 @@ export class Logs {
       return this.parseIndex(eventArgs[input.name]);
     }
 
+    if (
+      Array.isArray(input.components)
+      && input.components.length === 1
+      && input.components[0].name === 'value'
+    ) {
+      if (
+        input.name.toLowerCase().includes('spread')
+        || input.name.toLowerCase().includes('ratio')
+        || input.name.toLowerCase().includes('rate')
+        || input.name.toLowerCase().includes('premium')
+      ) {
+        return this.parseDecimalValue(eventArgs[input.name]);
+      }
+      return this.parseIntegerValue(eventArgs[input.name]);
+    }
+
     throw new Error('Unknown tuple type in event');
   }
 
@@ -152,5 +174,13 @@ export class Logs {
       deltaWei: valueToInteger(update.deltaWei),
       newPar: valueToInteger(update.newPar),
     };
+  }
+
+  private parseDecimalValue(value: any): Decimal {
+    return stringToDecimal(value.value);
+  }
+
+  private parseIntegerValue(value: any): Integer {
+    return new BigNumber(value.value);
   }
 }

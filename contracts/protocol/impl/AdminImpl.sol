@@ -45,6 +45,64 @@ library AdminImpl {
 
     bytes32 constant FILE = "AdminImpl";
 
+    // ============ Events ============
+
+    event LogWithdrawExcessTokens(
+        address token,
+        uint256 amount
+    );
+
+    event LogAddMarket(
+        uint256 marketId,
+        address token
+    );
+
+    event LogSetIsClosing(
+        uint256 marketId,
+        bool isClosing
+    );
+
+    event LogSetPriceOracle(
+        uint256 marketId,
+        address priceOracle
+    );
+
+    event LogSetInterestSetter(
+        uint256 marketId,
+        address interestSetter
+    );
+
+    event LogSetMarginPremium(
+        uint256 marketId,
+        Decimal.D256 marginPremium
+    );
+
+    event LogSetSpreadPremium(
+        uint256 marketId,
+        Decimal.D256 spreadPremium
+    );
+
+    event LogSetMarginRatio(
+        Decimal.D256 marginRatio
+    );
+
+    event LogSetLiquidationSpread(
+        Decimal.D256 liquidationSpread
+    );
+
+    event LogSetEarningsRate(
+        Decimal.D256 earningsRate
+    );
+
+    event LogSetMinBorrowedValue(
+        Monetary.Value minBorrowedValue
+    );
+
+    event LogSetGlobalOperator(
+        address operator,
+        bool approved
+    );
+
     // ============ Token Functions ============
 
     function ownerWithdrawExcessTokens(
@@ -73,6 +131,8 @@ library AdminImpl {
 
         token.transfer(recipient, excessWei.value);
 
+        emit LogWithdrawExcessTokens(token, excessWei.value);
+
         return excessWei.value;
     }
 
@@ -88,6 +148,9 @@ library AdminImpl {
 
         uint256 balance = token.balanceOf(address(this));
         token.transfer(recipient, balance);
+
+        emit LogWithdrawExcessTokens(token, balance);
+
         return balance;
     }
 
@@ -111,6 +174,8 @@ library AdminImpl {
         state.markets[marketId].token = token;
         state.markets[marketId].index = Interest.newIndex();
 
+        emit LogAddMarket(marketId, token);
+
         _setPriceOracle(state, marketId, priceOracle);
         _setInterestSetter(state, marketId, interestSetter);
         _setMarginPremium(state, marketId, marginPremium);
@@ -126,6 +191,7 @@ library AdminImpl {
     {
         _validateMarketId(state, marketId);
         state.markets[marketId].isClosing = isClosing;
+        emit LogSetIsClosing(marketId, isClosing);
     }
 
     function ownerSetPriceOracle(
@@ -191,6 +257,7 @@ library AdminImpl {
             "Ratio cannot be <= spread"
         );
         state.riskParams.marginRatio = ratio;
+        emit LogSetMarginRatio(ratio);
     }
 
     function ownerSetLiquidationSpread(
@@ -210,6 +277,7 @@ library AdminImpl {
             "Spread cannot be >= ratio"
         );
         state.riskParams.liquidationSpread = spread;
+        emit LogSetLiquidationSpread(spread);
     }
 
     function ownerSetEarningsRate(
@@ -224,6 +292,7 @@ library AdminImpl {
             "Rate too high"
         );
         state.riskParams.earningsRate = earningsRate;
+        emit LogSetEarningsRate(earningsRate);
     }
 
     function ownerSetMinBorrowedValue(
@@ -238,6 +307,7 @@ library AdminImpl {
             "Value too high"
         );
         state.riskParams.minBorrowedValue = minBorrowedValue;
+        emit LogSetMinBorrowedValue(minBorrowedValue);
     }
 
     // ============ Global Operator Functions ============
@@ -250,6 +320,8 @@ library AdminImpl {
         public
     {
         state.globalOperators[operator] = approved;
+
+        emit LogSetGlobalOperator(operator, approved);
     }
 
     // ============ Private Functions ============
@@ -261,8 +333,6 @@ library AdminImpl {
     )
         private
     {
-        state.markets[marketId].priceOracle = priceOracle;
-
         // require oracle can return non-zero price
         address token = state.markets[marketId].token;
 
@@ -271,6 +341,10 @@ library AdminImpl {
             FILE,
             "Invalid oracle price"
         );
+
+        state.markets[marketId].priceOracle = priceOracle;
+
+        emit LogSetPriceOracle(marketId, address(priceOracle));
     }
 
     function _setInterestSetter(
@@ -280,11 +354,13 @@ library AdminImpl {
     )
         private
     {
-        state.markets[marketId].interestSetter = interestSetter;
-
         // ensure interestSetter can return a value without reverting
         address token = state.markets[marketId].token;
         interestSetter.getInterestRate(token, 0, 0);
+
+        state.markets[marketId].interestSetter = interestSetter;
+
+        emit LogSetInterestSetter(marketId, address(interestSetter));
     }
 
     function _setMarginPremium(
@@ -300,6 +376,8 @@ library AdminImpl {
             "Margin premium too high"
         );
         state.markets[marketId].marginPremium = marginPremium;
+
+        emit LogSetMarginPremium(marketId, marginPremium);
     }
 
     function _setSpreadPremium(
@@ -315,6 +393,8 @@ library AdminImpl {
             "Spread premium too high"
         );
         state.markets[marketId].spreadPremium = spreadPremium;
+
+        emit LogSetSpreadPremium(marketId, spreadPremium);
     }
 
     function _requireNoMarket(
