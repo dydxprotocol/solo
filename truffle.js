@@ -38,7 +38,7 @@ module.exports = {
         1,
       ),
       gasPrice: Number(process.env.GAS_PRICE),
-      gas: 7900000,
+      gas: 6900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,
     },
@@ -51,7 +51,7 @@ module.exports = {
         1,
       ),
       gasPrice: 10000000000, // 10 gwei
-      gas: 7900000,
+      gas: 6900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,
     },

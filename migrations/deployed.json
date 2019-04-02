@@ -1,5 +1,13 @@
 {
     "SoloMargin": {
+        "1": {
+            "links": {
+                "AdminImpl": "0x8D5C957de5fB19739Baf6C7472095a12C6D9DbBB",
+                "OperationImpl": "0x3eF0f64DB325897E74F6e5a46A81aCa70CE7ef3c"
+            },
+            "address": "0x22cb2d5DE2009C9afD321BDF8759743665E45844",
+            "transactionHash": "0x135889f456772cd933a344938ec4c040e9d94a588dfa5754b7703baca17c9848"
+        },
         "42": {
             "links": {
                 "AdminImpl": "0x50180CF70b462356fc07CC40Be26ecfd692C189D",
@@ -10,6 +18,11 @@
         }
     },
     "PayableProxyForSoloMargin": {
+        "1": {
+            "links": {},
+            "address": "0x6E86Dc68723d9811F67d9f6aCfeC6ec9D3818527",
+            "transactionHash": "0x471ec5f83bd219ede6ed419378b399b267c5e488b32addf40c48b8924e109f32"
+        },
         "42": {
             "links": {},
             "address": "0xA430f0E98F0627D8f28b42993cC73A35708D7641",
@@ -17,6 +30,11 @@
         }
     },
     "PolynomialInterestSetter": {
+        "1": {
+            "links": {},
+            "address": "0xb1718Ca96C9C36a32803604859120AE662d16Bed",
+            "transactionHash": "0x7634f1aabfc854f765793bc7dbb5e65f5295154c1af9f7f12b478194f30d58c3"
+        },
         "42": {
             "links": {},
             "address": "0xef4b567e71Aa46Dc5336D93EBf4f8087a3672b1b",
@@ -38,6 +56,11 @@
         }
     },
     "Expiry": {
+        "1": {
+            "links": {},
+            "address": "0x42937Ed04ed5bfa36753829405934E7dB0b63122",
+            "transactionHash": "0xf52370671dc367f40b6edd54da55ca4cbee0360f46f849d0c5c8950888199343"
+        },
         "42": {
             "links": {},
             "address": "0x1B4918De46b7102e116C391BDAD350265B206978",
@@ -45,10 +68,29 @@
         }
     },
     "DaiPriceOracle": {
+        "1": {
+            "links": {},
+            "address": "0x79DcD895073655cE9C12Eb5b6003837EfBB3207b",
+            "transactionHash": "0x21c31aa2ef0e92a66dda397475cbc5fe4841157d29f50f3fb37ee29441303fa9"
+        },
         "42": {
             "links": {},
             "address": "0x5EA76C00c63C089689BAA54a29F2052EF27f6912",
             "transactionHash": "0x979455326e769c2f4b18be9bc7b4a91115b2cd815a786b2c2a20c6cbae2efac6"
+        }
+    },
+    "WethPriceOracle": {
+        "1": {
+            "links": {},
+            "address": "0xf9F00dE59DbcBC35E82f1754BfeF48c7037CF158",
+            "transactionHash": "0xcb722769724a901b005fd7dc3fbcd320ebd955cabad3a8412fb32863d205cb64"
+        }
+    },
+    "UsdcPriceOracle": {
+        "1": {
+            "links": {},
+            "address": "0xfd18Da025664D30460646F2AAD3a5BE63919B65a",
+            "transactionHash": "0xc6d535e0862481fdee53d3dce1c6fb4752540bfa0ff526c74e1bf9c6585a2e14"
         }
     }
 }
