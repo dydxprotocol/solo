@@ -575,6 +575,25 @@ describe('Integration', () => {
       expect(balance.wei).toEqual(expected);
     });
   });
+
+  it('Skips logs when necessary', async () => {
+    const blob = {
+      primaryAccountOwner: who,
+      primaryAccountId: accountNumber,
+      marketId: market,
+      amount: {
+        value: zero,
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
+      },
+      from: who,
+    };
+    const txResult = await solo.operation.initiate().deposit(blob).commit();
+    const noLogs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+    const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: false });
+    expect(noLogs.length).toEqual(0);
+    expect(logs.length).not.toEqual(0);
+  });
 });
 
 // ============ Helper Functions ============
