@@ -1018,4 +1018,14 @@ describe('Admin', () => {
       expect(result).toEqual(b);
     }
   });
+
+  // ============ Other ============
+
+  describe('Logs', () => {
+    it('Skips logs when necessary', async () => {
+      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      const logs = solo.logs.parseLogs(txr, { skipAdminLogs: true });
+      expect(logs.length).toEqual(0);
+    });
+  });
 });

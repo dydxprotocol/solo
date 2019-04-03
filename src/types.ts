@@ -56,6 +56,13 @@ export interface AccountOperationOptions {
   sendEthTo?: address;
 }
 
+export interface LogParsingOptions {
+  skipOperationLogs?: boolean;
+  skipAdminLogs?: boolean;
+  skipPermissionLogs?: boolean;
+  skipExpiryLogs?: boolean;
+}
+
 export interface TxResult {
   transactionHash: string;
   transactionIndex?: number;

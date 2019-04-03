@@ -131,6 +131,12 @@ describe('Permission', () => {
         expectOperator(operator2, true),
       ]);
     });
+
+    it('Skips logs when necessary', async () => {
+      const txResult = await solo.permissions.approveOperator(operator1, { from: owner });
+      const logs = solo.logs.parseLogs(txResult, { skipPermissionLogs: true });
+      expect(logs.length).toEqual(0);
+    });
   });
 });
 

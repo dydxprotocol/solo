@@ -87,6 +87,15 @@ describe('Expiry', () => {
     console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
   });
 
+  it('Skips logs when necessary', async () => {
+    const newTime = defaultTime.plus(1000);
+    const txResult = await setExpiry(newTime);
+    const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
+    const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
+    expect(noLogs.filter(e => e.name === 'ExpirySet').length).toEqual(0);
+    expect(logs.filter(e => e.name === 'ExpirySet').length).not.toEqual(0);
+  });
+
   it('Doesnt set expiry for non-negative balances', async () => {
     const newTime = defaultTime.plus(1000);
     await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
