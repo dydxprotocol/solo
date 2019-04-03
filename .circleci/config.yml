@@ -54,7 +54,7 @@ jobs:
           command: rm -rf ./build/contracts
       - run:
           name: Remove artifacts file
-          command: rm ./src/lib/Artifacts.ts
+          command: rm ./scripts/*.ts
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
