@@ -55,24 +55,26 @@ export class Logs {
   }
 
   private parseAllLogs(receipt: TxResult): any {
-    if (receipt.logs) {
-      return receipt.logs.map(l => this.parseLog(l)).filter(l => !!l);
-    }
-    if (receipt.events) {
-      const events = [];
+    let events: any[];
 
-      Object.values(receipt.events).forEach((e) => {
+    if (receipt.logs) {
+      events = JSON.parse(JSON.stringify(receipt.logs));
+    } else if (receipt.events) {
+      const tempEvents = JSON.parse(JSON.stringify(receipt.events));
+      events = [];
+      Object.values(tempEvents).forEach((e: any) => {
         if (Array.isArray(e)) {
-          e.forEach(ev => events.splice(ev.logIndex, 0, ev));
+          e.forEach(ev => events.push(ev));
         } else {
-          events.splice(e.logIndex, 0, e);
+          events.push(e);
         }
       });
-
-      return events.map(e => this.parseEvent(e)).filter(l => !!l);
+      events.sort((a, b) => a.logIndex - b.logIndex);
+    } else {
+      throw new Error('Receipt has no logs');
     }
 
-    throw new Error('Receipt has no logs');
+    return events.map(e => this.parseEvent(e)).filter(l => !!l);
   }
 
   private parseEvent(event: EventLog) {
