@@ -117,6 +117,9 @@ jobs:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Remove Development Files
+          command: rm -rf ./migrations ./__tests__ ./scripts
+      - run:
           name: Compile Typescript
           command: npm run build:js
       - save_cache:
