@@ -115,7 +115,7 @@ jobs:
           command: npm run clean_contract_json
       - run:
           name: Remove Development Files
-          command: rm -rf ./migrations ./__tests__ ./scripts ./build/contracts
+          command: rm -rf ./migrations ./__tests__ ./scripts/*.ts ./scripts/*.js ./build/contracts
       - run:
           name: Compile Typescript
           command: npm run build:js
@@ -129,7 +129,7 @@ jobs:
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
       - add_ssh_keys:
           fingerprints:
             - "a2:ec:07:aa:96:73:ca:dc:7c:ef:b2:3e:42:73:88:71"
