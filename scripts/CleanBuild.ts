@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
-import contracts from '../src/lib/Artifacts';
+import contracts from './Artifacts';
 import deployed from '../migrations/deployed.json';
 import externalDeployed from '../migrations/external-deployed.json';
 import { abi as operationAbi } from '../build/contracts/Events.json';
@@ -25,6 +25,7 @@ async function clean(): Promise<void> {
       contractName: contract.contractName,
       abi: contract.abi,
       bytecode: contract.bytecode,
+      deployedBytecode: contract.deployedBytecode,
       networks: {},
       schemaVersion: contract.schemaVersion,
     };
