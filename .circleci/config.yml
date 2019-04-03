@@ -46,12 +46,6 @@ jobs:
       - run:
           name: Generate wrappers
           command: npm run build:wrappers
-      - run:
-          name: Clean contract json
-          command: npm run clean_contract_json
-      - run:
-          name: Remove artifacts file
-          command: rm ./scripts/*.ts
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
@@ -81,7 +75,7 @@ jobs:
           command: npm run deploy_test_ci
       - run:
           name: Remove uncleaned contracts
-          command: rm -rf ./build/contracts
+          command: rm -rf ./build/contracts ./scripts/*.ts
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "__tests__/**/*.test.ts" | circleci tests split --split-by=filesize) && npm run ci_test -- ${TESTFILES}
@@ -116,6 +110,9 @@ jobs:
     steps:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Clean contract json
+          command: npm run clean_contract_json
       - run:
           name: Remove Development Files
           command: rm -rf ./migrations ./__tests__ ./scripts ./build/contracts
