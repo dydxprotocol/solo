@@ -16,6 +16,7 @@ import { default as TokenC } from '../../build/contracts/TokenC.json';
 import { default as Weth } from '../../build/contracts/WETH9.json';
 import { default as ErroringToken } from '../../build/contracts/ErroringToken.json';
 import { default as OmiseToken } from '../../build/contracts/OmiseToken.json';
+import { default as Events } from '../../build/contracts/Events.json';
 import { default as TestLib } from '../../build/contracts/TestLib.json';
 import { default as TestAutoTrader } from '../../build/contracts/TestAutoTrader.json';
 import { default as TestCallee } from '../../build/contracts/TestCallee.json';
@@ -45,6 +46,7 @@ export default {
   Weth,
   ErroringToken,
   OmiseToken,
+  Events,
   TestLib,
   TestPriceOracle,
   TestMakerOracle,
