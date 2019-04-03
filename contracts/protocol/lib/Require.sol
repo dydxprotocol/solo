@@ -243,8 +243,9 @@ library Require {
         bytes memory bstr = new bytes(length);
         uint256 k = length - 1;
         while (j != 0) {
-            bstr[k--] = byte(uint8(ASCII_ZERO + (j % 10)));
+            bstr[k] = byte(uint8(ASCII_ZERO + (j % 10)));
             j /= 10;
+            k--;
         }
 
         return bstr;
