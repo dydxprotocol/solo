@@ -25,6 +25,7 @@ async function clean(): Promise<void> {
       contractName: contract.contractName,
       abi: contract.abi,
       bytecode: contract.bytecode,
+      deployedBytecode: contract.deployedBytecode,
       networks: {},
       schemaVersion: contract.schemaVersion,
     };
