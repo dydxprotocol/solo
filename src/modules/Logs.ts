@@ -11,10 +11,10 @@ import {
   TxResult,
 } from '../types';
 import { stringToDecimal, valueToInteger } from '../lib/Helpers';
-import { abi as operationAbi } from '../../build/contracts/Events.json';
-import { abi as adminAbi } from '../../build/contracts/AdminImpl.json';
-import { abi as permissionAbi } from '../../build/contracts/Permission.json';
-import { abi as expiryAbi } from '../../build/contracts/Expiry.json';
+import { abi as operationAbi } from '../../build/published_contracts/Events.json';
+import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
+import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
+import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
 
 export class Logs {
   private contracts: Contracts;

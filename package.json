@@ -3,6 +3,7 @@
   "version": "0.4.3",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/js/src/index.js",
+  "types": "dist/types/src/types.d.ts",
   "files": [
     "dist/js/build/",
     "dist/js/src/",

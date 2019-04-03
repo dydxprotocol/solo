@@ -49,6 +49,9 @@ jobs:
       - run:
           name: Clean contract json
           command: npm run clean_contract_json
+      - run:
+          name: Remove uncleaned contracts
+          command: rm -rf ./build/contracts
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
@@ -117,20 +120,6 @@ jobs:
           key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
-  prod_build:
-    docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
-    working_directory: ~/build
-    steps:
-      - restore_cache:
-          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Production Build
-          command: sh scripts/prod_build.sh
-      - save_cache:
-          key: cache-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/build
   publish:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -167,15 +156,8 @@ workflows:
       - build_js:
           requires:
             - build_contracts
-      - prod_build:
-          requires:
-            - build_js
-          filters:
-            branches:
-              only: master
       - publish:
           requires:
-            - prod_build
             - test
             - lint
           filters:
