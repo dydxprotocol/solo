@@ -207,16 +207,17 @@ library Require {
         returns (bytes memory)
     {
         bytes memory r = abi.encodePacked(b);
-        for (uint256 i = 0; i < 32; i++) {
-            if (r[i] == 0) {
+        for (uint256 i = 32; i-- > 0; ) {
+            if (r[i] != 0) {
+                uint256 length = i + 1;
                 /* solium-disable-next-line security/no-inline-assembly */
                 assembly {
-                    mstore(r, i) // r.length = i;
+                    mstore(r, length) // r.length = length;
                 }
                 return r;
             }
         }
-        return r;
+        return new bytes(0);
     }
 
     function stringify(
