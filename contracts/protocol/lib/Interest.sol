@@ -69,11 +69,14 @@ library Interest {
             Types.Wei memory borrowWei
         ) = totalParToWei(totalPar, index);
 
-        // calculate the interest accrued by
+        // Calculates interest for borrowers by using the formula: rate * time.
+        // This calculation closely approximates continuously-compounded interest when called
+        // frequently and is much more gas-efficient to calculate.
         uint32 currentTime = Time.currentTime();
         uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
 
-        // adjust the interest by the earningsRate, then prorate the interest across all suppliers
+        // For suppliers, the interest rate is adjusted the interest by the earningsRate, then
+        // prorated the across all lenders.
         uint256 supplyInterest;
         if (Types.isZero(supplyWei)) {
             supplyInterest = 0;
