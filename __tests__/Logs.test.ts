@@ -62,6 +62,29 @@ describe('Logs', () => {
           type: 'mined',
           id: 'log_e4f19380',
         },
+        {
+          address: solo.contracts.testSoloMargin.options.address,
+          blockHash: '0x81441018c1131afd6f7ceec2077257f4ecfc3325d56b375bf370008d17a20d65',
+          blockNumber: 7492404,
+          data: '0x0000000000000000000000000000000000000000000000000000000000000000' +
+                  '0000000000000000000000000000000000000000000000000000000000000000' +
+                  '0000000000000000000000000000000000000000000000000000000000000001' +
+                  '00000000000000000000000000000000000000000000000000038d7ea4c68000' +
+                  '0000000000000000000000000000000000000000000000000000000000000001' +
+                  '00000000000000000000000000000000000000000000000000038d7ea4c68000' +
+                  '0000000000000000000000006e86dc68723d9811f67d9f6acfec6ec9d3818527',
+          logIndex: 123,
+          removed: false,
+          topics: [
+            '0x2bad8bc95088af2c247b30fa2b2e6a0886f88625e0945cd3051008e0e270198f',
+            '0x0000000000000000000000006a08b12aa520d319768e0d3a779af8660794c5e1',
+          ],
+          transactionHash: '0xfbb9bc794809a190e7a18278181128d53ed41cec7bf34667e7052edfbff8ad69',
+          transactionIndex: 152,
+          transactionLogIndex: '0x4',
+          type: 'mined',
+          id: 'log_9aab3f86',
+        },
       ],
     };
     const logs = solo.logs.parseLogs((txResult as any));
