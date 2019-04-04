@@ -119,10 +119,10 @@ export class Logs {
       throw new Error('Event type not found');
     }
 
-    const eventArgs =  this.web3.eth.abi.decodeLog(
+    const eventArgs = this.web3.eth.abi.decodeLog(
       eventJson.inputs,
       log.data,
-      log.topics.splice(1),
+      log.topics.slice(1),
     );
 
     return {
