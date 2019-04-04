@@ -59,7 +59,10 @@ export class Logs {
 
     if (receipt.logs) {
       events = JSON.parse(JSON.stringify(receipt.logs));
-    } else if (receipt.events) {
+      return events.map(e => this.parseLog(e)).filter(l => !!l);
+    }
+
+    if (receipt.events) {
       const tempEvents = JSON.parse(JSON.stringify(receipt.events));
       events = [];
       Object.values(tempEvents).forEach((e: any) => {
@@ -70,11 +73,10 @@ export class Logs {
         }
       });
       events.sort((a, b) => a.logIndex - b.logIndex);
-    } else {
-      throw new Error('Receipt has no logs');
+      return events.map(e => this.parseEvent(e)).filter(l => !!l);
     }
 
-    return events.map(e => this.parseEvent(e)).filter(l => !!l);
+    throw new Error('Receipt has no logs');
   }
 
   private parseEvent(event: EventLog) {
