@@ -32,7 +32,7 @@
 
 ### Independent Audits
 
-The smart contracts were audited independently by both Bramah Systems and Zeppelin.
+The smart contracts were audited independently by both Zeppelin Solutions and Bramah Systems.
 
 ### Code Coverage
 
@@ -40,16 +40,21 @@ All production smart contracts are tested and have 100% branching code-coverage.
 
 ### Vulnerability Disclosure Policy
 
-The disclosure of security vulnerabilities helps us ensure the security and privacy of our users.
+The disclosure of security vulnerabilities helps us ensure the security of our users.
 
 **How to report a security vulnerability?**
 
-If you believe you’ve found a security vulnerability in one of our contracts or platforms please send
-it to us by emailing [contact@dydx.exchange](mailto:contact@dydx.exchange). Please include the following details with your report:
+If you believe you’ve found a security vulnerability in one of our contracts or platforms,
+send it to us by emailing [security@dydx.exchange](mailto:security@dydx.exchange).
+Please include the following details with your report:
 
 * Description of the location and potential impact of the vulnerability;
 
 * A detailed description of the steps required to reproduce the vulnerability
+
+**Scope**
+
+Any vulnerability not previously disclosed by us or our independent auditors in their reports
 
 **Guidelines**  
 
@@ -70,13 +75,14 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 * Work with you to understand and resolve the issue quickly
 (including an initial confirmation of your report within 72 hours of submission)
 
-* Consider a monetary reward based on the potential impact of the vulnerability
+* Grant a monetary reward based on the OWASP risk assessment methodology (similar to our [first
+protocol release](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4))
 
 ## Install
 
 This project uses [node](https://nodejs.org) and [npm](https://npmjs.com).
 
-`$ npm i @dydxprotocol/solo`
+`npm i @dydxprotocol/solo`
 
 ## Development
 
@@ -112,8 +118,13 @@ Requires [docker](https://docker.com).
 
 ## Maintainers
 
- - **Brendan Chou** [@brendanchou](https://github.com/BrendanChou) `brendan@dydx.exchange`
- - **Antonio Juliano** [@antoniojuliano](https://github.com/AntonioJuliano) `antonio@dydx.exchange`
+ - **Brendan Chou**
+ [@brendanchou](https://github.com/BrendanChou)
+ [`brendan@dydx.exchange`](mailto:brendan@dydx.exchange)
+
+ - **Antonio Juliano**
+ [@antoniojuliano](https://github.com/AntonioJuliano)
+ [`antonio@dydx.exchange`](mailto:antonio@dydx.exchange)
 
 ## License
 
