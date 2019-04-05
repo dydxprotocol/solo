@@ -54,6 +54,19 @@ library Interest {
 
     // ============ Library Functions ============
 
+    /**
+     * Returns a new market Index based on the old index and market interest rate.
+     * Calculates interest for borrowers by using the formula rate * time. This calculation closely
+     * approximates continuously-compounded interest when called frequently, but is much more
+     * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
+     * then prorated the across all lenders.
+     *
+     * @param  index         The old index for a market
+     * @param  rate          The current interest rate of the market
+     * @param  totalPar      The total supply and borrow par values of the market
+     * @param  earningsRate  The portion of the interest that is forwarded to the lenders
+     * @return               The updated index for a market
+     */
     function calculateNewIndex(
         Index memory index,
         Rate memory rate,
@@ -69,14 +82,11 @@ library Interest {
             Types.Wei memory borrowWei
         ) = totalParToWei(totalPar, index);
 
-        // Calculates interest for borrowers by using the formula: rate * time.
-        // This calculation closely approximates continuously-compounded interest when called
-        // frequently and is much more gas-efficient to calculate.
+        // get interest increase for borrowers
         uint32 currentTime = Time.currentTime();
         uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
 
-        // For suppliers, the interest rate is adjusted the interest by the earningsRate, then
-        // prorated the across all lenders.
+        // get interest increase for lenders
         uint256 supplyInterest;
         if (Types.isZero(supplyWei)) {
             supplyInterest = 0;
