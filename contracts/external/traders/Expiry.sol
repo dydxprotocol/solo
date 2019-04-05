@@ -52,8 +52,6 @@ contract Expiry is
 
     bytes32 constant FILE = "Expiry";
 
-    uint32 constant INVALID_TIME = 0;
-
     // ============ Events ============
 
     event ExpirySet(
@@ -104,7 +102,7 @@ contract Expiry is
         ) = parseCallArgs(data);
 
         // don't set expiry time for accounts with positive balance
-        if (isValidTime(expiryTime) && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
+        if (expiryTime != 0 && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
             return;
         }
 
@@ -152,7 +150,7 @@ contract Expiry is
 
         // clear expiry if loan is fully repaid
         if (newInputPar.value == 0) {
-            setExpiry(makerAccount, inputMarketId, INVALID_TIME);
+            setExpiry(makerAccount, inputMarketId, 0);
         }
 
         // get maximum acceptable return value
@@ -206,7 +204,7 @@ contract Expiry is
         returns (bool)
     {
         uint32 expiry = getExpiry(account, marketId);
-        return isValidTime(expiry) && expiry <= Time.currentTime();
+        return expiry != 0 && expiry <= Time.currentTime();
     }
 
     function inputWeiToOutput(
@@ -268,15 +266,5 @@ contract Expiry is
             marketId,
             Math.to32(rawExpiry)
         );
-    }
-
-    function isValidTime(
-        uint32 time
-    )
-        private
-        pure
-        returns (bool)
-    {
-        return time != INVALID_TIME;
     }
 }
