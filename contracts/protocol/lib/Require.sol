@@ -36,6 +36,7 @@ library Require {
     bytes2 constant COMMA = 0x2c20; // ', '
     bytes2 constant LPAREN = 0x203c; // ' <'
     byte constant RPAREN = 0x3e; // '>'
+    uint256 constant FOUR_BIT_MASK = 0xf;
 
     // ============ Library Functions ============
 
@@ -200,51 +201,71 @@ library Require {
     // ============ Private Functions ============
 
     function stringify(
-        bytes32 b
+        bytes32 input
     )
         private
         pure
         returns (bytes memory)
     {
-        bytes memory r = abi.encodePacked(b);
-        for (uint256 i = 32; i-- > 0; ) {
-            if (r[i] != 0) {
+        // put the input bytes into the result
+        bytes memory result = abi.encodePacked(input);
+
+        // determine the length of the input by finding the location of the last non-zero byte
+        for (uint256 i = 32; i > 0; ) {
+            // reverse-for-loops with uint
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // find the last non-zero byte in order to determine the length
+            if (result[i] != 0) {
                 uint256 length = i + 1;
+
                 /* solium-disable-next-line security/no-inline-assembly */
                 assembly {
-                    mstore(r, length) // r.length = length;
+                    mstore(result, length) // r.length = length;
                 }
-                return r;
+
+                return result;
             }
         }
+
+        // all bytes are zero
         return new bytes(0);
     }
 
     function stringify(
-        uint256 i
+        uint256 input
     )
         private
         pure
         returns (bytes memory)
     {
-        if (i == 0) {
+        if (input == 0) {
             return "0";
         }
 
-        // get length
-        uint256 j = i;
+        // get the final string length
+        uint256 j = input;
         uint256 length;
         while (j != 0) {
             length++;
             j /= 10;
         }
 
-        // get string
-        j = i;
+        // allocate the string
         bytes memory bstr = new bytes(length);
-        uint256 k = length - 1;
-        while (j != 0) {
-            bstr[k--] = byte(uint8(ASCII_ZERO + (j % 10)));
+
+        // populate the string starting with the least-significant charcter
+        j = input;
+        for (uint256 i = length; i > 0; ) {
+            // reverse-for-loops with uint
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // take last decimal digit
+            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
+
+            // remove the last decimal digit
             j /= 10;
         }
 
@@ -252,23 +273,32 @@ library Require {
     }
 
     function stringify(
-        address a
+        address input
     )
         private
         pure
         returns (bytes memory)
     {
-        uint256 z = uint256(a);
+        uint256 z = uint256(input);
 
+        // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
         bytes memory result = new bytes(42);
+
+        // populate the result with "0x"
         result[0] = byte(uint8(ASCII_ZERO));
         result[1] = byte(uint8(ASCII_LOWER_EX));
 
+        // for each byte (starting from the lowest byte), populate the result with two characters
         for (uint256 i = 0; i < 20; i++) {
+            // each byte takes two characters
             uint256 shift = i * 2;
-            result[41 - shift] = char(z & 0xf);
+
+            // populate the least-significant character
+            result[41 - shift] = char(z & FOUR_BIT_MASK);
             z = z >> 4;
-            result[40 - shift] = char(z & 0xf);
+
+            // populate the most-significant character
+            result[40 - shift] = char(z & FOUR_BIT_MASK);
             z = z >> 4;
         }
 
@@ -276,15 +306,18 @@ library Require {
     }
 
     function char(
-        uint256 b
+        uint256 input
     )
         private
         pure
         returns (byte)
     {
-        if (b < 10) {
-            return byte(uint8(b + ASCII_ZERO));
+        // return ASCII digit (0-9)
+        if (input < 10) {
+            return byte(uint8(input + ASCII_ZERO));
         }
-        return byte(uint8(b + ASCII_RELATIVE_ZERO));
+
+        // return ASCII letter (a-f)
+        return byte(uint8(input + ASCII_RELATIVE_ZERO));
     }
 }
