@@ -202,16 +202,6 @@ contract TestLib {
         return Time.currentTime();
     }
 
-    function TimeHasHappened(
-        uint32 time
-    )
-        external
-        view
-        returns (bool)
-    {
-        return Time.hasHappened(time);
-    }
-
     // ============ Token Functions ============
 
     function TokenBalanceOf(

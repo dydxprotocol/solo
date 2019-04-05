@@ -38,14 +38,4 @@ library Time {
     {
         return Math.to32(block.timestamp);
     }
-
-    function hasHappened(
-        uint32 time
-    )
-        internal
-        view
-        returns (bool)
-    {
-        return (time != 0) && (time <= currentTime());
-    }
 }

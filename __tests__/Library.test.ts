@@ -213,18 +213,6 @@ describe('Library', () => {
       expect(new BigNumber(time2).toNumber()).toBeGreaterThanOrEqual(block2.timestamp);
       expect(block2.timestamp).toBeGreaterThanOrEqual(block1.timestamp + 15);
     });
-
-    it('hasHappened', async () => {
-      const block = await solo.web3.eth.getBlock('latest');
-      const results = await Promise.all([
-        solo.contracts.testLib.methods.TimeHasHappened(0).call(),
-        solo.contracts.testLib.methods.TimeHasHappened(1).call(),
-        solo.contracts.testLib.methods.TimeHasHappened(block.timestamp - 10).call(),
-        solo.contracts.testLib.methods.TimeHasHappened(block.timestamp).call(),
-        solo.contracts.testLib.methods.TimeHasHappened(block.timestamp + 10).call(),
-      ]);
-      expect(results).toEqual([false, true, true, true, false]);
-    });
   });
 
   describe('Token', () => {
