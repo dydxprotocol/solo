@@ -120,6 +120,7 @@ describe('Library', () => {
   });
 
   describe('Require', () => {
+    const emptyReason = '0x0000000000000000000000000000000000000000000000000000000000000000';
     const reason1 = '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
     const reasonString1 = 'This Is the Text Reason.01234567';
     const reason2 = '0x53686f727420526561736f6e2030393800000000000000000000000000000000';
@@ -127,6 +128,16 @@ describe('Library', () => {
     const arg1 = '0';
     const arg2 = '1234567890987654321';
     const arg3 = INTEGERS.ONES_255.toFixed(0);
+
+    it('that (emptyString)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThat1(
+          emptyReason,
+          arg1,
+        ).call(),
+        `TestLib:  <${arg1}>`,
+      );
+    });
 
     it('that (0 args)', async () => {
       await expectThrow(
