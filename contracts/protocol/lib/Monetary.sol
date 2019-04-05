@@ -18,9 +18,6 @@
 
 pragma solidity 0.5.7;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "./Math.sol";
-
 
 /**
  * @title Monetary
@@ -29,10 +26,6 @@ import { Math } from "./Math.sol";
  * Library for types involving money
  */
 library Monetary {
-    using SafeMath for uint256;
-
-    // ============ Structs ============
-
     struct Price {
         uint256 value;
     }
