@@ -22,6 +22,7 @@
 ## Table of Contents
 
  - [Security](#security)
+ - [Install](#install)
  - [Development](#development)
  - [Maintainers](#maintainers)
  - [Contributing](#contributing)
@@ -29,11 +30,57 @@
 
 ## Security
 
-The smart contracts were audited independently by Bramah Systems and Zeppelin.
+### Independent Audits
+
+The smart contracts were audited independently by both
+[Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
+
+### Code Coverage
 
 All production smart contracts are tested and have 100% branching code-coverage.
 
-Please email any of the [maintainers](#Maintainers) if any security issues are found or suspected.
+### Vulnerability Disclosure Policy
+
+The disclosure of security vulnerabilities helps us ensure the security of our users.
+
+**How to report a security vulnerability?**
+
+If you believe you’ve found a security vulnerability in one of our contracts or platforms,
+send it to us by emailing [security@dydx.exchange](mailto:security@dydx.exchange).
+Please include the following details with your report:
+
+* Description of the location and potential impact of the vulnerability;
+
+* A detailed description of the steps required to reproduce the vulnerability
+
+**Scope**
+
+Any vulnerability not previously disclosed by us or our independent auditors in their reports
+
+**Guidelines**  
+
+We require that all reporters:
+
+* Make every effort to avoid privacy violations, degradation of user experience,
+disruption to production systems, and destruction of data during security testing
+
+* Use the identified communication channels to report vulnerability information to us
+
+* Keep information about any vulnerabilities you’ve discovered confidential between yourself and
+dYdX until we’ve had 30 days to resolve the issue
+
+If you follow these guidelines when reporting an issue to us, we commit to:
+
+* Not pursue or support any legal action related to your findings
+
+* Work with you to understand and resolve the issue quickly
+(including an initial confirmation of your report within 72 hours of submission)
+
+* Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4)
+
+## Install
+
+`npm i -s @dydxprotocol/solo`
 
 ## Development
 
@@ -41,44 +88,41 @@ Please email any of the [maintainers](#Maintainers) if any security issues are f
 
 You must be running Docker
 
-```
-npm run build
-```
+`npm run build`
 
 ### Compile TypeScript
 
-```
-npm run build:js
-```
+`npm run build:js`
 
 ### Test
 
-Requires docker
+Requires [docker](https://docker.com).
 
-Start test node:
-```
-docker-compose up
-```
+**Start test node:**
 
-Deploy contracts to test node & run tests:
-```
-npm test
-```
+`docker-compose up`
 
-Just run tests (contracts must already be deployed to test node)
-```
-npm run test_only
-```
+**Deploy contracts to test node & run tests:**
 
-Just deploy contracts to test node:
-```
-npm run deploy_test
-```
+`npm test`
+
+**Just run tests (contracts must already be deployed to test node):**
+
+`npm run test_only`
+
+**Just deploy contracts to test node:**
+
+`npm run deploy_test`
 
 ## Maintainers
 
- - **Brendan Chou** `brendan@dydx.exchange`
- - **Antonio Juliano** `antonio@dydx.exchange`
+ - **Brendan Chou**
+ [@brendanchou](https://github.com/BrendanChou)
+ [`brendan@dydx.exchange`](mailto:brendan@dydx.exchange)
+
+ - **Antonio Juliano**
+ [@antoniojuliano](https://github.com/AntonioJuliano)
+ [`antonio@dydx.exchange`](mailto:antonio@dydx.exchange)
 
 ## License
 
