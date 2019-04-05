@@ -32,7 +32,8 @@
 
 ### Independent Audits
 
-The smart contracts were audited independently by both Zeppelin Solutions and Bramah Systems.
+The smart contracts were audited independently by both
+[Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
 
 ### Code Coverage
 
@@ -75,14 +76,11 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 * Work with you to understand and resolve the issue quickly
 (including an initial confirmation of your report within 72 hours of submission)
 
-* Grant a monetary reward based on the OWASP risk assessment methodology (similar to our [first
-protocol release](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4))
+* Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4)
 
 ## Install
 
-This project uses [node](https://nodejs.org) and [npm](https://npmjs.com).
-
-`npm i @dydxprotocol/solo`
+`npm i -s @dydxprotocol/solo`
 
 ## Development
 
