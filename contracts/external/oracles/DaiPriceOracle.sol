@@ -189,7 +189,7 @@ contract DaiPriceOracle is
 
     /**
      * Gets the USD price of DAI that this contract will move towards when updated. This price is
-     * not bounded by the varaibles governing the maximum deviation from the old price.
+     * not bounded by the variables governing the maximum deviation from the old price.
      */
     function getTargetPrice()
         public

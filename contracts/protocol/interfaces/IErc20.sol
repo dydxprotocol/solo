@@ -23,7 +23,7 @@ pragma solidity 0.5.7;
  * @author dYdX
  *
  * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
- * that we dont automatically revert when calling non-compliant tokens that have no return value for
+ * that we don't automatically revert when calling non-compliant tokens that have no return value for
  * transfer(), transferFrom(), or approve().
  */
 interface IErc20 {
