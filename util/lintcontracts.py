@@ -72,6 +72,7 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     authorLine = " * @author dYdX\n"
     blankLine = " *\n"
     solidityLine = "pragma solidity " + solidityVersion + ";\n"
+    abiEncoderLine = "pragma experimental ABIEncoderV2;\n"
     allLines = open(filepath, 'r').readlines()
 
     everythingOkay = True
@@ -86,6 +87,9 @@ def lintCommentHeader(dir, filepath, solidityVersion):
         everythingOkay = False
     if solidityLine not in allLines:
         print "Unlikely to be using solidity version " + solidityVersion + " in " + fileName
+        everythingOkay = False
+    if abiEncoderLine not in allLines:
+        print "Must use ABIEncoderV2 in " + fileName
         everythingOkay = False
 
     return everythingOkay
