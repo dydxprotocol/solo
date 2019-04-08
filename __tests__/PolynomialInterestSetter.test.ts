@@ -182,7 +182,7 @@ describe('PolynomialInterestSetter', () => {
     expect(maxAPR2).toEqual(newAPR);
   });
 
-  it('Fails to deploy contracts whose coefficients don\'t add to 100', async () => {
+  it("Fails to deploy contracts whose coefficients don't add to 100", async () => {
     await expectThrow(
       solo.contracts.testPolynomialInterestSetter.methods.createNew({
         maxAPR: '0',
