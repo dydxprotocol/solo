@@ -149,40 +149,40 @@ library Actions {
     // ============ Helper Functions ============
 
     function getMarketLayout(
-        ActionType ttype
+        ActionType actionType
     )
         internal
         pure
         returns (MarketLayout)
     {
         if (
-            ttype == Actions.ActionType.Deposit
-            || ttype == Actions.ActionType.Withdraw
-            || ttype == Actions.ActionType.Transfer
+            actionType == Actions.ActionType.Deposit
+            || actionType == Actions.ActionType.Withdraw
+            || actionType == Actions.ActionType.Transfer
         ) {
             return MarketLayout.OneMarket;
         }
-        else if (ttype == Actions.ActionType.Call) {
+        else if (actionType == Actions.ActionType.Call) {
             return MarketLayout.ZeroMarkets;
         }
         return MarketLayout.TwoMarkets;
     }
 
     function getAccountLayout(
-        ActionType ttype
+        ActionType actionType
     )
         internal
         pure
         returns (AccountLayout)
     {
         if (
-            ttype == Actions.ActionType.Transfer
-            || ttype == Actions.ActionType.Trade
+            actionType == Actions.ActionType.Transfer
+            || actionType == Actions.ActionType.Trade
         ) {
             return AccountLayout.TwoPrimary;
         } else if (
-            ttype == Actions.ActionType.Liquidate
-            || ttype == Actions.ActionType.Vaporize
+            actionType == Actions.ActionType.Liquidate
+            || actionType == Actions.ActionType.Vaporize
         ) {
             return AccountLayout.PrimaryAndSecondary;
         }
