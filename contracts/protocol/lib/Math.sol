@@ -66,51 +66,51 @@ library Math {
     }
 
     function to128(
-        uint256 x
+        uint256 number
     )
         internal
         pure
         returns (uint128)
     {
-        uint128 r = uint128(x);
+        uint128 result = uint128(number);
         Require.that(
-            r == x,
+            result == number,
             FILE,
             "Unsafe cast to uint128"
         );
-        return r;
+        return result;
     }
 
     function to96(
-        uint256 x
+        uint256 number
     )
         internal
         pure
         returns (uint96)
     {
-        uint96 r = uint96(x);
+        uint96 result = uint96(number);
         Require.that(
-            r == x,
+            result == number,
             FILE,
             "Unsafe cast to uint96"
         );
-        return r;
+        return result;
     }
 
     function to32(
-        uint256 x
+        uint256 number
     )
         internal
         pure
         returns (uint32)
     {
-        uint32 r = uint32(x);
+        uint32 result = uint32(number);
         Require.that(
-            r == x,
+            result == number,
             FILE,
             "Unsafe cast to uint32"
         );
-        return r;
+        return result;
     }
 
     function min(
