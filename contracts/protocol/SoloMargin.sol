@@ -31,7 +31,7 @@ import { Storage } from "./lib/Storage.sol";
  * @title SoloMargin
  * @author dYdX
  *
- * Main contract that inherets from other contracts
+ * Main contract that inherits from other contracts
  */
 contract SoloMargin is
     State,

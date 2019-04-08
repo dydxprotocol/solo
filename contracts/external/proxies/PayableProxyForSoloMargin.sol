@@ -71,7 +71,7 @@ contract PayableProxyForSoloMargin is
     {
         require( // coverage-disable-line
             msg.sender == address(WETH),
-            "Cannot recieve ETH"
+            "Cannot receive ETH"
         );
     }
 

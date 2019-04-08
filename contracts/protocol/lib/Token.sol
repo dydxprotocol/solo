@@ -164,7 +164,7 @@ library Token {
                 returnValue := mload(0x0)
             }
 
-            // not sure what was returned: dont mark as success
+            // not sure what was returned: don't mark as success
             default { }
         }
 
