@@ -77,7 +77,7 @@ contract PayableProxyForSoloMargin is
 
     function operate(
         Account.Info[] memory accounts,
-        Actions.ActionArgs[] memory args,
+        Actions.ActionArgs[] memory actions,
         address payable sendEthTo
     )
         public
@@ -92,11 +92,11 @@ contract PayableProxyForSoloMargin is
         }
 
         // validate the input
-        for (uint256 i = 0; i < args.length; i++) {
-            Actions.ActionArgs memory operation = args[i];
+        for (uint256 i = 0; i < actions.length; i++) {
+            Actions.ActionArgs memory action = actions[i];
 
             // Can only operate on accounts owned by msg.sender
-            address owner1 = accounts[operation.accountId].owner;
+            address owner1 = accounts[action.accountId].owner;
             Require.that(
                 owner1 == msg.sender,
                 FILE,
@@ -105,8 +105,8 @@ contract PayableProxyForSoloMargin is
             );
 
             // For a transfer both accounts must be owned by msg.sender
-            if (operation.actionType == Actions.ActionType.Transfer) {
-                address owner2 = accounts[operation.otherAccountId].owner;
+            if (action.actionType == Actions.ActionType.Transfer) {
+                address owner2 = accounts[action.otherAccountId].owner;
                 Require.that(
                     owner2 == msg.sender,
                     FILE,
@@ -116,7 +116,7 @@ contract PayableProxyForSoloMargin is
             }
         }
 
-        SOLO_MARGIN.operate(accounts, args);
+        SOLO_MARGIN.operate(accounts, actions);
 
         // return all remaining WETH to the sendEthTo as ETH
         uint256 remainingWeth = weth.balanceOf(address(this));

@@ -222,36 +222,36 @@ library OperationImpl {
         private
     {
         for (uint256 i = 0; i < actions.length; i++) {
-            Actions.ActionArgs memory arg = actions[i];
-            Actions.ActionType actionType = arg.actionType;
+            Actions.ActionArgs memory action = actions[i];
+            Actions.ActionType actionType = action.actionType;
 
             if (actionType == Actions.ActionType.Deposit) {
-                _deposit(state, Actions.parseDepositArgs(accounts, arg));
+                _deposit(state, Actions.parseDepositArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Withdraw) {
-                _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
+                _withdraw(state, Actions.parseWithdrawArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Transfer) {
-                _transfer(state, Actions.parseTransferArgs(accounts, arg));
+                _transfer(state, Actions.parseTransferArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Buy) {
-                _buy(state, Actions.parseBuyArgs(accounts, arg));
+                _buy(state, Actions.parseBuyArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Sell) {
-                _sell(state, Actions.parseSellArgs(accounts, arg));
+                _sell(state, Actions.parseSellArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Trade) {
-                _trade(state, Actions.parseTradeArgs(accounts, arg));
+                _trade(state, Actions.parseTradeArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg), cache);
+                _liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), cache);
+                _vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
             else  {
                 assert(actionType == Actions.ActionType.Call);
-                _call(state, Actions.parseCallArgs(accounts, arg));
+                _call(state, Actions.parseCallArgs(accounts, action));
             }
         }
     }
