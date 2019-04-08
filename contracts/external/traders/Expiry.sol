@@ -143,7 +143,7 @@ contract Expiry is
 
         // expiry time validation
         Require.that(
-            Time.hasHappened(getExpiry(makerAccount, inputMarketId)),
+            hasExpired(makerAccount, inputMarketId),
             FILE,
             "Loan not yet expired"
         );
@@ -193,6 +193,18 @@ contract Expiry is
             marketId,
             time
         );
+    }
+
+    function hasExpired(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        private
+        view
+        returns (bool)
+    {
+        uint32 expiry = getExpiry(account, marketId);
+        return expiry != 0 && expiry <= Time.currentTime();
     }
 
     function inputWeiToOutput(
