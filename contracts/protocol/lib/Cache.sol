@@ -46,6 +46,9 @@ library Cache {
 
     // ============ Setter Functions ============
 
+    /**
+     * Initializes an empty cache for some given number of total markets.
+     */
     function create(
         uint256 numMarkets
     )
@@ -58,6 +61,10 @@ library Cache {
         });
     }
 
+    /**
+     * Adds market information (price and total borrowed par if the market is closing) to the cache.
+     * Returns true if the market information did not previously exist in the cache.
+     */
     function addMarket(
         MarketCache memory cache,
         Storage.State storage state,

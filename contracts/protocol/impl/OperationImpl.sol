@@ -631,7 +631,7 @@ library OperationImpl {
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
             Require.that(
-                !state.isCollateralized(args.liquidAccount, cache, false),
+                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
                 FILE,
                 "Unliquidatable account",
                 args.liquidAccount.owner,
@@ -848,6 +848,10 @@ library OperationImpl {
 
     // ============ Private Functions ============
 
+    /**
+     * For the purposes of liquidation or vaporization, gets the value-equivalent amount of heldWei
+     * given owedWei and the (spread-adjusted) prices of each asset.
+     */
     function _owedWeiToHeldWei(
         Types.Wei memory owedWei,
         Monetary.Price memory heldPrice,
@@ -863,6 +867,10 @@ library OperationImpl {
         });
     }
 
+    /**
+     * For the purposes of liquidation or vaporization, gets the value-equivalent amount of owedWei
+     * given heldWei and the (spread-adjusted) prices of each asset.
+     */
     function _heldWeiToOwedWei(
         Types.Wei memory heldWei,
         Monetary.Price memory heldPrice,
@@ -878,6 +886,12 @@ library OperationImpl {
         });
     }
 
+    /**
+     * Attempts to vaporize an account's balance using the excess tokens in the protocol. Returns a
+     * bool and a wei value. The boolean is true if and only if the balance was fully vaporized. The
+     * Wei value is how many excess tokens were used to partially or fully vaporize the account's
+     * negative balance.
+     */
     function _vaporizeUsingExcess(
         Storage.State storage state,
         Actions.VaporizeArgs memory args
@@ -887,6 +901,7 @@ library OperationImpl {
     {
         Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMarket);
 
+        // There are no excess funds, return zero
         if (!excessWei.isPositive()) {
             return (false, Types.zeroWei());
         }
@@ -894,6 +909,7 @@ library OperationImpl {
         Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
         maxRefundWei.sign = true;
 
+        // The account is fully vaporizable using excess funds
         if (excessWei.value >= maxRefundWei.value) {
             state.setPar(
                 args.vaporAccount,
@@ -901,7 +917,10 @@ library OperationImpl {
                 Types.zeroPar()
             );
             return (true, maxRefundWei);
-        } else {
+        }
+
+        // The account is only partially vaporizable using excess funds
+        else {
             state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMarket,
@@ -911,6 +930,10 @@ library OperationImpl {
         }
     }
 
+    /**
+     * Returns the (spread-adjusted) prices of two assets for the purposes of liquidation or
+     * vaporization.
+     */
     function _getLiquidationPrices(
         Storage.State storage state,
         Cache.MarketCache memory cache,

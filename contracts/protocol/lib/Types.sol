@@ -44,7 +44,7 @@ library Types {
     }
 
     struct AssetAmount {
-        bool sign;
+        bool sign; // true if positive
         AssetDenomination denomination;
         AssetReference ref;
         uint256 value;
@@ -58,7 +58,7 @@ library Types {
     }
 
     struct Par {
-        bool sign;
+        bool sign; // true if positive
         uint128 value;
     }
 
@@ -171,7 +171,7 @@ library Types {
     // ============ Wei (Token Amount) ============
 
     struct Wei {
-        bool sign;
+        bool sign; // true if positive
         uint256 value;
     }
 
