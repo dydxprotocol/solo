@@ -25,6 +25,7 @@ import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
@@ -44,6 +45,7 @@ contract Expiry is
     ICallee,
     IAutoTrader
 {
+    using SafeMath for uint32;
     using SafeMath for uint256;
     using Types for Types.Par;
     using Types for Types.Wei;
@@ -66,14 +68,20 @@ contract Expiry is
     // owner => number => market => time
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
 
+    // time over which the liquidation ratio goes from zero to maximum
+    uint256 public EXPIRY_RAMP_TIME;
+
     // ============ Constructor ============
 
     constructor (
-        address soloMargin
+        address soloMargin,
+        uint256 expiryRampTime
     )
         public
         OnlySolo(soloMargin)
-    {} /* solium-disable-line no-empty-blocks */
+    {
+        EXPIRY_RAMP_TIME = expiryRampTime;
+    }
 
     // ============ Public Functions ============
 
@@ -124,6 +132,67 @@ contract Expiry is
         onlySolo(msg.sender)
         returns (Types.AssetAmount memory)
     {
+        Types.AssetAmount memory result = getTradeCostInternal(
+            inputMarketId,
+            outputMarketId,
+            makerAccount,
+            oldInputPar,
+            newInputPar,
+            inputWei
+        );
+
+        // clear expiry if loan is fully repaid
+        if (newInputPar.isZero()) {
+            setExpiry(makerAccount, inputMarketId, 0);
+        }
+
+        return result;
+    }
+
+    function getSpreadAdjustedPrices(
+        Account.Info memory account,
+        uint256 inputMarketId,
+        uint256 outputMarketId
+    )
+        public
+        view
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
+    {
+        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+            outputMarketId,
+            inputMarketId
+        );
+
+        // adjust liquidationSpread for recently expired positions
+        uint256 expiryAge = getExpiryAge(account, inputMarketId);
+        if (expiryAge < EXPIRY_RAMP_TIME) {
+            spread.value = Math.getPartial(spread.value, expiryAge, EXPIRY_RAMP_TIME);
+        }
+
+        Monetary.Price memory inputPrice = SOLO_MARGIN.getMarketPrice(inputMarketId);
+        Monetary.Price memory outputPrice = SOLO_MARGIN.getMarketPrice(outputMarketId);
+        inputPrice.value = inputPrice.value.add(Decimal.mul(inputPrice.value, spread));
+
+        return (inputPrice, outputPrice);
+    }
+
+    // ============ Private Functions ============
+
+    function getTradeCostInternal(
+        uint256 inputMarketId,
+        uint256 outputMarketId,
+        Account.Info memory makerAccount,
+        Types.Par memory oldInputPar,
+        Types.Par memory newInputPar,
+        Types.Wei memory inputWei
+    )
+        private
+        view
+        returns (Types.AssetAmount memory)
+    {
         // input validation
         Require.that(
             oldInputPar.isNegative(),
@@ -141,18 +210,6 @@ contract Expiry is
             "Loans must be decreased"
         );
 
-        // expiry time validation
-        Require.that(
-            hasExpired(makerAccount, inputMarketId),
-            FILE,
-            "Loan not yet expired"
-        );
-
-        // clear expiry if loan is fully repaid
-        if (newInputPar.value == 0) {
-            setExpiry(makerAccount, inputMarketId, 0);
-        }
-
         // get maximum acceptable return value
         Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
         Require.that(
@@ -163,6 +220,7 @@ contract Expiry is
 
         // get return value
         Types.AssetAmount memory output = inputWeiToOutput(
+            makerAccount,
             inputWei,
             inputMarketId,
             outputMarketId
@@ -175,8 +233,6 @@ contract Expiry is
 
         return output;
     }
-
-    // ============ Private Functions ============
 
     function setExpiry(
         Account.Info memory account,
@@ -195,19 +251,8 @@ contract Expiry is
         );
     }
 
-    function hasExpired(
-        Account.Info memory account,
-        uint256 marketId
-    )
-        private
-        view
-        returns (bool)
-    {
-        uint32 expiry = getExpiry(account, marketId);
-        return expiry != 0 && expiry <= Time.currentTime();
-    }
-
     function inputWeiToOutput(
+        Account.Info memory account,
         Types.Wei memory inputWei,
         uint256 inputMarketId,
         uint256 outputMarketId
@@ -216,18 +261,15 @@ contract Expiry is
         view
         returns (Types.AssetAmount memory)
     {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
-            outputMarketId,
-            inputMarketId
-        );
-        uint256 inputPrice = SOLO_MARGIN.getMarketPrice(inputMarketId).value;
-        uint256 outputPrice = SOLO_MARGIN.getMarketPrice(outputMarketId).value;
-        inputPrice = inputPrice.add(Decimal.mul(inputPrice, spread));
+        (
+            Monetary.Price memory inputPrice,
+            Monetary.Price memory outputPrice
+        ) = getSpreadAdjustedPrices(account, inputMarketId, outputMarketId);
 
         uint256 nonSpreadValue = Math.getPartial(
             inputWei.value,
-            inputPrice,
-            outputPrice
+            inputPrice.value,
+            outputPrice.value
         );
         return Types.AssetAmount({
             sign: false,
@@ -235,6 +277,31 @@ contract Expiry is
             ref: Types.AssetReference.Delta,
             value: nonSpreadValue
         });
+    }
+
+    function getExpiryAge(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        private
+        view
+        returns (uint256)
+    {
+        uint32 expiry = getExpiry(account, marketId);
+
+        Require.that(
+            expiry != 0,
+            FILE,
+            "Expiry not set"
+        );
+
+        Require.that(
+            expiry <= Time.currentTime(),
+            FILE,
+            "Loan not yet expired"
+        );
+
+        return Time.currentTime().sub(expiry);
     }
 
     function parseCallArgs(

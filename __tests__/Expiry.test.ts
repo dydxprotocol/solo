@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
-import { resetEVM, snapshot } from './helpers/EVM';
+import { mineAvgBlock, resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
@@ -27,6 +27,7 @@ const defaultTime = new BigNumber(1234321);
 const par = new BigNumber(10000);
 const zero = new BigNumber(0);
 const premium = new BigNumber('1.05');
+const defaultPrice = new BigNumber('1e40');
 let defaultGlob: Trade;
 
 describe('Expiry', () => {
@@ -92,8 +93,8 @@ describe('Expiry', () => {
     const txResult = await setExpiry(newTime);
     const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
     const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
-    expect(noLogs.filter(e => e.name === 'ExpirySet').length).toEqual(0);
-    expect(logs.filter(e => e.name === 'ExpirySet').length).not.toEqual(0);
+    expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
+    expect(logs.filter((e: any) => e.name === 'ExpirySet').length).not.toEqual(0);
   });
 
   it('Doesnt set expiry for non-negative balances', async () => {
@@ -294,12 +295,12 @@ describe('Expiry', () => {
     await setExpiry(zero);
     await expectExpireRevert(
       {},
-      'Expiry: Loan not yet expired',
+      'Expiry: Expiry not set',
     );
   });
 
   it('Fails for a future expiry', async () => {
-    await setExpiry(INTEGERS.ONES_31);
+    await setExpiry(new BigNumber('1892160000'));
     await expectExpireRevert(
       {},
       'Expiry: Loan not yet expired',
@@ -323,23 +324,68 @@ describe('Expiry', () => {
   });
 
   it('Fails for overtaking collateral', async () => {
+    await setExpiry(INTEGERS.ONE);
     await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par);
     await expectExpireRevert(
       {},
       'Expiry: Collateral cannot be overtaken',
     );
   });
+
+  describe('#getSpreadAdjustedPrices', async () => {
+    it('Fails for non-expired positions', async () => {
+      await setExpiry(INTEGERS.ONES_31);
+      await expectThrow(
+        solo.getters.getExpiryPrices(
+          owner2,
+          accountNumber2,
+          owedMarket,
+          heldMarket,
+        ),
+        'Expiry: Loan not yet expired',
+      );
+    });
+
+    it('Succeeds for recently expired positions', async () => {
+      const txResult = await setExpiry(INTEGERS.ZERO);
+      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+      await setExpiry(new BigNumber(timestamp));
+      await mineAvgBlock();
+      const prices = await solo.getters.getExpiryPrices(
+        owner2,
+        accountNumber2,
+        owedMarket,
+        heldMarket,
+      );
+      expect(prices.inputPrice.lt(defaultPrice.times(premium))).toEqual(true);
+      expect(prices.inputPrice.gte(defaultPrice)).toEqual(true);
+      expect(prices.outputPrice).toEqual(defaultPrice);
+    });
+
+    it('Succeeds for very expired positions', async () => {
+      await setExpiry(INTEGERS.ONE);
+      const prices = await solo.getters.getExpiryPrices(
+        owner2,
+        accountNumber2,
+        owedMarket,
+        heldMarket,
+      );
+      expect(prices.inputPrice).toEqual(defaultPrice.times(premium));
+      expect(prices.outputPrice).toEqual(defaultPrice);
+    });
+  });
 });
 
 // ============ Helper Functions ============
 
 async function setExpiry(time?: BigNumber) {
-  return solo.operation.initiate().setExpiry({
+  const txResult = await solo.operation.initiate().setExpiry({
     primaryAccountOwner: owner2,
     primaryAccountId: accountNumber2,
     marketId: owedMarket,
     expiryTime: time ? time : defaultTime,
   }).commit({ from: owner2 });
+  return txResult;
 }
 
 async function expectExpireOkay(

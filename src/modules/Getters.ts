@@ -481,6 +481,31 @@ export class Getters {
     return new BigNumber(result);
   }
 
+  public async getExpiryPrices(
+    accountOwner: address,
+    accountNumber: Integer,
+    inputMarketId: Integer,
+    outputMarketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<{inputPrice: Integer, outputPrice: Integer}> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.getSpreadAdjustedPrices(
+        {
+          owner: accountOwner,
+          number: accountNumber.toFixed(0),
+        },
+        inputMarketId.toFixed(0),
+        outputMarketId.toFixed(0),
+      ),
+      options,
+    );
+
+    return {
+      inputPrice: new BigNumber(result[0].value),
+      outputPrice: new BigNumber(result[1].value),
+    };
+  }
+
   // ============ Helper Functions ============
 
   private parseIndex(

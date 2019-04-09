@@ -24,6 +24,7 @@ const {
   getRiskLimits,
   getRiskParams,
   getDaiPriceOracleParams,
+  getExpiryRampTime,
 } = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
 
@@ -172,6 +173,7 @@ async function deploySecondLayer(deployer, network) {
     deployer.deploy(
       Expiry,
       soloMargin.address,
+      getExpiryRampTime(),
     ),
   ]);
 
