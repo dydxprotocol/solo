@@ -22,6 +22,7 @@ import {
   Amount,
   Integer,
   AccountOperationOptions,
+  ConfirmationType,
   address,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
@@ -209,7 +210,9 @@ export class AccountOperation {
       throw new Error('No actions have been added to operation');
     }
 
-    this.committed = true;
+    if (options && options.confirmationType !== ConfirmationType.Simulate) {
+      this.committed = true;
+    }
 
     try {
       let method: TransactionObject<void>;
@@ -223,7 +226,7 @@ export class AccountOperation {
         method = this.contracts.payableProxy.methods.operate(
           this.accounts,
           this.actions,
-          this.sendEthTo || options.from || this.contracts.payableProxy.options.from,
+          this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
         );
       }
 
