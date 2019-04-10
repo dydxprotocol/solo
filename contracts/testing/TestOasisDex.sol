@@ -17,6 +17,7 @@
 */
 
 pragma solidity 0.5.7;
+pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IErc20 } from "../protocol/interfaces/IErc20.sol";

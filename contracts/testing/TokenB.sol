@@ -17,6 +17,7 @@
 */
 
 pragma solidity 0.5.7;
+pragma experimental ABIEncoderV2;
 
 import { TestToken } from "./TestToken.sol";
 
