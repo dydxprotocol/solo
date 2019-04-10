@@ -403,7 +403,7 @@ export class Contracts {
     if (confirmationType === ConfirmationType.Simulate || !options.gas) {
       let gasEstimate: number;
 
-      if (this.defaultGas) {
+      if (this.defaultGas && confirmationType !== ConfirmationType.Simulate) {
         txOptions.gas = this.defaultGas;
       } else {
         try {
