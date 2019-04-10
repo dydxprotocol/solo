@@ -141,9 +141,9 @@ library OperationImpl {
         // keep track of primary accounts and indexes that need updating
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory arg = actions[i];
-            Actions.ActionType ttype = arg.actionType;
-            Actions.MarketLayout marketLayout = Actions.getMarketLayout(ttype);
-            Actions.AccountLayout accountLayout = Actions.getAccountLayout(ttype);
+            Actions.ActionType actionType = arg.actionType;
+            Actions.MarketLayout marketLayout = Actions.getMarketLayout(actionType);
+            Actions.AccountLayout accountLayout = Actions.getAccountLayout(actionType);
 
             // parse out primary accounts
             if (accountLayout != Actions.AccountLayout.OnePrimary) {
@@ -222,36 +222,36 @@ library OperationImpl {
         private
     {
         for (uint256 i = 0; i < actions.length; i++) {
-            Actions.ActionArgs memory arg = actions[i];
-            Actions.ActionType ttype = arg.actionType;
+            Actions.ActionArgs memory action = actions[i];
+            Actions.ActionType actionType = action.actionType;
 
-            if (ttype == Actions.ActionType.Deposit) {
-                _deposit(state, Actions.parseDepositArgs(accounts, arg));
+            if (actionType == Actions.ActionType.Deposit) {
+                _deposit(state, Actions.parseDepositArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Withdraw) {
-                _withdraw(state, Actions.parseWithdrawArgs(accounts, arg));
+            else if (actionType == Actions.ActionType.Withdraw) {
+                _withdraw(state, Actions.parseWithdrawArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Transfer) {
-                _transfer(state, Actions.parseTransferArgs(accounts, arg));
+            else if (actionType == Actions.ActionType.Transfer) {
+                _transfer(state, Actions.parseTransferArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Buy) {
-                _buy(state, Actions.parseBuyArgs(accounts, arg));
+            else if (actionType == Actions.ActionType.Buy) {
+                _buy(state, Actions.parseBuyArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Sell) {
-                _sell(state, Actions.parseSellArgs(accounts, arg));
+            else if (actionType == Actions.ActionType.Sell) {
+                _sell(state, Actions.parseSellArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Trade) {
-                _trade(state, Actions.parseTradeArgs(accounts, arg));
+            else if (actionType == Actions.ActionType.Trade) {
+                _trade(state, Actions.parseTradeArgs(accounts, action));
             }
-            else if (ttype == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, arg), cache);
+            else if (actionType == Actions.ActionType.Liquidate) {
+                _liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
             }
-            else if (ttype == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, arg), cache);
+            else if (actionType == Actions.ActionType.Vaporize) {
+                _vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
             else  {
-                assert(ttype == Actions.ActionType.Call);
-                _call(state, Actions.parseCallArgs(accounts, arg));
+                assert(actionType == Actions.ActionType.Call);
+                _call(state, Actions.parseCallArgs(accounts, action));
             }
         }
     }
