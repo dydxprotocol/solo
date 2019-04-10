@@ -269,7 +269,7 @@ contract Expiry is
             Require.that(
                 !newInputPar.isNegative(),
                 FILE,
-                "Collateral cannot be overpaid"
+                "Collateral cannot be overused"
             );
             assert(oldInputPar.isPositive());
             Require.that(
