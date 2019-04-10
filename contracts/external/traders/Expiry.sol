@@ -125,34 +125,44 @@ contract Expiry is
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,
-        bytes memory /* data */
+        bytes memory data
     )
         public
-        // view
         onlySolo(msg.sender)
         returns (Types.AssetAmount memory)
     {
-        Types.AssetAmount memory result = getTradeCostInternal(
+        // return zero if input amount is zero
+        if (inputWei.isZero()) {
+            return Types.AssetAmount({
+                sign: true,
+                denomination: Types.AssetDenomination.Par,
+                ref: Types.AssetReference.Delta,
+                value: 0
+            });
+        }
+
+        (
+            uint256 owedMarketId,
+            uint32 maxExpiry
+        ) = parseTradeArgs(data);
+
+        return getTradeCostInternal(
             inputMarketId,
             outputMarketId,
             makerAccount,
             oldInputPar,
             newInputPar,
-            inputWei
+            inputWei,
+            owedMarketId,
+            maxExpiry
         );
-
-        // clear expiry if loan is fully repaid
-        if (newInputPar.isZero()) {
-            setExpiry(makerAccount, inputMarketId, 0);
-        }
-
-        return result;
     }
 
     function getSpreadAdjustedPrices(
         Account.Info memory account,
-        uint256 inputMarketId,
-        uint256 outputMarketId
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 maxExpiry
     )
         public
         view
@@ -162,21 +172,41 @@ contract Expiry is
         )
     {
         Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
-            outputMarketId,
-            inputMarketId
+            heldMarketId,
+            owedMarketId
         );
 
         // adjust liquidationSpread for recently expired positions
-        uint256 expiryAge = getExpiryAge(account, inputMarketId);
+        uint32 expiry = getExpiry(account, owedMarketId);
+
+        // validate expiry
+        Require.that(
+            expiry != 0,
+            FILE,
+            "Expiry not set"
+        );
+        Require.that(
+            expiry <= Time.currentTime(),
+            FILE,
+            "Loan not yet expired"
+        );
+        Require.that(
+            expiry >= maxExpiry,
+            FILE,
+            "Expiry past maxExpiry"
+        );
+
+        uint256 expiryAge = Time.currentTime().sub(expiry);
+
         if (expiryAge < EXPIRY_RAMP_TIME) {
             spread.value = Math.getPartial(spread.value, expiryAge, EXPIRY_RAMP_TIME);
         }
 
-        Monetary.Price memory inputPrice = SOLO_MARGIN.getMarketPrice(inputMarketId);
-        Monetary.Price memory outputPrice = SOLO_MARGIN.getMarketPrice(outputMarketId);
-        inputPrice.value = inputPrice.value.add(Decimal.mul(inputPrice.value, spread));
+        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
+        owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
 
-        return (inputPrice, outputPrice);
+        return (heldPrice, owedPrice);
     }
 
     // ============ Private Functions ============
@@ -187,49 +217,81 @@ contract Expiry is
         Account.Info memory makerAccount,
         Types.Par memory oldInputPar,
         Types.Par memory newInputPar,
-        Types.Wei memory inputWei
+        Types.Wei memory inputWei,
+        uint256 owedMarketId,
+        uint32 maxExpiry
     )
         private
-        view
         returns (Types.AssetAmount memory)
     {
-        // input validation
-        Require.that(
-            oldInputPar.isNegative(),
-            FILE,
-            "Balance must be negative"
-        );
-        Require.that(
-            !newInputPar.isPositive(),
-            FILE,
-            "Loans cannot be overpaid"
-        );
-        Require.that(
-            inputWei.isPositive(),
-            FILE,
-            "Loans must be decreased"
-        );
-
-        // get maximum acceptable return value
+        Types.AssetAmount memory output;
         Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
-        Require.that(
-            maxOutputWei.isPositive(),
-            FILE,
-            "Collateral must be positive"
-        );
 
-        // get return value
-        Types.AssetAmount memory output = inputWeiToOutput(
-            makerAccount,
-            inputWei,
-            inputMarketId,
-            outputMarketId
-        );
+        // inputMarketId == owedMarketId
+        if (inputWei.isPositive()) {
+            Require.that(
+                inputMarketId == owedMarketId,
+                FILE,
+                "inputMarket mismatch"
+            );
+            Require.that(
+                !newInputPar.isPositive(),
+                FILE,
+                "Loans cannot be overpaid"
+            );
+            assert(oldInputPar.isNegative());
+            Require.that(
+                maxOutputWei.isPositive(),
+                FILE,
+                "Collateral must be positive"
+            );
+            output = owedWeiToHeldWei(
+                makerAccount,
+                inputWei,
+                outputMarketId,
+                inputMarketId,
+                maxExpiry
+            );
+
+            // clear expiry if loan is fully repaid
+            if (newInputPar.isZero()) {
+                setExpiry(makerAccount, owedMarketId, 0);
+            }
+        }
+
+        // inputMarketId == heldMarketId
+        else {
+            Require.that(
+                outputMarketId == owedMarketId,
+                FILE,
+                "outputMarket mismatch"
+            );
+            Require.that(
+                !newInputPar.isNegative(),
+                FILE,
+                "Collateral cannot be overpaid"
+            );
+            assert(oldInputPar.isPositive());
+            Require.that(
+                maxOutputWei.isNegative(),
+                FILE,
+                "Loans must be negative"
+            );
+            output = heldWeiToOwedWei(
+                makerAccount,
+                inputWei,
+                inputMarketId,
+                outputMarketId,
+                maxExpiry
+            );
+        }
+
         Require.that(
             output.value <= maxOutputWei.value,
             FILE,
-            "Collateral cannot be overtaken"
+            "outputMarket too small"
         );
+        assert(output.sign != maxOutputWei.sign);
 
         return output;
     }
@@ -251,57 +313,74 @@ contract Expiry is
         );
     }
 
-    function inputWeiToOutput(
+    function heldWeiToOwedWei(
         Account.Info memory account,
-        Types.Wei memory inputWei,
-        uint256 inputMarketId,
-        uint256 outputMarketId
+        Types.Wei memory heldWei,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 maxExpiry
     )
         private
         view
         returns (Types.AssetAmount memory)
     {
         (
-            Monetary.Price memory inputPrice,
-            Monetary.Price memory outputPrice
-        ) = getSpreadAdjustedPrices(account, inputMarketId, outputMarketId);
-
-        uint256 nonSpreadValue = Math.getPartial(
-            inputWei.value,
-            inputPrice.value,
-            outputPrice.value
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPrice
+        ) = getSpreadAdjustedPrices(
+            account,
+            heldMarketId,
+            owedMarketId,
+            maxExpiry
         );
+
+        uint256 owedAmount = Math.getPartial(
+            heldWei.value,
+            heldPrice.value,
+            owedPrice.value
+        );
+
+        return Types.AssetAmount({
+            sign: true,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
+            value: owedAmount
+        });
+    }
+
+    function owedWeiToHeldWei(
+        Account.Info memory account,
+        Types.Wei memory owedWei,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 maxExpiry
+    )
+        private
+        view
+        returns (Types.AssetAmount memory)
+    {
+        (
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPrice
+        ) = getSpreadAdjustedPrices(
+            account,
+            heldMarketId,
+            owedMarketId,
+            maxExpiry
+        );
+
+        uint256 heldAmount = Math.getPartial(
+            owedWei.value,
+            owedPrice.value,
+            heldPrice.value
+        );
+
         return Types.AssetAmount({
             sign: false,
             denomination: Types.AssetDenomination.Wei,
             ref: Types.AssetReference.Delta,
-            value: nonSpreadValue
+            value: heldAmount
         });
-    }
-
-    function getExpiryAge(
-        Account.Info memory account,
-        uint256 marketId
-    )
-        private
-        view
-        returns (uint256)
-    {
-        uint32 expiry = getExpiry(account, marketId);
-
-        Require.that(
-            expiry != 0,
-            FILE,
-            "Expiry not set"
-        );
-
-        Require.that(
-            expiry <= Time.currentTime(),
-            FILE,
-            "Loan not yet expired"
-        );
-
-        return Time.currentTime().sub(expiry);
     }
 
     function parseCallArgs(
@@ -331,6 +410,37 @@ contract Expiry is
 
         return (
             marketId,
+            Math.to32(rawExpiry)
+        );
+    }
+
+    function parseTradeArgs(
+        bytes memory data
+    )
+        private
+        pure
+        returns (
+            uint256,
+            uint32
+        )
+    {
+        Require.that(
+            data.length == 64,
+            FILE,
+            "Trade data invalid length"
+        );
+
+        uint256 owedMarketId;
+        uint256 rawExpiry;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            owedMarketId := mload(add(data, 32))
+            rawExpiry := mload(add(data, 64))
+        }
+
+        return (
+            owedMarketId,
             Math.to32(rawExpiry)
         );
     }

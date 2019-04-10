@@ -3,6 +3,7 @@ import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { mineAvgBlock, resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
+import { toBytes } from '../src/lib/BytesHelper';
 import { INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
 import {
@@ -51,7 +52,7 @@ describe('Expiry', () => {
         denomination: AmountDenomination.Principal,
         reference: AmountReference.Target,
       },
-      data: [],
+      data: toBytes(owedMarket, INTEGERS.ZERO),
     };
 
     await resetEVM();
@@ -69,278 +70,306 @@ describe('Expiry', () => {
     await resetEVM(snapshotId);
   });
 
-  it('Succeeds in setting expiry', async () => {
-    const newTime = defaultTime.plus(1000);
-    const txResult = await setExpiry(newTime);
-    const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
-    expect(expiry).toEqual(newTime);
+  describe('set expiry', async () => {
+    it('Succeeds in setting expiry', async () => {
+      const newTime = defaultTime.plus(1000);
+      const txResult = await setExpiry(newTime);
+      const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(expiry).toEqual(newTime);
 
-    const logs = solo.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(5);
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(5);
 
-    const expirySetLog = logs[3];
-    expect(expirySetLog.name).toEqual('ExpirySet');
-    expect(expirySetLog.args.owner).toEqual(owner2);
-    expect(expirySetLog.args.number).toEqual(accountNumber2);
-    expect(expirySetLog.args.marketId).toEqual(owedMarket);
-    expect(expirySetLog.args.time).toEqual(newTime);
+      const expirySetLog = logs[3];
+      expect(expirySetLog.name).toEqual('ExpirySet');
+      expect(expirySetLog.args.owner).toEqual(owner2);
+      expect(expirySetLog.args.number).toEqual(accountNumber2);
+      expect(expirySetLog.args.marketId).toEqual(owedMarket);
+      expect(expirySetLog.args.time).toEqual(newTime);
 
-    console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
-  });
-
-  it('Skips logs when necessary', async () => {
-    const newTime = defaultTime.plus(1000);
-    const txResult = await setExpiry(newTime);
-    const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
-    const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
-    expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
-    expect(logs.filter((e: any) => e.name === 'ExpirySet').length).not.toEqual(0);
-  });
-
-  it('Doesnt set expiry for non-negative balances', async () => {
-    const newTime = defaultTime.plus(1000);
-    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
-    await setExpiry(newTime);
-    const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
-    expect(expiry).toEqual(defaultTime);
-  });
-
-  it('Allows setting expiry back to zero even for non-negative balances', async () => {
-    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
-    await setExpiry(zero);
-    const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
-    expect(expiry).toEqual(zero);
-  });
-
-  it('Succeeds in expiring', async () => {
-    const txResult = await expectExpireOkay({});
-
-    const logs = solo.logs.parseLogs(txResult);
-
-    const expiryLog = logs[3];
-    expect(expiryLog.name).toEqual('ExpirySet');
-    expect(expiryLog.args.owner).toEqual(owner2);
-    expect(expiryLog.args.number).toEqual(accountNumber2);
-    expect(expiryLog.args.marketId).toEqual(owedMarket);
-    expect(expiryLog.args.time).toEqual(zero);
-
-    const [
-      held1,
-      owed1,
-      held2,
-      owed2,
-    ] = await Promise.all([
-      solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-      solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-    ]);
-
-    expect(owed1).toEqual(zero);
-    expect(owed2).toEqual(zero);
-    expect(held1).toEqual(par.times(premium));
-    expect(held2).toEqual(par.times(2).minus(held1));
-
-    console.log(`\tExpiring gas used: ${txResult.gasUsed}`);
-  });
-
-  it('Succeeds in expiring part of a position', async () => {
-    const txResult = await expectExpireOkay({
-      amount: {
-        value: par.div(-2),
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Target,
-      },
+      console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
     });
 
-    const logs = solo.logs.parseLogs(txResult);
-    logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
+    it('Skips logs when necessary', async () => {
+      const newTime = defaultTime.plus(1000);
+      const txResult = await setExpiry(newTime);
+      const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
+      const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
+      expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
+      expect(logs.filter((e: any) => e.name === 'ExpirySet').length).not.toEqual(0);
+    });
 
-    const [
-      held1,
-      owed1,
-      held2,
-      owed2,
-    ] = await Promise.all([
-      solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-      solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-    ]);
+    it('Doesnt set expiry for non-negative balances', async () => {
+      const newTime = defaultTime.plus(1000);
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      await setExpiry(newTime);
+      const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(expiry).toEqual(defaultTime);
+    });
 
-    expect(owed1).toEqual(par.div(2));
-    expect(owed2).toEqual(par.div(-2));
-    expect(held1).toEqual(par.times(premium).div(2));
-    expect(held2).toEqual(par.times(2).minus(held1));
+    it('Allows setting expiry back to zero even for non-negative balances', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      await setExpiry(zero);
+      const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(expiry).toEqual(zero);
+    });
+
+    it('Fails for invalid number of bytes', async () => {
+      const errorMessage = 'Expiry: Call data invalid length';
+      const callGlob = {
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        callee: solo.contracts.expiry.options.address,
+        data: [],
+      };
+      await expectThrow(
+        solo.operation.initiate().call(callGlob).commit(),
+        errorMessage,
+      );
+
+      const bunchOfZeroes = [];
+      for (let i = 0; i < 100; i += 1) {
+        bunchOfZeroes.push([0]);
+      }
+      await expectThrow(
+        solo.operation.initiate().call({
+          ...callGlob,
+          data: bunchOfZeroes,
+        }).commit(),
+        errorMessage,
+      );
+    });
   });
 
-  it('Succeeds in expiring including premiums', async () => {
-    const owedPremium = new BigNumber('0.5');
-    const heldPremium = new BigNumber('1.0');
-    const adjustedPremium = premium.minus(1).times(
-      owedPremium.plus(1),
-    ).times(
-      heldPremium.plus(1),
-    ).plus(1);
-    await Promise.all([
-      solo.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
-      solo.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
-    ]);
-
-    await expectExpireOkay({});
-
-    const [
-      held1,
-      owed1,
-      held2,
-      owed2,
-    ] = await Promise.all([
-      solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-      solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-      solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-    ]);
-
-    expect(owed1).toEqual(zero);
-    expect(owed2).toEqual(zero);
-    expect(held1).toEqual(par.times(adjustedPremium));
-    expect(held2).toEqual(par.times(2).minus(held1));
+  describe('expire account (heldAmount)', async () => {
+    // TODO
   });
 
-  it('Fails for invalid number of bytes', async () => {
-    const errorMessage = 'Expiry: Call data invalid length';
-    const callGlob = {
-      primaryAccountOwner: owner1,
-      primaryAccountId: accountNumber1,
-      callee: solo.contracts.expiry.options.address,
-      data: [],
-    };
-    await expectThrow(
-      solo.operation.initiate().call(callGlob).commit(),
-      errorMessage,
-    );
+  describe('expire account (owedAmount)', async () => {
+    it('Succeeds in expiring', async () => {
+      const txResult = await expectExpireOkay({});
 
-    const bunchOfZeroes = [];
-    for (let i = 0; i < 100; i += 1) {
-      bunchOfZeroes.push([0]);
-    }
-    await expectThrow(
-      solo.operation.initiate().call({
-        ...callGlob,
-        data: bunchOfZeroes,
-      }).commit(),
-      errorMessage,
-    );
-  });
+      const logs = solo.logs.parseLogs(txResult);
 
-  it('Fails for non-solo calls', async () => {
-    await expectThrow(
-      solo.contracts.callContractFunction(
-        solo.contracts.expiry.methods.callFunction(
-          owner1,
-          {
-            owner: owner1,
-            number: accountNumber1.toFixed(0),
-          },
-          [],
+      const expiryLog = logs[3];
+      expect(expiryLog.name).toEqual('ExpirySet');
+      expect(expiryLog.args.owner).toEqual(owner2);
+      expect(expiryLog.args.number).toEqual(accountNumber2);
+      expect(expiryLog.args.marketId).toEqual(owedMarket);
+      expect(expiryLog.args.time).toEqual(zero);
+
+      const [
+        held1,
+        owed1,
+        held2,
+        owed2,
+      ] = await Promise.all([
+        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2).minus(held1));
+
+      console.log(`\tExpiring gas used: ${txResult.gasUsed}`);
+    });
+
+    it('Succeeds in expiring part of a position', async () => {
+      const txResult = await expectExpireOkay({
+        amount: {
+          value: par.div(-2),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      });
+
+      const logs = solo.logs.parseLogs(txResult);
+      logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
+
+      const [
+        held1,
+        owed1,
+        held2,
+        owed2,
+      ] = await Promise.all([
+        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(par.div(2));
+      expect(owed2).toEqual(par.div(-2));
+      expect(held1).toEqual(par.times(premium).div(2));
+      expect(held2).toEqual(par.times(2).minus(held1));
+    });
+
+    it('Succeeds in expiring including premiums', async () => {
+      const owedPremium = new BigNumber('0.5');
+      const heldPremium = new BigNumber('1.0');
+      const adjustedPremium = premium.minus(1).times(
+        owedPremium.plus(1),
+      ).times(
+        heldPremium.plus(1),
+      ).plus(1);
+      await Promise.all([
+        solo.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
+        solo.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
+      ]);
+
+      await expectExpireOkay({});
+
+      const [
+        held1,
+        owed1,
+        held2,
+        owed2,
+      ] = await Promise.all([
+        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(adjustedPremium));
+      expect(held2).toEqual(par.times(2).minus(held1));
+    });
+
+    it('Fails for non-solo calls', async () => {
+      await expectThrow(
+        solo.contracts.callContractFunction(
+          solo.contracts.expiry.methods.callFunction(
+            owner1,
+            {
+              owner: owner1,
+              number: accountNumber1.toFixed(0),
+            },
+            [],
+          ),
         ),
-      ),
-      'OnlySolo: Only Solo can call function',
-    );
-  });
+        'OnlySolo: Only Solo can call function',
+      );
+    });
 
-  it('Fails for zero inputMarket', async () => {
-    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, zero);
-    await expectExpireRevert(
-      {},
-      'Expiry: Balance must be negative',
-    );
-  });
+    it('Succeeds for zero inputMarket', async () => {
+      const getAllBalances = [
+        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ];
+      const start = await Promise.all(getAllBalances);
 
-  it('Fails for positive inputMarket', async () => {
-    await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
-    await expectExpireRevert(
-      {},
-      'Expiry: Balance must be negative',
-    );
-  });
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, zero);
+      await expectExpireOkay({});
 
-  it('Fails for overpaying a loan', async () => {
-    await expectExpireRevert(
-      {
-        amount: {
-          value: par,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Target,
+      const end = await Promise.all(getAllBalances);
+      expect(start).toEqual(end);
+    });
+
+    it('Fails for positive inputMarket', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      await expectExpireRevert(
+        {},
+        'Expiry: outputMarket mismatch',
+      );
+    });
+
+    it('Fails for overpaying a loan', async () => {
+      await expectExpireRevert(
+        {
+          amount: {
+            value: par,
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Target,
+          },
         },
-      },
-      'Expiry: Loans cannot be overpaid',
-    );
-  });
+        'Expiry: Loans cannot be overpaid',
+      );
+    });
 
-  it('Fails for increasing a loan', async () => {
-    await expectExpireRevert(
-      {
-        amount: {
-          value: par.times(-2),
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Target,
+    it('Fails for increasing a loan', async () => {
+      await expectExpireRevert(
+        {
+          amount: {
+            value: par.times(-2),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Target,
+          },
         },
-      },
-      'Expiry: Loans must be decreased',
-    );
-  });
+        'Expiry: outputMarket mismatch',
+      );
+    });
 
-  it('Fails for a zero expiry', async () => {
-    await setExpiry(zero);
-    await expectExpireRevert(
-      {},
-      'Expiry: Expiry not set',
-    );
-  });
+    it('Fails for a zero expiry', async () => {
+      await setExpiry(zero);
+      await expectExpireRevert(
+        {},
+        'Expiry: Expiry not set',
+      );
+    });
 
-  it('Fails for a future expiry', async () => {
-    await setExpiry(new BigNumber('1892160000'));
-    await expectExpireRevert(
-      {},
-      'Expiry: Loan not yet expired',
-    );
-  });
+    it('Fails for a future expiry', async () => {
+      await setExpiry(new BigNumber('1892160000'));
+      await expectExpireRevert(
+        {},
+        'Expiry: Loan not yet expired',
+      );
+    });
 
-  it('Fails for zero collateral', async () => {
-    await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, zero);
-    await expectExpireRevert(
-      {},
-      'Expiry: Collateral must be positive',
-    );
-  });
+    it('Fails for zero collateral', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, zero);
+      await expectExpireRevert(
+        {},
+        'Expiry: Collateral must be positive',
+      );
+    });
 
-  it('Fails for negative collateral', async () => {
-    await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(-1));
-    await expectExpireRevert(
-      {},
-      'Expiry: Collateral must be positive',
-    );
-  });
+    it('Fails for negative collateral', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(-1));
+      await expectExpireRevert(
+        {},
+        'Expiry: Collateral must be positive',
+      );
+    });
 
-  it('Fails for overtaking collateral', async () => {
-    await setExpiry(INTEGERS.ONE);
-    await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par);
-    await expectExpireRevert(
-      {},
-      'Expiry: Collateral cannot be overtaken',
-    );
+    it('Fails for overtaking collateral', async () => {
+      await setExpiry(INTEGERS.ONE);
+      await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par);
+      await expectExpireRevert(
+        {},
+        'Expiry: outputMarket too small',
+      );
+    });
   });
 
   describe('#getSpreadAdjustedPrices', async () => {
-    it('Fails for non-expired positions', async () => {
-      await setExpiry(INTEGERS.ONES_31);
+    it('Fails for no-expiry markets', async () => {
       await expectThrow(
         solo.getters.getExpiryPrices(
           owner2,
           accountNumber2,
           owedMarket,
           heldMarket,
+        ),
+        'Expiry: Expiry not set',
+      );
+    });
+
+    it('Fails for non-expired positions', async () => {
+      await setExpiry(INTEGERS.ONES_31);
+      await expectThrow(
+        solo.getters.getExpiryPrices(
+          owner2,
+          accountNumber2,
+          heldMarket,
+          owedMarket,
         ),
         'Expiry: Loan not yet expired',
       );
@@ -354,12 +383,12 @@ describe('Expiry', () => {
       const prices = await solo.getters.getExpiryPrices(
         owner2,
         accountNumber2,
-        owedMarket,
         heldMarket,
+        owedMarket,
       );
-      expect(prices.inputPrice.lt(defaultPrice.times(premium))).toEqual(true);
-      expect(prices.inputPrice.gte(defaultPrice)).toEqual(true);
-      expect(prices.outputPrice).toEqual(defaultPrice);
+      expect(prices.owedPrice.lt(defaultPrice.times(premium))).toEqual(true);
+      expect(prices.owedPrice.gt(defaultPrice)).toEqual(true);
+      expect(prices.heldPrice).toEqual(defaultPrice);
     });
 
     it('Succeeds for very expired positions', async () => {
@@ -367,11 +396,11 @@ describe('Expiry', () => {
       const prices = await solo.getters.getExpiryPrices(
         owner2,
         accountNumber2,
-        owedMarket,
         heldMarket,
+        owedMarket,
       );
-      expect(prices.inputPrice).toEqual(defaultPrice.times(premium));
-      expect(prices.outputPrice).toEqual(defaultPrice);
+      expect(prices.owedPrice).toEqual(defaultPrice.times(premium));
+      expect(prices.heldPrice).toEqual(defaultPrice);
     });
   });
 });

@@ -484,25 +484,28 @@ export class Getters {
   public async getExpiryPrices(
     accountOwner: address,
     accountNumber: Integer,
-    inputMarketId: Integer,
-    outputMarketId: Integer,
+    heldMarketId: Integer,
+    owedMarketId: Integer,
+    optionalMaxExpiry?: Integer,
     options?: ContractConstantCallOptions,
-  ): Promise<{inputPrice: Integer, outputPrice: Integer}> {
+  ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
+    const maxExpiry = optionalMaxExpiry || new BigNumber(0);
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.expiry.methods.getSpreadAdjustedPrices(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
         },
-        inputMarketId.toFixed(0),
-        outputMarketId.toFixed(0),
+        heldMarketId.toFixed(0),
+        owedMarketId.toFixed(0),
+        maxExpiry.toFixed(0),
       ),
       options,
     );
 
     return {
-      inputPrice: new BigNumber(result[0].value),
-      outputPrice: new BigNumber(result[1].value),
+      heldPrice: new BigNumber(result[0].value),
+      owedPrice: new BigNumber(result[1].value),
     };
   }
 

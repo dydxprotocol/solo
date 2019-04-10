@@ -25,7 +25,7 @@ import {
   address,
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
-import { ADDRESSES } from '../../lib/Constants';
+import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 
 interface OptionalActionArgs {
   actionType: number | string;
@@ -193,6 +193,7 @@ export class AccountOperation {
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
         otherAddress: this.contracts.expiry.options.address,
+        data: toBytes(liquidate.liquidMarketId, INTEGERS.ZERO),
       },
     );
 
