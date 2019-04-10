@@ -210,7 +210,7 @@ export class AccountOperation {
       throw new Error('No actions have been added to operation');
     }
 
-    if (options.confirmationType !== ConfirmationType.Simulate) {
+    if (options && options.confirmationType !== ConfirmationType.Simulate) {
       this.committed = true;
     }
 
@@ -226,7 +226,7 @@ export class AccountOperation {
         method = this.contracts.payableProxy.methods.operate(
           this.accounts,
           this.actions,
-          this.sendEthTo || options.from || this.contracts.payableProxy.options.from,
+          this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
         );
       }
 
