@@ -400,12 +400,12 @@ export class Contracts {
       txOptions.gasPrice = this.defaultGasPrice;
     }
 
-    if (!options.gas) {
+    if (confirmationType === ConfirmationType.Simulate || !options.gas) {
+      let gasEstimate: number;
+
       if (this.defaultGas) {
         txOptions.gas = this.defaultGas;
       } else {
-        let gasEstimate: number;
-
         try {
           gasEstimate = await method.estimateGas(txOptions);
         } catch (error) {
@@ -419,6 +419,10 @@ export class Contracts {
         const multiplier = autoGasMultiplier || this.autoGasMultiplier;
         const totalGas: number = Math.floor(gasEstimate * multiplier);
         txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
+      }
+
+      if (confirmationType === ConfirmationType.Simulate) {
+        return { gasEstimate, gas: Number(txOptions.gas) };
       }
     }
 

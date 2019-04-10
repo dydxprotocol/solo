@@ -29,6 +29,7 @@ export enum ConfirmationType {
   Hash = 0,
   Confirmed = 1,
   Both = 2,
+  Simulate = 3,
 }
 
 export interface SoloOptions {
@@ -64,7 +65,7 @@ export interface LogParsingOptions {
 }
 
 export interface TxResult {
-  transactionHash: string;
+  transactionHash?: string;
   transactionIndex?: number;
   blockHash?: string;
   blockNumber?: number;
@@ -79,6 +80,8 @@ export interface TxResult {
   };
   status?: boolean;
   confirmation?: Promise<TransactionReceipt>;
+  gasEstimate?: number;
+  gas?: number;
 }
 
 export enum AmountDenomination {
