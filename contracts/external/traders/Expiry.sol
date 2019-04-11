@@ -134,17 +134,22 @@ contract Expiry is
         Require.that(
             expiry != 0,
             FILE,
-            "Expiry not set"
+            "Expiry not set",
+            account.owner,
+            account.number,
+            owedMarketId
         );
         Require.that(
             expiry <= Time.currentTime(),
             FILE,
-            "Loan not yet expired"
+            "Loan not yet expired",
+            expiry
         );
         Require.that(
             expiry >= maxExpiry,
             FILE,
-            "Expiry past maxExpiry"
+            "Expiry past maxExpiry",
+            expiry
         );
 
         uint256 expiryAge = Time.currentTime().sub(expiry);
@@ -247,18 +252,22 @@ contract Expiry is
             Require.that(
                 inputMarketId == owedMarketId,
                 FILE,
-                "inputMarket mismatch"
+                "inputMarket mismatch",
+                inputMarketId
             );
             Require.that(
                 !newInputPar.isPositive(),
                 FILE,
-                "Loans cannot be overpaid"
+                "Loans cannot be overpaid",
+                newInputPar.value
             );
             assert(oldInputPar.isNegative());
             Require.that(
                 maxOutputWei.isPositive(),
                 FILE,
-                "Collateral must be positive"
+                "Collateral must be positive",
+                outputMarketId,
+                maxOutputWei.value
             );
             output = owedWeiToHeldWei(
                 makerAccount,
@@ -279,18 +288,22 @@ contract Expiry is
             Require.that(
                 outputMarketId == owedMarketId,
                 FILE,
-                "outputMarket mismatch"
+                "outputMarket mismatch",
+                outputMarketId
             );
             Require.that(
                 !newInputPar.isNegative(),
                 FILE,
-                "Collateral cannot be overused"
+                "Collateral cannot be overused",
+                newInputPar.value
             );
             assert(oldInputPar.isPositive());
             Require.that(
                 maxOutputWei.isNegative(),
                 FILE,
-                "Loans must be negative"
+                "Loans must be negative",
+                outputMarketId,
+                maxOutputWei.value
             );
             output = heldWeiToOwedWei(
                 makerAccount,
@@ -304,7 +317,9 @@ contract Expiry is
         Require.that(
             output.value <= maxOutputWei.value,
             FILE,
-            "outputMarket too small"
+            "outputMarket too small",
+            output.value,
+            maxOutputWei.value
         );
         assert(output.sign != maxOutputWei.sign);
 
@@ -411,7 +426,8 @@ contract Expiry is
         Require.that(
             data.length == 64,
             FILE,
-            "Call data invalid length"
+            "Call data invalid length",
+            data.length
         );
 
         uint256 marketId;
@@ -442,7 +458,8 @@ contract Expiry is
         Require.that(
             data.length == 64,
             FILE,
-            "Trade data invalid length"
+            "Trade data invalid length",
+            data.length
         );
 
         uint256 owedMarketId;
