@@ -20,6 +20,7 @@ pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
@@ -41,6 +42,7 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
  * account. The arbitrage incentive is the same as liquidation in the base protocol.
  */
 contract Expiry is
+    Ownable,
     OnlySolo,
     ICallee,
     IAutoTrader
@@ -69,7 +71,7 @@ contract Expiry is
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
 
     // time over which the liquidation ratio goes from zero to maximum
-    uint256 public EXPIRY_RAMP_TIME;
+    uint256 public g_expiryRampTime;
 
     // ============ Constructor ============
 
@@ -80,10 +82,21 @@ contract Expiry is
         public
         OnlySolo(soloMargin)
     {
-        EXPIRY_RAMP_TIME = expiryRampTime;
+        g_expiryRampTime = expiryRampTime;
     }
 
-    // ============ Public Functions ============
+    // ============ Owner Functions ============
+
+    function ownerSetExpiryRampTime(
+        uint256 newExpiryRampTime
+    )
+        external
+        onlyOwner
+    {
+        g_expiryRampTime = newExpiryRampTime;
+    }
+
+    // ============ Getters ============
 
     function getExpiry(
         Account.Info memory account,
@@ -95,6 +108,59 @@ contract Expiry is
     {
         return g_expiries[account.owner][account.number][marketId];
     }
+
+    function getSpreadAdjustedPrices(
+        Account.Info memory account,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 maxExpiry
+    )
+        public
+        view
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
+    {
+        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+            heldMarketId,
+            owedMarketId
+        );
+
+        // adjust liquidationSpread for recently expired positions
+        uint32 expiry = getExpiry(account, owedMarketId);
+
+        // validate expiry
+        Require.that(
+            expiry != 0,
+            FILE,
+            "Expiry not set"
+        );
+        Require.that(
+            expiry <= Time.currentTime(),
+            FILE,
+            "Loan not yet expired"
+        );
+        Require.that(
+            expiry >= maxExpiry,
+            FILE,
+            "Expiry past maxExpiry"
+        );
+
+        uint256 expiryAge = Time.currentTime().sub(expiry);
+
+        if (expiryAge < g_expiryRampTime) {
+            spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
+        }
+
+        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
+        owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
+
+        return (heldPrice, owedPrice);
+    }
+
+    // ============ Only-Solo Functions ============
 
     function callFunction(
         address /* sender */,
@@ -156,57 +222,6 @@ contract Expiry is
             owedMarketId,
             maxExpiry
         );
-    }
-
-    function getSpreadAdjustedPrices(
-        Account.Info memory account,
-        uint256 heldMarketId,
-        uint256 owedMarketId,
-        uint32 maxExpiry
-    )
-        public
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
-            heldMarketId,
-            owedMarketId
-        );
-
-        // adjust liquidationSpread for recently expired positions
-        uint32 expiry = getExpiry(account, owedMarketId);
-
-        // validate expiry
-        Require.that(
-            expiry != 0,
-            FILE,
-            "Expiry not set"
-        );
-        Require.that(
-            expiry <= Time.currentTime(),
-            FILE,
-            "Loan not yet expired"
-        );
-        Require.that(
-            expiry >= maxExpiry,
-            FILE,
-            "Expiry past maxExpiry"
-        );
-
-        uint256 expiryAge = Time.currentTime().sub(expiry);
-
-        if (expiryAge < EXPIRY_RAMP_TIME) {
-            spread.value = Math.getPartial(spread.value, expiryAge, EXPIRY_RAMP_TIME);
-        }
-
-        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
-        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
-        owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
-
-        return (heldPrice, owedPrice);
     }
 
     // ============ Private Functions ============

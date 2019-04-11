@@ -821,6 +821,22 @@ describe('Expiry', () => {
       expect(prices.heldPrice).toEqual(defaultPrice);
     });
   });
+
+  describe('#ownerSetExpiryRampTime', async () => {
+    it('Succeeds for owner', async () => {
+      const oldValue = await solo.getters.getExpiryRampTime();
+      expect(oldValue).toEqual(INTEGERS.ONE_HOUR_IN_SECONDS);
+      await solo.admin.setExpiryRampTime(INTEGERS.ONE_DAY_IN_SECONDS, { from: admin });
+      const newValue = await solo.getters.getExpiryRampTime();
+      expect(newValue).toEqual(INTEGERS.ONE_DAY_IN_SECONDS);
+    });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        solo.admin.setExpiryRampTime(INTEGERS.ONE_DAY_IN_SECONDS, { from: owner1 }),
+      );
+    });
+  });
 });
 
 // ============ Helper Functions ============

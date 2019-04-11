@@ -509,6 +509,16 @@ export class Getters {
     };
   }
 
+  public async getExpiryRampTime(
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.g_expiryRampTime(),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
   // ============ Helper Functions ============
 
   private parseIndex(
