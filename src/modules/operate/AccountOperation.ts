@@ -1,7 +1,10 @@
+import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { Contracts } from '../../lib/Contracts';
 import {
+  AmountReference,
+  AmountDenomination,
   AccountAction,
   Deposit,
   Withdraw,
@@ -183,7 +186,10 @@ export class AccountOperation {
     return this;
   }
 
-  public liquidateExpiredAccount(liquidate: Liquidate): AccountOperation {
+  // This function is deprecated and is only intended to be used for account with no more than two
+  // assets
+  public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
+    const minExpiryTimestamp = minExpiry || INTEGERS.ZERO;
     this.addActionArgs(
       liquidate,
       {
@@ -193,9 +199,105 @@ export class AccountOperation {
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
         otherAddress: this.contracts.expiry.options.address,
-        data: toBytes(liquidate.liquidMarketId, INTEGERS.ZERO),
+        data: toBytes(liquidate.liquidMarketId, minExpiryTimestamp),
       },
     );
+    return this;
+  }
+
+  public fullyExpireAccount(
+    primaryAccount: AccountInfo,
+    expiredAccount: AccountInfo,
+    expiredMarket: Integer,
+    expiryTimestamp: Integer,
+    blockTimestamp: Integer,
+    weis: Integer[],
+    prices: Integer[],
+    spreadPremiums: Integer[],
+    collateralPreferences: Integer[],
+  ): AccountOperation {
+    // hardcoded values
+    const defaultSpread = new BigNumber('0.5');
+    const expiryRampTime = new BigNumber(INTEGERS.ONE_HOUR_IN_SECONDS);
+
+    // get info about the expired market
+    let owedWei = weis[expiredMarket.toNumber()];
+    const owedPrice = prices[expiredMarket.toNumber()];
+    const owedSpreadMult = spreadPremiums[expiredMarket.toNumber()].plus(1);
+
+    // error checking
+    if (owedWei.gte(0)) {
+      throw new Error('Expired account must have negative expired balance');
+    }
+    if (blockTimestamp.lt(expiryTimestamp)) {
+      throw new Error('Expiry timestamp must be larger than blockTimestamp');
+    }
+
+    // loop through each collateral type as long as there is come borrow amount left
+    for (let i = 0; i < collateralPreferences.length && owedWei.lt(0); i += 1) {
+      // get info about the next collateral market
+      const heldMarket = collateralPreferences[i];
+      const heldWei = weis[heldMarket.toNumber()];
+      const heldPrice = prices[heldMarket.toNumber()];
+      const heldSpreadMult = spreadPremiums[heldMarket.toNumber()].plus(1);
+
+      // skip this collateral market if the account is not positive in this market
+      if (heldWei.lte(0)) {
+        continue;
+      }
+
+      // get the relative value of each market
+      const rampAdjustment = BigNumber.min(
+        blockTimestamp.minus(expiryTimestamp).div(expiryRampTime),
+        INTEGERS.ONE,
+      );
+      const spread = defaultSpread.times(heldSpreadMult).times(owedSpreadMult).plus(1);
+      const heldValue = heldWei.times(heldPrice).abs();
+      const owedValue = owedWei.times(owedPrice).times(rampAdjustment).times(spread).abs();
+
+      // add variables that need to be populated
+      let primaryMarketId: Integer;
+      let secondaryMarketId: Integer;
+
+      // set remaining owedWei and the marketIds depending on which market will 'bound' the action
+      if (heldValue.gt(owedValue)) {
+        // we expect no remaining owedWei
+        owedWei = INTEGERS.ZERO;
+
+        primaryMarketId = expiredMarket;
+        secondaryMarketId = heldMarket;
+      } else {
+        // calculate the expected remaining owedWei
+        owedWei = owedValue.minus(heldValue).div(owedValue).times(owedWei);
+
+        primaryMarketId = heldMarket;
+        secondaryMarketId = expiredMarket;
+      }
+
+      // add the action to the current actions
+      this.addActionArgs(
+        {
+          primaryAccountOwner: primaryAccount.owner,
+          primaryAccountId: new BigNumber(primaryAccount.number),
+        },
+        {
+          actionType: ActionType.Trade,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+          primaryMarketId: primaryMarketId.toFixed(0),
+          secondaryMarketId: secondaryMarketId.toFixed(0),
+          otherAccountId: this.getAccountId(
+            expiredAccount.owner,
+            new BigNumber(expiredAccount.number),
+          ),
+          otherAddress: this.contracts.expiry.options.address,
+          data: toBytes(expiredMarket, expiryTimestamp),
+        },
+      );
+    }
 
     return this;
   }

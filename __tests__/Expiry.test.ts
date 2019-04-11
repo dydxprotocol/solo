@@ -78,6 +78,7 @@ describe('Expiry', () => {
       solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par.times(-1)),
       solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(2)),
       solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
+      solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par.times(4)),
     ]);
     await setExpiry();
     snapshotId = await snapshot();
@@ -162,7 +163,6 @@ describe('Expiry', () => {
     beforeEach(async () => {
       await Promise.all([
         solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par),
-        solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par.times(4)),
       ]);
     });
 
@@ -331,6 +331,16 @@ describe('Expiry', () => {
           data: toBytes(owedMarket, defaultTime.plus(1)),
         },
         'Expiry: Expiry past maxExpiry',
+      );
+    });
+
+    it('Fails for invalid trade data', async () => {
+      await expectExpireRevert(
+        {
+          ...heldGlob,
+          data: toBytes(owedMarket),
+        },
+        'Expiry: Trade data invalid length',
       );
     });
 
@@ -546,6 +556,15 @@ describe('Expiry', () => {
       );
     });
 
+    it('Fails for invalid trade data', async () => {
+      await expectExpireRevert(
+        {
+          data: toBytes(owedMarket),
+        },
+        'Expiry: Trade data invalid length',
+      );
+    });
+
     it('Fails for zero collateral', async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, zero);
       await expectExpireRevert(
@@ -572,7 +591,180 @@ describe('Expiry', () => {
   });
 
   describe('AccountOperation#fullyExpireAccount', async () => {
-    // TODO
+    it('Succeeds for two assets', async () => {
+      const primaryAccount = {
+        owner: owner1,
+        number: accountNumber1.toFixed(0),
+      };
+      const expiredAccount = {
+        owner: owner2,
+        number: accountNumber2.toFixed(0),
+      };
+      const prices = [
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+      ];
+      const premiums = [
+        INTEGERS.ZERO,
+        INTEGERS.ZERO,
+        INTEGERS.ZERO,
+      ];
+      const collateralPreferences = [
+        owedMarket,
+        heldMarket,
+        collateralMarket,
+      ];
+      const weis = await Promise.all([
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+      ]);
+      await solo.operation.initiate().fullyExpireAccount(
+        primaryAccount,
+        expiredAccount,
+        owedMarket,
+        defaultTime,
+        defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),
+        weis,
+        prices,
+        premiums,
+        collateralPreferences,
+      ).commit();
+
+      const balances = await Promise.all([
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+      ]);
+
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(par.times(2).minus(par.times(premium)));
+      expect(balances[2]).toEqual(par.times(4));
+    });
+
+    it('Succeeds for three assets', async () => {
+      const primaryAccount = {
+        owner: owner1,
+        number: accountNumber1.toFixed(0),
+      };
+      const expiredAccount = {
+        owner: owner2,
+        number: accountNumber2.toFixed(0),
+      };
+      const prices = [
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+      ];
+      const premiums = [
+        INTEGERS.ZERO,
+        INTEGERS.ZERO,
+        INTEGERS.ZERO,
+      ];
+      const collateralPreferences = [
+        owedMarket,
+        heldMarket,
+        collateralMarket,
+      ];
+      await Promise.all([
+        solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par),
+        solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par),
+      ]);
+      const weis = await Promise.all([
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+      ]);
+      await solo.operation.initiate().fullyExpireAccount(
+        primaryAccount,
+        expiredAccount,
+        owedMarket,
+        defaultTime,
+        defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),
+        weis,
+        prices,
+        premiums,
+        collateralPreferences,
+      ).commit();
+
+      const balances = await Promise.all([
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+      ]);
+
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(zero);
+
+      // calculate the last expected value
+      const remainingOwed = par.minus(par.div(premium));
+      expect(balances[2]).toEqual(par.minus(remainingOwed.times(premium)).integerValue());
+    });
+
+    it('Succeeds for three assets (with premiums)', async () => {
+      const primaryAccount = {
+        owner: owner1,
+        number: accountNumber1.toFixed(0),
+      };
+      const expiredAccount = {
+        owner: owner2,
+        number: accountNumber2.toFixed(0),
+      };
+      const prices = [
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+        INTEGERS.ONES_31,
+      ];
+      const premiums = [
+        new BigNumber('0.1'),
+        new BigNumber('0.2'),
+        new BigNumber('0.3'),
+      ];
+      const collateralPreferences = [
+        owedMarket,
+        heldMarket,
+        collateralMarket,
+      ];
+      await Promise.all([
+        solo.admin.setSpreadPremium(heldMarket, premiums[0], { from: admin }),
+        solo.admin.setSpreadPremium(owedMarket, premiums[1], { from: admin }),
+        solo.admin.setSpreadPremium(collateralMarket, premiums[2], { from: admin }),
+        solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(premium)),
+        solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par),
+      ]);
+      const weis = await Promise.all([
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+      ]);
+      await solo.operation.initiate().fullyExpireAccount(
+        primaryAccount,
+        expiredAccount,
+        owedMarket,
+        defaultTime,
+        defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),
+        weis,
+        prices,
+        premiums,
+        collateralPreferences,
+      ).commit();
+
+      const balances = await Promise.all([
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+      ]);
+
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(zero);
+
+      // calculate the last expected value
+      const firstPrem = premium.minus(1).times('1.1').times('1.2').plus(1);
+      const secondPrem = premium.minus(1).times('1.2').times('1.3').plus(1);
+      const remainingOwed = par.minus(par.times(premium).div(firstPrem));
+      expect(balances[2]).toEqual(par.minus(remainingOwed.times(secondPrem)).integerValue());
+    });
   });
 
   describe('#getSpreadAdjustedPrices', async () => {
@@ -602,7 +794,7 @@ describe('Expiry', () => {
     });
 
     it('Succeeds for recently expired positions', async () => {
-      const txResult = await setExpiry(INTEGERS.ZERO);
+      const txResult = await setExpiry(zero);
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
       await setExpiry(new BigNumber(timestamp));
       await mineAvgBlock();

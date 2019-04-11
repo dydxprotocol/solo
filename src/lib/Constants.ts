@@ -2,11 +2,18 @@ import BigNumber from 'bignumber.js';
 
 export const SUBTRACT_GAS_LIMIT: number = 100000;
 
+const ONE_MINUTE_IN_SECONDS = new BigNumber(60);
+const ONE_HOUR_IN_SECONDS = ONE_MINUTE_IN_SECONDS.times(60);
+const ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS.times(24);
+const ONE_YEAR_IN_SECONDS = ONE_DAY_IN_SECONDS.times(365);
+
 export const INTEGERS = {
+  ONE_MINUTE_IN_SECONDS,
+  ONE_HOUR_IN_SECONDS,
+  ONE_DAY_IN_SECONDS,
+  ONE_YEAR_IN_SECONDS,
   ZERO: new BigNumber(0),
   ONE: new BigNumber(1),
-  ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24),
-  ONE_YEAR_IN_SECONDS: new BigNumber(60 * 60 * 24 * 365),
   ONES_31: new BigNumber('4294967295'), // 2**32-1
   ONES_127: new BigNumber('340282366920938463463374607431768211455'), // 2**128-1
   ONES_255: new BigNumber(
