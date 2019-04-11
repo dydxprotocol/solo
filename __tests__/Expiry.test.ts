@@ -96,9 +96,9 @@ describe('Expiry', () => {
       expect(expiry).toEqual(newTime);
 
       const logs = solo.logs.parseLogs(txResult);
-      expect(logs.length).toEqual(5);
+      expect(logs.length).toEqual(6);
 
-      const expirySetLog = logs[3];
+      const expirySetLog = logs[4];
       expect(expirySetLog.name).toEqual('ExpirySet');
       expect(expirySetLog.args.owner).toEqual(owner2);
       expect(expirySetLog.args.number).toEqual(accountNumber2);
@@ -375,7 +375,7 @@ describe('Expiry', () => {
 
       const logs = solo.logs.parseLogs(txResult);
 
-      const expiryLog = logs[3];
+      const expiryLog = logs[4];
       expect(expiryLog.name).toEqual('ExpirySet');
       expect(expiryLog.args.owner).toEqual(owner2);
       expect(expiryLog.args.number).toEqual(accountNumber2);
