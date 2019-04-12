@@ -67,7 +67,6 @@ interface IErc20 {
     )
         external;
 
-
     function transferFrom(
         address from,
         address to,

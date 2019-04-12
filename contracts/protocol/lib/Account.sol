@@ -31,6 +31,10 @@ import { Types } from "./Types.sol";
 library Account {
     // ============ Enums ============
 
+    /*
+     * Account status. Account can be liquidated if its status is Liquid even if it becomes
+     * overcollateralized at some later time.
+     */
     enum Status {
         Normal,
         Liquid,
@@ -39,13 +43,15 @@ library Account {
 
     // ============ Structs ============
 
+    // Represents the unique key that specifies an account
     struct Info {
-        address owner;
-        uint256 number;
+        address owner;  // The address that owns the account
+        uint256 number; // A nonce that allows a single address to control many accounts
     }
 
+    // The complete storage for any account
     struct Storage {
-        mapping (uint256 => Types.Par) balances;
+        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
         Status status;
     }
 

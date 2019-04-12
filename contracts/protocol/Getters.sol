@@ -52,6 +52,12 @@ contract Getters is
 
     // ============ Getters for Risk ============
 
+    /**
+     * Gets the global minimum margin-ratio that every position must maintain to prevent being
+     * liquidated.
+     *
+     * @return  The global margin-ratio
+     */
     function getMarginRatio()
         public
         view
@@ -60,6 +66,11 @@ contract Getters is
         return g_state.riskParams.marginRatio;
     }
 
+    /**
+     * Gets the global liquidation spread that incentivizes liquidators to close liquid positions.
+     *
+     * @return  The global liquidation spread
+     */
     function getLiquidationSpread()
         public
         view
@@ -68,6 +79,12 @@ contract Getters is
         return g_state.riskParams.liquidationSpread;
     }
 
+    /**
+     * Gets the global earning-rate variable that determines what percentage of the interest paid
+     * by borrowers gets passed-on to lenders.
+     *
+     * @return  The global earnings rate
+     */
     function getEarningsRate()
         public
         view
@@ -76,6 +93,11 @@ contract Getters is
         return g_state.riskParams.earningsRate;
     }
 
+    /**
+     * Gets the global minimum-borrow value which is the minimum value of any new loan on Solo.
+     *
+     * @return  The global minimum borrow value
+     */
     function getMinBorrowedValue()
         public
         view
@@ -84,6 +106,11 @@ contract Getters is
         return g_state.riskParams.minBorrowedValue;
     }
 
+    /**
+     * Gets all risk parameters in a single struct.
+     *
+     * @return  All global risk parameters
+     */
     function getRiskParams()
         public
         view
@@ -92,6 +119,12 @@ contract Getters is
         return g_state.riskParams;
     }
 
+    /**
+     * Gets all risk parameter limits in a single struct. These are the maximum limits at which the
+     * risk parameters can be set by the admin of Solo.
+     *
+     * @return  All global risk parameter limnits
+     */
     function getRiskLimits()
         public
         view
@@ -102,6 +135,11 @@ contract Getters is
 
     // ============ Getters for Markets ============
 
+    /**
+     * Gets the total number of markets.
+     *
+     * @return           The number of markets
+     */
     function getNumMarkets()
         public
         view
@@ -110,6 +148,12 @@ contract Getters is
         return g_state.numMarkets;
     }
 
+    /**
+     * Gets the ERC20 token address for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The token address
+     */
     function getMarketTokenAddress(
         uint256 marketId
     )
@@ -121,6 +165,12 @@ contract Getters is
         return g_state.getToken(marketId);
     }
 
+    /**
+     * Gets the total principal amounts (borrowed and lent) for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The total principal amounts
+     */
     function getMarketTotalPar(
         uint256 marketId
     )
@@ -132,6 +182,12 @@ contract Getters is
         return g_state.getTotalPar(marketId);
     }
 
+    /**
+     * Gets the most recently cached interest index for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The most recent index
+     */
     function getMarketCachedIndex(
         uint256 marketId
     )
@@ -143,6 +199,12 @@ contract Getters is
         return g_state.getIndex(marketId);
     }
 
+    /**
+     * Gets the interest index for a market if it were to be updated right now.
+     *
+     * @param  marketId  The market to query
+     * @return           The estimated current index
+     */
     function getMarketCurrentIndex(
         uint256 marketId
     )
@@ -154,6 +216,12 @@ contract Getters is
         return g_state.fetchNewIndex(marketId, g_state.getIndex(marketId));
     }
 
+    /**
+     * Gets the price oracle address for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The price oracle address
+     */
     function getMarketPriceOracle(
         uint256 marketId
     )
@@ -165,6 +233,12 @@ contract Getters is
         return g_state.markets[marketId].priceOracle;
     }
 
+    /**
+     * Gets the interest-setter address for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The interest-setter address
+     */
     function getMarketInterestSetter(
         uint256 marketId
     )
@@ -176,6 +250,13 @@ contract Getters is
         return g_state.markets[marketId].interestSetter;
     }
 
+    /**
+     * Gets the margin premium for a market. A margin premium makes it so that any positions that
+     * include the market require a higher collateralization to avoid being liquidated.
+     *
+     * @param  marketId  The market to query
+     * @return           The market's margin premium
+     */
     function getMarketMarginPremium(
         uint256 marketId
     )
@@ -187,6 +268,13 @@ contract Getters is
         return g_state.markets[marketId].marginPremium;
     }
 
+    /**
+     * Get the spread premium for a market. A spread premium makes it so that any liquidations
+     * that include the market have a higher spread than the global default.
+     *
+     * @param  marketId  The market to query
+     * @return           The market's spread premium
+     */
     function getMarketSpreadPremium(
         uint256 marketId
     )
@@ -198,6 +286,13 @@ contract Getters is
         return g_state.markets[marketId].spreadPremium;
     }
 
+    /**
+     * Returns true if a particular market is in closing mode. Additional loans cannot be taken from
+     * a market that is closing.
+     *
+     * @param  marketId  The market to query
+     * @return           True if the market is closing, false otherwise
+     */
     function getMarketIsClosing(
         uint256 marketId
     )
@@ -209,6 +304,12 @@ contract Getters is
         return g_state.markets[marketId].isClosing;
     }
 
+    /**
+     * Gets the price of the token for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The price of each atomic unit of the token
+     */
     function getMarketPrice(
         uint256 marketId
     )
@@ -220,6 +321,12 @@ contract Getters is
         return g_state.fetchPrice(marketId);
     }
 
+    /**
+     * Gets the current borrower interest rate for a market.
+     *
+     * @param  marketId  The market to query
+     * @return           The current interest rate
+     */
     function getMarketInterestRate(
         uint256 marketId
     )
@@ -234,6 +341,14 @@ contract Getters is
         );
     }
 
+    /**
+     * Gets the adjusted liquidation spread for some market pair. This is equal to the global
+     * liquidation spread multiplied by (1 + spreadPremium) for each of the two markets.
+     *
+     * @param  heldMarketId  The market for which the account has collateral
+     * @param  owedMarketId  The market for which the account has borrowed tokens
+     * @return               The adjusted liquidation spread
+     */
     function getLiquidationSpreadForPair(
         uint256 heldMarketId,
         uint256 owedMarketId
@@ -247,6 +362,20 @@ contract Getters is
         return g_state.getLiquidationSpreadForPair(heldMarketId, owedMarketId);
     }
 
+    /**
+     * Returns basic information about a particular market.
+     *
+     * @param  marketId  The market to query
+     * @return           The current market info, including:
+     *                    - The ERC20 token address
+     *                    - The total borrowed and lent principal
+     *                    - The most recently cached interest index
+     *                    - The address of the price oracle
+     *                    - The address of the interest setter
+     *                    - The margin premium
+     *                    - The spread premium
+     *                    - Whether the market is closing
+     */
     function getMarket(
         uint256 marketId
     )
@@ -258,6 +387,16 @@ contract Getters is
         return g_state.markets[marketId];
     }
 
+    /**
+     * Returns comprehensive information about a particular market.
+     *
+     * @param  marketId  The market to query
+     * @return           Four values:
+     *                    - The basic market info from getMarket()
+     *                    - The current estimated interest index
+     *                    - The current token price
+     *                    - The current market interest rate
+     */
     function getMarketWithInfo(
         uint256 marketId
     )
@@ -279,6 +418,14 @@ contract Getters is
         );
     }
 
+    /**
+     * Returns the number of excess tokens for a market. The number of excess tokens is calculated
+     * by taking the current number of tokens held in Solo, adding the number of tokens owed to Solo
+     * by borrowers, and subtracting the number of tokens owed to lenders by Solo.
+     *
+     * @param  marketId  The market to query
+     * @return           The number of excess tokens
+     */
     function getNumExcessTokens(
         uint256 marketId
     )
@@ -292,6 +439,13 @@ contract Getters is
 
     // ============ Getters for Accounts ============
 
+    /**
+     * Get the principal value for a particular account and market.
+     *
+     * @param  account   The account to query
+     * @param  marketId  The market to query
+     * @return           The principal value
+     */
     function getAccountPar(
         Account.Info memory account,
         uint256 marketId
@@ -304,6 +458,13 @@ contract Getters is
         return g_state.getPar(account, marketId);
     }
 
+    /**
+     * Get the token balance for a particular account and market.
+     *
+     * @param  account   The account to query
+     * @param  marketId  The market to query
+     * @return           The token amount
+     */
     function getAccountWei(
         Account.Info memory account,
         uint256 marketId
@@ -319,6 +480,12 @@ contract Getters is
         );
     }
 
+    /**
+     * Gets the status of an account (Normal, Liquidating, or Vaporizing).
+     *
+     * @param  account  The account to query
+     * @return          The account's status
+     */
     function getAccountStatus(
         Account.Info memory account
     )
@@ -329,6 +496,14 @@ contract Getters is
         return g_state.getStatus(account);
     }
 
+    /**
+     * Gets the total lent and total borrow value of an account.
+     *
+     * @param  account  The account to query
+     * @return          The following values:
+     *                   - The lent value of the account
+     *                   - The borrowed value of the account
+     */
     function getAccountValues(
         Account.Info memory account
     )
@@ -339,6 +514,18 @@ contract Getters is
         return getAccountValuesInternal(account, /* adjustForLiquidity = */ false);
     }
 
+    /**
+     * Gets the total lent and total borrow values of an account adjusted by the marginPremium of
+     * each market. Lent values are divided by (1 + marginPremium) for each market and borrowed
+     * values are multiplied by (1 + marginPremium) for each market. Comparing these adjusted values
+     * gives the margin-ratio of the account which will be compared to the global margin-ratio when
+     * determining if the account can be liquidated.
+     *
+     * @param  account  The account to query
+     * @return          The following values:
+     *                   - The lent value of the account (adjusted for marginPremium)
+     *                   - The borrowed value of the account (adjusted for marginPremium)
+     */
     function getAdjustedAccountValues(
         Account.Info memory account
     )
@@ -349,6 +536,15 @@ contract Getters is
         return getAccountValuesInternal(account, /* adjustForLiquidity = */ true);
     }
 
+    /**
+     * Gets an account's summary for each market.
+     *
+     * @param  account  The account to query
+     * @return          The following values:
+     *                   - The ERC20 token address for each market
+     *                   - The account's principal value for each market
+     *                   = The account's (lent or borrowed) number of tokens for each market
+     */
     function getAccountBalances(
         Account.Info memory account
     )
@@ -380,6 +576,14 @@ contract Getters is
 
     // ============ Getters for Permissions ============
 
+    /**
+     * Returns true if a particular address is approved as an operator for an owner's accounts.
+     * Approved operators can act on the accounts of the owner as if it were the operator's own.
+     *
+     * @param  owner     The owner of the accounts
+     * @param  operator  The possible operator
+     * @return           True if operator is approved for owner's accounts
+     */
     function getIsLocalOperator(
         address owner,
         address operator
@@ -391,6 +595,13 @@ contract Getters is
         return g_state.isLocalOperator(owner, operator);
     }
 
+    /**
+     * Returns true if a particular address is approved as a global operator. Such an address can
+     * act on any account as if it were the operator's own.
+     *
+     * @param  operator  The address to query
+     * @return           True if operator is a global operator, false otherwise
+     */
     function getIsGlobalOperator(
         address operator
     )
@@ -403,6 +614,9 @@ contract Getters is
 
     // ============ Private Helper Functions ============
 
+    /**
+     * Reverts if marketId is invalid.
+     */
     function _requireValidMarket(
         uint256 marketId
     )
@@ -416,6 +630,9 @@ contract Getters is
         );
     }
 
+    /**
+     * Private helper for getting the monetary values of an account.
+     */
     function getAccountValuesInternal(
         Account.Info memory account,
         bool adjustForLiquidity

@@ -30,7 +30,7 @@ import { Types } from "./Types.sol";
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and indexes of Solo
+ * Library for managing the interest rate and interest indexes of Solo
  */
 library Interest {
     using Math for uint256;
@@ -118,6 +118,9 @@ library Interest {
         });
     }
 
+    /*
+     * Converts a principal amount to a token amount given an index.
+     */
     function parToWei(
         Types.Par memory input,
         Index memory index
@@ -140,6 +143,9 @@ library Interest {
         }
     }
 
+    /*
+     * Converts a token amount to a principal amount given an index.
+     */
     function weiToPar(
         Types.Wei memory input,
         Index memory index
@@ -161,6 +167,10 @@ library Interest {
         }
     }
 
+    /*
+     * Converts the total supply and borrow principal amounts of a market to total supply and borrow
+     * token amounts.
+     */
     function totalParToWei(
         Types.TotalPar memory totalPar,
         Index memory index

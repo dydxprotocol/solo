@@ -44,6 +44,12 @@ contract Admin is
 {
     // ============ Token Functions ============
 
+    /**
+     * Withdraws any ERC20 token for which there is an associated market. Only excess tokens can be
+     * withdrawn. The number of excess tokens is calculated by taking the current number of tokens
+     * held in Solo, adding the number of tokens owed to Solo by borrowers, and subtracting the
+     * number of tokens owed to lenders by Solo.
+     */
     function ownerWithdrawExcessTokens(
         uint256 marketId,
         address recipient
@@ -60,6 +66,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Withdraws any ERC20 token for which there is no associated market.
+     */
     function ownerWithdrawUnsupportedTokens(
         address token,
         address recipient
@@ -78,6 +87,9 @@ contract Admin is
 
     // ============ Market Functions ============
 
+    /**
+     * Adds a new market to Solo. Must be for a previously-unsupported ERC20 token.
+     */
     function ownerAddMarket(
         address token,
         IPriceOracle priceOracle,
@@ -99,6 +111,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets (or unsets) the status of a market to "closing." The borrowedValue of a market cannot
+     * increase while its status is "closing."
+     */
     function ownerSetIsClosing(
         uint256 marketId,
         bool isClosing
@@ -114,6 +130,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets the price oracle for a market.
+     */
     function ownerSetPriceOracle(
         uint256 marketId,
         IPriceOracle priceOracle
@@ -129,6 +148,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets the interest-setter for a market.
+     */
     function ownerSetInterestSetter(
         uint256 marketId,
         IInterestSetter interestSetter
@@ -144,6 +166,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets a premium on the minimum margin-ratio for a market. This makes it so that any positions
+     * that include this market require a higher collateralization to avoid being liquidated.
+     */
     function ownerSetMarginPremium(
         uint256 marketId,
         Decimal.D256 memory marginPremium
@@ -159,6 +185,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets a premium on the liquidation spread for a market. This makes it so that any liquidations
+     * that include this market have a higher spread than the global default.
+     */
     function ownerSetSpreadPremium(
         uint256 marketId,
         Decimal.D256 memory spreadPremium
@@ -176,6 +206,10 @@ contract Admin is
 
     // ============ Risk Functions ============
 
+    /**
+     * Sets the global minimum margin-ratio that every position must maintain to prevent being
+     * liquidated.
+     */
     function ownerSetMarginRatio(
         Decimal.D256 memory ratio
     )
@@ -189,6 +223,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets the global liquidation spread that incentivizes liquidators to close liquid positions.
+     */
     function ownerSetLiquidationSpread(
         Decimal.D256 memory spread
     )
@@ -202,6 +239,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets the global earning-rate variable that determines what percentage of the interest paid
+     * by borrowers gets passed-on to lenders.
+     */
     function ownerSetEarningsRate(
         Decimal.D256 memory earningsRate
     )
@@ -215,6 +256,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Sets the global minimum-borrow value which is the minimum value of any new loan on Solo.
+     */
     function ownerSetMinBorrowedValue(
         Monetary.Value memory minBorrowedValue
     )
@@ -230,6 +274,10 @@ contract Admin is
 
     // ============ Global Operator Functions ============
 
+    /**
+     * Approves or disapproves an address that is permissioned to be an operator for all accounts in
+     * Solo. Is intended only to approve smart-contracts.
+     */
     function ownerSetGlobalOperator(
         address operator,
         bool approved

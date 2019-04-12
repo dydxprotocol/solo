@@ -43,9 +43,9 @@ library Actions {
         Transfer,  // transfer balance between accounts
         Buy,       // buy an amount of some token (externally)
         Sell,      // sell an amount of some token (externally)
-        Trade,     // buy an amount of some token (internally)
+        Trade,     // trade tokens against another account
         Liquidate, // liquidate an undercollateralized or expiring account
-        Vaporize,  // arbitrage admin funds to save a completely negative account
+        Vaporize,  // use excess tokens to zero-out a completely negative account
         Call       // send arbitrary data to an address
     }
 
