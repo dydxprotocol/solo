@@ -361,10 +361,11 @@ library Storage {
         view
         returns (bool)
     {
+        // get account values (adjusted for liquidity)
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = state.getAccountValues(account, cache, true);
+        ) = state.getAccountValues(account, cache, /* adjustForLiquidity = */ true);
 
         if (borrowValue.value == 0) {
             return true;

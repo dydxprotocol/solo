@@ -336,7 +336,7 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        return getAccountValuesInternal(account, false);
+        return getAccountValuesInternal(account, /* adjustForLiquidity = */ false);
     }
 
     function getAdjustedAccountValues(
@@ -346,7 +346,7 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        return getAccountValuesInternal(account, true);
+        return getAccountValuesInternal(account, /* adjustForLiquidity = */ true);
     }
 
     function getAccountBalances(
