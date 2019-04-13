@@ -366,15 +366,7 @@ contract Getters is
      * Get basic information about a particular market.
      *
      * @param  marketId  The market to query
-     * @return           The current market info, including:
-     *                    - The ERC20 token address
-     *                    - The total borrowed and lent principal
-     *                    - The most recently cached interest index
-     *                    - The address of the price oracle
-     *                    - The address of the interest setter
-     *                    - The margin premium
-     *                    - The spread premium
-     *                    - Whether the market is closing
+     * @return           A Storage.Market struct with the current state of the market
      */
     function getMarket(
         uint256 marketId
@@ -391,8 +383,8 @@ contract Getters is
      * Get comprehensive information about a particular market.
      *
      * @param  marketId  The market to query
-     * @return           Four values:
-     *                    - The basic market info from getMarket()
+     * @return           A tuple containing the values:
+     *                    - A Storage.Market struct with the current state of the market
      *                    - The current estimated interest index
      *                    - The current token price
      *                    - The current market interest rate

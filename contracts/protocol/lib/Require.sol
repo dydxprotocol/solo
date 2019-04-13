@@ -213,7 +213,7 @@ library Require {
 
         // determine the length of the input by finding the location of the last non-zero byte
         for (uint256 i = 32; i > 0; ) {
-            // reverse-for-loops with uint
+            // reverse-for-loops with unsigned integer
             /* solium-disable-next-line security/no-modify-for-iter-var */
             i--;
 
@@ -256,10 +256,10 @@ library Require {
         // allocate the string
         bytes memory bstr = new bytes(length);
 
-        // populate the string starting with the least-significant charcter
+        // populate the string starting with the least-significant character
         j = input;
         for (uint256 i = length; i > 0; ) {
-            // reverse-for-loops with uint
+            // reverse-for-loops with unsigned integer
             /* solium-disable-next-line security/no-modify-for-iter-var */
             i--;
 
