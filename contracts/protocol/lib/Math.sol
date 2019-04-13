@@ -39,7 +39,7 @@ library Math {
     // ============ Library Functions ============
 
     /*
-     * Returns target * (numerator / denominator).
+     * Return target * (numerator / denominator).
      */
     function getPartial(
         uint256 target,
@@ -54,7 +54,7 @@ library Math {
     }
 
     /*
-     * Returns target * (numerator / denominator), but rounds up.
+     * Return target * (numerator / denominator), but rounded up.
      */
     function getPartialRoundUp(
         uint256 target,

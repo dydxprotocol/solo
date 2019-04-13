@@ -436,7 +436,7 @@ library Storage {
     }
 
     /**
-     * Determines and sets an account's balance based on the intended balance change. Returns the
+     * Determine and set an account's balance based on the intended balance change. Return the
      * equivalent amount in wei
      */
     function getNewParAndDeltaWei(
@@ -625,7 +625,7 @@ library Storage {
     }
 
     /**
-     * Determines and sets an account's balance based on a change in wei
+     * Determine and set an account's balance based on a change in wei
      */
     function setParFromDeltaWei(
         Storage.State storage state,

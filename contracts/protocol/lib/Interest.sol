@@ -56,9 +56,9 @@ library Interest {
     // ============ Library Functions ============
 
     /**
-     * Returns a new market Index based on the old index and market interest rate.
-     * Calculates interest for borrowers by using the formula rate * time. This calculation closely
-     * approximates continuously-compounded interest when called frequently, but is much more
+     * Get a new market Index based on the old index and market interest rate.
+     * Calculate interest for borrowers by using the formula rate * time. Approximates
+     * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
      * then prorated the across all lenders.
      *
@@ -119,7 +119,7 @@ library Interest {
     }
 
     /*
-     * Converts a principal amount to a token amount given an index.
+     * Convert a principal amount to a token amount given an index.
      */
     function parToWei(
         Types.Par memory input,
@@ -144,7 +144,7 @@ library Interest {
     }
 
     /*
-     * Converts a token amount to a principal amount given an index.
+     * Convert a token amount to a principal amount given an index.
      */
     function weiToPar(
         Types.Wei memory input,
@@ -168,7 +168,7 @@ library Interest {
     }
 
     /*
-     * Converts the total supply and borrow principal amounts of a market to total supply and borrow
+     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
      * token amounts.
      */
     function totalParToWei(

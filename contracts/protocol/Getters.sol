@@ -53,7 +53,7 @@ contract Getters is
     // ============ Getters for Risk ============
 
     /**
-     * Gets the global minimum margin-ratio that every position must maintain to prevent being
+     * Get the global minimum margin-ratio that every position must maintain to prevent being
      * liquidated.
      *
      * @return  The global margin-ratio
@@ -67,7 +67,7 @@ contract Getters is
     }
 
     /**
-     * Gets the global liquidation spread that incentivizes liquidators to close liquid positions.
+     * Get the global liquidation spread that incentivizes liquidators to close liquid positions.
      *
      * @return  The global liquidation spread
      */
@@ -80,7 +80,7 @@ contract Getters is
     }
 
     /**
-     * Gets the global earning-rate variable that determines what percentage of the interest paid
+     * Get the global earning-rate variable that determines what percentage of the interest paid
      * by borrowers gets passed-on to lenders.
      *
      * @return  The global earnings rate
@@ -94,7 +94,7 @@ contract Getters is
     }
 
     /**
-     * Gets the global minimum-borrow value which is the minimum value of any new loan on Solo.
+     * Get the global minimum-borrow value which is the minimum value of any new loan on Solo.
      *
      * @return  The global minimum borrow value
      */
@@ -107,7 +107,7 @@ contract Getters is
     }
 
     /**
-     * Gets all risk parameters in a single struct.
+     * Get all risk parameters in a single struct.
      *
      * @return  All global risk parameters
      */
@@ -120,7 +120,7 @@ contract Getters is
     }
 
     /**
-     * Gets all risk parameter limits in a single struct. These are the maximum limits at which the
+     * Get all risk parameter limits in a single struct. These are the maximum limits at which the
      * risk parameters can be set by the admin of Solo.
      *
      * @return  All global risk parameter limnits
@@ -136,7 +136,7 @@ contract Getters is
     // ============ Getters for Markets ============
 
     /**
-     * Gets the total number of markets.
+     * Get the total number of markets.
      *
      * @return           The number of markets
      */
@@ -149,7 +149,7 @@ contract Getters is
     }
 
     /**
-     * Gets the ERC20 token address for a market.
+     * Get the ERC20 token address for a market.
      *
      * @param  marketId  The market to query
      * @return           The token address
@@ -166,7 +166,7 @@ contract Getters is
     }
 
     /**
-     * Gets the total principal amounts (borrowed and lent) for a market.
+     * Get the total principal amounts (borrowed and lent) for a market.
      *
      * @param  marketId  The market to query
      * @return           The total principal amounts
@@ -183,7 +183,7 @@ contract Getters is
     }
 
     /**
-     * Gets the most recently cached interest index for a market.
+     * Get the most recently cached interest index for a market.
      *
      * @param  marketId  The market to query
      * @return           The most recent index
@@ -200,7 +200,7 @@ contract Getters is
     }
 
     /**
-     * Gets the interest index for a market if it were to be updated right now.
+     * Get the interest index for a market if it were to be updated right now.
      *
      * @param  marketId  The market to query
      * @return           The estimated current index
@@ -217,7 +217,7 @@ contract Getters is
     }
 
     /**
-     * Gets the price oracle address for a market.
+     * Get the price oracle address for a market.
      *
      * @param  marketId  The market to query
      * @return           The price oracle address
@@ -234,7 +234,7 @@ contract Getters is
     }
 
     /**
-     * Gets the interest-setter address for a market.
+     * Get the interest-setter address for a market.
      *
      * @param  marketId  The market to query
      * @return           The interest-setter address
@@ -251,7 +251,7 @@ contract Getters is
     }
 
     /**
-     * Gets the margin premium for a market. A margin premium makes it so that any positions that
+     * Get the margin premium for a market. A margin premium makes it so that any positions that
      * include the market require a higher collateralization to avoid being liquidated.
      *
      * @param  marketId  The market to query
@@ -287,7 +287,7 @@ contract Getters is
     }
 
     /**
-     * Returns true if a particular market is in closing mode. Additional loans cannot be taken from
+     * Return true if a particular market is in closing mode. Additional loans cannot be taken from
      * a market that is closing.
      *
      * @param  marketId  The market to query
@@ -305,7 +305,7 @@ contract Getters is
     }
 
     /**
-     * Gets the price of the token for a market.
+     * Get the price of the token for a market.
      *
      * @param  marketId  The market to query
      * @return           The price of each atomic unit of the token
@@ -322,7 +322,7 @@ contract Getters is
     }
 
     /**
-     * Gets the current borrower interest rate for a market.
+     * Get the current borrower interest rate for a market.
      *
      * @param  marketId  The market to query
      * @return           The current interest rate
@@ -342,7 +342,7 @@ contract Getters is
     }
 
     /**
-     * Gets the adjusted liquidation spread for some market pair. This is equal to the global
+     * Get the adjusted liquidation spread for some market pair. This is equal to the global
      * liquidation spread multiplied by (1 + spreadPremium) for each of the two markets.
      *
      * @param  heldMarketId  The market for which the account has collateral
@@ -363,7 +363,7 @@ contract Getters is
     }
 
     /**
-     * Returns basic information about a particular market.
+     * Get basic information about a particular market.
      *
      * @param  marketId  The market to query
      * @return           The current market info, including:
@@ -388,7 +388,7 @@ contract Getters is
     }
 
     /**
-     * Returns comprehensive information about a particular market.
+     * Get comprehensive information about a particular market.
      *
      * @param  marketId  The market to query
      * @return           Four values:
@@ -419,7 +419,7 @@ contract Getters is
     }
 
     /**
-     * Returns the number of excess tokens for a market. The number of excess tokens is calculated
+     * Get the number of excess tokens for a market. The number of excess tokens is calculated
      * by taking the current number of tokens held in Solo, adding the number of tokens owed to Solo
      * by borrowers, and subtracting the number of tokens owed to lenders by Solo.
      *
@@ -481,7 +481,7 @@ contract Getters is
     }
 
     /**
-     * Gets the status of an account (Normal, Liquidating, or Vaporizing).
+     * Get the status of an account (Normal, Liquidating, or Vaporizing).
      *
      * @param  account  The account to query
      * @return          The account's status
@@ -497,7 +497,7 @@ contract Getters is
     }
 
     /**
-     * Gets the total lent and total borrow value of an account.
+     * Get the total lent and total borrow value of an account.
      *
      * @param  account  The account to query
      * @return          The following values:
@@ -515,7 +515,7 @@ contract Getters is
     }
 
     /**
-     * Gets the total lent and total borrow values of an account adjusted by the marginPremium of
+     * Get the total lent and total borrow values of an account adjusted by the marginPremium of
      * each market. Lent values are divided by (1 + marginPremium) for each market and borrowed
      * values are multiplied by (1 + marginPremium) for each market. Comparing these adjusted values
      * gives the margin-ratio of the account which will be compared to the global margin-ratio when
@@ -537,7 +537,7 @@ contract Getters is
     }
 
     /**
-     * Gets an account's summary for each market.
+     * Get an account's summary for each market.
      *
      * @param  account  The account to query
      * @return          The following values:
@@ -577,7 +577,7 @@ contract Getters is
     // ============ Getters for Permissions ============
 
     /**
-     * Returns true if a particular address is approved as an operator for an owner's accounts.
+     * Return true if a particular address is approved as an operator for an owner's accounts.
      * Approved operators can act on the accounts of the owner as if it were the operator's own.
      *
      * @param  owner     The owner of the accounts
@@ -596,7 +596,7 @@ contract Getters is
     }
 
     /**
-     * Returns true if a particular address is approved as a global operator. Such an address can
+     * Return true if a particular address is approved as a global operator. Such an address can
      * act on any account as if it were the operator's own.
      *
      * @param  operator  The address to query
@@ -615,7 +615,7 @@ contract Getters is
     // ============ Private Helper Functions ============
 
     /**
-     * Reverts if marketId is invalid.
+     * Revert if marketId is invalid.
      */
     function _requireValidMarket(
         uint256 marketId

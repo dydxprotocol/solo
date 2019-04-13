@@ -41,7 +41,7 @@ contract Operation is
     /**
      * The main entry-point to Solo that allows users and contracts to manage accounts.
      *
-     * Takes one or more actions on one or more accounts. The msg.sender must be the owner or
+     * Take one or more actions on one or more accounts. The msg.sender must be the owner or
      * operator of all accounts except for those being liquidated, vaporized, or traded with.
      *
      * @param  accounts  A list of all accounts that will be used in this operation. Cannot contain

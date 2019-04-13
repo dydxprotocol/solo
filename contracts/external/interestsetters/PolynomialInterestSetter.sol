@@ -156,7 +156,7 @@ contract PolynomialInterestSetter is
     }
 
     /**
-     * Returns the maximum APR that this interestSetter will return. The actual APY may be higher
+     * Get the maximum APR that this interestSetter will return. The actual APY may be higher
      * depending on how often the interest is compounded.
      *
      * @return The maximum APR
@@ -170,7 +170,7 @@ contract PolynomialInterestSetter is
     }
 
     /**
-     * Returns all of the coefficients of the interest calculation, starting from the coefficient for
+     * Get all of the coefficients of the interest calculation, starting from the coefficient for
      * the first-order utilization variable.
      *
      * @return The coefficients
