@@ -65,6 +65,10 @@ contract Expiry is
         uint32 time
     );
 
+    event LogExpiryRampTimeSet(
+        uint256 expiryRampTime
+    );
+
     // ============ Storage ============
 
     // owner => number => market => time
@@ -93,6 +97,7 @@ contract Expiry is
         external
         onlyOwner
     {
+        emit LogExpiryRampTimeSet(newExpiryRampTime);
         g_expiryRampTime = newExpiryRampTime;
     }
 
@@ -146,7 +151,7 @@ contract Expiry is
             expiry
         );
         Require.that(
-            expiry >= maxExpiry,
+            expiry <= maxExpiry,
             FILE,
             "Expiry past maxExpiry",
             expiry

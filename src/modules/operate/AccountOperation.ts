@@ -186,10 +186,9 @@ export class AccountOperation {
     return this;
   }
 
-  // This function is deprecated and is only intended to be used for account with no more than two
-  // assets
+  // This function is deprecated and is should only be used for account with no more than two assets
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
-    const minExpiryTimestamp = minExpiry || INTEGERS.ZERO;
+    const maxExpiryTimestamp = minExpiry || INTEGERS.ONES_31;
     this.addActionArgs(
       liquidate,
       {
@@ -199,7 +198,7 @@ export class AccountOperation {
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
         otherAddress: this.contracts.expiry.options.address,
-        data: toBytes(liquidate.liquidMarketId, minExpiryTimestamp),
+        data: toBytes(liquidate.liquidMarketId, maxExpiryTimestamp),
       },
     );
     return this;
