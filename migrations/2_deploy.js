@@ -126,7 +126,7 @@ async function deployBaseProtocol(deployer, network) {
   await deployer.deploy(soloMargin, getRiskParams(network), getRiskLimits());
 
   if (!isDevNetwork(network)) {
-    const deployedSoloMargin = soloMargin.deployed();
+    const deployedSoloMargin = await soloMargin.deployed();
     await deployedSoloMargin.transferOwnership(getAdminMultisigAddress(network));
   }
 }
@@ -163,6 +163,11 @@ async function deployPriceOracles(deployer, network, accounts) {
     deployer.deploy(UsdcPriceOracle),
     deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
   ]);
+
+  if (!isDevNetwork(network)) {
+    const deployedDaiPriceOracle = await DaiPriceOracle.deployed();
+    deployedDaiPriceOracle.transferOwnership(getAdminMultisigAddress(network));
+  }
 }
 
 async function deploySecondLayer(deployer, network) {
