@@ -139,7 +139,7 @@ contract Getters is
     /**
      * Get the total number of markets.
      *
-     * @return           The number of markets
+     * @return  The number of markets
      */
     function getNumMarkets()
         public
