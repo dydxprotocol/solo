@@ -460,6 +460,17 @@ export class Getters {
     );
   }
 
+  // ============ Getters for Admin ============
+
+  public async getAdmin(
+    options?: ContractConstantCallOptions,
+  ): Promise<address> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.owner(),
+      options,
+    );
+  }
+
   // ============ Getters for Expiry ============
 
   public async getExpiryAdmin(

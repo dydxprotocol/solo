@@ -3,12 +3,14 @@ import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
 import { snapshot, resetEVM, fastForward, mineAvgBlock } from '../helpers/EVM';
 import { INTEGERS, ADDRESSES } from '../../src/lib/Constants';
-import { address } from '../../src/types';
+import { address, ContractCallOptions } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
 
 let solo: Solo;
 let accounts: address[];
 let admin: address;
+let poker: address;
+let rando: address;
 let marketMaker: address;
 const defaultPrice = new BigNumber('1e18');
 const defaultEthPrice = new BigNumber('1e20');
@@ -23,20 +25,18 @@ describe('DaiPriceOracle', () => {
     accounts = r.accounts;
     admin = accounts[0];
     marketMaker = accounts[6];
-    const defaultAccount = solo.getDefaultAccount();
+    poker = accounts[9];
+    rando = accounts[8];
     await resetEVM();
     const tokenAmount = new BigNumber('1e19');
     const oasisDexAddress = solo.contracts.testOasisDex.options.address;
     await Promise.all([
+      solo.oracle.daiPriceOracle.setPokerAddress(poker, { from: admin }),
       setEthPrice(defaultEthPrice, true),
       solo.testing.tokenB.issueTo(tokenAmount, marketMaker),
       solo.weth.wrap(marketMaker, tokenAmount),
       solo.weth.setMaximumAllowance(marketMaker, oasisDexAddress),
       solo.testing.tokenB.setMaximumAllowance(marketMaker, oasisDexAddress),
-      solo.contracts.callContractFunction(
-        solo.contracts.daiPriceOracle.methods.transferOwnership(defaultAccount),
-        { from: admin },
-      ),
     ]);
     snapshotId = await snapshot();
   });
@@ -70,27 +70,43 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
         setUniswapPrice('0.97'),
       ]);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       const priceInfo = await solo.oracle.daiPriceOracle.getPriceInfo();
       const price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(priceInfo.price);
     });
   });
 
+  describe('ownerSetPriceOracle', () => {
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        solo.oracle.daiPriceOracle.setPokerAddress(marketMaker, { from: rando }),
+      );
+    });
+
+    it('Succeeds', async () => {
+      const oldPoker = await solo.oracle.daiPriceOracle.getPoker();
+      await solo.oracle.daiPriceOracle.setPokerAddress(marketMaker, { from: admin });
+      const newPoker = await solo.oracle.daiPriceOracle.getPoker();
+      expect(newPoker).toEqual(marketMaker);
+      expect(newPoker).not.toEqual(oldPoker);
+    });
+  });
+
   describe('updatePrice', () => {
-    it('Does not update for non-admin', async () => {
-      const rando = accounts[6];
+    it('Does not update for non-poker', async () => {
       await Promise.all([
         setOasisLowPrice('0.99'),
         setOasisHighPrice('1.01'),
         setUniswapPrice('1.00'),
       ]);
       await expectThrow(
-        solo.oracle.daiPriceOracle.updatePrice(
+        updatePrice(
           null,
           null,
           { from: rando },
         ),
+        'DaiPriceOracle: Only poker can call updatePrice',
       );
     });
 
@@ -102,7 +118,7 @@ describe('DaiPriceOracle', () => {
         setUniswapPrice('1.00'),
       ]);
       await expectThrow(
-        solo.oracle.daiPriceOracle.updatePrice(),
+        updatePrice(),
       );
     });
 
@@ -112,7 +128,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('1.01'),
         setUniswapPrice('1.00'),
       ]);
-      const txResult = await solo.oracle.daiPriceOracle.updatePrice();
+      const txResult = await updatePrice();
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
       const priceInfo = await solo.oracle.daiPriceOracle.getPriceInfo();
       expect(priceInfo.lastUpdate).toEqual(new BigNumber(timestamp));
@@ -125,7 +141,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
         setUniswapPrice('0.97'),
       ]);
-      const txResult = await solo.oracle.daiPriceOracle.updatePrice();
+      const txResult = await updatePrice();
       const priceInfo = await solo.oracle.daiPriceOracle.getPriceInfo();
       const log = txResult.events.PriceSet;
       expect(log).not.toBeUndefined();
@@ -141,7 +157,7 @@ describe('DaiPriceOracle', () => {
       ]);
       await fastForward(1000);
       const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       const price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(boundedPrice);
     });
@@ -156,17 +172,17 @@ describe('DaiPriceOracle', () => {
       const targetPrice = await solo.oracle.daiPriceOracle.getTargetPrice();
 
       await fastForward(1000);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).not.toEqual(targetPrice);
 
       await fastForward(1000);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).not.toEqual(targetPrice);
 
       await fastForward(1000);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       price = await solo.oracle.daiPriceOracle.getPrice();
       expect(price).toEqual(targetPrice);
     });
@@ -178,7 +194,7 @@ describe('DaiPriceOracle', () => {
         setUniswapPrice('0.96'),
       ]);
       await expectThrow(
-        solo.oracle.daiPriceOracle.updatePrice(
+        updatePrice(
           defaultPrice,
           null,
         ),
@@ -193,7 +209,7 @@ describe('DaiPriceOracle', () => {
         setUniswapPrice('1.04'),
       ]);
       await expectThrow(
-        solo.oracle.daiPriceOracle.updatePrice(
+        updatePrice(
           null,
           defaultPrice,
         ),
@@ -291,7 +307,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('1.11'),
         setUniswapPrice('1.10'),
       ]);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       await mineAvgBlock();
       const price = await solo.oracle.daiPriceOracle.getPrice();
       const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
@@ -305,7 +321,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.91'),
         setUniswapPrice('0.90'),
       ]);
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       await mineAvgBlock();
       const price = await solo.oracle.daiPriceOracle.getPrice();
       const boundedPrice = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
@@ -368,7 +384,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
       ]);
       await mineAvgBlock();
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.stop(),
@@ -384,7 +400,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
       ]);
       await mineAvgBlock();
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.setBuyEnabled(false),
@@ -400,7 +416,7 @@ describe('DaiPriceOracle', () => {
         setOasisHighPrice('0.99'),
       ]);
       await mineAvgBlock();
-      await solo.oracle.daiPriceOracle.updatePrice();
+      await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
       await solo.contracts.callContractFunction(
         solo.contracts.testOasisDex.methods.setMatchingEnabled(false),
@@ -548,4 +564,12 @@ async function createOasisOrder(
     ),
     { from: marketMaker },
   );
+}
+
+async function updatePrice(
+  minimum?: BigNumber,
+  maximum?: BigNumber,
+  options?: ContractCallOptions,
+) {
+  return solo.oracle.daiPriceOracle.updatePrice(minimum, maximum, options || { from: poker });
 }

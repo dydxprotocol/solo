@@ -74,6 +74,8 @@ contract DaiPriceOracle is
 
     PriceInfo public g_priceInfo;
 
+    address public g_poker;
+
     DeviationParams public DEVIATION_PARAMS;
 
     uint256 public OASIS_ETH_AMOUNT;
@@ -91,6 +93,7 @@ contract DaiPriceOracle is
     // ============ Constructor =============
 
     constructor(
+        address poker,
         address weth,
         address dai,
         address medianizer,
@@ -101,6 +104,7 @@ contract DaiPriceOracle is
     )
         public
     {
+        g_poker = poker;
         MEDIANIZER = IMakerOracle(medianizer);
         WETH = IErc20(weth);
         DAI = IErc20(dai);
@@ -114,6 +118,17 @@ contract DaiPriceOracle is
         });
     }
 
+    // ============ Admin Functions ============
+
+    function ownerSetPokerAddress(
+        address newPoker
+    )
+        external
+        onlyOwner
+    {
+        g_poker = newPoker;
+    }
+
     // ============ Public Functions ============
 
     function updatePrice(
@@ -121,9 +136,15 @@ contract DaiPriceOracle is
         Monetary.Price memory maximum
     )
         public
-        onlyOwner
         returns (PriceInfo memory)
     {
+        Require.that(
+            msg.sender == g_poker,
+            FILE,
+            "Only poker can call updatePrice",
+            msg.sender
+        );
+
         Monetary.Price memory newPrice = getBoundedTargetPrice();
 
         Require.that(
