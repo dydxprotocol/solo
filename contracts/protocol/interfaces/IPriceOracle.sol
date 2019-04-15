@@ -26,7 +26,7 @@ import { Monetary } from "../lib/Monetary.sol";
  * @title IPriceOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement
+ * Interface that Price Oracles for Solo must implement in order to report prices.
  */
 contract IPriceOracle {
 
@@ -39,10 +39,11 @@ contract IPriceOracle {
     /**
      * Get the price of a token
      *
-     * @return  The USD price of a base unit of the token, then multiplied by 10^36.
-     *          So a USD-stable coin with 18 decimal places would return 10^18.
-     *          Remember that this is the price of the base unit rather than the price of a
-     *          "human-readable" token amount. Every ERC20 may have a different number of decimals.
+     * @param  token  The ERC20 token address of the market
+     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
+     *                So a USD-stable coin with 18 decimal places would return 10^18.
+     *                This is the price of the base unit rather than the price of a "human-readable"
+     *                token amount. Every ERC20 may have a different number of decimals.
      */
     function getPrice(
         address token
@@ -50,5 +51,4 @@ contract IPriceOracle {
         public
         view
         returns (Monetary.Price memory);
-
 }

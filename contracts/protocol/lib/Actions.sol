@@ -43,9 +43,9 @@ library Actions {
         Transfer,  // transfer balance between accounts
         Buy,       // buy an amount of some token (externally)
         Sell,      // sell an amount of some token (externally)
-        Trade,     // buy an amount of some token (internally)
+        Trade,     // trade tokens against another account
         Liquidate, // liquidate an undercollateralized or expiring account
-        Vaporize,  // arbitrage admin funds to save a completely negative account
+        Vaporize,  // use excess tokens to zero-out a completely negative account
         Call       // send arbitrary data to an address
     }
 
@@ -63,6 +63,11 @@ library Actions {
 
     // ============ Structs ============
 
+    /*
+     * Arguments that are passed to Solo in an ordered list as part of a single operation.
+     * Each ActionArgs has an actionType which specifies which action struct that this data will be
+     * parsed into before being processed.
+     */
     struct ActionArgs {
         ActionType actionType;
         uint256 accountId;
@@ -76,6 +81,9 @@ library Actions {
 
     // ============ Action Types ============
 
+    /*
+     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
+     */
     struct DepositArgs {
         Types.AssetAmount amount;
         Account.Info account;
@@ -83,6 +91,10 @@ library Actions {
         address from;
     }
 
+    /*
+     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
+     * previously supplied.
+     */
     struct WithdrawArgs {
         Types.AssetAmount amount;
         Account.Info account;
@@ -90,6 +102,11 @@ library Actions {
         address to;
     }
 
+    /*
+     * Transfers balance between two accounts. The msg.sender must be an operator for both accounts.
+     * The amount field applies to accountOne.
+     * This action does not require any token movement since the trade is done internally to Solo.
+     */
     struct TransferArgs {
         Types.AssetAmount amount;
         Account.Info accountOne;
@@ -97,6 +114,11 @@ library Actions {
         uint256 market;
     }
 
+    /*
+     * Acquires a certain amount of tokens by spending other tokens. Sends takerMarket tokens to the
+     * specified exchangeWrapper contract and expects makerMarket tokens in return. The amount field
+     * applies to the makerMarket.
+     */
     struct BuyArgs {
         Types.AssetAmount amount;
         Account.Info account;
@@ -106,6 +128,11 @@ library Actions {
         bytes orderData;
     }
 
+    /*
+     * Spends a certain amount of tokens to acquire other tokens. Sends takerMarket tokens to the
+     * specified exchangeWrapper and expects makerMarket tokens in return. The amount field applies
+     * to the takerMarket.
+     */
     struct SellArgs {
         Types.AssetAmount amount;
         Account.Info account;
@@ -115,6 +142,14 @@ library Actions {
         bytes orderData;
     }
 
+    /*
+     * Trades balances between two accounts using any external contract that implements the
+     * AutoTrader interface. The AutoTrader contract must be an operator for the makerAccount (for
+     * which it is trading on-behalf-of). The amount field applies to the makerAccount and the
+     * inputMarket. This proposed change to the makerAccount is passed to the AutoTrader which will
+     * quote a change for the makerAccount in the outputMarket (or will disallow the trade).
+     * This action does not require any token movement since the trade is done internally to Solo.
+     */
     struct TradeArgs {
         Types.AssetAmount amount;
         Account.Info takerAccount;
@@ -125,6 +160,19 @@ library Actions {
         bytes tradeData;
     }
 
+    /*
+     * Each account must maintain a certain margin-ratio (specified globally). If the account falls
+     * below this margin-ratio, it can be liquidated by any other account. This allows anyone else
+     * (arbitrageurs) to repay any borrowed asset (owedMarket) of the liquidating account in
+     * exchange for any collateral asset (heldMarket) of the liquidAccount. The ratio is determined
+     * by the price ratio (given by the oracles) plus a spread (specified globally). Liquidating an
+     * account also sets a flag on the account that the account is being liquidated. This allows
+     * anyone to continue liquidating the account until there are no more borrows being taken by the
+     * liquidating account. Liquidators do not have to liquidate the entire account all at once but
+     * can liquidate as much as they choose. The liquidating flag allows liquidators to continue
+     * liquidating the account even if it becomes collateralized through partial liquidation or
+     * price movement.
+     */
     struct LiquidateArgs {
         Types.AssetAmount amount;
         Account.Info solidAccount;
@@ -133,6 +181,12 @@ library Actions {
         uint256 heldMarket;
     }
 
+    /*
+     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances
+     * remaining. The arbitrageur pays back the negative asset (owedMarket) of the vaporAccount in
+     * exchange for a collateral asset (heldMarket) at a favorable spread. However, since the
+     * liquidAccount has no collateral assets, the collateral must come from Solo's excess tokens.
+     */
     struct VaporizeArgs {
         Types.AssetAmount amount;
         Account.Info solidAccount;
@@ -141,6 +195,13 @@ library Actions {
         uint256 heldMarket;
     }
 
+    /*
+     * Passes arbitrary bytes of data to an external contract that implements the Callee interface.
+     * Does not change any asset amounts. This function may be useful for setting certain variables
+     * on layer-two contracts for certain accounts without having to make a separate Ethereum
+     * transaction for doing so. Also, the second-layer contracts can ensure that the call is coming
+     * from an operator of the particular account.
+     */
     struct CallArgs {
         Account.Info account;
         address callee;

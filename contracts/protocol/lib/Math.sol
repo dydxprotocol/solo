@@ -38,6 +38,9 @@ library Math {
 
     // ============ Library Functions ============
 
+    /*
+     * Return target * (numerator / denominator).
+     */
     function getPartial(
         uint256 target,
         uint256 numerator,
@@ -50,6 +53,9 @@ library Math {
         return target.mul(numerator).div(denominator);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded up.
+     */
     function getPartialRoundUp(
         uint256 target,
         uint256 numerator,

@@ -54,6 +54,7 @@ library Storage {
 
     // ============ Structs ============
 
+    // All information necessary for tracking a market
     struct Market {
         // Contract address of the associated ERC20 token
         address token;
@@ -80,6 +81,7 @@ library Storage {
         bool isClosing;
     }
 
+    // The global risk parameters that govern the health and security of the system
     struct RiskParams {
         // Required ratio of over-collateralization
         Decimal.D256 marginRatio;
@@ -95,6 +97,7 @@ library Storage {
         Monetary.Value minBorrowedValue;
     }
 
+    // The maximum RiskParam values that can be set
     struct RiskLimits {
         uint64 marginRatioMax;
         uint64 liquidationSpreadMax;
@@ -104,6 +107,7 @@ library Storage {
         uint128 minBorrowedValueMax;
     }
 
+    // The entire storage state of Solo
     struct State {
         // number of markets
         uint256 numMarkets;
@@ -432,7 +436,7 @@ library Storage {
     }
 
     /**
-     * Determines and sets an account's balance based on the intended balance change. Returns the
+     * Determine and set an account's balance based on the intended balance change. Return the
      * equivalent amount in wei
      */
     function getNewParAndDeltaWei(
@@ -621,7 +625,7 @@ library Storage {
     }
 
     /**
-     * Determines and sets an account's balance based on a change in wei
+     * Determine and set an account's balance based on a change in wei
      */
     function setParFromDeltaWei(
         Storage.State storage state,

@@ -135,7 +135,7 @@ library Token {
     // ============ Private Functions ============
 
     /**
-     * Checks the return value of the previous function up to 32 bytes. Returns true if the previous
+     * Check the return value of the previous function up to 32 bytes. Return true if the previous
      * function returned 0 bytes or 32 bytes that are not all-zero.
      */
     function checkSuccess(

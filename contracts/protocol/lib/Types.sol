@@ -53,11 +53,13 @@ library Types {
 
     // ============ Par (Principal Amount) ============
 
+    // Total borrow and supply values for a market
     struct TotalPar {
         uint128 borrow;
         uint128 supply;
     }
 
+    // Individual principal amount for an account
     struct Par {
         bool sign; // true if positive
         uint128 value;
@@ -171,6 +173,7 @@ library Types {
 
     // ============ Wei (Token Amount) ============
 
+    // Individual token amount for an account
     struct Wei {
         bool sign; // true if positive
         uint256 value;

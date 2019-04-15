@@ -44,6 +44,12 @@ contract Admin is
 {
     // ============ Token Functions ============
 
+    /**
+     * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be
+     * withdrawn. The number of excess tokens is calculated by taking the current number of tokens
+     * held in Solo, adding the number of tokens owed to Solo by borrowers, and subtracting the
+     * number of tokens owed to suppliers by Solo.
+     */
     function ownerWithdrawExcessTokens(
         uint256 marketId,
         address recipient
@@ -60,6 +66,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Withdraw an ERC20 token for which there is no associated market.
+     */
     function ownerWithdrawUnsupportedTokens(
         address token,
         address recipient
@@ -78,6 +87,9 @@ contract Admin is
 
     // ============ Market Functions ============
 
+    /**
+     * Add a new market to Solo. Must be for a previously-unsupported ERC20 token.
+     */
     function ownerAddMarket(
         address token,
         IPriceOracle priceOracle,
@@ -99,6 +111,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Set (or unset) the status of a market to "closing". The borrowedValue of a market cannot
+     * increase while its status is "closing".
+     */
     function ownerSetIsClosing(
         uint256 marketId,
         bool isClosing
@@ -114,6 +130,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Set the price oracle for a market.
+     */
     function ownerSetPriceOracle(
         uint256 marketId,
         IPriceOracle priceOracle
@@ -129,6 +148,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Set the interest-setter for a market.
+     */
     function ownerSetInterestSetter(
         uint256 marketId,
         IInterestSetter interestSetter
@@ -144,6 +166,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Set a premium on the minimum margin-ratio for a market. This makes it so that any positions
+     * that include this market require a higher collateralization to avoid being liquidated.
+     */
     function ownerSetMarginPremium(
         uint256 marketId,
         Decimal.D256 memory marginPremium
@@ -159,6 +185,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Set a premium on the liquidation spread for a market. This makes it so that any liquidations
+     * that include this market have a higher spread than the global default.
+     */
     function ownerSetSpreadPremium(
         uint256 marketId,
         Decimal.D256 memory spreadPremium
@@ -176,6 +206,10 @@ contract Admin is
 
     // ============ Risk Functions ============
 
+    /**
+     * Set the global minimum margin-ratio that every position must maintain to prevent being
+     * liquidated.
+     */
     function ownerSetMarginRatio(
         Decimal.D256 memory ratio
     )
@@ -189,6 +223,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Set the global liquidation spread. This is the spread between oracle prices that incentivizes
+     * the liquidation of risky positions.
+     */
     function ownerSetLiquidationSpread(
         Decimal.D256 memory spread
     )
@@ -202,6 +240,10 @@ contract Admin is
         );
     }
 
+    /**
+     * Set the global earnings-rate variable that determines what percentage of the interest paid
+     * by borrowers gets passed-on to suppliers.
+     */
     function ownerSetEarningsRate(
         Decimal.D256 memory earningsRate
     )
@@ -215,6 +257,9 @@ contract Admin is
         );
     }
 
+    /**
+     * Set the global minimum-borrow value which is the minimum value of any new borrow on Solo.
+     */
     function ownerSetMinBorrowedValue(
         Monetary.Value memory minBorrowedValue
     )
@@ -230,6 +275,10 @@ contract Admin is
 
     // ============ Global Operator Functions ============
 
+    /**
+     * Approve (or disapprove) an address that is permissioned to be an operator for all accounts in
+     * Solo. Intended only to approve smart-contracts.
+     */
     function ownerSetGlobalOperator(
         address operator,
         bool approved

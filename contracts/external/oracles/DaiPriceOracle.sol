@@ -168,7 +168,7 @@ contract DaiPriceOracle is
     // ============ Price-Query Functions ============
 
     /**
-     * Gets the new price that would be stored if updated right now.
+     * Get the new price that would be stored if updated right now.
      */
     function getBoundedTargetPrice()
         public
@@ -188,7 +188,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Gets the USD price of DAI that this contract will move towards when updated. This price is
+     * Get the USD price of DAI that this contract will move towards when updated. This price is
      * not bounded by the variables governing the maximum deviation from the old price.
      */
     function getTargetPrice()
@@ -210,7 +210,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Gets the USD price of ETH according the Maker Medianizer contract.
+     * Get the USD price of ETH according the Maker Medianizer contract.
      */
     function getMedianizerPrice()
         public
@@ -224,7 +224,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Gets the USD price of DAI according to OasisDEX given the USD price of ETH.
+     * Get the USD price of DAI according to OasisDEX given the USD price of ETH.
      */
     function getOasisPrice(
         Monetary.Price memory ethUsd
@@ -266,7 +266,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Gets the USD price of DAI according to Uniswap given the USD price of ETH.
+     * Get the USD price of DAI according to Uniswap given the USD price of ETH.
      */
     function getUniswapPrice(
         Monetary.Price memory ethUsd

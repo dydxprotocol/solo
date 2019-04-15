@@ -849,7 +849,7 @@ library OperationImpl {
     // ============ Private Functions ============
 
     /**
-     * For the purposes of liquidation or vaporization, gets the value-equivalent amount of heldWei
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of heldWei
      * given owedWei and the (spread-adjusted) prices of each asset.
      */
     function _owedWeiToHeldWei(
@@ -868,7 +868,7 @@ library OperationImpl {
     }
 
     /**
-     * For the purposes of liquidation or vaporization, gets the value-equivalent amount of owedWei
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of owedWei
      * given heldWei and the (spread-adjusted) prices of each asset.
      */
     function _heldWeiToOwedWei(
@@ -887,7 +887,7 @@ library OperationImpl {
     }
 
     /**
-     * Attempts to vaporize an account's balance using the excess tokens in the protocol. Returns a
+     * Attempt to vaporize an account's balance using the excess tokens in the protocol. Return a
      * bool and a wei value. The boolean is true if and only if the balance was fully vaporized. The
      * Wei value is how many excess tokens were used to partially or fully vaporize the account's
      * negative balance.
@@ -931,7 +931,7 @@ library OperationImpl {
     }
 
     /**
-     * Returns the (spread-adjusted) prices of two assets for the purposes of liquidation or
+     * Return the (spread-adjusted) prices of two assets for the purposes of liquidation or
      * vaporization.
      */
     function _getLiquidationPrices(

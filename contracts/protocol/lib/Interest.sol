@@ -30,7 +30,7 @@ import { Types } from "./Types.sol";
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and indexes of Solo
+ * Library for managing the interest rate and interest indexes of Solo
  */
 library Interest {
     using Math for uint256;
@@ -56,16 +56,16 @@ library Interest {
     // ============ Library Functions ============
 
     /**
-     * Returns a new market Index based on the old index and market interest rate.
-     * Calculates interest for borrowers by using the formula rate * time. This calculation closely
-     * approximates continuously-compounded interest when called frequently, but is much more
+     * Get a new market Index based on the old index and market interest rate.
+     * Calculate interest for borrowers by using the formula rate * time. Approximates
+     * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all lenders.
+     * then prorated the across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
      * @param  totalPar      The total supply and borrow par values of the market
-     * @param  earningsRate  The portion of the interest that is forwarded to the lenders
+     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
      * @return               The updated index for a market
      */
     function calculateNewIndex(
@@ -87,7 +87,7 @@ library Interest {
         uint32 currentTime = Time.currentTime();
         uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
 
-        // get interest increase for lenders
+        // get interest increase for suppliers
         uint256 supplyInterest;
         if (Types.isZero(supplyWei)) {
             supplyInterest = 0;
@@ -118,6 +118,9 @@ library Interest {
         });
     }
 
+    /*
+     * Convert a principal amount to a token amount given an index.
+     */
     function parToWei(
         Types.Par memory input,
         Index memory index
@@ -140,6 +143,9 @@ library Interest {
         }
     }
 
+    /*
+     * Convert a token amount to a principal amount given an index.
+     */
     function weiToPar(
         Types.Wei memory input,
         Index memory index
@@ -161,6 +167,10 @@ library Interest {
         }
     }
 
+    /*
+     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
+     * token amounts.
+     */
     function totalParToWei(
         Types.TotalPar memory totalPar,
         Index memory index

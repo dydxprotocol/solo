@@ -31,6 +31,15 @@ import { Types } from "./Types.sol";
 library Account {
     // ============ Enums ============
 
+    /*
+     * Most-recently-cached account status.
+     *
+     * Normal: Can only be liquidated if the account values are violating the global margin-ratio.
+     * Liquid: Can be liquidated no matter the account values.
+     *         Can be vaporized if there are no more positive account values.
+     * Vapor:  Has only negative (or zeroed) account values. Can be vaporized.
+     *
+     */
     enum Status {
         Normal,
         Liquid,
@@ -39,13 +48,15 @@ library Account {
 
     // ============ Structs ============
 
+    // Represents the unique key that specifies an account
     struct Info {
-        address owner;
-        uint256 number;
+        address owner;  // The address that owns the account
+        uint256 number; // A nonce that allows a single address to control many accounts
     }
 
+    // The complete storage for any account
     struct Storage {
-        mapping (uint256 => Types.Par) balances;
+        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
         Status status;
     }
 
