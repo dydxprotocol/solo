@@ -99,6 +99,19 @@ function verifyNetwork(network) {
   }
 }
 
+function getOraclePokerAddress(network) {
+  if (isMainNet(network)) {
+    return '0xac89e378758c97625d5448065d92f63f4851f1e2';
+  }
+  if (isKovan(network)) {
+    return '0xa13cc3ab215bf669764a1a56a831c1bdc95659dd';
+  }
+  if (isDevNetwork(network)) {
+    return '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1';
+  }
+  throw new Error('Cannot find Oracle Poker');
+}
+
 module.exports = {
   isDevNetwork,
   isMainNet,
@@ -110,4 +123,5 @@ module.exports = {
   getPolynomialParams,
   getDaiPriceOracleParams,
   getExpiryRampTime,
+  getOraclePokerAddress,
 };

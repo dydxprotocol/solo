@@ -25,6 +25,7 @@ const {
   getRiskParams,
   getDaiPriceOracleParams,
   getExpiryRampTime,
+  getOraclePokerAddress,
 } = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
 
@@ -144,6 +145,7 @@ async function deployPriceOracles(deployer, network) {
   await Promise.all([
     deployer.deploy(
       DaiPriceOracle,
+      getOraclePokerAddress(network),
       getWethAddress(network),
       getDaiAddress(network),
       getMedianizerAddress(network),

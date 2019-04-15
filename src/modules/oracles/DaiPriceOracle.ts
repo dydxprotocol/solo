@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
 import {
+  address,
   Decimal,
   Integer,
   ContractConstantCallOptions,
@@ -16,6 +17,18 @@ export class DaiPriceOracle {
     contracts: Contracts,
   ) {
     this.contracts = contracts;
+  }
+
+  // ============ Admin ============
+
+  public async setPokerAddress(
+    newPoker: address,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.daiPriceOracle.methods.ownerSetPokerAddress(newPoker),
+      options,
+    );
   }
 
   // ============ Setters ============
@@ -37,6 +50,25 @@ export class DaiPriceOracle {
   }
 
   // ============ Getters ============
+
+  public async getOwner(
+    options?: ContractConstantCallOptions,
+  ): Promise<address> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.daiPriceOracle.methods.owner(),
+      options,
+    );
+  }
+
+  public async getPoker(
+    options?: ContractConstantCallOptions,
+  ): Promise<address> {
+    const poker = await this.contracts.callConstantContractFunction(
+      this.contracts.daiPriceOracle.methods.g_poker(),
+      options,
+    );
+    return poker;
+  }
 
   public async getPrice(
     options?: ContractConstantCallOptions,
