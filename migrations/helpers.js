@@ -28,13 +28,6 @@ function isDocker(network) {
   return network === 'docker';
 }
 
-const MULTISIG = {
-  KOVAN: {
-  },
-  MAINNET: {
-  },
-};
-
 async function getRiskLimits() {
   return {
     marginRatioMax: decimalToString('2.00'),
@@ -112,16 +105,26 @@ function getOraclePokerAddress(network, accounts) {
   throw new Error('Cannot find Oracle Poker');
 }
 
+function getAdminMultisigAddress(network) {
+  if (isMainNet(network)) {
+    return '0x03b24cf9fe32dd719631d52bd6705d014c49f86f';
+  }
+  if (isKovan(network)) {
+    return '0xecc04f59c69e6ddb19d601282eb6dd4ea763ee09';
+  }
+  throw new Error('Cannot find Admin Multisig');
+}
+
 module.exports = {
   isDevNetwork,
   isMainNet,
   isKovan,
   isDocker,
-  MULTISIG,
   getRiskLimits,
   getRiskParams,
   getPolynomialParams,
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
+  getAdminMultisigAddress,
 };
