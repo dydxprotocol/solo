@@ -68,14 +68,14 @@ const WethPriceOracle = artifacts.require('WethPriceOracle');
 
 // ============ Main Migration ============
 
-const migration = async (deployer, network) => {
+const migration = async (deployer, network, accounts) => {
   await Promise.all([
     deployTestContracts(deployer, network),
     deployBaseProtocol(deployer, network),
   ]);
   await Promise.all([
     deployInterestSetters(deployer, network),
-    deployPriceOracles(deployer, network),
+    deployPriceOracles(deployer, network, accounts),
     deploySecondLayer(deployer, network),
   ]);
 };
@@ -132,7 +132,7 @@ async function deployInterestSetters(deployer, network) {
   await deployer.deploy(PolynomialInterestSetter, getPolynomialParams());
 }
 
-async function deployPriceOracles(deployer, network) {
+async function deployPriceOracles(deployer, network, accounts) {
   if (
     isDevNetwork(network)
     || isKovan(network)
@@ -145,7 +145,7 @@ async function deployPriceOracles(deployer, network) {
   await Promise.all([
     deployer.deploy(
       DaiPriceOracle,
-      getOraclePokerAddress(network),
+      getOraclePokerAddress(network, accounts),
       getWethAddress(network),
       getDaiAddress(network),
       getMedianizerAddress(network),
