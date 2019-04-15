@@ -32,8 +32,13 @@ library Account {
     // ============ Enums ============
 
     /*
-     * Account status. Account can be liquidated if its status is Liquid even if it becomes
-     * overcollateralized at some later time.
+     * Most-recently-cached account status.
+     *
+     * Normal: Can only be liquidated if the account values are violating the global margin-ratio.
+     * Liquid: Can be liquidated no matter the account values.
+     *         Can be vaporized if there are no more positive account values.
+     * Vapor:  Has only negative (or zeroed) account values. Can be vaporized.
+     *
      */
     enum Status {
         Normal,
