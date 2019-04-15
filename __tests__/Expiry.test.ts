@@ -320,7 +320,7 @@ describe('Expiry', () => {
       await setExpiry(INTEGERS.ONES_31);
       await expectExpireRevert(
         heldGlob,
-        'Expiry: Loan not yet expired',
+        'Expiry: Borrow not yet expired',
       );
     });
 
@@ -348,7 +348,7 @@ describe('Expiry', () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, zero);
       await expectExpireRevert(
         heldGlob,
-        'Expiry: Loans must be negative',
+        'Expiry: Borrows must be negative',
       );
     });
 
@@ -356,11 +356,11 @@ describe('Expiry', () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
       await expectExpireRevert(
         heldGlob,
-        'Expiry: Loans must be negative',
+        'Expiry: Borrows must be negative',
       );
     });
 
-    it('Fails for over-repaying the loan', async () => {
+    it('Fails for over-repaying the borrow', async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(2));
       await expectExpireRevert(
         heldGlob,
@@ -505,7 +505,7 @@ describe('Expiry', () => {
       );
     });
 
-    it('Fails for overpaying a loan', async () => {
+    it('Fails for overpaying a borrow', async () => {
       await expectExpireRevert(
         {
           amount: {
@@ -514,11 +514,11 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         },
-        'Expiry: Loans cannot be overpaid',
+        'Expiry: Borrows cannot be overpaid',
       );
     });
 
-    it('Fails for increasing a loan', async () => {
+    it('Fails for increasing a borrow', async () => {
       await expectExpireRevert(
         {
           amount: {
@@ -543,7 +543,7 @@ describe('Expiry', () => {
       await setExpiry(INTEGERS.ONES_31);
       await expectExpireRevert(
         {},
-        'Expiry: Loan not yet expired',
+        'Expiry: Borrow not yet expired',
       );
     });
 
@@ -789,7 +789,7 @@ describe('Expiry', () => {
           heldMarket,
           owedMarket,
         ),
-        'Expiry: Loan not yet expired',
+        'Expiry: Borrow not yet expired',
       );
     });
 

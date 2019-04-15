@@ -147,7 +147,7 @@ contract Expiry is
         Require.that(
             expiry <= Time.currentTime(),
             FILE,
-            "Loan not yet expired",
+            "Borrow not yet expired",
             expiry
         );
         Require.that(
@@ -263,7 +263,7 @@ contract Expiry is
             Require.that(
                 !newInputPar.isPositive(),
                 FILE,
-                "Loans cannot be overpaid",
+                "Borrows cannot be overpaid",
                 newInputPar.value
             );
             assert(oldInputPar.isNegative());
@@ -282,7 +282,7 @@ contract Expiry is
                 maxExpiry
             );
 
-            // clear expiry if loan is fully repaid
+            // clear expiry if borrow is fully repaid
             if (newInputPar.isZero()) {
                 setExpiry(makerAccount, owedMarketId, 0);
             }
@@ -306,7 +306,7 @@ contract Expiry is
             Require.that(
                 maxOutputWei.isNegative(),
                 FILE,
-                "Loans must be negative",
+                "Borrows must be negative",
                 outputMarketId,
                 maxOutputWei.value
             );
