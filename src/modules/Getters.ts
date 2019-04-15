@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
+import { INTEGERS } from '../lib/Constants';
 import {
   address,
   AccountStatus,
@@ -489,7 +490,7 @@ export class Getters {
     optionalMaxExpiry?: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
-    const maxExpiry = optionalMaxExpiry || new BigNumber(0);
+    const maxExpiry = optionalMaxExpiry || INTEGERS.ONES_31;
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.expiry.methods.getSpreadAdjustedPrices(
         {

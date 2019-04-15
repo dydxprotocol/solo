@@ -328,7 +328,7 @@ describe('Expiry', () => {
       await expectExpireRevert(
         {
           ...heldGlob,
-          data: toBytes(owedMarket, defaultTime.plus(1)),
+          data: toBytes(owedMarket, defaultTime.minus(1)),
         },
         'Expiry: Expiry past maxExpiry',
       );
@@ -550,7 +550,7 @@ describe('Expiry', () => {
     it('Fails for an expiry past maxExpiry', async () => {
       await expectExpireRevert(
         {
-          data: toBytes(owedMarket, defaultTime.plus(1)),
+          data: toBytes(owedMarket, defaultTime.minus(1)),
         },
         'Expiry: Expiry past maxExpiry',
       );
