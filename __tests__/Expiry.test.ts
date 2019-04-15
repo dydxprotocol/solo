@@ -184,7 +184,7 @@ describe('Expiry', () => {
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1).toEqual(par.minus(par.div(premium)).integerValue(BigNumber.ROUND_UP));
+      expect(owed1).toEqual(par.minus(par.div(premium)).integerValue(BigNumber.ROUND_DOWN));
       expect(owed2).toEqual(owed1.times(-1));
       expect(held1).toEqual(par);
       expect(held2).toEqual(zero);
@@ -217,7 +217,7 @@ describe('Expiry', () => {
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1).toEqual(par.minus(par.div(premium).div(2)).integerValue(BigNumber.ROUND_UP));
+      expect(owed1).toEqual(par.minus(par.div(premium).div(2)).integerValue(BigNumber.ROUND_DOWN));
       expect(owed2).toEqual(owed1.times(-1));
       expect(held1).toEqual(par.div(2));
       expect(held2).toEqual(par.minus(held1));
@@ -250,7 +250,7 @@ describe('Expiry', () => {
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1).toEqual(par.minus(par.div(adjustedPremium)).integerValue(BigNumber.ROUND_UP));
+      expect(owed1).toEqual(par.minus(par.div(adjustedPremium)).integerValue(BigNumber.ROUND_DOWN));
       expect(owed2).toEqual(owed1.times(-1));
       expect(held1).toEqual(par);
       expect(held2).toEqual(zero);
@@ -699,7 +699,9 @@ describe('Expiry', () => {
 
       // calculate the last expected value
       const remainingOwed = par.minus(par.div(premium));
-      expect(balances[2]).toEqual(par.minus(remainingOwed.times(premium)).integerValue());
+      expect(balances[2]).toEqual(
+        par.minus(remainingOwed.times(premium)).integerValue(BigNumber.ROUND_UP),
+      );
     });
 
     it('Succeeds for three assets (with premiums)', async () => {
@@ -763,7 +765,9 @@ describe('Expiry', () => {
       const firstPrem = premium.minus(1).times('1.1').times('1.2').plus(1);
       const secondPrem = premium.minus(1).times('1.2').times('1.3').plus(1);
       const remainingOwed = par.minus(par.times(premium).div(firstPrem));
-      expect(balances[2]).toEqual(par.minus(remainingOwed.times(secondPrem)).integerValue());
+      expect(balances[2]).toEqual(
+        par.minus(remainingOwed.times(secondPrem)).integerValue(BigNumber.ROUND_UP),
+      );
     });
   });
 
@@ -835,6 +839,41 @@ describe('Expiry', () => {
       await expectThrow(
         solo.admin.setExpiryRampTime(INTEGERS.ONE_DAY_IN_SECONDS, { from: owner1 }),
       );
+    });
+  });
+
+  describe('#liquidateExpiredAccount', async () => {
+    it('Succeeds', async () => {
+      await solo.operation.initiate().liquidateExpiredAccount({
+        liquidMarketId: owedMarket,
+        payoutMarketId: heldMarket,
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        liquidAccountOwner: owner2,
+        liquidAccountId: accountNumber2,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      }).commit();
+
+      const [
+        held1,
+        owed1,
+        held2,
+        owed2,
+      ] = await Promise.all([
+        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2).minus(held1));
     });
   });
 });
