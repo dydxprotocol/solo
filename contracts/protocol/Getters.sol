@@ -67,7 +67,8 @@ contract Getters is
     }
 
     /**
-     * Get the global liquidation spread that incentivizes liquidators to close liquid positions.
+     * Get the global liquidation spread. This is the spread between oracle prices that incentivizes
+     * the liquidation of risky positions.
      *
      * @return  The global liquidation spread
      */
@@ -80,8 +81,8 @@ contract Getters is
     }
 
     /**
-     * Get the global earning-rate variable that determines what percentage of the interest paid
-     * by borrowers gets passed-on to lenders.
+     * Get the global earnings-rate variable that determines what percentage of the interest paid
+     * by borrowers gets passed-on to suppliers.
      *
      * @return  The global earnings rate
      */
@@ -94,7 +95,7 @@ contract Getters is
     }
 
     /**
-     * Get the global minimum-borrow value which is the minimum value of any new loan on Solo.
+     * Get the global minimum-borrow value which is the minimum value of any new borrow on Solo.
      *
      * @return  The global minimum borrow value
      */
@@ -166,7 +167,7 @@ contract Getters is
     }
 
     /**
-     * Get the total principal amounts (borrowed and lent) for a market.
+     * Get the total principal amounts (borrowed and supplied) for a market.
      *
      * @param  marketId  The market to query
      * @return           The total principal amounts
@@ -287,11 +288,11 @@ contract Getters is
     }
 
     /**
-     * Return true if a particular market is in closing mode. Additional loans cannot be taken from
-     * a market that is closing.
+     * Return true if a particular market is in closing mode. Additional borrows cannot be taken
+     * from a market that is closing.
      *
      * @param  marketId  The market to query
-     * @return           True if the market is closing, false otherwise
+     * @return           True if the market is closing
      */
     function getMarketIsClosing(
         uint256 marketId
@@ -413,7 +414,7 @@ contract Getters is
     /**
      * Get the number of excess tokens for a market. The number of excess tokens is calculated
      * by taking the current number of tokens held in Solo, adding the number of tokens owed to Solo
-     * by borrowers, and subtracting the number of tokens owed to lenders by Solo.
+     * by borrowers, and subtracting the number of tokens owed to suppliers by Solo.
      *
      * @param  marketId  The market to query
      * @return           The number of excess tokens
@@ -489,11 +490,11 @@ contract Getters is
     }
 
     /**
-     * Get the total lent and total borrow value of an account.
+     * Get the total supplied and total borrowed value of an account.
      *
      * @param  account  The account to query
      * @return          The following values:
-     *                   - The lent value of the account
+     *                   - The supplied value of the account
      *                   - The borrowed value of the account
      */
     function getAccountValues(
@@ -507,15 +508,15 @@ contract Getters is
     }
 
     /**
-     * Get the total lent and total borrow values of an account adjusted by the marginPremium of
-     * each market. Lent values are divided by (1 + marginPremium) for each market and borrowed
-     * values are multiplied by (1 + marginPremium) for each market. Comparing these adjusted values
-     * gives the margin-ratio of the account which will be compared to the global margin-ratio when
-     * determining if the account can be liquidated.
+     * Get the total supplied and total borrowed values of an account adjusted by the marginPremium
+     * of each market. Supplied values are divided by (1 + marginPremium) for each market and
+     * borrowed values are multiplied by (1 + marginPremium) for each market. Comparing these
+     * adjusted values gives the margin-ratio of the account which will be compared to the global
+     * margin-ratio when determining if the account can be liquidated.
      *
      * @param  account  The account to query
      * @return          The following values:
-     *                   - The lent value of the account (adjusted for marginPremium)
+     *                   - The supplied value of the account (adjusted for marginPremium)
      *                   - The borrowed value of the account (adjusted for marginPremium)
      */
     function getAdjustedAccountValues(
@@ -535,7 +536,7 @@ contract Getters is
      * @return          The following values:
      *                   - The ERC20 token address for each market
      *                   - The account's principal value for each market
-     *                   = The account's (lent or borrowed) number of tokens for each market
+     *                   - The account's (supplied or borrowed) number of tokens for each market
      */
     function getAccountBalances(
         Account.Info memory account
@@ -592,7 +593,7 @@ contract Getters is
      * act on any account as if it were the operator's own.
      *
      * @param  operator  The address to query
-     * @return           True if operator is a global operator, false otherwise
+     * @return           True if operator is a global operator
      */
     function getIsGlobalOperator(
         address operator

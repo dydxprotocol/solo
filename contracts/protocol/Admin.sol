@@ -48,7 +48,7 @@ contract Admin is
      * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be
      * withdrawn. The number of excess tokens is calculated by taking the current number of tokens
      * held in Solo, adding the number of tokens owed to Solo by borrowers, and subtracting the
-     * number of tokens owed to lenders by Solo.
+     * number of tokens owed to suppliers by Solo.
      */
     function ownerWithdrawExcessTokens(
         uint256 marketId,
@@ -224,7 +224,8 @@ contract Admin is
     }
 
     /**
-     * Set the global liquidation spread that incentivizes liquidators to close liquid positions.
+     * Set the global liquidation spread. This is the spread between oracle prices that incentivizes
+     * the liquidation of risky positions.
      */
     function ownerSetLiquidationSpread(
         Decimal.D256 memory spread
@@ -240,8 +241,8 @@ contract Admin is
     }
 
     /**
-     * Set the global earning-rate variable that determines what percentage of the interest paid
-     * by borrowers gets passed-on to lenders.
+     * Set the global earnings-rate variable that determines what percentage of the interest paid
+     * by borrowers gets passed-on to suppliers.
      */
     function ownerSetEarningsRate(
         Decimal.D256 memory earningsRate
@@ -257,7 +258,7 @@ contract Admin is
     }
 
     /**
-     * Set the global minimum-borrow value which is the minimum value of any new loan on Solo.
+     * Set the global minimum-borrow value which is the minimum value of any new borrow on Solo.
      */
     function ownerSetMinBorrowedValue(
         Monetary.Value memory minBorrowedValue

@@ -167,7 +167,7 @@ library Actions {
      * exchange for any collateral asset (heldMarket) of the liquidAccount. The ratio is determined
      * by the price ratio (given by the oracles) plus a spread (specified globally). Liquidating an
      * account also sets a flag on the account that the account is being liquidated. This allows
-     * anyone to continue liquidating the account until there are no more loans being taken by the
+     * anyone to continue liquidating the account until there are no more borrows being taken by the
      * liquidating account. Liquidators do not have to liquidate the entire account all at once but
      * can liquidate as much as they choose. The liquidating flag allows liquidators to continue
      * liquidating the account even if it becomes collateralized through partial liquidation or

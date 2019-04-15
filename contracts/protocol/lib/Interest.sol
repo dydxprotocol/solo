@@ -60,12 +60,12 @@ library Interest {
      * Calculate interest for borrowers by using the formula rate * time. Approximates
      * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all lenders.
+     * then prorated the across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
      * @param  totalPar      The total supply and borrow par values of the market
-     * @param  earningsRate  The portion of the interest that is forwarded to the lenders
+     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
      * @return               The updated index for a market
      */
     function calculateNewIndex(
@@ -87,7 +87,7 @@ library Interest {
         uint32 currentTime = Time.currentTime();
         uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
 
-        // get interest increase for lenders
+        // get interest increase for suppliers
         uint256 supplyInterest;
         if (Types.isZero(supplyWei)) {
             supplyInterest = 0;
