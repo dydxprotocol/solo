@@ -602,7 +602,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('AccountOperation#fullyExpireAccount', async () => {
+  describe('AccountOperation#fullyLiquidateExpiredAccount', async () => {
     it('Succeeds for two assets', async () => {
       const primaryAccount = {
         owner: owner1,
@@ -632,7 +632,7 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      await solo.operation.initiate().fullyExpireAccount(
+      await solo.operation.initiate().fullyLiquidateExpiredAccount(
         primaryAccount,
         expiredAccount,
         owedMarket,
@@ -688,7 +688,7 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      await solo.operation.initiate().fullyExpireAccount(
+      await solo.operation.initiate().fullyLiquidateExpiredAccount(
         primaryAccount,
         expiredAccount,
         owedMarket,
@@ -752,7 +752,7 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      await solo.operation.initiate().fullyExpireAccount(
+      await solo.operation.initiate().fullyLiquidateExpiredAccount(
         primaryAccount,
         expiredAccount,
         owedMarket,

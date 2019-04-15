@@ -207,7 +207,7 @@ export class AccountOperation {
     return this;
   }
 
-  public fullyExpireAccount(
+  public fullyLiquidateExpiredAccount(
     primaryAccount: AccountInfo,
     expiredAccount: AccountInfo,
     expiredMarket: Integer,
