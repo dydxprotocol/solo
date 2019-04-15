@@ -26,6 +26,7 @@ const {
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
+  getAdminMultisigAddress,
 } = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
 
@@ -123,6 +124,11 @@ async function deployBaseProtocol(deployer, network) {
     soloMargin.link('OperationImpl', OperationImpl.address),
   ]);
   await deployer.deploy(soloMargin, getRiskParams(network), getRiskLimits());
+
+  if (!isDevNetwork(network)) {
+    const deployedSoloMargin = soloMargin.deployed();
+    await deployedSoloMargin.transferOwnership(getAdminMultisigAddress(network));
+  }
 }
 
 async function deployInterestSetters(deployer, network) {
@@ -178,6 +184,11 @@ async function deploySecondLayer(deployer, network) {
       getExpiryRampTime(),
     ),
   ]);
+
+  if (!isDevNetwork(network)) {
+    const deployedExpiry = await Expiry.deployed();
+    await deployedExpiry.transferOwnership(getAdminMultisigAddress(network));
+  }
 
   await Promise.all([
     soloMargin.ownerSetGlobalOperator(
