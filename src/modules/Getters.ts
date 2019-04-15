@@ -462,6 +462,15 @@ export class Getters {
 
   // ============ Getters for Expiry ============
 
+  public async getExpiryAdmin(
+    options?: ContractConstantCallOptions,
+  ): Promise<address> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.owner(),
+      options,
+    );
+  }
+
   public async getExpiry(
     accountOwner: address,
     accountNumber: Integer,
@@ -476,6 +485,37 @@ export class Getters {
         },
         marketId.toFixed(0),
       ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async getExpiryPrices(
+    heldMarketId: Integer,
+    owedMarketId: Integer,
+    expiryTimestamp: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.getSpreadAdjustedPrices(
+        heldMarketId.toFixed(0),
+        owedMarketId.toFixed(0),
+        expiryTimestamp.toFixed(0),
+      ),
+      options,
+    );
+
+    return {
+      heldPrice: new BigNumber(result[0].value),
+      owedPrice: new BigNumber(result[1].value),
+    };
+  }
+
+  public async getExpiryRampTime(
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.expiry.methods.g_expiryRampTime(),
       options,
     );
     return new BigNumber(result);

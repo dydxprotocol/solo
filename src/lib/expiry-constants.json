@@ -1,0 +1,18 @@
+{
+  "1": {
+    "spread": "0.05",
+    "expiryRampTime": "3600"
+  },
+  "42": {
+    "spread": "0.05",
+    "expiryRampTime": "3600"
+  },
+  "1001": {
+    "spread": "0.05",
+    "expiryRampTime": "3600"
+  },
+  "1002": {
+    "spread": "0.05",
+    "expiryRampTime": "3600"
+  }
+}

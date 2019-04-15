@@ -89,6 +89,10 @@ function getDaiPriceOracleParams(network) {
   };
 }
 
+function getExpiryRampTime() {
+  return '3600';
+}
+
 function verifyNetwork(network) {
   if (!network) {
     throw new Error('No network provided');
@@ -105,4 +109,5 @@ module.exports = {
   getRiskParams,
   getPolynomialParams,
   getDaiPriceOracleParams,
+  getExpiryRampTime,
 };

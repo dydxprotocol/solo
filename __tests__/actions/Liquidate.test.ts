@@ -272,7 +272,7 @@ describe('Liquidate', () => {
     expect(totalOtherPar.market.totalPar.borrow).toEqual(zero);
   });
 
-  it('Succeeds (without effect) for zero loan', async () => {
+  it('Succeeds (without effect) for zero borrow', async () => {
     await expectLiquidateOkay({
       liquidMarketId: otherMarket,
     });

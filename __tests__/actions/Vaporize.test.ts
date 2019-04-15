@@ -397,7 +397,7 @@ describe('Vaporize', () => {
     ]);
   });
 
-  it('Succeeds (without effect) for zero loan', async () => {
+  it('Succeeds (without effect) for zero borrow', async () => {
     const payoutAmount = wei.times(premium);
     await issueHeldTokensToSolo(payoutAmount);
     await expectVaporizeOkay({

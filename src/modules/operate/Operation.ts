@@ -6,6 +6,7 @@ import { AccountOperationOptions } from '../../types';
 export class Operation {
   private contracts: Contracts;
   private orderMapper: OrderMapper;
+  private networkId: number;
 
   constructor(
     contracts: Contracts,
@@ -13,6 +14,7 @@ export class Operation {
   ) {
     this.contracts = contracts;
     this.orderMapper = new OrderMapper(networkId);
+    this.networkId = networkId;
   }
 
   public setNetworkId(networkId: number): void {
@@ -23,6 +25,7 @@ export class Operation {
     return new AccountOperation(
       this.contracts,
       this.orderMapper,
+      this.networkId,
       options,
     );
   }
