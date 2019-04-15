@@ -115,10 +115,9 @@ contract Expiry is
     }
 
     function getSpreadAdjustedPrices(
-        Account.Info memory account,
         uint256 heldMarketId,
         uint256 owedMarketId,
-        uint32 maxExpiry
+        uint32 expiry
     )
         public
         view
@@ -130,31 +129,6 @@ contract Expiry is
         Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
             heldMarketId,
             owedMarketId
-        );
-
-        // adjust liquidationSpread for recently expired positions
-        uint32 expiry = getExpiry(account, owedMarketId);
-
-        // validate expiry
-        Require.that(
-            expiry != 0,
-            FILE,
-            "Expiry not set",
-            account.owner,
-            account.number,
-            owedMarketId
-        );
-        Require.that(
-            expiry <= Time.currentTime(),
-            FILE,
-            "Borrow not yet expired",
-            expiry
-        );
-        Require.that(
-            expiry <= maxExpiry,
-            FILE,
-            "Expiry past maxExpiry",
-            expiry
         );
 
         uint256 expiryAge = Time.currentTime().sub(expiry);
@@ -222,6 +196,30 @@ contract Expiry is
             uint32 maxExpiry
         ) = parseTradeArgs(data);
 
+        uint32 expiry = getExpiry(makerAccount, owedMarketId);
+
+        // validate expiry
+        Require.that(
+            expiry != 0,
+            FILE,
+            "Expiry not set",
+            makerAccount.owner,
+            makerAccount.number,
+            owedMarketId
+        );
+        Require.that(
+            expiry <= Time.currentTime(),
+            FILE,
+            "Borrow not yet expired",
+            expiry
+        );
+        Require.that(
+            expiry <= maxExpiry,
+            FILE,
+            "Expiry past maxExpiry",
+            expiry
+        );
+
         return getTradeCostInternal(
             inputMarketId,
             outputMarketId,
@@ -230,7 +228,7 @@ contract Expiry is
             newInputPar,
             inputWei,
             owedMarketId,
-            maxExpiry
+            expiry
         );
     }
 
@@ -244,7 +242,7 @@ contract Expiry is
         Types.Par memory newInputPar,
         Types.Wei memory inputWei,
         uint256 owedMarketId,
-        uint32 maxExpiry
+        uint32 expiry
     )
         private
         returns (Types.AssetAmount memory)
@@ -252,7 +250,6 @@ contract Expiry is
         Types.AssetAmount memory output;
         Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
 
-        // inputMarketId == owedMarketId
         if (inputWei.isPositive()) {
             Require.that(
                 inputMarketId == owedMarketId,
@@ -275,21 +272,17 @@ contract Expiry is
                 maxOutputWei.value
             );
             output = owedWeiToHeldWei(
-                makerAccount,
                 inputWei,
                 outputMarketId,
                 inputMarketId,
-                maxExpiry
+                expiry
             );
 
             // clear expiry if borrow is fully repaid
             if (newInputPar.isZero()) {
                 setExpiry(makerAccount, owedMarketId, 0);
             }
-        }
-
-        // inputMarketId == heldMarketId
-        else {
+        } else {
             Require.that(
                 outputMarketId == owedMarketId,
                 FILE,
@@ -311,12 +304,16 @@ contract Expiry is
                 maxOutputWei.value
             );
             output = heldWeiToOwedWei(
-                makerAccount,
                 inputWei,
                 inputMarketId,
                 outputMarketId,
-                maxExpiry
+                expiry
             );
+
+            // clear expiry if borrow is fully repaid
+            if (output.value == maxOutputWei.value) {
+                setExpiry(makerAccount, owedMarketId, 0);
+            }
         }
 
         Require.that(
@@ -349,11 +346,10 @@ contract Expiry is
     }
 
     function heldWeiToOwedWei(
-        Account.Info memory account,
         Types.Wei memory heldWei,
         uint256 heldMarketId,
         uint256 owedMarketId,
-        uint32 maxExpiry
+        uint32 expiry
     )
         private
         view
@@ -363,10 +359,9 @@ contract Expiry is
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
         ) = getSpreadAdjustedPrices(
-            account,
             heldMarketId,
             owedMarketId,
-            maxExpiry
+            expiry
         );
 
         uint256 owedAmount = Math.getPartialRoundUp(
@@ -384,11 +379,10 @@ contract Expiry is
     }
 
     function owedWeiToHeldWei(
-        Account.Info memory account,
         Types.Wei memory owedWei,
         uint256 heldMarketId,
         uint256 owedMarketId,
-        uint32 maxExpiry
+        uint32 expiry
     )
         private
         view
@@ -398,10 +392,9 @@ contract Expiry is
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
         ) = getSpreadAdjustedPrices(
-            account,
             heldMarketId,
             owedMarketId,
-            maxExpiry
+            expiry
         );
 
         uint256 heldAmount = Math.getPartial(

@@ -29,6 +29,7 @@ import {
 } from '../../types';
 import { toBytes } from '../../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
+import expiryConstants from '../../lib/expiry-constants.json';
 
 interface OptionalActionArgs {
   actionType: number | string;
@@ -48,10 +49,12 @@ export class AccountOperation {
   private accounts: AccountInfo[];
   private usePayableProxy: boolean;
   private sendEthTo: address;
+  private networkId: number;
 
   constructor(
     contracts: Contracts,
     orderMapper: OrderMapper,
+    networkId: number,
     options: AccountOperationOptions = {},
   ) {
     this.contracts = contracts;
@@ -61,6 +64,7 @@ export class AccountOperation {
     this.accounts = [];
     this.usePayableProxy = options.usePayableProxy;
     this.sendEthTo = options.sendEthTo;
+    this.networkId = networkId;
   }
 
   public deposit(deposit: Deposit): AccountOperation {
@@ -186,7 +190,7 @@ export class AccountOperation {
     return this;
   }
 
-  // This function is deprecated and is should only be used for account with no more than two assets
+  // This function is deprecated (should only be used for accounts with no more than two assets)
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
     const maxExpiryTimestamp = minExpiry || INTEGERS.ONES_31;
     this.addActionArgs(
@@ -216,8 +220,9 @@ export class AccountOperation {
     collateralPreferences: Integer[],
   ): AccountOperation {
     // hardcoded values
-    const defaultSpread = new BigNumber('0.5');
-    const expiryRampTime = new BigNumber(INTEGERS.ONE_HOUR_IN_SECONDS);
+    const networkExpiryConstants = expiryConstants[this.networkId];
+    const defaultSpread = new BigNumber(networkExpiryConstants.spread);
+    const expiryRampTime = new BigNumber(networkExpiryConstants.expiryRampTime);
 
     // get info about the expired market
     let owedWei = weis[expiredMarket.toNumber()];
@@ -232,7 +237,7 @@ export class AccountOperation {
       throw new Error('Expiry timestamp must be larger than blockTimestamp');
     }
 
-    // loop through each collateral type as long as there is come borrow amount left
+    // loop through each collateral type as long as there is some borrow amount left
     for (let i = 0; i < collateralPreferences.length && owedWei.lt(0); i += 1) {
       // get info about the next collateral market
       const heldMarket = collateralPreferences[i];

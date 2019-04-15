@@ -161,9 +161,7 @@ describe('Expiry', () => {
 
   describe('expire account (heldAmount)', async () => {
     beforeEach(async () => {
-      await Promise.all([
-        solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par),
-      ]);
+      await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par);
     });
 
     it('Succeeds in expiring', async () => {
@@ -190,6 +188,20 @@ describe('Expiry', () => {
       expect(held2).toEqual(zero);
 
       console.log(`\tExpiring (held) gas used: ${txResult.gasUsed}`);
+    });
+
+    it('Succeeds in expiring and setting expiry back to zero', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(premium));
+      const txResult = await expectExpireOkay(heldGlob);
+
+      const logs = solo.logs.parseLogs(txResult);
+
+      const expiryLog = logs[4];
+      expect(expiryLog.name).toEqual('ExpirySet');
+      expect(expiryLog.args.owner).toEqual(owner2);
+      expect(expiryLog.args.number).toEqual(accountNumber2);
+      expect(expiryLog.args.marketId).toEqual(owedMarket);
+      expect(expiryLog.args.time).toEqual(zero);
     });
 
     it('Succeeds in expiring part of a position', async () => {
@@ -772,41 +784,14 @@ describe('Expiry', () => {
   });
 
   describe('#getSpreadAdjustedPrices', async () => {
-    it('Fails for no-expiry markets', async () => {
-      await expectThrow(
-        solo.getters.getExpiryPrices(
-          owner2,
-          accountNumber2,
-          owedMarket,
-          heldMarket,
-        ),
-        'Expiry: Expiry not set',
-      );
-    });
-
-    it('Fails for non-expired positions', async () => {
-      await setExpiry(INTEGERS.ONES_31);
-      await expectThrow(
-        solo.getters.getExpiryPrices(
-          owner2,
-          accountNumber2,
-          heldMarket,
-          owedMarket,
-        ),
-        'Expiry: Borrow not yet expired',
-      );
-    });
-
     it('Succeeds for recently expired positions', async () => {
       const txResult = await setExpiry(zero);
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
-      await setExpiry(new BigNumber(timestamp));
       await mineAvgBlock();
       const prices = await solo.getters.getExpiryPrices(
-        owner2,
-        accountNumber2,
         heldMarket,
         owedMarket,
+        new BigNumber(timestamp),
       );
       expect(prices.owedPrice.lt(defaultPrice.times(premium))).toEqual(true);
       expect(prices.owedPrice.gt(defaultPrice)).toEqual(true);
@@ -814,12 +799,10 @@ describe('Expiry', () => {
     });
 
     it('Succeeds for very expired positions', async () => {
-      await setExpiry(INTEGERS.ONE);
       const prices = await solo.getters.getExpiryPrices(
-        owner2,
-        accountNumber2,
         heldMarket,
         owedMarket,
+        INTEGERS.ONE,
       );
       expect(prices.owedPrice).toEqual(defaultPrice.times(premium));
       expect(prices.heldPrice).toEqual(defaultPrice);
