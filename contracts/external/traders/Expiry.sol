@@ -369,7 +369,7 @@ contract Expiry is
             maxExpiry
         );
 
-        uint256 owedAmount = Math.getPartial(
+        uint256 owedAmount = Math.getPartialRoundUp(
             heldWei.value,
             heldPrice.value,
             owedPrice.value
