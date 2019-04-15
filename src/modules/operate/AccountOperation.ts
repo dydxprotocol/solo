@@ -190,7 +190,6 @@ export class AccountOperation {
     return this;
   }
 
-  // This function is deprecated (should only be used for accounts with no more than two assets)
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
     const maxExpiryTimestamp = minExpiry || INTEGERS.ONES_31;
     this.addActionArgs(
