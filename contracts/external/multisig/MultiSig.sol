@@ -46,6 +46,7 @@ contract MultiSig {
      *  Constants
      */
     uint256 constant public MAX_OWNER_COUNT = 50;
+    address constant ADDRESS_ZERO = address(0x0);
 
     /*
      *  Storage
@@ -83,7 +84,7 @@ contract MultiSig {
     }
 
     modifier transactionExists(uint256 transactionId) {
-        require(transactions[transactionId].destination != 0);
+        require(transactions[transactionId].destination != ADDRESS_ZERO);
         _;
     }
 
@@ -103,7 +104,7 @@ contract MultiSig {
     }
 
     modifier notNull(address _address) {
-        require(_address != 0);
+        require(_address != ADDRESS_ZERO);
         _;
     }
 
@@ -126,7 +127,7 @@ contract MultiSig {
         validRequirement(_owners.length, _required)
     {
         for (uint256 i=0; i<_owners.length; i++) {
-            require(!isOwner[_owners[i]] && _owners[i] != 0);
+            require(!isOwner[_owners[i]] && _owners[i] != ADDRESS_ZERO);
             isOwner[_owners[i]] = true;
         }
         owners = _owners;
