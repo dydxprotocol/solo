@@ -68,13 +68,13 @@ contract DelayedMultiSig is
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
     /// @param _secondsTimeLocked Duration needed after a transaction is confirmed and before it becomes executable, in seconds.
-    constructor (
-        address[] _owners,
+    constructor(
+        address[] memory _owners,
         uint256 _required,
         uint256 _secondsTimeLocked
     )
         public
-        MultiSigWallet(_owners, _required)
+        MultiSig(_owners, _required)
     {
         secondsTimeLocked = _secondsTimeLocked;
     }
