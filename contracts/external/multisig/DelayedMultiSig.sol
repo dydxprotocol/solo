@@ -29,6 +29,11 @@ import { MultiSig } from "./MultiSig.sol";
  * Multi-Signature Wallet with delay in execution.
  * Allows multiple parties to execute a transaction after a time lock has passed.
  * Adapted from Amir Bandeali's MultiSigWalletWithTimeLock contract.
+
+ * Logic Changes:
+ *  - Only owners can execute transactions
+ *  - Require that each transaction succeeds
+ *  - Added function to execute multiple transactions within the same Ethereum transaction
  */
 contract DelayedMultiSig is
     MultiSig
@@ -43,7 +48,7 @@ contract DelayedMultiSig is
     uint256 public secondsTimeLocked;
     mapping (uint256 => uint256) public confirmationTimes;
 
-    // ============ Mddifiers ============
+    // ============ Modifiers ============
 
     modifier notFullyConfirmed(
         uint256 transactionId
@@ -77,11 +82,15 @@ contract DelayedMultiSig is
 
     // ============ Constructor ============
 
-    /// @dev Contract constructor sets initial owners, required number of confirmations, and time lock.
-    /// @param _owners List of initial owners.
-    /// @param _required Number of required confirmations.
-    /// @param _secondsTimeLocked Duration needed after a transaction is confirmed and before it becomes executable, in seconds.
-    constructor(
+    /**
+     * Contract constructor sets initial owners, required number of confirmations, and time lock.
+     *
+     * @param  _owners             List of initial owners.
+     * @param  _required           Number of required confirmations.
+     * @param  _secondsTimeLocked  Duration needed after a transaction is confirmed and before it
+     *                             becomes executable, in seconds.
+     */
+    constructor (
         address[] memory _owners,
         uint256 _required,
         uint256 _secondsTimeLocked
@@ -94,8 +103,12 @@ contract DelayedMultiSig is
 
     // ============ Wallet-Only Functions ============
 
-    /// @dev Changes the duration of the time lock for transactions.
-    /// @param _secondsTimeLocked Duration needed after a transaction is confirmed and before it becomes executable, in seconds.
+    /**
+     * Changes the duration of the time lock for transactions.
+     *
+     * @param  _secondsTimeLocked  Duration needed after a transaction is confirmed and before it
+     *                             becomes executable, in seconds.
+     */
     function changeTimeLock(
         uint256 _secondsTimeLocked
     )
@@ -108,8 +121,11 @@ contract DelayedMultiSig is
 
     // ============ Owner Functions ============
 
-    /// @dev Allows an owner to confirm a transaction.
-    /// @param transactionId Transaction ID.
+    /**
+     * Allows an owner to confirm a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
     function confirmTransaction(
         uint256 transactionId
     )
@@ -126,8 +142,11 @@ contract DelayedMultiSig is
         }
     }
 
-    /// @dev Allows anyone to execute a confirmed transaction.
-    /// @param transactionId Transaction ID.
+    /**
+     * Allows an owner to execute a confirmed transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
     function executeTransaction(
         uint256 transactionId
     )
@@ -170,7 +189,9 @@ contract DelayedMultiSig is
 
     // ============ Helper Functions ============
 
-    /// @dev Sets the time of when a submission first passed.
+    /**
+     * Sets the time of when a submission first passed.
+     */
     function setConfirmationTime(
         uint256 transactionId,
         uint256 confirmationTime

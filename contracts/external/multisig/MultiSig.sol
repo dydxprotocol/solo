@@ -27,6 +27,19 @@ pragma experimental ABIEncoderV2;
  * Multi-Signature Wallet.
  * Allows multiple parties to agree on transactions before execution.
  * Adapted from Stefan George's MultiSigWallet contract.
+ *
+ * Logic Changes:
+ *  - Removed the fallback function
+ *  - Ensure newOwner is notNull
+ *
+ * Syntax Changes:
+ *  - Update Solidity syntax for 0.5.X: use `emit` keyword (events), use `view` keyword (functions)
+ *  - Add braces to all `if` and `for` statements
+ *  - Remove named return variables
+ *  - Add space before and after comparison operators
+ *  - Add ADDRESS_ZERO as a constant
+ *  - uint => uint256
+ *  - external_call => externalCall
  */
 contract MultiSig {
 
@@ -67,6 +80,7 @@ contract MultiSig {
     // ============ Modifiers ============
 
     modifier onlyWallet() {
+        /* solium-disable-next-line error-reason */
         require(msg.sender == address(this));
         _;
     }
@@ -74,6 +88,7 @@ contract MultiSig {
     modifier ownerDoesNotExist(
         address owner
     ) {
+        /* solium-disable-next-line error-reason */
         require(!isOwner[owner]);
         _;
     }
@@ -81,6 +96,7 @@ contract MultiSig {
     modifier ownerExists(
         address owner
     ) {
+        /* solium-disable-next-line error-reason */
         require(isOwner[owner]);
         _;
     }
@@ -88,6 +104,7 @@ contract MultiSig {
     modifier transactionExists(
         uint256 transactionId
     ) {
+        /* solium-disable-next-line error-reason */
         require(transactions[transactionId].destination != ADDRESS_ZERO);
         _;
     }
@@ -96,6 +113,7 @@ contract MultiSig {
         uint256 transactionId,
         address owner
     ) {
+        /* solium-disable-next-line error-reason */
         require(confirmations[transactionId][owner]);
         _;
     }
@@ -104,6 +122,7 @@ contract MultiSig {
         uint256 transactionId,
         address owner
     ) {
+        /* solium-disable-next-line error-reason */
         require(!confirmations[transactionId][owner]);
         _;
     }
@@ -111,6 +130,7 @@ contract MultiSig {
     modifier notExecuted(
         uint256 transactionId
     ) {
+        /* solium-disable-next-line error-reason */
         require(!transactions[transactionId].executed);
         _;
     }
@@ -118,6 +138,7 @@ contract MultiSig {
     modifier notNull(
         address _address
     ) {
+        /* solium-disable-next-line error-reason */
         require(_address != ADDRESS_ZERO);
         _;
     }
@@ -126,6 +147,7 @@ contract MultiSig {
         uint256 ownerCount,
         uint256 _required
     ) {
+        /* solium-disable-next-line error-reason */
         require(
             ownerCount <= MAX_OWNER_COUNT
             && _required <= ownerCount
@@ -137,9 +159,12 @@ contract MultiSig {
 
     // ============ Constructor ============
 
-    /// @dev Contract constructor sets initial owners and required number of confirmations.
-    /// @param _owners List of initial owners.
-    /// @param _required Number of required confirmations.
+    /**
+     * Contract constructor sets initial owners and required number of confirmations.
+     *
+     * @param  _owners    List of initial owners.
+     * @param  _required  Number of required confirmations.
+     */
     constructor(
         address[] memory _owners,
         uint256 _required
@@ -148,6 +173,7 @@ contract MultiSig {
         validRequirement(_owners.length, _required)
     {
         for (uint256 i = 0; i < _owners.length; i++) {
+            /* solium-disable-next-line error-reason */
             require(!isOwner[_owners[i]] && _owners[i] != ADDRESS_ZERO);
             isOwner[_owners[i]] = true;
         }
@@ -157,8 +183,11 @@ contract MultiSig {
 
     // ============ Wallet-Only Functions ============
 
-    /// @dev Allows to add a new owner. Transaction has to be sent by wallet.
-    /// @param owner Address of new owner.
+    /**
+     * Allows to add a new owner. Transaction has to be sent by wallet.
+     *
+     * @param  owner  Address of new owner.
+     */
     function addOwner(
         address owner
     )
@@ -173,8 +202,11 @@ contract MultiSig {
         emit OwnerAddition(owner);
     }
 
-    /// @dev Allows to remove an owner. Transaction has to be sent by wallet.
-    /// @param owner Address of owner.
+    /**
+     * Allows to remove an owner. Transaction has to be sent by wallet.
+     *
+     * @param  owner  Address of owner.
+     */
     function removeOwner(
         address owner
     )
@@ -196,9 +228,12 @@ contract MultiSig {
         emit OwnerRemoval(owner);
     }
 
-    /// @dev Allows to replace an owner with a new owner. Transaction has to be sent by wallet.
-    /// @param owner Address of owner to be replaced.
-    /// @param newOwner Address of new owner.
+    /**
+     * Allows to replace an owner with a new owner. Transaction has to be sent by wallet.
+     *
+     * @param  owner     Address of owner to be replaced.
+     * @param  newOwner  Address of new owner.
+     */
     function replaceOwner(
         address owner,
         address newOwner
@@ -221,8 +256,11 @@ contract MultiSig {
         emit OwnerAddition(newOwner);
     }
 
-    /// @dev Allows to change the number of required confirmations. Transaction has to be sent by wallet.
-    /// @param _required Number of required confirmations.
+    /**
+     * Allows to change the number of required confirmations. Transaction has to be sent by wallet.
+     *
+     * @param  _required  Number of required confirmations.
+     */
     function changeRequirement(
         uint256 _required
     )
@@ -236,25 +274,32 @@ contract MultiSig {
 
     // ============ Owner Functions ============
 
-    /// @dev Allows an owner to submit and confirm a transaction.
-    /// @param destination Transaction target address.
-    /// @param value Transaction ether value.
-    /// @param data Transaction data payload.
-    /// @return Returns transaction ID.
+    /**
+     * Allows an owner to submit and confirm a transaction.
+     *
+     * @param  destination  Transaction target address.
+     * @param  value        Transaction ether value.
+     * @param  data         Transaction data payload.
+     * @return              Transaction ID.
+     */
     function submitTransaction(
         address destination,
         uint256 value,
         bytes memory data
     )
         public
-        returns (uint256 transactionId)
+        returns (uint256)
     {
-        transactionId = addTransaction(destination, value, data);
+        uint256 transactionId = addTransaction(destination, value, data);
         confirmTransaction(transactionId);
+        return transactionId;
     }
 
-    /// @dev Allows an owner to confirm a transaction.
-    /// @param transactionId Transaction ID.
+    /**
+     * Allows an owner to confirm a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
     function confirmTransaction(
         uint256 transactionId
     )
@@ -268,8 +313,11 @@ contract MultiSig {
         executeTransaction(transactionId);
     }
 
-    /// @dev Allows an owner to revoke a confirmation for a transaction.
-    /// @param transactionId Transaction ID.
+    /**
+     * Allows an owner to revoke a confirmation for a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
     function revokeConfirmation(
         uint256 transactionId
     )
@@ -282,8 +330,11 @@ contract MultiSig {
         emit Revocation(msg.sender, transactionId);
     }
 
-    /// @dev Allows anyone to execute a confirmed transaction.
-    /// @param transactionId Transaction ID.
+    /**
+     * Allows anyone to execute a confirmed transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
     function executeTransaction(
         uint256 transactionId
     )
@@ -311,9 +362,12 @@ contract MultiSig {
 
     // ============ Getter Functions ============
 
-    /// @dev Returns the confirmation status of a transaction.
-    /// @param transactionId Transaction ID.
-    /// @return Confirmation status.
+    /**
+     * Returns the confirmation status of a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     * @return                Confirmation status.
+     */
     function isConfirmed(
         uint256 transactionId
     )
@@ -332,38 +386,44 @@ contract MultiSig {
         }
     }
 
-    /*
-     * Web3 call functions
+    /**
+     * Returns number of confirmations of a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     * @return                Number of confirmations.
      */
-    /// @dev Returns number of confirmations of a transaction.
-    /// @param transactionId Transaction ID.
-    /// @return Number of confirmations.
     function getConfirmationCount(
         uint256 transactionId
     )
         public
         view
-        returns (uint256 count)
+        returns (uint256)
     {
+        uint256 count = 0;
         for (uint256 i = 0; i < owners.length; i++) {
             if (confirmations[transactionId][owners[i]]) {
                 count += 1;
             }
         }
+        return count;
     }
 
-    /// @dev Returns total number of transactions after filers are applied.
-    /// @param pending Include pending transactions.
-    /// @param executed Include executed transactions.
-    /// @return Total number of transactions after filters are applied.
+    /**
+     * Returns total number of transactions after filers are applied.
+     *
+     * @param  pending   Include pending transactions.
+     * @param  executed  Include executed transactions.
+     * @return           Total number of transactions after filters are applied.
+     */
     function getTransactionCount(
         bool pending,
         bool executed
     )
         public
         view
-        returns (uint256 count)
+        returns (uint256)
     {
+        uint256 count = 0;
         for (uint256 i = 0; i < transactionCount; i++) {
             if (
                 pending && !transactions[i].executed
@@ -372,10 +432,14 @@ contract MultiSig {
                 count += 1;
             }
         }
+        return count;
     }
 
-    /// @dev Returns list of owners.
-    /// @return List of owner addresses.
+    /**
+     * Returns array of owners.
+     *
+     * @return  Array of owner addresses.
+     */
     function getOwners()
         public
         view
@@ -384,15 +448,18 @@ contract MultiSig {
         return owners;
     }
 
-    /// @dev Returns array with owner addresses, which confirmed transaction.
-    /// @param transactionId Transaction ID.
-    /// @return Returns array of owner addresses.
+    /**
+     * Returns array with owner addresses, which confirmed transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     * @return                Array of owner addresses.
+     */
     function getConfirmations(
         uint256 transactionId
     )
         public
         view
-        returns (address[] memory _confirmations)
+        returns (address[] memory)
     {
         address[] memory confirmationsTemp = new address[](owners.length);
         uint256 count = 0;
@@ -403,18 +470,22 @@ contract MultiSig {
                 count += 1;
             }
         }
-        _confirmations = new address[](count);
+        address[] memory _confirmations = new address[](count);
         for (i = 0; i < count; i++) {
             _confirmations[i] = confirmationsTemp[i];
         }
+        return _confirmations;
     }
 
-    /// @dev Returns list of transaction IDs in defined range.
-    /// @param from Index start position of transaction array.
-    /// @param to Index end position of transaction array.
-    /// @param pending Include pending transactions.
-    /// @param executed Include executed transactions.
-    /// @return Returns array of transaction IDs.
+    /**
+     * Returns list of transaction IDs in defined range.
+     *
+     * @param  from      Index start position of transaction array.
+     * @param  to        Index end position of transaction array.
+     * @param  pending   Include pending transactions.
+     * @param  executed  Include executed transactions.
+     * @return           Array of transaction IDs.
+     */
     function getTransactionIds(
         uint256 from,
         uint256 to,
@@ -423,7 +494,7 @@ contract MultiSig {
     )
         public
         view
-        returns (uint256[] memory _transactionIds)
+        returns (uint256[] memory)
     {
         uint256[] memory transactionIdsTemp = new uint256[](transactionCount);
         uint256 count = 0;
@@ -437,10 +508,11 @@ contract MultiSig {
                 count += 1;
             }
         }
-        _transactionIds = new uint256[](to - from);
+        uint256[] memory _transactionIds = new uint256[](to - from);
         for (i = from; i < to; i++) {
             _transactionIds[i - from] = transactionIdsTemp[i];
         }
+        return _transactionIds;
     }
 
     // ============ Helper Functions ============
@@ -457,6 +529,7 @@ contract MultiSig {
         returns (bool)
     {
         bool result;
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             let x := mload(0x40)   // "Allocate" memory for output (0x40 is where "free memory" pointer is stored by convention)
             let d := add(data, 32) // First 32 bytes are the padded length of data, so exclude that
@@ -475,11 +548,14 @@ contract MultiSig {
         return result;
     }
 
-    /// @dev Adds a new transaction to the transaction mapping, if transaction does not exist yet.
-    /// @param destination Transaction target address.
-    /// @param value Transaction ether value.
-    /// @param data Transaction data payload.
-    /// @return Returns transaction ID.
+    /**
+     * Adds a new transaction to the transaction mapping, if transaction does not exist yet.
+     *
+     * @param  destination  Transaction target address.
+     * @param  value        Transaction ether value.
+     * @param  data         Transaction data payload.
+     * @return              Transaction ID.
+     */
     function addTransaction(
         address destination,
         uint256 value,
@@ -487,9 +563,9 @@ contract MultiSig {
     )
         internal
         notNull(destination)
-        returns (uint256 transactionId)
+        returns (uint256)
     {
-        transactionId = transactionCount;
+        uint256 transactionId = transactionCount;
         transactions[transactionId] = Transaction({
             destination: destination,
             value: value,
@@ -498,5 +574,6 @@ contract MultiSig {
         });
         transactionCount += 1;
         emit Submission(transactionId);
+        return transactionId;
     }
 }
