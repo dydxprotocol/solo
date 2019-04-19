@@ -122,7 +122,7 @@ contract MultiSig {
     /// @dev Contract constructor sets initial owners and required number of confirmations.
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
-    function MultiSigWallet(address[] _owners, uint256 _required)
+    function MultiSigWallet(address[] memory _owners, uint256 _required)
         public
         validRequirement(_owners.length, _required)
     {
@@ -203,7 +203,7 @@ contract MultiSig {
     /// @param value Transaction ether value.
     /// @param data Transaction data payload.
     /// @return Returns transaction ID.
-    function submitTransaction(address destination, uint256 value, bytes data)
+    function submitTransaction(address destination, uint256 value, bytes memory data)
         public
         returns (uint256 transactionId)
     {
@@ -309,7 +309,7 @@ contract MultiSig {
     function getOwners()
         public
         view
-        returns (address[])
+        returns (address[] memory)
     {
         return owners;
     }
@@ -320,7 +320,7 @@ contract MultiSig {
     function getConfirmations(uint256 transactionId)
         public
         view
-        returns (address[] _confirmations)
+        returns (address[] memory _confirmations)
     {
         address[] memory confirmationsTemp = new address[](owners.length);
         uint256 count = 0;
@@ -344,7 +344,7 @@ contract MultiSig {
     function getTransactionIds(uint256 from, uint256 to, bool pending, bool executed)
         public
         view
-        returns (uint256[] _transactionIds)
+        returns (uint256[] memory _transactionIds)
     {
         uint256[] memory transactionIdsTemp = new uint256[](transactionCount);
         uint256 count = 0;
@@ -366,7 +366,7 @@ contract MultiSig {
      */
     // call has been separated into its own function in order to take advantage
     // of the Solidity's code generator to produce a loop that copies tx.data into memory.
-    function external_call(address destination, uint256 value, uint256 dataLength, bytes data) internal returns (bool) {
+    function external_call(address destination, uint256 value, uint256 dataLength, bytes memory data) internal returns (bool) {
         bool result;
         assembly {
             let x := mload(0x40)   // "Allocate" memory for output (0x40 is where "free memory" pointer is stored by convention)
@@ -391,7 +391,7 @@ contract MultiSig {
     /// @param value Transaction ether value.
     /// @param data Transaction data payload.
     /// @return Returns transaction ID.
-    function addTransaction(address destination, uint256 value, bytes data)
+    function addTransaction(address destination, uint256 value, bytes memory data)
         internal
         notNull(destination)
         returns (uint256 transactionId)
