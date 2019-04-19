@@ -38,7 +38,6 @@ contract MultiSig {
     event Submission(uint256 indexed transactionId);
     event Execution(uint256 indexed transactionId);
     event ExecutionFailure(uint256 indexed transactionId);
-    event Deposit(address indexed sender, uint256 value);
     event OwnerAddition(address indexed owner);
     event OwnerRemoval(address indexed owner);
     event RequirementChange(uint256 required);
@@ -114,14 +113,6 @@ contract MultiSig {
             && _required != 0
             && ownerCount != 0);
         _;
-    }
-
-    /// @dev Fallback function allows to deposit ether.
-    function()
-        payable
-    {
-        if (msg.value > 0)
-            emit Deposit(msg.sender, msg.value);
     }
 
     /*
