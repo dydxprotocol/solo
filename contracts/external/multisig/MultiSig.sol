@@ -260,7 +260,7 @@ contract MultiSig {
     /// @return Confirmation status.
     function isConfirmed(uint256 transactionId)
         public
-        constant
+        view
         returns (bool)
     {
         uint256 count = 0;
@@ -280,7 +280,7 @@ contract MultiSig {
     /// @return Number of confirmations.
     function getConfirmationCount(uint256 transactionId)
         public
-        constant
+        view
         returns (uint256 count)
     {
         for (uint256 i=0; i<owners.length; i++)
@@ -294,7 +294,7 @@ contract MultiSig {
     /// @return Total number of transactions after filters are applied.
     function getTransactionCount(bool pending, bool executed)
         public
-        constant
+        view
         returns (uint256 count)
     {
         for (uint256 i=0; i<transactionCount; i++)
@@ -307,7 +307,7 @@ contract MultiSig {
     /// @return List of owner addresses.
     function getOwners()
         public
-        constant
+        view
         returns (address[])
     {
         return owners;
@@ -318,7 +318,7 @@ contract MultiSig {
     /// @return Returns array of owner addresses.
     function getConfirmations(uint256 transactionId)
         public
-        constant
+        view
         returns (address[] _confirmations)
     {
         address[] memory confirmationsTemp = new address[](owners.length);
@@ -342,7 +342,7 @@ contract MultiSig {
     /// @return Returns array of transaction IDs.
     function getTransactionIds(uint256 from, uint256 to, bool pending, bool executed)
         public
-        constant
+        view
         returns (uint256[] _transactionIds)
     {
         uint256[] memory transactionIdsTemp = new uint256[](transactionCount);
