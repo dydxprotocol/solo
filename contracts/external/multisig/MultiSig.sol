@@ -126,10 +126,12 @@ contract MultiSig {
         uint256 ownerCount,
         uint256 _required
     ) {
-        require(ownerCount <= MAX_OWNER_COUNT
+        require(
+            ownerCount <= MAX_OWNER_COUNT
             && _required <= ownerCount
             && _required != 0
-            && ownerCount != 0);
+            && ownerCount != 0
+        );
         _;
     }
 
@@ -145,7 +147,7 @@ contract MultiSig {
         public
         validRequirement(_owners.length, _required)
     {
-        for (uint256 i=0; i<_owners.length; i++) {
+        for (uint256 i = 0; i < _owners.length; i++) {
             require(!isOwner[_owners[i]] && _owners[i] != ADDRESS_ZERO);
             isOwner[_owners[i]] = true;
         }
@@ -181,14 +183,16 @@ contract MultiSig {
         ownerExists(owner)
     {
         isOwner[owner] = false;
-        for (uint256 i=0; i<owners.length - 1; i++)
+        for (uint256 i = 0; i < owners.length - 1; i++) {
             if (owners[i] == owner) {
                 owners[i] = owners[owners.length - 1];
                 break;
             }
+        }
         owners.length -= 1;
-        if (required > owners.length)
+        if (required > owners.length) {
             changeRequirement(owners.length);
+        }
         emit OwnerRemoval(owner);
     }
 
@@ -205,11 +209,12 @@ contract MultiSig {
         ownerDoesNotExist(newOwner)
         notNull(newOwner)
     {
-        for (uint256 i=0; i<owners.length; i++)
+        for (uint256 i = 0; i < owners.length; i++) {
             if (owners[i] == owner) {
                 owners[i] = newOwner;
                 break;
             }
+        }
         isOwner[owner] = false;
         isOwner[newOwner] = true;
         emit OwnerRemoval(owner);
@@ -290,9 +295,14 @@ contract MultiSig {
         if (isConfirmed(transactionId)) {
             Transaction storage txn = transactions[transactionId];
             txn.executed = true;
-            if (external_call(txn.destination, txn.value, txn.data.length, txn.data))
+            if (externalCall(
+                txn.destination,
+                txn.value,
+                txn.data.length,
+                txn.data)
+            ) {
                 emit Execution(transactionId);
-            else {
+            } else {
                 emit ExecutionFailure(transactionId);
                 txn.executed = false;
             }
@@ -312,11 +322,13 @@ contract MultiSig {
         returns (bool)
     {
         uint256 count = 0;
-        for (uint256 i=0; i<owners.length; i++) {
-            if (confirmations[transactionId][owners[i]])
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (confirmations[transactionId][owners[i]]) {
                 count += 1;
-            if (count == required)
+            }
+            if (count == required) {
                 return true;
+            }
         }
     }
 
@@ -333,9 +345,11 @@ contract MultiSig {
         view
         returns (uint256 count)
     {
-        for (uint256 i=0; i<owners.length; i++)
-            if (confirmations[transactionId][owners[i]])
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (confirmations[transactionId][owners[i]]) {
                 count += 1;
+            }
+        }
     }
 
     /// @dev Returns total number of transactions after filers are applied.
@@ -350,10 +364,14 @@ contract MultiSig {
         view
         returns (uint256 count)
     {
-        for (uint256 i=0; i<transactionCount; i++)
-            if (   pending && !transactions[i].executed
-                || executed && transactions[i].executed)
+        for (uint256 i = 0; i < transactionCount; i++) {
+            if (
+                pending && !transactions[i].executed
+                || executed && transactions[i].executed
+            ) {
                 count += 1;
+            }
+        }
     }
 
     /// @dev Returns list of owners.
@@ -379,14 +397,16 @@ contract MultiSig {
         address[] memory confirmationsTemp = new address[](owners.length);
         uint256 count = 0;
         uint256 i;
-        for (i=0; i<owners.length; i++)
+        for (i = 0; i < owners.length; i++) {
             if (confirmations[transactionId][owners[i]]) {
                 confirmationsTemp[count] = owners[i];
                 count += 1;
             }
+        }
         _confirmations = new address[](count);
-        for (i=0; i<count; i++)
+        for (i = 0; i < count; i++) {
             _confirmations[i] = confirmationsTemp[i];
+        }
     }
 
     /// @dev Returns list of transaction IDs in defined range.
@@ -408,23 +428,26 @@ contract MultiSig {
         uint256[] memory transactionIdsTemp = new uint256[](transactionCount);
         uint256 count = 0;
         uint256 i;
-        for (i=0; i<transactionCount; i++)
-            if (   pending && !transactions[i].executed
-                || executed && transactions[i].executed)
-            {
+        for (i = 0; i < transactionCount; i++) {
+            if (
+                pending && !transactions[i].executed
+                || executed && transactions[i].executed
+            ) {
                 transactionIdsTemp[count] = i;
                 count += 1;
             }
+        }
         _transactionIds = new uint256[](to - from);
-        for (i=from; i<to; i++)
+        for (i = from; i < to; i++) {
             _transactionIds[i - from] = transactionIdsTemp[i];
+        }
     }
 
     // ============ Helper Functions ============
 
     // call has been separated into its own function in order to take advantage
     // of the Solidity's code generator to produce a loop that copies tx.data into memory.
-    function external_call(
+    function externalCall(
         address destination,
         uint256 value,
         uint256 dataLength,
