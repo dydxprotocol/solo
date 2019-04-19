@@ -157,6 +157,7 @@ contract DelayedMultiSig is
         pastTimeLock(transactionId)
     {
         Transaction storage txn = transactions[transactionId];
+        txn.executed = true;
         bool success = externalCall(
             txn.destination,
             txn.value,
@@ -167,7 +168,6 @@ contract DelayedMultiSig is
             success,
             "TX_REVERTED"
         );
-        txn.executed = true;
         emit Execution(transactionId);
     }
 
