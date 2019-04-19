@@ -1,31 +1,37 @@
 /*
 
-  Copyright 2018 ZeroEx Intl.
+    Copyright 2019 dYdX Trading Inc.
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 
 */
 
-pragma solidity 0.4.24;
+pragma solidity 0.5.7;
+pragma experimental ABIEncoderV2;
 
-import "./MultiSigWallet.sol";
+import { MultiSig } from "./MultiSig.sol";
 
 
-/// @title Multisignature wallet with time lock- Allows multiple parties to execute a transaction after a time lock has passed.
-/// @author Amir Bandeali - <amir@0xProject.com>
-// solhint-disable not-rely-on-time
-contract MultiSigWalletWithTimeLock is
-    MultiSigWallet
+/**
+ * @title DelayedMultiSig
+ * @author dYdX
+ *
+ * Multi-Signature Wallet with delay in execution.
+ * Allows multiple parties to execute a transaction after a time lock has passed.
+ * Adapted from Amir Bandeali's MultiSigWalletWithTimeLock contract.
+ */
+contract DelayedMultiSig is
+    MultiSig
 {
     event ConfirmationTimeSet(uint256 indexed transactionId, uint256 confirmationTime);
     event TimeLockChange(uint256 secondsTimeLocked);
