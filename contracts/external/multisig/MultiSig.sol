@@ -331,7 +331,7 @@ contract MultiSig {
     }
 
     /**
-     * Allows anyone to execute a confirmed transaction.
+     * Allows an owner to execute a confirmed transaction.
      *
      * @param  transactionId  Transaction ID.
      */
