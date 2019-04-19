@@ -40,7 +40,9 @@ contract DelayedMultiSig is
 
     mapping (uint256 => uint256) public confirmationTimes;
 
-    modifier notFullyConfirmed(uint256 transactionId) {
+    modifier notFullyConfirmed(
+        uint256 transactionId
+    ) {
         require(
             !isConfirmed(transactionId),
             "TX_FULLY_CONFIRMED"
@@ -48,7 +50,9 @@ contract DelayedMultiSig is
         _;
     }
 
-    modifier fullyConfirmed(uint256 transactionId) {
+    modifier fullyConfirmed(
+        uint256 transactionId
+    ) {
         require(
             isConfirmed(transactionId),
             "TX_NOT_FULLY_CONFIRMED"
@@ -56,7 +60,9 @@ contract DelayedMultiSig is
         _;
     }
 
-    modifier pastTimeLock(uint256 transactionId) {
+    modifier pastTimeLock(
+        uint256 transactionId
+    ) {
         require(
             block.timestamp >= confirmationTimes[transactionId] + secondsTimeLocked,
             "TIME_LOCK_INCOMPLETE"
@@ -81,7 +87,9 @@ contract DelayedMultiSig is
 
     /// @dev Changes the duration of the time lock for transactions.
     /// @param _secondsTimeLocked Duration needed after a transaction is confirmed and before it becomes executable, in seconds.
-    function changeTimeLock(uint256 _secondsTimeLocked)
+    function changeTimeLock(
+        uint256 _secondsTimeLocked
+    )
         public
         onlyWallet
     {
@@ -91,7 +99,9 @@ contract DelayedMultiSig is
 
     /// @dev Allows an owner to confirm a transaction.
     /// @param transactionId Transaction ID.
-    function confirmTransaction(uint256 transactionId)
+    function confirmTransaction(
+        uint256 transactionId
+    )
         public
         ownerExists(msg.sender)
         transactionExists(transactionId)
@@ -107,7 +117,9 @@ contract DelayedMultiSig is
 
     /// @dev Allows anyone to execute a confirmed transaction.
     /// @param transactionId Transaction ID.
-    function executeTransaction(uint256 transactionId)
+    function executeTransaction(
+        uint256 transactionId
+    )
         public
         notExecuted(transactionId)
         fullyConfirmed(transactionId)
@@ -124,7 +136,10 @@ contract DelayedMultiSig is
     }
 
     /// @dev Sets the time of when a submission first passed.
-    function setConfirmationTime(uint256 transactionId, uint256 confirmationTime)
+    function setConfirmationTime(
+        uint256 transactionId,
+        uint256 confirmationTime
+    )
         internal
     {
         confirmationTimes[transactionId] = confirmationTime;
