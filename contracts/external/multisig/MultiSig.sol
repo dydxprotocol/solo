@@ -30,9 +30,8 @@ pragma experimental ABIEncoderV2;
  */
 contract MultiSig {
 
-    /*
-     *  Events
-     */
+    // ============ Events ============
+
     event Confirmation(address indexed sender, uint256 indexed transactionId);
     event Revocation(address indexed sender, uint256 indexed transactionId);
     event Submission(uint256 indexed transactionId);
@@ -42,21 +41,21 @@ contract MultiSig {
     event OwnerRemoval(address indexed owner);
     event RequirementChange(uint256 required);
 
-    /*
-     *  Constants
-     */
+    // ============ Constants ============
+
     uint256 constant public MAX_OWNER_COUNT = 50;
     address constant ADDRESS_ZERO = address(0x0);
 
-    /*
-     *  Storage
-     */
+    // ============ Storage ============
+
     mapping (uint256 => Transaction) public transactions;
     mapping (uint256 => mapping (address => bool)) public confirmations;
     mapping (address => bool) public isOwner;
     address[] public owners;
     uint256 public required;
     uint256 public transactionCount;
+
+    // ============ Structs ============
 
     struct Transaction {
         address destination;
@@ -65,9 +64,8 @@ contract MultiSig {
         bool executed;
     }
 
-    /*
-     *  Modifiers
-     */
+    // ============ Modifiers ============
+
     modifier onlyWallet() {
         require(msg.sender == address(this));
         _;
@@ -135,9 +133,8 @@ contract MultiSig {
         _;
     }
 
-    /*
-     * Public functions
-     */
+    // ============ Constructor ============
+
     /// @dev Contract constructor sets initial owners and required number of confirmations.
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
@@ -155,6 +152,8 @@ contract MultiSig {
         owners = _owners;
         required = _required;
     }
+
+    // ============ Wallet-Only Functions ============
 
     /// @dev Allows to add a new owner. Transaction has to be sent by wallet.
     /// @param owner Address of new owner.
@@ -229,6 +228,8 @@ contract MultiSig {
         emit RequirementChange(_required);
     }
 
+    // ============ Owner Functions ============
+
     /// @dev Allows an owner to submit and confirm a transaction.
     /// @param destination Transaction target address.
     /// @param value Transaction ether value.
@@ -296,6 +297,8 @@ contract MultiSig {
             }
         }
     }
+
+    // ============ Getter Functions ============
 
     /// @dev Returns the confirmation status of a transaction.
     /// @param transactionId Transaction ID.
@@ -416,9 +419,8 @@ contract MultiSig {
             _transactionIds[i - from] = transactionIdsTemp[i];
     }
 
-    /*
-     * Internal functions
-     */
+    // ============ Helper Functions ============
+
     // call has been separated into its own function in order to take advantage
     // of the Solidity's code generator to produce a loop that copies tx.data into memory.
     function external_call(

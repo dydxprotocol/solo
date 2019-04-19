@@ -33,12 +33,17 @@ import { MultiSig } from "./MultiSig.sol";
 contract DelayedMultiSig is
     MultiSig
 {
+    // ============ Events ============
+
     event ConfirmationTimeSet(uint256 indexed transactionId, uint256 confirmationTime);
     event TimeLockChange(uint256 secondsTimeLocked);
 
-    uint256 public secondsTimeLocked;
+    // ============ Storage ============
 
+    uint256 public secondsTimeLocked;
     mapping (uint256 => uint256) public confirmationTimes;
+
+    // ============ Mddifiers ============
 
     modifier notFullyConfirmed(
         uint256 transactionId
@@ -70,6 +75,8 @@ contract DelayedMultiSig is
         _;
     }
 
+    // ============ Constructor ============
+
     /// @dev Contract constructor sets initial owners, required number of confirmations, and time lock.
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
@@ -85,6 +92,8 @@ contract DelayedMultiSig is
         secondsTimeLocked = _secondsTimeLocked;
     }
 
+    // ============ Wallet-Only Functions ============
+
     /// @dev Changes the duration of the time lock for transactions.
     /// @param _secondsTimeLocked Duration needed after a transaction is confirmed and before it becomes executable, in seconds.
     function changeTimeLock(
@@ -96,6 +105,8 @@ contract DelayedMultiSig is
         secondsTimeLocked = _secondsTimeLocked;
         emit TimeLockChange(_secondsTimeLocked);
     }
+
+    // ============ Owner Functions ============
 
     /// @dev Allows an owner to confirm a transaction.
     /// @param transactionId Transaction ID.
@@ -134,6 +145,8 @@ contract DelayedMultiSig is
             txn.executed = false;
         }
     }
+
+    // ============ Helper Functions ============
 
     /// @dev Sets the time of when a submission first passed.
     function setConfirmationTime(
