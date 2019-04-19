@@ -203,6 +203,7 @@ contract MultiSig {
         onlyWallet
         ownerExists(owner)
         ownerDoesNotExist(newOwner)
+        notNull(newOwner)
     {
         for (uint256 i=0; i<owners.length; i++)
             if (owners[i] == owner) {

@@ -132,17 +132,39 @@ contract DelayedMultiSig is
         uint256 transactionId
     )
         public
+        ownerExists(msg.sender)
         notExecuted(transactionId)
         fullyConfirmed(transactionId)
         pastTimeLock(transactionId)
     {
         Transaction storage txn = transactions[transactionId];
+        bool success = externalCall(
+            txn.destination,
+            txn.value,
+            txn.data.length,
+            txn.data
+        );
+        require(
+            success,
+            "TX_REVERTED"
+        );
         txn.executed = true;
-        if (external_call(txn.destination, txn.value, txn.data.length, txn.data)) {
-            emit Execution(transactionId);
-        } else {
-            emit ExecutionFailure(transactionId);
-            txn.executed = false;
+        emit Execution(transactionId);
+    }
+
+    /**
+     * Allows an owner to execute multiple confirmed transactions
+     *
+     * @param  transactionIds  List of transaction IDs.
+     */
+    function executeMultipleTransactions(
+        uint256[] memory transactionIds
+    )
+        public
+        ownerExists(msg.sender)
+    {
+        for (uint256 i = 0; i < transactionIds.length; i++) {
+            executeTransaction(transactionIds[i]);
         }
     }
 
