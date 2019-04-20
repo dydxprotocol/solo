@@ -82,6 +82,11 @@ Importantly collateralization is only checked at the end of an operation, so acc
 In this example 1 ETH is being withdrawn from an account, and then 200 DAI are being deposited into it:
 
 ```javascript
+await solo.token.setMaximumSoloAllowance(
+  '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', // DAI Contract Address
+  '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+);
+
 await solo.operation.initiate()
   .withdraw({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
