@@ -64,8 +64,7 @@ A very important thing to note is that amounts are always relative to how the ba
 
 ### Markets
 
-Solo has a Market for each ERC20 token asset it supports. Interest Each Market has a specified interes
-
+Solo has a Market for each ERC20 token asset it supports. Interest Each Market has a specified interest
 
 ### Interest
 
