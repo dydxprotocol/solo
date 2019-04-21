@@ -35,7 +35,7 @@
 
 ### Initialize
 
-```typesctipt
+```javascript
 const solo = new Solo(
   provider,  // Valid web3 provider
   networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
