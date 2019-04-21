@@ -1,5 +1,3 @@
-# dYdX Solo-Margin
-
 <p align="center"><img src="https://dydx.exchange/images/logo.png" width="256" /></p>
 
 <p align="center">
@@ -17,16 +15,110 @@
   </a>
 </p>
 
-> Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol
+> Ethereum Smart Contracts and TypeScript library used for the dYdX Solo Trading Protocol. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange)
 
 ## Table of Contents
 
- - [Security](#security)
  - [Install](#install)
+ - [Usage](#usage)
+ - [Security](#security)
  - [Development](#development)
  - [Maintainers](#maintainers)
  - [Contributing](#contributing)
  - [License](#license)
+
+## Install
+
+`npm i -s @dydxprotocol/solo`
+
+## Usage
+
+### Initialize
+
+```typesctipt
+const solo = new Solo(
+  provider,  // Valid web3 provider
+  networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
+);
+```
+
+### Accounts
+
+Solo is Account based. Each Account is referenced by its owner Ethereum address and an account number unique to that owner address. Accounts have balances on each asset supported by Solo, which can be either positive (indicating a net supply of the asset) or negative (indicating a net borrow of an asset). Accounts must maintain a certain level of collateralization or they will be liquidated.
+
+
+### Amounts
+
+Amounts in Solo are denominated by 3 things:
+
+- `value` the numerical value of the Amount
+- `reference` One of:
+  - `AmountReference.Delta` Indicates an amount relative to the existing balance
+  - `AmountReference.Target` Indicates an absolute amount
+- `denomination` One of:
+  - `AmountDenomination.Actual` Indicates the amount is denominated in the actual units of the token being transferred
+  - `AmountDenomination.Principal` Indicates the amount is denominated in principal. Solo uses these types of amount in its internal accounting, and they do not change over time
+  
+A very important thing to note is that amounts are always relative to how the balance of the Account being Operated on will change, not the amount of the Action occurring. So, for example you'd say [pseudocode] `withdraw(-10)`, because when you Withdraw, the balance of the Account will decrease.
+
+
+### Markets
+
+Solo has a Market for each ERC20 token asset it supports. Interest Each Market has a specified interest
+
+### Interest
+
+Interest rates in Solo are dynamic and set per Market. Each interest rate is set based on the % utilization of that Market. Each Account's balances either continuously earns (if positive) or pays (if negative) interest.
+
+### Operations
+
+Every state changing action to the protocol occurs through an Operation. Operations contain a series of Actions that each operate on an Account. Some examples of Actions include (but are not limited to): Deposits, Withdrawals, Buys, Sells, Trades,  and Liquidates.
+
+Importantly collateralization is only checked at the end of an operation, so accounts are allowed to be transiently undercollateralized in the scope of one Operation. This allows for Operations like a Sell -> Trade, where an asset is first sold, and the collateral is locked up as the second Action in the Operation.
+
+#### Example
+
+In this example 1 ETH is being withdrawn from an account, and then 200 DAI are being deposited into it:
+
+```javascript
+await solo.token.setMaximumSoloAllowance(
+  '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', // DAI Contract Address
+  '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+);
+
+await solo.operation.initiate()
+  .withdraw({
+    primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+    primaryAccountId: new BigNumber('123456'),
+    marketId: new BigNumber(0), // WETH Market ID
+    amount: {
+      value: new BigNumber('-1e18'),
+      reference: AmountReference.Delta,
+      denomination: AmountDenomination.Actual,
+    },
+    to: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5'
+  })
+  .deposit({
+    primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+    primaryAccountId: new BigNumber('123456'),
+    marketId: new BigNumber(1), // DAI Market ID
+    amount: {
+      value: new BigNumber('200e18'),
+      reference: AmountReference.Delta,
+      denomination: AmountDenomination.Actual,
+    },
+    from: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  })
+  .commit({
+    from: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+    gasPrice: '1000000000',
+    confirmationType: ConfirmationType.Confirmed,
+  });
+```
+
+### Web3
+
+Solo uses [web3](https://web3js.readthedocs.io/en/1.0/index.html) under the hood. You can access it through `solo.web3`
 
 ## Security
 
@@ -78,15 +170,12 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 
 * Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4)
 
-## Install
-
-`npm i -s @dydxprotocol/solo`
 
 ## Development
 
 ### Compile Contracts
 
-You must be running Docker
+Requires a running [docker](https://docker.com) engine.
 
 `npm run build`
 
@@ -96,7 +185,7 @@ You must be running Docker
 
 ### Test
 
-Requires [docker](https://docker.com).
+Requires a running [docker](https://docker.com) engine.
 
 **Start test node:**
 
