@@ -46,15 +46,12 @@ contract PartiallyDelayedMultiSig is
     modifier pastTimeLock(
         uint256 transactionId
     ) {
-        Transaction memory txn = transactions[transactionId];
-
         // if the function selector is not exempt from timelock, then require timelock
-        if (!isNoDelaySelector(txn.destination, txn.data)) {
-            require(
-                block.timestamp >= confirmationTimes[transactionId] + secondsTimeLocked,
-                "TIME_LOCK_INCOMPLETE"
-            );
-        }
+        require(
+            block.timestamp >= confirmationTimes[transactionId] + secondsTimeLocked
+            || txCanBeExecutedInstantly(transactionId),
+            "TIME_LOCK_INCOMPLETE"
+        );
         _;
     }
 
@@ -96,24 +93,27 @@ contract PartiallyDelayedMultiSig is
     // ============ Helper Functions ============
 
     /**
-     * Returns true if function selector is in instantData for address dest.
+     * Returns true if transaction can be executed instantly (without timelock).
      */
-    function isNoDelaySelector(
-        address dest,
-        bytes memory b
+    function txCanBeExecutedInstantly(
+        uint256 transactionId
     )
         internal
         view
         returns (bool)
     {
+        // get transaction from storage
+        Transaction memory txn = transactions[transactionId];
+        address dest = txn.destination;
+        bytes memory data = txn.data;
+
         // fallback function
-        if (b.length == 0) {
-            return instantData[dest][BYTES_ZERO]
-                || instantData[ADDRESS_ZERO][BYTES_ZERO];
+        if (data.length == 0) {
+            selectorCanBeExecutedInstantly(dest, BYTES_ZERO);
         }
 
         // invalid function selector
-        if (b.length < 4) {
+        if (data.length < 4) {
             return false;
         }
 
@@ -121,11 +121,25 @@ contract PartiallyDelayedMultiSig is
         bytes32 rawData;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            rawData := mload(add(b, 32))
+            rawData := mload(add(data, 32))
         }
         bytes4 selector = bytes4(rawData);
 
-        return instantData[dest][selector]
+        return selectorCanBeExecutedInstantly(dest, selector);
+    }
+
+    /**
+     * Function selector is in instantData for address dest (or for address zero).
+     */
+    function selectorCanBeExecutedInstantly(
+        address destination,
+        bytes4 selector
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return instantData[destination][selector]
             || instantData[ADDRESS_ZERO][selector];
     }
 }
