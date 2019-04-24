@@ -31,9 +31,14 @@ import { DelayedMultiSig } from "./DelayedMultiSig.sol";
 contract PartiallyDelayedMultiSig is
     DelayedMultiSig
 {
+    // ============ Constants ============
+
+    bytes4 constant internal BYTES_ZERO = bytes4(0x0);
+
     // ============ Storage ============
 
-    mapping (bytes4 => bool) public noDelayFunctions;
+    // destination => function selector => can bypass timelock
+    mapping (address => mapping (bytes4 => bool)) public instantData;
 
     // ============ Modifiers ============
 
@@ -41,10 +46,10 @@ contract PartiallyDelayedMultiSig is
     modifier pastTimeLock(
         uint256 transactionId
     ) {
-        bytes memory txnData = transactions[transactionId].data;
+        Transaction memory txn = transactions[transactionId];
 
         // if the function selector is not exempt from timelock, then require timelock
-        if (!isNoDelayData(txnData)) {
+        if (!isNoDelaySelector(txn.destination, txn.data)) {
             require(
                 block.timestamp >= confirmationTimes[transactionId] + secondsTimeLocked,
                 "TIME_LOCK_INCOMPLETE"
@@ -62,29 +67,39 @@ contract PartiallyDelayedMultiSig is
      * @param  _required           Number of required confirmations.
      * @param  _secondsTimeLocked  Duration needed after a transaction is confirmed and before it
      *                             becomes executable, in seconds.
-     * @param  _noDelayFunctions   All function selectors that do not require a delay to execute.
+     * @param  _noDelayAddresses   List of destination addresses that correspond with the selectors.
+     *                             Zero address allows the function selector to be used with any
+     *                             address.
+     * @param  _noDelaySelectors   All function selectors that do not require a delay to execute.
      *                             Fallback function is 0x00000000.
      */
     constructor (
         address[] memory _owners,
         uint256 _required,
         uint256 _secondsTimeLocked,
-        bytes4[] memory _noDelayFunctions
+        address[] memory _noDelayAddresses,
+        bytes4[] memory _noDelaySelectors
     )
         public
         DelayedMultiSig(_owners, _required, _secondsTimeLocked)
     {
-        for (uint256 i = 0; i < _noDelayFunctions.length; i++) {
-            noDelayFunctions[_noDelayFunctions[i]] = true;
+        require(
+            _noDelayAddresses.length == _noDelaySelectors.length,
+            "ADDRESS_AND_SELECTOR_MISMATCH"
+        );
+
+        for (uint256 i = 0; i < _noDelaySelectors.length; i++) {
+            instantData[_noDelayAddresses[i]][_noDelaySelectors[i]] = true;
         }
     }
 
     // ============ Helper Functions ============
 
     /**
-     * Returns true if function selector is in noDelayFunctions.
+     * Returns true if function selector is in instantData for address dest.
      */
-    function isNoDelayData(
+    function isNoDelaySelector(
+        address dest,
         bytes memory b
     )
         internal
@@ -93,7 +108,8 @@ contract PartiallyDelayedMultiSig is
     {
         // fallback function
         if (b.length == 0) {
-            return noDelayFunctions[bytes4(0x0)];
+            return instantData[dest][BYTES_ZERO]
+                || instantData[ADDRESS_ZERO][BYTES_ZERO];
         }
 
         // invalid function selector
@@ -107,6 +123,9 @@ contract PartiallyDelayedMultiSig is
         assembly {
             rawData := mload(add(b, 32))
         }
-        return noDelayFunctions[bytes4(rawData)];
+        bytes4 selector = bytes4(rawData);
+
+        return instantData[dest][selector]
+            || instantData[ADDRESS_ZERO][selector];
     }
 }
