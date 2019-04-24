@@ -109,7 +109,7 @@ contract PartiallyDelayedMultiSig is
 
         // fallback function
         if (data.length == 0) {
-            selectorCanBeExecutedInstantly(dest, BYTES_ZERO);
+            return selectorCanBeExecutedInstantly(dest, BYTES_ZERO);
         }
 
         // invalid function selector

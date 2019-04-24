@@ -123,7 +123,7 @@ contract DelayedMultiSig is
 
     /**
      * Allows an owner to confirm a transaction.
-     * Overrides the function in Multisig.
+     * Overrides the function in MultiSig.
      *
      * @param  transactionId  Transaction ID.
      */
@@ -145,7 +145,7 @@ contract DelayedMultiSig is
 
     /**
      * Allows an owner to execute a confirmed transaction.
-     * Overrides the function in Multisig.
+     * Overrides the function in MultiSig.
      *
      * @param  transactionId  Transaction ID.
      */
