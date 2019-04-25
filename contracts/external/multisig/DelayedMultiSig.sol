@@ -41,11 +41,11 @@ contract DelayedMultiSig is
     // ============ Events ============
 
     event ConfirmationTimeSet(uint256 indexed transactionId, uint256 confirmationTime);
-    event TimeLockChange(uint256 secondsTimeLocked);
+    event TimeLockChange(uint32 secondsTimeLocked);
 
     // ============ Storage ============
 
-    uint256 public secondsTimeLocked;
+    uint32 public secondsTimeLocked;
     mapping (uint256 => uint256) public confirmationTimes;
 
     // ============ Modifiers ============
@@ -93,7 +93,7 @@ contract DelayedMultiSig is
     constructor (
         address[] memory _owners,
         uint256 _required,
-        uint256 _secondsTimeLocked
+        uint32 _secondsTimeLocked
     )
         public
         MultiSig(_owners, _required)
@@ -110,7 +110,7 @@ contract DelayedMultiSig is
      *                             becomes executable, in seconds.
      */
     function changeTimeLock(
-        uint256 _secondsTimeLocked
+        uint32 _secondsTimeLocked
     )
         public
         onlyWallet
