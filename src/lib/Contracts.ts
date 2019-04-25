@@ -33,6 +33,9 @@ import { Expiry } from '../../build/wrappers/Expiry';
 import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
+import {
+  LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1,
+} from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
@@ -57,6 +60,7 @@ import interestSetterJson from '../../build/published_contracts/IInterestSetter.
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
+import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
 import polynomialInterestSetterJson
   from '../../build/published_contracts/PolynomialInterestSetter.json';
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
@@ -108,6 +112,7 @@ export class Contracts {
   public priceOracle: PriceOracle;
   public expiry: Expiry;
   public payableProxy: PayableProxy;
+  public liquidatorProxyV1: LiquidatorProxyV1;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public wethPriceOracle: WethPriceOracle;
   public daiPriceOracle: DaiPriceOracle;
@@ -151,6 +156,8 @@ export class Contracts {
     this.priceOracle = new this.web3.eth.Contract(priceOracleJson.abi) as PriceOracle;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
+    this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
+      LiquidatorProxyV1;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
       PolynomialInterestSetter;
     this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
@@ -191,164 +198,45 @@ export class Contracts {
   ): void {
     this.soloMargin.setProvider(provider);
 
-    // Contracts
-    this.setContractProvider(
-      this.soloMargin,
-      soloMarginJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.erc20,
-      erc20Json,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.interestSetter,
-      interestSetterJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.priceOracle,
-      priceOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.expiry,
-      expiryJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.payableProxy,
-      payableProxyJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.polynomialInterestSetter,
-      polynomialInterestSetterJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.wethPriceOracle,
-      wethPriceOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.daiPriceOracle,
-      daiPriceOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.usdcPriceOracle,
-      usdcPriceOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.weth,
-      wethJson,
-      provider,
-      networkId,
-    );
+    const contracts = [
+      // contracts
+      { contract: this.soloMargin, json: soloMarginJson },
+      { contract: this.erc20, json: erc20Json },
+      { contract: this.interestSetter, json: interestSetterJson },
+      { contract: this.priceOracle, json: priceOracleJson },
+      { contract: this.expiry, json: expiryJson },
+      { contract: this.payableProxy, json: payableProxyJson },
+      { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
+      { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
+      { contract: this.wethPriceOracle, json: wethPriceOracleJson },
+      { contract: this.daiPriceOracle, json: daiPriceOracleJson },
+      { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
+      { contract: this.weth, json: wethJson },
 
-    // Test contracts
-    this.setContractProvider(
-      this.testSoloMargin,
-      testSoloMarginJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.tokenA,
-      tokenAJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.tokenB,
-      tokenBJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.tokenC,
-      tokenCJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.erroringToken,
-      erroringTokenJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.omiseToken,
-      omiseTokenJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testLib,
-      testLibJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testAutoTrader,
-      testAutoTraderJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testCallee,
-      testCalleeJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testExchangeWrapper,
-      testExchangeWrapperJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testPriceOracle,
-      testPriceOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testMakerOracle,
-      testMakerOracleJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testOasisDex,
-      testOasisDexJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testPolynomialInterestSetter,
-      testPolynomialInterestSetterJson,
-      provider,
-      networkId,
-    );
-    this.setContractProvider(
-      this.testInterestSetter,
-      testInterestSetterJson,
-      provider,
-      networkId,
+      // test contracts
+      { contract: this.testSoloMargin, json: testSoloMarginJson },
+      { contract: this.tokenA, json: tokenAJson },
+      { contract: this.tokenB, json: tokenBJson },
+      { contract: this.tokenC, json: tokenCJson },
+      { contract: this.erroringToken, json: erroringTokenJson },
+      { contract: this.omiseToken, json: omiseTokenJson },
+      { contract: this.testLib, json: testLibJson },
+      { contract: this.testAutoTrader, json: testAutoTraderJson },
+      { contract: this.testCallee, json: testCalleeJson },
+      { contract: this.testExchangeWrapper, json: testExchangeWrapperJson },
+      { contract: this.testPriceOracle, json: testPriceOracleJson },
+      { contract: this.testMakerOracle, json: testMakerOracleJson },
+      { contract: this.testOasisDex, json: testOasisDexJson },
+      { contract: this.testPolynomialInterestSetter, json: testPolynomialInterestSetterJson },
+      { contract: this.testInterestSetter, json: testInterestSetterJson },
+    ];
+
+    contracts.forEach(contract => this.setContractProvider(
+        contract.contract,
+        contract.json,
+        provider,
+        networkId,
+      ),
     );
   }
 
@@ -363,6 +251,7 @@ export class Contracts {
     this.priceOracle.options.from = account;
     this.expiry.options.from = account;
     this.payableProxy.options.from = account;
+    this.liquidatorProxyV1.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
     this.daiPriceOracle.options.from = account;
