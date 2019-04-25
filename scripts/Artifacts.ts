@@ -24,6 +24,9 @@ import { default as Events } from '../build/contracts/Events.json';
 import { default as AdminImpl } from '../build/contracts/AdminImpl.json';
 import { default as OperationImpl } from '../build/contracts/OperationImpl.json';
 import { default as Permission } from '../build/contracts/Permission.json';
+import { default as PartiallyDelayedMultiSig }
+  from '../build/contracts/PartiallyDelayedMultiSig.json';
+import { default as TestCounter } from '../build/contracts/TestCounter.json';
 import { default as TestLib } from '../build/contracts/TestLib.json';
 import { default as TestAutoTrader } from '../build/contracts/TestAutoTrader.json';
 import { default as TestCallee } from '../build/contracts/TestCallee.json';
@@ -57,6 +60,8 @@ export default {
   AdminImpl,
   OperationImpl,
   Permission,
+  PartiallyDelayedMultiSig,
+  TestCounter,
   TestLib,
   TestPriceOracle,
   TestMakerOracle,

@@ -6,8 +6,8 @@ import { resetEVM, snapshot, fastForward } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { address } from '../../src/types';
-import PartiallyDelayedMultiSigJson from '../../build/contracts/PartiallyDelayedMultiSig.json';
-import TestCounterJson from '../../build/contracts/TestCounter.json';
+import MultiSigJson from '../../build/published_contracts/PartiallyDelayedMultiSig.json';
+import TestCounterJson from '../../build/published_contracts/TestCounter.json';
 
 let multiSig: any;
 let testCounterA: any;
@@ -48,7 +48,7 @@ describe('PartiallyDelayedMultiSig', () => {
     counterBAddress = testCounterB.options.address;
     multiSig = await deployContract(
       solo,
-      PartiallyDelayedMultiSigJson,
+      MultiSigJson,
       [
         [owner1, owner2, owner3],
         '2',
@@ -126,7 +126,7 @@ describe('PartiallyDelayedMultiSig', () => {
       await expectThrow(
         deployContract(
           solo,
-          PartiallyDelayedMultiSigJson,
+          MultiSigJson,
           [
             [owner1, owner2, owner3],
             '2',
