@@ -80,7 +80,8 @@ describe('Expiry', () => {
       solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
       solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par.times(4)),
     ]);
-    await setExpiry();
+    await setExpiry(defaultTime);
+    await mineAvgBlock();
     snapshotId = await snapshot();
   });
 
@@ -127,7 +128,7 @@ describe('Expiry', () => {
 
     it('Allows setting expiry back to zero even for non-negative balances', async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
-      await setExpiry(zero);
+      await setExpiry(zero, { gas: '5000000' });
       const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
       expect(expiry).toEqual(zero);
     });
@@ -863,13 +864,13 @@ describe('Expiry', () => {
 
 // ============ Helper Functions ============
 
-async function setExpiry(time?: BigNumber) {
+async function setExpiry(expiryTime: BigNumber, options?: any) {
   const txResult = await solo.operation.initiate().setExpiry({
+    expiryTime,
     primaryAccountOwner: owner2,
     primaryAccountId: accountNumber2,
     marketId: owedMarket,
-    expiryTime: time ? time : defaultTime,
-  }).commit({ from: owner2 });
+  }).commit({ ...options, from: owner2 });
   return txResult;
 }
 
