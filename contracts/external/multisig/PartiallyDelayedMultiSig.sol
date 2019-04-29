@@ -31,6 +31,10 @@ import { DelayedMultiSig } from "./DelayedMultiSig.sol";
 contract PartiallyDelayedMultiSig is
     DelayedMultiSig
 {
+    // ============ Events ============
+
+    event SelectorSet(address destination, bytes4 selector, bool approved);
+
     // ============ Constants ============
 
     bytes4 constant internal BYTES_ZERO = bytes4(0x0);
@@ -60,34 +64,59 @@ contract PartiallyDelayedMultiSig is
     /**
      * Contract constructor sets initial owners, required number of confirmations, and time lock.
      *
-     * @param  _owners             List of initial owners.
-     * @param  _required           Number of required confirmations.
-     * @param  _secondsTimeLocked  Duration needed after a transaction is confirmed and before it
-     *                             becomes executable, in seconds.
-     * @param  _noDelayAddresses   List of destination addresses that correspond with the selectors.
-     *                             Zero address allows the function selector to be used with any
-     *                             address.
-     * @param  _noDelaySelectors   All function selectors that do not require a delay to execute.
-     *                             Fallback function is 0x00000000.
+     * @param  _owners               List of initial owners.
+     * @param  _required             Number of required confirmations.
+     * @param  _secondsTimeLocked    Duration needed after a transaction is confirmed and before it
+     *                               becomes executable, in seconds.
+     * @param  _noDelayDestinations  List of destinations that correspond with the selectors.
+     *                               Zero address allows the function selector to be used with any
+     *                               address.
+     * @param  _noDelaySelectors     All function selectors that do not require a delay to execute.
+     *                               Fallback function is 0x00000000.
      */
     constructor (
         address[] memory _owners,
         uint256 _required,
-        uint256 _secondsTimeLocked,
-        address[] memory _noDelayAddresses,
+        uint32 _secondsTimeLocked,
+        address[] memory _noDelayDestinations,
         bytes4[] memory _noDelaySelectors
     )
         public
         DelayedMultiSig(_owners, _required, _secondsTimeLocked)
     {
         require(
-            _noDelayAddresses.length == _noDelaySelectors.length,
+            _noDelayDestinations.length == _noDelaySelectors.length,
             "ADDRESS_AND_SELECTOR_MISMATCH"
         );
 
         for (uint256 i = 0; i < _noDelaySelectors.length; i++) {
-            instantData[_noDelayAddresses[i]][_noDelaySelectors[i]] = true;
+            address destination = _noDelayDestinations[i];
+            bytes4 selector = _noDelaySelectors[i];
+            instantData[destination][selector] = true;
+            emit SelectorSet(destination, selector, true);
         }
+    }
+
+    // ============ Wallet-Only Functions ============
+
+    /**
+     * Adds or removes functions that can be executed instantly. Transaction must be sent by wallet.
+     *
+     * @param  destination  Destination address of function. Zero address allows the function to be
+     *                      sent to any address.
+     * @param  selector     4-byte selector of the function. Fallback function is 0x00000000.
+     * @param  approved     True if adding approval, false if removing approval.
+     */
+    function setSelector(
+        address destination,
+        bytes4 selector,
+        bool approved
+    )
+        public
+        onlyWallet
+    {
+        instantData[destination][selector] = approved;
+        emit SelectorSet(destination, selector, approved);
     }
 
     // ============ Helper Functions ============

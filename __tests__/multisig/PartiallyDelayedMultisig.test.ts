@@ -54,7 +54,7 @@ describe('PartiallyDelayedMultiSig', () => {
         '2',
         '120',
         [counterAAddress, ADDRESSES.ZERO, counterBAddress],
-        ['0x181b3bb3', '0x935272a2', '0x00000000'],
+        [functionOneSelector, functionTwoSelector, fallbackSelector],
       ],
     );
 
@@ -132,10 +132,48 @@ describe('PartiallyDelayedMultiSig', () => {
             '2',
             '120',
             [counterAAddress, ADDRESSES.ZERO, counterBAddress],
-            ['0x181b3bb3', '0x935272a2'],
+            [functionOneSelector, functionTwoSelector],
           ],
         ),
         'ADDRESS_AND_SELECTOR_MISMATCH',
+      );
+    });
+  });
+
+  describe('#setSelector', () => {
+    it('Succeeds for false', async () => {
+      await expectInstantData(counterAAddress, functionOneSelector, true);
+      await submitTransaction(
+        multiSig.options.address,
+        setSelectorData(counterAAddress, functionOneSelector, false),
+      );
+      await confirmTransaction(9);
+      await fastForward(120);
+      await executeTransaction(9);
+      await expectInstantData(counterAAddress, functionOneSelector, false);
+    });
+
+    it('Succeeds for true', async () => {
+      await expectInstantData(counterBAddress, functionThreeSelector, false);
+      await submitTransaction(
+        multiSig.options.address,
+        setSelectorData(counterBAddress, functionThreeSelector, true),
+      );
+      await confirmTransaction(9);
+      await fastForward(120);
+      await executeTransaction(9);
+      await expectInstantData(counterBAddress, functionThreeSelector, true);
+    });
+
+    it('Fails for external sender', async () => {
+      await expectThrow(
+        solo.contracts.callContractFunction(
+          multiSig.methods.setSelector(
+            ADDRESSES.ZERO,
+            '0x00000000',
+            true,
+          ),
+        ),
       );
     });
   });
@@ -222,26 +260,28 @@ async function confirmTransaction(n: number) {
   );
 }
 
+function setSelectorData(destination: address, selector: string, approved: boolean) {
+  const data = multiSig.methods.setSelector(destination, selector, approved).encodeABI();
+  return hexToBytes(data);
+}
+
 function functionOneData() {
-  const result = functionOneSelector;
-  return hexToBytes(result);
+  const data = testCounterA.methods.functionOne().encodeABI();
+  return hexToBytes(data);
 }
 
 function numberToFunctionTwoData(n: number) {
-  const result = functionTwoSelector
-    + n.toString().padStart(64, '0');
-  return hexToBytes(result);
+  const data = testCounterA.methods.functionTwo(n.toString()).encodeABI();
+  return hexToBytes(data);
 }
 
 function numbersToFunctionThreeData(n1: number, n2: number) {
-  const result = functionThreeSelector
-    + n1.toString().padStart(64, '0')
-    + n2.toString().padStart(64, '0');
-  return hexToBytes(result);
+  const data = testCounterA.methods.functionThree(n1.toString(), n2.toString()).encodeABI();
+  return hexToBytes(data);
 }
 
 function hexToBytes(hex: string) {
-  return hex.match(/.{1,2}/g).slice(1).map(
+  return hex.toLowerCase().match(/.{1,2}/g).slice(1).map(
     x => [new BigNumber(x, 16).toNumber()],
   );
 }
@@ -251,7 +291,10 @@ async function executeTransaction(n: number, from?: address) {
     multiSig.methods.executeTransaction(
       n.toString(),
     ),
-    { from: from || owner3 },
+    {
+      from: from || owner3,
+      gas: '5000000',
+    },
   );
 
   const transaction: any = await solo.contracts.callConstantContractFunction(
