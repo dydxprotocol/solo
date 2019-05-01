@@ -1,4 +1,4 @@
-<p align="center"><img src="https://dydx.exchange/images/logo.png" width="256" /></p>
+<p align="center"><img src="https://s3.amazonaws.com/dydx-assets/logo_large_white.png" width="256" /></p>
 
 <p align="center">
   <a href="https://circleci.com/gh/dydxprotocol/workflows/solo/tree/master">
