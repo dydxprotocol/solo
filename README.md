@@ -2,7 +2,10 @@
 
 <p align="center">
   <a href="https://circleci.com/gh/dydxprotocol/workflows/solo/tree/master">
-    <img src="https://circleci.com/gh/dydxprotocol/solo/tree/master.svg?style=svg&circle-token=5f92a227c38113445186b0ecf2681be2fd86c9d4" alt='CI' />
+    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/solo.svg" alt='CI' />
+  </a>
+  <a href='https://www.npmjs.com/package/@dydxprotocol/solo'>
+    <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM' />
   </a>
   <a href='https://coveralls.io/github/dydxprotocol/solo'>
     <img src='https://coveralls.io/repos/github/dydxprotocol/solo/badge.svg?t=toKMwT' alt='Coverage Status' />
