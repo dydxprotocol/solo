@@ -124,7 +124,7 @@ await solo.operation.initiate()
 
 Solo uses [web3](https://web3js.readthedocs.io/en/1.0/index.html) under the hood. You can access it through `solo.web3`
 
-## Smart Contracts
+## Contracts
 
 ### Mainnet
 
