@@ -437,6 +437,27 @@ export class Getters {
     return result;
   }
 
+  public async isAccountLiquidatable(
+    liquidOwner: address,
+    liquidNumber: Integer,
+    options: ContractConstantCallOptions = {},
+  ): Promise<boolean> {
+    const [
+      marginRatio,
+      accountValues,
+    ] = await Promise.all([
+      this.getMarginRatio(options),
+      this.getAdjustedAccountValues(
+        liquidOwner,
+        liquidNumber,
+        options,
+      ),
+    ]);
+
+    const marginRequirement = accountValues.borrow.times(marginRatio);
+    return accountValues.supply.lt(accountValues.borrow.plus(marginRequirement));
+  }
+
   // ============ Getters for Permissions ============
 
   public async getIsLocalOperator(
