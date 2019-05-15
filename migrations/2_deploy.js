@@ -56,7 +56,6 @@ const WETH9 = artifacts.require('WETH9');
 
 // Second-Layer Contracts
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
-const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const Expiry = artifacts.require('Expiry');
 
 // Interest Setters
@@ -177,10 +176,6 @@ async function deploySecondLayer(deployer, network) {
       Expiry,
       soloMargin.address,
       getExpiryRampTime(),
-    ),
-    deployer.deploy(
-      LiquidatorProxyV1ForSoloMargin,
-      soloMargin.address,
     ),
   ]);
 

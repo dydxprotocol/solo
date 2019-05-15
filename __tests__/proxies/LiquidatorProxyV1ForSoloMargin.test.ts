@@ -105,11 +105,12 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('60')),
           solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('50')),
         ]);
-        await liquidate();
+        const txResult = await liquidate();
         await expectBalances(
           [zero, par.times('60'), par.times('44.9925')],
           [zero, zero, par.times('5.0075')],
         );
+        console.log(`\tLiquidatorProxyV1 gas used (1 owed, 2 held): ${txResult.gasUsed}`);
       });
 
       it('Succeeds for many owed, one held', async () => {
@@ -120,11 +121,12 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('50')),
           solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('165')),
         ]);
-        await liquidate();
+        const txResult = await liquidate();
         await expectBalances(
           [zero, par.times('50'), par.times('157.5')],
           [zero, zero, par.times('7.5')],
         );
+        console.log(`\tLiquidatorProxyV1 gas used (2 owed, 1 held): ${txResult.gasUsed}`);
       });
 
       it('Succeeds for many owed, many held', async () => {
@@ -136,11 +138,12 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('170')),
           solo.testing.setAccountBalance(owner2, accountNumber2, market4, negPar.times('0.1')),
         ]);
-        await liquidate();
+        const txResult = await liquidate();
         await expectBalances(
           [par.times('0.525'), par.times('50'), par.times('157.5'), par.times('0.9')],
           [zero, zero, par.times('12.5'), zero],
         );
+        console.log(`\tLiquidatorProxyV1 gas used (2 owed, 2 held): ${txResult.gasUsed}`);
       });
 
       it('Succeeds for liquid account collateralized but in liquid status', async () => {
@@ -223,11 +226,12 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
           solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
         ]);
-        await liquidate();
+        const txResult = await liquidate();
         await expectBalances(
           [negPar.div(2), par.times('5')],
           [zero, par.times('5')],
         );
+        console.log(`\tLiquidatorProxyV1 gas used: ${txResult.gasUsed}`);
       });
 
       it('Succeeds for one owed, one held (liquidator balance is !posHeld<!negOwed)', async () => {
@@ -335,8 +339,57 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
     });
 
+    describe('Follows preferences', () => {
+      it('Liquidates the most specified markets first', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par.times('0.02')),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market3, negPar.times('100')),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market4, par.times('0.11')),
+        ]);
+        await solo.liquidatorProxy.liquidate(
+          owner1,
+          accountNumber1,
+          owner2,
+          accountNumber2,
+          new BigNumber('0.25'),
+          [market3, market1],
+          [market4, market2],
+          { from: operator },
+        );
+        await expectBalances(
+          [zero, zero, negPar.times('100'), par.times('0.125')],
+          [negPar, par.times('110'), zero, par.times('.005')],
+        );
+      });
+
+      it('Does not liquidate unspecified markets', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+        ]);
+        await solo.liquidatorProxy.liquidate(
+          owner1,
+          accountNumber1,
+          owner2,
+          accountNumber2,
+          new BigNumber('0.25'),
+          [market2],
+          [market1],
+          { from: operator },
+        );
+        await expectBalances(
+          [par, par.times('100')],
+          [negPar, par.times('110')],
+        );
+      });
+    });
+
     describe('Failure cases', () => {
-      it('Fails for non-operator', async () => {
+      it('Fails for msg.sender is non-operator', async () => {
         await Promise.all([
           setUpBasicBalances(),
           solo.permissions.disapproveOperator(operator, { from: owner1 }),
@@ -344,6 +397,20 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
         await expectThrow(
           liquidate(),
           'LiquidatorProxyV1ForSoloMargin: Sender not operator',
+        );
+      });
+
+      it('Fails for proxy is non-operator', async () => {
+        await Promise.all([
+          setUpBasicBalances(),
+          solo.permissions.disapproveOperator(
+            solo.contracts.liquidatorProxyV1.options.address,
+            { from: owner1 },
+          ),
+        ]);
+        await expectThrow(
+          liquidate(),
+          'Storage: Unpermissioned operator',
         );
       });
 
@@ -370,13 +437,6 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
 // ============ Helper Functions ============
 
-// TODO: remove
-/*
-function printTxLogs(txResult){
-  console.log(JSON.stringify(txResult.events, null, '    '));
-}
-*/
-
 async function setUpBasicBalances() {
   await Promise.all([
     solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
@@ -402,7 +462,6 @@ async function liquidate() {
     preferences,
     { from: operator },
   );
-  console.log(txResult.gasUsed); // TODO: remove
   return txResult;
 }
 
@@ -422,10 +481,6 @@ async function expectBalances(
     solo.getters.getAccountPar(owner2, accountNumber2, market3),
     solo.getters.getAccountPar(owner2, accountNumber2, market4),
   ]);
-
-  // TODO: remove
-  console.log(bal1);
-  console.log(bal2);
 
   for (let i = 0; i < liquidatorBalances.length; i += 1) {
     expect(bal1[i]).toEqual(liquidatorBalances[i]);

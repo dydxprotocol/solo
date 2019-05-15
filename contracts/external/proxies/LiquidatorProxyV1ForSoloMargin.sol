@@ -173,10 +173,10 @@ contract LiquidatorProxyV1ForSoloMargin is
                     owedMarket
                 );
 
-                // get the min safe liquidation amount
-                calculateMinLiquidationAmount(cache);
+                // get the liquidation amount (before liquidator decreases in collateralization)
+                calculateSafeLiquidationAmount(cache);
 
-                // get the max safe liquidation amount
+                // get the max liquidation amount (before liquidator reaches minLiquidatorRatio)
                 calculateMaxLiquidationAmount(constants, cache);
 
                 // if nothing to liquidate, do nothing
@@ -197,11 +197,11 @@ contract LiquidatorProxyV1ForSoloMargin is
 
     /**
      * Calculate the owedAmount that can be liquidated until the liquidator account will be left
-     * with a positive amount of heldMarket and a negative amount of owedMarket. That is, the amount
-     * that can be liquidated until the collateralization of the liquidator account will begin to
-     * decrease.
+     * with BOTH a non-negative balance of heldMarket AND a non-positive balance of owedMarket.
+     * This is the amount that can be liquidated until the collateralization of the liquidator
+     * account will begin to decrease.
      */
-    function calculateMinLiquidationAmount(
+    function calculateSafeLiquidationAmount(
         Cache memory cache
     )
         private
@@ -257,7 +257,7 @@ contract LiquidatorProxyV1ForSoloMargin is
     /**
      * Calculate the additional owedAmount that can be liquidated until the collateralization of the
      * liquidator account reaches the minLiquidatorRatio. By this point, the cache will be set such
-     * that the amount of owedMarket is negative and the amount of heldMarket is positive.
+     * that the amount of owedMarket is non-positive and the amount of heldMarket is non-negative.
      */
     function calculateMaxLiquidationAmount(
         Constants memory constants,
@@ -280,12 +280,12 @@ contract LiquidatorProxyV1ForSoloMargin is
             return;
         }
 
-        // find how much margin overhead we have to play with
+        // find the value difference between the current margin and the margin at minLiquidatorRatio
         uint256 requiredOverhead = Decimal.mul(cache.borrowValue, constants.minLiquidatorRatio);
         uint256 requiredSupplyValue = cache.borrowValue.add(requiredOverhead);
         uint256 remainingValueBuffer = cache.supplyValue.sub(requiredSupplyValue);
 
-        // get the absolute difference between the margin-ratio I require and the spread
+        // get the absolute difference between the minLiquidatorRatio and the liquidation spread
         Decimal.D256 memory spreadMarginDiff = Decimal.D256({
             value: constants.minLiquidatorRatio.value.sub(cache.spread.value)
         });
@@ -293,9 +293,10 @@ contract LiquidatorProxyV1ForSoloMargin is
         // get the additional value of owedToken I can borrow to liquidate this position
         uint256 owedValueToTakeOn = Decimal.div(remainingValueBuffer, spreadMarginDiff);
 
-        // get the final amount of owedWei to liquidate
+        // get the additional amount of owedWei to liquidate
         uint256 owedWeiToLiquidate = owedValueToTakeOn.div(cache.owedPrice);
 
+        // store the additional amount in the cache
         cache.toLiquidate = cache.toLiquidate.add(owedWeiToLiquidate);
     }
 
