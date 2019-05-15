@@ -26,6 +26,7 @@ import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
+import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
@@ -42,6 +43,7 @@ export class Solo {
   public web3: Web3;
   public admin: Admin;
   public getters: Getters;
+  public liquidatorProxy: LiquidatorProxy;
   public permissions: Permissions;
   public logs: Logs;
 
@@ -64,6 +66,7 @@ export class Solo {
     this.testing = new Testing(provider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
+    this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
   }

@@ -89,7 +89,7 @@ describe('Expiry', () => {
     await resetEVM(snapshotId);
   });
 
-  describe('set expiry', async () => {
+  describe('set expiry', () => {
     it('Succeeds in setting expiry', async () => {
       const newTime = defaultTime.plus(1000);
       const txResult = await setExpiry(newTime);
@@ -160,7 +160,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('expire account (heldAmount)', async () => {
+  describe('expire account (heldAmount)', () => {
     beforeEach(async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par);
     });
@@ -382,7 +382,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('expire account (owedAmount)', async () => {
+  describe('expire account (owedAmount)', () => {
     it('Succeeds in expiring', async () => {
       const txResult = await expectExpireOkay({});
 
@@ -603,7 +603,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('AccountOperation#fullyLiquidateExpiredAccount', async () => {
+  describe('AccountOperation#fullyLiquidateExpiredAccount', () => {
     it('Succeeds for two assets', async () => {
       const primaryAccount = {
         owner: owner1,
@@ -784,7 +784,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('#getSpreadAdjustedPrices', async () => {
+  describe('#getSpreadAdjustedPrices', () => {
     it('Succeeds for recently expired positions', async () => {
       const txResult = await setExpiry(zero);
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
@@ -810,7 +810,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('#ownerSetExpiryRampTime', async () => {
+  describe('#ownerSetExpiryRampTime', () => {
     it('Succeeds for owner', async () => {
       const oldValue = await solo.getters.getExpiryRampTime();
       expect(oldValue).toEqual(INTEGERS.ONE_HOUR_IN_SECONDS);
@@ -826,7 +826,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('#liquidateExpiredAccount', async () => {
+  describe('#liquidateExpiredAccount', () => {
     it('Succeeds', async () => {
       await solo.operation.initiate().liquidateExpiredAccount({
         liquidMarketId: owedMarket,

@@ -9,6 +9,8 @@ import { default as IPriceOracle } from '../build/contracts/IPriceOracle.json';
 import { default as Expiry } from '../build/contracts/Expiry.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
+import { default as LiquidatorProxyV1ForSoloMargin }
+  from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
 import { default as PolynomialInterestSetter }
   from '../build/contracts/PolynomialInterestSetter.json';
 import { default as WethPriceOracle } from '../build/contracts/WethPriceOracle.json';
@@ -46,6 +48,7 @@ export default {
   IPriceOracle,
   Expiry,
   PayableProxyForSoloMargin,
+  LiquidatorProxyV1ForSoloMargin,
   PolynomialInterestSetter,
   WethPriceOracle,
   DaiPriceOracle,

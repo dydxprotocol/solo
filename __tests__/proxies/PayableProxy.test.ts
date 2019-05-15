@@ -1,18 +1,18 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
-import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
-import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
-import { expectThrow } from '../src/lib/Expect';
-import { toBytes } from '../src/lib/BytesHelper';
+import { getSolo } from '../helpers/Solo';
+import { Solo } from '../../src/Solo';
+import { resetEVM, snapshot } from '../helpers/EVM';
+import { setupMarkets } from '../helpers/SoloHelpers';
+import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
+import { expectThrow } from '../../src/lib/Expect';
+import { toBytes } from '../../src/lib/BytesHelper';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import {
   address,
   Amount,
   AmountDenomination,
   AmountReference,
-} from '../src/types';
+} from '../../src/types';
 
 let solo: Solo;
 let accounts: address[];
