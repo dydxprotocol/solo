@@ -126,5 +126,12 @@
             "address": "0xcfa0451D8D1F08504Fa44a6f72D00F455b858a1d",
             "transactionHash": "0xa3cc992952235b09917836419b0c6495e004412f1be3f8f8f8c39d8185ace9cc"
         }
+    },
+    "LiquidatorProxyV1ForSoloMargin": {
+        "1": {
+            "links": {},
+            "address": "0xc16dE5602f542A99BA76507Ad388FF246a832720",
+            "transactionHash": "0xc6a429ae9d6c2073dd3d17c05001a68619e732f4e14d715a62e9641e5679bd18"
+        }
     }
 }
