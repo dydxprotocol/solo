@@ -46,7 +46,8 @@
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
     "install_compiler": "docker pull ethereum/solc:0.5.7",
-    "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts"
+    "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts",
+    "serve_docs": "docsify serve ./docs"
   },
   "repository": {
     "type": "git",
@@ -78,6 +79,7 @@
     "babel-eslint": "^10.0.1",
     "chai": "^4.1.2",
     "coveralls": "^3.0.3",
+    "docsify-cli": "^4.3.0",
     "dotenv-flow": "^0.2.0",
     "es6-promisify": "^6.0.1",
     "eslint": "^5.14.1",
