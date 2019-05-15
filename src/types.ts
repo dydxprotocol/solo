@@ -87,6 +87,8 @@ export interface TxResult {
 export enum AmountDenomination {
   Actual = 0,
   Principal = 1,
+  Wei = 0,
+  Par = 1,
 }
 
 export enum AmountReference {
