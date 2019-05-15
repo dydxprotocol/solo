@@ -13,9 +13,6 @@
   <a href='https://github.com/dydxprotocol/solo/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
   </a>
-  <a href='https://docs.dydx.exchange' style="text-decoration:none;">
-    <img src='https://img.shields.io/badge/docs-blue.svg?longCache=true' alt='Docs' />
-  </a>
   <a href='https://t.me/joinchat/GBnMlBb9mQblQck2pThTgw' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />
   </a>
