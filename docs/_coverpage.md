@@ -2,7 +2,7 @@
 
 # Solo
 
-> Typescript library for interacting with the dYdX V2 smart contracts
+> TypeScript library for interacting with the dYdX V2 smart contracts
 
 - Trustless margin trading, borrowing, and lending
 - Built on Ethereum & Web3

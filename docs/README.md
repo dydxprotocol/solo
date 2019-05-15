@@ -18,7 +18,7 @@
   </a>
 </div>
 
-> Typescript library for interacting with the dYdX V2 smart contracts
+> TypeScript library for interacting with the dYdX V2 smart contracts
 
 ## Table of Contents
 
