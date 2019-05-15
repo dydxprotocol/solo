@@ -35,4 +35,4 @@ npm i -s @dydxprotocol/solo
 
 ## License
 
-[Apache-2.0](./blob/master/LICENSE)
+[Apache-2.0](https://github.com/dydxprotocol/solo/blob/master/LICENSE)
