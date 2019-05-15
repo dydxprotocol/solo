@@ -10,7 +10,7 @@
   <a href='https://coveralls.io/github/dydxprotocol/solo'>
     <img src='https://coveralls.io/repos/github/dydxprotocol/solo/badge.svg?t=toKMwT' alt='Coverage Status' />
   </a>
-  <a href='https://github.com/dydxprotocol/solomargin/blob/master/LICENSE'>
+  <a href='https://github.com/dydxprotocol/solo/blob/master/LICENSE'>
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
   </a>
   <a href='https://slack.dydx.exchange/'>
@@ -63,7 +63,7 @@ Amounts in Solo are denominated by 3 things:
 - `denomination` One of:
   - `AmountDenomination.Actual` Indicates the amount is denominated in the actual units of the token being transferred
   - `AmountDenomination.Principal` Indicates the amount is denominated in principal. Solo uses these types of amount in its internal accounting, and they do not change over time
-  
+
 A very important thing to note is that amounts are always relative to how the balance of the Account being Operated on will change, not the amount of the Action occurring. So, for example you'd say [pseudocode] `withdraw(-10)`, because when you Withdraw, the balance of the Account will decrease.
 
 

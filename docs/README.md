@@ -10,11 +10,11 @@
   <a href='https://coveralls.io/github/dydxprotocol/solo'>
     <img src='https://coveralls.io/repos/github/dydxprotocol/solo/badge.svg?t=toKMwT' alt='Coverage Status' />
   </a>
-  <a href='https://github.com/dydxprotocol/solomargin/blob/master/LICENSE'>
+  <a href='https://github.com/dydxprotocol/solo/blob/master/LICENSE'>
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
   </a>
-  <a href='https://slack.dydx.exchange/'>
-    <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Slack' />
+  <a href='https://t.me/joinchat/GBnMlBb9mQblQck2pThTgw'>
+    <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />
   </a>
 </p>
 
