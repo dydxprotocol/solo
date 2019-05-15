@@ -20,6 +20,8 @@
 
 > Ethereum Smart Contracts and TypeScript library used for the dYdX Solo Trading Protocol. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange)
 
+**Full Documentation at [trade.dydx.exchange](https://trade.dydx.exchange)**
+
 ## Table of Contents
 
  - [Documentation](#documentation)
