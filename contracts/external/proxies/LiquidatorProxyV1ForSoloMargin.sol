@@ -178,7 +178,9 @@ contract LiquidatorProxyV1ForSoloMargin is
         Require.that(
             totalValueLiquidated >= minValueLiquidated,
             FILE,
-            "Not enough liquidatable value"
+            "Not enough liquidatable value",
+            totalValueLiquidated,
+            minValueLiquidated
         );
     }
 
