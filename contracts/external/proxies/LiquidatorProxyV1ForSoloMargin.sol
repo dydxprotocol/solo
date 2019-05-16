@@ -101,40 +101,15 @@ contract LiquidatorProxyV1ForSoloMargin is
         Account.Info memory fromAccount,
         Account.Info memory liquidAccount,
         Decimal.D256 memory minLiquidatorRatio,
+        uint256 minValueLiquidated,
         uint256[] memory owedPreferences,
         uint256[] memory heldPreferences
     )
         public
         nonReentrant
     {
-        // check credentials
-        Require.that(
-            fromAccount.owner == msg.sender
-            || SOLO_MARGIN.getIsLocalOperator(fromAccount.owner, msg.sender),
-            FILE,
-            "Sender not operator",
-            fromAccount.owner
-        );
-
-        // require that the liquidAccount is liquidatable
-        Decimal.D256 memory marginRatio = SOLO_MARGIN.getMarginRatio();
-        (
-            Monetary.Value memory liquidSupplyValue,
-            Monetary.Value memory liquidBorrowValue
-        ) = SOLO_MARGIN.getAccountValues(liquidAccount);
-        Require.that(
-            liquidSupplyValue.value != 0,
-            FILE,
-            "Liquid account no supply"
-        );
-        Require.that(
-            SOLO_MARGIN.getAccountStatus(liquidAccount) == Account.Status.Liquid
-            || !isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
-            FILE,
-            "Liquid account not liquidatable",
-            liquidSupplyValue.value,
-            liquidBorrowValue.value
-        );
+        // validate the msg.sender and that the liquidAccount can be liquidated
+        checkRequirements(fromAccount, liquidAccount);
 
         // put all values that will not change into a single struct
         Constants memory constants = Constants({
@@ -142,6 +117,9 @@ contract LiquidatorProxyV1ForSoloMargin is
             liquidAccount: liquidAccount,
             minLiquidatorRatio: minLiquidatorRatio
         });
+
+        // keep a running tally of how much value will be attempted to be liquidated
+        uint256 totalValueLiquidated = 0;
 
         // for each owedMarket
         for (uint256 owedIndex = 0; owedIndex < owedPreferences.length; owedIndex++) {
@@ -189,8 +167,19 @@ contract LiquidatorProxyV1ForSoloMargin is
                     constructAccountsArray(constants),
                     constructActionsArray(cache)
                 );
+
+                // increment the total value liquidated
+                totalValueLiquidated =
+                    totalValueLiquidated.add(cache.toLiquidate.mul(cache.owedPrice));
             }
         }
+
+        // revert if liquidator account does not have a lot of overhead to liquidate these pairs
+        Require.that(
+            totalValueLiquidated >= minValueLiquidated,
+            FILE,
+            "Not enough liquidatable value"
+        );
     }
 
     // ============ Calculation Functions ============
@@ -301,6 +290,51 @@ contract LiquidatorProxyV1ForSoloMargin is
     }
 
     // ============ Helper Functions ============
+
+    /**
+     * Make some basic checks before attempting to liquidate an account.
+     *  - Require that the msg.sender is permissioned to use the liquidator account
+     *  - Require that the liquid account is liquidatable
+     */
+    function checkRequirements(
+        Account.Info memory fromAccount,
+        Account.Info memory liquidAccount
+    )
+        private
+        view
+    {
+        // check credentials for msg.sender
+        Require.that(
+            fromAccount.owner == msg.sender
+            || SOLO_MARGIN.getIsLocalOperator(fromAccount.owner, msg.sender),
+            FILE,
+            "Sender not operator",
+            fromAccount.owner
+        );
+
+        // require that the liquidAccount is liquidatable
+        (
+            Monetary.Value memory liquidSupplyValue,
+            Monetary.Value memory liquidBorrowValue
+        ) = SOLO_MARGIN.getAccountValues(liquidAccount);
+        Require.that(
+            liquidSupplyValue.value != 0,
+            FILE,
+            "Liquid account no supply"
+        );
+        Require.that(
+            SOLO_MARGIN.getAccountStatus(liquidAccount) == Account.Status.Liquid
+            || !isCollateralized(
+                liquidSupplyValue.value,
+                liquidBorrowValue.value,
+                SOLO_MARGIN.getMarginRatio()
+            ),
+            FILE,
+            "Liquid account not liquidatable",
+            liquidSupplyValue.value,
+            liquidBorrowValue.value
+        );
+    }
 
     /**
      * Changes the cache values to reflect changing the heldWei and owedWei of the liquidator
