@@ -25,6 +25,7 @@ export class LiquidatorProxy {
     liquidOwner: address,
     liquidNumber: Integer,
     minLiquidatorRatio: Decimal,
+    minValueLiquidated: Integer,
     owedPreferences: Integer[],
     heldPreferences: Integer[],
     options: ContractCallOptions = {},
@@ -42,6 +43,7 @@ export class LiquidatorProxy {
         {
           value: decimalToString(minLiquidatorRatio),
         },
+        minValueLiquidated.toFixed(0),
         owedPreferences.map(x => x.toFixed(0)),
         heldPreferences.map(x => x.toFixed(0)),
       ),

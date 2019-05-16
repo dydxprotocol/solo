@@ -130,8 +130,8 @@
     "LiquidatorProxyV1ForSoloMargin": {
         "1": {
             "links": {},
-            "address": "0xc16dE5602f542A99BA76507Ad388FF246a832720",
-            "transactionHash": "0xc6a429ae9d6c2073dd3d17c05001a68619e732f4e14d715a62e9641e5679bd18"
+            "address": "0x49754C3C01f765eCa358f2bd543757aa83F2599C",
+            "transactionHash": "0xc1982f276edd9387896f896b5762baddf1293810d6302710cfe81e44514f3297"
         }
     }
 }
