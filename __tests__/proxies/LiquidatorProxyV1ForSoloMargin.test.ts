@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { Solo } from '../../src/Solo';
-import { resetEVM, snapshot } from '../helpers/EVM';
+import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -63,6 +63,7 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       zero,
       { from: admin },
     );
+    await mineAvgBlock();
 
     snapshotId = await snapshot();
   });
@@ -532,6 +533,38 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           liquidate(),
           'LiquidatorProxyV1ForSoloMargin: Liquid account not liquidatable',
         );
+      });
+    });
+
+    describe('Interest cases', () => {
+      it('Liquidates properly even if the indexes have changed', async () => {
+        const rate = new BigNumber(1).div(INTEGERS.ONE_YEAR_IN_SECONDS);
+        await Promise.all([
+          solo.testing.interestSetter.setInterestRate(solo.testing.tokenA.getAddress(), rate),
+          solo.testing.interestSetter.setInterestRate(solo.testing.tokenB.getAddress(), rate),
+          solo.testing.setMarketIndex(market1, {
+            borrow: new BigNumber('1.2'),
+            supply: new BigNumber('1.1'),
+            lastUpdate: zero,
+          }),
+          solo.testing.setMarketIndex(market2, {
+            borrow: new BigNumber('1.2'),
+            supply: new BigNumber('1.1'),
+            lastUpdate: zero,
+          }),
+        ]);
+        console.log(await solo.getters.getMarketInterestRate(market1));
+        await fastForward(3600);
+        await mineAvgBlock();
+
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
+          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('30')),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+        ]);
+
+        await liquidate();
       });
     });
   });
