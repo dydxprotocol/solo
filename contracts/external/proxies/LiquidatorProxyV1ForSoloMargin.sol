@@ -25,6 +25,7 @@ import { SoloMargin } from "../../protocol/SoloMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
+import { Interest } from "../../protocol/lib/Interest.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -57,6 +58,12 @@ contract LiquidatorProxyV1ForSoloMargin is
         Account.Info fromAccount;
         Account.Info liquidAccount;
         Decimal.D256 minLiquidatorRatio;
+        MarketInfo[] markets;
+    }
+
+    struct MarketInfo {
+        Monetary.Price price;
+        Interest.Index index;
     }
 
     struct Cache {
@@ -108,15 +115,16 @@ contract LiquidatorProxyV1ForSoloMargin is
         public
         nonReentrant
     {
-        // validate the msg.sender and that the liquidAccount can be liquidated
-        checkRequirements(fromAccount, liquidAccount);
-
         // put all values that will not change into a single struct
         Constants memory constants = Constants({
             fromAccount: fromAccount,
             liquidAccount: liquidAccount,
-            minLiquidatorRatio: minLiquidatorRatio
+            minLiquidatorRatio: minLiquidatorRatio,
+            markets: getMarketsInfo()
         });
+
+        // validate the msg.sender and that the liquidAccount can be liquidated
+        checkRequirements(constants);
 
         // keep a running tally of how much value will be attempted to be liquidated
         uint256 totalValueLiquidated = 0;
@@ -299,33 +307,32 @@ contract LiquidatorProxyV1ForSoloMargin is
      *  - Require that the liquid account is liquidatable
      */
     function checkRequirements(
-        Account.Info memory fromAccount,
-        Account.Info memory liquidAccount
+        Constants memory constants
     )
         private
         view
     {
         // check credentials for msg.sender
         Require.that(
-            fromAccount.owner == msg.sender
-            || SOLO_MARGIN.getIsLocalOperator(fromAccount.owner, msg.sender),
+            constants.fromAccount.owner == msg.sender
+            || SOLO_MARGIN.getIsLocalOperator(constants.fromAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
-            fromAccount.owner
+            constants.fromAccount.owner
         );
 
         // require that the liquidAccount is liquidatable
         (
             Monetary.Value memory liquidSupplyValue,
             Monetary.Value memory liquidBorrowValue
-        ) = SOLO_MARGIN.getAccountValues(liquidAccount);
+        ) = getCurrentAccountValues(constants, constants.liquidAccount);
         Require.that(
             liquidSupplyValue.value != 0,
             FILE,
             "Liquid account no supply"
         );
         Require.that(
-            SOLO_MARGIN.getAccountStatus(liquidAccount) == Account.Status.Liquid
+            SOLO_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
             || !isCollateralized(
                 liquidSupplyValue.value,
                 liquidBorrowValue.value,
@@ -406,8 +413,65 @@ contract LiquidatorProxyV1ForSoloMargin is
         return supplyValue >= borrowValue.add(requiredMargin);
     }
 
-    // ============ Parsing Functions ============
+    // ============ Getter Functions ============
 
+    /**
+     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
+     * the current index will be once updated.
+     */
+    function getCurrentAccountValues(
+        Constants memory constants,
+        Account.Info memory account
+    )
+        private
+        view
+        returns (
+            Monetary.Value memory,
+            Monetary.Value memory
+        )
+    {
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
+
+        for (uint256 m = 0; m < constants.markets.length; m++) {
+            Types.Par memory par = SOLO_MARGIN.getAccountPar(account, m);
+            if (par.isZero()) {
+                continue;
+            }
+            Types.Wei memory userWei = Interest.parToWei(par, constants.markets[m].index);
+            uint256 assetValue = userWei.value.mul(constants.markets[m].price.value);
+            if (userWei.sign) {
+                supplyValue.value = supplyValue.value.add(assetValue);
+            } else {
+                borrowValue.value = borrowValue.value.add(assetValue);
+            }
+        }
+
+        return (supplyValue, borrowValue);
+    }
+
+    /**
+     * Get the updated index and price for every market.
+     */
+    function getMarketsInfo()
+        private
+        view
+        returns (MarketInfo[] memory)
+    {
+        uint256 numMarkets = SOLO_MARGIN.getNumMarkets();
+        MarketInfo[] memory markets = new MarketInfo[](numMarkets);
+        for (uint256 m = 0; m < numMarkets; m++) {
+            markets[m] = MarketInfo({
+                price: SOLO_MARGIN.getMarketPrice(m),
+                index: SOLO_MARGIN.getMarketCurrentIndex(m)
+            });
+        }
+        return markets;
+    }
+
+    /**
+     * Pre-populates cache values for some pair of markets.
+     */
     function initializeCache(
         Constants memory constants,
         uint256 heldMarket,
@@ -420,16 +484,22 @@ contract LiquidatorProxyV1ForSoloMargin is
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = SOLO_MARGIN.getAccountValues(constants.fromAccount);
+        ) = getCurrentAccountValues(constants, constants.fromAccount);
 
-        uint256 heldPrice = SOLO_MARGIN.getMarketPrice(heldMarket).value;
-        uint256 owedPrice = SOLO_MARGIN.getMarketPrice(owedMarket).value;
+        uint256 heldPrice = constants.markets[heldMarket].price.value;
+        uint256 owedPrice = constants.markets[owedMarket].price.value;
         Decimal.D256 memory spread =
             SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
 
         return Cache({
-            heldWei: SOLO_MARGIN.getAccountWei(constants.fromAccount, heldMarket),
-            owedWei: SOLO_MARGIN.getAccountWei(constants.fromAccount, owedMarket),
+            heldWei: Interest.parToWei(
+                SOLO_MARGIN.getAccountPar(constants.fromAccount, heldMarket),
+                constants.markets[heldMarket].index
+            ),
+            owedWei: Interest.parToWei(
+                SOLO_MARGIN.getAccountPar(constants.fromAccount, owedMarket),
+                constants.markets[owedMarket].index
+            ),
             toLiquidate: 0,
             supplyValue: supplyValue.value,
             borrowValue: borrowValue.value,
@@ -441,6 +511,8 @@ contract LiquidatorProxyV1ForSoloMargin is
             owedPriceAdj: Decimal.mul(owedPrice, Decimal.onePlus(spread))
         });
     }
+
+    // ============ Operation-Construction Functions ============
 
     function constructAccountsArray(
         Constants memory constants
