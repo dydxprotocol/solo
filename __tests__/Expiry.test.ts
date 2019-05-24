@@ -605,14 +605,6 @@ describe('Expiry', () => {
 
   describe('AccountOperation#fullyLiquidateExpiredAccount', () => {
     it('Succeeds for two assets', async () => {
-      const primaryAccount = {
-        owner: owner1,
-        number: accountNumber1.toFixed(0),
-      };
-      const expiredAccount = {
-        owner: owner2,
-        number: accountNumber2.toFixed(0),
-      };
       const prices = [
         INTEGERS.ONES_31,
         INTEGERS.ONES_31,
@@ -634,8 +626,10 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
       await solo.operation.initiate().fullyLiquidateExpiredAccount(
-        primaryAccount,
-        expiredAccount,
+        owner1,
+        accountNumber1,
+        owner2,
+        accountNumber2,
         owedMarket,
         defaultTime,
         defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),
@@ -657,14 +651,6 @@ describe('Expiry', () => {
     });
 
     it('Succeeds for three assets', async () => {
-      const primaryAccount = {
-        owner: owner1,
-        number: accountNumber1.toFixed(0),
-      };
-      const expiredAccount = {
-        owner: owner2,
-        number: accountNumber2.toFixed(0),
-      };
       const prices = [
         INTEGERS.ONES_31,
         INTEGERS.ONES_31,
@@ -690,8 +676,10 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
       await solo.operation.initiate().fullyLiquidateExpiredAccount(
-        primaryAccount,
-        expiredAccount,
+        owner1,
+        accountNumber1,
+        owner2,
+        accountNumber2,
         owedMarket,
         defaultTime,
         defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),
@@ -718,14 +706,6 @@ describe('Expiry', () => {
     });
 
     it('Succeeds for three assets (with premiums)', async () => {
-      const primaryAccount = {
-        owner: owner1,
-        number: accountNumber1.toFixed(0),
-      };
-      const expiredAccount = {
-        owner: owner2,
-        number: accountNumber2.toFixed(0),
-      };
       const prices = [
         INTEGERS.ONES_31,
         INTEGERS.ONES_31,
@@ -754,8 +734,10 @@ describe('Expiry', () => {
         solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
       await solo.operation.initiate().fullyLiquidateExpiredAccount(
-        primaryAccount,
-        expiredAccount,
+        owner1,
+        accountNumber1,
+        owner2,
+        accountNumber2,
         owedMarket,
         defaultTime,
         defaultTime.plus(INTEGERS.ONE_DAY_IN_SECONDS),

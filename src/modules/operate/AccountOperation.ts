@@ -209,8 +209,10 @@ export class AccountOperation {
   }
 
   public fullyLiquidateExpiredAccount(
-    primaryAccount: AccountInfo,
-    expiredAccount: AccountInfo,
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    expiredAccountOwner: address,
+    expiredAccountNumber: Integer,
     expiredMarket: Integer,
     expiryTimestamp: Integer,
     blockTimestamp: Integer,
@@ -281,8 +283,8 @@ export class AccountOperation {
       // add the action to the current actions
       this.addActionArgs(
         {
-          primaryAccountOwner: primaryAccount.owner,
-          primaryAccountId: new BigNumber(primaryAccount.number),
+          primaryAccountOwner,
+          primaryAccountId: primaryAccountNumber,
         },
         {
           actionType: ActionType.Trade,
@@ -294,8 +296,8 @@ export class AccountOperation {
           primaryMarketId: primaryMarketId.toFixed(0),
           secondaryMarketId: secondaryMarketId.toFixed(0),
           otherAccountId: this.getAccountId(
-            expiredAccount.owner,
-            new BigNumber(expiredAccount.number),
+            expiredAccountOwner,
+            expiredAccountNumber,
           ),
           otherAddress: this.contracts.expiry.options.address,
           data: toBytes(expiredMarket, expiryTimestamp),
