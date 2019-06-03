@@ -65,7 +65,9 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 The smart contracts were audited independently by both
 [Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
 
-[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)
+**[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**
+
+**[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
 
 ### Code Coverage
 
