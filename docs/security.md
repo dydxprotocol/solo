@@ -7,6 +7,8 @@ The smart contracts were audited independently by both
 
 **[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**
 
+**[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
+
 ## Code Coverage
 
 All production smart contracts are tested and have 100% branching code-coverage.
