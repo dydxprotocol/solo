@@ -553,7 +553,6 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
             lastUpdate: zero,
           }),
         ]);
-        console.log(await solo.getters.getMarketInterestRate(market1));
         await fastForward(3600);
         await mineAvgBlock();
 
