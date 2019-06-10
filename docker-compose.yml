@@ -1,7 +1,7 @@
 version: '3'
 services:
   ganache:
-    image: trufflesuite/ganache-cli:v6.4.3
+    image: trufflesuite/ganache-cli:v6.4.1
     ports:
       - 8445:8545
-    command: -d -i 1001
+    command: ganache-cli -d -k=petersburg -i 1001

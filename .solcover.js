@@ -8,5 +8,5 @@ module.exports = {
     'Migrations.sol'
   ],
   testCommand: 'npm run test_cov',
-  testrpcOptions: '-d --port 8555 -i 1002',
+  testrpcOptions: '-d -k=petersburg -p 8555 -i 1002',
 };
