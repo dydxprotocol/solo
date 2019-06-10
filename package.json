@@ -64,7 +64,7 @@
   },
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
-    "@dydxprotocol/exchange-wrappers": "0.2.7",
+    "@dydxprotocol/exchange-wrappers": "0.2.8",
     "bignumber.js": "^8.1.1",
     "canonical-weth": "^1.4.0",
     "openzeppelin-solidity": "2.1.3",
