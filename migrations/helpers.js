@@ -57,7 +57,7 @@ async function getPolynomialParams(network) {
   if (isMainNet(network)) {
     return {
       maxAPR: decimalToString('0.75'), // 75%
-      coefficients: coefficientsToString([0, 12, 0, 0, 0, 88]),
+      coefficients: coefficientsToString([0, 15, 0, 0, 0, 0, 85]),
     };
   }
   return {
