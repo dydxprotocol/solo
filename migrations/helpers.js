@@ -53,7 +53,13 @@ async function getRiskParams(network) {
   };
 }
 
-async function getPolynomialParams() {
+async function getPolynomialParams(network) {
+  if (isMainNet(network)) {
+    return {
+      maxAPR: decimalToString('0.75'), // 75%
+      coefficients: coefficientsToString([0, 12, 0, 0, 0, 88]),
+    };
+  }
   return {
     maxAPR: decimalToString('1.00'), // 100%
     coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),

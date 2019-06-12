@@ -96,7 +96,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestLib),
       deployer.deploy(TestAutoTrader),
       deployer.deploy(TestExchangeWrapper),
-      deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams()),
+      deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams(network)),
       deployer.deploy(TestMakerOracle),
       deployer.deploy(TestOasisDex),
     ]);
@@ -129,7 +129,7 @@ async function deployInterestSetters(deployer, network) {
   if (isDevNetwork(network)) {
     await deployer.deploy(TestInterestSetter);
   }
-  await deployer.deploy(PolynomialInterestSetter, getPolynomialParams());
+  await deployer.deploy(PolynomialInterestSetter, getPolynomialParams(network));
 }
 
 async function deployPriceOracles(deployer, network, accounts) {
