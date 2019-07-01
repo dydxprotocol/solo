@@ -9,8 +9,7 @@
     "noUnusedLocals": true,
     "esModuleInterop": true,
     "declaration": true,
-    "declarationDir": "dist/types",
-    "outDir": "dist/js",
+    "outDir": "dist",
     "resolveJsonModule": true,
     "typeRoots": [
       "node_modules/@types"
