@@ -17,11 +17,11 @@
 */
 
 import Web3 from 'web3';
-import { Solo } from './Solo';
 import BigNumber from 'bignumber.js';
 
-module.exports = {
+export { Solo } from './Solo';
+export {
   Web3,
-  Solo,
   BigNumber,
 };
+export * from './types';

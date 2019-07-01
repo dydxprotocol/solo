@@ -7,4 +7,4 @@ sleep 5
 npm run migrate -- --network=docker --reset
 kill -TERM $PROC_ID
 
-cp -r ./build/published_contracts ./dist/js/build/published_contracts
+cp -r ./build/published_contracts ./dist/build/published_contracts
