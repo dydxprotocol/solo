@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -30,7 +30,7 @@
     "coverage": "./node_modules/.bin/solidity-coverage",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "build:js": "rm -rf dist/ && tsc",
+    "build:js": "rm -rf dist/ && tsc && cp -r build/wrappers dist/build",
     "docker_node": "ganache-cli -i 1313 -d -k=petersburg -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
