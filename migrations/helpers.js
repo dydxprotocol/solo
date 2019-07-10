@@ -28,6 +28,25 @@ function isDocker(network) {
   return network === 'docker';
 }
 
+function getChainId(network) {
+  if (isMainNet(network)) {
+    return 1;
+  }
+  if (isKovan(network)) {
+    return 42;
+  }
+  if (network === 'coverage') {
+    return 1002;
+  }
+  if (network === 'docker') {
+    return 1313;
+  }
+  if (network === 'test' || network === 'test_ci') {
+    return 1001;
+  }
+  throw new Error('No chainId for network', network);
+}
+
 async function getRiskLimits() {
   return {
     marginRatioMax: decimalToString('2.00'),
@@ -126,6 +145,7 @@ module.exports = {
   isMainNet,
   isKovan,
   isDocker,
+  getChainId,
   getRiskLimits,
   getRiskParams,
   getPolynomialParams,

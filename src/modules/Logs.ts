@@ -15,6 +15,7 @@ import { abi as operationAbi } from '../../build/published_contracts/Events.json
 import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
 import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
+import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 
 export class Logs {
   private contracts: Contracts;
@@ -45,6 +46,9 @@ export class Logs {
     }
     if (options.skipExpiryLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, expiryAbi));
+    }
+    if (options.skipLimitOrdersLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
     }
 
     return logs;
@@ -101,6 +105,9 @@ export class Logs {
       case this.contracts.expiry.options.address: {
         return this.parseLogWithContract(this.contracts.expiry, log);
       }
+      case this.contracts.limitOrders.options.address: {
+        return this.parseLogWithContract(this.contracts.limitOrders, log);
+      }
     }
 
     return null;
@@ -142,7 +149,7 @@ export class Logs {
         val = eventArgs[input.name];
       } else if (input.type === 'bool') {
         val = eventArgs[input.name];
-      } else if (input.type === 'bytes') {
+      } else if (input.type.match(/^bytes[0-9]*$/)) {
         val = eventArgs[input.name];
       } else if (input.type.match(/^uint[0-9]*$/)) {
         val = new BigNumber(eventArgs[input.name]);

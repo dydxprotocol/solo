@@ -68,6 +68,7 @@ export interface LogParsingOptions {
   skipAdminLogs?: boolean;
   skipPermissionLogs?: boolean;
   skipExpiryLogs?: boolean;
+  skipLimitOrdersLogs?: boolean;
 }
 
 export interface TxResult {
@@ -192,6 +193,14 @@ export interface SetExpiry extends AccountAction {
   expiryTime: Integer;
 }
 
+export interface CallApproveLimitOrder extends AccountAction {
+  order: LimitOrder;
+}
+
+export interface CallCancelLimitOrder extends AccountAction {
+  order: LimitOrder;
+}
+
 export interface Call extends AccountAction {
   callee: address;
   data: (string | number[])[];
@@ -277,4 +286,26 @@ export interface Values {
 export interface BalanceUpdate {
   deltaWei: Integer;
   newPar: Integer;
+}
+
+// ============ Limit Orders ============
+
+export interface LimitOrder {
+  makerMarket: Integer;
+  takerMarket: Integer;
+  makerAmount: Integer;
+  takerAmount: Integer;
+  makerAccountOwner: address;
+  makerAccountNumber: Integer;
+  takerAccountOwner: address;
+  takerAccountNumber: Integer;
+  expiration: Integer;
+  salt: Integer;
+  signature?: string;
+}
+
+export enum LimitOrderStatus {
+  Null = 0,
+  Approved = 1,
+  Canceled = 2,
 }
