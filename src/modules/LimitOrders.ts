@@ -129,41 +129,35 @@ export class LimitOrders {
 
   public async ethSignTypedOrderV3(
     order: LimitOrder,
-    hashOptions: any = {},
   ): Promise<string> {
     return this.ethSignTypedOrderInternal(
       order,
       'eth_signTypedData_v3',
-      hashOptions,
     );
   }
 
   public async ethSignTypedOrder(
     order: LimitOrder,
-    hashOptions: any = {},
   ): Promise<string> {
     return this.ethSignTypedOrderInternal(
       order,
       'eth_signTypedData',
-      hashOptions,
     );
   }
 
   public async ethSignOrder(
     order: LimitOrder,
-    hashOptions: any = {},
   ): Promise<string> {
-    const hash = this.getOrderHash(order, hashOptions);
+    const hash = this.getOrderHash(order);
     const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
     return createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND);
   }
 
   public async ethSignCancelOrder(
     order: LimitOrder,
-    hashOptions: any = {},
   ): Promise<string> {
     return this.ethSignCancelOrderByHash(
-      this.getOrderHash(order, hashOptions),
+      this.getOrderHash(order),
       order.makerAccountOwner,
     );
   }
@@ -181,13 +175,12 @@ export class LimitOrders {
 
   public async orderHasValidSignature(
     order: LimitOrder,
-    hashOptions: any = {},
   ): Promise<boolean> {
     if (!order.signature) {
       return false;
     }
     return this.orderByHashHasValidSignature(
-      this.getOrderHash(order, hashOptions),
+      this.getOrderHash(order),
       order.signature,
       order.makerAccountOwner,
     );
@@ -205,10 +198,9 @@ export class LimitOrders {
   public async cancelOrderHasValidSignature(
     order: LimitOrder,
     typedSignature: string,
-    hashOptions: any = {},
   ): Promise<boolean> {
     return this.cancelOrderByHashHasValidSignature(
-      this.getOrderHash(order, hashOptions),
+      this.getOrderHash(order),
       typedSignature,
       order.makerAccountOwner,
     );
@@ -228,7 +220,6 @@ export class LimitOrders {
 
   public getOrderHash(
     order: LimitOrder,
-    hashOptions: any = {},
   ): string {
     const structHash = soliditySha3(
       { t: 'bytes32', v: stringToBytes32(EIP712_ORDER_STRUCT_STRING) },
@@ -244,7 +235,7 @@ export class LimitOrders {
       { t: 'uint256', v: order.salt },
     );
 
-    const domainHash = this.getDomainHash(hashOptions);
+    const domainHash = this.getDomainHash();
 
     const retVal = soliditySha3(
       { t: 'bytes2', v: '0x1901' },
@@ -255,19 +246,13 @@ export class LimitOrders {
     return retVal;
   }
 
-  public getDomainHash(
-    hashOptions: any = {},
-  ): string {
-    const contractAddress =
-      hashOptions.contractAddress || this.contracts.limitOrders.options.address;
-    const chainId = hashOptions.chainId || this.networkId;
-
+  public getDomainHash(): string {
     return soliditySha3(
       { t: 'bytes32', v: stringToBytes32(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: stringToBytes32('LimitOrders') },
       { t: 'bytes32', v: stringToBytes32('1.0') },
-      { t: 'uint256', v: chainId },
-      { t: 'bytes32', v: addressToBytes32(contractAddress) },
+      { t: 'uint256', v: this.networkId },
+      { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
   }
 
@@ -306,16 +291,12 @@ export class LimitOrders {
   private async ethSignTypedOrderInternal(
     order: LimitOrder,
     rpcMethod: string,
-    hashOptions: any = {},
   ): Promise<string> {
-    const contractAddress =
-      hashOptions.contractAddress || this.contracts.limitOrders.options.address;
-    const chainId = hashOptions.chainId || this.networkId;
     const domainData = {
-      chainId,
       name: 'LimitOrders',
       version: '1.0',
-      verifyingContract: contractAddress,
+      chainId: this.networkId,
+      verifyingContract: this.contracts.limitOrders.options.address,
     };
     const orderData = {
       makerMarket: order.makerMarket.toFixed(0),

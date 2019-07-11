@@ -133,17 +133,17 @@ contract LimitOrders is
 
     // ============ Events ============
 
-    event LogOrderCanceled(
-        address canceler,
-        bytes32 orderHash
+    event LogLimitOrderCanceled(
+        bytes32 orderHash,
+        address canceler
     );
 
-    event LogOrderApproved(
-        address approver,
-        bytes32 orderHash
+    event LogLimitOrderApproved(
+        bytes32 orderHash,
+        address approver
     );
 
-    event LogOrderTaken(
+    event LogLimitOrderFilled(
         bytes32 orderHash,
         uint256 fillAmount
     );
@@ -294,7 +294,7 @@ contract LimitOrders is
             "Cannot cancel canceled order"
         );
         g_status[canceler][orderHash] = OrderStatus.Canceled;
-        emit LogOrderCanceled(canceler, orderHash);
+        emit LogLimitOrderCanceled(orderHash, canceler);
     }
 
     /**
@@ -312,7 +312,7 @@ contract LimitOrders is
             "Cannot approve non-null order"
         );
         g_status[approver][orderHash] = OrderStatus.Approved;
-        emit LogOrderApproved(approver, orderHash);
+        emit LogLimitOrderApproved(orderHash, approver);
     }
 
     // ============ Private Helper Functions ============
@@ -384,7 +384,7 @@ contract LimitOrders is
             "Cannot overfill order"
         );
         g_filled[order.orderHash] = newFillAmount;
-        emit LogOrderTaken(order.orderHash, fillAmount);
+        emit LogLimitOrderFilled(order.orderHash, fillAmount);
     }
 
     /**

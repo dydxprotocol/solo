@@ -41,12 +41,12 @@ library Bytes {
      * @param  input  Byte array to lookup.
      * @return        Memory address of the contents of the byte array.
      */
-    /* solium-disable-next-line security/no-named-returns */
     function contentAddress(bytes memory input)
         internal
         pure
-        returns (uint256 memoryAddress)
+        returns (uint256)
     {
+        uint256 memoryAddress;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             memoryAddress := add(input, 32)
