@@ -30,7 +30,7 @@ import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
-import { SoloOptions, address } from './types';
+import { SoloOptions, EthereumAccount, address } from './types';
 
 export class Solo {
   public contracts: Contracts;
@@ -69,6 +69,10 @@ export class Solo {
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
+
+    if (options.accounts) {
+      options.accounts.forEach(this.loadAccount);
+    }
   }
 
   public setProvider(
@@ -91,5 +95,22 @@ export class Solo {
 
   public getDefaultAccount(): address {
     return this.web3.eth.defaultAccount;
+  }
+
+  public loadAccount(account: EthereumAccount): void {
+    const newAccount = this.web3.eth.accounts.wallet.add(
+      account.privateKey,
+    );
+
+    if (
+      !newAccount
+      || (
+        account.address
+        && account.address.toLowerCase() !== newAccount.address.toLowerCase()
+      )
+    ) {
+      throw new Error(`Loaded account address mismatch.
+        Expected ${account.address}, got ${newAccount.address}`);
+    }
   }
 }

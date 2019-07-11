@@ -40,6 +40,12 @@ export interface SoloOptions {
   testing?: boolean;
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
+  accounts?: EthereumAccount[];
+}
+
+export interface EthereumAccount {
+  address?: string;
+  privateKey: string;
 }
 
 export interface ContractCallOptions extends Tx {
