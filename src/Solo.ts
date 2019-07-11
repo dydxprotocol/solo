@@ -110,7 +110,7 @@ export class Solo {
       )
     ) {
       throw new Error(`Loaded account address mismatch.
-        Expected ${account.address}, got ${newAccount.address}`);
+        Expected ${account.address}, got ${newAccount ? newAccount.address : null}`);
     }
   }
 }
