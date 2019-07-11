@@ -85,7 +85,7 @@ describe('LimitOrders', () => {
 
   describe('Get trade cost', () => {
     it('Succeeds for makerAmount specified', async () => {
-      await takeLimitOrder(testOrder, {
+      await fillLimitOrder(testOrder, {
         amount: defaultMakerAmount.times(-1),
         denominatedInMakerAmount: true,
       });
@@ -94,7 +94,7 @@ describe('LimitOrders', () => {
     });
 
     it('Succeeds for takerAmount specified', async () => {
-      const txResult = await takeLimitOrder(testOrder, {
+      const txResult = await fillLimitOrder(testOrder, {
         amount: defaultTakerAmount,
         denominatedInMakerAmount: false,
       });
@@ -110,7 +110,7 @@ describe('LimitOrders', () => {
         takerAccountNumber: INTEGERS.ZERO,
       };
       testOrderNoTaker.signature = await solo.limitOrders.ethSignTypedOrder(testOrderNoTaker);
-      await takeLimitOrder(testOrderNoTaker, {});
+      await fillLimitOrder(testOrderNoTaker, {});
       await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
       await expectFilledAmount(testOrderNoTaker, defaultMakerAmount);
     });
@@ -124,7 +124,7 @@ describe('LimitOrders', () => {
       delete testOrderNoSig.signature;
 
       // verify okay
-      await takeLimitOrder(testOrder, {});
+      await fillLimitOrder(testOrder, {});
       await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
       await expectFilledAmount(testOrderNoSig, defaultMakerAmount);
     });
@@ -150,7 +150,7 @@ describe('LimitOrders', () => {
 
     it('Fails for inputWei of zero', async () => {
       await expectThrow(
-        takeLimitOrder(testOrder, { amount: zero }),
+        fillLimitOrder(testOrder, { amount: zero }),
         'LimitOrders: InputWei is zero',
       );
     });
@@ -188,7 +188,7 @@ describe('LimitOrders', () => {
 
     it('Fails to overfill order (makerAmount)', async () => {
       await expectThrow(
-        takeLimitOrder(testOrder, {
+        fillLimitOrder(testOrder, {
           amount: defaultMakerAmount.plus(5).times(-1),
           denominatedInMakerAmount: true,
         }),
@@ -198,7 +198,7 @@ describe('LimitOrders', () => {
 
     it('Fails to overfill order (takerAmount)', async () => {
       await expectThrow(
-        takeLimitOrder(testOrder, { amount: defaultTakerAmount.plus(5) }),
+        fillLimitOrder(testOrder, { amount: defaultTakerAmount.plus(5) }),
         'LimitOrders: Cannot overfill order',
       );
     });
@@ -207,7 +207,7 @@ describe('LimitOrders', () => {
       await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
       await expectThrow(
-        takeLimitOrder(testOrder, {}),
+        fillLimitOrder(testOrder, {}),
         'LimitOrders: Order canceled',
       );
     });
@@ -219,18 +219,18 @@ describe('LimitOrders', () => {
       };
       testOrderExpired.signature = await solo.limitOrders.ethSignTypedOrder(testOrderExpired);
       await expectThrow(
-        takeLimitOrder(testOrderExpired, {}),
+        fillLimitOrder(testOrderExpired, {}),
         'LimitOrders: Order expired',
       );
     });
 
     it('Fails for incorrect taker account', async () => {
       await expectThrow(
-        takeLimitOrder(testOrder, { taker: rando }),
+        fillLimitOrder(testOrder, { taker: rando }),
         'LimitOrders: Order taker account mismatch',
       );
       await expectThrow(
-        takeLimitOrder(testOrder, { takerNumber: defaultTakerNumber.plus(1) }),
+        fillLimitOrder(testOrder, { takerNumber: defaultTakerNumber.plus(1) }),
         'LimitOrders: Order taker account mismatch',
       );
     });
@@ -258,11 +258,11 @@ describe('LimitOrders', () => {
       const testOrderInvalidSig1 = { ...testOrder, signature: invalidSignature1 };
       const testOrderInvalidSig2 = { ...testOrder, signature: invalidSignature2 };
       await expectThrow(
-        takeLimitOrder(testOrderInvalidSig1, {}),
+        fillLimitOrder(testOrderInvalidSig1, {}),
         'TypedSignature: Invalid signature type',
       );
       await expectThrow(
-        takeLimitOrder(testOrderInvalidSig2, {}),
+        fillLimitOrder(testOrderInvalidSig2, {}),
         'LimitOrders: Order invalid signature',
       );
     });
@@ -271,8 +271,8 @@ describe('LimitOrders', () => {
       const shortSig = '0x0000';
       const testOrderShortSig = { ...testOrder, signature: shortSig };
       await expectThrow(
-        takeLimitOrder(testOrderShortSig, {}),
-        'LimitOrders: Cannot parse signature',
+        fillLimitOrder(testOrderShortSig, {}),
+        'LimitOrders: Cannot parse signature from data',
       );
     });
 
@@ -284,7 +284,7 @@ describe('LimitOrders', () => {
             data: [[255], [255]],
           },
         ).commit({ from: defaultTakerAddress }),
-        'LimitOrders: Cannot parse order',
+        'LimitOrders: Cannot parse order from data',
       );
     });
   });
@@ -364,6 +364,37 @@ describe('LimitOrders', () => {
       await expectThrow(
         solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner }),
         'LimitOrders: Cannot cancel canceled order',
+      );
+    });
+  });
+
+  describe('callFunction: bad data', () => {
+    it('Fails for bad callFunction type', async () => {
+      const badType = new BigNumber(2);
+      await expectThrow(
+        solo.operation.initiate().call({
+          primaryAccountOwner: testOrder.takerAccountOwner,
+          primaryAccountId: testOrder.takerAccountNumber,
+          callee: solo.contracts.limitOrders.options.address,
+          data: toBytes(
+            badType,
+            solo.limitOrders.getOrderHash(testOrder),
+          ),
+        }).commit({ from: testOrder.takerAccountOwner }),
+      );
+    });
+
+    it('Fails for too-short data', async () => {
+      await expectThrow(
+        solo.operation.initiate().call({
+          primaryAccountOwner: testOrder.takerAccountOwner,
+          primaryAccountId: testOrder.takerAccountNumber,
+          callee: solo.contracts.limitOrders.options.address,
+          data: toBytes(
+            solo.limitOrders.getOrderHash(testOrder),
+          ),
+        }).commit({ from: testOrder.takerAccountOwner }),
+        'LimitOrders: Cannot parse CallFunctionData',
       );
     });
   });
@@ -484,7 +515,7 @@ describe('LimitOrders', () => {
   describe('integration', () => {
     it('Fills an order multiple times up to the limit', async () => {
       // fill once
-      await takeLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
+      await fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
       await expectBalances(
         defaultTakerAmount.div(2),
         defaultMakerAmount.div(2),
@@ -494,7 +525,7 @@ describe('LimitOrders', () => {
       await expectFilledAmount(testOrder, defaultMakerAmount.div(2));
 
       // fill twice
-      await takeLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
+      await fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
       await expectBalances(
         zero,
         defaultMakerAmount,
@@ -505,7 +536,7 @@ describe('LimitOrders', () => {
 
       // fail a third time
       await expectThrow(
-        takeLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) }),
+        fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) }),
         'LimitOrders: Cannot overfill order',
       );
     });
@@ -514,7 +545,7 @@ describe('LimitOrders', () => {
       const orderHash = solo.limitOrders.getOrderHash(testOrder);
 
       // fill half, once
-      const txResult1 = await takeLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
+      const txResult1 = await fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
       await expectFilledAmount(testOrder, defaultMakerAmount.div(2));
 
       // check logs for first tx
@@ -523,13 +554,15 @@ describe('LimitOrders', () => {
       const logOrderTaken1 = logs1[3];
       expect(logOrderTaken1.name).toEqual('LogLimitOrderFilled');
       expect(logOrderTaken1.args.orderHash).toEqual(orderHash);
-      expect(logOrderTaken1.args.fillAmount).toEqual(defaultMakerAmount.div(2));
+      expect(logOrderTaken1.args.orderMaker).toEqual(testOrder.makerAccountOwner);
+      expect(logOrderTaken1.args.makerFillAmount).toEqual(defaultMakerAmount.div(2));
+      expect(logOrderTaken1.args.newMakerFilledAmount).toEqual(defaultMakerAmount.div(2));
 
       // wait so that the indexes will update
       await mineAvgBlock();
 
       // fill a quarter
-      const txResult2 = await takeLimitOrder(testOrder, { amount: defaultTakerAmount.div(4) });
+      const txResult2 = await fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(4) });
       await expectFilledAmount(testOrder, defaultMakerAmount.times(3).div(4));
 
       // check logs for second tx
@@ -538,14 +571,16 @@ describe('LimitOrders', () => {
       const logOrderTaken2 = logs2[3];
       expect(logOrderTaken2.name).toEqual('LogLimitOrderFilled');
       expect(logOrderTaken2.args.orderHash).toEqual(orderHash);
-      expect(logOrderTaken2.args.fillAmount).toEqual(defaultMakerAmount.div(4));
+      expect(logOrderTaken2.args.orderMaker).toEqual(testOrder.makerAccountOwner);
+      expect(logOrderTaken2.args.makerFillAmount).toEqual(defaultMakerAmount.div(4));
+      expect(logOrderTaken2.args.newMakerFilledAmount).toEqual(defaultMakerAmount.times(3).div(4));
     });
   });
 });
 
 // ============ Helper Functions ============
 
-async function takeLimitOrder(
+async function fillLimitOrder(
   order: LimitOrder,
   {
     taker = defaultTakerAddress,
@@ -554,7 +589,7 @@ async function takeLimitOrder(
     denominatedInMakerAmount = false,
   },
 ) {
-  return solo.operation.initiate().takeLimitOrder(
+  return solo.operation.initiate().fillLimitOrder(
     taker,
     takerNumber,
     order,
@@ -626,14 +661,14 @@ async function expectFilledAmount(
   order: LimitOrder,
   expectedFilledAmount: Integer,
 ) {
-  const status = await solo.limitOrders.getOrderStatus(order);
-  expect(status.makerFilledAmount).toEqual(expectedFilledAmount);
+  const state = await solo.limitOrders.getOrderState(order);
+  expect(state.makerFilledAmount).toEqual(expectedFilledAmount);
 }
 
 async function expectStatus(
   order: LimitOrder,
-  expectedStatus: number,
+  expectedStatus: LimitOrderStatus,
 ) {
-  const status = await solo.limitOrders.getOrderStatus(order);
-  expect(status.status).toEqual(expectedStatus);
+  const state = await solo.limitOrders.getOrderState(order);
+  expect(state.status).toEqual(expectedStatus);
 }

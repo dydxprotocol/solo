@@ -19,6 +19,7 @@
 pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
+import { TypedSignature } from "../external/lib/TypedSignature.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -37,6 +38,19 @@ contract TestLib {
     // ============ Constants ============
 
     bytes32 constant FILE = "TestLib";
+
+    // ============ TypedSignature Functions ============
+
+    function TypedSignatureRecover(
+        bytes32 hash,
+        bytes calldata signatureWithType
+    )
+        external
+        pure
+        returns (address)
+    {
+        return TypedSignature.recover(hash, signatureWithType);
+    }
 
     // ============ Math Functions ============
 

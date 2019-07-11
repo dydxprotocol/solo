@@ -56,7 +56,8 @@ library TypedSignature {
     // ============ Functions ============
 
     /**
-     * Gives the address of the signer of a hash. Allows for three common prepended strings.
+     * Gives the address of the signer of a hash. Also allows for the commonly prepended string of
+     * '\x19Ethereum Signed Message:\n' + message.length
      *
      * @param  hash               Hash that was signed (does not include prepended message)
      * @param  signatureWithType  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}

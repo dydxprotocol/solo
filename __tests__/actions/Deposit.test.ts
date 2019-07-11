@@ -548,7 +548,7 @@ async function setAccountBalance(amount: BigNumber) {
 }
 
 async function issueTokensToUser(amount: BigNumber) {
-  return await solo.testing.tokenA.issueTo(amount, who);
+  return solo.testing.tokenA.issueTo(amount, who);
 }
 
 async function expectBalances(
@@ -590,7 +590,7 @@ async function expectDepositOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().deposit(combinedGlob).commit(options);
+  return solo.operation.initiate().deposit(combinedGlob).commit(options);
 }
 
 async function expectDepositRevert(

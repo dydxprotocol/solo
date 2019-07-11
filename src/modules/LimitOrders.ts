@@ -22,6 +22,7 @@ import {
   ContractConstantCallOptions,
   Integer,
   LimitOrder,
+  LimitOrderStatus,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -68,14 +69,14 @@ export class LimitOrders {
     this.networkId = networkId;
   }
 
-  // ============ Sender Contract Methods ============
+  // ============ On-Chain Approve / On-Chain Cancel ============
 
   public async approveOrder(
     order: LimitOrder,
     options?: ContractCallOptions,
   ): Promise<any> {
     const orderHash = this.getOrderHash(order);
-    return await this.contracts.callContractFunction(
+    return this.contracts.callContractFunction(
       this.contracts.limitOrders.methods.approveOrder(orderHash),
       options,
     );
@@ -86,7 +87,7 @@ export class LimitOrders {
     options?: ContractCallOptions,
   ): Promise<any> {
     const orderHash = this.getOrderHash(order);
-    return await this.contracts.callContractFunction(
+    return this.contracts.callContractFunction(
       this.contracts.limitOrders.methods.cancelOrder(orderHash),
       options,
     );
@@ -94,39 +95,32 @@ export class LimitOrders {
 
   // ============ Getter Contract Methods ============
 
-  public async getOrderStatus(
+  /**
+   * Gets the status and the current filled amount (in makerAmount) of the order from the chain.
+   */
+  public async getOrderState(
     order: LimitOrder,
     options?: ContractConstantCallOptions,
-  ): Promise<{status: number, makerFilledAmount: Integer}> {
-    const orderHash = this.getOrderHash(order);
-
-    const [
-      status,
-      makerFilledAmount,
-    ] = await Promise.all([
-      this.contracts.callConstantContractFunction(
-        this.contracts.limitOrders.methods.g_status(
-          order.makerAccountOwner,
-          orderHash,
-        ),
-        options,
+  ): Promise<{status: LimitOrderStatus, makerFilledAmount: Integer}> {
+    const state = await this.contracts.callConstantContractFunction(
+      this.contracts.limitOrders.methods.getOrderState(
+        this.getOrderHash(order),
+        order.makerAccountOwner,
       ),
-      this.contracts.callConstantContractFunction(
-        this.contracts.limitOrders.methods.g_filled(
-          orderHash,
-        ),
-        options,
-      ),
-    ]);
-
+      options,
+    );
     return {
-      status: parseInt(status, 10),
-      makerFilledAmount: new BigNumber(makerFilledAmount),
+      status: parseInt(state[0], 10),
+      makerFilledAmount: new BigNumber(state[1]),
     };
   }
 
   // ============ Signing Methods ============
 
+  /**
+   * Sends order to current provider for signing. Uses the newer 'eth_signTypedData_v3' rpc call
+   * which is compatible with metamask but may not be compatible with all rpc providers.
+   */
   public async ethSignTypedOrderV3(
     order: LimitOrder,
   ): Promise<string> {
@@ -136,6 +130,9 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Sends order to current provider for signing. Uses the 'eth_signTypedData' rpc call.
+   */
   public async ethSignTypedOrder(
     order: LimitOrder,
   ): Promise<string> {
@@ -145,12 +142,15 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Uses web3.eth.sign to sign the hash of the order.
+   */
   public async ethSignOrder(
     order: LimitOrder,
   ): Promise<string> {
     const hash = this.getOrderHash(order);
     const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
-    return createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND);
+    return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
   }
 
   public async ethSignCancelOrder(
@@ -168,11 +168,14 @@ export class LimitOrders {
   ): Promise<string> {
     const cancelHash = this.orderHashToCancelOrderHash(orderHash);
     const signature = await this.web3.eth.sign(cancelHash, signer);
-    return createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND);
+    return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
   }
 
   // ============ Signature Verification ============
 
+  /**
+   * Returns true if the order object has a non-null valid signature.
+   */
   public async orderHasValidSignature(
     order: LimitOrder,
   ): Promise<boolean> {

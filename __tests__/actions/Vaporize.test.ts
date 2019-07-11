@@ -491,11 +491,11 @@ describe('Vaporize', () => {
 // ============ Helper Functions ============
 
 async function issueHeldTokensToSolo(amount: BigNumber) {
-  return await solo.testing.tokenB.issueTo(amount, solo.contracts.soloMargin.options.address);
+  return solo.testing.tokenB.issueTo(amount, solo.contracts.soloMargin.options.address);
 }
 
 async function issueOwedTokensToSolo(amount: BigNumber) {
-  return await solo.testing.tokenA.issueTo(amount, solo.contracts.soloMargin.options.address);
+  return solo.testing.tokenA.issueTo(amount, solo.contracts.soloMargin.options.address);
 }
 
 async function expectVaporizeOkay(
@@ -503,7 +503,7 @@ async function expectVaporizeOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().vaporize(combinedGlob).commit(options);
+  return solo.operation.initiate().vaporize(combinedGlob).commit(options);
 }
 
 async function expectVaporizeRevert(

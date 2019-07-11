@@ -88,7 +88,7 @@
     "ganache-cli": "6.4.1",
     "jest": "^24.1.0",
     "mocha-junit-reporter": "^1.18.0",
-    "solidity-coverage": "git+https://github.com/rotcivegaf/solidity-coverage.git#5875f5b7bc74d447f3312c9c0e9fc7814b482477",
+    "solidity-coverage": "0.6.0",
     "truffle": "^5.0.26",
     "truffle-hdwallet-provider": "^1.0.6",
     "ts-jest": "^24.0.0",

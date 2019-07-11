@@ -1,9 +1,17 @@
 import BigNumber from 'bignumber.js';
+import { soliditySha3, hexToBytes } from 'web3-utils';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { resetEVM, mineAvgBlock } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
+import { stripHexPrefix } from '../src/lib/BytesHelper';
+import {
+  SIGNATURE_TYPES,
+  PREPEND_DEC,
+  PREPEND_HEX,
+  createTypedSignature,
+} from '../src/lib/SignatureHelper';
 import { address } from '../src/types';
 
 let solo: Solo;
@@ -19,6 +27,81 @@ describe('Library', () => {
     solo = r.solo;
     owner = solo.getDefaultAccount();
     await resetEVM();
+  });
+
+  describe('TypedSignature', () => {
+    const hash = '0x1234567812345678123456781234567812345678123456781234567812345678';
+    const r = '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
+    const s = '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
+    const v = '0x1b';
+    const signature = `${r}${stripHexPrefix(s)}${stripHexPrefix(v)}`;
+
+    async function recover(hash: string, typedSignature: string) {
+      return solo.contracts.callConstantContractFunction(
+        solo.contracts.testLib.methods.TypedSignatureRecover(
+          hexToBytes(hash),
+          hexToBytes(typedSignature),
+        ),
+      );
+    }
+
+    describe('recover', () => {
+      it('fails for invalid signature length', async () => {
+        await expectThrow(
+          recover(hash, hash.slice(0, -2)),
+          'TypedSignature: Invalid signature length',
+        );
+      });
+
+      it('fails for invalid signature type', async () => {
+        // type too small
+        await expectThrow(
+          recover(hash, `0x${'00'.repeat(65)}00`),
+          'TypedSignature: Invalid signature type',
+        );
+
+        // type to large
+        await expectThrow(
+          recover(hash, `0x${'00'.repeat(65)}04`),
+          'TypedSignature: Invalid signature type',
+        );
+      });
+
+      it('succeeds for no prepend', async () => {
+        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: hash });
+        const recoveredAddress = await recover(
+          hash,
+          createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND),
+        );
+        expect(recoveredAddress).toEqual(signer);
+      });
+
+      it('succeeds for decimal prepend', async () => {
+        const decHash = soliditySha3(
+          { t: 'string', v: PREPEND_DEC },
+          { t: 'bytes32', v: hash },
+        );
+        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: decHash });
+        const recoveredAddress = await recover(
+          hash,
+          createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL),
+        );
+        expect(recoveredAddress).toEqual(signer);
+      });
+
+      it('succeeds for hexadecimal prepend', async () => {
+        const hexHash = soliditySha3(
+          { t: 'string', v: PREPEND_HEX },
+          { t: 'bytes32', v: hash },
+        );
+        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: hexHash });
+        const recoveredAddress = await recover(
+          hash,
+          createTypedSignature(signature, SIGNATURE_TYPES.HEXADECIMAL),
+        );
+        expect(recoveredAddress).toEqual(signer);
+      });
+    });
   });
 
   describe('Math', () => {

@@ -230,7 +230,7 @@ export class AccountOperation {
     return this;
   }
 
-  public takeLimitOrder(
+  public fillLimitOrder(
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
     order: LimitOrder,

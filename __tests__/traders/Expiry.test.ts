@@ -861,7 +861,7 @@ async function expectExpireOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().trade(combinedGlob).commit(options);
+  return solo.operation.initiate().trade(combinedGlob).commit(options);
 }
 
 async function expectExpireRevert(

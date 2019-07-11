@@ -78,3 +78,33 @@ export function createTypedSignature(
   }
   return `0x${stripHexPrefix(signature)}0${sigType}`;
 }
+
+/**
+ * Fixes any signatures that don't have a 'v' value of 27 or 28
+ */
+export function fixRawSignature(
+  signature: string,
+): string {
+  const stripped = stripHexPrefix(signature);
+
+  if (stripped.length !== 130) {
+    throw new Error(`Invalid raw signature: ${signature}`);
+  }
+
+  const rs = stripped.substr(0, 128);
+  const v = stripped.substr(128, 2);
+
+  switch (v) {
+    case '00':
+      return `0x${rs}1b`;
+    case '00':
+      return `0x${rs}1c`;
+    case '1b':
+    case '1c':
+      break;
+    default:
+      throw new Error(`Invalid v value: ${v}`);
+  }
+
+  return signature;
+}
