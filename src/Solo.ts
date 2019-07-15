@@ -71,7 +71,7 @@ export class Solo {
     this.logs = new Logs(this.contracts, this.web3);
 
     if (options.accounts) {
-      options.accounts.forEach(this.loadAccount);
+      options.accounts.forEach(a => this.loadAccount(a));
     }
   }
 
