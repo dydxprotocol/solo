@@ -20,6 +20,7 @@ pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
@@ -37,6 +38,7 @@ import { TypedSignature } from "../lib/TypedSignature.sol";
  * Allows for Limit Orders to be used with dYdX
  */
 contract LimitOrders is
+    Ownable,
     OnlySolo,
     IAutoTrader,
     ICallee
@@ -130,7 +132,21 @@ contract LimitOrders is
         bytes32 orderHash;
     }
 
+    struct OrderQueryInput {
+        bytes32 orderHash;
+        address orderMaker;
+    }
+
+    struct OrderQueryOutput {
+        OrderStatus orderStatus;
+        uint256 orderMakerFilledAmount;
+    }
+
     // ============ Events ============
+
+    event ContractStatusSet(
+        bool operational
+    );
 
     event LogLimitOrderCanceled(
         bytes32 indexed orderHash,
@@ -146,7 +162,7 @@ contract LimitOrders is
         bytes32 indexed orderHash,
         address indexed orderMaker,
         uint256 makerFillAmount,
-        uint256 newMakerFilledAmount
+        uint256 totalMakerFilledAmount
     );
 
     // ============ Immutable Storage ============
@@ -155,6 +171,9 @@ contract LimitOrders is
     bytes32 public EIP712_DOMAIN_HASH;
 
     // ============ Mutable Storage ============
+
+    // true if this contract can process orders
+    bool public g_isOperational;
 
     // order hash => filled amount (in makerAmount)
     mapping (bytes32 => uint256) public g_makerFilledAmount;
@@ -171,6 +190,8 @@ contract LimitOrders is
         public
         OnlySolo(soloMargin)
     {
+        g_isOperational = true;
+
         /* solium-disable-next-line indentation */
         EIP712_DOMAIN_HASH = keccak256(abi.encode(
             EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH,
@@ -181,23 +202,28 @@ contract LimitOrders is
         ));
     }
 
-    // ============ Getters ============
+    // ============ Admin Functions ============
 
     /**
-     * Returns the status and the filled amount (in makerAmount) of an order.
+     * The owner can shut down the exchange.
      */
-    function getOrderState(
-        bytes32 orderHash,
-        address orderMaker
-    )
+    function shutDown()
         external
-        view
-        returns(OrderStatus, uint256)
+        onlyOwner
     {
-        return (
-            g_status[orderMaker][orderHash],
-            g_makerFilledAmount[orderHash]
-        );
+        g_isOperational = false;
+        emit ContractStatusSet(false);
+    }
+
+    /**
+     * The owner can start back up the exchange.
+     */
+    function startUp()
+        external
+        onlyOwner
+    {
+        g_isOperational = true;
+        emit ContractStatusSet(true);
     }
 
     // ============ External Functions ============
@@ -259,9 +285,15 @@ contract LimitOrders is
         onlySolo(msg.sender)
         returns (Types.AssetAmount memory)
     {
+        Require.that(
+            g_isOperational,
+            FILE,
+            "Contract is not operational"
+        );
+
         Order memory order = getOrderAndValidateSignature(data);
 
-        verifyAccountsAndMarkets(
+        verifyOrderAndAccountsAndMarkets(
             order,
             makerAccount,
             takerAccount,
@@ -302,6 +334,35 @@ contract LimitOrders is
         }
     }
 
+    // ============ Getters ============
+
+    /**
+     * Returns the status and the filled amount (in makerAmount) of an order.
+     */
+    function getOrderStates(
+        OrderQueryInput[] memory orders
+    )
+        public
+        view
+        returns(OrderQueryOutput[] memory)
+    {
+        uint256 numOrders = orders.length;
+        OrderQueryOutput[] memory output = new OrderQueryOutput[](orders.length);
+
+        // for each order
+        for (uint256 i = 0; i < numOrders; i++) {
+            // retrieve the input
+            OrderQueryInput memory order = orders[i];
+
+            // construct the output
+            output[i] = OrderQueryOutput({
+                orderStatus: g_status[order.orderMaker][order.orderHash],
+                orderMakerFilledAmount: g_makerFilledAmount[order.orderHash]
+            });
+        }
+        return output;
+    }
+
     // ============ Private Storage Functions ============
 
     /**
@@ -313,12 +374,6 @@ contract LimitOrders is
     )
         private
     {
-        Require.that(
-            g_status[canceler][orderHash] != OrderStatus.Canceled,
-            FILE,
-            "Cannot cancel canceled order",
-            orderHash
-        );
         g_status[canceler][orderHash] = OrderStatus.Canceled;
         emit LogLimitOrderCanceled(orderHash, canceler);
     }
@@ -333,9 +388,9 @@ contract LimitOrders is
         private
     {
         Require.that(
-            g_status[approver][orderHash] == OrderStatus.Null,
+            g_status[approver][orderHash] != OrderStatus.Canceled,
             FILE,
-            "Cannot approve non-null order",
+            "Cannot approve canceled order",
             orderHash
         );
         g_status[approver][orderHash] = OrderStatus.Approved;
@@ -345,9 +400,9 @@ contract LimitOrders is
     // ============ Private Helper Functions ============
 
     /**
-     * Verifies inputs
+     * Verifies that the order is still fillable for the particular accounts and markets specified.
      */
-    function verifyAccountsAndMarkets(
+    function verifyOrderAndAccountsAndMarkets(
         Order memory order,
         Account.Info memory makerAccount,
         Account.Info memory takerAccount,
@@ -356,8 +411,16 @@ contract LimitOrders is
         Types.Wei memory inputWei
     )
         private
-        pure
+        view
     {
+        // verify expriy
+        Require.that(
+            order.expiration == 0 || order.expiration >= block.timestamp,
+            FILE,
+            "Order expired",
+            order.orderHash
+        );
+
         // verify maker
         Require.that(
             makerAccount.owner == order.makerAccountOwner &&
@@ -424,13 +487,13 @@ contract LimitOrders is
             makerFillAmount = inputWei.value;
         }
 
-        uint256 newMakerFilledAmount = updateMakerFilledAmount(order, makerFillAmount);
+        uint256 totalMakerFilledAmount = updateMakerFilledAmount(order, makerFillAmount);
 
         emit LogLimitOrderFilled(
             order.orderHash,
             order.makerAccountOwner,
             makerFillAmount,
-            newMakerFilledAmount
+            totalMakerFilledAmount
         );
 
         return Types.AssetAmount({
@@ -452,14 +515,14 @@ contract LimitOrders is
         private
         returns (uint256)
     {
-        uint256 newMakerFilledAmount = g_makerFilledAmount[order.orderHash].add(makerFillAmount);
+        uint256 totalMakerFilledAmount = g_makerFilledAmount[order.orderHash].add(makerFillAmount);
         Require.that(
-            newMakerFilledAmount <= order.makerAmount,
+            totalMakerFilledAmount <= order.makerAmount,
             FILE,
             "Cannot overfill order"
         );
-        g_makerFilledAmount[order.orderHash] = newMakerFilledAmount;
-        return newMakerFilledAmount;
+        g_makerFilledAmount[order.orderHash] = totalMakerFilledAmount;
+        return totalMakerFilledAmount;
     }
 
     /**
@@ -473,14 +536,6 @@ contract LimitOrders is
         returns (Order memory)
     {
         Order memory order = parseOrder(data);
-
-        // verify order is not expired
-        Require.that(
-            order.expiration >= block.timestamp,
-            FILE,
-            "Order expired",
-            order.orderHash
-        );
 
         OrderStatus orderStatus = g_status[order.makerAccountOwner][order.orderHash];
 

@@ -12,13 +12,13 @@ import {
   AmountReference,
   Integer,
   LimitOrder,
+  SignedLimitOrder,
   LimitOrderStatus,
 } from '../../src/types';
 
 let solo: Solo;
 let accounts: address[];
 let snapshotId: string;
-const zero = INTEGERS.ZERO;
 const defaultMakerMarket = new BigNumber(0);
 const defaultTakerMarket = new BigNumber(1);
 const incorrectMarket = new BigNumber(2);
@@ -26,18 +26,19 @@ const defaultMakerNumber = new BigNumber(111);
 const defaultTakerNumber = new BigNumber(222);
 const defaultMakerAmount = new BigNumber('1e10');
 const defaultTakerAmount = new BigNumber('2e10');
+let admin: address;
 let defaultMakerAddress: address;
 let defaultTakerAddress: address;
 let rando: address;
 
-let testOrder: LimitOrder;
+let testOrder: SignedLimitOrder;
 
 describe('LimitOrders', () => {
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
     accounts = r.accounts;
-
+    admin = accounts[0];
     defaultMakerAddress = accounts[6];
     defaultTakerAddress = accounts[7];
     rando = accounts[9];
@@ -53,8 +54,9 @@ describe('LimitOrders', () => {
       takerAccountNumber: defaultTakerNumber,
       expiration: INTEGERS.ONES_31,
       salt: new BigNumber(100),
+      typedSignature: null,
     };
-    testOrder.signature = await solo.limitOrders.ethSignTypedOrder(testOrder);
+    testOrder.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrder);
 
     await resetEVM();
 
@@ -83,13 +85,79 @@ describe('LimitOrders', () => {
     await resetEVM(snapshotId);
   });
 
-  describe('Get trade cost', () => {
+  describe('shutDown', () => {
+    it('Succeeds', async () => {
+      expect(await solo.limitOrders.isOperational()).toBe(true);
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.shutDown(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(false);
+    });
+
+    it('Succeeds when it is already shutDown', async () => {
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.shutDown(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(false);
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.shutDown(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(false);
+    });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        solo.contracts.callContractFunction(
+          solo.contracts.limitOrders.methods.shutDown(),
+          { from: rando },
+        ),
+      );
+    });
+  });
+
+  describe('startUp', () => {
+    it('Succeeds after being shutDown', async () => {
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.shutDown(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(false);
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.startUp(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(true);
+    });
+
+    it('Succeeds when it is already operational', async () => {
+      expect(await solo.limitOrders.isOperational()).toBe(true);
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.startUp(),
+        { from: admin },
+      );
+      expect(await solo.limitOrders.isOperational()).toBe(true);
+    });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        solo.contracts.callContractFunction(
+          solo.contracts.limitOrders.methods.startUp(),
+          { from: rando },
+        ),
+      );
+    });
+  });
+
+  describe('getTradeCost', () => {
     it('Succeeds for makerAmount specified', async () => {
       await fillLimitOrder(testOrder, {
         amount: defaultMakerAmount.times(-1),
         denominatedInMakerAmount: true,
       });
-      await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
+      await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrder, defaultMakerAmount);
     });
 
@@ -98,9 +166,21 @@ describe('LimitOrders', () => {
         amount: defaultTakerAmount,
         denominatedInMakerAmount: false,
       });
-      await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
+      await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrder, defaultMakerAmount);
       console.log(`\tLimitOrder Trade gas used: ${txResult.gasUsed}`);
+    });
+
+    it('Succeeds for zero expiry', async () => {
+      const testOrderNoExpiry = {
+        ...testOrder,
+        expiration: INTEGERS.ZERO,
+      };
+      testOrderNoExpiry.typedSignature =
+        await solo.limitOrders.ethSignTypedOrder(testOrderNoExpiry);
+      await fillLimitOrder(testOrderNoExpiry, {});
+      await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
+      await expectFilledAmount(testOrderNoExpiry, defaultMakerAmount);
     });
 
     it('Succeeds for no specific taker', async () => {
@@ -109,9 +189,9 @@ describe('LimitOrders', () => {
         takerAccountOwner: ADDRESSES.ZERO,
         takerAccountNumber: INTEGERS.ZERO,
       };
-      testOrderNoTaker.signature = await solo.limitOrders.ethSignTypedOrder(testOrderNoTaker);
+      testOrderNoTaker.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderNoTaker);
       await fillLimitOrder(testOrderNoTaker, {});
-      await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
+      await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrderNoTaker, defaultMakerAmount);
     });
 
@@ -121,11 +201,17 @@ describe('LimitOrders', () => {
 
       // create order without signature
       const testOrderNoSig = { ...testOrder };
-      delete testOrderNoSig.signature;
+      delete testOrderNoSig.typedSignature;
 
       // verify okay
-      await fillLimitOrder(testOrder, {});
-      await expectBalances(zero, defaultMakerAmount, defaultTakerAmount, zero);
+      await solo.operation.initiate().fillPreApprovedLimitOrder(
+        defaultTakerAddress,
+        defaultTakerNumber,
+        testOrderNoSig,
+        defaultTakerAmount,
+        false,
+      ).commit({ from: defaultTakerAddress });
+      await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrderNoSig, defaultMakerAmount);
     });
 
@@ -148,9 +234,20 @@ describe('LimitOrders', () => {
       );
     });
 
+    it('Fails if shutDown', async () => {
+      await solo.contracts.callContractFunction(
+        solo.contracts.limitOrders.methods.shutDown(),
+        { from: admin },
+      );
+      await expectThrow(
+        fillLimitOrder(testOrder, {}),
+        'LimitOrders: Contract is not operational',
+      );
+    });
+
     it('Fails for inputWei of zero', async () => {
       await expectThrow(
-        fillLimitOrder(testOrder, { amount: zero }),
+        fillLimitOrder(testOrder, { amount: INTEGERS.ZERO }),
         'LimitOrders: InputWei is zero',
       );
     });
@@ -217,7 +314,7 @@ describe('LimitOrders', () => {
         ...testOrder,
         expiration: INTEGERS.ONE,
       };
-      testOrderExpired.signature = await solo.limitOrders.ethSignTypedOrder(testOrderExpired);
+      testOrderExpired.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderExpired);
       await expectThrow(
         fillLimitOrder(testOrderExpired, {}),
         'LimitOrders: Order expired',
@@ -255,8 +352,8 @@ describe('LimitOrders', () => {
     it('Fails for invalid signature', async () => {
       const invalidSignature1 = `0x${'00'.repeat(65)}00`;
       const invalidSignature2 = `0x${'00'.repeat(65)}01`;
-      const testOrderInvalidSig1 = { ...testOrder, signature: invalidSignature1 };
-      const testOrderInvalidSig2 = { ...testOrder, signature: invalidSignature2 };
+      const testOrderInvalidSig1 = { ...testOrder, typedSignature: invalidSignature1 };
+      const testOrderInvalidSig2 = { ...testOrder, typedSignature: invalidSignature2 };
       await expectThrow(
         fillLimitOrder(testOrderInvalidSig1, {}),
         'TypedSignature: Invalid signature type',
@@ -269,7 +366,7 @@ describe('LimitOrders', () => {
 
     it('Fails for bad signature data', async () => {
       const shortSig = '0x0000';
-      const testOrderShortSig = { ...testOrder, signature: shortSig };
+      const testOrderShortSig = { ...testOrder, typedSignature: shortSig };
       await expectThrow(
         fillLimitOrder(testOrderShortSig, {}),
         'LimitOrders: Cannot parse signature from data',
@@ -320,19 +417,26 @@ describe('LimitOrders', () => {
       expect(log.args.approver).toEqual(approver);
     });
 
-    it('Fails for approved order', async () => {
-      await solo.limitOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner });
-      await expectThrow(
-        solo.limitOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner }),
-        'LimitOrders: Cannot approve non-null order',
-      );
+    it('Succeeds for approved order', async () => {
+      const approver = testOrder.makerAccountOwner;
+      await solo.limitOrders.approveOrder(testOrder, { from: approver });
+      await expectStatus(testOrder, LimitOrderStatus.Approved);
+      const txResult = await solo.limitOrders.approveOrder(testOrder, { from: approver });
+      await expectStatus(testOrder, LimitOrderStatus.Approved);
+
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.name).toEqual('LogLimitOrderApproved');
+      expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
+      expect(log.args.approver).toEqual(approver);
     });
 
     it('Fails for canceled order', async () => {
       await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
       await expectThrow(
         solo.limitOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner }),
-        'LimitOrders: Cannot approve non-null order',
+        'LimitOrders: Cannot approve canceled order',
       );
     });
   });
@@ -359,12 +463,11 @@ describe('LimitOrders', () => {
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
 
-    it('Fails for canceled order', async () => {
+    it('Succeeds for canceled order', async () => {
       await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
-      await expectThrow(
-        solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner }),
-        'LimitOrders: Cannot cancel canceled order',
-      );
+      await expectStatus(testOrder, LimitOrderStatus.Canceled);
+      await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
   });
 
@@ -439,19 +542,26 @@ describe('LimitOrders', () => {
       expect(log.args.approver).toEqual(approver);
     });
 
-    it('Fails for approved order', async () => {
+    it('Succeeds for approved order', async () => {
+      const approver = testOrder.makerAccountOwner;
       await approveTestOrder();
-      await expectThrow(
-        approveTestOrder(),
-        'LimitOrders: Cannot approve non-null order',
-      );
+      await expectStatus(testOrder, LimitOrderStatus.Approved);
+      const txResult = await approveTestOrder();
+      await expectStatus(testOrder, LimitOrderStatus.Approved);
+
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(4);
+      const log = logs[2];
+      expect(log.name).toEqual('LogLimitOrderApproved');
+      expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
+      expect(log.args.approver).toEqual(approver);
     });
 
     it('Fails for canceled order', async () => {
       await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
       await expectThrow(
         approveTestOrder(),
-        'LimitOrders: Cannot approve non-null order',
+        'LimitOrders: Cannot approve canceled order',
       );
     });
   });
@@ -503,12 +613,11 @@ describe('LimitOrders', () => {
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
 
-    it('Fails for canceled order', async () => {
+    it('Succeeds for canceled order', async () => {
+      await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await expectStatus(testOrder, LimitOrderStatus.Canceled);
       await cancelTestOrder();
-      await expectThrow(
-        cancelTestOrder(),
-        'LimitOrders: Cannot cancel canceled order',
-      );
+      await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
   });
 
@@ -527,10 +636,10 @@ describe('LimitOrders', () => {
       // fill twice
       await fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) });
       await expectBalances(
-        zero,
+        INTEGERS.ZERO,
         defaultMakerAmount,
         defaultTakerAmount,
-        zero,
+        INTEGERS.ZERO,
       );
       await expectFilledAmount(testOrder, defaultMakerAmount);
 
@@ -556,7 +665,7 @@ describe('LimitOrders', () => {
       expect(logOrderTaken1.args.orderHash).toEqual(orderHash);
       expect(logOrderTaken1.args.orderMaker).toEqual(testOrder.makerAccountOwner);
       expect(logOrderTaken1.args.makerFillAmount).toEqual(defaultMakerAmount.div(2));
-      expect(logOrderTaken1.args.newMakerFilledAmount).toEqual(defaultMakerAmount.div(2));
+      expect(logOrderTaken1.args.totalMakerFilledAmount).toEqual(defaultMakerAmount.div(2));
 
       // wait so that the indexes will update
       await mineAvgBlock();
@@ -573,7 +682,102 @@ describe('LimitOrders', () => {
       expect(logOrderTaken2.args.orderHash).toEqual(orderHash);
       expect(logOrderTaken2.args.orderMaker).toEqual(testOrder.makerAccountOwner);
       expect(logOrderTaken2.args.makerFillAmount).toEqual(defaultMakerAmount.div(4));
-      expect(logOrderTaken2.args.newMakerFilledAmount).toEqual(defaultMakerAmount.times(3).div(4));
+      expect(logOrderTaken2.args.totalMakerFilledAmount)
+        .toEqual(defaultMakerAmount.times(3).div(4));
+    });
+  });
+
+  describe('getOrderStates', () => {
+    it('Succeeds for multiple orders', async () => {
+      const canceler = accounts[0];
+      const approver = accounts[1];
+      const testOrderCancel = { ...testOrder, makerAccountOwner: canceler };
+      const testOrderApprove = { ...testOrder, makerAccountOwner: approver };
+      testOrderCancel.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderCancel);
+      testOrderApprove.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderApprove);
+
+      await Promise.all([
+        solo.limitOrders.approveOrder(testOrderApprove, { from: approver }),
+        solo.limitOrders.cancelOrder(testOrderCancel, { from: canceler }),
+        fillLimitOrder(testOrder, { amount: defaultTakerAmount.div(2) }),
+      ]);
+      const states1 = await solo.limitOrders.getOrderStates([
+        testOrder,
+        testOrderCancel,
+        testOrderApprove,
+      ]);
+      expect(states1).toEqual([
+        { status: LimitOrderStatus.Null, totalMakerFilledAmount: testOrder.makerAmount.div(2) },
+        { status: LimitOrderStatus.Canceled, totalMakerFilledAmount: INTEGERS.ZERO },
+        { status: LimitOrderStatus.Approved, totalMakerFilledAmount: INTEGERS.ZERO },
+      ]);
+    });
+  });
+
+  describe('getAccountCollateralizationAfterMakingOrders', () => {
+    it('succeeds for x/0=infinity', async () => {
+      expect(
+        solo.limitOrders.getAccountCollateralizationAfterMakingOrders(
+          [defaultMakerAmount, INTEGERS.ZERO],
+          [new BigNumber(2), new BigNumber(1)],
+          [testOrder],
+          [testOrder.makerAmount],
+        ),
+      ).toEqual(
+        new BigNumber(Infinity),
+      );
+    });
+
+    it('succeeds for 0/0=infinity', async () => {
+      expect(
+        solo.limitOrders.getAccountCollateralizationAfterMakingOrders(
+          [INTEGERS.ZERO, INTEGERS.ZERO],
+          [],
+          [],
+          [],
+        ),
+      ).toEqual(
+        new BigNumber(Infinity),
+      );
+    });
+
+    it('succeeds for zero', async () => {
+      expect(
+        solo.limitOrders.getAccountCollateralizationAfterMakingOrders(
+          [INTEGERS.ZERO, defaultTakerAmount.times(-1)],
+          [new BigNumber(2), new BigNumber(1)],
+          [testOrder],
+          [testOrder.makerAmount],
+        ),
+      ).toEqual(
+        new BigNumber(0),
+      );
+    });
+
+    it('succeeds for one', async () => {
+      expect(
+        solo.limitOrders.getAccountCollateralizationAfterMakingOrders(
+          [INTEGERS.ZERO, INTEGERS.ZERO],
+          [new BigNumber(2), new BigNumber(1)],
+          [testOrder],
+          [testOrder.makerAmount],
+        ),
+      ).toEqual(
+        new BigNumber(1),
+      );
+    });
+
+    it('succeeds for two orders', async () => {
+      expect(
+        solo.limitOrders.getAccountCollateralizationAfterMakingOrders(
+          [INTEGERS.ZERO, INTEGERS.ZERO],
+          [new BigNumber(2), new BigNumber(1)],
+          [testOrder, testOrder],
+          [testOrder.makerAmount.div(2), testOrder.makerAmount.div(2)],
+        ),
+      ).toEqual(
+        new BigNumber(1),
+      );
     });
   });
 });
@@ -581,7 +785,7 @@ describe('LimitOrders', () => {
 // ============ Helper Functions ============
 
 async function fillLimitOrder(
-  order: LimitOrder,
+  order: SignedLimitOrder,
   {
     taker = defaultTakerAddress,
     takerNumber = defaultTakerNumber,
@@ -589,7 +793,7 @@ async function fillLimitOrder(
     denominatedInMakerAmount = false,
   },
 ) {
-  return solo.operation.initiate().fillLimitOrder(
+  return solo.operation.initiate().fillSignedLimitOrder(
     taker,
     takerNumber,
     order,
@@ -599,7 +803,7 @@ async function fillLimitOrder(
 }
 
 function limitOrderToTradeData(
-  order: LimitOrder,
+  order: SignedLimitOrder,
 ) {
   return {
     primaryAccountOwner: order.takerAccountOwner,
@@ -614,7 +818,7 @@ function limitOrderToTradeData(
       reference: AmountReference.Delta,
       value: order.takerAmount,
     },
-    data: toBytes(solo.limitOrders.orderToBytes(order)),
+    data: toBytes(solo.limitOrders.signedOrderToBytes(order)),
   };
 }
 
@@ -661,14 +865,14 @@ async function expectFilledAmount(
   order: LimitOrder,
   expectedFilledAmount: Integer,
 ) {
-  const state = await solo.limitOrders.getOrderState(order);
-  expect(state.makerFilledAmount).toEqual(expectedFilledAmount);
+  const states = await solo.limitOrders.getOrderStates([order]);
+  expect(states[0].totalMakerFilledAmount).toEqual(expectedFilledAmount);
 }
 
 async function expectStatus(
   order: LimitOrder,
   expectedStatus: LimitOrderStatus,
 ) {
-  const state = await solo.limitOrders.getOrderState(order);
-  expect(state.status).toEqual(expectedStatus);
+  const states = await solo.limitOrders.getOrderStates([order]);
+  expect(states[0].status).toEqual(expectedStatus);
 }

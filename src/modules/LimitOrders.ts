@@ -20,9 +20,11 @@ import {
   address,
   ContractCallOptions,
   ContractConstantCallOptions,
+  Decimal,
   Integer,
   LimitOrder,
-  LimitOrderStatus,
+  SignedLimitOrder,
+  LimitOrderState,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -71,6 +73,10 @@ export class LimitOrders {
 
   // ============ On-Chain Approve / On-Chain Cancel ============
 
+  /**
+   * Sends an transaction to pre-approve an order on-chain (so that no signature is required when
+   * filling the order).
+   */
   public async approveOrder(
     order: LimitOrder,
     options?: ContractCallOptions,
@@ -82,6 +88,9 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Sends an transaction to cancel an order on-chain.s
+   */
   public async cancelOrder(
     order: LimitOrder,
     options?: ContractCallOptions,
@@ -96,32 +105,50 @@ export class LimitOrders {
   // ============ Getter Contract Methods ============
 
   /**
-   * Gets the status and the current filled amount (in makerAmount) of the order from the chain.
+   * Returns true if the contract can process orders.
    */
-  public async getOrderState(
-    order: LimitOrder,
+  public async isOperational(
     options?: ContractConstantCallOptions,
-  ): Promise<{status: LimitOrderStatus, makerFilledAmount: Integer}> {
-    const state = await this.contracts.callConstantContractFunction(
-      this.contracts.limitOrders.methods.getOrderState(
-        this.getOrderHash(order),
-        order.makerAccountOwner,
-      ),
+  ): Promise<boolean> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.limitOrders.methods.g_isOperational(),
       options,
     );
-    return {
-      status: parseInt(state[0], 10),
-      makerFilledAmount: new BigNumber(state[1]),
-    };
+  }
+
+  /**
+   * Gets the status and the current filled amount (in makerAmount) of all given orders.
+   */
+  public async getOrderStates(
+    orders: LimitOrder[],
+    options?: ContractConstantCallOptions,
+  ): Promise<LimitOrderState[]> {
+    const inputQuery = orders.map((order) => {
+      return {
+        orderHash: this.getOrderHash(order),
+        orderMaker: order.makerAccountOwner,
+      };
+    });
+    const states = await this.contracts.callConstantContractFunction(
+      this.contracts.limitOrders.methods.getOrderStates(inputQuery),
+      options,
+    );
+
+    return states.map((state) => {
+      return {
+        status: parseInt(state[0], 10),
+        totalMakerFilledAmount: new BigNumber(state[1]),
+      };
+    });
   }
 
   // ============ Signing Methods ============
 
   /**
-   * Sends order to current provider for signing. Uses the newer 'eth_signTypedData_v3' rpc call
-   * which is compatible with metamask but may not be compatible with all rpc providers.
+   * Sends order to current provider for signing. Uses the 'eth_signTypedData_v3' rpc call which is
+   * compatible only with Metamask.
    */
-  public async ethSignTypedOrderV3(
+  public async ethSignTypedOrderWithMetamask(
     order: LimitOrder,
   ): Promise<string> {
     return this.ethSignTypedOrderInternal(
@@ -131,7 +158,8 @@ export class LimitOrders {
   }
 
   /**
-   * Sends order to current provider for signing. Uses the 'eth_signTypedData' rpc call.
+   * Sends order to current provider for signing. Uses the 'eth_signTypedData' rpc call. This should
+   * be used for any provider that is not Metamask.
    */
   public async ethSignTypedOrder(
     order: LimitOrder,
@@ -153,6 +181,11 @@ export class LimitOrders {
     return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
   }
 
+  /**
+   * Uses web3.eth.sign to sign a cancel message for an order. This signature is not used on-chain,
+   * but allows dYdX backend services to verify that the cancel order api call is from the original
+   * maker of the order.
+   */
   public async ethSignCancelOrder(
     order: LimitOrder,
   ): Promise<string> {
@@ -162,6 +195,11 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Uses web3.eth.sign to sign a cancel message for an order hash. This signature is not used
+   * on-chain, but allows dYdX backend services to verify that the cancel order api call is from the
+   * original maker of the order.
+   */
   public async ethSignCancelOrderByHash(
     orderHash: string,
     signer: address,
@@ -174,21 +212,21 @@ export class LimitOrders {
   // ============ Signature Verification ============
 
   /**
-   * Returns true if the order object has a non-null valid signature.
+   * Returns true if the order object has a non-null valid signature from the maker of the order.
    */
   public async orderHasValidSignature(
-    order: LimitOrder,
+    order: SignedLimitOrder,
   ): Promise<boolean> {
-    if (!order.signature) {
-      return false;
-    }
     return this.orderByHashHasValidSignature(
       this.getOrderHash(order),
-      order.signature,
+      order.typedSignature,
       order.makerAccountOwner,
     );
   }
 
+  /**
+   * Returns true if the order hash has a non-null valid signature from a particular signer.
+   */
   public async orderByHashHasValidSignature(
     orderHash: string,
     typedSignature: string,
@@ -198,6 +236,9 @@ export class LimitOrders {
     return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
   }
 
+  /**
+   * Returns true if the cancel order message has a valid signature.
+   */
   public async cancelOrderHasValidSignature(
     order: LimitOrder,
     typedSignature: string,
@@ -209,6 +250,9 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Returns true if the cancel order message has a valid signature.
+   */
   public async cancelOrderByHashHasValidSignature(
     orderHash: string,
     typedSignature: string,
@@ -219,8 +263,65 @@ export class LimitOrders {
     return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
   }
 
+  // ============ Off-Chain Collateralization Calculation Methods ============
+
+  /**
+   * Returns the estimated account collateralization after making each of the orders provided.
+   * The makerAccount of each order should be associated with the same account.
+   * This function does not make any on-chain calls and so all information must be passed in
+   * (including asset prices and remaining amounts on the orders).
+   * - 150% collateralization will be returned as BigNumber(1.5).
+   * - Accounts with zero borrow will be returned as BigNumber(infinity) regardless of supply.
+   */
+  public getAccountCollateralizationAfterMakingOrders(
+    weis: Integer[],
+    prices: Integer[],
+    orders: LimitOrder[],
+    remainingMakerAmounts: Integer[],
+  ): Decimal {
+    const runningWeis = weis.map(x => new BigNumber(x));
+
+    // for each order, modify the wei value of the account
+    for (let i = 0; i < orders.length; i += 1) {
+      const order = orders[i];
+
+      // calculate maker and taker amounts
+      const makerAmount = remainingMakerAmounts[i];
+      const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
+        .integerValue(BigNumber.ROUND_UP);
+
+      // update running weis
+      const makerMarket = order.makerMarket.toNumber();
+      const takerMarket = order.takerMarket.toNumber();
+      runningWeis[makerMarket] = runningWeis[makerMarket].minus(makerAmount);
+      runningWeis[takerMarket] = runningWeis[takerMarket].plus(takerAmount);
+    }
+
+    // calculate the final collateralization
+    let supplyValue = new BigNumber(0);
+    let borrowValue = new BigNumber(0);
+    for (let i = 0; i < runningWeis.length; i += 1) {
+      const value = runningWeis[i].times(prices[i]);
+      if (value.gt(0)) {
+        supplyValue = supplyValue.plus(value.abs());
+      } else if (value.lt(0)) {
+        borrowValue = borrowValue.plus(value.abs());
+      }
+    }
+
+    // return infinity if borrow amount is zero (even if supply is also zero)
+    if (borrowValue.isZero()) {
+      return new BigNumber(Infinity);
+    }
+
+    return supplyValue.div(borrowValue);
+  }
+
   // ============ Hashing Functions ============
 
+  /**
+   * Returns the bytes32 hash of an order.
+   */
   public getOrderHash(
     order: LimitOrder,
   ): string {
@@ -259,11 +360,25 @@ export class LimitOrders {
     );
   }
 
-  public orderToBytes(
+  public unsignedOrderToBytes(
     order: LimitOrder,
-    includeSignature: boolean = true,
   ): string {
-    let byteArray = []
+    return bytesToHex(this.orderToByteArray(order));
+  }
+
+  public signedOrderToBytes(
+    order: SignedLimitOrder,
+  ): string {
+    const byteArray = this.orderToByteArray(order).concat(hexToBytes(order.typedSignature));
+    return bytesToHex(byteArray);
+  }
+
+  // ============ Private Helper Functions ============
+
+  private orderToByteArray(
+    order: LimitOrder,
+  ): number[] {
+    return []
       .concat(argToBytes(order.makerMarket))
       .concat(argToBytes(order.takerMarket))
       .concat(argToBytes(order.makerAmount))
@@ -274,13 +389,7 @@ export class LimitOrders {
       .concat(argToBytes(order.takerAccountNumber))
       .concat(argToBytes(order.expiration))
       .concat(argToBytes(order.salt));
-    if (includeSignature && order.signature) {
-      byteArray = byteArray.concat(hexToBytes(order.signature));
-    }
-    return bytesToHex(byteArray);
   }
-
-  // ============ Private Helper Functions ============
 
   private orderHashToCancelOrderHash(
     orderHash: string,

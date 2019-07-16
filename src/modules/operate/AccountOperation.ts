@@ -31,6 +31,8 @@ import {
   ConfirmationType,
   address,
   LimitOrder,
+  SignedLimitOrder,
+  LimitOrderCallFunctionType,
 } from '../../types';
 import { toBytes, hexStringToBytes } from '../../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
@@ -169,32 +171,30 @@ export class AccountOperation {
   }
 
   public approveLimitOrder(args: CallApproveLimitOrder): AccountOperation {
-    const APPROVE_LIMIT_ORDER = new BigNumber(0);
+    const orderHash = typeof(args.order) === 'string'
+      ? args.order
+      : this.limitOrders.getOrderHash(args.order);
     this.addActionArgs(
       args,
       {
         actionType: ActionType.Call,
         otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(
-          APPROVE_LIMIT_ORDER,
-          this.limitOrders.getOrderHash(args.order),
-        ),
+        data: toBytes(LimitOrderCallFunctionType.Approve, orderHash),
       },
     );
     return this;
   }
 
   public cancelLimitOrder(args: CallCancelLimitOrder): AccountOperation {
-    const CANCEL_LIMIT_ORDER = new BigNumber(1);
+    const orderHash = typeof(args.order) === 'string'
+      ? args.order
+      : this.limitOrders.getOrderHash(args.order);
     this.addActionArgs(
       args,
       {
         actionType: ActionType.Call,
         otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(
-          CANCEL_LIMIT_ORDER,
-          this.limitOrders.getOrderHash(args.order),
-        ),
+        data: toBytes(LimitOrderCallFunctionType.Cancel, orderHash),
       },
     );
     return this;
@@ -230,29 +230,38 @@ export class AccountOperation {
     return this;
   }
 
-  public fillLimitOrder(
+  public fillSignedLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: SignedLimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    return this.fillLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      true,
+    );
+  }
+
+  public fillPreApprovedLimitOrder(
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
     order: LimitOrder,
     weiAmount: Integer,
     denotedInMakerAmount: boolean = false,
   ): AccountOperation {
-    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
-    return this.trade({
+    return this.fillLimitOrderInternal(
       primaryAccountOwner,
-      primaryAccountId: primaryAccountNumber,
-      autoTrader: this.contracts.limitOrders.options.address,
-      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
-      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
-      otherAccountOwner: order.makerAccountOwner,
-      otherAccountId: order.makerAccountNumber,
-      amount: {
-        denomination: AmountDenomination.Wei,
-        reference: AmountReference.Delta,
-        value: amount,
-      },
-      data: hexStringToBytes(this.limitOrders.orderToBytes(order)),
-    });
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      false,
+    );
   }
 
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
@@ -410,6 +419,40 @@ export class AccountOperation {
       this.committed = false;
       throw error;
     }
+  }
+
+  // ============ Private Helper Functions ============
+
+  /**
+   * Internal logic for filling limit orders (either signed or pre-approved orders)
+   */
+  private fillLimitOrderInternal(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: LimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean,
+    isSignedOrder: boolean,
+  ): AccountOperation {
+    const dataString = isSignedOrder
+      ? this.limitOrders.signedOrderToBytes(order as SignedLimitOrder)
+      : this.limitOrders.unsignedOrderToBytes(order);
+    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.limitOrders.options.address,
+      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
+      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      amount: {
+        denomination: AmountDenomination.Wei,
+        reference: AmountReference.Delta,
+        value: amount,
+      },
+      data: hexStringToBytes(dataString),
+    });
   }
 
   private exchange(exchange: Exchange, actionType: ActionType): AccountOperation {

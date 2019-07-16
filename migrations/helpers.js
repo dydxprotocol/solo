@@ -130,9 +130,19 @@ function getOraclePokerAddress(network, accounts) {
   throw new Error('Cannot find Oracle Poker');
 }
 
-function getAdminMultisigAddress(network) {
+function getPartiallyDelayedMultisigAddress(network) {
   if (isMainNet(network)) {
-    return '0x03b24cf9fe32dd719631d52bd6705d014c49f86f';
+    return '0xba2906b18B069b40C6D2CAFd392E76ad479B1B53';
+  }
+  if (isKovan(network)) {
+    return '0x3d62d8b3ef034e0fde7de8fec4f557a3e6e4efa1';
+  }
+  throw new Error('Cannot find Admin Multisig');
+}
+
+function getNonDelayedMultisigAddress(network) {
+  if (isMainNet(network)) {
+    return '0x03b24cf9fE32dd719631d52BD6705D014C49F86F';
   }
   if (isKovan(network)) {
     return '0xecc04f59c69e6ddb19d601282eb6dd4ea763ee09';
@@ -152,5 +162,6 @@ module.exports = {
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
-  getAdminMultisigAddress,
+  getPartiallyDelayedMultisigAddress,
+  getNonDelayedMultisigAddress,
 };

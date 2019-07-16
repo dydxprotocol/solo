@@ -194,11 +194,11 @@ export interface SetExpiry extends AccountAction {
 }
 
 export interface CallApproveLimitOrder extends AccountAction {
-  order: LimitOrder;
+  order: LimitOrder | string; // order or order hash
 }
 
 export interface CallCancelLimitOrder extends AccountAction {
-  order: LimitOrder;
+  order: LimitOrder | string; // order or order hash
 }
 
 export interface Call extends AccountAction {
@@ -301,11 +301,24 @@ export interface LimitOrder {
   takerAccountNumber: Integer;
   expiration: Integer;
   salt: Integer;
-  signature?: string;
+}
+
+export interface SignedLimitOrder extends LimitOrder {
+  typedSignature: string;
 }
 
 export enum LimitOrderStatus {
   Null = 0,
   Approved = 1,
   Canceled = 2,
+}
+
+export interface LimitOrderState {
+  status: LimitOrderStatus;
+  totalMakerFilledAmount: Integer;
+}
+
+export enum LimitOrderCallFunctionType {
+  Approve = 0,
+  Cancel = 1,
 }

@@ -18,7 +18,8 @@
 
 const {
   isDevNetwork,
-  getAdminMultisigAddress,
+  getPartiallyDelayedMultisigAddress,
+  getNonDelayedMultisigAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -26,27 +27,32 @@ const {
 const SoloMargin = artifacts.require('SoloMargin');
 const Expiry = artifacts.require('Expiry');
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const LimitOrders = artifacts.require('LimitOrders');
 
 // ============ Main Migration ============
 
 const migration = async (deployer, network) => {
   if (!isDevNetwork(network)) {
-    const multisigAddress = getAdminMultisigAddress(network);
+    const partiallyDelayedMultisig = getPartiallyDelayedMultisigAddress(network);
+    const nonDelayedMultisig = getNonDelayedMultisigAddress(network);
 
     const [
       deployedSoloMargin,
       deployedDaiPriceOracle,
       deployedExpiry,
+      deployedLimitOrders,
     ] = await Promise.all([
       SoloMargin.deployed(),
       DaiPriceOracle.deployed(),
       Expiry.deployed(),
+      LimitOrders.deployed(),
     ]);
 
     await Promise.all([
-      deployedSoloMargin.transferOwnership(multisigAddress),
-      deployedDaiPriceOracle.transferOwnership(multisigAddress),
-      deployedExpiry.transferOwnership(multisigAddress),
+      deployedSoloMargin.transferOwnership(partiallyDelayedMultisig),
+      deployedDaiPriceOracle.transferOwnership(nonDelayedMultisig),
+      deployedExpiry.transferOwnership(partiallyDelayedMultisig),
+      deployedLimitOrders.transferOwnership(partiallyDelayedMultisig),
     ]);
   }
 };

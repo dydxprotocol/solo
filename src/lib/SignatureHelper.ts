@@ -2,19 +2,21 @@ import { soliditySha3 } from 'web3-utils';
 import { stripHexPrefix } from './BytesHelper';
 import { address } from '../../src/types';
 
-export const SIGNATURE_TYPES = {
-  INVALID: 0,
-  NO_PREPEND: 1,
-  DECIMAL: 2,
-  HEXADECIMAL: 3,
-  UNSUPPORTED: 4,
-};
+export enum SIGNATURE_TYPES {
+  INVALID = 0,
+  NO_PREPEND = 1,
+  DECIMAL = 2,
+  HEXADECIMAL = 3,
+  UNSUPPORTED = 4,
+}
 
-export const PREPEND_DEC = '\x19Ethereum Signed Message:\n32';
+export const PREPEND_DEC: string =
+  '\x19Ethereum Signed Message:\n32';
 
-export const PREPEND_HEX = '\x19Ethereum Signed Message:\n\x20';
+export const PREPEND_HEX: string =
+  '\x19Ethereum Signed Message:\n\x20';
 
-export const EIP712_DOMAIN_STRING =
+export const EIP712_DOMAIN_STRING: string =
   'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)';
 
 export const EIP712_DOMAIN_STRUCT = [
@@ -76,7 +78,7 @@ export function createTypedSignature(
   if (!isValidSigType(sigType)) {
     throw new Error(`Invalid signature type: ${sigType}`);
   }
-  return `0x${stripHexPrefix(signature)}0${sigType}`;
+  return `${fixRawSignature(signature)}0${sigType}`;
 }
 
 /**
@@ -101,10 +103,8 @@ export function fixRawSignature(
       return `0x${rs}1c`;
     case '1b':
     case '1c':
-      break;
+      return `0x${stripped}`;
     default:
       throw new Error(`Invalid v value: ${v}`);
   }
-
-  return signature;
 }

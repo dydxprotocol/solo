@@ -6,18 +6,21 @@ export function hexStringToBytes(hex: string): number[][] {
   return hexToBytes(hex);
 }
 
-export function toBytes(...args: (Integer | string)[]): number[][] {
+export function toBytes(...args: (string | number | Integer)[]): number[][] {
   return args.reduce(
-    (acc: number[], val: Integer | string): number[] => acc.concat(argToBytes(val)), [],
+    (acc: number[], val: string | number | Integer): number[] => acc.concat(argToBytes(val)), [],
   ).map(
     (a :number): number[] => [a],
   );
 }
 
 export function argToBytes(
-  val: string | Integer,
+  val: string | number | Integer,
 ): number[] {
   let v: any = val;
+  if (typeof(val) === 'number') {
+    v = val.toString();
+  }
   if (val instanceof BigNumber) {
     v = val.toFixed();
   }
