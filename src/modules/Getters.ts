@@ -443,9 +443,14 @@ export class Getters {
     options: ContractConstantCallOptions = {},
   ): Promise<boolean> {
     const [
+      accountStatus,
       marginRatio,
       accountValues,
     ] = await Promise.all([
+      this.getAccountStatus(
+        liquidOwner,
+        liquidNumber,
+      ),
       this.getMarginRatio(options),
       this.getAdjustedAccountValues(
         liquidOwner,
@@ -454,6 +459,21 @@ export class Getters {
       ),
     ]);
 
+    // return true if account has been partially liquidated
+    if (
+      accountValues.borrow.gt(0) &&
+      accountValues.supply.gt(0) &&
+      accountStatus === AccountStatus.Liquidating
+    ) {
+      return true;
+    }
+
+    // return false if account is vaporizable
+    if (accountValues.supply.isZero()) {
+      return false;
+    }
+
+    // return true if account is undercollateralized
     const marginRequirement = accountValues.borrow.times(marginRatio);
     return accountValues.supply.lt(accountValues.borrow.plus(marginRequirement));
   }
