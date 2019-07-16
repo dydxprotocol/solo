@@ -868,6 +868,45 @@ describe('Getters', () => {
         });
       });
     });
+
+    describe('#isAccountLiquidatable', () => {
+      it('True for undercollateralized account', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, account1, market1, par),
+          solo.testing.setAccountBalance(owner1, account1, market2, par.times(-1)),
+        ]);
+        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        expect(liquidatable).toBe(true);
+      });
+
+      it('True for partially liquidated account', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
+          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
+          solo.testing.setAccountStatus(owner1, account1, AccountStatus.Liquidating),
+        ]);
+        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        expect(liquidatable).toBe(true);
+      });
+
+      it('False for collateralized account', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
+          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
+        ]);
+        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        expect(liquidatable).toBe(false);
+      });
+
+      it('False for vaporizable account', async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
+          solo.testing.setAccountStatus(owner1, account1, AccountStatus.Liquidating),
+        ]);
+        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        expect(liquidatable).toBe(false);
+      });
+    });
   });
 
   // ============ Getters for Permissions ============
