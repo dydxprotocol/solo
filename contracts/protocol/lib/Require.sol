@@ -224,6 +224,37 @@ library Require {
         }
     }
 
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+        internal
+        pure
+    {
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        COMMA,
+                        stringify(payloadC),
+                        RPAREN
+                    )
+                )
+            );
+        }
+    }
+
     // ============ Private Functions ============
 
     function stringifyTruncated(

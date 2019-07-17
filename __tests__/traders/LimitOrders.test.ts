@@ -350,7 +350,7 @@ describe('LimitOrders', () => {
     });
 
     it('Fails for invalid signature', async () => {
-      const invalidSignature1 = `0x${'00'.repeat(65)}00`;
+      const invalidSignature1 = `0x${'00'.repeat(65)}05`;
       const invalidSignature2 = `0x${'00'.repeat(65)}01`;
       const testOrderInvalidSig1 = { ...testOrder, typedSignature: invalidSignature1 };
       const testOrderInvalidSig2 = { ...testOrder, typedSignature: invalidSignature2 };

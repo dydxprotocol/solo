@@ -206,6 +206,40 @@ contract TestLib {
         );
     }
 
+    function RequireThatB0(
+        bytes32 reason,
+        bytes32 payloadA
+    )
+        external
+        pure
+    {
+        Require.that(
+            false,
+            FILE,
+            reason,
+            payloadA
+        );
+    }
+
+    function RequireThatB2(
+        bytes32 reason,
+        bytes32 payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+        external
+        pure
+    {
+        Require.that(
+            false,
+            FILE,
+            reason,
+            payloadA,
+            payloadB,
+            payloadC
+        );
+    }
+
     // ============ Time Functions ============
 
     function TimeCurrentTime()

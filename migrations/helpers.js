@@ -142,7 +142,7 @@ function getPartiallyDelayedMultisigAddress(network) {
 
 function getNonDelayedMultisigAddress(network) {
   if (isMainNet(network)) {
-    return '0x03b24cf9fE32dd719631d52BD6705D014C49F86F';
+    return '0x03b24cf9fe32dd719631d52bd6705d014c49f86f';
   }
   if (isKovan(network)) {
     return '0xecc04f59c69e6ddb19d601282eb6dd4ea763ee09';

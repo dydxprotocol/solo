@@ -515,11 +515,15 @@ contract LimitOrders is
         private
         returns (uint256)
     {
-        uint256 totalMakerFilledAmount = g_makerFilledAmount[order.orderHash].add(makerFillAmount);
+        uint256 oldMakerFilledAmount = g_makerFilledAmount[order.orderHash];
+        uint256 totalMakerFilledAmount = oldMakerFilledAmount.add(makerFillAmount);
         Require.that(
             totalMakerFilledAmount <= order.makerAmount,
             FILE,
-            "Cannot overfill order"
+            "Cannot overfill order",
+            order.orderHash,
+            oldMakerFilledAmount,
+            makerFillAmount
         );
         g_makerFilledAmount[order.orderHash] = totalMakerFilledAmount;
         return totalMakerFilledAmount;

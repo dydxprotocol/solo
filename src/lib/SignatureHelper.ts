@@ -3,11 +3,9 @@ import { stripHexPrefix } from './BytesHelper';
 import { address } from '../../src/types';
 
 export enum SIGNATURE_TYPES {
-  INVALID = 0,
-  NO_PREPEND = 1,
-  DECIMAL = 2,
-  HEXADECIMAL = 3,
-  UNSUPPORTED = 4,
+  NO_PREPEND = 0,
+  DECIMAL = 1,
+  HEXADECIMAL = 2,
 }
 
 export const PREPEND_DEC: string =
@@ -29,7 +27,14 @@ export const EIP712_DOMAIN_STRUCT = [
 export function isValidSigType(
   sigType: number,
 ): boolean {
-  return (sigType > SIGNATURE_TYPES.INVALID && sigType < SIGNATURE_TYPES.UNSUPPORTED);
+  switch (sigType) {
+    case SIGNATURE_TYPES.NO_PREPEND:
+    case SIGNATURE_TYPES.DECIMAL:
+    case SIGNATURE_TYPES.HEXADECIMAL:
+      return true;
+    default:
+      return false;
+  }
 }
 
 export async function ecRecoverTypedSignature(

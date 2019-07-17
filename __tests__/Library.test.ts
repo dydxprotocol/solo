@@ -54,15 +54,12 @@ describe('Library', () => {
       });
 
       it('fails for invalid signature type', async () => {
-        // type too small
-        await expectThrow(
-          recover(hash, `0x${'00'.repeat(65)}00`),
-          'TypedSignature: Invalid signature type',
-        );
-
-        // type to large
         await expectThrow(
           recover(hash, `0x${'00'.repeat(65)}04`),
+          'TypedSignature: Invalid signature type',
+        );
+        await expectThrow(
+          recover(hash, `0x${'00'.repeat(65)}05`),
           'TypedSignature: Invalid signature type',
         );
       });
@@ -203,6 +200,7 @@ describe('Library', () => {
   });
 
   describe('Require', () => {
+    const bytes32Hex = `0x${'0123456789abcdef'.repeat(4)}`;
     const emptyReason = '0x0000000000000000000000000000000000000000000000000000000000000000';
     const reason1 = '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
     const reasonString1 = 'This Is the Text Reason.01234567';
@@ -282,6 +280,28 @@ describe('Library', () => {
           arg3,
         ).call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}, ${arg3}>`,
+      );
+    });
+
+    it('that (bytes32 arg)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThatB0(
+          reason1,
+          bytes32Hex,
+        ).call(),
+        `TestLib: ${reasonString1} <${bytes32Hex}>`,
+      );
+    });
+
+    it('that (1 bytes32, 2 numbers)', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.RequireThatB2(
+          reason2,
+          bytes32Hex,
+          arg1,
+          arg3,
+        ).call(),
+        `TestLib: ${reasonString2} <${bytes32Hex}, ${arg1}, ${arg3}>`,
       );
     });
   });

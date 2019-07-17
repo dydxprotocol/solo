@@ -46,11 +46,10 @@ library TypedSignature {
     // ============ Enums ============
 
     enum SignatureType {
-        Invalid,
         NoPrepend,
         Decimal,
         Hexadecimal,
-        Unsupported
+        Invalid
     }
 
     // ============ Functions ============
@@ -80,7 +79,7 @@ library TypedSignature {
         bytes32 r;
         bytes32 s;
         uint8 v;
-        SignatureType sigType;
+        uint8 rawSigType;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
@@ -88,14 +87,16 @@ library TypedSignature {
             s := mload(add(signatureWithType, 0x40))
             let lastSlot := mload(add(signatureWithType, 0x60))
             v := byte(0, lastSlot)
-            sigType := byte(1, lastSlot)
+            rawSigType := byte(1, lastSlot)
         }
 
         Require.that(
-            sigType > SignatureType.Invalid && sigType < SignatureType.Unsupported,
+            rawSigType < uint8(SignatureType.Invalid),
             FILE,
             "Invalid signature type"
         );
+
+        SignatureType sigType = SignatureType(rawSigType);
 
         bytes32 signedHash;
         if (sigType == SignatureType.NoPrepend) {

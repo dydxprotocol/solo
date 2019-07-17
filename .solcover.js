@@ -3,7 +3,6 @@ module.exports = {
   copyPackages: ['openzeppelin-solidity', '@dydxprotocol/exchange-wrappers'],
   skipFiles: [
     'testing/',
-    'external/proxies/PayableProxyForSoloMargin.sol',
     'external/multisig/MultiSig.sol',
     'external/multisig/DelayedMultiSig.sol',
     'Migrations.sol'
