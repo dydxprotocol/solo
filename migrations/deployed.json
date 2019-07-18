@@ -133,5 +133,12 @@
             "address": "0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686",
             "transactionHash": "0x98febd81e3735eb3f628906fc13c3d986d36e4dab86cca2c40ae6653c2d7371e"
         }
+    },
+    "LimitOrders": {
+        "1": {
+            "links": {},
+            "address": "0xeb32d60A5cDED175cea9aFD0f2447297C125F2f4",
+            "transactionHash": "0x4814f9adb458e74836c2db3e8a3e5401b6e4557417c146b6cf6877139dee53f9"
+        }
     }
 }
