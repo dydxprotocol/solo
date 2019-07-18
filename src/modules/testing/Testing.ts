@@ -6,6 +6,7 @@ import { TestToken } from './TestToken';
 import { Token } from '../Token';
 import { TestAutoTrader } from './TestAutoTrader';
 import { TestCallee } from './TestCallee';
+import { TestSimpleCallee } from './TestSimpleCallee';
 import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
 import { TestPolynomialInterestSetter } from './TestPolynomialInterestSetter';
@@ -30,6 +31,7 @@ export class Testing {
   public omiseToken: TestToken;
   public autoTrader: TestAutoTrader;
   public callee: TestCallee;
+  public simpleCallee: TestSimpleCallee;
   public exchangeWrapper: TestExchangeWrapper;
   public priceOracle: TestPriceOracle;
   public polynomialInterestSetter: TestPolynomialInterestSetter;
@@ -49,6 +51,7 @@ export class Testing {
     this.omiseToken = new TestToken(contracts, token, contracts.omiseToken);
     this.autoTrader = new TestAutoTrader(contracts);
     this.callee = new TestCallee(contracts);
+    this.simpleCallee = new TestSimpleCallee(contracts);
     this.exchangeWrapper = new TestExchangeWrapper(contracts);
     this.priceOracle = new TestPriceOracle(contracts);
     this.polynomialInterestSetter = new TestPolynomialInterestSetter(contracts);

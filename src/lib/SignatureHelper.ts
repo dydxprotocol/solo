@@ -47,9 +47,6 @@ export function ecRecoverTypedSignature(
   }
 
   const sigType = parseInt(typedSignature.slice(-2), 16);
-  if (!isValidSigType(sigType)) {
-    throw new Error(`Invalid signature type: ${sigType}`);
-  }
 
   let prependedHash: string;
   switch (sigType) {

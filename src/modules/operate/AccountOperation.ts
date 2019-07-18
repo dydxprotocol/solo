@@ -21,6 +21,7 @@ import {
   Liquidate,
   Vaporize,
   AccountInfo,
+  OperationAuthorization,
   SetExpiry,
   CallApproveLimitOrder,
   CallCancelLimitOrder,
@@ -33,8 +34,17 @@ import {
   LimitOrder,
   SignedLimitOrder,
   LimitOrderCallFunctionType,
+  ProxyType,
+  Operation,
+  SignedOperation,
+  Action,
 } from '../../types';
-import { toBytes, hexStringToBytes } from '../../lib/BytesHelper';
+import {
+  bytesToHexString,
+  hexStringToBytes,
+  toBytes,
+} from '../../lib/BytesHelper';
+import { toNumber } from '../../lib/Helpers';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import expiryConstants from '../../lib/expiry-constants.json';
 
@@ -55,8 +65,9 @@ export class AccountOperation {
   private orderMapper: OrderMapper;
   private limitOrders: LimitOrders;
   private accounts: AccountInfo[];
-  private usePayableProxy: boolean;
+  private proxy: ProxyType;
   private sendEthTo: address;
+  private auths: OperationAuthorization[];
   private networkId: number;
 
   constructor(
@@ -64,16 +75,23 @@ export class AccountOperation {
     orderMapper: OrderMapper,
     limitOrders: LimitOrders,
     networkId: number,
-    options: AccountOperationOptions = {},
+    options: AccountOperationOptions,
   ) {
+    // use the passed-in proxy type, but support the old way of passing in `usePayableProxy = true`
+    const proxy =
+      options.proxy ||
+      ((options as any).usePayableProxy ? ProxyType.Payable : null) ||
+      ProxyType.None;
+
     this.contracts = contracts;
     this.actions = [];
     this.committed = false;
     this.orderMapper = orderMapper;
     this.limitOrders = limitOrders;
     this.accounts = [];
-    this.usePayableProxy = options.usePayableProxy;
+    this.proxy = proxy;
     this.sendEthTo = options.sendEthTo;
+    this.auths = [];
     this.networkId = networkId;
   }
 
@@ -381,6 +399,113 @@ export class AccountOperation {
     return this;
   }
 
+  public addSignedOperation(
+    signedOperation: SignedOperation,
+  ): AccountOperation {
+    // store the auth
+    this.auths.push({
+      startIndex: new BigNumber(this.actions.length),
+      numActions: new BigNumber(signedOperation.actions.length),
+      salt: signedOperation.salt,
+      expiration: signedOperation.expiration,
+      sender: signedOperation.sender,
+      typedSignature: signedOperation.typedSignature,
+    });
+
+    // store the actions
+    for (let i = 0; i < signedOperation.actions.length; i += 1) {
+      const action = signedOperation.actions[i];
+      const dataIsEmpty =
+        (action.data === '0x') ||
+        (action.data === null) ||
+        (action.data === undefined);
+
+      const secondaryAccountId = action.secondaryAccountOwner === ADDRESSES.ZERO
+        ? 0
+        : this.getAccountId(
+          action.secondaryAccountOwner,
+          action.secondaryAccountNumber,
+        );
+
+      this.addActionArgs(
+        {
+          primaryAccountOwner: action.primaryAccountOwner,
+          primaryAccountId: action.primaryAccountNumber,
+        },
+        {
+          actionType: action.actionType,
+          primaryMarketId: action.primaryMarketId.toFixed(0),
+          secondaryMarketId: action.secondaryMarketId.toFixed(0),
+          otherAddress: action.otherAddress,
+          otherAccountId: secondaryAccountId,
+          data: dataIsEmpty ? [] : hexStringToBytes(action.data),
+          amount: {
+            reference: action.amount.ref,
+            denomination: action.amount.denomination,
+            value: action.amount.value.times(action.amount.sign ? 1 : -1),
+          },
+        },
+      );
+    }
+
+    return this;
+  }
+
+  public createOperation(
+    options: {
+      expiration?: Integer,
+      salt?: Integer,
+      sender?: address,
+      signer?: address,
+    },
+  ): Operation {
+    if (this.auths.length) {
+      throw new Error('Cannot create operation out of operation with auths');
+    }
+    if (!this.actions.length) {
+      throw new Error('Cannot create operation out of operation with no actions');
+    }
+
+    function actionArgsToAction(action: ActionArgs): Action {
+      const secondaryAccount: AccountInfo = (
+        action.actionType === ActionType.Transfer ||
+        action.actionType === ActionType.Trade ||
+        action.actionType === ActionType.Liquidate ||
+        action.actionType === ActionType.Vaporize
+      )
+        ? this.accounts[action.otherAccountId]
+        : { owner: ADDRESSES.ZERO, number: '0' };
+
+      return {
+        actionType: toNumber(action.actionType),
+        primaryAccountOwner: this.accounts[action.accountId].owner,
+        primaryAccountNumber: new BigNumber(this.accounts[action.accountId].number),
+        secondaryAccountOwner: secondaryAccount.owner,
+        secondaryAccountNumber: new BigNumber(secondaryAccount.number),
+        primaryMarketId: new BigNumber(action.primaryMarketId),
+        secondaryMarketId: new BigNumber(action.secondaryMarketId),
+        amount: {
+          sign: action.amount.sign,
+          ref: toNumber(action.amount.ref),
+          denomination: toNumber(action.amount.denomination),
+          value: new BigNumber(action.amount.value),
+        },
+        otherAddress: action.otherAddress,
+        data: bytesToHexString(action.data),
+      };
+    }
+
+    const actions: Action[] = this.actions.map(actionArgsToAction.bind(this));
+
+    return {
+      actions,
+      expiration: options.expiration || INTEGERS.ZERO,
+      salt: options.salt || INTEGERS.ZERO,
+      sender: options.sender || ADDRESSES.ZERO,
+      signer: options.signer || this.accounts[0].owner,
+    };
+  }
+
   public async commit(
     options?: ContractCallOptions,
   ): Promise<TxResult> {
@@ -398,17 +523,29 @@ export class AccountOperation {
     try {
       let method: TransactionObject<void>;
 
-      if (!this.usePayableProxy) {
-        method = this.contracts.soloMargin.methods.operate(
-          this.accounts,
-          this.actions,
-        );
-      } else {
-        method = this.contracts.payableProxy.methods.operate(
-          this.accounts,
-          this.actions,
-          this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
-        );
+      switch (this.proxy) {
+        case ProxyType.None:
+          method = this.contracts.soloMargin.methods.operate(
+            this.accounts,
+            this.actions,
+          );
+          break;
+        case ProxyType.Payable:
+          method = this.contracts.payableProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
+          );
+          break;
+        case ProxyType.Sender:
+          method = this.contracts.signedOperationProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.generateAuthData(),
+          );
+          break;
+        default:
+          throw new Error(`Invalid proxy type: ${this.proxy}`);
       }
 
       return this.contracts.callContractFunction(
@@ -541,5 +678,59 @@ export class AccountOperation {
     this.accounts.push(accountInfo);
 
     return this.accounts.length - 1;
+  }
+
+  private generateAuthData(): {
+    numActions: string,
+    expiration: string,
+    salt: string,
+    sender: string,
+    signature: number[][],
+  }[] {
+    let actionIndex: Integer = INTEGERS.ZERO;
+    const result = [];
+
+    const emptyAuth = {
+      numActions: '0',
+      expiration: '0',
+      salt: '0',
+      sender: ADDRESSES.ZERO,
+      signature: [],
+    };
+
+    // for each signed auth
+    for (let i = 0; i < this.auths.length; i += 1) {
+      const auth = this.auths[i];
+
+      // if empty auth needed, push it
+      if (auth.startIndex.gt(actionIndex)) {
+        result.push({
+          ...emptyAuth,
+          numActions: auth.startIndex.minus(actionIndex).toFixed(0),
+        });
+      }
+
+      // push this auth
+      result.push({
+        numActions: auth.numActions.toFixed(0),
+        expiration: auth.expiration.toFixed(0),
+        salt: auth.salt.toFixed(0),
+        sender: auth.sender,
+        signature: toBytes(auth.typedSignature),
+      });
+
+      // update the action index
+      actionIndex = auth.startIndex.plus(auth.numActions);
+    }
+
+    // push a final empty auth if necessary
+    if (actionIndex.lt(this.actions.length)) {
+      result.push({
+        ...emptyAuth,
+        numActions: new BigNumber(this.actions.length).minus(actionIndex).toFixed(0),
+      });
+    }
+
+    return result;
   }
 }

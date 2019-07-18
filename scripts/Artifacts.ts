@@ -10,6 +10,8 @@ import { default as Expiry } from '../build/contracts/Expiry.json';
 import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
+import { default as SignedOperationProxy }
+  from '../build/contracts/SignedOperationProxy.json';
 import { default as LiquidatorProxyV1ForSoloMargin }
   from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
 import { default as PolynomialInterestSetter }
@@ -33,6 +35,7 @@ import { default as TestCounter } from '../build/contracts/TestCounter.json';
 import { default as TestLib } from '../build/contracts/TestLib.json';
 import { default as TestAutoTrader } from '../build/contracts/TestAutoTrader.json';
 import { default as TestCallee } from '../build/contracts/TestCallee.json';
+import { default as TestSimpleCallee } from '../build/contracts/TestSimpleCallee.json';
 import { default as TestExchangeWrapper } from '../build/contracts/TestExchangeWrapper.json';
 import { default as TestPriceOracle } from '../build/contracts/TestPriceOracle.json';
 import { default as TestMakerOracle } from '../build/contracts/TestMakerOracle.json';
@@ -50,6 +53,7 @@ export default {
   Expiry,
   LimitOrders,
   PayableProxyForSoloMargin,
+  SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
   PolynomialInterestSetter,
   WethPriceOracle,
@@ -76,5 +80,6 @@ export default {
   TestSoloMargin,
   TestAutoTrader,
   TestCallee,
+  TestSimpleCallee,
   TestExchangeWrapper,
 };

@@ -16,6 +16,9 @@ import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json'
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
 import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
+import {
+  abi as signedOperationProxyAbi,
+} from '../../build/published_contracts/SignedOperationProxy.json';
 
 export class Logs {
   private contracts: Contracts;
@@ -49,6 +52,9 @@ export class Logs {
     }
     if (options.skipLimitOrdersLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
+    }
+    if (options.skipSignedOperationProxyLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, signedOperationProxyAbi));
     }
 
     return logs;
@@ -107,6 +113,9 @@ export class Logs {
       }
       case this.contracts.limitOrders.options.address: {
         return this.parseLogWithContract(this.contracts.limitOrders, log);
+      }
+      case this.contracts.signedOperationProxy.options.address: {
+        return this.parseLogWithContract(this.contracts.signedOperationProxy, log);
       }
     }
 

@@ -2,11 +2,11 @@ import { BigNumber } from 'bignumber.js';
 import { INTEGERS } from './Constants';
 import { Decimal, Integer } from '../types';
 
-export function stringToDecimal(s: string) {
+export function stringToDecimal(s: string): Decimal {
   return new BigNumber(s).div(INTEGERS.INTEREST_RATE_BASE);
 }
 
-export function decimalToString(d: Decimal | string) {
+export function decimalToString(d: Decimal | string): string {
   return new BigNumber(d).times(INTEGERS.INTEREST_RATE_BASE).toFixed(0);
 }
 
@@ -37,6 +37,10 @@ export function coefficientsToString(
     m = m.times(256);
   }
   return result.toFixed(0);
+}
+
+export function toNumber(input: string | number | BigNumber): number {
+  return new BigNumber(input).toNumber();
 }
 
 export function getInterestPerSecond(

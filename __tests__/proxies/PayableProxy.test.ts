@@ -12,6 +12,7 @@ import {
   Amount,
   AmountDenomination,
   AmountReference,
+  AccountOperationOptions,
 } from '../../src/types';
 
 let solo: Solo;
@@ -293,5 +294,7 @@ describe('PayableProxy', () => {
 // ============ Helper Functions ============
 
 function newOperation(sendEthTo?: address) {
-  return solo.operation.initiate({ usePayableProxy: true, sendEthTo: sendEthTo || owner1 });
+  return solo.operation.initiate(
+    ({ usePayableProxy: true, sendEthTo: sendEthTo || owner1 }) as AccountOperationOptions,
+  );
 }

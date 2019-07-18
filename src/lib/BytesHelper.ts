@@ -1,9 +1,14 @@
+import { ethers } from 'ethers';
 import BigNumber from 'bignumber.js';
 import { Integer, address } from '../types';
 import { hexToBytes, padLeft, toHex, soliditySha3 } from 'web3-utils';
 
 export function hexStringToBytes(hex: string): number[][] {
   return hexToBytes(hex);
+}
+
+export function bytesToHexString(input: (number[] | string)[]): string {
+  return ethers.utils.hexlify(input.map(x => new BigNumber(x[0]).toNumber()));
 }
 
 export function toBytes(...args: (string | number | Integer)[]): number[][] {
@@ -34,12 +39,17 @@ export function addressToBytes32(input: address) {
   return `0x000000000000000000000000${ stripHexPrefix(input) }`;
 }
 
-export function stringToBytes32(input: string) {
+export function hashString(input: string) {
   return soliditySha3({ t: 'string', v: input });
 }
 
-export function bytesToBytes32(input: string) {
-  return soliditySha3({ t: 'bytes', v: input });
+export function hashBytes(input: string) {
+  // javascript soliditySha3 has a problem with empty bytes arrays, so manually return the same
+  // value that solidity does for keccak256 of an empty bytes array
+  if (!stripHexPrefix(input)) {
+    return '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470';
+  }
+  return soliditySha3({ t: 'bytes', v: `0x${ stripHexPrefix(input) }` });
 }
 
 export function stripHexPrefix(input: string) {
@@ -47,4 +57,12 @@ export function stripHexPrefix(input: string) {
     return input.substr(2);
   }
   return input;
+}
+
+export function addressesAreEqual(
+  addressOne: string,
+  addressTwo: string,
+): boolean {
+  return addressOne && addressTwo &&
+    (stripHexPrefix(addressOne).toLowerCase() === stripHexPrefix(addressTwo).toLowerCase());
 }

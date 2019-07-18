@@ -29,7 +29,7 @@ const operation = solo.operation.initiate();
 Solo also provides a [Payable Proxy](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol) contract that will automatically wrap and unwrap ETH <-> WETH, so that users can interact with Solo using only ETH. You can use it by:
 
 ```javascript
-const operation = solo.operation.initiate({ usePayableProxy: true });
+const operation = solo.operation.initiate({ proxy: ProxyType.Payable });
 ```
 
 #### Add Actions
