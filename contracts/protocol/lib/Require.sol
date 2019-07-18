@@ -53,9 +53,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason)
+                        stringifyTruncated(reason)
                     )
                 )
             );
@@ -75,9 +75,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason),
+                        stringifyTruncated(reason),
                         LPAREN,
                         stringify(payloadA),
                         RPAREN
@@ -101,9 +101,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason),
+                        stringifyTruncated(reason),
                         LPAREN,
                         stringify(payloadA),
                         COMMA,
@@ -128,9 +128,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason),
+                        stringifyTruncated(reason),
                         LPAREN,
                         stringify(payloadA),
                         RPAREN
@@ -154,9 +154,9 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason),
+                        stringifyTruncated(reason),
                         LPAREN,
                         stringify(payloadA),
                         COMMA,
@@ -183,9 +183,65 @@ library Require {
             revert(
                 string(
                     abi.encodePacked(
-                        stringify(file),
+                        stringifyTruncated(file),
                         COLON,
-                        stringify(reason),
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        COMMA,
+                        stringify(payloadC),
+                        RPAREN
+                    )
+                )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA
+    )
+        internal
+        pure
+    {
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        RPAREN
+                    )
+                )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+        internal
+        pure
+    {
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
                         LPAREN,
                         stringify(payloadA),
                         COMMA,
@@ -201,7 +257,7 @@ library Require {
 
     // ============ Private Functions ============
 
-    function stringify(
+    function stringifyTruncated(
         bytes32 input
     )
         private
@@ -300,6 +356,39 @@ library Require {
 
             // populate the most-significant character
             result[40 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function stringify(
+        bytes32 input
+    )
+        private
+        pure
+        returns (bytes memory)
+    {
+        uint256 z = uint256(input);
+
+        // bytes32 are "0x" followed by 32 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(66);
+
+        // populate the result with "0x"
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 32; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[65 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[64 - shift] = char(z & FOUR_BIT_MASK);
             z = z >> 4;
         }
 

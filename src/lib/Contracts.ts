@@ -30,6 +30,7 @@ import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { Expiry } from '../../build/wrappers/Expiry';
+import { LimitOrders } from '../../build/wrappers/LimitOrders';
 import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
@@ -59,6 +60,7 @@ import erc20Json from '../../build/published_contracts/IErc20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
+import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
 import polynomialInterestSetterJson
@@ -111,6 +113,7 @@ export class Contracts {
   public interestSetter: InterestSetter;
   public priceOracle: PriceOracle;
   public expiry: Expiry;
+  public limitOrders: LimitOrders;
   public payableProxy: PayableProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
   public polynomialInterestSetter: PolynomialInterestSetter;
@@ -155,6 +158,7 @@ export class Contracts {
     this.interestSetter = new this.web3.eth.Contract(interestSetterJson.abi) as InterestSetter;
     this.priceOracle = new this.web3.eth.Contract(priceOracleJson.abi) as PriceOracle;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
+    this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
     this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
       LiquidatorProxyV1;
@@ -205,6 +209,7 @@ export class Contracts {
       { contract: this.interestSetter, json: interestSetterJson },
       { contract: this.priceOracle, json: priceOracleJson },
       { contract: this.expiry, json: expiryJson },
+      { contract: this.limitOrders, json: limitOrdersJson },
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
@@ -250,6 +255,7 @@ export class Contracts {
     this.interestSetter.options.from = account;
     this.priceOracle.options.from = account;
     this.expiry.options.from = account;
+    this.limitOrders.options.from = account;
     this.payableProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
     this.polynomialInterestSetter.options.from = account;

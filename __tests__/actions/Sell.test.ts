@@ -387,7 +387,7 @@ async function expectSellOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().sell(combinedGlob).commit(options);
+  return solo.operation.initiate().sell(combinedGlob).commit(options);
 }
 
 async function expectSellRevert(

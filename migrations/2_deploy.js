@@ -26,6 +26,7 @@ const {
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
+  getChainId,
 } = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
 
@@ -57,6 +58,8 @@ const WETH9 = artifacts.require('WETH9');
 // Second-Layer Contracts
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
+const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
+const LimitOrders = artifacts.require('LimitOrders');
 
 // Interest Setters
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
@@ -177,6 +180,15 @@ async function deploySecondLayer(deployer, network) {
       soloMargin.address,
       getExpiryRampTime(),
     ),
+    deployer.deploy(
+      LiquidatorProxyV1ForSoloMargin,
+      soloMargin.address,
+    ),
+    deployer.deploy(
+      LimitOrders,
+      soloMargin.address,
+      getChainId(network),
+    ),
   ]);
 
   await Promise.all([
@@ -186,6 +198,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       Expiry.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      LimitOrders.address,
       true,
     ),
   ]);

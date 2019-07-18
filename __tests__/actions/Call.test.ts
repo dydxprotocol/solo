@@ -135,7 +135,7 @@ async function expectCallOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().call(combinedGlob).commit(options);
+  return solo.operation.initiate().call(combinedGlob).commit(options);
 }
 
 async function expectCallRevert(

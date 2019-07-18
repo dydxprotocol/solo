@@ -28,6 +28,25 @@ function isDocker(network) {
   return network === 'docker';
 }
 
+function getChainId(network) {
+  if (isMainNet(network)) {
+    return 1;
+  }
+  if (isKovan(network)) {
+    return 42;
+  }
+  if (network === 'coverage') {
+    return 1002;
+  }
+  if (network === 'docker') {
+    return 1313;
+  }
+  if (network === 'test' || network === 'test_ci') {
+    return 1001;
+  }
+  throw new Error('No chainId for network', network);
+}
+
 async function getRiskLimits() {
   return {
     marginRatioMax: decimalToString('2.00'),
@@ -111,7 +130,17 @@ function getOraclePokerAddress(network, accounts) {
   throw new Error('Cannot find Oracle Poker');
 }
 
-function getAdminMultisigAddress(network) {
+function getPartiallyDelayedMultisigAddress(network) {
+  if (isMainNet(network)) {
+    return '0xba2906b18B069b40C6D2CAFd392E76ad479B1B53';
+  }
+  if (isKovan(network)) {
+    return '0x3d62d8b3ef034e0fde7de8fec4f557a3e6e4efa1';
+  }
+  throw new Error('Cannot find Admin Multisig');
+}
+
+function getNonDelayedMultisigAddress(network) {
   if (isMainNet(network)) {
     return '0x03b24cf9fe32dd719631d52bd6705d014c49f86f';
   }
@@ -126,11 +155,13 @@ module.exports = {
   isMainNet,
   isKovan,
   isDocker,
+  getChainId,
   getRiskLimits,
   getRiskParams,
   getPolynomialParams,
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
-  getAdminMultisigAddress,
+  getPartiallyDelayedMultisigAddress,
+  getNonDelayedMultisigAddress,
 };

@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
+import { LimitOrders } from '../LimitOrders';
 import { Contracts } from '../../lib/Contracts';
 import {
   AmountReference,
@@ -21,14 +22,19 @@ import {
   Vaporize,
   AccountInfo,
   SetExpiry,
+  CallApproveLimitOrder,
+  CallCancelLimitOrder,
   Call,
   Amount,
   Integer,
   AccountOperationOptions,
   ConfirmationType,
   address,
+  LimitOrder,
+  SignedLimitOrder,
+  LimitOrderCallFunctionType,
 } from '../../types';
-import { toBytes } from '../../lib/BytesHelper';
+import { toBytes, hexStringToBytes } from '../../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import expiryConstants from '../../lib/expiry-constants.json';
 
@@ -47,6 +53,7 @@ export class AccountOperation {
   private actions: ActionArgs[];
   private committed: boolean;
   private orderMapper: OrderMapper;
+  private limitOrders: LimitOrders;
   private accounts: AccountInfo[];
   private usePayableProxy: boolean;
   private sendEthTo: address;
@@ -55,6 +62,7 @@ export class AccountOperation {
   constructor(
     contracts: Contracts,
     orderMapper: OrderMapper,
+    limitOrders: LimitOrders,
     networkId: number,
     options: AccountOperationOptions = {},
   ) {
@@ -62,6 +70,7 @@ export class AccountOperation {
     this.actions = [];
     this.committed = false;
     this.orderMapper = orderMapper;
+    this.limitOrders = limitOrders;
     this.accounts = [];
     this.usePayableProxy = options.usePayableProxy;
     this.sendEthTo = options.sendEthTo;
@@ -161,6 +170,36 @@ export class AccountOperation {
     return this;
   }
 
+  public approveLimitOrder(args: CallApproveLimitOrder): AccountOperation {
+    const orderHash = typeof(args.order) === 'string'
+      ? args.order
+      : this.limitOrders.getOrderHash(args.order);
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.limitOrders.options.address,
+        data: toBytes(LimitOrderCallFunctionType.Approve, orderHash),
+      },
+    );
+    return this;
+  }
+
+  public cancelLimitOrder(args: CallCancelLimitOrder): AccountOperation {
+    const orderHash = typeof(args.order) === 'string'
+      ? args.order
+      : this.limitOrders.getOrderHash(args.order);
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.limitOrders.options.address,
+        data: toBytes(LimitOrderCallFunctionType.Cancel, orderHash),
+      },
+    );
+    return this;
+  }
+
   public call(args: Call): AccountOperation {
     this.addActionArgs(
       args,
@@ -189,6 +228,40 @@ export class AccountOperation {
     );
 
     return this;
+  }
+
+  public fillSignedLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: SignedLimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    return this.fillLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      true,
+    );
+  }
+
+  public fillPreApprovedLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: LimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    return this.fillLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      false,
+    );
   }
 
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
@@ -346,6 +419,40 @@ export class AccountOperation {
       this.committed = false;
       throw error;
     }
+  }
+
+  // ============ Private Helper Functions ============
+
+  /**
+   * Internal logic for filling limit orders (either signed or pre-approved orders)
+   */
+  private fillLimitOrderInternal(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: LimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean,
+    isSignedOrder: boolean,
+  ): AccountOperation {
+    const dataString = isSignedOrder
+      ? this.limitOrders.signedOrderToBytes(order as SignedLimitOrder)
+      : this.limitOrders.unsignedOrderToBytes(order);
+    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.limitOrders.options.address,
+      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
+      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      amount: {
+        denomination: AmountDenomination.Wei,
+        reference: AmountReference.Delta,
+        value: amount,
+      },
+      data: hexStringToBytes(dataString),
+    });
   }
 
   private exchange(exchange: Exchange, actionType: ActionType): AccountOperation {

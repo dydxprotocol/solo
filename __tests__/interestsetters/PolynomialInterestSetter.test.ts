@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
-import { resetEVM, snapshot } from './helpers/EVM';
-import { ADDRESSES } from '../src/lib/Constants';
-import { address } from '../src/types';
-import { expectThrow } from '../src/lib/Expect';
-import { coefficientsToString, getInterestPerSecond } from '../src/lib/Helpers';
+import { getSolo } from '../helpers/Solo';
+import { Solo } from '../../src/Solo';
+import { resetEVM, snapshot } from '../helpers/EVM';
+import { ADDRESSES } from '../../src/lib/Constants';
+import { address } from '../../src/types';
+import { expectThrow } from '../../src/lib/Expect';
+import { coefficientsToString, getInterestPerSecond } from '../../src/lib/Helpers';
 
 let solo: Solo;
 let owner: address;

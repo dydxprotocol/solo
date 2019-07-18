@@ -13,7 +13,7 @@ export function decimalToString(d: Decimal | string) {
 export function integerToValue(i: Integer) {
   return {
     sign: i.isGreaterThan(0),
-    value: i.abs(),
+    value: i.abs().toFixed(0),
   };
 }
 

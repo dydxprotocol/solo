@@ -26,6 +26,7 @@ import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
+import { LimitOrders } from './modules/LimitOrders';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { Permissions } from './modules/Permissions';
@@ -36,16 +37,17 @@ export class Solo {
   public contracts: Contracts;
   public interest: Interest;
   public testing: Testing;
-  public operation: Operation;
   public token: Token;
   public oracle: Oracle;
   public weth: Weth;
   public web3: Web3;
   public admin: Admin;
   public getters: Getters;
+  public limitOrders: LimitOrders;
   public liquidatorProxy: LiquidatorProxy;
   public permissions: Permissions;
   public logs: Logs;
+  public operation: Operation;
 
   constructor(
     provider: Provider,
@@ -59,16 +61,17 @@ export class Solo {
 
     this.contracts = new Contracts(provider, networkId, this.web3, options);
     this.interest = new Interest(networkId);
-    this.operation = new Operation(this.contracts, networkId);
     this.token = new Token(this.contracts);
     this.oracle = new Oracle(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
     this.testing = new Testing(provider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
+    this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
+    this.operation = new Operation(this.contracts, this.limitOrders, networkId);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
@@ -81,8 +84,8 @@ export class Solo {
   ): void {
     this.web3.setProvider(provider);
     this.contracts.setProvider(provider, networkId);
-    this.interest.setNetworkId(networkId);
     this.testing.setProvider(provider);
+    this.interest.setNetworkId(networkId);
     this.operation.setNetworkId(networkId);
   }
 

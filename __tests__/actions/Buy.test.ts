@@ -405,7 +405,7 @@ async function expectBuyOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().buy(combinedGlob).commit(options);
+  return solo.operation.initiate().buy(combinedGlob).commit(options);
 }
 
 async function expectBuyRevert(

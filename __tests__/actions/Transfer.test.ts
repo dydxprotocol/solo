@@ -545,7 +545,7 @@ async function expectTransferOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().transfer(combinedGlob).commit(options);
+  return solo.operation.initiate().transfer(combinedGlob).commit(options);
 }
 
 async function expectTransferRevert(

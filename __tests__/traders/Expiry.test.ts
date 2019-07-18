@@ -1,17 +1,17 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
-import { mineAvgBlock, resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
-import { toBytes } from '../src/lib/BytesHelper';
-import { INTEGERS } from '../src/lib/Constants';
-import { expectThrow } from '../src/lib/Expect';
+import { getSolo } from '../helpers/Solo';
+import { Solo } from '../../src/Solo';
+import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
+import { setupMarkets } from '../helpers/SoloHelpers';
+import { toBytes } from '../../src/lib/BytesHelper';
+import { INTEGERS } from '../../src/lib/Constants';
+import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
   AmountDenomination,
   AmountReference,
   Trade,
-} from '../src/types';
+} from '../../src/types';
 
 let solo: Solo;
 let accounts: address[];
@@ -861,7 +861,7 @@ async function expectExpireOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return await solo.operation.initiate().trade(combinedGlob).commit(options);
+  return solo.operation.initiate().trade(combinedGlob).commit(options);
 }
 
 async function expectExpireRevert(
