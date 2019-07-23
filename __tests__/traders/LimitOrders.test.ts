@@ -85,6 +85,26 @@ describe('LimitOrders', () => {
     await resetEVM(snapshotId);
   });
 
+  describe('signing messages', () => {
+    it('Succeeds for eth.sign', async () => {
+      const order = { ...testOrder };
+      order.typedSignature = await solo.limitOrders.ethSignOrder(order);
+      expect(solo.limitOrders.orderHasValidSignature(order)).toBe(true);
+    });
+
+    it('Succeeds for eth_signTypedData', async () => {
+      const order = { ...testOrder };
+      order.typedSignature = await solo.limitOrders.ethSignTypedOrder(order);
+      expect(solo.limitOrders.orderHasValidSignature(order)).toBe(true);
+    });
+
+    it('Recognizes a bad signature', async () => {
+      const order = { ...testOrder };
+      order.typedSignature = `0x${'1b'.repeat(65)}00`;
+      expect(solo.limitOrders.orderHasValidSignature(order)).toBe(false);
+    });
+  });
+
   describe('shutDown', () => {
     it('Succeeds', async () => {
       expect(await solo.limitOrders.isOperational()).toBe(true);

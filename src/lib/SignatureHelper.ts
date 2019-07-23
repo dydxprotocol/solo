@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import { soliditySha3 } from 'web3-utils';
 import { stripHexPrefix } from './BytesHelper';
 import { address } from '../../src/types';
@@ -37,10 +38,10 @@ export function isValidSigType(
   }
 }
 
-export async function ecRecoverTypedSignature(
+export function ecRecoverTypedSignature(
   hash: string,
   typedSignature: string,
-): Promise<address> {
+): address {
   if (stripHexPrefix(typedSignature).length !== 66 * 2) {
     throw new Error(`Unable to ecrecover signature: ${typedSignature}`);
   }
@@ -73,7 +74,7 @@ export async function ecRecoverTypedSignature(
 
   const signature = typedSignature.slice(0, -2);
 
-  return this.web3.eth.accounts.recover(prependedHash, signature);
+  return ethers.utils.recoverAddress(ethers.utils.arrayify(prependedHash), signature);
 }
 
 export function createTypedSignature(
@@ -104,7 +105,7 @@ export function fixRawSignature(
   switch (v) {
     case '00':
       return `0x${rs}1b`;
-    case '00':
+    case '01':
       return `0x${rs}1c`;
     case '1b':
     case '1c':

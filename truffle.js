@@ -47,7 +47,7 @@ module.exports = {
       network_id: '42',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'http://34.227.10.106:8545',
+        'http://54.235.26.63:8545',
         0,
         1,
       ),
