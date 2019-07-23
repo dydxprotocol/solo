@@ -105,7 +105,7 @@ export function fixRawSignature(
   switch (v) {
     case '00':
       return `0x${rs}1b`;
-    case '00':
+    case '01':
       return `0x${rs}1c`;
     case '1b':
     case '1c':
