@@ -68,6 +68,7 @@
     "bignumber.js": "^8.1.1",
     "canonical-weth": "^1.4.0",
     "es6-promisify": "^6.0.1",
+    "ethers": "^4.0.33",
     "openzeppelin-solidity": "2.1.3",
     "web3": "1.0.0-beta.37",
     "web3-utils": "1.0.0-beta.37"

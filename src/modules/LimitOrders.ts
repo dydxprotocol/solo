@@ -214,9 +214,9 @@ export class LimitOrders {
   /**
    * Returns true if the order object has a non-null valid signature from the maker of the order.
    */
-  public async orderHasValidSignature(
+  public orderHasValidSignature(
     order: SignedLimitOrder,
-  ): Promise<boolean> {
+  ): boolean {
     return this.orderByHashHasValidSignature(
       this.getOrderHash(order),
       order.typedSignature,
@@ -227,22 +227,22 @@ export class LimitOrders {
   /**
    * Returns true if the order hash has a non-null valid signature from a particular signer.
    */
-  public async orderByHashHasValidSignature(
+  public orderByHashHasValidSignature(
     orderHash: string,
     typedSignature: string,
     expectedSigner: address,
-  ): Promise<boolean> {
-    const signer = await ecRecoverTypedSignature(orderHash, typedSignature);
+  ): boolean {
+    const signer = ecRecoverTypedSignature(orderHash, typedSignature);
     return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
   }
 
   /**
    * Returns true if the cancel order message has a valid signature.
    */
-  public async cancelOrderHasValidSignature(
+  public cancelOrderHasValidSignature(
     order: LimitOrder,
     typedSignature: string,
-  ): Promise<boolean> {
+  ): boolean {
     return this.cancelOrderByHashHasValidSignature(
       this.getOrderHash(order),
       typedSignature,
@@ -253,13 +253,13 @@ export class LimitOrders {
   /**
    * Returns true if the cancel order message has a valid signature.
    */
-  public async cancelOrderByHashHasValidSignature(
+  public cancelOrderByHashHasValidSignature(
     orderHash: string,
     typedSignature: string,
     expectedSigner: address,
-  ): Promise<boolean> {
+  ): boolean {
     const cancelHash = this.orderHashToCancelOrderHash(orderHash);
-    const signer = await ecRecoverTypedSignature(cancelHash, typedSignature);
+    const signer = ecRecoverTypedSignature(cancelHash, typedSignature);
     return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
   }
 
