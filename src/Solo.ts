@@ -29,6 +29,7 @@ import { Getters } from './modules/Getters';
 import { LimitOrders } from './modules/LimitOrders';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
+import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
 import { SoloOptions, EthereumAccount, address } from './types';
@@ -44,6 +45,7 @@ export class Solo {
   public admin: Admin;
   public getters: Getters;
   public limitOrders: LimitOrders;
+  public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
   public permissions: Permissions;
   public logs: Logs;
@@ -68,6 +70,7 @@ export class Solo {
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
     this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
+    this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);

@@ -60,6 +60,7 @@ const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin')
 const Expiry = artifacts.require('Expiry');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
+const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // Interest Setters
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
@@ -189,6 +190,11 @@ async function deploySecondLayer(deployer, network) {
       soloMargin.address,
       getChainId(network),
     ),
+    deployer.deploy(
+      SignedOperationProxy,
+      soloMargin.address,
+      getChainId(network),
+    ),
   ]);
 
   await Promise.all([
@@ -202,6 +208,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       LimitOrders.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      SignedOperationProxy.address,
       true,
     ),
   ]);

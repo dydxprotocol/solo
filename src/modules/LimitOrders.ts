@@ -89,7 +89,7 @@ export class LimitOrders {
   }
 
   /**
-   * Sends an transaction to cancel an order on-chain.s
+   * Sends an transaction to cancel an order on-chain.
    */
   public async cancelOrder(
     order: LimitOrder,
@@ -129,7 +129,7 @@ export class LimitOrders {
         orderMaker: order.makerAccountOwner,
       };
     });
-    const states = await this.contracts.callConstantContractFunction(
+    const states: any[] = await this.contracts.callConstantContractFunction(
       this.contracts.limitOrders.methods.getOrderStates(inputQuery),
       options,
     );
@@ -360,6 +360,17 @@ export class LimitOrders {
     );
   }
 
+  public orderHashToCancelOrderHash(
+    orderHash: string,
+  ): string {
+    return soliditySha3(
+      { t: 'string', v: 'cancel' },
+      { t: 'bytes32', v: orderHash },
+    );
+  }
+
+  // ============ To-Bytes Functions ============
+
   public unsignedOrderToBytes(
     order: LimitOrder,
   ): string {
@@ -389,15 +400,6 @@ export class LimitOrders {
       .concat(argToBytes(order.takerAccountNumber))
       .concat(argToBytes(order.expiration))
       .concat(argToBytes(order.salt));
-  }
-
-  private orderHashToCancelOrderHash(
-    orderHash: string,
-  ): string {
-    return soliditySha3(
-      { t: 'string', v: 'cancel' },
-      { t: 'bytes32', v: orderHash },
-    );
   }
 
   private async ethSignTypedOrderInternal(

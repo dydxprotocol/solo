@@ -33,8 +33,17 @@ import {
   LimitOrder,
   SignedLimitOrder,
   LimitOrderCallFunctionType,
+  ProxyType,
+  OperationProof,
+  Operation,
+  SignedOperation,
+  Action,
 } from '../../types';
-import { toBytes, hexStringToBytes } from '../../lib/BytesHelper';
+import {
+  bytesToHexString,
+  toBytes,
+  hexStringToBytes,
+} from '../../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import expiryConstants from '../../lib/expiry-constants.json';
 
@@ -50,12 +59,13 @@ interface OptionalActionArgs {
 
 export class AccountOperation {
   private contracts: Contracts;
+  private accounts: AccountInfo[];
   private actions: ActionArgs[];
+  private proofs: OperationProof[];
   private committed: boolean;
   private orderMapper: OrderMapper;
   private limitOrders: LimitOrders;
-  private accounts: AccountInfo[];
-  private usePayableProxy: boolean;
+  private proxy: ProxyType;
   private sendEthTo: address;
   private networkId: number;
 
@@ -64,15 +74,16 @@ export class AccountOperation {
     orderMapper: OrderMapper,
     limitOrders: LimitOrders,
     networkId: number,
-    options: AccountOperationOptions = {},
+    options: AccountOperationOptions,
   ) {
     this.contracts = contracts;
+    this.accounts = [];
     this.actions = [];
+    this.proofs = [];
     this.committed = false;
     this.orderMapper = orderMapper;
     this.limitOrders = limitOrders;
-    this.accounts = [];
-    this.usePayableProxy = options.usePayableProxy;
+    this.proxy = options.proxy || ProxyType.None;
     this.sendEthTo = options.sendEthTo;
     this.networkId = networkId;
   }
@@ -381,6 +392,52 @@ export class AccountOperation {
     return this;
   }
 
+  public addSignedOperation(
+    operation: SignedOperation,
+  ): AccountOperation {
+    if (!operation.actions.length) {
+      throw new Error('Unable to add operation without actions');
+    }
+
+    this.proofs.push({
+      startIndex: this.actions.length,
+      numActions: operation.actions.length,
+      expiration: operation.expiration,
+      salt: operation.salt,
+      sender: operation.sender,
+      typedSignature: operation.typedSignature,
+    });
+
+    for (let i = 0; i < operation.actions.length; i += 1) {
+      const action = operation.actions[i];
+      const otherAccountId = action.secondaryAccountOwner === ADDRESSES.ZERO
+        ? 0
+        : this.getAccountId(action.secondaryAccountOwner, action.secondaryAccountNumber);
+
+      this.addActionArgs(
+        {
+          primaryAccountOwner: action.primaryAccountOwner,
+          primaryAccountId: action.primaryAccountNumber,
+        },
+        {
+          otherAccountId,
+          actionType: action.actionType,
+          primaryMarketId: action.primaryMarketId.toFixed(0),
+          secondaryMarketId: action.secondaryMarketId.toFixed(0),
+          amount: {
+            denomination: action.amount.denomination,
+            reference: action.amount.ref,
+            value: action.amount.value.times(action.amount.sign ? 1 : -1),
+          },
+          otherAddress: action.otherAddress,
+          data: hexStringToBytes(action.data),
+        },
+      );
+    }
+
+    return this;
+  }
+
   public async commit(
     options?: ContractCallOptions,
   ): Promise<TxResult> {
@@ -398,17 +455,29 @@ export class AccountOperation {
     try {
       let method: TransactionObject<void>;
 
-      if (!this.usePayableProxy) {
-        method = this.contracts.soloMargin.methods.operate(
-          this.accounts,
-          this.actions,
-        );
-      } else {
-        method = this.contracts.payableProxy.methods.operate(
-          this.accounts,
-          this.actions,
-          this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
-        );
+      switch (this.proxy) {
+        case ProxyType.None:
+          method = this.contracts.soloMargin.methods.operate(
+            this.accounts,
+            this.actions,
+          );
+          break;
+        case ProxyType.Payable:
+          method = this.contracts.payableProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
+          );
+          break;
+        case ProxyType.Sender:
+          method = this.contracts.signedOperationProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.generateProofs(),
+          );
+          break;
+        default:
+          throw new Error(`Invalid proxy type: ${this.proxy}`);
       }
 
       return this.contracts.callContractFunction(
@@ -419,6 +488,51 @@ export class AccountOperation {
       this.committed = false;
       throw error;
     }
+  }
+
+  public createOperation(
+    options: any,
+  ): Operation {
+    if (this.proofs.length) {
+      throw new Error('Cannot create operation out of operation with proofs');
+    }
+    if (!this.actions.length) {
+      throw new Error('Cannot create operation out of operation with no actions');
+    }
+
+    function toEnum(input: string | number) {
+      return new BigNumber(input).toNumber();
+    }
+
+    function actionArgsToAction(action: ActionArgs): Action {
+      return {
+        actionType: toEnum(action.actionType),
+        primaryAccountOwner: this.accounts[action.accountId].owner,
+        primaryAccountNumber: new BigNumber(this.accounts[action.accountId].number),
+        secondaryAccountOwner: this.accounts[action.otherAccountId].owner,
+        secondaryAccountNumber: new BigNumber(this.accounts[action.otherAccountId].number),
+        primaryMarketId: new BigNumber(action.primaryMarketId),
+        secondaryMarketId: new BigNumber(action.secondaryMarketId),
+        amount: {
+          sign: action.amount.sign,
+          ref: toEnum(action.amount.ref),
+          denomination: toEnum(action.amount.denomination),
+          value: new BigNumber(action.amount.value),
+        },
+        otherAddress: action.otherAddress,
+        data: bytesToHexString(action.data),
+      };
+    }
+
+    const actions = this.actions.map(actionArgsToAction);
+
+    return {
+      actions,
+      expiration: options.expiration || INTEGERS.ZERO,
+      salt: options.salt || INTEGERS.ZERO,
+      sender: options.sender || ADDRESSES.ZERO,
+      signer: options.signer || this.accounts[0].owner,
+    };
   }
 
   // ============ Private Helper Functions ============
@@ -541,5 +655,9 @@ export class AccountOperation {
     this.accounts.push(accountInfo);
 
     return this.accounts.length - 1;
+  }
+
+  private generateProofs(): any {
+    return []; // TODO
   }
 }

@@ -10,6 +10,8 @@ import { default as Expiry } from '../build/contracts/Expiry.json';
 import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
+import { default as SignedOperationProxy }
+  from '../build/contracts/SignedOperationProxy.json';
 import { default as LiquidatorProxyV1ForSoloMargin }
   from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
 import { default as PolynomialInterestSetter }
@@ -50,6 +52,7 @@ export default {
   Expiry,
   LimitOrders,
   PayableProxyForSoloMargin,
+  SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
   PolynomialInterestSetter,
   WethPriceOracle,

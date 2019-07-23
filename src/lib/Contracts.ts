@@ -35,6 +35,9 @@ import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
 import {
+  SignedOperationProxy as SignedOperationProxy,
+} from '../../build/wrappers/SignedOperationProxy';
+import {
   LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1,
 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
@@ -62,6 +65,7 @@ import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
 import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
+import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
 import polynomialInterestSetterJson
   from '../../build/published_contracts/PolynomialInterestSetter.json';
@@ -115,6 +119,7 @@ export class Contracts {
   public expiry: Expiry;
   public limitOrders: LimitOrders;
   public payableProxy: PayableProxy;
+  public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public wethPriceOracle: WethPriceOracle;
@@ -160,6 +165,8 @@ export class Contracts {
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
+    this.signedOperationProxy = new this.web3.eth.Contract(signedOperationProxyJson.abi) as
+      SignedOperationProxy;
     this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
       LiquidatorProxyV1;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
@@ -211,6 +218,7 @@ export class Contracts {
       { contract: this.expiry, json: expiryJson },
       { contract: this.limitOrders, json: limitOrdersJson },
       { contract: this.payableProxy, json: payableProxyJson },
+      { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
@@ -257,6 +265,7 @@ export class Contracts {
     this.expiry.options.from = account;
     this.limitOrders.options.from = account;
     this.payableProxy.options.from = account;
+    this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
