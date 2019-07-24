@@ -1,11 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { soliditySha3, hexToBytes } from 'web3-utils';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { resetEVM, mineAvgBlock } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
-import { stripHexPrefix } from '../src/lib/BytesHelper';
+import { stripHexPrefix, hexStringToBytes } from '../src/lib/BytesHelper';
 import {
   SIGNATURE_TYPES,
   PREPEND_DEC,
@@ -39,8 +38,8 @@ describe('Library', () => {
     async function recover(hash: string, typedSignature: string) {
       return solo.contracts.callConstantContractFunction(
         solo.contracts.testLib.methods.TypedSignatureRecover(
-          hexToBytes(hash),
-          hexToBytes(typedSignature),
+          solo.web3.utils.hexToBytes(hash),
+          hexStringToBytes(typedSignature),
         ),
       );
     }
@@ -74,7 +73,7 @@ describe('Library', () => {
       });
 
       it('succeeds for decimal prepend', async () => {
-        const decHash = soliditySha3(
+        const decHash = solo.web3.utils.soliditySha3(
           { t: 'string', v: PREPEND_DEC },
           { t: 'bytes32', v: hash },
         );
@@ -87,7 +86,7 @@ describe('Library', () => {
       });
 
       it('succeeds for hexadecimal prepend', async () => {
-        const hexHash = soliditySha3(
+        const hexHash = solo.web3.utils.soliditySha3(
           { t: 'string', v: PREPEND_HEX },
           { t: 'bytes32', v: hash },
         );

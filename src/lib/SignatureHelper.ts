@@ -1,5 +1,5 @@
+import Web3 from 'web3';
 import { ethers } from 'ethers';
-import { soliditySha3 } from 'web3-utils';
 import { stripHexPrefix } from './BytesHelper';
 import { address } from '../../src/types';
 
@@ -57,13 +57,13 @@ export function ecRecoverTypedSignature(
       prependedHash = hash;
       break;
     case SIGNATURE_TYPES.DECIMAL:
-      prependedHash = soliditySha3(
+      prependedHash = Web3.utils.soliditySha3(
         { t: 'string', v: PREPEND_DEC },
         { t: 'bytes32', v: hash },
       );
       break;
     case SIGNATURE_TYPES.HEXADECIMAL:
-      prependedHash = soliditySha3(
+      prependedHash = Web3.utils.soliditySha3(
         { t: 'string', v: PREPEND_HEX },
         { t: 'bytes32', v: hash },
       );

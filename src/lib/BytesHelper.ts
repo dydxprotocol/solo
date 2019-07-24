@@ -1,9 +1,9 @@
+import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Integer, address } from '../types';
-import { hexToBytes, padLeft, toHex, soliditySha3 } from 'web3-utils';
 
 export function hexStringToBytes(hex: string): number[][] {
-  return hexToBytes(hex);
+  return Web3.utils.hexToBytes(hex).map(x => [x]);
 }
 
 export function toBytes(...args: (string | number | Integer)[]): number[][] {
@@ -25,8 +25,8 @@ export function argToBytes(
     v = val.toFixed();
   }
 
-  return hexToBytes(
-    padLeft(toHex(v), 64, '0'),
+  return Web3.utils.hexToBytes(
+    Web3.utils.padLeft(Web3.utils.toHex(v), 64, '0'),
   );
 }
 
@@ -35,11 +35,11 @@ export function addressToBytes32(input: address) {
 }
 
 export function stringToBytes32(input: string) {
-  return soliditySha3({ t: 'string', v: input });
+  return Web3.utils.soliditySha3({ t: 'string', v: input });
 }
 
 export function bytesToBytes32(input: string) {
-  return soliditySha3({ t: 'bytes', v: input });
+  return Web3.utils.soliditySha3({ t: 'bytes', v: input });
 }
 
 export function stripHexPrefix(input: string) {

@@ -1,6 +1,5 @@
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
-import { soliditySha3, bytesToHex, hexToBytes } from 'web3-utils';
 import { promisify } from 'es6-promisify';
 import { Contracts } from '../lib/Contracts';
 import {
@@ -325,23 +324,23 @@ export class LimitOrders {
   public getOrderHash(
     order: LimitOrder,
   ): string {
-    const structHash = soliditySha3(
+    const structHash = this.web3.utils.soliditySha3(
       { t: 'bytes32', v: stringToBytes32(EIP712_ORDER_STRUCT_STRING) },
-      { t: 'uint256', v: order.makerMarket },
-      { t: 'uint256', v: order.takerMarket },
-      { t: 'uint256', v: order.makerAmount },
-      { t: 'uint256', v: order.takerAmount },
+      { t: 'uint256', v: order.makerMarket.toFixed(0) },
+      { t: 'uint256', v: order.takerMarket.toFixed(0) },
+      { t: 'uint256', v: order.makerAmount.toFixed(0) },
+      { t: 'uint256', v: order.takerAmount.toFixed(0) },
       { t: 'bytes32', v: addressToBytes32(order.makerAccountOwner) },
-      { t: 'uint256', v: order.makerAccountNumber },
+      { t: 'uint256', v: order.makerAccountNumber.toFixed(0) },
       { t: 'bytes32', v: addressToBytes32(order.takerAccountOwner) },
-      { t: 'uint256', v: order.takerAccountNumber },
-      { t: 'uint256', v: order.expiration },
-      { t: 'uint256', v: order.salt },
+      { t: 'uint256', v: order.takerAccountNumber.toFixed(0) },
+      { t: 'uint256', v: order.expiration.toFixed(0) },
+      { t: 'uint256', v: order.salt.toFixed(0) },
     );
 
     const domainHash = this.getDomainHash();
 
-    const retVal = soliditySha3(
+    const retVal = this.web3.utils.soliditySha3(
       { t: 'bytes2', v: '0x1901' },
       { t: 'bytes32', v: domainHash },
       { t: 'bytes32', v: structHash },
@@ -351,11 +350,11 @@ export class LimitOrders {
   }
 
   public getDomainHash(): string {
-    return soliditySha3(
+    return this.web3.utils.soliditySha3(
       { t: 'bytes32', v: stringToBytes32(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: stringToBytes32('LimitOrders') },
       { t: 'bytes32', v: stringToBytes32('1.0') },
-      { t: 'uint256', v: this.networkId },
+      { t: 'uint256', v: this.networkId.toString() },
       { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
   }
@@ -363,14 +362,19 @@ export class LimitOrders {
   public unsignedOrderToBytes(
     order: LimitOrder,
   ): string {
-    return bytesToHex(this.orderToByteArray(order));
+    return this.web3.utils.bytesToHex(this.orderToByteArray(order));
   }
 
   public signedOrderToBytes(
     order: SignedLimitOrder,
   ): string {
-    const byteArray = this.orderToByteArray(order).concat(hexToBytes(order.typedSignature));
-    return bytesToHex(byteArray);
+    return this.web3.utils.bytesToHex(
+      this.orderToByteArray(
+        order,
+      ).concat(
+        this.web3.utils.hexToBytes(order.typedSignature),
+      ),
+    );
   }
 
   // ============ Private Helper Functions ============
@@ -394,7 +398,7 @@ export class LimitOrders {
   private orderHashToCancelOrderHash(
     orderHash: string,
   ): string {
-    return soliditySha3(
+    return this.web3.utils.soliditySha3(
       { t: 'string', v: 'cancel' },
       { t: 'bytes32', v: orderHash },
     );
