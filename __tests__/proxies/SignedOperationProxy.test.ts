@@ -360,6 +360,8 @@ describe('SignedOperationProxy', () => {
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogDeposit']);
       await expectInvalid([signedOperation]);
+
+      console.log(`\tSignedOperationProxy gas used: ${txResult.gasUsed}`);
     });
 
     it('Succeeds for deposit', async () => {
@@ -480,7 +482,122 @@ describe('SignedOperationProxy', () => {
     });
   });
 
-  describe('Failures', () => {
+  describe('Failures for each actionType', () => {
+    async function randoifySignedOperation(
+      signedOperation: SignedOperation,
+    ): Promise<SignedOperation> {
+      const randoifiedOperation = { ...signedOperation };
+      randoifiedOperation.actions = ([{}] as Action[]);
+      randoifiedOperation.actions[0] = {
+        ...signedOperation.actions[0],
+        primaryAccountOwner: rando,
+      };
+      randoifiedOperation.typedSignature =
+        await solo.signedOperations.ethSignOperation(randoifiedOperation);
+      return randoifiedOperation;
+    }
+
+    it('Fails for deposit', async () => {
+      const badOperation = await randoifySignedOperation(signedDepositOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for withdraw', async () => {
+      const badOperation = await randoifySignedOperation(signedWithdrawOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for transfer', async () => {
+      const badOperation = await randoifySignedOperation(signedTransferOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for buy', async () => {
+      const badOperation = await randoifySignedOperation(signedBuyOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for sell', async () => {
+      const badOperation = await randoifySignedOperation(signedSellOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for trade', async () => {
+      const badOperation = await randoifySignedOperation(signedTradeOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for call (0 bytes)', async () => {
+      const badOperation = await randoifySignedOperation(signedCallOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for liquidate', async () => {
+      const badOperation = await randoifySignedOperation(signedLiquidateOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+
+    it('Fails for vaporize', async () => {
+      const badOperation = await randoifySignedOperation(signedVaporizeOperation);
+      await expectThrow(
+        solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(badOperation)
+          .commit({ from: defaultSender }),
+        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('Other failures', () => {
     it('Fails for expired operation', async () => {
       const expiredOperation: SignedOperation = {
         ...signedDepositOperation,
@@ -564,28 +681,16 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Fails for incorrect signature', async () => {
-      const invalidSigOperation: SignedOperation = { ...signedDepositOperation };
-      invalidSigOperation.salt = new BigNumber(999);
+      const invalidSigOperation: SignedOperation = {
+        ...signedDepositOperation,
+        salt: new BigNumber(999),
+      };
       await expectThrow(
         solo.operation
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(invalidSigOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Invalid signer',
-      );
-    });
-
-    it('Fails for operation on random accounts', async () => {
-      const randomOperation: SignedOperation = { ...signedTransferOperation };
-      randomOperation.actions[0].secondaryAccountOwner = rando;
-      randomOperation.typedSignature =
-        await solo.signedOperations.ethSignOperation(randomOperation);
-      await expectThrow(
-        solo.operation
-          .initiate({ proxy: ProxyType.Sender })
-          .addSignedOperation(randomOperation)
-          .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -605,6 +710,116 @@ describe('SignedOperationProxy', () => {
   });
 
   describe('Advanced', () => {
+    it('Succeeds only for transfers involving sender or signer', async () => {
+      const defaultBlob = {
+        primaryAccountId: defaultSignerNumber,
+        toAccountId: defaultSenderNumber,
+        marketId: defaultMarket,
+        amount: defaultAssetAmount,
+      };
+      const goodTransfer1 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSigner,
+          toAccountOwner: defaultSender,
+        },
+      );
+      const goodTransfer2 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSender,
+          toAccountOwner: defaultSigner,
+        },
+      );
+      const goodTransfer3 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSigner,
+          toAccountOwner: defaultSigner,
+        },
+      );
+      const goodTransfer4 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSender,
+          toAccountOwner: defaultSender,
+        },
+      );
+      const allOperations = [goodTransfer1, goodTransfer2, goodTransfer3, goodTransfer4];
+      for (const o in allOperations) {
+        const operation = allOperations[o];
+        const txResult = await solo.operation
+          .initiate({ proxy: ProxyType.Sender })
+          .addSignedOperation(operation)
+          .commit({ from: defaultSender });
+        expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogTransfer']);
+      }
+    });
+
+    it('Fails for transfers involving non-sender or non-signer accounts', async () => {
+      const defaultBlob = {
+        primaryAccountId: defaultSignerNumber,
+        toAccountId: defaultSenderNumber,
+        marketId: defaultMarket,
+        amount: defaultAssetAmount,
+      };
+      const badTransfer1 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: rando,
+          toAccountOwner: defaultSender,
+        },
+      );
+      const badTransfer2 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSender,
+          toAccountOwner: rando,
+        },
+      );
+      const badTransfer3 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: defaultSigner,
+          toAccountOwner: rando,
+        },
+      );
+      const badTransfer4 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: rando,
+          toAccountOwner: defaultSigner,
+        },
+      );
+      const badTransfer5 = await createSignedOperation(
+        'transfer',
+        {
+          ...defaultBlob,
+          primaryAccountOwner: rando,
+          toAccountOwner: rando,
+        },
+      );
+      const allOperations = [badTransfer1, badTransfer2, badTransfer3, badTransfer4, badTransfer5];
+      for (const o in allOperations) {
+        const operation = allOperations[o];
+        await expectThrow(
+          solo.operation
+            .initiate({ proxy: ProxyType.Sender })
+            .addSignedOperation(operation)
+            .commit({ from: defaultSender }),
+          `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        );
+      }
+    });
+
     it('Succeeds for data with less than 32 bytes', async () => {
       const txResult = await solo.operation
         .initiate({ proxy: ProxyType.Sender })
@@ -617,8 +832,13 @@ describe('SignedOperationProxy', () => {
       const multiActionOperation: SignedOperation = { ...signedDepositOperation };
       multiActionOperation.actions =
         multiActionOperation.actions.concat(signedWithdrawOperation.actions);
+      multiActionOperation.actions =
+        multiActionOperation.actions.concat(signedTransferOperation.actions);
+      multiActionOperation.actions =
+        multiActionOperation.actions.concat(signedCallOperation.actions);
       multiActionOperation.typedSignature =
         await solo.signedOperations.ethSignOperation(multiActionOperation);
+
       const txResult = await solo.operation
         .initiate({ proxy: ProxyType.Sender })
         .addSignedOperation(multiActionOperation)
@@ -628,8 +848,12 @@ describe('SignedOperationProxy', () => {
         'LogOperation',
         'LogDeposit',
         'LogWithdraw',
+        'LogTransfer',
+        'LogCall',
       ]);
       await expectInvalid([multiActionOperation]);
+
+      console.log(`\tSignedOperationProxy (multiAction) gas used: ${txResult.gasUsed}`);
     });
 
     it('Succeeds for multiple signed operations from different signers', async () => {
@@ -640,7 +864,7 @@ describe('SignedOperationProxy', () => {
         marketId: defaultMarket,
         from: rando,
         amount: defaultAssetAmount,
-      }).createOperation({
+      }).createSignableOperation({
         sender: defaultSender,
         signer: rando,
       });
@@ -673,7 +897,7 @@ describe('SignedOperationProxy', () => {
         marketId: defaultMarket,
         from: rando,
         amount: defaultAssetAmount,
-      }).createOperation({
+      }).createSignableOperation({
         sender: defaultSender,
         signer: rando,
       });
@@ -720,10 +944,11 @@ async function createSignedOperation(
   actionType: string,
   action: any,
 ): Promise<SignedOperation> {
-  const operation:Operation = solo.operation.initiate()[actionType](action).createOperation({
-    sender: defaultSender,
-    signer: defaultSigner,
-  });
+  const operation:Operation =
+    solo.operation.initiate()[actionType](action).createSignableOperation({
+      sender: defaultSender,
+      signer: defaultSigner,
+    });
   return {
     ...operation,
     typedSignature: await solo.signedOperations.ethSignOperation(operation),

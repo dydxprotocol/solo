@@ -258,58 +258,58 @@ contract SignedOperationProxy is
         );
 
         // cache the index of the first action for this auth
-        uint256 authStartIndex = 0;
+        uint256 actionStartIdx = 0;
 
         // loop over all auths
-        for (uint256 p = 0; p < auths.length; p++) {
-            Authorization memory auth = auths[p];
+        for (uint256 authIdx = 0; authIdx < auths.length; authIdx++) {
+            Authorization memory auth = auths[authIdx];
 
             // require that the message is not expired
             Require.that(
                 auth.expiration == 0 || auth.expiration >= block.timestamp,
                 FILE,
                 "Signed operation is expired",
-                p
+                authIdx
             );
 
-            // require that the sender is the sender
+            // require that the sender matches the authorization
             Require.that(
                 auth.sender == address(0) || auth.sender == msg.sender,
                 FILE,
                 "Operation sender mismatch",
-                p
+                authIdx
             );
 
-            // get the signer of the auth (msg.sender if no auth)
+            // get the signer of the auth (msg.sender if no signature)
             address signer = getSigner(
                 accounts,
                 actions,
                 auth,
-                authStartIndex
+                actionStartIdx
             );
 
             // cache the index of the first action after this auth
-            uint256 authEndIndex = authStartIndex.add(auth.numActions);
+            uint256 actionEndIdx = actionStartIdx.add(auth.numActions);
 
             // loop over all actions for which this auth applies
-            for (uint256 a = authStartIndex; a < authEndIndex; a++) {
+            for (uint256 actionIdx = actionStartIdx; actionIdx < actionEndIdx; actionIdx++) {
                 // validate primary account
-                Actions.ActionArgs memory action = actions[a];
+                Actions.ActionArgs memory action = actions[actionIdx];
                 validateAccountOwner(accounts[action.accountId].owner, signer);
 
-                // validate second account in the case of a transfer action
+                // validate second account in the case of a transfer
                 if (action.actionType == Actions.ActionType.Transfer) {
                     validateAccountOwner(accounts[action.otherAccountId].owner, signer);
                 }
             }
 
-            // update authStartIndex
-            authStartIndex = authEndIndex;
+            // update actionStartIdx
+            actionStartIdx = actionEndIdx;
         }
 
         // require that all actions are signed or from msg.sender
         Require.that(
-            authStartIndex == actions.length,
+            actionStartIdx == actions.length,
             FILE,
             "Not all actions are signed"
         );
@@ -352,7 +352,7 @@ contract SignedOperationProxy is
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions,
         Authorization memory auth,
-        uint256 startIndex
+        uint256 startIdx
     )
         private
         returns (address)
@@ -367,7 +367,7 @@ contract SignedOperationProxy is
             accounts,
             actions,
             auth,
-            startIndex
+            startIdx
         );
 
         // get the signer
@@ -381,7 +381,7 @@ contract SignedOperationProxy is
             operationHash
         );
 
-        // consider this hash signed
+        // consider this operationHash to be used (and therefore no longer valid)
         g_invalidated[signer][operationHash] = true;
         emit LogOperationExecuted(operationHash, signer, msg.sender);
 
@@ -420,7 +420,7 @@ contract SignedOperationProxy is
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions,
         Authorization memory auth,
-        uint256 startIndex
+        uint256 startIdx
     )
         private
         view
@@ -431,7 +431,7 @@ contract SignedOperationProxy is
             accounts,
             actions,
             auth,
-            startIndex
+            startIdx
         );
 
         // compute the EIP712 hashStruct of an Operation struct
@@ -460,44 +460,35 @@ contract SignedOperationProxy is
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actions,
         Authorization memory auth,
-        uint256 startIndex
+        uint256 startIdx
     )
         private
         pure
         returns (bytes32)
     {
-        // store in-memory sequential hash of each action
-        bytes memory actionsBytes = new bytes(auth.numActions.mul(32));
-
-        // create null account
-        Account.Info memory nullAccount = Account.Info({ owner: address(0), number: 0 });
+        // store hash of each action
+        bytes32[] memory actionsBytes = new bytes32[](auth.numActions);
 
         // for each action that corresponds to the auth
         for (uint256 i = 0; i < auth.numActions; i++) {
-            Actions.ActionArgs memory action = actions[startIndex + i];
+            Actions.ActionArgs memory action = actions[startIdx + i];
 
             // if action type has no second account, assume null account
             Account.Info memory otherAccount =
                 (Actions.getAccountLayout(action.actionType) == Actions.AccountLayout.OnePrimary)
-                ? nullAccount
+                ? Account.Info({ owner: address(0), number: 0 })
                 : accounts[action.otherAccountId];
 
             // compute the individual hash for the action
             /* solium-disable-next-line indentation */
-            bytes32 actionHash = getActionHash(
+            actionsBytes[i] = getActionHash(
                 action,
                 accounts[action.accountId],
                 otherAccount
             );
-
-            // store actionHash in the actionBytes array
-            /* solium-disable-next-line security/no-inline-assembly */
-            assembly {
-                mstore(add(actionsBytes, mul(0x20, add(i, 1))), actionHash)
-            }
         }
 
-        return keccak256(actionsBytes);
+        return keccak256(abi.encodePacked(actionsBytes));
     }
 
     /**

@@ -65,6 +65,7 @@ export interface ContractConstantCallOptions extends Tx {
 }
 
 export interface AccountOperationOptions {
+  usePayableProxy?: boolean; // deprecated
   proxy?: ProxyType;
   sendEthTo?: address;
 }

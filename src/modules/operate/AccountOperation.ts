@@ -80,7 +80,7 @@ export class AccountOperation {
     // use the passed-in proxy type, but support the old way of passing in `usePayableProxy = true`
     const proxy =
       options.proxy ||
-      ((options as any).usePayableProxy ? ProxyType.Payable : null) ||
+      (options.usePayableProxy ? ProxyType.Payable : null) ||
       ProxyType.None;
 
     this.contracts = contracts;
@@ -451,7 +451,11 @@ export class AccountOperation {
     return this;
   }
 
-  public createOperation(
+  /**
+   * Takes all current actions/accounts and creates an Operation struct that can then be signed and
+   * later used with the SignedOperationProxy.
+   */
+  public createSignableOperation(
     options: {
       expiration?: Integer,
       salt?: Integer,
