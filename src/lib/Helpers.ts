@@ -10,6 +10,10 @@ export function decimalToString(d: Decimal | string): string {
   return new BigNumber(d).times(INTEGERS.INTEREST_RATE_BASE).toFixed(0);
 }
 
+export function toString(input: number | string | BigNumber) {
+  return new BigNumber(input).toFixed(0);
+}
+
 export function integerToValue(i: Integer) {
   return {
     sign: i.isGreaterThan(0),

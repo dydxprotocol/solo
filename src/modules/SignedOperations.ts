@@ -1,8 +1,10 @@
 import Web3 from 'web3';
-import BigNumber from 'bignumber.js';
 import { soliditySha3 } from 'web3-utils';
 import { promisify } from 'es6-promisify';
 import { Contracts } from '../lib/Contracts';
+import {
+  toString,
+} from '../lib/Helpers';
 import {
   addressToBytes32,
   hashBytes,
@@ -118,6 +120,9 @@ export class SignedOperations {
     return this.cancelOperationByHash(operationHash, cco);
   }
 
+  /**
+   * Sends an transaction to cancel an operation (by hash) on-chain.
+   */
   public async cancelOperationByHash(
     operationHash: string,
     options?: ContractCallOptions,
@@ -285,12 +290,15 @@ export class SignedOperations {
 
   // ============ Hashing Functions ============
 
+  /**
+   * Returns the final signable EIP712 hash for approving an operation.
+   */
   public getOperationHash(operation: Operation): string {
     const basicHash = soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_OPERATION_STRING) },
       { t: 'bytes32', v: this.getActionsHash(operation.actions) },
-      { t: 'uint256', v: mustString(operation.expiration) },
-      { t: 'uint256', v: mustString(operation.salt) },
+      { t: 'uint256', v: toString(operation.expiration) },
+      { t: 'uint256', v: toString(operation.salt) },
       { t: 'bytes32', v: addressToBytes32(operation.sender) },
     );
 
@@ -303,6 +311,9 @@ export class SignedOperations {
     return retVal;
   }
 
+  /**
+   * Returns the EIP712 domain separator hash.
+   */
   public getDomainHash(): string {
     return soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
@@ -313,6 +324,9 @@ export class SignedOperations {
     );
   }
 
+  /**
+   * Returns the EIP712 hash of the actions array.
+   */
   public getActionsHash(
     actions: Action[],
   ): string {
@@ -322,36 +336,45 @@ export class SignedOperations {
     return soliditySha3(...actionsAsHashes);
   }
 
+  /**
+   * Returns the EIP712 hash of a single Action struct.
+   */
   public getActionHash(
     action: Action,
   ): string {
     return soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ACTION_STRING) },
-      { t: 'uint256', v: mustString(action.actionType) },
+      { t: 'uint256', v: toString(action.actionType) },
       { t: 'bytes32', v: addressToBytes32(action.primaryAccountOwner) },
-      { t: 'uint256', v: mustString(action.primaryAccountNumber) },
+      { t: 'uint256', v: toString(action.primaryAccountNumber) },
       { t: 'bytes32', v: this.getAssetAmountHash(action.amount) },
-      { t: 'uint256', v: mustString(action.primaryMarketId) },
-      { t: 'uint256', v: mustString(action.secondaryMarketId) },
+      { t: 'uint256', v: toString(action.primaryMarketId) },
+      { t: 'uint256', v: toString(action.secondaryMarketId) },
       { t: 'bytes32', v: addressToBytes32(action.otherAddress) },
       { t: 'bytes32', v: addressToBytes32(action.secondaryAccountOwner) },
-      { t: 'uint256', v: mustString(action.secondaryAccountNumber) },
+      { t: 'uint256', v: toString(action.secondaryAccountNumber) },
       { t: 'bytes32', v: hashBytes(action.data) },
     );
   }
 
+  /**
+   * Returns the EIP712 hash of an AssetAmount struct.
+   */
   public getAssetAmountHash(
     amount: AssetAmount,
   ): string {
     return soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ASSET_AMOUNT_STRING) },
-      { t: 'uint256', v: mustString(amount.sign ? 1 : 0) },
-      { t: 'uint256', v: mustString(amount.denomination) },
-      { t: 'uint256', v: mustString(amount.ref) },
-      { t: 'uint256', v: mustString(amount.value) },
+      { t: 'uint256', v: toString(amount.sign ? 1 : 0) },
+      { t: 'uint256', v: toString(amount.denomination) },
+      { t: 'uint256', v: toString(amount.ref) },
+      { t: 'uint256', v: toString(amount.value) },
     );
   }
 
+  /**
+   * Given some operation hash, returns the hash of a cancel-operation message.
+   */
   public operationHashToCancelOperationHash(
     operationHash: string,
   ): string {
@@ -375,20 +398,20 @@ export class SignedOperations {
     };
     const actionsData = operation.actions.map((action) => {
       return {
-        actionType: mustString(action.actionType),
+        actionType: toString(action.actionType),
         accountOwner: action.primaryAccountOwner,
-        accountNumber: mustString(action.primaryAccountNumber),
+        accountNumber: toString(action.primaryAccountNumber),
         assetAmount: {
           sign: action.amount.sign,
-          denomination: mustString(action.amount.denomination),
-          ref: mustString(action.amount.ref),
-          value: mustString(action.amount.value),
+          denomination: toString(action.amount.denomination),
+          ref: toString(action.amount.ref),
+          value: toString(action.amount.value),
         },
-        primaryMarketId: mustString(action.primaryMarketId),
-        secondaryMarketId: mustString(action.secondaryMarketId),
-        otherAddress: mustString(action.otherAddress),
+        primaryMarketId: toString(action.primaryMarketId),
+        secondaryMarketId: toString(action.secondaryMarketId),
+        otherAddress: toString(action.otherAddress),
         otherAccountOwner: action.secondaryAccountOwner,
-        otherAccountNumber: mustString(action.secondaryAccountNumber),
+        otherAccountNumber: toString(action.secondaryAccountNumber),
         data: action.data,
       };
     });
@@ -421,8 +444,4 @@ export class SignedOperations {
     }
     return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
   }
-}
-
-function mustString(input: number | string | BigNumber) {
-  return new BigNumber(input).toFixed(0);
 }

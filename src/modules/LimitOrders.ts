@@ -321,7 +321,7 @@ export class LimitOrders {
   // ============ Hashing Functions ============
 
   /**
-   * Returns the bytes32 hash of an order.
+   * Returns the final signable EIP712 hash for approving an order.
    */
   public getOrderHash(
     order: LimitOrder,
@@ -351,6 +351,9 @@ export class LimitOrders {
     return retVal;
   }
 
+  /**
+   * Returns the EIP712 domain separator hash.
+   */
   public getDomainHash(): string {
     return soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
@@ -361,6 +364,9 @@ export class LimitOrders {
     );
   }
 
+  /**
+   * Given some order hash, returns the hash of a cancel-order message.
+   */
   public orderHashToCancelOrderHash(
     orderHash: string,
   ): string {

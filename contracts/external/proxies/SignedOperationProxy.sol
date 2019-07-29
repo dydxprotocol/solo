@@ -46,7 +46,7 @@ contract SignedOperationProxy is
     bytes32 constant private FILE = "SignedOperationProxy";
 
     // EIP191 header for EIP712 prefix
-    string constant private EIP191_HEADER = "\x19\x01";
+    bytes2 constant private EIP191_HEADER = 0x1901;
 
     // EIP712 Domain Name value
     string constant private EIP712_DOMAIN_NAME = "SignedOperationProxy";
@@ -236,7 +236,7 @@ contract SignedOperationProxy is
     /**
      * Submits an operation to SoloMargin. Actions for accounts that the msg.sender does not control
      * must be authorized by a signed message. Each authorization can apply to multiple actions at
-     * once which must occur in order next to each other. An empty authorization must be supplied
+     * once which must occur in-order next to each other. An empty authorization must be supplied
      * explicitly for each group of actions that do not require a signed message.
      *
      * @param  accounts  The accounts to forward to SoloMargin.operate()

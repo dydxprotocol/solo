@@ -399,6 +399,10 @@ export class AccountOperation {
     return this;
   }
 
+  /**
+   * Adds all actions from a SignedOperation and also adds the authorization object that allows the
+   * proxy to process the actions.
+   */
   public addSignedOperation(
     signedOperation: SignedOperation,
   ): AccountOperation {
@@ -510,6 +514,9 @@ export class AccountOperation {
     };
   }
 
+  /**
+   * Commits the operation to the chain by sending a transaction.
+   */
   public async commit(
     options?: ContractCallOptions,
   ): Promise<TxResult> {
