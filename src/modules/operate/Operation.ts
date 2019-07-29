@@ -31,7 +31,7 @@ export class Operation {
       this.orderMapper,
       this.limitOrders,
       this.networkId,
-      options,
+      options || {},
     );
   }
 }

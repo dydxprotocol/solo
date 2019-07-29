@@ -8,6 +8,7 @@ module.exports = {
       version: '0.5.7',
       docker: process.env.DOCKER_COMPILER !== undefined
         ? process.env.DOCKER_COMPILER === 'true' : true,
+      parser: 'solcjs',
       settings: {
         optimizer: {
           enabled: true,

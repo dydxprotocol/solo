@@ -293,5 +293,7 @@ describe('PayableProxy', () => {
 // ============ Helper Functions ============
 
 function newOperation(sendEthTo?: address) {
-  return solo.operation.initiate({ usePayableProxy: true, sendEthTo: sendEthTo || owner1 });
+  return solo.operation.initiate(
+    { usePayableProxy: true, sendEthTo: sendEthTo || owner1 },
+  );
 }

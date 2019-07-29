@@ -32,6 +32,12 @@ export enum ConfirmationType {
   Simulate = 3,
 }
 
+export enum ProxyType {
+  None = 'None',
+  Payable = 'Payable',
+  Sender = 'Sender',
+}
+
 export interface SoloOptions {
   defaultAccount?: address;
   confirmationType?: ConfirmationType;
@@ -59,7 +65,8 @@ export interface ContractConstantCallOptions extends Tx {
 }
 
 export interface AccountOperationOptions {
-  usePayableProxy?: boolean;
+  usePayableProxy?: boolean; // deprecated
+  proxy?: ProxyType;
   sendEthTo?: address;
 }
 
@@ -69,6 +76,7 @@ export interface LogParsingOptions {
   skipPermissionLogs?: boolean;
   skipExpiryLogs?: boolean;
   skipLimitOrdersLogs?: boolean;
+  skipSignedOperationProxyLogs?: boolean;
 }
 
 export interface TxResult {
@@ -321,4 +329,47 @@ export interface LimitOrderState {
 export enum LimitOrderCallFunctionType {
   Approve = 0,
   Cancel = 1,
+}
+
+// ============ Sender Proxy ============
+
+export interface OperationAuthorization {
+  startIndex: Integer;
+  numActions: Integer;
+  expiration: Integer;
+  salt: Integer;
+  sender: address;
+  typedSignature: string;
+}
+
+export interface AssetAmount {
+  sign: boolean;
+  denomination: AmountDenomination;
+  ref: AmountReference;
+  value: Integer;
+}
+
+export interface Action {
+  actionType: ActionType;
+  primaryAccountOwner: address;
+  primaryAccountNumber: Integer;
+  secondaryAccountOwner: address;
+  secondaryAccountNumber: Integer;
+  primaryMarketId: Integer;
+  secondaryMarketId: Integer;
+  amount: AssetAmount;
+  otherAddress: address;
+  data: string;
+}
+
+export interface Operation {
+  actions: Action[];
+  expiration: Integer;
+  salt: Integer;
+  sender: address;
+  signer: address;
+}
+
+export interface SignedOperation extends Operation {
+  typedSignature: string;
 }

@@ -21,24 +21,22 @@ pragma experimental ABIEncoderV2;
 
 import { OnlySolo } from "../external/helpers/OnlySolo.sol";
 import { ICallee } from "../protocol/interfaces/ICallee.sol";
-import { IAutoTrader } from "../protocol/interfaces/IAutoTrader.sol";
 import { Account } from "../protocol/lib/Account.sol";
-import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
- * @title TestCallee
+ * @title TestSimpleCallee
  * @author dYdX
  *
- * ICallee for testing
+ * ICallee for testing any data being sent
  */
-contract TestCallee is
+contract TestSimpleCallee is
     ICallee,
     OnlySolo
 {
     // ============ Constants ============
 
-    bytes32 constant FILE = "TestCallee";
+    bytes32 constant FILE = "TestSimpleCallee";
 
     // ============ Events ============
 
@@ -46,17 +44,8 @@ contract TestCallee is
         address indexed sender,
         address indexed accountOwner,
         uint256 accountNumber,
-        uint256 accountData,
-        uint256 senderData
+        bytes data
     );
-
-    // ============ Storage ============
-
-    // owner => number => data
-    mapping (address => mapping (uint256 => uint256)) public accountData;
-
-    // sender => data
-    mapping (address => uint256) public senderData;
 
     // ============ Constructor ============
 
@@ -77,53 +66,11 @@ contract TestCallee is
         public
         onlySolo(msg.sender)
     {
-        (
-            uint256 aData,
-            uint256 sData
-        ) = parseData(data);
-
         emit Called(
             sender,
             account.owner,
             account.number,
-            aData,
-            sData
-        );
-
-        accountData[account.owner][account.number] = aData;
-        senderData[sender] = sData;
-    }
-
-    // ============ Private Functions ============
-
-    function parseData(
-        bytes memory data
-    )
-        private
-        pure
-        returns (
-            uint256,
-            uint256
-        )
-    {
-        Require.that(
-            data.length == 64,
-            FILE,
-            "Call data invalid length"
-        );
-
-        uint256 aData;
-        uint256 sData;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            aData := mload(add(data, 32))
-            sData := mload(add(data, 64))
-        }
-
-        return (
-            aData,
-            sData
+            data
         );
     }
 }

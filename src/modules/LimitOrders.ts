@@ -6,8 +6,9 @@ import { Contracts } from '../lib/Contracts';
 import {
   addressToBytes32,
   argToBytes,
-  stringToBytes32,
+  hashString,
   stripHexPrefix,
+  addressesAreEqual,
 } from '../lib/BytesHelper';
 import {
   SIGNATURE_TYPES,
@@ -89,7 +90,7 @@ export class LimitOrders {
   }
 
   /**
-   * Sends an transaction to cancel an order on-chain.s
+   * Sends an transaction to cancel an order on-chain.
    */
   public async cancelOrder(
     order: LimitOrder,
@@ -129,7 +130,7 @@ export class LimitOrders {
         orderMaker: order.makerAccountOwner,
       };
     });
-    const states = await this.contracts.callConstantContractFunction(
+    const states: any[] = await this.contracts.callConstantContractFunction(
       this.contracts.limitOrders.methods.getOrderStates(inputQuery),
       options,
     );
@@ -233,7 +234,7 @@ export class LimitOrders {
     expectedSigner: address,
   ): boolean {
     const signer = ecRecoverTypedSignature(orderHash, typedSignature);
-    return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
+    return addressesAreEqual(signer, expectedSigner);
   }
 
   /**
@@ -260,7 +261,7 @@ export class LimitOrders {
   ): boolean {
     const cancelHash = this.orderHashToCancelOrderHash(orderHash);
     const signer = ecRecoverTypedSignature(cancelHash, typedSignature);
-    return stripHexPrefix(signer).toLowerCase() === stripHexPrefix(expectedSigner).toLowerCase();
+    return addressesAreEqual(signer, expectedSigner);
   }
 
   // ============ Off-Chain Collateralization Calculation Methods ============
@@ -320,13 +321,13 @@ export class LimitOrders {
   // ============ Hashing Functions ============
 
   /**
-   * Returns the bytes32 hash of an order.
+   * Returns the final signable EIP712 hash for approving an order.
    */
   public getOrderHash(
     order: LimitOrder,
   ): string {
     const structHash = soliditySha3(
-      { t: 'bytes32', v: stringToBytes32(EIP712_ORDER_STRUCT_STRING) },
+      { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
       { t: 'uint256', v: order.makerMarket },
       { t: 'uint256', v: order.takerMarket },
       { t: 'uint256', v: order.makerAmount },
@@ -350,15 +351,32 @@ export class LimitOrders {
     return retVal;
   }
 
+  /**
+   * Returns the EIP712 domain separator hash.
+   */
   public getDomainHash(): string {
     return soliditySha3(
-      { t: 'bytes32', v: stringToBytes32(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: stringToBytes32('LimitOrders') },
-      { t: 'bytes32', v: stringToBytes32('1.0') },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
+      { t: 'bytes32', v: hashString('LimitOrders') },
+      { t: 'bytes32', v: hashString('1.0') },
       { t: 'uint256', v: this.networkId },
       { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
   }
+
+  /**
+   * Given some order hash, returns the hash of a cancel-order message.
+   */
+  public orderHashToCancelOrderHash(
+    orderHash: string,
+  ): string {
+    return soliditySha3(
+      { t: 'string', v: 'cancel' },
+      { t: 'bytes32', v: orderHash },
+    );
+  }
+
+  // ============ To-Bytes Functions ============
 
   public unsignedOrderToBytes(
     order: LimitOrder,
@@ -389,15 +407,6 @@ export class LimitOrders {
       .concat(argToBytes(order.takerAccountNumber))
       .concat(argToBytes(order.expiration))
       .concat(argToBytes(order.salt));
-  }
-
-  private orderHashToCancelOrderHash(
-    orderHash: string,
-  ): string {
-    return soliditySha3(
-      { t: 'string', v: 'cancel' },
-      { t: 'bytes32', v: orderHash },
-    );
   }
 
   private async ethSignTypedOrderInternal(
