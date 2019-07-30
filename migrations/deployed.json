@@ -150,5 +150,17 @@
             "address": "0x521F1297348b71Aaa26F9218622D3219Fc1C27Ab",
             "transactionHash": "0xf1984bb4cdc90487ebde5ab9bd58446596245d65f413fb2c7369221c2ab6f3ba"
         }
+    },
+    "SignedOperationProxy": {
+        "1": {
+            "links": {},
+            "address": "0x401dca7116d1CACb3c3bc1B4acE16fC87f7EfaBa",
+            "transactionHash": "0x2dad24c25ed87859565eb4766d40b9721185f62d7cc258a2af0633926dc634c5"
+        },
+        "42": {
+            "links": {},
+            "address": "0xdbCa6b4c84Ed7B8D41B820C4894B360c0da7785f",
+            "transactionHash": "0xc360170d82f44b18c1af7887acd12d2129b2f3d1e601bebd4054fd7d75490eaa"
+        }
     }
 }
