@@ -22,6 +22,12 @@ details of your order. Once you create this object you must sign it with your Et
 and put the result in the `typedSignature` field. Note: The `typedSignature` is omitted before
 signing, and added only after signing the message.
 
+The order data is hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md).
+This includes the exact order format and version as well as information about the verifying contract and the chainId of the network.
+
+When creating your order you _must_ specify the takerAccountOwner as `x` and the takerAccountNumber
+as `y`, otherwise your order will be rejected.
+
 After this is done, the order is ready to be submitted to the API.
 
 __Order fields__
@@ -33,10 +39,10 @@ __Order fields__
 |makerAmount|string|The amount of token the Maker is offering in base units|
 |takerAmount|string|The amount of token the Maker is requesting from the taker base units|
 |makerAccountOwner|string|The Ethereum address of the Maker.|
-|takerAccountOwner|string|The Ethereum address of the Taker.|
+|takerAccountOwner|string|The Ethereum address of the Taker. This must be to the dYdX account owner listed above|
 |makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
-|takerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Taker|
-|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled.|
+|takerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Taker. This must be set to teh dYdX account number listed above|
+|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `0` to specify that there is no expiration on the order.|
 |salt|string|A random number to make the orderHash unique.|
 |typedSignature|string|The signature of the order.|
 
@@ -73,7 +79,7 @@ Request Body:
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
-|fillOrKill|boolean|Whether or not this order is a market order.|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
  
 note: Market orders execute immediately and no part of the market order will go on the open order
 book. Market orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -81,7 +87,7 @@ book. Market orders will either be completely filled, or not filled. Partial fil
 Example Request Body:
 ```JSON
 {
-	"fillOrKill" true,
+	"fillOrKill": true,
 	"order": {
 		"makerMarket": "0",
 		"takerMarket": "1",
@@ -106,7 +112,8 @@ Returns:
 Description:
 Cancels an open order by hash.
 
-Please note you will need to provide a valid cancellation signature in order to cancel an order.
+Please note you will need to provide a valid cancelation signature in order to cancel an order.
+The cancellation message should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
 Headers:
 ```
@@ -194,7 +201,7 @@ export const STATUS = {
 };
 ```
 
-If the order was cancelled, additional information will be provided by the `unfillableReason`
+If the order was canceled, additional information will be provided by the `unfillableReason`
 field.
 
 For fills the status field represents the status of the transaction on-chain.
