@@ -1,5 +1,6 @@
 * [Home](/ "dYdX Solo Documentation")
-* [Overview](overview.md "dYdX Solo Documentation - Overview")
-* [Usage](usage.md "dYdX Solo Documentation - Usage")
+* [Protocol Overview](overview.md "dYdX Solo Documentation - Overview")
+* [Solo.js Usage](usage.md "dYdX Solo Documentation - Usage")
+* [HTTP API](api.md "dYdX Solo Documentation - API")
 * [Contracts](contracts.md "dYdX Solo Documentation - Contracts")
 * [Security](security.md "dYdX Solo Documentation - Security")
