@@ -50,7 +50,7 @@ contract LimitOrders is
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "LimitOrders";
+    bytes32 constant private FILE = "LimitOrders";
 
     // EIP191 header for EIP712 prefix
     bytes2 constant private EIP191_HEADER = 0x1901;
@@ -63,7 +63,7 @@ contract LimitOrders is
 
     // Hash of the EIP712 Domain Separator Schema
     /* solium-disable-next-line indentation */
-    bytes32 constant public EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH = keccak256(abi.encodePacked(
+    bytes32 constant private EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH = keccak256(abi.encodePacked(
         "EIP712Domain(",
         "string name,",
         "string version,",
@@ -74,7 +74,7 @@ contract LimitOrders is
 
     // Hash of the EIP712 LimitOrder struct
     /* solium-disable-next-line indentation */
-    bytes32 constant public EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
+    bytes32 constant private EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
         "LimitOrder(",
         "uint256 makerMarket,",
         "uint256 takerMarket,",
@@ -124,6 +124,10 @@ contract LimitOrders is
         uint256 takerAccountNumber;
         uint256 expiration;
         uint256 salt;
+    }
+
+    struct OrderInfo {
+        Order order;
         bytes32 orderHash;
     }
 
@@ -291,10 +295,10 @@ contract LimitOrders is
             "Contract is not operational"
         );
 
-        Order memory order = getOrderAndValidateSignature(data);
+        OrderInfo memory orderInfo = getOrderAndValidateSignature(data);
 
         verifyOrderAndAccountsAndMarkets(
-            order,
+            orderInfo,
             makerAccount,
             takerAccount,
             inputMarketId,
@@ -306,7 +310,7 @@ contract LimitOrders is
             inputMarketId,
             outputMarketId,
             inputWei,
-            order
+            orderInfo
         );
     }
 
@@ -325,7 +329,14 @@ contract LimitOrders is
         public
         onlySolo(msg.sender)
     {
-        CallFunctionData memory cfd = parseCallFunctionData(data);
+        Require.that(
+            data.length >= NUM_CALLFUNCTIONDATA_BYTES,
+            FILE,
+            "Cannot parse CallFunctionData"
+        );
+
+        CallFunctionData memory cfd = abi.decode(data, (CallFunctionData));
+
         if (cfd.callType == CallFunctionType.Approve) {
             approveOrderInternal(accountInfo.owner, cfd.orderHash);
         } else {
@@ -403,7 +414,7 @@ contract LimitOrders is
      * Verifies that the order is still fillable for the particular accounts and markets specified.
      */
     function verifyOrderAndAccountsAndMarkets(
-        Order memory order,
+        OrderInfo memory orderInfo,
         Account.Info memory makerAccount,
         Account.Info memory takerAccount,
         uint256 inputMarketId,
@@ -415,37 +426,37 @@ contract LimitOrders is
     {
         // verify expriy
         Require.that(
-            order.expiration == 0 || order.expiration >= block.timestamp,
+            orderInfo.order.expiration == 0 || orderInfo.order.expiration >= block.timestamp,
             FILE,
             "Order expired",
-            order.orderHash
+            orderInfo.orderHash
         );
 
         // verify maker
         Require.that(
-            makerAccount.owner == order.makerAccountOwner &&
-            makerAccount.number == order.makerAccountNumber,
+            makerAccount.owner == orderInfo.order.makerAccountOwner &&
+            makerAccount.number == orderInfo.order.makerAccountNumber,
             FILE,
             "Order maker account mismatch",
-            order.orderHash
+            orderInfo.orderHash
         );
 
         // verify taker
         Require.that(
-            (order.takerAccountOwner == address(0) && order.takerAccountNumber == 0 ) ||
-            (order.takerAccountOwner == takerAccount.owner && order.takerAccountNumber == takerAccount.number),
+            (orderInfo.order.takerAccountOwner == address(0) && orderInfo.order.takerAccountNumber == 0 ) ||
+            (orderInfo.order.takerAccountOwner == takerAccount.owner && orderInfo.order.takerAccountNumber == takerAccount.number),
             FILE,
             "Order taker account mismatch",
-            order.orderHash
+            orderInfo.orderHash
         );
 
         // verify markets
         Require.that(
-            (order.makerMarket == outputMarketId && order.takerMarket == inputMarketId) ||
-            (order.takerMarket == outputMarketId && order.makerMarket == inputMarketId),
+            (orderInfo.order.makerMarket == outputMarketId && orderInfo.order.takerMarket == inputMarketId) ||
+            (orderInfo.order.takerMarket == outputMarketId && orderInfo.order.makerMarket == inputMarketId),
             FILE,
             "Market mismatch",
-            order.orderHash
+            orderInfo.orderHash
         );
 
         // verify inputWei
@@ -453,13 +464,13 @@ contract LimitOrders is
             !inputWei.isZero(),
             FILE,
             "InputWei is zero",
-            order.orderHash
+            orderInfo.orderHash
         );
         Require.that(
-            inputWei.sign == (order.takerMarket == inputMarketId),
+            inputWei.sign == (orderInfo.order.takerMarket == inputMarketId),
             FILE,
             "InputWei sign mismatch",
-            order.orderHash
+            orderInfo.orderHash
         );
     }
 
@@ -470,7 +481,7 @@ contract LimitOrders is
         uint256 inputMarketId,
         uint256 outputMarketId,
         Types.Wei memory inputWei,
-        Order memory order
+        OrderInfo memory orderInfo
     )
         private
         returns (Types.AssetAmount memory)
@@ -478,26 +489,32 @@ contract LimitOrders is
         uint256 outputAmount;
         uint256 makerFillAmount;
 
-        if (order.takerMarket == inputMarketId) {
-            outputAmount = inputWei.value.getPartial(order.makerAmount, order.takerAmount);
+        if (orderInfo.order.takerMarket == inputMarketId) {
+            outputAmount = inputWei.value.getPartial(
+                orderInfo.order.makerAmount,
+                orderInfo.order.takerAmount
+            );
             makerFillAmount = outputAmount;
         } else {
-            assert(order.takerMarket == outputMarketId);
-            outputAmount = inputWei.value.getPartialRoundUp(order.takerAmount, order.makerAmount);
+            assert(orderInfo.order.takerMarket == outputMarketId);
+            outputAmount = inputWei.value.getPartialRoundUp(
+                orderInfo.order.takerAmount,
+                orderInfo.order.makerAmount
+            );
             makerFillAmount = inputWei.value;
         }
 
-        uint256 totalMakerFilledAmount = updateMakerFilledAmount(order, makerFillAmount);
+        uint256 totalMakerFilledAmount = updateMakerFilledAmount(orderInfo, makerFillAmount);
 
         emit LogLimitOrderFilled(
-            order.orderHash,
-            order.makerAccountOwner,
+            orderInfo.orderHash,
+            orderInfo.order.makerAccountOwner,
             makerFillAmount,
             totalMakerFilledAmount
         );
 
         return Types.AssetAmount({
-            sign: order.takerMarket == outputMarketId,
+            sign: orderInfo.order.takerMarket == outputMarketId,
             denomination: Types.AssetDenomination.Wei,
             ref: Types.AssetReference.Delta,
             value: outputAmount
@@ -509,23 +526,23 @@ contract LimitOrders is
      * Returns the new total filled amount (in makerAmount).
      */
     function updateMakerFilledAmount(
-        Order memory order,
+        OrderInfo memory orderInfo,
         uint256 makerFillAmount
     )
         private
         returns (uint256)
     {
-        uint256 oldMakerFilledAmount = g_makerFilledAmount[order.orderHash];
+        uint256 oldMakerFilledAmount = g_makerFilledAmount[orderInfo.orderHash];
         uint256 totalMakerFilledAmount = oldMakerFilledAmount.add(makerFillAmount);
         Require.that(
-            totalMakerFilledAmount <= order.makerAmount,
+            totalMakerFilledAmount <= orderInfo.order.makerAmount,
             FILE,
             "Cannot overfill order",
-            order.orderHash,
+            orderInfo.orderHash,
             oldMakerFilledAmount,
             makerFillAmount
         );
-        g_makerFilledAmount[order.orderHash] = totalMakerFilledAmount;
+        g_makerFilledAmount[orderInfo.orderHash] = totalMakerFilledAmount;
         return totalMakerFilledAmount;
     }
 
@@ -537,33 +554,33 @@ contract LimitOrders is
     )
         private
         view
-        returns (Order memory)
+        returns (OrderInfo memory)
     {
-        Order memory order = parseOrder(data);
+        OrderInfo memory orderInfo = parseOrderInfo(data);
 
-        OrderStatus orderStatus = g_status[order.makerAccountOwner][order.orderHash];
+        OrderStatus orderStatus = g_status[orderInfo.order.makerAccountOwner][orderInfo.orderHash];
 
         // verify valid signature or is pre-approved
         if (orderStatus == OrderStatus.Null) {
             bytes memory signature = parseSignature(data);
-            address signer = TypedSignature.recover(order.orderHash, signature);
+            address signer = TypedSignature.recover(orderInfo.orderHash, signature);
             Require.that(
-                order.makerAccountOwner == signer,
+                orderInfo.order.makerAccountOwner == signer,
                 FILE,
                 "Order invalid signature",
-                order.orderHash
+                orderInfo.orderHash
             );
         } else {
             Require.that(
                 orderStatus != OrderStatus.Canceled,
                 FILE,
                 "Order canceled",
-                order.orderHash
+                orderInfo.orderHash
             );
             assert(orderStatus == OrderStatus.Approved);
         }
 
-        return order;
+        return orderInfo;
     }
 
     // ============ Private Parsing Functions ============
@@ -571,12 +588,12 @@ contract LimitOrders is
     /**
      * Parses out an order from call data.
      */
-    function parseOrder(
+    function parseOrderInfo(
         bytes memory data
     )
         private
         view
-        returns (Order memory)
+        returns (OrderInfo memory)
     {
         Require.that(
             data.length >= NUM_ORDER_BYTES,
@@ -584,47 +601,25 @@ contract LimitOrders is
             "Cannot parse order from data"
         );
 
-        Order memory order;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            mstore(add(order, 0x000), mload(add(data, 0x020)))
-            mstore(add(order, 0x020), mload(add(data, 0x040)))
-            mstore(add(order, 0x040), mload(add(data, 0x060)))
-            mstore(add(order, 0x060), mload(add(data, 0x080)))
-            mstore(add(order, 0x080), mload(add(data, 0x0a0)))
-            mstore(add(order, 0x0a0), mload(add(data, 0x0c0)))
-            mstore(add(order, 0x0c0), mload(add(data, 0x0e0)))
-            mstore(add(order, 0x0e0), mload(add(data, 0x100)))
-            mstore(add(order, 0x100), mload(add(data, 0x120)))
-            mstore(add(order, 0x120), mload(add(data, 0x140)))
-        }
+        OrderInfo memory orderInfo;
+        orderInfo.order = abi.decode(data, (Order));
 
         // compute the overall signed struct hash
         /* solium-disable-next-line indentation */
         bytes32 structHash = keccak256(abi.encode(
             EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH,
-            order.makerMarket,
-            order.takerMarket,
-            order.makerAmount,
-            order.takerAmount,
-            order.makerAccountOwner,
-            order.makerAccountNumber,
-            order.takerAccountOwner,
-            order.takerAccountNumber,
-            order.expiration,
-            order.salt
+            orderInfo.order
         ));
 
         // compute eip712 compliant hash
         /* solium-disable-next-line indentation */
-        order.orderHash = keccak256(abi.encodePacked(
+        orderInfo.orderHash = keccak256(abi.encodePacked(
             EIP191_HEADER,
             EIP712_DOMAIN_HASH,
             structHash
         ));
 
-        return order;
+        return orderInfo;
     }
 
     /**
@@ -645,40 +640,15 @@ contract LimitOrders is
 
         bytes memory signature = new bytes(NUM_SIGNATURE_BYTES);
 
+        uint256 sigOffset = NUM_ORDER_BYTES;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            mstore(add(signature, 0x020), mload(add(data, 0x160)))
-            mstore(add(signature, 0x040), mload(add(data, 0x180)))
-            mstore(add(signature, 0x042), mload(add(data, 0x182)))
+            let sigStart := add(data, sigOffset)
+            mstore(add(signature, 0x020), mload(add(sigStart, 0x20)))
+            mstore(add(signature, 0x040), mload(add(sigStart, 0x40)))
+            mstore(add(signature, 0x042), mload(add(sigStart, 0x42)))
         }
 
         return signature;
-    }
-
-    /**
-     * Parses out a CallFunctionData struct from call data.
-     */
-    function parseCallFunctionData(
-        bytes memory data
-    )
-        private
-        pure
-        returns (CallFunctionData memory)
-    {
-        Require.that(
-            data.length >= NUM_CALLFUNCTIONDATA_BYTES,
-            FILE,
-            "Cannot parse CallFunctionData"
-        );
-
-        CallFunctionData memory cfd;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            mstore(add(cfd, 0x00), mload(add(data, 0x20)))
-            mstore(add(cfd, 0x20), mload(add(data, 0x40)))
-        }
-
-        return cfd;
     }
 }
