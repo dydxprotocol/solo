@@ -58,6 +58,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 |[`OperationImpl`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1](https://etherscan.io/address/0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1)|
 |[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686](https://etherscan.io/address/0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686)|
 |[`LimitOrders`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/LimitOrders.sol)|Contract for making limit orders using dYdX funds|[0xeb32d60A5cDED175cea9aFD0f2447297C125F2f4](https://etherscan.io/address/0xeb32d60A5cDED175cea9aFD0f2447297C125F2f4)|
+|[`SignedOperationProxy`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[0x401dca7116d1CACb3c3bc1B4acE16fC87f7EfaBa](https://etherscan.io/address/0x401dca7116d1CACb3c3bc1B4acE16fC87f7EfaBa)|
 
 ## Security
 
