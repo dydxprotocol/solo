@@ -5,7 +5,7 @@ free to let us know via Intercom or Telegram if you have any questions or experi
 
 All of these endpoints live at `https://api.dydx.exchange/`
 
-e.g. `https://api.dyd.exchange/v1/orders`
+e.g. `https://api.dydx.exchange/v1/orders`
 
 ## Orderbook
 
@@ -13,7 +13,7 @@ e.g. `https://api.dyd.exchange/v1/orders`
 
 The following API endpoints allow for submitting and retrieving orders from the dYdX orderbook.
 This orderbook is what's frequently referred to as a "Matching Model" orderbook. This means that
-all orders are submitted to the blockchain by dYdX itself You do not need to provide gas fees
+all orders are submitted to the blockchain by dYdX itself. You do not need to provide gas fees
 or send on-chain transactions yourself. This is especially useful for traders and market makers who
 wish to be able to quickly cancel their orders without waiting for a transaction to be mined.
 
@@ -26,7 +26,7 @@ The order data is hashed according to [EIP712](https://github.com/ethereum/EIPs/
 This includes the exact order format and version as well as information about the verifying contract and the chainId of the network.
 
 When creating your order you _must_ specify the takerAccountOwner as `x` and the takerAccountNumber
-as `y`, otherwise your order will be rejected.
+as `y`, otherwise your order will be rejected. __TODO__: Replace with real owner/number when known.
 
 After this is done, the order is ready to be submitted to the API.
 
