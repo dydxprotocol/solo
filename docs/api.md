@@ -123,13 +123,6 @@ Content-Type: application/json
 Authorization: [A valid cancel signature]
 ```
 
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-|?makerAccountOwner|The Ethereum address of the account(s) to request orders for.|
-|?makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
-
 Example Response Body:
 ```JSON
 {
@@ -220,7 +213,7 @@ export const STATUSES = {
 ### GET /v1/dex/orders
 
 Description:
-Get all open orders from the orderbook for a particular makerAccountOnwer.
+Get all open orders from the orderbook for a particular makerAccountOwner.
 
 Headers:
 ```
@@ -303,10 +296,11 @@ Content-Type: application/json
 ```
 
 Query Params:
-```
-"?makerAccountOwner": The Ethereum address of the account(s) to request orders for.
-"?makerAccountNumber": (Optional) The Solo account number of the account to request orders for.
-```
+
+|Field Name|Description|
+|----------|-----------|
+|?makerAccountOwner|The Ethereum address of the account(s) to request fills for.|
+|?makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
 
 Example Response Body:
 ```JSON
