@@ -17,6 +17,8 @@ all orders are submitted to the blockchain by dYdX itself. You do not need to pr
 or send on-chain transactions yourself. This is especially useful for traders and market makers who
 wish to be able to quickly cancel their orders without waiting for a transaction to be mined.
 
+The below documents the underlying HTTP API. For easier implementation we recommend using the official [Python Client](https://github.com/dydxprotocol/dydx-python). We may build clients for other languages in the future, so if you have other language/framework needs, please let us know.
+
 In order to submit an order, you (the maker) must first create a JSON object that specifies the
 details of your order. Once you create this object you must sign it with your Ethereum private key,
 and put the result in the `typedSignature` field. Note: The `typedSignature` is omitted before
@@ -42,7 +44,7 @@ __Order fields__
 |takerAccountOwner|string|The Ethereum address of the Taker. This must be to the dYdX account owner listed above|
 |makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
 |takerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Taker. This must be set to teh dYdX account number listed above|
-|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `0` to specify that there is no expiration on the order.|
+|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
 |salt|string|A random number to make the orderHash unique.|
 |typedSignature|string|The signature of the order.|
 
@@ -81,8 +83,8 @@ Request Body:
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
  
-note: Market orders execute immediately and no part of the market order will go on the open order
-book. Market orders will either be completely filled, or not filled. Partial fills are not possible.
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
 
 Example Request Body:
 ```JSON
