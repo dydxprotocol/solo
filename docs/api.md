@@ -23,7 +23,7 @@ and put the result in the `typedSignature` field. Note: The `typedSignature` is 
 signing, and added only after signing the message.
 
 The order data is hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md).
-This includes the exact order format and version as well as information about the verifying contract and the chainId of the network.
+This includes the exact order format and version as well as information about the verifying contract and the chainId of the network. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
 When creating your order you _must_ specify the takerAccountOwner as `x` and the takerAccountNumber
 as `y`, otherwise your order will be rejected. __TODO__: Replace with real owner/number when known.
@@ -112,8 +112,8 @@ Returns:
 Description:
 Cancels an open order by hash.
 
-Please note you will need to provide a valid cancelation signature in order to cancel an order.
-The cancellation message should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
+Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
+The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
 Headers:
 ```
