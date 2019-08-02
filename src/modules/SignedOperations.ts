@@ -13,6 +13,13 @@ import {
   addressesAreEqual,
 } from '../lib/BytesHelper';
 import {
+  SIGNATURE_TYPES,
+  EIP712_DOMAIN_STRING,
+  EIP712_DOMAIN_STRUCT,
+  createTypedSignature,
+  ecRecoverTypedSignature,
+} from '../lib/SignatureHelper';
+import {
   address,
   Action,
   AssetAmount,
@@ -20,14 +27,8 @@ import {
   SignedOperation,
   ContractCallOptions,
   ContractConstantCallOptions,
+  SigningMethod,
 } from '../../src/types';
-import {
-  SIGNATURE_TYPES,
-  EIP712_DOMAIN_STRING,
-  EIP712_DOMAIN_STRUCT,
-  createTypedSignature,
-  ecRecoverTypedSignature,
-} from '../lib/SignatureHelper';
 
 const EIP712_OPERATION_STRUCT = [
   { type: 'Action[]', name: 'actions' },
@@ -87,6 +88,15 @@ const EIP712_OPERATION_STRING =
   'address sender' +
   ')' +
   EIP712_ACTION_STRING;
+
+const EIP712_CANCEL_OPERATION_STRUCT = [
+  { type: 'bytes32', name: 'operationHash' },
+];
+
+const EIP712_CANCEL_OPERATION_STRUCT_STRING =
+  'CancelOperation(' +
+  'bytes32 operationHash' +
+  ')';
 
 export class SignedOperations {
   private contracts: Contracts;
@@ -169,41 +179,86 @@ export class SignedOperations {
   // ============ Signing Methods ============
 
   /**
-   * Sends operation to current provider for signing. Uses the 'eth_signTypedData_v3' rpc call which
-   * is compatible only with Metamask.
+   * Sends operation to current provider for signing. Can sign locally if the signing account is
+   * loaded into web3 and SigningMethod.Hash is used.
    */
-  public async ethSignTypedOperationWithMetamask(
+  public async signOperation(
     operation: Operation,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    return this.ethSignTypedOperationInternal(
-      operation,
-      'eth_signTypedData_v3',
+    switch (signingMethod) {
+      case SigningMethod.Hash:
+        const hash = this.getOperationHash(operation);
+        const signature = await this.web3.eth.sign(hash, operation.signer);
+        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+
+      case SigningMethod.TypedData:
+        return this.ethSignTypedOperationInternal(
+          operation,
+          'eth_signTypedData',
+        );
+
+      case SigningMethod.MetaMask:
+        return this.ethSignTypedOperationInternal(
+          operation,
+          'eth_signTypedData_v3',
+        );
+
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
+  }
+
+  /**
+   * Sends operation to current provider for signing of a cancel message. Can sign locally if the
+   * signing account is loaded into web3 and SigningMethod.Hash is used.
+   */
+  public async signCancelOperation(
+    operation: Operation,
+    signingMethod: SigningMethod,
+  ): Promise<string> {
+    return this.signCancelOperationByHash(
+      this.getOperationHash(operation),
+      operation.signer,
+      signingMethod,
     );
   }
 
   /**
-   * Sends operation to current provider for signing. Uses the 'eth_signTypedData' rpc call. This
-   * should be used for any provider that is not Metamask.
+   * Sends operationHash to current provider for signing of a cancel message. Can sign locally if
+   * the signing account is loaded into web3 and SigningMethod.Hash is used.
    */
-  public async ethSignTypedOperation(
-    operation: Operation,
+  public async signCancelOperationByHash(
+    operationHash: string,
+    signer: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    return this.ethSignTypedOperationInternal(
-      operation,
-      'eth_signTypedData',
-    );
+    switch (signingMethod) {
+      case SigningMethod.Hash:
+        const cancelHash = this.operationHashToCancelOperationHash(operationHash);
+        const signature = await this.web3.eth.sign(cancelHash, signer);
+        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+
+      case SigningMethod.TypedData:
+        return this.ethSignTypedCancelOperationInternal(
+          operationHash,
+          signer,
+          'eth_signTypedData',
+        );
+
+      case SigningMethod.MetaMask:
+        return this.ethSignTypedCancelOperationInternal(
+          operationHash,
+          signer,
+          'eth_signTypedData_v3',
+        );
+
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
   }
 
-  /**
-   * Uses web3.eth.sign to sign the hash of the operation.
-   */
-  public async ethSignOperation(
-    operation: Operation,
-  ): Promise<string> {
-    const hash = this.getOperationHash(operation);
-    const signature = await this.web3.eth.sign(hash, operation.signer);
-    return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
-  }
+  // ============ Signing Cancel Operation Methods ============
 
   /**
    * Uses web3.eth.sign to sign a cancel message for an operation. This signature is not used
@@ -294,34 +349,14 @@ export class SignedOperations {
    * Returns the final signable EIP712 hash for approving an operation.
    */
   public getOperationHash(operation: Operation): string {
-    const basicHash = soliditySha3(
+    const structHash = soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_OPERATION_STRING) },
       { t: 'bytes32', v: this.getActionsHash(operation.actions) },
       { t: 'uint256', v: toString(operation.expiration) },
       { t: 'uint256', v: toString(operation.salt) },
       { t: 'bytes32', v: addressToBytes32(operation.sender) },
     );
-
-    const retVal = soliditySha3(
-      { t: 'bytes', v: '0x1901' },
-      { t: 'bytes32', v: this.getDomainHash() },
-      { t: 'bytes32', v: basicHash },
-    );
-
-    return retVal;
-  }
-
-  /**
-   * Returns the EIP712 domain separator hash.
-   */
-  public getDomainHash(): string {
-    return soliditySha3(
-      { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: hashString('SignedOperationProxy') },
-      { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: this.networkId },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.signedOperationProxy.options.address) },
-    );
+    return this.getEIP712Hash(structHash);
   }
 
   /**
@@ -378,24 +413,54 @@ export class SignedOperations {
   public operationHashToCancelOperationHash(
     operationHash: string,
   ): string {
-    return soliditySha3(
-      { t: 'string', v: 'cancel' },
+    const structHash = soliditySha3(
+      { t: 'bytes32', v: hashString(EIP712_CANCEL_OPERATION_STRUCT_STRING) },
       { t: 'bytes32', v: operationHash },
+    );
+    return this.getEIP712Hash(structHash);
+  }
+
+  /**
+   * Returns the EIP712 domain separator hash.
+   */
+  public getDomainHash(): string {
+    return soliditySha3(
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
+      { t: 'bytes32', v: hashString('SignedOperationProxy') },
+      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'uint256', v: this.networkId },
+      { t: 'bytes32', v: addressToBytes32(this.contracts.signedOperationProxy.options.address) },
     );
   }
 
-  // ============ Private Helper Functions ============s
+  /**
+   * Returns a signable EIP712 Hash of a struct
+   */
+  public getEIP712Hash(
+    structHash: string,
+  ): string {
+    return soliditySha3(
+      { t: 'bytes2', v: '0x1901' },
+      { t: 'bytes32', v: this.getDomainHash() },
+      { t: 'bytes32', v: structHash },
+    );
+  }
 
-  private async ethSignTypedOperationInternal(
-    operation: Operation,
-    rpcMethod: string,
-  ): Promise<string> {
-    const domainData = {
+  // ============ Private Helper Functions ============
+
+  private getDomainData() {
+    return {
       name: 'SignedOperationProxy',
       version: '1.0',
       chainId: this.networkId,
       verifyingContract: this.contracts.signedOperationProxy.options.address,
     };
+  }
+
+  private async ethSignTypedOperationInternal(
+    operation: Operation,
+    rpcMethod: string,
+  ): Promise<string> {
     const actionsData = operation.actions.map((action) => {
       return {
         actionType: toString(action.actionType),
@@ -428,14 +493,47 @@ export class SignedOperations {
         Action: EIP712_ACTION_STRUCT,
         AssetAmount: EIP712_ASSET_AMOUNT_STRUCT,
       },
-      domain: domainData,
+      domain: this.getDomainData(),
       primaryType: 'Operation',
       message: operationData,
     };
+    return this.ethSignTypedDataInternal(
+      operation.signer,
+      data,
+      rpcMethod,
+    );
+  }
+
+  private async ethSignTypedCancelOperationInternal(
+    operationHash: string,
+    signer: string,
+    rpcMethod: string,
+  ): Promise<string> {
+    const data = {
+      types: {
+        EIP712Domain: EIP712_DOMAIN_STRUCT,
+        CancelOperation: EIP712_CANCEL_OPERATION_STRUCT,
+      },
+      domain: this.getDomainData(),
+      primaryType: 'CancelOperation',
+      message: { operationHash },
+    };
+    return this.ethSignTypedDataInternal(
+      signer,
+      data,
+      rpcMethod,
+    );
+  }
+
+  private async ethSignTypedDataInternal(
+    signer: string,
+    data: any,
+    rpcMethod: string,
+  ): Promise<string> {
     const sendAsync = promisify(this.web3.currentProvider.send).bind(this.web3.currentProvider);
     const response = await sendAsync({
       method: rpcMethod,
-      params: [operation.signer, data],
+      params: [signer, data],
       jsonrpc: '2.0',
       id: new Date().getTime(),
     });

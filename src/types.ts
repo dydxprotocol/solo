@@ -38,6 +38,12 @@ export enum ProxyType {
   Sender = 'Sender',
 }
 
+export enum SigningMethod {
+  Hash = 'Hash',
+  TypedData = 'TypedData',
+  MetaMask = 'MetaMask',
+}
+
 export interface SoloOptions {
   defaultAccount?: address;
   confirmationType?: ConfirmationType;

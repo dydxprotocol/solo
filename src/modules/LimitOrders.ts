@@ -26,6 +26,7 @@ import {
   LimitOrder,
   SignedLimitOrder,
   LimitOrderState,
+  SigningMethod,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -53,6 +54,15 @@ const EIP712_ORDER_STRUCT_STRING =
   'uint256 takerAccountNumber,' +
   'uint256 expiration,' +
   'uint256 salt' +
+  ')';
+
+const EIP712_CANCEL_ORDER_STRUCT = [
+  { type: 'bytes32', name: 'orderHash' },
+];
+
+const EIP712_CANCEL_ORDER_STRUCT_STRING =
+  'CancelLimitOrder(' +
+  'bytes32 orderHash' +
   ')';
 
 export class LimitOrders {
@@ -146,68 +156,83 @@ export class LimitOrders {
   // ============ Signing Methods ============
 
   /**
-   * Sends order to current provider for signing. Uses the 'eth_signTypedData_v3' rpc call which is
-   * compatible only with Metamask.
+   * Sends order to current provider for signing. Can sign locally if the signing account is
+   * loaded into web3 and SigningMethod.Hash is used.
    */
-  public async ethSignTypedOrderWithMetamask(
+  public async signOrder(
     order: LimitOrder,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    return this.ethSignTypedOrderInternal(
-      order,
-      'eth_signTypedData_v3',
-    );
+    switch (signingMethod) {
+      case SigningMethod.Hash:
+        const hash = this.getOrderHash(order);
+        const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
+        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+
+      case SigningMethod.TypedData:
+        return this.ethSignTypedOrderInternal(
+          order,
+          'eth_signTypedData',
+        );
+
+      case SigningMethod.MetaMask:
+        return this.ethSignTypedOrderInternal(
+          order,
+          'eth_signTypedData_v3',
+        );
+
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
   }
 
   /**
-   * Sends order to current provider for signing. Uses the 'eth_signTypedData' rpc call. This should
-   * be used for any provider that is not Metamask.
+   * Sends order to current provider for signing of a cancel message. Can sign locally if the
+   * signing account is loaded into web3 and SigningMethod.Hash is used.
    */
-  public async ethSignTypedOrder(
+  public async signCancelOrder(
     order: LimitOrder,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    return this.ethSignTypedOrderInternal(
-      order,
-      'eth_signTypedData',
-    );
-  }
-
-  /**
-   * Uses web3.eth.sign to sign the hash of the order.
-   */
-  public async ethSignOrder(
-    order: LimitOrder,
-  ): Promise<string> {
-    const hash = this.getOrderHash(order);
-    const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
-    return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
-  }
-
-  /**
-   * Uses web3.eth.sign to sign a cancel message for an order. This signature is not used on-chain,
-   * but allows dYdX backend services to verify that the cancel order api call is from the original
-   * maker of the order.
-   */
-  public async ethSignCancelOrder(
-    order: LimitOrder,
-  ): Promise<string> {
-    return this.ethSignCancelOrderByHash(
+    return this.signCancelOrderByHash(
       this.getOrderHash(order),
       order.makerAccountOwner,
+      signingMethod,
     );
   }
 
   /**
-   * Uses web3.eth.sign to sign a cancel message for an order hash. This signature is not used
-   * on-chain, but allows dYdX backend services to verify that the cancel order api call is from the
-   * original maker of the order.
+   * Sends orderHash to current provider for signing of a cancel message. Can sign locally if
+   * the signing account is loaded into web3 and SigningMethod.Hash is used.
    */
-  public async ethSignCancelOrderByHash(
+  public async signCancelOrderByHash(
     orderHash: string,
-    signer: address,
+    signer: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    const cancelHash = this.orderHashToCancelOrderHash(orderHash);
-    const signature = await this.web3.eth.sign(cancelHash, signer);
-    return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+    switch (signingMethod) {
+      case SigningMethod.Hash:
+        const cancelHash = this.orderHashToCancelOrderHash(orderHash);
+        const signature = await this.web3.eth.sign(cancelHash, signer);
+        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+
+      case SigningMethod.TypedData:
+        return this.ethSignTypedCancelOrderInternal(
+          orderHash,
+          signer,
+          'eth_signTypedData',
+        );
+
+      case SigningMethod.MetaMask:
+        return this.ethSignTypedCancelOrderInternal(
+          orderHash,
+          signer,
+          'eth_signTypedData_v3',
+        );
+
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
   }
 
   // ============ Signature Verification ============
@@ -339,16 +364,20 @@ export class LimitOrders {
       { t: 'uint256', v: order.expiration },
       { t: 'uint256', v: order.salt },
     );
+    return this.getEIP712Hash(structHash);
+  }
 
-    const domainHash = this.getDomainHash();
-
-    const retVal = soliditySha3(
-      { t: 'bytes2', v: '0x1901' },
-      { t: 'bytes32', v: domainHash },
-      { t: 'bytes32', v: structHash },
+  /**
+   * Given some order hash, returns the hash of a cancel-order message.
+   */
+  public orderHashToCancelOrderHash(
+    orderHash: string,
+  ): string {
+    const structHash = soliditySha3(
+      { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
+      { t: 'bytes32', v: orderHash },
     );
-
-    return retVal;
+    return this.getEIP712Hash(structHash);
   }
 
   /**
@@ -365,14 +394,15 @@ export class LimitOrders {
   }
 
   /**
-   * Given some order hash, returns the hash of a cancel-order message.
+   * Returns a signable EIP712 Hash of a struct
    */
-  public orderHashToCancelOrderHash(
-    orderHash: string,
+  public getEIP712Hash(
+    structHash: string,
   ): string {
     return soliditySha3(
-      { t: 'string', v: 'cancel' },
-      { t: 'bytes32', v: orderHash },
+      { t: 'bytes2', v: '0x1901' },
+      { t: 'bytes32', v: this.getDomainHash() },
+      { t: 'bytes32', v: structHash },
     );
   }
 
@@ -409,16 +439,19 @@ export class LimitOrders {
       .concat(argToBytes(order.salt));
   }
 
-  private async ethSignTypedOrderInternal(
-    order: LimitOrder,
-    rpcMethod: string,
-  ): Promise<string> {
-    const domainData = {
+  private getDomainData() {
+    return {
       name: 'LimitOrders',
       version: '1.0',
       chainId: this.networkId,
       verifyingContract: this.contracts.limitOrders.options.address,
     };
+  }
+
+  private async ethSignTypedOrderInternal(
+    order: LimitOrder,
+    rpcMethod: string,
+  ): Promise<string> {
     const orderData = {
       makerMarket: order.makerMarket.toFixed(0),
       takerMarket: order.takerMarket.toFixed(0),
@@ -436,14 +469,47 @@ export class LimitOrders {
         EIP712Domain: EIP712_DOMAIN_STRUCT,
         LimitOrder: EIP712_ORDER_STRUCT,
       },
-      domain: domainData,
+      domain: this.getDomainData(),
       primaryType: 'LimitOrder',
       message: orderData,
     };
+    return this.ethSignTypedDataInternal(
+      order.makerAccountOwner,
+      data,
+      rpcMethod,
+    );
+  }
+
+  private async ethSignTypedCancelOrderInternal(
+    orderHash: string,
+    signer: string,
+    rpcMethod: string,
+  ): Promise<string> {
+    const data = {
+      types: {
+        EIP712Domain: EIP712_DOMAIN_STRUCT,
+        CancelLimitOrder: EIP712_CANCEL_ORDER_STRUCT,
+      },
+      domain: this.getDomainData(),
+      primaryType: 'CancelLimitOrder',
+      message: { orderHash },
+    };
+    return this.ethSignTypedDataInternal(
+      signer,
+      data,
+      rpcMethod,
+    );
+  }
+
+  private async ethSignTypedDataInternal(
+    signer: string,
+    data: any,
+    rpcMethod: string,
+  ): Promise<string> {
     const sendAsync = promisify(this.web3.currentProvider.send).bind(this.web3.currentProvider);
     const response = await sendAsync({
       method: rpcMethod,
-      params: [order.makerAccountOwner, data],
+      params: [signer, data],
       jsonrpc: '2.0',
       id: new Date().getTime(),
     });
