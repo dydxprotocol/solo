@@ -170,7 +170,7 @@ The Authorization header signature should be hashed according to [EIP712](https:
 Headers:
 ```
 Content-Type: application/json
-Authorization: [A valid cancel signature]
+Authorization: Bearer [A valid cancel signature]
 ```
 
 Example Response Body:
@@ -263,7 +263,8 @@ export const STATUSES = {
 ### GET /v1/dex/orders
 
 Description:
-Get all open orders from the orderbook.
+Get all open orders from the orderbook. This includes both unfilled and partially filled orders, but
+does not include canceled, pruned, or unfillable orders.
 
 Headers:
 ```
