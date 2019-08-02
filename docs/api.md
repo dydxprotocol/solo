@@ -66,6 +66,56 @@ Example:
 };
 ```
 
+### GET /v1/dex/pairs
+
+Description:
+Returns all dex-compatible pairs
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Example Response Body:
+```JSON
+{
+    "pairs": [
+        {
+            "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+            "name": "WETH-DAI",
+            "createdAt": "2019-07-26T17:19:34.955Z",
+            "updatedAt": "2019-07-26T17:19:34.955Z",
+            "deletedAt": null,
+            "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "makerCurrency": {
+                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                "createdAt": "2019-07-26T17:19:34.627Z",
+                "updatedAt": "2019-07-26T17:19:34.627Z",
+                "deletedAt": null
+            },
+            "takerCurrency": {
+                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+                "createdAt": "2019-07-26T17:19:34.919Z",
+                "updatedAt": "2019-07-26T17:19:34.919Z",
+                "deletedAt": null
+            }
+        }
+    ]
+}
+```
+
+Returns:
+`200` if successful
+
 ### POST /v1/dex/orders
 
 Description:
@@ -120,7 +170,7 @@ The Authorization header signature should be hashed according to [EIP712](https:
 Headers:
 ```
 Content-Type: application/json
-Authorization: [A valid cancel signature]
+Authorization: Bearer [A valid cancel signature]
 ```
 
 Example Response Body:
@@ -213,7 +263,8 @@ export const STATUSES = {
 ### GET /v1/dex/orders
 
 Description:
-Get all open orders from the orderbook for a particular makerAccountOwner.
+Get all open orders from the orderbook. This includes both unfilled and partially filled orders, but
+does not include canceled, pruned, or unfillable orders.
 
 Headers:
 ```
@@ -224,8 +275,10 @@ Query Params:
 
 |Field Name|Description|
 |----------|-----------|
-|?makerAccountOwner|The Ethereum address of the account(s) to request orders for.|
+|?makerAccountOwner|(Optional) The Ethereum address of the account(s) to request orders for.|
 |?makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
 
 Example Response Body:
 ```JSON
@@ -288,7 +341,7 @@ Example Response Body:
 ### GET /v1/dex/fills
 
 Description:
-Get all historical fills for a particular makerAccountOwner.
+Get all historical fills.
 
 Headers:
 ```
@@ -301,6 +354,8 @@ Query Params:
 |----------|-----------|
 |?makerAccountOwner|The Ethereum address of the account(s) to request fills for.|
 |?makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
 
 Example Response Body:
 ```JSON
@@ -367,5 +422,65 @@ Example Response Body:
             }
         },
     ]
+}
+```
+
+## Accounts
+
+### GET /v1/accounts/:address
+
+Description:
+Get account balances for a particular account owner
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Note: To get any account's collateralization, simply take `sumSupplyUsdValue / sumBorrowUsdValue`.
+The minimum collateralization where liquidation occurs on the protocol using this formula is 1.15.
+
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?number|(Optional) The Solo Acount number of the account to request balances for.|
+
+Example Response Body:
+```JSON
+{
+  "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
+  "number": "0",
+  "uuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
+  "hasAtLeastOneNegativePar": false,
+  "hasAtLeastOnePositivePar": true,
+  "sumBorrowUsdValue": "0",
+  "sumSupplyUsdValue": "0",
+  "balances": {
+    "0": {
+      "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
+      "number": "0",
+      "marketId": 0,
+      "newPar": "9994719126810778",
+      "accountUuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
+      "isParPositive": true,
+      "isParNegative": false,
+      "wei": "10000184397123234.892111593021043502",
+      "expiresAt": null,
+      "par": "9994719126810778",
+      "adjustedSupplyUsdValue": "0",
+      "adjustedBorrowUsdValue": "0"
+    },
+    "1": {
+      "par": 0,
+      "wei": 0,
+      "expiresAt": null
+    },
+    "2": {
+      "par": 0,
+      "wei": 0,
+      "expiresAt": null
+    }
+  }
 }
 ```
