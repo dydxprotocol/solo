@@ -14,6 +14,7 @@ import {
   SignedOperation,
   AmountReference,
   AmountDenomination,
+  SigningMethod,
 } from '../../src/types';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -222,17 +223,50 @@ describe('SignedOperationProxy', () => {
     await resetEVM(snapshotId);
   });
 
-  describe('signing messages', () => {
+  describe('Signing Operations', () => {
     it('Succeeds for eth.sign', async () => {
       const operation = { ...signedTradeOperation };
-      operation.typedSignature = await solo.signedOperations.ethSignOperation(operation);
+      operation.typedSignature =
+        await solo.signedOperations.signOperation(operation, SigningMethod.Hash);
       expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(true);
+    });
+
+    it('Succeeds for eth_signTypedData', async () => {
+      // TODO: once ganache supports eth_signTypedData for arrays
     });
 
     it('Recognizes a bad signature', async () => {
       const operation = { ...signedTradeOperation };
       operation.typedSignature = `0x${'1b'.repeat(65)}00`;
       expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(false);
+    });
+  });
+
+  describe('Signing Cancel Operations', () => {
+    it('Succeeds for eth.sign', async () => {
+      const operation = { ...signedTradeOperation };
+      const cancelSig =
+        await solo.signedOperations.signCancelOperation(operation, SigningMethod.Hash);
+      expect(
+        solo.signedOperations.cancelOperationHasValidSignature(operation, cancelSig),
+      ).toBe(true);
+    });
+
+    it('Succeeds for eth_signTypedData', async () => {
+      const operation = { ...signedTradeOperation };
+      const cancelSig =
+        await solo.signedOperations.signCancelOperation(operation, SigningMethod.TypedData);
+      expect(
+        solo.signedOperations.cancelOperationHasValidSignature(operation, cancelSig),
+      ).toBe(true);
+    });
+
+    it('Recognizes a bad signature', async () => {
+      const operation = { ...signedTradeOperation };
+      const cancelSig = `0x${'1b'.repeat(65)}00`;
+      expect(
+        solo.signedOperations.cancelOperationHasValidSignature(operation, cancelSig),
+      ).toBe(false);
     });
   });
 
@@ -348,7 +382,8 @@ describe('SignedOperationProxy', () => {
         sender: defaultSender,
         signer: defaultSigner,
       };
-      const typedSignature = await solo.signedOperations.ethSignOperation(operation);
+      const typedSignature =
+        await solo.signedOperations.signOperation(operation, SigningMethod.Hash);
       const signedOperation: SignedOperation = {
         ...operation,
         typedSignature,
@@ -493,7 +528,7 @@ describe('SignedOperationProxy', () => {
         primaryAccountOwner: rando,
       };
       randoifiedOperation.typedSignature =
-        await solo.signedOperations.ethSignOperation(randoifiedOperation);
+        await solo.signedOperations.signOperation(randoifiedOperation, SigningMethod.Hash);
       return randoifiedOperation;
     }
 
@@ -604,7 +639,7 @@ describe('SignedOperationProxy', () => {
         expiration: INTEGERS.ONE,
       };
       expiredOperation.typedSignature =
-        await solo.signedOperations.ethSignOperation(expiredOperation);
+        await solo.signedOperations.signOperation(expiredOperation, SigningMethod.Hash);
       await expectThrow(
         solo.operation
           .initiate({ proxy: ProxyType.Sender })
@@ -837,7 +872,7 @@ describe('SignedOperationProxy', () => {
       multiActionOperation.actions =
         multiActionOperation.actions.concat(signedCallOperation.actions);
       multiActionOperation.typedSignature =
-        await solo.signedOperations.ethSignOperation(multiActionOperation);
+        await solo.signedOperations.signOperation(multiActionOperation, SigningMethod.Hash);
 
       const txResult = await solo.operation
         .initiate({ proxy: ProxyType.Sender })
@@ -870,7 +905,7 @@ describe('SignedOperationProxy', () => {
       });
       const signedOperation2: SignedOperation = {
         ...operation2,
-        typedSignature: await solo.signedOperations.ethSignOperation(operation2),
+        typedSignature: await solo.signedOperations.signOperation(operation2, SigningMethod.Hash),
       };
 
       // commit the operations
@@ -903,7 +938,7 @@ describe('SignedOperationProxy', () => {
       });
       const signedOperation2: SignedOperation = {
         ...operation2,
-        typedSignature: await solo.signedOperations.ethSignOperation(operation2),
+        typedSignature: await solo.signedOperations.signOperation(operation2, SigningMethod.Hash),
       };
 
       // generate interleaved data
@@ -951,7 +986,7 @@ async function createSignedOperation(
     });
   return {
     ...operation,
-    typedSignature: await solo.signedOperations.ethSignOperation(operation),
+    typedSignature: await solo.signedOperations.signOperation(operation, SigningMethod.Hash),
   };
 }
 

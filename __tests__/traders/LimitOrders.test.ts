@@ -14,6 +14,7 @@ import {
   LimitOrder,
   SignedLimitOrder,
   LimitOrderStatus,
+  SigningMethod,
 } from '../../src/types';
 
 let solo: Solo;
@@ -56,7 +57,8 @@ describe('LimitOrders', () => {
       salt: new BigNumber(100),
       typedSignature: null,
     };
-    testOrder.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrder);
+    testOrder.typedSignature =
+        await solo.limitOrders.signOrder(testOrder, SigningMethod.TypedData);
 
     await resetEVM();
 
@@ -85,16 +87,16 @@ describe('LimitOrders', () => {
     await resetEVM(snapshotId);
   });
 
-  describe('signing messages', () => {
+  describe('Signing Orders', () => {
     it('Succeeds for eth.sign', async () => {
       const order = { ...testOrder };
-      order.typedSignature = await solo.limitOrders.ethSignOrder(order);
+      order.typedSignature = await solo.limitOrders.signOrder(order, SigningMethod.Hash);
       expect(solo.limitOrders.orderHasValidSignature(order)).toBe(true);
     });
 
     it('Succeeds for eth_signTypedData', async () => {
       const order = { ...testOrder };
-      order.typedSignature = await solo.limitOrders.ethSignTypedOrder(order);
+      order.typedSignature = await solo.limitOrders.signOrder(order, SigningMethod.TypedData);
       expect(solo.limitOrders.orderHasValidSignature(order)).toBe(true);
     });
 
@@ -102,6 +104,26 @@ describe('LimitOrders', () => {
       const order = { ...testOrder };
       order.typedSignature = `0x${'1b'.repeat(65)}00`;
       expect(solo.limitOrders.orderHasValidSignature(order)).toBe(false);
+    });
+  });
+
+  describe('Signing CancelOrders', () => {
+    it('Succeeds for eth.sign', async () => {
+      const order = { ...testOrder };
+      const cancelSig = await solo.limitOrders.signCancelOrder(order, SigningMethod.Hash);
+      expect(solo.limitOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(true);
+    });
+
+    it('Succeeds for eth_signTypedData', async () => {
+      const order = { ...testOrder };
+      const cancelSig = await solo.limitOrders.signCancelOrder(order, SigningMethod.TypedData);
+      expect(solo.limitOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(true);
+    });
+
+    it('Recognizes a bad signature', async () => {
+      const order = { ...testOrder };
+      const cancelSig = `0x${'1b'.repeat(65)}00`;
+      expect(solo.limitOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(false);
     });
   });
 
@@ -197,7 +219,7 @@ describe('LimitOrders', () => {
         expiration: INTEGERS.ZERO,
       };
       testOrderNoExpiry.typedSignature =
-        await solo.limitOrders.ethSignTypedOrder(testOrderNoExpiry);
+        await solo.limitOrders.signOrder(testOrderNoExpiry, SigningMethod.TypedData);
       await fillLimitOrder(testOrderNoExpiry, {});
       await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrderNoExpiry, defaultMakerAmount);
@@ -209,7 +231,8 @@ describe('LimitOrders', () => {
         takerAccountOwner: ADDRESSES.ZERO,
         takerAccountNumber: INTEGERS.ZERO,
       };
-      testOrderNoTaker.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderNoTaker);
+      testOrderNoTaker.typedSignature =
+        await solo.limitOrders.signOrder(testOrderNoTaker, SigningMethod.TypedData);
       await fillLimitOrder(testOrderNoTaker, {});
       await expectBalances(INTEGERS.ZERO, defaultMakerAmount, defaultTakerAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrderNoTaker, defaultMakerAmount);
@@ -334,7 +357,8 @@ describe('LimitOrders', () => {
         ...testOrder,
         expiration: INTEGERS.ONE,
       };
-      testOrderExpired.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderExpired);
+      testOrderExpired.typedSignature =
+        await solo.limitOrders.signOrder(testOrderExpired, SigningMethod.TypedData);
       await expectThrow(
         fillLimitOrder(testOrderExpired, {}),
         'LimitOrders: Order expired',
@@ -713,8 +737,10 @@ describe('LimitOrders', () => {
       const approver = accounts[1];
       const testOrderCancel = { ...testOrder, makerAccountOwner: canceler };
       const testOrderApprove = { ...testOrder, makerAccountOwner: approver };
-      testOrderCancel.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderCancel);
-      testOrderApprove.typedSignature = await solo.limitOrders.ethSignTypedOrder(testOrderApprove);
+      testOrderCancel.typedSignature =
+        await solo.limitOrders.signOrder(testOrderCancel, SigningMethod.TypedData);
+      testOrderApprove.typedSignature =
+        await solo.limitOrders.signOrder(testOrderApprove, SigningMethod.TypedData);
 
       await Promise.all([
         solo.limitOrders.approveOrder(testOrderApprove, { from: approver }),
