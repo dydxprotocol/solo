@@ -165,20 +165,19 @@ export class LimitOrders {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
-        const hash = this.getOrderHash(order);
-        const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+      case SigningMethod.UnsafeHash:
+        const orderHash = this.getOrderHash(order);
+        const signature = await this.web3.eth.sign(orderHash, order.makerAccountOwner);
+        const sigType = (signingMethod === SigningMethod.UnsafeHash)
+          ? SIGNATURE_TYPES.NO_PREPEND
+          : SIGNATURE_TYPES.DECIMAL;
+        return createTypedSignature(signature, sigType);
 
       case SigningMethod.TypedData:
-        return this.ethSignTypedOrderInternal(
-          order,
-          'eth_signTypedData',
-        );
-
       case SigningMethod.MetaMask:
         return this.ethSignTypedOrderInternal(
           order,
-          'eth_signTypedData_v3',
+          signingMethod,
         );
 
       default:
@@ -212,22 +211,20 @@ export class LimitOrders {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
+      case SigningMethod.UnsafeHash:
         const cancelHash = this.orderHashToCancelOrderHash(orderHash);
         const signature = await this.web3.eth.sign(cancelHash, signer);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+        const sigType = (signingMethod === SigningMethod.UnsafeHash)
+          ? SIGNATURE_TYPES.NO_PREPEND
+          : SIGNATURE_TYPES.DECIMAL;
+        return createTypedSignature(signature, sigType);
 
       case SigningMethod.TypedData:
-        return this.ethSignTypedCancelOrderInternal(
-          orderHash,
-          signer,
-          'eth_signTypedData',
-        );
-
       case SigningMethod.MetaMask:
         return this.ethSignTypedCancelOrderInternal(
           orderHash,
           signer,
-          'eth_signTypedData_v3',
+          signingMethod,
         );
 
       default:
@@ -450,7 +447,7 @@ export class LimitOrders {
 
   private async ethSignTypedOrderInternal(
     order: LimitOrder,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
     const orderData = {
       makerMarket: order.makerMarket.toFixed(0),
@@ -476,14 +473,14 @@ export class LimitOrders {
     return this.ethSignTypedDataInternal(
       order.makerAccountOwner,
       data,
-      rpcMethod,
+      signingMethod,
     );
   }
 
   private async ethSignTypedCancelOrderInternal(
     orderHash: string,
     signer: string,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
     const data = {
       types: {
@@ -497,19 +494,39 @@ export class LimitOrders {
     return this.ethSignTypedDataInternal(
       signer,
       data,
-      rpcMethod,
+      signingMethod,
     );
   }
 
   private async ethSignTypedDataInternal(
     signer: string,
     data: any,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    const sendAsync = promisify(this.web3.currentProvider.send).bind(this.web3.currentProvider);
+    let sendMethod: string;
+    let rpcMethod: string;
+    let rpcData: any;
+
+    switch (signingMethod) {
+      case SigningMethod.TypedData:
+        sendMethod = 'send';
+        rpcMethod = 'eth_signTypedData';
+        rpcData = data;
+        break;
+      case SigningMethod.MetaMask:
+        sendMethod = 'sendAsync';
+        rpcMethod = 'eth_signTypedData_v3';
+        rpcData = JSON.stringify(data);
+        break;
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
+
+    const provider = this.web3.currentProvider;
+    const sendAsync = promisify(provider[sendMethod]).bind(provider);
     const response = await sendAsync({
       method: rpcMethod,
-      params: [signer, data],
+      params: [signer, rpcData],
       jsonrpc: '2.0',
       id: new Date().getTime(),
     });

@@ -188,20 +188,19 @@ export class SignedOperations {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
+      case SigningMethod.UnsafeHash:
         const hash = this.getOperationHash(operation);
         const signature = await this.web3.eth.sign(hash, operation.signer);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+        const sigType = (signingMethod === SigningMethod.UnsafeHash)
+          ? SIGNATURE_TYPES.NO_PREPEND
+          : SIGNATURE_TYPES.DECIMAL;
+        return createTypedSignature(signature, sigType);
 
       case SigningMethod.TypedData:
-        return this.ethSignTypedOperationInternal(
-          operation,
-          'eth_signTypedData',
-        );
-
       case SigningMethod.MetaMask:
         return this.ethSignTypedOperationInternal(
           operation,
-          'eth_signTypedData_v3',
+          signingMethod,
         );
 
       default:
@@ -235,22 +234,20 @@ export class SignedOperations {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
+      case SigningMethod.UnsafeHash:
         const cancelHash = this.operationHashToCancelOperationHash(operationHash);
         const signature = await this.web3.eth.sign(cancelHash, signer);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+        const sigType = (signingMethod === SigningMethod.UnsafeHash)
+          ? SIGNATURE_TYPES.NO_PREPEND
+          : SIGNATURE_TYPES.DECIMAL;
+        return createTypedSignature(signature, sigType);
 
       case SigningMethod.TypedData:
-        return this.ethSignTypedCancelOperationInternal(
-          operationHash,
-          signer,
-          'eth_signTypedData',
-        );
-
       case SigningMethod.MetaMask:
         return this.ethSignTypedCancelOperationInternal(
           operationHash,
           signer,
-          'eth_signTypedData_v3',
+          signingMethod,
         );
 
       default:
@@ -459,7 +456,7 @@ export class SignedOperations {
 
   private async ethSignTypedOperationInternal(
     operation: Operation,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
     const actionsData = operation.actions.map((action) => {
       return {
@@ -500,14 +497,14 @@ export class SignedOperations {
     return this.ethSignTypedDataInternal(
       operation.signer,
       data,
-      rpcMethod,
+      signingMethod,
     );
   }
 
   private async ethSignTypedCancelOperationInternal(
     operationHash: string,
     signer: string,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
     const data = {
       types: {
@@ -521,19 +518,39 @@ export class SignedOperations {
     return this.ethSignTypedDataInternal(
       signer,
       data,
-      rpcMethod,
+      signingMethod,
     );
   }
 
   private async ethSignTypedDataInternal(
     signer: string,
     data: any,
-    rpcMethod: string,
+    signingMethod: SigningMethod,
   ): Promise<string> {
-    const sendAsync = promisify(this.web3.currentProvider.send).bind(this.web3.currentProvider);
+    let sendMethod: string;
+    let rpcMethod: string;
+    let rpcData: any;
+
+    switch (signingMethod) {
+      case SigningMethod.TypedData:
+        sendMethod = 'send';
+        rpcMethod = 'eth_signTypedData';
+        rpcData = data;
+        break;
+      case SigningMethod.MetaMask:
+        sendMethod = 'sendAsync';
+        rpcMethod = 'eth_signTypedData_v3';
+        rpcData = JSON.stringify(data);
+        break;
+      default:
+        throw new Error(`Invalid signing method ${signingMethod}`);
+    }
+
+    const provider = this.web3.currentProvider;
+    const sendAsync = promisify(provider[sendMethod]).bind(provider);
     const response = await sendAsync({
       method: rpcMethod,
-      params: [signer, data],
+      params: [signer, rpcData],
       jsonrpc: '2.0',
       id: new Date().getTime(),
     });
