@@ -165,9 +165,16 @@ export class LimitOrders {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
-        const hash = this.getOrderHash(order);
-        const signature = await this.web3.eth.sign(hash, order.makerAccountOwner);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+        return createTypedSignature(
+          await this.web3.eth.sign(this.getOrderHash(order), order.makerAccountOwner),
+          SIGNATURE_TYPES.DECIMAL,
+        );
+
+      case SigningMethod.UnsafeHash:
+        return createTypedSignature(
+          await this.web3.eth.sign(this.getOrderHash(order), order.makerAccountOwner),
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
 
       case SigningMethod.TypedData:
         return this.ethSignTypedOrderInternal(
@@ -212,9 +219,16 @@ export class LimitOrders {
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
-        const cancelHash = this.orderHashToCancelOrderHash(orderHash);
-        const signature = await this.web3.eth.sign(cancelHash, signer);
-        return createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL);
+        return createTypedSignature(
+          await this.web3.eth.sign(this.orderHashToCancelOrderHash(orderHash), signer),
+          SIGNATURE_TYPES.DECIMAL,
+        );
+
+      case SigningMethod.UnsafeHash:
+        return createTypedSignature(
+          await this.web3.eth.sign(this.orderHashToCancelOrderHash(orderHash), signer),
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
 
       case SigningMethod.TypedData:
         return this.ethSignTypedCancelOrderInternal(
