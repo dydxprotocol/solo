@@ -39,10 +39,10 @@ export enum ProxyType {
 }
 
 export enum SigningMethod {
-  UnsafeHash = 'UnsafeHash', // hash not prepended
+  UnsafeHash = 'UnsafeHash', // raw hash signed
   Hash = 'Hash',             // hash prepended according to EIP-191
-  TypedData = 'TypedData',   // hash prepended according to EIP-712
-  MetaMask = 'MetaMask',     // hash prepended according to EIP-712 (MetaMask-specific)
+  TypedData = 'TypedData',   // order hashed according to EIP-712
+  MetaMask = 'MetaMask',     // order hashed according to EIP-712 (MetaMask-specific)
 }
 
 export interface SoloOptions {
