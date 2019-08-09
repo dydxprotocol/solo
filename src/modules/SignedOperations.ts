@@ -1,5 +1,4 @@
 import Web3 from 'web3';
-import { soliditySha3 } from 'web3-utils';
 import { promisify } from 'es6-promisify';
 import { Contracts } from '../lib/Contracts';
 import {
@@ -346,7 +345,7 @@ export class SignedOperations {
    * Returns the final signable EIP712 hash for approving an operation.
    */
   public getOperationHash(operation: Operation): string {
-    const structHash = soliditySha3(
+    const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_OPERATION_STRING) },
       { t: 'bytes32', v: this.getActionsHash(operation.actions) },
       { t: 'uint256', v: toString(operation.expiration) },
@@ -365,7 +364,7 @@ export class SignedOperations {
     const actionsAsHashes = actions.map(
       action => ({ t: 'bytes32', v: this.getActionHash(action) }),
     );
-    return soliditySha3(...actionsAsHashes);
+    return Web3.utils.soliditySha3(...actionsAsHashes);
   }
 
   /**
@@ -374,7 +373,7 @@ export class SignedOperations {
   public getActionHash(
     action: Action,
   ): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ACTION_STRING) },
       { t: 'uint256', v: toString(action.actionType) },
       { t: 'bytes32', v: addressToBytes32(action.primaryAccountOwner) },
@@ -395,7 +394,7 @@ export class SignedOperations {
   public getAssetAmountHash(
     amount: AssetAmount,
   ): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ASSET_AMOUNT_STRING) },
       { t: 'uint256', v: toString(amount.sign ? 1 : 0) },
       { t: 'uint256', v: toString(amount.denomination) },
@@ -410,7 +409,7 @@ export class SignedOperations {
   public operationHashToCancelOperationHash(
     operationHash: string,
   ): string {
-    const structHash = soliditySha3(
+    const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_OPERATION_STRUCT_STRING) },
       { t: 'bytes32', v: operationHash },
     );
@@ -421,11 +420,11 @@ export class SignedOperations {
    * Returns the EIP712 domain separator hash.
    */
   public getDomainHash(): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('SignedOperationProxy') },
       { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: this.networkId },
+      { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.signedOperationProxy.options.address) },
     );
   }
@@ -436,7 +435,7 @@ export class SignedOperations {
   public getEIP712Hash(
     structHash: string,
   ): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes2', v: '0x1901' },
       { t: 'bytes32', v: this.getDomainHash() },
       { t: 'bytes32', v: structHash },

@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { soliditySha3, hexToBytes } from 'web3-utils';
+import Web3 from 'web3';
 import { getSolo } from './helpers/Solo';
 import { Solo } from '../src/Solo';
 import { resetEVM, mineAvgBlock } from './helpers/EVM';
@@ -39,8 +39,8 @@ describe('Library', () => {
     async function recover(hash: string, typedSignature: string) {
       return solo.contracts.callConstantContractFunction(
         solo.contracts.testLib.methods.TypedSignatureRecover(
-          hexToBytes(hash),
-          hexToBytes(typedSignature),
+          Web3.utils.hexToBytes(hash),
+          Web3.utils.hexToBytes(typedSignature).map(x => [x]),
         ),
       );
     }
@@ -74,7 +74,7 @@ describe('Library', () => {
       });
 
       it('succeeds for decimal prepend', async () => {
-        const decHash = soliditySha3(
+        const decHash = Web3.utils.soliditySha3(
           { t: 'string', v: PREPEND_DEC },
           { t: 'bytes32', v: hash },
         );
@@ -87,7 +87,7 @@ describe('Library', () => {
       });
 
       it('succeeds for hexadecimal prepend', async () => {
-        const hexHash = soliditySha3(
+        const hexHash = Web3.utils.soliditySha3(
           { t: 'string', v: PREPEND_HEX },
           { t: 'bytes32', v: hash },
         );
