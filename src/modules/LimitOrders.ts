@@ -414,7 +414,8 @@ export class LimitOrders {
   public signedOrderToBytes(
     order: SignedLimitOrder,
   ): string {
-    const byteArray = this.orderToByteArray(order).concat(Web3.utils.hexToBytes(order.typedSignature));
+    const signatureBytes = Web3.utils.hexToBytes(order.typedSignature);
+    const byteArray = this.orderToByteArray(order).concat(signatureBytes);
     return Web3.utils.bytesToHex(byteArray);
   }
 
