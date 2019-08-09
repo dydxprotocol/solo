@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
+import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Integer, address } from '../types';
-import { hexToBytes, padLeft, toHex, soliditySha3 } from 'web3-utils';
 
 export function hexStringToBytes(hex: string): number[][] {
-  return hexToBytes(hex);
+  return Web3.utils.hexToBytes(hex).map(x => [x]);
 }
 
 export function bytesToHexString(input: (number[] | string)[]): string {
@@ -30,8 +30,8 @@ export function argToBytes(
     v = val.toFixed();
   }
 
-  return hexToBytes(
-    padLeft(toHex(v), 64, '0'),
+  return Web3.utils.hexToBytes(
+    Web3.utils.padLeft(Web3.utils.toHex(v), 64, '0'),
   );
 }
 
@@ -40,7 +40,7 @@ export function addressToBytes32(input: address) {
 }
 
 export function hashString(input: string) {
-  return soliditySha3({ t: 'string', v: input });
+  return Web3.utils.soliditySha3({ t: 'string', v: input });
 }
 
 export function hashBytes(input: string) {
@@ -49,7 +49,7 @@ export function hashBytes(input: string) {
   if (!stripHexPrefix(input)) {
     return '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470';
   }
-  return soliditySha3({ t: 'bytes', v: `0x${ stripHexPrefix(input) }` });
+  return Web3.utils.soliditySha3({ t: 'bytes', v: `0x${ stripHexPrefix(input) }` });
 }
 
 export function stripHexPrefix(input: string) {

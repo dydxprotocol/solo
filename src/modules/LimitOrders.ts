@@ -1,8 +1,8 @@
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
-import { soliditySha3, bytesToHex, hexToBytes } from 'web3-utils';
 import { promisify } from 'es6-promisify';
 import { Contracts } from '../lib/Contracts';
+import { toString } from '../lib/Helpers';
 import {
   addressToBytes32,
   argToBytes,
@@ -348,18 +348,18 @@ export class LimitOrders {
   public getOrderHash(
     order: LimitOrder,
   ): string {
-    const structHash = soliditySha3(
+    const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
-      { t: 'uint256', v: order.makerMarket },
-      { t: 'uint256', v: order.takerMarket },
-      { t: 'uint256', v: order.makerAmount },
-      { t: 'uint256', v: order.takerAmount },
+      { t: 'uint256', v: toString(order.makerMarket) },
+      { t: 'uint256', v: toString(order.takerMarket) },
+      { t: 'uint256', v: toString(order.makerAmount) },
+      { t: 'uint256', v: toString(order.takerAmount) },
       { t: 'bytes32', v: addressToBytes32(order.makerAccountOwner) },
-      { t: 'uint256', v: order.makerAccountNumber },
+      { t: 'uint256', v: toString(order.makerAccountNumber) },
       { t: 'bytes32', v: addressToBytes32(order.takerAccountOwner) },
-      { t: 'uint256', v: order.takerAccountNumber },
-      { t: 'uint256', v: order.expiration },
-      { t: 'uint256', v: order.salt },
+      { t: 'uint256', v: toString(order.takerAccountNumber) },
+      { t: 'uint256', v: toString(order.expiration) },
+      { t: 'uint256', v: toString(order.salt) },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -370,7 +370,7 @@ export class LimitOrders {
   public orderHashToCancelOrderHash(
     orderHash: string,
   ): string {
-    const structHash = soliditySha3(
+    const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: orderHash },
     );
@@ -381,11 +381,11 @@ export class LimitOrders {
    * Returns the EIP712 domain separator hash.
    */
   public getDomainHash(): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('LimitOrders') },
       { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: this.networkId },
+      { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
   }
@@ -396,7 +396,7 @@ export class LimitOrders {
   public getEIP712Hash(
     structHash: string,
   ): string {
-    return soliditySha3(
+    return Web3.utils.soliditySha3(
       { t: 'bytes2', v: '0x1901' },
       { t: 'bytes32', v: this.getDomainHash() },
       { t: 'bytes32', v: structHash },
@@ -408,14 +408,15 @@ export class LimitOrders {
   public unsignedOrderToBytes(
     order: LimitOrder,
   ): string {
-    return bytesToHex(this.orderToByteArray(order));
+    return Web3.utils.bytesToHex(this.orderToByteArray(order));
   }
 
   public signedOrderToBytes(
     order: SignedLimitOrder,
   ): string {
-    const byteArray = this.orderToByteArray(order).concat(hexToBytes(order.typedSignature));
-    return bytesToHex(byteArray);
+    const signatureBytes = Web3.utils.hexToBytes(order.typedSignature);
+    const byteArray = this.orderToByteArray(order).concat(signatureBytes);
+    return Web3.utils.bytesToHex(byteArray);
   }
 
   // ============ Private Helper Functions ============
