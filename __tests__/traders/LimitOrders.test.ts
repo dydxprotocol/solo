@@ -459,6 +459,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderApproved');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.approver).toEqual(approver);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Succeeds for approved order', async () => {
@@ -474,6 +476,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderApproved');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.approver).toEqual(approver);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Fails for canceled order', async () => {
@@ -498,6 +502,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderCanceled');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.canceler).toEqual(canceler);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Succeeds for approved order', async () => {
@@ -591,6 +597,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderApproved');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.approver).toEqual(approver);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Succeeds for approved order', async () => {
@@ -606,6 +614,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderApproved');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.approver).toEqual(approver);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Fails for canceled order', async () => {
@@ -662,6 +672,8 @@ describe('LimitOrders', () => {
       expect(log.name).toEqual('LogLimitOrderCanceled');
       expect(log.args.orderHash).toEqual(solo.limitOrders.getOrderHash(testOrder));
       expect(log.args.canceler).toEqual(canceler);
+      expect(log.args.makerMarket).toEqual(testOrder.makerMarket);
+      expect(log.args.takerMarket).toEqual(testOrder.takerMarket);
     });
 
     it('Succeeds for approved order', async () => {

@@ -149,12 +149,16 @@ contract LimitOrders is
 
     event LogLimitOrderCanceled(
         bytes32 indexed orderHash,
-        address indexed canceler
+        address indexed canceler,
+        uint256 makerMarket,
+        uint256 takerMarket
     );
 
     event LogLimitOrderApproved(
         bytes32 indexed orderHash,
-        address indexed approver
+        address indexed approver,
+        uint256 makerMarket,
+        uint256 takerMarket
     );
 
     event LogLimitOrderFilled(
@@ -384,7 +388,12 @@ contract LimitOrders is
         );
         bytes32 orderHash = getOrderHash(order);
         g_status[orderHash] = OrderStatus.Canceled;
-        emit LogLimitOrderCanceled(orderHash, canceler);
+        emit LogLimitOrderCanceled(
+            orderHash,
+            canceler,
+            order.makerMarket,
+            order.takerMarket
+        );
     }
 
     /**
@@ -409,7 +418,12 @@ contract LimitOrders is
             orderHash
         );
         g_status[orderHash] = OrderStatus.Approved;
-        emit LogLimitOrderApproved(orderHash, approver);
+        emit LogLimitOrderApproved(
+            orderHash,
+            approver,
+            order.makerMarket,
+            order.takerMarket
+        );
     }
 
     // ============ Private Helper Functions ============
