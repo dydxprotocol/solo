@@ -1,4 +1,4 @@
-# Overview
+# HTTP API
 dYdX offers a few HTTP APIs for retrieving information about the protocol, and submitting orders to
 our DEX. Feel free to use these APIs to build your own applications on top of dYdX. Please feel
 free to let us know via Intercom or Telegram if you have any questions or experience any issues.
@@ -164,7 +164,7 @@ Request Body:
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
- 
+
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
 

@@ -1,4 +1,19 @@
-# Usage
+# Solo.js
+
+TypeScript library for interacting with the dYdX V2 smart contracts
+
+- [GitHub](https://github.com/dydxprotocol/solo)
+- [npm](https://www.npmjs.com/package/@dydxprotocol/solo)
+
+## Install
+
+```
+npm i -s @dydxprotocol/solo
+```
+
+## License
+
+[Apache-2.0](https://github.com/dydxprotocol/solo/blob/master/LICENSE)
 
 ## Install
 
