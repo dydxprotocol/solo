@@ -1,6 +1,6 @@
-<p align="center"><img src="https://s3.amazonaws.com/dydx-assets/dydx_logo_black.svg" width="256"/></p>
+<p align="center"><img src="https://s3.amazonaws.com/dydx-assets/dydx_logo_white.svg" width="256"/></p>
 
-## Overview
+# dYdX Documentation
 
 - Trustless margin trading, borrowing, and lending
 
@@ -9,8 +9,8 @@
 ## Table of Contents
 
 - [Protocol](protocol.md "dYdX Documentation - Protocol")
-- [Solo.js](solojs.md "dYdX Documentation - Solo.js")
-- [HTTP API](api.md "dYdX Documentation - API")
-- [Python Client](python.md "dYdX Documentation - dYdX Python Client")
+- [TypeScript Client](typescript.md "dYdX Documentation - TypeScript Client")
+- [HTTP API](api.md "dYdX Documentation - HTTP API")
+- [Python Client](python.md "dYdX Documentation - Python Client")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
 - [Security](security.md "dYdX Documentation - Security")

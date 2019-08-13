@@ -1,4 +1,7 @@
 # Protocol
+
+- [GitHub](https://github.com/dydxprotocol/solo)
+
 Solo is an open protocol consisting of smart contracts that run on the Ethereum blockchain. Solo supports margin trading, borrowing, and lending. The Solo Typescript library makes it easy to interact with the smart contracts running on the blockchain.
 
 Solo is built by dYdX, and is used by [trade.dydx.exchange](https://trade.dydx.exchange)
