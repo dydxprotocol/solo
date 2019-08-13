@@ -513,6 +513,13 @@ describe('LimitOrders', () => {
       await solo.limitOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
+
+    it('Fails for non-maker', async () => {
+      await expectThrow(
+        solo.limitOrders.cancelOrder(testOrder, { from: rando }),
+        'LimitOrders: Canceler must be maker',
+      );
+    });
   });
 
   describe('callFunction: bad data', () => {
@@ -547,12 +554,12 @@ describe('LimitOrders', () => {
   });
 
   describe('callFunction: approve', () => {
-    async function approveTestOrder() {
+    async function approveTestOrder(from?: address) {
       return solo.operation.initiate().approveLimitOrder({
-        primaryAccountOwner: testOrder.makerAccountOwner,
+        primaryAccountOwner: from || testOrder.makerAccountOwner,
         primaryAccountId: testOrder.makerAccountNumber,
         order: testOrder,
-      }).commit({ from: testOrder.makerAccountOwner });
+      }).commit({ from: from || testOrder.makerAccountOwner });
     }
 
     it('Fails for non-Solo caller', async () => {
@@ -564,7 +571,7 @@ describe('LimitOrders', () => {
               owner: testOrder.makerAccountOwner,
               number: testOrder.makerAccountNumber.toFixed(0),
             },
-            toBytes(INTEGERS.ZERO, solo.limitOrders.getOrderHash(testOrder)),
+            [],
           ),
           { from: rando },
         ),
@@ -608,15 +615,22 @@ describe('LimitOrders', () => {
         'LimitOrders: Cannot approve canceled order',
       );
     });
+
+    it('Fails for non-maker', async () => {
+      await expectThrow(
+        approveTestOrder(rando),
+        'LimitOrders: Approver must be maker',
+      );
+    });
   });
 
   describe('callFunction: cancel', () => {
-    async function cancelTestOrder() {
+    async function cancelTestOrder(from?: address) {
       return solo.operation.initiate().cancelLimitOrder({
-        primaryAccountOwner: testOrder.makerAccountOwner,
+        primaryAccountOwner: from || testOrder.makerAccountOwner,
         primaryAccountId: testOrder.makerAccountNumber,
         order: testOrder,
-      }).commit({ from: testOrder.makerAccountOwner });
+      }).commit({ from: from || testOrder.makerAccountOwner });
     }
 
     it('Fails for non-Solo caller', async () => {
@@ -628,7 +642,7 @@ describe('LimitOrders', () => {
               owner: testOrder.makerAccountOwner,
               number: testOrder.makerAccountNumber.toFixed(0),
             },
-            toBytes(INTEGERS.ONE, solo.limitOrders.getOrderHash(testOrder)),
+            [],
           ),
           { from: rando },
         ),
@@ -662,6 +676,13 @@ describe('LimitOrders', () => {
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
       await cancelTestOrder();
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
+    });
+
+    it('Fails for non-maker', async () => {
+      await expectThrow(
+        cancelTestOrder(rando),
+        'LimitOrders: Canceler must be maker',
+      );
     });
   });
 

@@ -208,12 +208,8 @@ export interface SetExpiry extends AccountAction {
   expiryTime: Integer;
 }
 
-export interface CallApproveLimitOrder extends AccountAction {
-  order: LimitOrder | string; // order or order hash
-}
-
-export interface CallCancelLimitOrder extends AccountAction {
-  order: LimitOrder | string; // order or order hash
+export interface AccountActionWithOrder extends AccountAction {
+  order: LimitOrder;
 }
 
 export interface Call extends AccountAction {
@@ -346,6 +342,7 @@ export interface OperationAuthorization {
   expiration: Integer;
   salt: Integer;
   sender: address;
+  signer: address;
   typedSignature: string;
 }
 

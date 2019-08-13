@@ -96,7 +96,7 @@ contract LimitOrders is
     uint256 constant private NUM_SIGNATURE_BYTES = 66;
 
     // Number of bytes in a CallFunctionData struct
-    uint256 constant private NUM_CALLFUNCTIONDATA_BYTES = 64;
+    uint256 constant private NUM_CALLFUNCTIONDATA_BYTES = 32 + NUM_ORDER_BYTES;
 
     // ============ Enums ============
 
@@ -133,12 +133,7 @@ contract LimitOrders is
 
     struct CallFunctionData {
         CallFunctionType callType;
-        bytes32 orderHash;
-    }
-
-    struct OrderQueryInput {
-        bytes32 orderHash;
-        address orderMaker;
+        Order order;
     }
 
     struct OrderQueryOutput {
@@ -182,8 +177,8 @@ contract LimitOrders is
     // order hash => filled amount (in makerAmount)
     mapping (bytes32 => uint256) public g_makerFilledAmount;
 
-    // signer => order hash => status
-    mapping (address => mapping (bytes32 => OrderStatus)) public g_status;
+    // order hash => status
+    mapping (bytes32 => OrderStatus) public g_status;
 
     // ============ Constructor ============
 
@@ -233,29 +228,29 @@ contract LimitOrders is
     // ============ External Functions ============
 
     /**
-     * Cancels an orderHash from msg.sender. Cannot already be canceled.
+     * Cancels an order. Cannot already be canceled.
      *
-     * @param  orderHash  The hash of the order to cancel
+     * @param  order  The order to cancel
      */
     function cancelOrder(
-        bytes32 orderHash
+        Order memory order
     )
-        external
+        public
     {
-        cancelOrderInternal(msg.sender, orderHash);
+        cancelOrderInternal(msg.sender, order);
     }
 
     /**
-     * Approves an orderHash from msg.sender. Cannot already be approved or canceled.
+     * Approves an order. Cannot already be approved or canceled.
      *
-     * @param  orderHash  The hash of the order to approve
+     * @param  order  The order to approve
      */
     function approveOrder(
-        bytes32 orderHash
+        Order memory order
     )
-        external
+        public
     {
-        approveOrderInternal(msg.sender, orderHash);
+        approveOrderInternal(msg.sender, order);
     }
 
     // ============ Only-Solo Functions ============
@@ -338,37 +333,34 @@ contract LimitOrders is
         CallFunctionData memory cfd = abi.decode(data, (CallFunctionData));
 
         if (cfd.callType == CallFunctionType.Approve) {
-            approveOrderInternal(accountInfo.owner, cfd.orderHash);
+            approveOrderInternal(accountInfo.owner, cfd.order);
         } else {
             assert(cfd.callType == CallFunctionType.Cancel);
-            cancelOrderInternal(accountInfo.owner, cfd.orderHash);
+            cancelOrderInternal(accountInfo.owner, cfd.order);
         }
     }
 
     // ============ Getters ============
 
     /**
-     * Returns the status and the filled amount (in makerAmount) of an order.
+     * Returns the status and the filled amount (in makerAmount) of several orders.
      */
     function getOrderStates(
-        OrderQueryInput[] memory orders
+        bytes32[] memory orderHashes
     )
         public
         view
         returns(OrderQueryOutput[] memory)
     {
-        uint256 numOrders = orders.length;
-        OrderQueryOutput[] memory output = new OrderQueryOutput[](orders.length);
+        uint256 numOrders = orderHashes.length;
+        OrderQueryOutput[] memory output = new OrderQueryOutput[](numOrders);
 
         // for each order
         for (uint256 i = 0; i < numOrders; i++) {
-            // retrieve the input
-            OrderQueryInput memory order = orders[i];
-
-            // construct the output
+            bytes32 orderHash = orderHashes[i];
             output[i] = OrderQueryOutput({
-                orderStatus: g_status[order.orderMaker][order.orderHash],
-                orderMakerFilledAmount: g_makerFilledAmount[order.orderHash]
+                orderStatus: g_status[orderHash],
+                orderMakerFilledAmount: g_makerFilledAmount[orderHash]
             });
         }
         return output;
@@ -381,11 +373,17 @@ contract LimitOrders is
      */
     function cancelOrderInternal(
         address canceler,
-        bytes32 orderHash
+        Order memory order
     )
         private
     {
-        g_status[canceler][orderHash] = OrderStatus.Canceled;
+        Require.that(
+            canceler == order.makerAccountOwner,
+            FILE,
+            "Canceler must be maker"
+        );
+        bytes32 orderHash = getOrderHash(order);
+        g_status[orderHash] = OrderStatus.Canceled;
         emit LogLimitOrderCanceled(orderHash, canceler);
     }
 
@@ -394,17 +392,23 @@ contract LimitOrders is
      */
     function approveOrderInternal(
         address approver,
-        bytes32 orderHash
+        Order memory order
     )
         private
     {
         Require.that(
-            g_status[approver][orderHash] != OrderStatus.Canceled,
+            approver == order.makerAccountOwner,
+            FILE,
+            "Approver must be maker"
+        );
+        bytes32 orderHash = getOrderHash(order);
+        Require.that(
+            g_status[orderHash] != OrderStatus.Canceled,
             FILE,
             "Cannot approve canceled order",
             orderHash
         );
-        g_status[approver][orderHash] = OrderStatus.Approved;
+        g_status[orderHash] = OrderStatus.Approved;
         emit LogLimitOrderApproved(orderHash, approver);
     }
 
@@ -556,9 +560,17 @@ contract LimitOrders is
         view
         returns (OrderInfo memory)
     {
-        OrderInfo memory orderInfo = parseOrderInfo(data);
+        Require.that(
+            data.length >= NUM_ORDER_BYTES,
+            FILE,
+            "Cannot parse order from data"
+        );
 
-        OrderStatus orderStatus = g_status[orderInfo.order.makerAccountOwner][orderInfo.orderHash];
+        OrderInfo memory orderInfo;
+        orderInfo.order = abi.decode(data, (Order));
+        orderInfo.orderHash = getOrderHash(orderInfo.order);
+
+        OrderStatus orderStatus = g_status[orderInfo.orderHash];
 
         // verify valid signature or is pre-approved
         if (orderStatus == OrderStatus.Null) {
@@ -586,40 +598,29 @@ contract LimitOrders is
     // ============ Private Parsing Functions ============
 
     /**
-     * Parses out an order from call data.
+     * Returns the EIP712 hash of an order.
      */
-    function parseOrderInfo(
-        bytes memory data
+    function getOrderHash(
+        Order memory order
     )
         private
         view
-        returns (OrderInfo memory)
+        returns (bytes32)
     {
-        Require.that(
-            data.length >= NUM_ORDER_BYTES,
-            FILE,
-            "Cannot parse order from data"
-        );
-
-        OrderInfo memory orderInfo;
-        orderInfo.order = abi.decode(data, (Order));
-
         // compute the overall signed struct hash
         /* solium-disable-next-line indentation */
         bytes32 structHash = keccak256(abi.encode(
             EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH,
-            orderInfo.order
+            order
         ));
 
         // compute eip712 compliant hash
         /* solium-disable-next-line indentation */
-        orderInfo.orderHash = keccak256(abi.encodePacked(
+        return keccak256(abi.encodePacked(
             EIP191_HEADER,
             EIP712_DOMAIN_HASH,
             structHash
         ));
-
-        return orderInfo;
     }
 
     /**
