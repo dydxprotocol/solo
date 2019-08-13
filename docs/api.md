@@ -69,7 +69,10 @@ Example:
 ### GET /v1/dex/pairs
 
 Description:
-Returns all dex-compatible pairs
+Returns all dex-compatible pairs. Be aware that there are two "pairs" for each unique order pair.
+
+For example, in the unique pair WETH and DAI, there are two pairs, one for each side of the book.
+The pairs are always named as `MAKER-TAKER`.
 
 Headers:
 ```
@@ -80,11 +83,40 @@ Example Response Body:
 ```JSON
 {
     "pairs": [
+		{
+            "uuid": "e401535b-e43a-4a79-933f-7c1950cabbdf",
+            "name": "DAI-WETH",
+            "createdAt": "2019-08-13T19:12:27.386Z",
+            "updatedAt": "2019-08-13T19:12:27.386Z",
+            "deletedAt": null,
+            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "makerCurrency": {
+                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+                "createdAt": "2019-08-13T19:12:27.365Z",
+                "updatedAt": "2019-08-13T19:12:27.365Z",
+                "deletedAt": null
+            },
+            "takerCurrency": {
+                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                "createdAt": "2019-08-13T19:12:27.227Z",
+                "updatedAt": "2019-08-13T19:12:27.227Z",
+                "deletedAt": null
+            }
+        },
         {
-            "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+            "uuid": "65354d23-f9a0-49fa-b823-4c0592e0fa60",
             "name": "WETH-DAI",
-            "createdAt": "2019-07-26T17:19:34.955Z",
-            "updatedAt": "2019-07-26T17:19:34.955Z",
+            "createdAt": "2019-08-13T19:12:27.386Z",
+            "updatedAt": "2019-08-13T19:12:27.386Z",
             "deletedAt": null,
             "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
             "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
@@ -94,8 +126,8 @@ Example Response Body:
                 "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
                 "decimals": 18,
                 "soloMarket": 0,
-                "createdAt": "2019-07-26T17:19:34.627Z",
-                "updatedAt": "2019-07-26T17:19:34.627Z",
+                "createdAt": "2019-08-13T19:12:27.227Z",
+                "updatedAt": "2019-08-13T19:12:27.227Z",
                 "deletedAt": null
             },
             "takerCurrency": {
@@ -104,8 +136,8 @@ Example Response Body:
                 "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
                 "decimals": 18,
                 "soloMarket": 1,
-                "createdAt": "2019-07-26T17:19:34.919Z",
-                "updatedAt": "2019-07-26T17:19:34.919Z",
+                "createdAt": "2019-08-13T19:12:27.365Z",
+                "updatedAt": "2019-08-13T19:12:27.365Z",
                 "deletedAt": null
             }
         }
@@ -190,6 +222,7 @@ Example Response Body:
             "unfillableAt": null,
             "unfillableReason": null,
             "takerAmount": "10",
+			"expiresAt": null,
             "makerAmountRemaining": "10",
             "takerAmountRemaining": "10",
             "createdAt": "2019-07-29T23:56:25.522Z",
@@ -279,6 +312,7 @@ Query Params:
 |?makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
 |?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
 |?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
 
 Example Response Body:
 ```JSON
@@ -294,6 +328,7 @@ Example Response Body:
             "fillOrKill": false,
             "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
             "makerAmount": "10",
+			"expiresAt": null,
             "unfillableAt": null,
             "unfillableReason": null,
             "takerAmount": "10",
@@ -356,6 +391,7 @@ Query Params:
 |?makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
 |?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
 |?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
 
 Example Response Body:
 ```JSON
@@ -381,6 +417,7 @@ Example Response Body:
                 "fillOrKill": false,
                 "rawData": "{\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"0\",\"expiration\":\"0\",\"typedSignature\":\"0xd9561c880b9572899eb97901f58423a610640357c1d36138f0bd31b16ca17edb715ec175b7cd7a308d70e88a6654ac706672419765720b6d8e357e60a9a5ce9b1c01\"}",
                 "makerAmount": "10",
+				"expiresAt": null,
                 "unfillableAt": "2019-07-27T00:48:16.000Z",
                 "unfillableReason": "ENTIRELY_FILLED",
                 "takerAmount": "10",
