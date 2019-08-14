@@ -6,7 +6,7 @@
 </a>
 <br>
 <a href='https://pypi.org/project/dydx-python'>
-  <img src='https://img.shields.io/badge/PyPi-dydx--python-lightgrey' alt='PyPi'/>
+  <img src='https://img.shields.io/pypi/v/dydx-python.svg' alt='PyPi'/>
 </a>
 
 A python library for interacting with the Limit Order API.

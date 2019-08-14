@@ -6,7 +6,7 @@
 </a>
 <br>
 <a href='https://www.npmjs.com/package/@dydxprotocol/solo'>
-  <img src='https://img.shields.io/badge/NPM-@dydxprotocol%2Fsolo-lightgrey' alt='NPM Package'/>
+  <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM Package'/>
 </a>
 
 TypeScript library for interacting with the dYdX smart contracts
