@@ -14,3 +14,8 @@
 - [Python Client](python.md "dYdX Documentation - Python Client")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
 - [Security](security.md "dYdX Documentation - Security")
+
+## Additional Communication Channels
+
+- [Telegram](https://t.me/joinchat/GBnMlBb9mQblQck2pThTgw)
+- [contact@dydx.exchange](contact@dydx.exchange)
