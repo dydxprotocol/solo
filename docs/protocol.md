@@ -1,7 +1,14 @@
-# Overview
-Solo is an open protocol consisting of smart contracts that run on the Ethereum blockchain. Solo supports margin trading, borrowing, and lending. The Solo Typescript library makes it easy to interact with the smart contracts running on the blockchain.
+# Protocol
 
-Solo is built by dYdX, and is used by [trade.dydx.exchange](https://trade.dydx.exchange)
+<br>
+<a href='https://github.com/dydxprotocol/solo'>
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+</a>
+
+The dYdX protocol (A.K.A. "Solo") consists of smart contracts that run on the Ethereum blockchain.
+These contracts support margin trading, borrowing, and lending.
+
+Solo is used by [trade.dydx.exchange](https://trade.dydx.exchange).
 
 
 ## Accounts
@@ -77,28 +84,28 @@ Later, interest has accrued for DAI on the protocol, and now the supply index fo
 
 All state changes to accounts happen through Actions. Actions can modify the balances of 1 or more Accounts. There is no such thing as a "Borrow" action on Solo, Actions can automatically borrow funds if Account balances decrease. The following Actions are supported by Solo:
 
-### Deposit
+#### Deposit
 Deposit funds into an Account. Funds are moved from the sender or an approved address to Solo, and the Account's balance is incremented.
 
-### Withdraw
+#### Withdraw
 Withdraw funds from an Account. Funds are sent from Solo to a specified address and the Account's balance is decremented.
 
-### Transfer
+#### Transfer
 Transfer funds internally between two Solo accounts.
 
-### Buy
+#### Buy
 Buy an asset on a decentralized exchange using another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the bought asset's balance to go up, and the asset used to do the buy's balance to go down. Example: Buy 1 WETH on eth2dai using DAI
 
-### Sell
+#### Sell
 Sell an asset on a decentralized exchange for another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the sold asset's balance to go down, and the received assets balance to go up. Example: Sell 1 WETH on eth2dai for DAI
 
-### Trade
+#### Trade
 Trade assets with another account on Solo internally. No actual tokens are moved, but Account balances are updated. Uses the [`AutoTrader`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/IAutoTrader.sol) interface, which allows a smart contract to be specified which is called to determine the price of the trade.
 
-### Call
+#### Call
 Calls a function specified by the [`ICallee`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/ICallee.sol) interface through the context of an Account. Does not modify Account balances. An example of how this can be used is for setting expiration on the [`Expiry`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Expiry.sol) contract.
 
-### Liquidate
+#### Liquidate
 Liquidates an undercollateralized Account. Operates on two Accounts: the liquidating Account, and the undercollateralized Account. Does not transfer any tokens, but just internally updates balances of accounts. Liquidates at the price specified by Example:
 
 Starting Account Balances:
@@ -114,7 +121,7 @@ The liquidate action causes 1 ETH to be transferred from L -> U, and `1 ETH * ((
 Liquidating Account (L): +231.25 DAI, -1 ETH
 Undercollateralized Account (U): +18.75 DAI
 
-### Vaporize
+#### Vaporize
 Pulls funds from the insurance fund to recollateralize an underwater account with only negative balances.
 
 ## Operations

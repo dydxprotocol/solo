@@ -1,4 +1,15 @@
-# Usage
+# TypeScript Client
+
+<br>
+<a href='https://github.com/dydxprotocol/solo'>
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+</a>
+<br>
+<a href='https://www.npmjs.com/package/@dydxprotocol/solo'>
+  <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM Package'/>
+</a>
+
+TypeScript library for interacting with the dYdX smart contracts
 
 ## Install
 
@@ -8,12 +19,26 @@ npm i -s @dydxprotocol/solo
 
 ## Initialize
 
+You will need to initialize the main class of Solo using a provider and network id.
+
 ```javascript
 import { Solo } from '@dydxprotocol/solo';
 const solo = new Solo(
   provider,  // Valid web3 provider
   networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
 );
+```
+
+If you need other types from the library, you can import them like this:
+
+```javascript
+import {
+  Solo,
+  ProxyType,
+  AmountDenomination,
+  AmountReference,
+  ConfirmationType,
+} from '@dydxprotocol/solo';
 ```
 
 ## Operations
@@ -102,10 +127,10 @@ Example of setting DAI token allowance on Solo:
 ```javascript
 await solo.token.setMaximumSoloAllowance(
   '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', // DAI Contract Address
-  '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
-  { from: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5' },
+  '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // My Address
+  { from: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5' }, // My Address
 );
 ```
 
 ## Web3
-Solo uses [Web3 1.0](https://web3js.readthedocs.io/en/1.0/index.html) under the hood. You can access it through `solo.web3`
+Solo uses [Web3 1.X](https://web3js.readthedocs.io/) under the hood. You can access it through `solo.web3`
