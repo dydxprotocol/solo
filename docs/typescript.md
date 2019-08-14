@@ -1,10 +1,15 @@
 # TypeScript Client
 
-TypeScript library for interacting with the dYdX V2 smart contracts
+<br>
+<a href='https://github.com/dydxprotocol/solo'>
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+</a>
+<br>
+<a href='https://www.npmjs.com/package/@dydxprotocol/solo'>
+  <img src='https://img.shields.io/badge/NPM-@dydxprotocol%2Fsolo-lightgrey' alt='NPM Package'/>
+</a>
 
-- [GitHub](https://github.com/dydxprotocol/solo)
-- [npm](https://www.npmjs.com/package/@dydxprotocol/solo)
-- [License (Apache 2.0)](https://github.com/dydxprotocol/solo/blob/master/LICENSE)
+TypeScript library for interacting with the dYdX smart contracts
 
 ## Install
 

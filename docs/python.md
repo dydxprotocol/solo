@@ -1,11 +1,17 @@
 # Python Client
 
+<br>
+<a href='https://github.com/dydxprotocol/dydx-python'>
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fdydx--python-lightgrey' alt='GitHub'/>
+</a>
+<br>
+<a href='https://pypi.org/project/dydx-python'>
+  <img src='https://img.shields.io/badge/PyPi-dydx--python-lightgrey' alt='PyPi'/>
+</a>
+
 A python library for interacting with the Limit Order API.
 
 The library is currently tested against Python versions 2.7, 3.4, 3.5, and 3.6
-
-- [GitHub](https://github.com/dydxprotocol/dydx-python)
-- [PyPi](https://pypi.org/project/dydx-python)
 
 ## Install
 Install with `pip`:
