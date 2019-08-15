@@ -7,6 +7,7 @@ import { default as IErc20 } from '../build/contracts/IErc20.json';
 import { default as IInterestSetter } from '../build/contracts/IInterestSetter.json';
 import { default as IPriceOracle } from '../build/contracts/IPriceOracle.json';
 import { default as Expiry } from '../build/contracts/Expiry.json';
+import { default as Refunder } from '../build/contracts/Refunder.json';
 import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
@@ -51,6 +52,7 @@ export default {
   IInterestSetter,
   IPriceOracle,
   Expiry,
+  Refunder,
   LimitOrders,
   PayableProxyForSoloMargin,
   SignedOperationProxy,

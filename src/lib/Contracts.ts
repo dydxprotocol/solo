@@ -30,6 +30,7 @@ import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { Expiry } from '../../build/wrappers/Expiry';
+import { Refunder } from '../../build/wrappers/Refunder';
 import { LimitOrders } from '../../build/wrappers/LimitOrders';
 import {
   PayableProxyForSoloMargin as PayableProxy,
@@ -62,6 +63,7 @@ import erc20Json from '../../build/published_contracts/IErc20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
+import refunderJson from '../../build/published_contracts/Refunder.json';
 import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
@@ -117,6 +119,7 @@ export class Contracts {
   public interestSetter: InterestSetter;
   public priceOracle: PriceOracle;
   public expiry: Expiry;
+  public refunder: Refunder;
   public limitOrders: LimitOrders;
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
@@ -164,6 +167,7 @@ export class Contracts {
     this.interestSetter = new this.web3.eth.Contract(interestSetterJson.abi) as InterestSetter;
     this.priceOracle = new this.web3.eth.Contract(priceOracleJson.abi) as PriceOracle;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
+    this.refunder = new this.web3.eth.Contract(refunderJson.abi) as Refunder;
     this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
     this.signedOperationProxy = new this.web3.eth.Contract(signedOperationProxyJson.abi) as
@@ -219,6 +223,7 @@ export class Contracts {
       { contract: this.interestSetter, json: interestSetterJson },
       { contract: this.priceOracle, json: priceOracleJson },
       { contract: this.expiry, json: expiryJson },
+      { contract: this.refunder, json: refunderJson },
       { contract: this.limitOrders, json: limitOrdersJson },
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
@@ -267,6 +272,7 @@ export class Contracts {
     this.interestSetter.options.from = account;
     this.priceOracle.options.from = account;
     this.expiry.options.from = account;
+    this.refunder.options.from = account;
     this.limitOrders.options.from = account;
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;

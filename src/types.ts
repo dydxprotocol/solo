@@ -82,6 +82,7 @@ export interface LogParsingOptions {
   skipAdminLogs?: boolean;
   skipPermissionLogs?: boolean;
   skipExpiryLogs?: boolean;
+  skipRefunderLogs?: boolean;
   skipLimitOrdersLogs?: boolean;
   skipSignedOperationProxyLogs?: boolean;
 }
@@ -206,6 +207,14 @@ export interface Vaporize extends AccountAction {
 export interface SetExpiry extends AccountAction {
   marketId: Integer;
   expiryTime: Integer;
+}
+
+export interface Refund extends AccountAction {
+  receiverAccountOwner: address;
+  receiverAccountId: Integer;
+  refundMarketId: Integer;
+  otherMarketId: Integer;
+  wei: Integer;
 }
 
 export interface AccountActionWithOrder extends AccountAction {
