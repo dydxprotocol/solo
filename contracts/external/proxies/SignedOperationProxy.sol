@@ -129,17 +129,17 @@ contract SignedOperationProxy is
 
     // ============ Structs ============
 
-    struct Authorization {
-        uint256 numActions;
+    struct OperationHeader {
         uint256 expiration;
         uint256 salt;
         address sender;
-        bytes signature;
+        address signer;
     }
 
-    struct OperationQueryInput {
-        bytes32 operationHash;
-        address operationSigner;
+    struct Authorization {
+        uint256 numActions;
+        OperationHeader header;
+        bytes signature;
     }
 
     // ============ Events ============
@@ -169,8 +169,8 @@ contract SignedOperationProxy is
      // true if this contract can process operationss
     bool public g_isOperational;
 
-    // signer => final hash => was executed (or canceled)
-    mapping (address => mapping (bytes32 => bool)) public g_invalidated;
+    // operation hash => was executed (or canceled)
+    mapping (bytes32 => bool) public g_invalidated;
 
     // ============ Constructor ============
 
@@ -222,14 +222,29 @@ contract SignedOperationProxy is
     /**
      * Allows a signer to permanently cancel an operation on-chain.
      *
-     * @param  operationHash  The EIP712 hash of the Operation message to cancel.
+     * @param  accounts  The accounts involved in the operation
+     * @param  actions   The actions involved in the operation
+     * @param  auth      The unsigned authorization of the operation
      */
     function cancel(
-        bytes32 operationHash
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions,
+        Authorization memory auth
     )
-        external
+        public
     {
-        g_invalidated[msg.sender][operationHash] = true;
+        bytes32 operationHash = getOperationHash(
+            accounts,
+            actions,
+            auth,
+            0
+        );
+        Require.that(
+            auth.header.signer == msg.sender,
+            FILE,
+            "Canceler must be signer"
+        );
+        g_invalidated[operationHash] = true;
         emit LogOperationCanceled(operationHash, msg.sender);
     }
 
@@ -266,7 +281,7 @@ contract SignedOperationProxy is
 
             // require that the message is not expired
             Require.that(
-                auth.expiration == 0 || auth.expiration >= block.timestamp,
+                auth.header.expiration == 0 || auth.header.expiration >= block.timestamp,
                 FILE,
                 "Signed operation is expired",
                 authIdx
@@ -274,19 +289,47 @@ contract SignedOperationProxy is
 
             // require that the sender matches the authorization
             Require.that(
-                auth.sender == address(0) || auth.sender == msg.sender,
+                auth.header.sender == address(0) || auth.header.sender == msg.sender,
                 FILE,
                 "Operation sender mismatch",
                 authIdx
             );
 
-            // get the signer of the auth (msg.sender if no signature)
-            address signer = getSigner(
-                accounts,
-                actions,
-                auth,
-                actionStartIdx
-            );
+            // consider the signer to be msg.sender unless there is a signature
+            address signer = msg.sender;
+
+            // if there is a signature, then validate it
+            if (auth.signature.length != 0) {
+                // get the hash of the operation
+                bytes32 operationHash = getOperationHash(
+                    accounts,
+                    actions,
+                    auth,
+                    actionStartIdx
+                );
+
+                // require that this message is still valid
+                Require.that(
+                    !g_invalidated[operationHash],
+                    FILE,
+                    "Hash already used or canceled",
+                    operationHash
+                );
+
+                // get the signer
+                signer = TypedSignature.recover(operationHash, auth.signature);
+
+                // require that this signer matches the authorization
+                Require.that(
+                    auth.header.signer == signer,
+                    FILE,
+                    "Invalid signature"
+                );
+
+                // consider this operationHash to be used (and therefore no longer valid)
+                g_invalidated[operationHash] = true;
+                emit LogOperationExecuted(operationHash, signer, msg.sender);
+            }
 
             // cache the index of the first action after this auth
             uint256 actionEndIdx = actionStartIdx.add(auth.numActions);
@@ -325,68 +368,22 @@ contract SignedOperationProxy is
      * previously executed).
      */
     function getOperationsAreInvalid(
-        OperationQueryInput[] memory operations
+        bytes32[] memory operationHashes
     )
         public
         view
         returns(bool[] memory)
     {
-        uint256 numOperations = operations.length;
+        uint256 numOperations = operationHashes.length;
         bool[] memory output = new bool[](numOperations);
 
         for (uint256 i = 0; i < numOperations; i++) {
-            OperationQueryInput memory operation = operations[i];
-            output[i] = g_invalidated[operation.operationSigner][operation.operationHash];
+            output[i] = g_invalidated[operationHashes[i]];
         }
         return output;
     }
 
     // ============ Private Helper Functions ============
-
-    /**
-     * If the signature is empty, returns msg.sender.
-     * If the signature exists, checks that the operation is still valid, invalidates it, and then
-     * returns the signer of the authorization.
-     */
-    function getSigner(
-        Account.Info[] memory accounts,
-        Actions.ActionArgs[] memory actions,
-        Authorization memory auth,
-        uint256 startIdx
-    )
-        private
-        returns (address)
-    {
-        // consider msg.sender to be the signer in the case of empty signature
-        if (auth.signature.length == 0) {
-            return msg.sender;
-        }
-
-        // get the hash of the operation
-        bytes32 operationHash = getOperationHash(
-            accounts,
-            actions,
-            auth,
-            startIdx
-        );
-
-        // get the signer
-        address signer = TypedSignature.recover(operationHash, auth.signature);
-
-        // require that this message is still valid
-        Require.that(
-            !g_invalidated[signer][operationHash],
-            FILE,
-            "Hash already used or canceled",
-            operationHash
-        );
-
-        // consider this operationHash to be used (and therefore no longer valid)
-        g_invalidated[signer][operationHash] = true;
-        emit LogOperationExecuted(operationHash, signer, msg.sender);
-
-        return signer;
-    }
 
     /**
      * Validates that either the signer or the msg.sender are the accountOwner (or that either are
@@ -408,7 +405,7 @@ contract SignedOperationProxy is
         Require.that(
             valid,
             FILE,
-            "Invalid signer",
+            "Signer not authorized",
             signer
         );
     }
@@ -439,9 +436,7 @@ contract SignedOperationProxy is
         bytes32 structHash = keccak256(abi.encode(
             EIP712_OPERATION_HASH,
             actionsEncoding,
-            auth.expiration,
-            auth.salt,
-            auth.sender
+            auth.header
         ));
 
         // compute eip712 compliant hash

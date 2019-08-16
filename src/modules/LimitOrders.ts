@@ -92,9 +92,9 @@ export class LimitOrders {
     order: LimitOrder,
     options?: ContractCallOptions,
   ): Promise<any> {
-    const orderHash = this.getOrderHash(order);
+    const stringifiedOrder = this.stringifyOrder(order);
     return this.contracts.callContractFunction(
-      this.contracts.limitOrders.methods.approveOrder(orderHash),
+      this.contracts.limitOrders.methods.approveOrder(stringifiedOrder),
       options,
     );
   }
@@ -106,11 +106,23 @@ export class LimitOrders {
     order: LimitOrder,
     options?: ContractCallOptions,
   ): Promise<any> {
-    const orderHash = this.getOrderHash(order);
+    const stringifiedOrder = this.stringifyOrder(order);
     return this.contracts.callContractFunction(
-      this.contracts.limitOrders.methods.cancelOrder(orderHash),
+      this.contracts.limitOrders.methods.cancelOrder(stringifiedOrder),
       options,
     );
+  }
+
+  private stringifyOrder(
+    order: LimitOrder,
+  ): any {
+    const stringifiedOrder = { ... order };
+    for (const [key, value] of Object.entries(order)) {
+      if (typeof value !== 'string') {
+        stringifiedOrder[key] = toString(value);
+      }
+    }
+    return stringifiedOrder;
   }
 
   // ============ Getter Contract Methods ============
@@ -134,14 +146,9 @@ export class LimitOrders {
     orders: LimitOrder[],
     options?: ContractConstantCallOptions,
   ): Promise<LimitOrderState[]> {
-    const inputQuery = orders.map((order) => {
-      return {
-        orderHash: this.getOrderHash(order),
-        orderMaker: order.makerAccountOwner,
-      };
-    });
+    const orderHashes = orders.map(order => this.getOrderHash(order));
     const states: any[] = await this.contracts.callConstantContractFunction(
-      this.contracts.limitOrders.methods.getOrderStates(inputQuery),
+      this.contracts.limitOrders.methods.getOrderStates(orderHashes),
       options,
     );
 

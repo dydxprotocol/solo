@@ -4,6 +4,9 @@ import BigNumber from 'bignumber.js';
 import { Integer, address } from '../types';
 
 export function hexStringToBytes(hex: string): number[][] {
+  if (!hex || hex === '0x') {
+    return [];
+  }
   return Web3.utils.hexToBytes(hex).map(x => [x]);
 }
 

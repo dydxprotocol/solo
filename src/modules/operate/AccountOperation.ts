@@ -23,8 +23,7 @@ import {
   AccountInfo,
   OperationAuthorization,
   SetExpiry,
-  CallApproveLimitOrder,
-  CallCancelLimitOrder,
+  AccountActionWithOrder,
   Call,
   Amount,
   Integer,
@@ -188,31 +187,31 @@ export class AccountOperation {
     return this;
   }
 
-  public approveLimitOrder(args: CallApproveLimitOrder): AccountOperation {
-    const orderHash = typeof(args.order) === 'string'
-      ? args.order
-      : this.limitOrders.getOrderHash(args.order);
+  public approveLimitOrder(args: AccountActionWithOrder): AccountOperation {
     this.addActionArgs(
       args,
       {
         actionType: ActionType.Call,
         otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(LimitOrderCallFunctionType.Approve, orderHash),
+        data: toBytes(
+          LimitOrderCallFunctionType.Approve,
+          this.limitOrders.unsignedOrderToBytes(args.order),
+        ),
       },
     );
     return this;
   }
 
-  public cancelLimitOrder(args: CallCancelLimitOrder): AccountOperation {
-    const orderHash = typeof(args.order) === 'string'
-      ? args.order
-      : this.limitOrders.getOrderHash(args.order);
+  public cancelLimitOrder(args: AccountActionWithOrder): AccountOperation {
     this.addActionArgs(
       args,
       {
         actionType: ActionType.Call,
         otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(LimitOrderCallFunctionType.Cancel, orderHash),
+        data: toBytes(
+          LimitOrderCallFunctionType.Cancel,
+          this.limitOrders.unsignedOrderToBytes(args.order),
+        ),
       },
     );
     return this;
@@ -413,16 +412,13 @@ export class AccountOperation {
       salt: signedOperation.salt,
       expiration: signedOperation.expiration,
       sender: signedOperation.sender,
+      signer: signedOperation.signer,
       typedSignature: signedOperation.typedSignature,
     });
 
     // store the actions
     for (let i = 0; i < signedOperation.actions.length; i += 1) {
       const action = signedOperation.actions[i];
-      const dataIsEmpty =
-        (action.data === '0x') ||
-        (action.data === null) ||
-        (action.data === undefined);
 
       const secondaryAccountId = action.secondaryAccountOwner === ADDRESSES.ZERO
         ? 0
@@ -442,7 +438,7 @@ export class AccountOperation {
           secondaryMarketId: action.secondaryMarketId.toFixed(0),
           otherAddress: action.otherAddress,
           otherAccountId: secondaryAccountId,
-          data: dataIsEmpty ? [] : hexStringToBytes(action.data),
+          data: hexStringToBytes(action.data),
           amount: {
             reference: action.amount.ref,
             denomination: action.amount.denomination,
@@ -693,9 +689,12 @@ export class AccountOperation {
 
   private generateAuthData(): {
     numActions: string,
-    expiration: string,
-    salt: string,
-    sender: string,
+    header: {
+      expiration: string,
+      salt: string,
+      sender: string,
+      signer: string,
+    },
     signature: number[][],
   }[] {
     let actionIndex: Integer = INTEGERS.ZERO;
@@ -703,9 +702,12 @@ export class AccountOperation {
 
     const emptyAuth = {
       numActions: '0',
-      expiration: '0',
-      salt: '0',
-      sender: ADDRESSES.ZERO,
+      header: {
+        expiration: '0',
+        salt: '0',
+        sender: ADDRESSES.ZERO,
+        signer: ADDRESSES.ZERO,
+      },
       signature: [],
     };
 
@@ -724,9 +726,12 @@ export class AccountOperation {
       // push this auth
       result.push({
         numActions: auth.numActions.toFixed(0),
-        expiration: auth.expiration.toFixed(0),
-        salt: auth.salt.toFixed(0),
-        sender: auth.sender,
+        header: {
+          expiration: auth.expiration.toFixed(0),
+          salt: auth.salt.toFixed(0),
+          sender: auth.sender,
+          signer: auth.signer,
+        },
         signature: toBytes(auth.typedSignature),
       });
 

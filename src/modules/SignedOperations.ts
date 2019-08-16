@@ -1,15 +1,15 @@
 import Web3 from 'web3';
 import { promisify } from 'es6-promisify';
 import { Contracts } from '../lib/Contracts';
-import {
-  toString,
-} from '../lib/Helpers';
+import { ADDRESSES } from '../lib/Constants';
+import { toString } from '../lib/Helpers';
 import {
   addressToBytes32,
   hashBytes,
   hashString,
   stripHexPrefix,
   addressesAreEqual,
+  hexStringToBytes,
 } from '../lib/BytesHelper';
 import {
   SIGNATURE_TYPES,
@@ -27,6 +27,8 @@ import {
   ContractCallOptions,
   ContractConstantCallOptions,
   SigningMethod,
+  AccountInfo,
+  Integer,
 } from '../../src/types';
 
 const EIP712_OPERATION_STRUCT = [
@@ -123,22 +125,63 @@ export class SignedOperations {
     operation: Operation,
     options?: ContractCallOptions,
   ): Promise<any> {
-    const operationHash = this.getOperationHash(operation);
-    const cco = options || {};
-    cco.from = operation.signer;
-    return this.cancelOperationByHash(operationHash, cco);
-  }
+    const accounts = [];
+    const actions = [];
 
-  /**
-   * Sends an transaction to cancel an operation (by hash) on-chain.
-   */
-  public async cancelOperationByHash(
-    operationHash: string,
-    options?: ContractCallOptions,
-  ): Promise<any> {
+    const getAccountId = function (accountOwner: string, accountNumber: Integer): number {
+      if (accountOwner === ADDRESSES.ZERO) {
+        return 0;
+      }
+      const accountInfo: AccountInfo = {
+        owner: accountOwner,
+        number: accountNumber.toFixed(0),
+      };
+
+      const index = accounts.indexOf(accountInfo);
+
+      if (index >= 0) {
+        return index;
+      }
+
+      accounts.push(accountInfo);
+      return accounts.length - 1;
+    };
+
+    for (let i = 0; i < operation.actions.length; i += 1) {
+      const action = operation.actions[i];
+      actions.push({
+        accountId: getAccountId(action.primaryAccountOwner, action.primaryAccountNumber),
+        actionType: action.actionType,
+        primaryMarketId: toString(action.primaryMarketId),
+        secondaryMarketId: toString(action.secondaryMarketId),
+        otherAddress: action.otherAddress,
+        otherAccountId: getAccountId(action.secondaryAccountOwner, action.secondaryAccountNumber),
+        data: hexStringToBytes(action.data),
+        amount: {
+          sign: action.amount.sign,
+          ref: toString(action.amount.ref),
+          denomination: toString(action.amount.denomination),
+          value: toString(action.amount.value),
+        },
+      });
+    }
+
     return this.contracts.callContractFunction(
-      this.contracts.signedOperationProxy.methods.cancel(operationHash),
-      options,
+      this.contracts.signedOperationProxy.methods.cancel(
+        accounts,
+        actions,
+        {
+          numActions: operation.actions.length.toString(),
+          header: {
+            expiration: operation.expiration.toFixed(0),
+            salt: operation.salt.toFixed(0),
+            sender: operation.sender,
+            signer: operation.signer,
+          },
+          signature: [],
+        },
+      ),
+      options || { from: operation.signer },
     );
   }
 
@@ -163,14 +206,9 @@ export class SignedOperations {
     operations: Operation[],
     options?: ContractConstantCallOptions,
   ): Promise<boolean[]> {
-    const inputQuery = operations.map((operation) => {
-      return {
-        operationHash: this.getOperationHash(operation),
-        operationSigner: operation.signer,
-      };
-    });
+    const hashes = operations.map(operation => this.getOperationHash(operation));
     return this.contracts.callConstantContractFunction(
-      this.contracts.signedOperationProxy.methods.getOperationsAreInvalid(inputQuery),
+      this.contracts.signedOperationProxy.methods.getOperationsAreInvalid(hashes),
       options,
     );
   }
@@ -351,6 +389,7 @@ export class SignedOperations {
       { t: 'uint256', v: toString(operation.expiration) },
       { t: 'uint256', v: toString(operation.salt) },
       { t: 'bytes32', v: addressToBytes32(operation.sender) },
+      { t: 'bytes32', v: addressToBytes32(operation.signer) },
     );
     return this.getEIP712Hash(structHash);
   }

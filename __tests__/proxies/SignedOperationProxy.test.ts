@@ -354,6 +354,31 @@ describe('SignedOperationProxy', () => {
       expect(logs2[0].name).toEqual(logs1[0].name);
       expect(logs2[0].args).toEqual(logs1[0].args);
     });
+
+    it('Succeeds for two-account operations', async () => {
+      await expectValid([signedTransferOperation]);
+      const txResult1 = await solo.signedOperations.cancelOperation(signedTransferOperation);
+      await expectInvalid([signedTransferOperation]);
+      const txResult2 = await solo.signedOperations.cancelOperation(signedTransferOperation);
+      await expectInvalid([signedTransferOperation]);
+
+      const logs1 = solo.logs.parseLogs(txResult1);
+      expect(logs1[0].name).toEqual('LogOperationCanceled');
+      expect(logs1[0].args).toEqual({
+        canceler: signedTransferOperation.signer,
+        operationHash: solo.signedOperations.getOperationHash(signedTransferOperation),
+      });
+      const logs2 = solo.logs.parseLogs(txResult2);
+      expect(logs2[0].name).toEqual(logs1[0].name);
+      expect(logs2[0].args).toEqual(logs1[0].args);
+    });
+
+    it('Fails for non-signer', async () => {
+      await expectThrow(
+        solo.signedOperations.cancelOperation(signedTransferOperation, { from: rando }),
+        'SignedOperationProxy: Canceler must be signer',
+      );
+    });
   });
 
   describe('Basic', () => {
@@ -539,7 +564,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -550,7 +575,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -561,7 +586,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -572,7 +597,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -583,7 +608,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -594,7 +619,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -605,7 +630,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -616,7 +641,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
 
@@ -627,7 +652,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
-        `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+        `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
       );
     });
   });
@@ -725,7 +750,7 @@ describe('SignedOperationProxy', () => {
           .initiate({ proxy: ProxyType.Sender })
           .addSignedOperation(invalidSigOperation)
           .commit({ from: defaultSender }),
-        'SignedOperationProxy: Invalid signer',
+        'SignedOperationProxy: Invalid signature',
       );
     });
 
@@ -850,7 +875,7 @@ describe('SignedOperationProxy', () => {
             .initiate({ proxy: ProxyType.Sender })
             .addSignedOperation(operation)
             .commit({ from: defaultSender }),
-          `SignedOperationProxy: Invalid signer <${defaultSigner.toLowerCase()}>`,
+          `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
         );
       }
     });
