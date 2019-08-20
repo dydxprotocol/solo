@@ -1,0 +1,1 @@
+- On old LimitOrder / SignedOperationProxy should disable operation and set owner to 0 before going live

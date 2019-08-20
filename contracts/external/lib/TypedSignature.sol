@@ -45,6 +45,7 @@ library TypedSignature {
 
     // ============ Enums ============
 
+    // Put some commets as to what these types are
     enum SignatureType {
         NoPrepend,
         Decimal,
@@ -82,6 +83,7 @@ library TypedSignature {
         uint8 rawSigType;
 
         /* solium-disable-next-line security/no-inline-assembly */
+        // Can we use abi.decode here?
         assembly {
             r := mload(add(signatureWithType, 0x20))
             s := mload(add(signatureWithType, 0x40))

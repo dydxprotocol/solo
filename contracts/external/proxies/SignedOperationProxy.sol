@@ -77,9 +77,9 @@ contract SignedOperationProxy is
     // EIP712 encodeType of Action
     bytes constant private EIP712_ACTION_STRING = abi.encodePacked(
         "Action(",
-        "uint8 actionType,",
+        "uint8 actionType,", // Is it ok that this is uint8?
         "address accountOwner,",
-        "uint256 accountNumber,",
+        "uint256 accountNumber,", // We call this accountId elsewhere
         "AssetAmount assetAmount,",
         "uint256 primaryMarketId,",
         "uint256 secondaryMarketId,",
@@ -333,6 +333,8 @@ contract SignedOperationProxy is
 
             // cache the index of the first action after this auth
             uint256 actionEndIdx = actionStartIdx.add(auth.numActions);
+            // may be better to explicitly require actionEndIdx < actions.length
+            // rather than relying on solidity out of bounds checks
 
             // loop over all actions for which this auth applies
             for (uint256 actionIdx = actionStartIdx; actionIdx < actionEndIdx; actionIdx++) {
@@ -466,9 +468,11 @@ contract SignedOperationProxy is
 
         // for each action that corresponds to the auth
         for (uint256 i = 0; i < auth.numActions; i++) {
+            // what happens if auth.numActions > actions.length? Maybe we should just require this
             Actions.ActionArgs memory action = actions[startIdx + i];
 
             // if action type has no second account, assume null account
+            // what happens if action.otherAccountId > accounts.length? Maybe we should just require this
             Account.Info memory otherAccount =
                 (Actions.getAccountLayout(action.actionType) == Actions.AccountLayout.OnePrimary)
                 ? Account.Info({ owner: address(0), number: 0 })

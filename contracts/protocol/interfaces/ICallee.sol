@@ -40,7 +40,9 @@ contract ICallee {
      * @param  data         Arbitrary data given by the sender
      */
     function callFunction(
-        address sender,
+        address sender, // This is set to msg.sender, so this would be the auth proxy for everything...
+        // None of our contracts even use this right now though
+        // Same could be said of the payable proxy
         Account.Info memory accountInfo,
         bytes memory data
     )
