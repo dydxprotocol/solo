@@ -233,6 +233,7 @@ contract SignedOperationProxy is
     )
         public
     {
+        // Don't think it matters functionally, but maybe also require auth.numActions == actions.length
         bytes32 operationHash = getOperationHash(
             accounts,
             actions,
@@ -296,10 +297,13 @@ contract SignedOperationProxy is
             );
 
             // consider the signer to be msg.sender unless there is a signature
+            // This is weird because validateAccountOwner already special cases msg.sender
+            // Probably just set it to 0
             address signer = msg.sender;
 
             // if there is a signature, then validate it
             if (auth.signature.length != 0) {
+                // Split this out into a helper function
                 // get the hash of the operation
                 bytes32 operationHash = getOperationHash(
                     accounts,
@@ -399,6 +403,9 @@ contract SignedOperationProxy is
         view
     {
         bool valid =
+         // THOUGHT: Wouldn't signer now be set to msg.sender if no signature, so this is unneeded?
+         // answer: this is still needed because you could have an action block that touches
+         // both signer and msg.sender accounts
             msg.sender == accountOwner
             || signer == accountOwner
             || SOLO_MARGIN.getIsLocalOperator(accountOwner, msg.sender)
