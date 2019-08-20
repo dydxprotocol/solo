@@ -26,7 +26,14 @@ import { Solo } from '@dydxprotocol/solo';
 const solo = new Solo(
   provider,  // Valid web3 provider
   networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
+  { defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' }, // optional
 );
+
+// optional: loading in an account for signing transactions
+solo.loadAccount({
+  address: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1',
+  privateKey: '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
+});
 ```
 
 If you need other types from the library, you can import them like this:
