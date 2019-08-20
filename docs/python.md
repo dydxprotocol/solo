@@ -21,47 +21,360 @@ pip install dydx-python
 
 ## Example Usage
 
+### Initializing the client
+
 ```python
 from dydx.client import Client
+import dydx.constants as consts
+import dydx.util as utils
 
 # create a new client with a private key (string or bytearray)
 client = Client(
     private_key='0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
     node='https://parity.expotrading.com'
 )
+```
 
-# -----------------------------------------------------------
-# API Calls
-# -----------------------------------------------------------
+### HTTP API Calls
 
-# get all trading pairs for dydx
-trading_pairs = client.get_pairs()
+#### Trading Pairs
 
-# ...
+```python
+# Get all trading pairs for dydx
+pairs = client.get_pairs()
+'''
+pairs = {
+    "pairs": [
+        {
+            "uuid": "83b69358-a05e-4048-bc11-204da54a8b19",
+            "name": "DAI-WETH",
+            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "makerCurrency": {
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+            },
+            "takerCurrency": {
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                ...
+            },
+            ...
+        },
+        {
+            "uuid": "5a40f128-ced5-4947-ab10-2f5afee8e56b",
+            "name": "WETH-DAI",
+            "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "makerCurrency": {
+                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                ...
+            },
+            "takerCurrency": {
+                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+                ...
+            },
+            ...
+        }
+    ]
+}
+'''
+```
 
-# -----------------------------------------------------------
-# Ethereum Transactions
-# -----------------------------------------------------------
+#### Account Balances
 
+```python
+# Get my on-chain balances
+my_balances = client.get_my_balances()
+
+# Get on-chain balances of another account
+balances = client.get_balances(
+    address='0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1',
+    number=0
+)
+
+'''
+balances = {
+    "owner": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+    "number": "0",
+    "uuid": "0db94de2-a77c-4e81-b6e5-677032344186",
+    "balances": {
+        "0": {
+            "wei": "20000000893540864.968618118602975666",
+            "expiresAt": null,
+            "par": "19988408759132898",
+            ...
+        },
+        "1": {
+            "wei": "3000092108605235003.982412750027831584",
+            "expiresAt": null,
+            "par": "2895154605310571808",
+            ...
+        },
+        "2": {
+            "par": 0,
+            "wei": "0",
+            "expiresAt": null,
+            ...
+        }
+    }
+}
+'''
+```
+
+#### Open Orders
+
+```python
+# Get orders created by my account for both sides of the book
+my_orders = client.get_my_orders(
+    pairs=['WETH-DAI', 'DAI-WETH'],
+    limit=None,
+    startingBefore=None
+)
+
+# Get all orders for both sides of the book
+ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
+all_orders = client.get_orders(
+    pairs=['WETH-DAI', 'DAI-WETH'],
+    makerAccountOwner=None,  # optional
+    makerAccountNumber=None,  # optional
+    limit=2,  # optional
+    startingBefore=ten_days_ago  # optional
+)
+'''
+orders = {
+    "orders": [
+        {
+            "uuid": "6c2d9196-8b18-4749-9c80-3a40135ce325",
+            "id": "0x1bd537b8ccfa22c4d37e33062a5d88996819720b4748be5bd621c38f34d59708",
+            "makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+            "makerAccountNumber": "0",
+            "status": "OPEN",
+            "price": "0.01",
+            "fillOrKill": false,
+            "rawData": "...",
+            "makerAmount": "10000000000000000000",
+            "unfillableAt": null,
+            "expiresAt": "2019-09-16T21:34:38.000Z",
+            "unfillableReason": null,
+            "takerAmount": "100000000000000000",
+            "makerAmountRemaining": "10000000000000000000",
+            "orderType": "dydexLimitV1",
+            "takerAmountRemaining": "100000000000000000",
+            "createdAt": "2019-08-19T21:34:41.626Z",
+            "pairUuid": "83b69358-a05e-4048-bc11-204da54a8b19",
+            "pair": {
+                "name": "DAI-WETH",
+                ...
+            },
+            "fills": []
+        },
+        { ... }
+    ]
+}
+'''
+```
+
+#### Historical Fills
+
+```python
+# Get fills created by my account for both sides of the orderbook
+my_fills = client.get_my_fills(
+    pairs=['WETH-DAI', 'DAI-WETH'],
+    limit=None,  # optional
+    startingBefore=None  # optional
+)
+
+# Get all fills from one side of the book
+all_fills = client.get_fills(
+    pairs=['WETH-DAI'], # 'DAI-WETH' side of the book is not included
+    makerAccountOwner='0x5F5A46a8471F60b1E9F2eD0b8fc21Ba8b48887D8',  # optional
+    makerAccountNumber=0,  # optional
+    limit=2,  # optional
+    startingBefore=None  # optional
+)
+'''
+fills = {
+    "fills": [
+        {
+            "uuid": "29c11f80-3ccc-42f7-bc50-4bbebf1e4974",
+            "messageId": "f911b6da-fc4c-474e-bd2d-d00bb9b6c14d",
+            "status": "CONFIRMED",
+            "orderId": "0x692160665bf33f072fe9f54103c171ef1572a0d067b4378f373072c8c5450d7d",
+            "transactionSender": "0xf809e07870dca762b9536d61a4fbef1a17178092",
+            "transactionNonce": "766",
+            "transactionHash": "0x2a2923a6343a2aa7a454e0453ce824dbdd99679eaa6e1670c40314ed7d3472e6",
+            "fillAmount": "100000000000000000",
+            "createdAt": "2019-08-19T21:38:48.586Z",
+            "order": {
+                "uuid": "8e74f27e-d622-4e75-bddf-77640116bc93",
+                "id": "0x692160665bf33f072fe9f54103c171ef1572a0d067b4378f373072c8c5450d7d",
+                "makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+                "makerAccountNumber": "0",
+                "status": "OPEN",
+                "price": "191.5",
+                "fillOrKill": false,
+                "rawData": "...",
+                "makerAmount": "120000000000000000",
+                "unfillableAt": "2019-08-19T23:53:19.627Z",
+                "expiresAt": "2019-09-12T23:45:24.000Z",
+                "unfillableReason": "USER_CANCELED",
+                "takerAmount": "22980000000000000000",
+                "makerAmountRemaining": "15500000000000000",
+                "orderType": "dydexLimitV1",
+                "takerAmountRemaining": "2968250000000000000",
+                "createdAt": "2019-08-15T23:45:26.564Z",
+                "pairUuid": "5a40f128-ced5-4947-ab10-2f5afee8e56b",
+                "pair": {
+                    "name": "WETH-DAI",
+                    ...
+                }
+            }
+        },
+        {
+            ...
+        }
+        ...
+    ]
+}
+'''
+```
+
+#### Create an Order
+
+```python
+# Create order to SELL 10 ETH for 2000 DAI (a price of 200 DAI/ETH)
+created_order = client.create_order(
+    makerMarket=consts.MARKET_WETH,
+    takerMarket=consts.MARKET_DAI,
+    makerAmount=utils.token_to_wei(10, consts.MARKET_WETH),
+    takerAmount=utils.token_to_wei(2000, consts.MARKET_DAI)
+)
+'''
+created_order = {
+    "order": {
+        "uuid": "c85fc2f9-8aba-4302-bac8-c0fafb4b5e9c",
+        "id": "0x28676bc8f3b3ba651ccc928004f0fe315399a157bf57fd7e36188f7bc6172736",
+        "makerAccountOwner": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+        "makerAccountNumber": "0",
+        "status": "PENDING",
+        "price": "200",
+        "fillOrKill": false,
+        "orderType": "dydexLimitV1",
+        "makerAmount": "10000000000000000",
+        "makerAmountRemaining": "10000000000000000",
+        "takerAmount": "2000000000000000000",
+        "takerAmountRemaining": "2000000000000000000",
+        "expiresAt": "2019-09-17T01:07:21.000Z",
+        "unfillableAt": null,
+        "unfillableReason": null,
+        "pair": {
+            "name": "WETH-DAI",
+            ...
+        },
+        ...
+    }
+}
+'''
+```
+
+#### Cancel an Order
+
+```python
+# Cancel the previously created order
+order_hash = created_order['order']['id']
+canceled_order = client.cancel_order(
+    hash=order_hash
+)
+'''
+canceled_order = {
+    "order": {
+        "uuid": "16746923-10e4-4d30-92d9-1d1b16b52009",
+        "id": "0xbee3de265bed729a7b67a0393277508f89a58cb14c7789fbb826532fb93b2eaf",
+        "makerAccountOwner": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+        "makerAccountNumber": "0",
+        "status": "OPEN",
+        "price": "200",
+        "fillOrKill": false,
+        "orderType": "dydexLimitV1",
+        "makerAmount": "10000000000000000",
+        "makerAmountRemaining": "10000000000000000",
+        "takerAmount": "2000000000000000000",
+        "takerAmountRemaining": "2000000000000000000",
+        "expiresAt": "2019-09-17T01:09:55.000Z",
+        "unfillableAt": null,
+        "unfillableReason": null,
+        "pair": {
+            "name": "WETH-DAI",
+            ...
+        },
+        ...
+    }
+}
+'''
+```
+
+### Ethereum Transactions
+
+```python
 # Enable Limit Orders
 # must be called once, ever (only necessary during beta testing)
-tx_hash = client.enable_limit_orders()
+tx_hash = client.enable_limit_orders() # does not wait for transaction to be mined
+receipt = client.get_receipt(tx_hash) # waits for transaction to be mined
+
 
 # deposit 10 ETH
 # does not require set_allowance
-tx_hash = client.deposit(market=0, wei=(10 * 1e18)) # ETH has 18 decimal places
+tx_hash = client.deposit(
+  market=consts.MARKET_WETH,
+  wei=utils.token_to_wei(10, consts.MARKET_WETH)
+)
+receipt = client.get_receipt(tx_hash)
+
 
 # deposit 100 DAI
-tx_hash = client.set_allowance(market=1) # must only be called once, ever
-tx_hash = client.deposit(market=1, wei=(100 * 1e18)) # DAI has 18 decimal places
+tx_hash = client.set_allowance(market=consts.MARKET_DAI) # must only be called once, ever
+receipt = client.get_receipt(tx_hash)
+
+tx_hash = client.deposit(
+  market=consts.MARKET_DAI,
+  wei=utils.token_to_wei(100, consts.MARKET_DAI)
+)
+receipt = client.get_receipt(tx_hash)
+
 
 # deposit 100 USDC
-tx_hash = client.set_allowance(market=2) # must only be called once, ever
-tx_hash = client.deposit(market=2, wei=(100 * 1e6)) # USDC has 6 decimal places
+tx_hash = client.set_allowance(market=consts.MARKET_USDC) # must only be called once, ever
+receipt = client.get_receipt(tx_hash)
+
+tx_hash = client.deposit(
+  market=consts.MARKET_USDC,
+  wei=utils.token_to_wei(100, consts.MARKET_USDC)
+)
+receipt = client.get_receipt(tx_hash)
+
 
 # withdraw 50 USDC
-tx_hash = client.withdraw(market=2, wei=(100 * 1e6)) # USDC has 6 decimal places
+tx_hash = client.withdraw(
+  market=consts.MARKET_USDC,
+  wei=utils.token_to_wei(50, consts.MARKET_USDC)
+)
+receipt = client.get_receipt(tx_hash)
+
 
 # withdraw all DAI (including interest)
-tx_hash = client.withdraw_to_zero(market=1)
+tx_hash = client.withdraw_to_zero(market=consts.MARKET_DAI)
+receipt = client.get_receipt(tx_hash)
 ```
