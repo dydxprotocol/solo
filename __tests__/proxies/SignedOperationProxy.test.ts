@@ -995,6 +995,9 @@ describe('SignedOperationProxy', () => {
       ]);
       await expectInvalid([signedWithdrawOperation, signedOperation2]);
     });
+
+    // Maybe also test:
+    // - authorization that overflows the actions arrays
   });
 });
 
