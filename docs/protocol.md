@@ -15,7 +15,7 @@ Solo is used by [trade.dydx.exchange](https://trade.dydx.exchange).
 
 Solo is Account based. Each Account is referenced by its owner Ethereum address and an account number unique to that owner address. Accounts have balances on each asset supported by Solo, which can be either positive (indicating a net supply of the asset) or negative (indicating a net borrow of an asset). Accounts must maintain a certain level of collateralization or they will be liquidated.
 
-#### Example
+### Example
 
 Ethereum Address `0x6b5Bb4E60821eCE7363CaFf836Be1A4f9e3559B3` has the following balances in its account number `123456`:
 
@@ -47,13 +47,13 @@ Interest is earned / paid continuously (down to the second). Rates on the protoc
 
 There are two types of balances amounts on Solo: Wei and Par.
 
-#### Wei
+### Wei
 
 Wei refers to the actual token amount of an asset held in or owed by an account. Wei amounts are constantly changing as interest accrues on the balance. For example, if Bob deposits 10 DAI to a Solo Account, its Wei balance would initially be 10. The balance would start increasing every second as Bob started earning interest on his DAI.
 
 Likely, most times you will want to use Wei balances.
 
-#### Par
+### Par
 
 Par refers to an interest adjusted amount that is static and does not change on the protocol. These are the balances that are actually stored on the protocol smart contracts. The protocol uses the current market index (see below) to transform Par to Wei values.
 
@@ -73,7 +73,7 @@ Supply Wei Balance = (Supply Par Balance) * (Supply Market Index)
 
 Indexes start at 1 upon the addition of the Market to the protocol. They increase based on how much interest has accrued for that asset. For example upon adding USDC both the borrow index and supply index for USDC were 1. Say over the next month 2% interest accrues to borrowers and 1% interest accrues to lenders (based on the interest rates and time that has passed). After this, the supply index will be 1.01, and the borrow index will be 1.02. These indexes will keep increasing based on interest accrued, forever.
 
-#### Example
+### Example
 
 Alice deposits 10 DAI to the protocol (10 DAI in Wei). The supply index on DAI is currently 2. Using `Supply Par Balance = (Supply Wei Balance) / (Supply Market Index) = 10 / 2 = 5`, the protocol credits 5 Par balance to Alice's account.
 
@@ -84,28 +84,28 @@ Later, interest has accrued for DAI on the protocol, and now the supply index fo
 
 All state changes to accounts happen through Actions. Actions can modify the balances of 1 or more Accounts. There is no such thing as a "Borrow" action on Solo, Actions can automatically borrow funds if Account balances decrease. The following Actions are supported by Solo:
 
-#### Deposit
+### Deposit
 Deposit funds into an Account. Funds are moved from the sender or an approved address to Solo, and the Account's balance is incremented.
 
-#### Withdraw
+### Withdraw
 Withdraw funds from an Account. Funds are sent from Solo to a specified address and the Account's balance is decremented.
 
-#### Transfer
+### Transfer
 Transfer funds internally between two Solo accounts.
 
-#### Buy
+### Buy
 Buy an asset on a decentralized exchange using another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the bought asset's balance to go up, and the asset used to do the buy's balance to go down. Example: Buy 1 WETH on eth2dai using DAI
 
-#### Sell
+### Sell
 Sell an asset on a decentralized exchange for another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the sold asset's balance to go down, and the received assets balance to go up. Example: Sell 1 WETH on eth2dai for DAI
 
-#### Trade
+### Trade
 Trade assets with another account on Solo internally. No actual tokens are moved, but Account balances are updated. Uses the [`AutoTrader`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/IAutoTrader.sol) interface, which allows a smart contract to be specified which is called to determine the price of the trade.
 
-#### Call
+### Call
 Calls a function specified by the [`ICallee`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/ICallee.sol) interface through the context of an Account. Does not modify Account balances. An example of how this can be used is for setting expiration on the [`Expiry`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Expiry.sol) contract.
 
-#### Liquidate
+### Liquidate
 Liquidates an undercollateralized Account. Operates on two Accounts: the liquidating Account, and the undercollateralized Account. Does not transfer any tokens, but just internally updates balances of accounts. Liquidates at the price specified by Example:
 
 Starting Account Balances:
@@ -121,7 +121,7 @@ The liquidate action causes 1 ETH to be transferred from L -> U, and `1 ETH * ((
 Liquidating Account (L): +231.25 DAI, -1 ETH
 Undercollateralized Account (U): +18.75 DAI
 
-#### Vaporize
+### Vaporize
 Pulls funds from the insurance fund to recollateralize an underwater account with only negative balances.
 
 ## Operations
