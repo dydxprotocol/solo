@@ -23,6 +23,7 @@ import {
   AccountInfo,
   OperationAuthorization,
   SetExpiry,
+  Refund,
   AccountActionWithOrder,
   Call,
   Amount,
@@ -279,6 +280,24 @@ export class AccountOperation {
       denotedInMakerAmount,
       false,
     );
+  }
+
+  public refund(refundArgs: Refund): AccountOperation {
+    return this.trade({
+      primaryAccountOwner: refundArgs.primaryAccountOwner,
+      primaryAccountId: refundArgs.primaryAccountId,
+      inputMarketId: refundArgs.refundMarketId,
+      outputMarketId: refundArgs.otherMarketId,
+      otherAccountOwner: refundArgs.receiverAccountOwner,
+      otherAccountId: refundArgs.receiverAccountId,
+      amount: {
+        value: refundArgs.wei,
+        denomination: AmountDenomination.Actual,
+        reference: AmountReference.Delta,
+      },
+      data: [],
+      autoTrader: this.contracts.refunder.options.address,
+    });
   }
 
   public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {

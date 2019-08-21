@@ -3,6 +3,7 @@ import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
+  address,
   Decimal,
   Integer,
   BalanceUpdate,
@@ -15,6 +16,7 @@ import { abi as operationAbi } from '../../build/published_contracts/Events.json
 import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
 import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
+import { abi as refunderAbi } from '../../build/published_contracts/Refunder.json';
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 import {
   abi as signedOperationProxyAbi,
@@ -49,6 +51,9 @@ export class Logs {
     }
     if (options.skipExpiryLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, expiryAbi));
+    }
+    if (options.skipRefunderLogs) {
+      logs = logs.filter((log: any) => !this.logIsFrom(log, refunderAbi));
     }
     if (options.skipLimitOrdersLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
@@ -110,6 +115,9 @@ export class Logs {
       }
       case this.contracts.expiry.options.address: {
         return this.parseLogWithContract(this.contracts.expiry, log);
+      }
+      case this.contracts.refunder.options.address: {
+        return this.parseLogWithContract(this.contracts.refunder, log);
       }
       case this.contracts.limitOrders.options.address: {
         return this.parseLogWithContract(this.contracts.limitOrders, log);
@@ -177,6 +185,15 @@ export class Logs {
     if (
       Array.isArray(input.components)
       && input.components.length === 2
+      && input.components[0].name === 'owner'
+      && input.components[1].name === 'number'
+    ) {
+      return this.parseAccountInfo(eventArgs[input.name]);
+    }
+
+    if (
+      Array.isArray(input.components)
+      && input.components.length === 2
       && input.components[0].name === 'deltaWei'
       && input.components[1].name === 'newPar'
     ) {
@@ -210,6 +227,18 @@ export class Logs {
     }
 
     throw new Error('Unknown tuple type in event');
+  }
+
+  private parseAccountInfo(
+    accountInfo: any,
+  ): {
+    owner: address,
+    number: BigNumber,
+  } {
+    return {
+      owner: accountInfo.owner,
+      number: new BigNumber(accountInfo.number),
+    };
   }
 
   private parseIndex(index: any): Index {
