@@ -34,18 +34,19 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
 
 
 /**
- * @title ExpiryV2
+ * @title ExpiryOld
  * @author dYdX
  *
- * Expiry contract that also allows approved senders to set expiry to be 28 days in the future.
+ * Sets the negative balance for an account to expire at a certain time. This allows any other
+ * account to repay that negative balance after expiry using any positive balance in the same
+ * account. The arbitrage incentive is the same as liquidation in the base protocol.
  */
-contract ExpiryV2 is
+contract ExpiryOld is
     Ownable,
     OnlySolo,
     ICallee,
     IAutoTrader
 {
-    using Math for uint256;
     using SafeMath for uint32;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -54,26 +55,6 @@ contract ExpiryV2 is
     // ============ Constants ============
 
     bytes32 constant FILE = "Expiry";
-
-    // ============ Enums ============
-
-    enum CallFunctionType {
-        SetExpiry,
-        SetApproval
-    }
-
-    // ============ Structs ============
-
-    struct SetExpiryArg {
-        Account.Info account;
-        uint256 marketId;
-        uint32 timeDelta;
-    }
-
-    struct SetApprovalArg {
-        address sender;
-        uint32 minTimeDelta;
-    }
 
     // ============ Events ============
 
@@ -88,19 +69,10 @@ contract ExpiryV2 is
         uint256 expiryRampTime
     );
 
-    event LogSenderApproved(
-        address approver,
-        address sender,
-        uint32 minTimeDelta
-    );
-
     // ============ Storage ============
 
     // owner => number => market => time
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
-
-    // owner => sender => minimum time delta
-    mapping (address => mapping (address => uint32)) public g_approvedSender;
 
     // time over which the liquidation ratio goes from zero to maximum
     uint256 public g_expiryRampTime;
@@ -127,17 +99,6 @@ contract ExpiryV2 is
     {
         emit LogExpiryRampTimeSet(newExpiryRampTime);
         g_expiryRampTime = newExpiryRampTime;
-    }
-
-    // ============ Approval Functions ============
-
-    function approveSender(
-        address sender,
-        uint32 minTimeDelta
-    )
-        external
-    {
-        setApproval(msg.sender, sender, minTimeDelta);
     }
 
     // ============ Getters ============
@@ -193,12 +154,17 @@ contract ExpiryV2 is
         public
         onlySolo(msg.sender)
     {
-        CallFunctionType callType = abi.decode(data, (CallFunctionType));
-        if (callType == CallFunctionType.SetExpiry) {
-            callFunctionSetExpiry(account.owner, data);
-        } else {
-            callFunctionSetApproval(account.owner, data);
+        (
+            uint256 marketId,
+            uint32 expiryTime
+        ) = parseCallArgs(data);
+
+        // don't set expiry time for accounts with positive balance
+        if (expiryTime != 0 && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
+            return;
         }
+
+        setExpiry(account, marketId, expiryTime);
     }
 
     function getTradeCost(
@@ -225,7 +191,10 @@ contract ExpiryV2 is
             });
         }
 
-        (uint256 owedMarketId, uint256 maxExpiry) = abi.decode(data, (uint256, uint256));
+        (
+            uint256 owedMarketId,
+            uint32 maxExpiry
+        ) = parseTradeArgs(data);
 
         uint32 expiry = getExpiry(makerAccount, owedMarketId);
 
@@ -264,59 +233,6 @@ contract ExpiryV2 is
     }
 
     // ============ Private Functions ============
-
-    function callFunctionSetExpiry(
-        address sender,
-        bytes memory data
-    )
-        private
-    {
-        (
-            CallFunctionType callType,
-            SetExpiryArg[] memory expiries
-        ) = abi.decode(data, (CallFunctionType, SetExpiryArg[]));
-
-        assert(callType == CallFunctionType.SetExpiry);
-
-        for (uint256 i = 0; i < expiries.length; i++) {
-            SetExpiryArg memory exp = expiries[i];
-            uint32 timeDelta = exp.timeDelta;
-            if (exp.account.owner != sender) {
-                uint32 minApprovedTimeDelta = g_approvedSender[exp.account.owner][sender];
-                if (minApprovedTimeDelta == 0) {
-                    // don't do anything if sender is not approved
-                    continue;
-                } else {
-                    // bound the time by the minimum approved timeDelta
-                    timeDelta = Math.max(minApprovedTimeDelta, exp.timeDelta).to32();
-                }
-            }
-
-            // if timeDelta is zero, interpret it as unset expiry
-            if (
-                timeDelta > 0 &&
-                SOLO_MARGIN.getAccountPar(exp.account, exp.marketId).isNegative()
-            ) {
-                setExpiry(exp.account, exp.marketId, Time.currentTime().add(timeDelta).to32());
-            } else {
-                setExpiry(exp.account, exp.marketId, 0);
-            }
-        }
-    }
-
-    function callFunctionSetApproval(
-        address sender,
-        bytes memory data
-    )
-        private
-    {
-        (
-            CallFunctionType callType,
-            SetApprovalArg memory approvalArg
-        ) = abi.decode(data, (CallFunctionType, SetApprovalArg));
-        assert(callType == CallFunctionType.SetApproval);
-        setApproval(sender, approvalArg.sender, approvalArg.minTimeDelta);
-    }
 
     function getTradeCostInternal(
         uint256 inputMarketId,
@@ -420,23 +336,13 @@ contract ExpiryV2 is
         private
     {
         g_expiries[account.owner][account.number][marketId] = time;
+
         emit ExpirySet(
             account.owner,
             account.number,
             marketId,
             time
         );
-    }
-
-    function setApproval(
-        address approver,
-        address sender,
-        uint32 minTimeDelta
-    )
-        private
-    {
-        g_approvedSender[approver][sender] = minTimeDelta;
-        emit LogSenderApproved(approver, sender, minTimeDelta);
     }
 
     function heldWeiToOwedWei(
@@ -503,5 +409,69 @@ contract ExpiryV2 is
             ref: Types.AssetReference.Delta,
             value: heldAmount
         });
+    }
+
+    function parseCallArgs(
+        bytes memory data
+    )
+        private
+        pure
+        returns (
+            uint256,
+            uint32
+        )
+    {
+        Require.that(
+            data.length == 64,
+            FILE,
+            "Call data invalid length",
+            data.length
+        );
+
+        uint256 marketId;
+        uint256 rawExpiry;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            marketId := mload(add(data, 32))
+            rawExpiry := mload(add(data, 64))
+        }
+
+        return (
+            marketId,
+            Math.to32(rawExpiry)
+        );
+    }
+
+    function parseTradeArgs(
+        bytes memory data
+    )
+        private
+        pure
+        returns (
+            uint256,
+            uint32
+        )
+    {
+        Require.that(
+            data.length == 64,
+            FILE,
+            "Trade data invalid length",
+            data.length
+        );
+
+        uint256 owedMarketId;
+        uint256 rawExpiry;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            owedMarketId := mload(add(data, 32))
+            rawExpiry := mload(add(data, 64))
+        }
+
+        return (
+            owedMarketId,
+            Math.to32(rawExpiry)
+        );
     }
 }
