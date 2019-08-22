@@ -49,7 +49,7 @@ __Order fields__
 |typedSignature|string|The signature of the order.|
 
 Example:
-```JSON
+```json
 {
     "makerMarket": "0",
     "takerMarket": "1",
@@ -80,7 +80,7 @@ Content-Type: application/json
 ```
 
 Example Response Body:
-```JSON
+```json
 {
     "pairs": [
 		{
@@ -169,7 +169,7 @@ Note: `fillOrKill` orders execute immediately and no part of the order will go o
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
 
 Example Request Body:
-```JSON
+```json
 {
 	"fillOrKill": true,
 	"order": {
@@ -206,7 +206,7 @@ Authorization: Bearer [A valid cancel signature]
 ```
 
 Example Response Body:
-```JSON
+```json
 {
     "orders": [
         {
@@ -269,7 +269,7 @@ Example Response Body:
 Both orders and fills returned from the API will provide a status field.
 
 For orders this field represents the current status of the order.
-```
+```javascript
 export const STATUS = {
   PENDING: 'PENDING',
   OPEN: 'OPEN',
@@ -284,13 +284,12 @@ field.
 
 For fills the status field represents the status of the transaction on-chain.
 
-```
+```javascript
 export const STATUSES = {
   PENDING: 'PENDING',
   REVERTED: 'REVERTED',
   CONFIRMED: 'CONFIRMED',
 };
-
 ```
 
 ### GET /v1/dex/orders
@@ -315,7 +314,7 @@ Query Params:
 |?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
 
 Example Response Body:
-```JSON
+```json
 {
     "orders": [
         {
@@ -394,7 +393,7 @@ Query Params:
 |?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
 
 Example Response Body:
-```JSON
+```json
 {
     "fills": [
         {
@@ -484,7 +483,7 @@ Query Params:
 |?number|(Optional) The Solo Acount number of the account to request balances for.|
 
 Example Response Body:
-```JSON
+```json
 {
   "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
   "number": "0",
