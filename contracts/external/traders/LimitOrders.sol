@@ -461,6 +461,7 @@ contract LimitOrders is
 
         // verify taker
         Require.that(
+            // Line over max-len, does linter not catch this?
             (orderInfo.order.takerAccountOwner == address(0) && orderInfo.order.takerAccountNumber == 0 ) ||
             (orderInfo.order.takerAccountOwner == takerAccount.owner && orderInfo.order.takerAccountNumber == takerAccount.number),
             FILE,
@@ -564,6 +565,7 @@ contract LimitOrders is
         return totalMakerFilledAmount;
     }
 
+    // Nit: order these helper functions in the order they are used
     /**
      * Parses the order, verifies that it is not expired or canceled, and verifies the signature.
      */
@@ -575,6 +577,7 @@ contract LimitOrders is
         returns (OrderInfo memory)
     {
         Require.that(
+          // Should validate it is either exactly NUM_ORDER_BYTES or NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES
             data.length >= NUM_ORDER_BYTES,
             FILE,
             "Cannot parse order from data"
@@ -625,6 +628,7 @@ contract LimitOrders is
         /* solium-disable-next-line indentation */
         bytes32 structHash = keccak256(abi.encode(
             EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH,
+            // Does abi encoding structs just lay out all fields side by side with no padding?
             order
         ));
 
@@ -648,6 +652,7 @@ contract LimitOrders is
         returns (bytes memory)
     {
         Require.that(
+            // Why not exactly NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES?
             data.length >= NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
             FILE,
             "Cannot parse signature from data"
