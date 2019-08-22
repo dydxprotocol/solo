@@ -60,6 +60,7 @@ export interface SoloOptions {
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
   accounts?: EthereumAccount[];
+  apiEndpoint?: string;
 }
 
 export interface EthereumAccount {
