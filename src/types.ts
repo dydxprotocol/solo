@@ -226,6 +226,17 @@ export interface SetExpiry extends AccountAction {
   expiryTime: Integer;
 }
 
+export interface ExpiryV2Arg {
+  accountOwner: address;
+  accountId: Integer;
+  marketId: Integer;
+  timeDelta: Integer;
+}
+
+export interface SetExpiryV2 extends AccountAction {
+  expiryV2Args: ExpiryV2Arg[];
+}
+
 export interface Refund extends AccountAction {
   receiverAccountOwner: address;
   receiverAccountId: Integer;

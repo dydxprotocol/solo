@@ -23,6 +23,7 @@ import {
   AccountInfo,
   OperationAuthorization,
   SetExpiry,
+  SetExpiryV2,
   Refund,
   AccountActionWithOrder,
   Call,
@@ -189,6 +190,32 @@ export class AccountOperation {
     return this;
   }
 
+  public setExpiryV2(args: SetExpiryV2): AccountOperation {
+    const callType = toBytes(INTEGERS.ZERO);
+    let callData = callType;
+    callData = callData.concat(toBytes(new BigNumber(64)));
+    callData = callData.concat(toBytes(new BigNumber(args.expiryV2Args.length)));
+    for (let i = 0; i < args.expiryV2Args.length; i += 1) {
+      const expiryV2Arg = args.expiryV2Args[i];
+      callData = callData.concat(toBytes(
+        expiryV2Arg.accountOwner,
+        expiryV2Arg.accountId,
+        expiryV2Arg.marketId,
+        expiryV2Arg.timeDelta,
+      ));
+    }
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.expiryV2.options.address,
+        data: callData,
+      },
+    );
+
+    return this;
+  }
+
   public approveLimitOrder(args: AccountActionWithOrder): AccountOperation {
     this.addActionArgs(
       args,
@@ -331,6 +358,65 @@ export class AccountOperation {
     spreadPremiums: Integer[],
     collateralPreferences: Integer[],
   ): AccountOperation {
+    return this.fullyLiquidateExpiredAccountInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      expiredAccountOwner,
+      expiredAccountNumber,
+      expiredMarket,
+      expiryTimestamp,
+      blockTimestamp,
+      weis,
+      prices,
+      spreadPremiums,
+      collateralPreferences,
+      this.contracts.expiry.options.address,
+    );
+  }
+
+  public fullyLiquidateExpiredAccountV2(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    expiredAccountOwner: address,
+    expiredAccountNumber: Integer,
+    expiredMarket: Integer,
+    expiryTimestamp: Integer,
+    blockTimestamp: Integer,
+    weis: Integer[],
+    prices: Integer[],
+    spreadPremiums: Integer[],
+    collateralPreferences: Integer[],
+  ): AccountOperation {
+    return this.fullyLiquidateExpiredAccountInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      expiredAccountOwner,
+      expiredAccountNumber,
+      expiredMarket,
+      expiryTimestamp,
+      blockTimestamp,
+      weis,
+      prices,
+      spreadPremiums,
+      collateralPreferences,
+      this.contracts.expiryV2.options.address,
+    );
+  }
+
+  private fullyLiquidateExpiredAccountInternal(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    expiredAccountOwner: address,
+    expiredAccountNumber: Integer,
+    expiredMarket: Integer,
+    expiryTimestamp: Integer,
+    blockTimestamp: Integer,
+    weis: Integer[],
+    prices: Integer[],
+    spreadPremiums: Integer[],
+    collateralPreferences: Integer[],
+    contractAddress: address,
+  ): AccountOperation {
     // hardcoded values
     const networkExpiryConstants = expiryConstants[this.networkId];
     const defaultSpread = new BigNumber(networkExpiryConstants.spread);
@@ -409,7 +495,7 @@ export class AccountOperation {
             expiredAccountOwner,
             expiredAccountNumber,
           ),
-          otherAddress: this.contracts.expiry.options.address,
+          otherAddress: contractAddress,
           data: toBytes(expiredMarket, expiryTimestamp),
         },
       );
