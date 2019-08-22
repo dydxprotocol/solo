@@ -26,14 +26,16 @@ import { Solo } from '@dydxprotocol/solo';
 const solo = new Solo(
   provider,  // Valid web3 provider
   networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
-  { defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' }, // optional
+  {
+    defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional
+    accounts: [
+      {
+        address: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional
+        privateKey: '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
+      },
+    ], // Optional: loading in an account for signing transactions
+  }, // optional
 );
-
-// optional: loading in an account for signing transactions
-solo.loadAccount({
-  address: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1',
-  privateKey: '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
-});
 ```
 
 If you need other types from the library, you can import them like this:
@@ -139,5 +141,73 @@ await solo.token.setMaximumSoloAllowance(
 );
 ```
 
+## Api
+Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for making dex orders.
+
+#### Place Order
+```javascript
+import { MarketNumber, BigNumber } from '@dydxprotocol/solo';
+
+// order has type ApiOrder
+const { order } = await solo.api.placeOrder({
+   // Your address. Account must be loaded onto Solo with private key for signing
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  makerMarket: MarketNumber.WETH,
+  takerMarket: MarketNumber.DAI,
+
+  // denominated in base units of the token. i.e. 1 ETH = 1e18
+  makerAmount: new BigNumber('1e18'),
+
+  // denominated in base units of the token. i.e. 100 DAI = 100e18
+  // (NOTE: USDC has 6 decimals so 100 USDC would be 100e6)
+  takerAmount: new BigNumber('100e18'),
+
+  // OPTIONAL: defaults to 0 (0 is the account number that displays
+  // on trade.dydx.exchange/balances)
+  makerAccountNumber: new BigNumber(0),
+
+  // OPTIONAL: number of seconds until the order expires.
+  // 0 indicates no expiry. Defaults to 28 days
+  expiration: new BigNumber('1000'),
+
+  // OPTIONAL: defaults to false
+  fillOrKill: false,
+});
+```
+
+#### Cancel Order
+```javascript
+const { id } = existingOrder;
+
+// order has type ApiOrder
+const { order } = await solo.api.cancelOrder({
+  orderId: id,
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
+});
+```
+
+#### Get Orders
+```javascript
+// orders has type ApiOrder[]
+const { orders } = await solo.api.getOrders({
+  startingBefore: new Date(), // OPTIONAL
+  limit: 50, // OPTIONAL: maximum 100
+  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
+
+  // OPTIONAL: defaults to 0 if makerAccountOwner provided
+  makerAccountNumber: new BigNumber(0),
+});
+```
+
+#### Get Account Balances
+```javascript
+// account has type ApiAccount
+const account = await solo.api.getAccountBalances({
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  accountNumber: new BigNumber(0), // OPTIONAL: defaults to 0
+});
+```
+
 ## Web3
-Solo uses [Web3 1.X](https://web3js.readthedocs.io/) under the hood. You can access it through `solo.web3`
+Solo uses [Web3 1.2.X](https://web3js.readthedocs.io) under the hood. You can access it through `solo.web3`
