@@ -1,5 +1,10 @@
 # Contracts
 
+<br>
+<a href='https://github.com/dydxprotocol/solo'>
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+</a>
+
 ## Mainnet
 
 |Contract Name|Description|Address|
