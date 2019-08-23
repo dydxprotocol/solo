@@ -8,7 +8,6 @@ import {
   AmountReference,
   AmountDenomination,
   ContractCallOptions,
-  ConfirmationType,
   ProxyType,
 } from '../types';
 
