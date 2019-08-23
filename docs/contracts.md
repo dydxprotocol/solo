@@ -1,7 +1,7 @@
 # Contracts
 
 <br>
-<a href='https://github.com/dydxprotocol/solo'>
+<a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
   <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
 </a>
 

@@ -1,15 +1,17 @@
 # TypeScript Client
 
 <br>
-<a href='https://github.com/dydxprotocol/solo'>
-  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
-</a>
-<br>
-<a href='https://www.npmjs.com/package/@dydxprotocol/solo'>
-  <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM Package'/>
-</a>
+<div style="display:flex;">
+  <a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+  </a>
+  <br>
+  <a href='https://www.npmjs.com/package/@dydxprotocol/solo' style="text-decoration:none;padding-left:5px;">
+    <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM Package'/>
+  </a>
+</div>
 
-TypeScript library for interacting with the dYdX smart contracts
+TypeScript library for interacting with the dYdX smart contracts and http API
 
 ## Install
 
@@ -19,13 +21,15 @@ npm i -s @dydxprotocol/solo
 
 ## Initialize
 
-You will need to initialize the main class of Solo using a provider and network id.
+You will need to initialize Solo using a [Web3 provider](https://web3js.readthedocs.io/en/v1.2.1/web3.html#providers) / Ethereum node endpoint and Network.
 
 ```javascript
-import { Solo } from '@dydxprotocol/solo';
+import { Solo, Networks } from '@dydxprotocol/solo';
+
+// --- Initialize with Web3 provider ---
 const solo = new Solo(
   provider,  // Valid web3 provider
-  networkId, // Ethereum network ID (1 - Mainnet, 42 - Kovan, etc.)
+  Networks.MAINNET,
   {
     defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional
     accounts: [
@@ -36,21 +40,66 @@ const solo = new Solo(
     ], // Optional: loading in an account for signing transactions
   }, // Optional
 );
+
+// --- OR Initialize with Ethereum node endpoint ---
+const solo = new Solo(
+  'https://mainnet.infura.io/v3/YOUR-PROJECT-ID',
+  Networks.MAINNET,
+  {
+    defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional - but needed if using Infura
+    accounts: [
+      {
+        address: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional
+        privateKey: '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
+      },
+    ], // Optional: loading in an account for signing transactions
+  }, // Optional
+);
 ```
 
-If you need other types from the library, you can import them like this:
+## Standard Actions
+Solo exposes a number of "standard" actions for interacting with the protocol. These are a subset of what is possible with [Operations](#operations), but are simpler to use.
+
+#### Deposit
+Deposit funds to dYdX
 
 ```javascript
-import {
-  Solo,
-  ProxyType,
-  AmountDenomination,
-  AmountReference,
-  ConfirmationType,
-} from '@dydxprotocol/solo';
+import { MarketId, BigNumber } from '@dydxprotocol/solo';
+
+// By default resolves when transaction is received by the node - not when mined
+const result = await solo.standardActions.deposit({
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
+  marketId: MarketId.ETH,
+
+   // Base units of the token, so 1e18 = 1 ETH
+   // NOTE: USDC has 6 decimal places, so 1e6 = 1 USDC
+  amount: new BigNumber('1e18'),
+});
 ```
 
+- `MarketId.ETH` will send ETH whereas `MarketId.WETH` will send WETH. Both are the same market on the protocol
+- For all markets except `MarketId.ETH`, you will first need to set allowance on that token. See [Tokens](#tokens)
+
+#### Withdraw
+Withdraw funds from dYdX
+
+```javascript
+import { MarketId, BigNumber } from '@dydxprotocol/solo';
+
+// By default resolves when transaction is received by the node - not when mined
+const result = await solo.standardActions.withdraw({
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
+  marketId: MarketId.ETH,
+
+   // Base units of the token, so 1e18 = 1 ETH
+   // NOTE: USDC has 6 decimal places, so 1e6 = 1 USDC
+  amount: new BigNumber('1e18'),
+});
+```
+- `MarketId.ETH` will send ETH whereas `MarketId.WETH` will send WETH. Both are the same market on the protocol
+
 ## Operations
+The main way to interact with Solo is through Operations. See [Operations](protocol.md#operations)
 
 #### Initialize
 
@@ -73,12 +122,12 @@ Once an operation is initialized, Actions can be added to it. Action functions m
 
 In this example 1 ETH is being withdrawn from an account, and then 200 DAI are being deposited into it:
 ```javascript
-import { MarketNumber } from '@dydxprotocol/solo';
+import { MarketId } from '@dydxprotocol/solo';
 
 operation.withdraw({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
     primaryAccountId: new BigNumber('123456'),
-    marketId: MarketNumber.WETH,
+    marketId: MarketId.WETH,
     amount: {
       value: new BigNumber('-1e18'),
       reference: AmountReference.Delta,
@@ -89,7 +138,7 @@ operation.withdraw({
   .deposit({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
     primaryAccountId: new BigNumber('123456'),
-    marketId: MarketNumber.DAI,
+    marketId: MarketId.DAI,
     amount: {
       value: new BigNumber('200e18'),
       reference: AmountReference.Delta,
@@ -148,14 +197,14 @@ Solo provides an easy way to interact with dYdX http API endpoints. This is espe
 
 #### Place Order
 ```javascript
-import { MarketNumber, BigNumber } from '@dydxprotocol/solo';
+import { MarketId, BigNumber } from '@dydxprotocol/solo';
 
 // order has type ApiOrder
 const { order } = await solo.api.placeOrder({
    // Your address. Account must be loaded onto Solo with private key for signing
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
-  makerMarket: MarketNumber.WETH,
-  takerMarket: MarketNumber.DAI,
+  makerMarket: MarketId.WETH,
+  takerMarket: MarketId.DAI,
 
   // denominated in base units of the token. i.e. 1 ETH = 1e18
   makerAmount: new BigNumber('1e18'),
@@ -225,5 +274,24 @@ const account = await solo.api.getAccountBalances({
 });
 ```
 
+## Types
+You can import types from Solo as:
+
+```javascript
+import {
+  ProxyType,
+  AmountDenomination,
+  AmountReference,
+  ConfirmationType,
+} from '@dydxprotocol/solo';
+```
+
 ## Web3
 Solo uses [Web3 1.2.X](https://web3js.readthedocs.io) under the hood. You can access it through `solo.web3`
+
+## BigNumber
+Solo uses [BigNumber 8.X](http://mikemcl.github.io/bignumber.js/). You can import this from Solo as:
+
+```javascript
+import { BigNumber } from '@dydxprotocol/solo';
+```

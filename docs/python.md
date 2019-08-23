@@ -1,13 +1,15 @@
 # Python Client
 
 <br>
-<a href='https://github.com/dydxprotocol/dydx-python'>
-  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fdydx--python-lightgrey' alt='GitHub'/>
-</a>
-<br>
-<a href='https://pypi.org/project/dydx-python'>
-  <img src='https://img.shields.io/pypi/v/dydx-python.svg' alt='PyPi'/>
-</a>
+<div style="display:flex;">
+  <a href='https://github.com/dydxprotocol/dydx-python' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fdydx--python-lightgrey' alt='GitHub'/>
+  </a>
+  <br>
+  <a href='https://pypi.org/project/dydx-python' style="text-decoration:none;padding-left:5px;">
+    <img src='https://img.shields.io/pypi/v/dydx-python.svg' alt='PyPi'/>
+  </a>
+</div>
 
 A python library for interacting with the Limit Order API.
 
