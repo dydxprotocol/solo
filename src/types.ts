@@ -32,10 +32,19 @@ export enum ConfirmationType {
   Simulate = 3,
 }
 
-export const MarketNumber = {
+export const MarketId = {
   WETH: new BigNumber(0),
   DAI: new BigNumber(1),
   USDC: new BigNumber(2),
+
+  // This market number does not exist on the protocol,
+  // but can be used for simplified actions
+  ETH: new BigNumber(-1),
+};
+
+export const Networks = {
+  MAINNET: 1,
+  KOVAN: 42,
 };
 
 export enum ProxyType {
@@ -61,6 +70,8 @@ export interface SoloOptions {
   defaultGasPrice?: number | string;
   accounts?: EthereumAccount[];
   apiEndpoint?: string;
+  ethereumNodeEndpoint?: string;
+  ethereumNodeTimeout?: number;
 }
 
 export interface EthereumAccount {

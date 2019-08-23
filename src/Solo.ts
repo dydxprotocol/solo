@@ -33,7 +33,8 @@ import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
 import { Api } from './modules/Api';
-import { SoloOptions, EthereumAccount, address } from './types';
+import { StandardActions } from './modules/StandardActions';
+import { SoloOptions, EthereumAccount, address, Networks } from './types';
 
 export class Solo {
   public contracts: Contracts;
@@ -52,23 +53,34 @@ export class Solo {
   public logs: Logs;
   public operation: Operation;
   public api: Api;
+  public standardActions: StandardActions;
 
   constructor(
-    provider: Provider,
-    networkId: number,
+    provider: Provider | string,
+    networkId: number = Networks.MAINNET,
     options: SoloOptions = {},
   ) {
-    this.web3 = new Web3(provider);
+    let realProvider: Provider;
+    if (typeof provider === 'string') {
+      realProvider = new Web3.providers.HttpProvider(
+        options.ethereumNodeEndpoint,
+        options.ethereumNodeTimeout || 10000,
+      );
+    } else {
+      realProvider = provider;
+    }
+
+    this.web3 = new Web3(realProvider);
     if (options.defaultAccount) {
       this.web3.eth.defaultAccount = options.defaultAccount;
     }
 
-    this.contracts = new Contracts(provider, networkId, this.web3, options);
+    this.contracts = new Contracts(realProvider, networkId, this.web3, options);
     this.interest = new Interest(networkId);
     this.token = new Token(this.contracts);
     this.oracle = new Oracle(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
-    this.testing = new Testing(provider, this.contracts, this.token);
+    this.testing = new Testing(realProvider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
     this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
@@ -78,6 +90,7 @@ export class Solo {
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(this.contracts, this.limitOrders, networkId);
     this.api = new Api(this.limitOrders, options.apiEndpoint);
+    this.standardActions = new StandardActions(this.operation, this.contracts);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
