@@ -9,6 +9,7 @@ import {
   AmountDenomination,
   ContractCallOptions,
   ConfirmationType,
+  ProxyType,
 } from '../types';
 
 export class StandardActions {
@@ -38,7 +39,7 @@ export class StandardActions {
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
-      usePayableProxy: isEth,
+      proxy: isEth ? ProxyType.Payable : ProxyType.None,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
 
@@ -57,9 +58,6 @@ export class StandardActions {
     const commitOptions = options;
     if (!options.from) {
       commitOptions.from = accountOwner;
-    }
-    if (!options.confirmationType) {
-      commitOptions.confirmationType = ConfirmationType.Hash;
     }
 
     return operation.commit(commitOptions);
@@ -80,7 +78,7 @@ export class StandardActions {
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
-      usePayableProxy: isEth,
+      proxy: isEth ? ProxyType.Payable : ProxyType.None,
       sendEthTo: isEth ? accountOwner : undefined,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
@@ -100,9 +98,6 @@ export class StandardActions {
     const commitOptions = options;
     if (!options.from) {
       commitOptions.from = accountOwner;
-    }
-    if (!options.confirmationType) {
-      commitOptions.confirmationType = ConfirmationType.Hash;
     }
 
     return operation.commit(commitOptions);
