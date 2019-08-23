@@ -200,6 +200,20 @@ const { orders } = await solo.api.getOrders({
 });
 ```
 
+#### Get Fills
+```javascript
+// fills has type ApiFill[]
+const { fills } = await solo.api.getFills({
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  startingBefore: new Date(), // OPTIONAL
+  limit: 50, // OPTIONAL: maximum 100
+  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
+
+  // OPTIONAL: defaults to 0 if makerAccountOwner provided
+  makerAccountNumber: new BigNumber(0),
+});
+```
+
 #### Get Account Balances
 ```javascript
 // account has type ApiAccount

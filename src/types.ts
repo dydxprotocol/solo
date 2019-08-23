@@ -408,6 +408,12 @@ export enum ApiOrderStatus {
   CANCELED = 'CANCELED',
 }
 
+export enum ApiFillStatus {
+  PENDING = 'PENDING',
+  REVERTED = 'REVERTED',
+  CONFIRMED = 'CONFIRMED',
+}
+
 export interface ApiOrder extends ApiModel {
   id: string;
   rawData: string;
@@ -453,6 +459,14 @@ export interface ApiAccount extends ApiModel {
       expiresAt?: string;
     };
   };
+}
+
+export interface ApiFill extends ApiModel {
+  status: ApiFillStatus;
+  orderId: string;
+  transactionHash: string;
+  fillAmount: string;
+  order: ApiOrder;
 }
 
 interface ApiModel {

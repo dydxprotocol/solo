@@ -8,6 +8,7 @@ import {
   SigningMethod,
   ApiOrder,
   ApiAccount,
+  ApiFill,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -155,6 +156,45 @@ export class Api {
 
     return request({
       uri: `${this.endpoint}/v1/dex/orders${query.length > 0 ? '?' : ''}${query}`,
+      method: 'GET',
+      json: true,
+    });
+  }
+
+  public async getFills({
+    makerAccountOwner,
+    startingBefore,
+    limit,
+    pairs,
+    makerAccountNumber,
+  }: {
+    makerAccountOwner: address,
+    startingBefore?: Date,
+    limit: number,
+    pairs?: string[],
+    makerAccountNumber?: Integer | string,
+  }): Promise<{ fills: ApiFill }> {
+    const request: any = { makerAccountOwner };
+
+    if (startingBefore) {
+      request.startingBefore = startingBefore.toISOString();
+    }
+    if (limit) {
+      request.limit = limit;
+    }
+    if (pairs) {
+      request.pairs = pairs.join();
+    }
+    if (makerAccountNumber) {
+      request.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
+    } else {
+      request.makerAccountNumber = '0';
+    }
+
+    const query: string = queryString.stringify(request);
+
+    return request({
+      uri: `${this.endpoint}/v1/dex/fills?${query}`,
       method: 'GET',
       json: true,
     });
