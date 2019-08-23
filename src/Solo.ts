@@ -32,6 +32,7 @@ import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
+import { Api } from './modules/Api';
 import { SoloOptions, EthereumAccount, address } from './types';
 
 export class Solo {
@@ -50,6 +51,7 @@ export class Solo {
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
+  public api: Api;
 
   constructor(
     provider: Provider,
@@ -75,6 +77,7 @@ export class Solo {
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(this.contracts, this.limitOrders, networkId);
+    this.api = new Api(this.limitOrders, options.apiEndpoint);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));

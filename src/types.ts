@@ -32,6 +32,12 @@ export enum ConfirmationType {
   Simulate = 3,
 }
 
+export const MarketNumber = {
+  WETH: new BigNumber(0),
+  DAI: new BigNumber(1),
+  USDC: new BigNumber(2),
+};
+
 export enum ProxyType {
   None = 'None',
   Payable = 'Payable',
@@ -54,6 +60,7 @@ export interface SoloOptions {
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
   accounts?: EthereumAccount[];
+  apiEndpoint?: string;
 }
 
 export interface EthereumAccount {
@@ -385,4 +392,86 @@ export interface Operation {
 
 export interface SignedOperation extends Operation {
   typedSignature: string;
+}
+
+// ============ Api ============
+
+export enum ApiOrderType {
+  LIMIT_V1 = 'dydexLimitV1',
+}
+
+export enum ApiOrderStatus {
+  PENDING = 'PENDING',
+  OPEN = 'OPEN',
+  FILLED = 'FILLED',
+  PARTIALLY_FILLED = 'PARTIALLY_FILLED',
+  CANCELED = 'CANCELED',
+}
+
+export enum ApiFillStatus {
+  PENDING = 'PENDING',
+  REVERTED = 'REVERTED',
+  CONFIRMED = 'CONFIRMED',
+}
+
+export interface ApiOrder extends ApiModel {
+  id: string;
+  rawData: string;
+  orderType: ApiOrderType;
+  pairUuid: string;
+  makerAccountOwner: string;
+  makerAccountNumber: string;
+  makerAmount: string;
+  takerAmount: string;
+  makerAmountRemaining: string;
+  takerAmountRemaining: string;
+  price: string;
+  fillOrKill: boolean;
+  status: ApiOrderStatus;
+  expiresAt?: string;
+  unfillableReason?: string;
+  unfillableAt?: string;
+  pair: ApiPair;
+}
+
+export interface ApiPair extends ApiModel {
+  name: string;
+  makerCurrencyUuid: string;
+  takerCurrencyUuid: string;
+  makerCurrency: ApiCurrency;
+  takerCurrency: ApiCurrency;
+}
+
+export interface ApiCurrency extends ApiModel {
+  symbol: string;
+  contractAddress: string;
+  decimals: number;
+  soloMarket: number;
+}
+
+export interface ApiAccount extends ApiModel {
+  owner: string;
+  number: string;
+  balances: {
+    [marketNumber: string]: {
+      par: string;
+      wei: string;
+      expiresAt?: string;
+    };
+  };
+}
+
+export interface ApiFill extends ApiModel {
+  status: ApiFillStatus;
+  orderId: string;
+  transactionHash: string;
+  fillAmount: string;
+  order: ApiOrder;
+}
+
+interface ApiModel {
+  uuid: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
