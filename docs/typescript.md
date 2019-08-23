@@ -73,10 +73,12 @@ Once an operation is initialized, Actions can be added to it. Action functions m
 
 In this example 1 ETH is being withdrawn from an account, and then 200 DAI are being deposited into it:
 ```javascript
+import { MarketNumber } from '@dydxprotocol/solo';
+
 operation.withdraw({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
     primaryAccountId: new BigNumber('123456'),
-    marketId: new BigNumber(0), // WETH Market ID
+    marketId: MarketNumber.WETH,
     amount: {
       value: new BigNumber('-1e18'),
       reference: AmountReference.Delta,
@@ -87,7 +89,7 @@ operation.withdraw({
   .deposit({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
     primaryAccountId: new BigNumber('123456'),
-    marketId: new BigNumber(1), // DAI Market ID
+    marketId: MarketNumber.DAI,
     amount: {
       value: new BigNumber('200e18'),
       reference: AmountReference.Delta,
