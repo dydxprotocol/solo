@@ -63,7 +63,7 @@ export class Solo {
     let realProvider: Provider;
     if (typeof provider === 'string') {
       realProvider = new Web3.providers.HttpProvider(
-        options.ethereumNodeEndpoint,
+        provider,
         options.ethereumNodeTimeout || 10000,
       );
     } else {
