@@ -47,6 +47,11 @@ export class Api {
     expiration: Integer | string,
     fillOrKill: boolean,
   }): Promise<{ order: ApiOrder }> {
+    const realExpiration = new BigNumber(expiration).eq(0) ?
+      new BigNumber(0)
+      : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
+        new BigNumber(expiration),
+      );
     const order: LimitOrder = {
       makerAccountOwner,
       makerAccountNumber: new BigNumber(makerAccountNumber),
@@ -54,9 +59,7 @@ export class Api {
       takerMarket: new BigNumber(takerMarket),
       makerAmount: new BigNumber(makerAmount),
       takerAmount: new BigNumber(takerAmount),
-      expiration: new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
-        new BigNumber(expiration),
-      ),
+      expiration: realExpiration,
       takerAccountOwner: TAKER_ACCOUNT_OWNER,
       takerAccountNumber: TAKER_ACCOUNT_NUMBER,
       salt: generatePseudoRandom256BitNumber(),

@@ -447,7 +447,7 @@ export interface ApiAccount extends ApiModel {
   owner: string;
   number: string;
   balances: {
-    [maketNumber: string]: {
+    [marketNumber: string]: {
       par: string;
       wei: string;
       expiresAt?: string;
