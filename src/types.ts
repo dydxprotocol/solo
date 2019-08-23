@@ -38,7 +38,7 @@ export const MarketId = {
   USDC: new BigNumber(2),
 
   // This market number does not exist on the protocol,
-  // but can be used for simplified actions
+  // but can be used for standard actions
   ETH: new BigNumber(-1),
 };
 
@@ -70,7 +70,6 @@ export interface SoloOptions {
   defaultGasPrice?: number | string;
   accounts?: EthereumAccount[];
   apiEndpoint?: string;
-  ethereumNodeEndpoint?: string;
   ethereumNodeTimeout?: number;
 }
 
