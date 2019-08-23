@@ -15,7 +15,7 @@ import { LimitOrders } from './LimitOrders';
 const FOUR_WEEKS_IN_SECONDS = 60 * 60 * 24 * 28;
 const TAKER_ACCOUNT_OWNER = '0xf809e07870dca762B9536d61A4fBEF1a17178092';
 const TAKER_ACCOUNT_NUMBER = new BigNumber(0);
-const DEFAULT_API_ENDPOINT = 'https://api.dydx.exchange/';
+const DEFAULT_API_ENDPOINT = 'https://api.dydx.exchange';
 
 export class Api {
   private endpoint: String;
