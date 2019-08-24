@@ -92,7 +92,20 @@ export class ExpiryV2 {
     return new BigNumber(result);
   }
 
-  // ============ Getters ============
+  // ============ Setters ============
+
+  public async setApproval(
+    sender: address,
+    minTimeDelta: Integer,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.expiryV2.methods.approveSender(sender, minTimeDelta.toFixed(0)),
+      options,
+    );
+  }
+
+  // ============ Admin ============
 
   public async setRampTime(
     newExpiryRampTime: Integer,

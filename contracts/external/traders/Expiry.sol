@@ -34,14 +34,14 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
 
 
 /**
- * @title ExpiryOld
+ * @title Expiry
  * @author dYdX
  *
  * Sets the negative balance for an account to expire at a certain time. This allows any other
  * account to repay that negative balance after expiry using any positive balance in the same
  * account. The arbitrage incentive is the same as liquidation in the base protocol.
  */
-contract ExpiryOld is
+contract Expiry is
     Ownable,
     OnlySolo,
     ICallee,

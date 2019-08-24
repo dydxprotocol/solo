@@ -20,6 +20,7 @@ let snapshotId: string;
 let admin: address;
 let owner1: address;
 let owner2: address;
+let rando: address;
 
 const accountNumber1 = INTEGERS.ZERO;
 const accountNumber2 = INTEGERS.ONE;
@@ -30,6 +31,7 @@ const par = new BigNumber(10000);
 const zero = new BigNumber(0);
 const premium = new BigNumber('1.05');
 const defaultPrice = new BigNumber('1e40');
+const defaultTimeDelta = new BigNumber(1234);
 let defaultGlob: Trade;
 let heldGlob: Trade;
 
@@ -39,8 +41,9 @@ describe('Expiry', () => {
     solo = r.solo;
     accounts = r.accounts;
     admin = accounts[0];
-    owner1 = solo.getDefaultAccount();
+    owner1 = accounts[2];
     owner2 = accounts[3];
+    rando = accounts[4];
     defaultGlob = {
       primaryAccountOwner: owner1,
       primaryAccountId: accountNumber1,
@@ -73,16 +76,18 @@ describe('Expiry', () => {
     };
 
     await resetEVM();
+    await setupMarkets(solo, accounts);
     await Promise.all([
-      setupMarkets(solo, accounts),
       solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par.times(-1)),
       solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(2)),
       solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
       solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, par.times(4)),
     ]);
+    await Promise.all([
+      setExpiryForSelf(INTEGERS.ONE),
+      solo.expiryV2.setApproval(owner1, defaultTimeDelta, { from: owner2 }),
+    ]);
 
-    // set expiry for one second from now, then wait
-    await setExpiryForSelf(INTEGERS.ONE);
     await fastForward(60 * 60 * 24);
     await mineAvgBlock();
 
@@ -91,6 +96,51 @@ describe('Expiry', () => {
 
   beforeEach(async () => {
     await resetEVM(snapshotId);
+  });
+
+  describe('setApproval', () => {
+    it('Succeeds for zero', async () => {
+      const txResult = await solo.expiryV2.setApproval(
+        owner1,
+        zero,
+        { from: owner2 },
+      );
+
+      // check storage
+      const approval = await solo.expiryV2.getApproval(owner2, owner1);
+      expect(approval).toEqual(zero);
+
+      // check logs
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.name).toEqual('LogSenderApproved');
+      expect(log.args.approver).toEqual(owner2);
+      expect(log.args.sender).toEqual(owner1);
+      expect(log.args.minTimeDelta).toEqual(zero);
+    });
+
+    it('Succeeds for non-zero', async () => {
+      const defaultDelay = new BigNumber(425);
+      const txResult = await solo.expiryV2.setApproval(
+        owner1,
+        defaultDelay,
+        { from: owner2 },
+      );
+
+      // check storage
+      const approval = await solo.expiryV2.getApproval(owner2, owner1);
+      expect(approval).toEqual(defaultDelay);
+
+      // check logs
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.name).toEqual('LogSenderApproved');
+      expect(log.args.approver).toEqual(owner2);
+      expect(log.args.sender).toEqual(owner1);
+      expect(log.args.minTimeDelta).toEqual(defaultDelay);
+    });
   });
 
   describe('callFunction (invalid)', () => {
@@ -119,7 +169,7 @@ describe('Expiry', () => {
 
   describe('callFunctionSetApproval', () => {
     it('Succeeds in setting approval', async () => {
-      const minTimeDeltas = [INTEGERS.ZERO, new BigNumber(1234)];
+      const minTimeDeltas = [INTEGERS.ZERO, defaultTimeDelta];
       for (let i = 0; i < minTimeDeltas.length; i += 1) {
         // make transaction
         const txResult = await solo.operation.initiate().setApprovalForExpiryV2({
@@ -145,24 +195,22 @@ describe('Expiry', () => {
     });
   });
 
-  describe('callFunctionSetExpiry', () => {
+  describe('callFunctionSetExpiry (self)', () => {
     it('Succeeds in setting expiry', async () => {
-      const timeDelta = new BigNumber(1234);
-      const txResult = await setExpiryForSelf(timeDelta);
+      const txResult = await setExpiryForSelf(defaultTimeDelta);
       await expectExpiry(
         txResult,
         owner2,
         accountNumber2,
         owedMarket,
-        timeDelta,
+        defaultTimeDelta,
       );
 
-      console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
+      console.log(`\tSet expiry (self) gas used: ${txResult.gasUsed}`);
     });
 
     it('Skips logs when necessary', async () => {
-      const timeDelta = new BigNumber(1234);
-      const txResult = await setExpiryForSelf(timeDelta);
+      const txResult = await setExpiryForSelf(defaultTimeDelta);
       const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
       const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
       expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
@@ -170,9 +218,8 @@ describe('Expiry', () => {
     });
 
     it('Sets expiry to zero for non-negative balances', async () => {
-      const timeDelta = new BigNumber(1234);
       await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
-      const txResult = await setExpiryForSelf(timeDelta);
+      const txResult = await setExpiryForSelf(defaultTimeDelta);
       await expectExpiry(
         txResult,
         owner2,
@@ -185,6 +232,210 @@ describe('Expiry', () => {
     it('Allows setting expiry back to zero even for non-negative balances', async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
       const txResult = await setExpiryForSelf(zero);
+      await expectExpiry(
+        txResult,
+        owner2,
+        accountNumber2,
+        owedMarket,
+        zero,
+      );
+    });
+  });
+
+  describe('callFunctionSetExpiry (other)', () => {
+    it('Succeeds in setting expiry', async () => {
+      const txResult = await setExpiryForOther(defaultTimeDelta);
+      await expectExpiry(
+        txResult,
+        owner2,
+        accountNumber2,
+        owedMarket,
+        defaultTimeDelta,
+      );
+      console.log(`\tSet expiry (other) gas used: ${txResult.gasUsed}`);
+    });
+
+    it('Bounds time by minimum approved timeDelta', async () => {
+      const txResult = await setExpiryForOther(defaultTimeDelta.div(2));
+      await expectExpiry(
+        txResult,
+        owner2,
+        accountNumber2,
+        owedMarket,
+        defaultTimeDelta,
+      );
+    });
+
+    it('Allows longer than minimum approved timeDelta', async () => {
+      const txResult = await setExpiryForOther(defaultTimeDelta.times(2));
+      await expectExpiry(
+        txResult,
+        owner2,
+        accountNumber2,
+        owedMarket,
+        defaultTimeDelta.times(2),
+      );
+    });
+
+    it('Do nothing if sender not approved', async () => {
+      const timestamp1 = await solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket);
+
+      const txResult1 = await solo.operation.initiate().setExpiryV2({
+        primaryAccountOwner: rando,
+        primaryAccountId: accountNumber1,
+        expiryV2Args: [{
+          accountOwner: owner2,
+          accountId: accountNumber2,
+          marketId: owedMarket,
+          timeDelta: defaultTimeDelta,
+        }],
+      }).commit({ from: rando });
+      expect(solo.logs.parseLogs(txResult1, { skipOperationLogs: true }).length).toEqual(0);
+
+      const txResult2 = await solo.operation.initiate().setExpiryV2({
+        primaryAccountOwner: rando,
+        primaryAccountId: accountNumber1,
+        expiryV2Args: [{
+          accountOwner: owner2,
+          accountId: accountNumber2,
+          marketId: owedMarket,
+          timeDelta: zero,
+        }],
+      }).commit({ from: rando });
+      expect(solo.logs.parseLogs(txResult2, { skipOperationLogs: true }).length).toEqual(0);
+
+      const timestamp2 = await solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(timestamp2).toEqual(timestamp1);
+    });
+
+    it('Do nothing if sender not approved (non-negative balance)', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      const timestamp1 = await solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket);
+
+      const txResult1 = await solo.operation.initiate().setExpiryV2({
+        primaryAccountOwner: rando,
+        primaryAccountId: accountNumber1,
+        expiryV2Args: [{
+          accountOwner: owner2,
+          accountId: accountNumber2,
+          marketId: owedMarket,
+          timeDelta: defaultTimeDelta,
+        }],
+      }).commit({ from: rando });
+      expect(solo.logs.parseLogs(txResult1, { skipOperationLogs: true }).length).toEqual(0);
+
+      const txResult2 = await solo.operation.initiate().setExpiryV2({
+        primaryAccountOwner: rando,
+        primaryAccountId: accountNumber1,
+        expiryV2Args: [{
+          accountOwner: owner2,
+          accountId: accountNumber2,
+          marketId: owedMarket,
+          timeDelta: zero,
+        }],
+      }).commit({ from: rando });
+      expect(solo.logs.parseLogs(txResult2, { skipOperationLogs: true }).length).toEqual(0);
+
+      const timestamp2 = await solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(timestamp2).toEqual(timestamp1);
+    });
+
+    it('Set it for multiple', async () => {
+      await Promise.all([
+        solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par.times(-1)),
+        solo.testing.setAccountBalance(owner1, accountNumber1, collateralMarket, par.times(4)),
+        solo.testing.setAccountBalance(rando, accountNumber1, heldMarket, par.times(-1)),
+        solo.expiryV2.setApproval(owner1, defaultTimeDelta, { from: rando }),
+      ]);
+      const txResult = await solo.operation.initiate().setExpiryV2({
+        primaryAccountOwner: owner1,
+        primaryAccountId: accountNumber1,
+        expiryV2Args: [
+          {
+            accountOwner: owner2,
+            accountId: accountNumber2,
+            marketId: owedMarket,
+            timeDelta: zero,
+          },
+          {
+            accountOwner: owner1,
+            accountId: accountNumber1,
+            marketId: owedMarket,
+            timeDelta: defaultTimeDelta.div(2),
+          },
+          {
+            accountOwner: rando,
+            accountId: accountNumber1,
+            marketId: heldMarket,
+            timeDelta: defaultTimeDelta.times(2),
+          },
+          {
+            accountOwner: rando,
+            accountId: accountNumber1,
+            marketId: owedMarket,
+            timeDelta: defaultTimeDelta.div(2),
+          },
+        ],
+      }).commit({ from: owner1 });
+
+      // check logs
+      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+      const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+      expect(logs.length).toEqual(4);
+      expect(logs[0].name).toEqual('ExpirySet');
+      expect(logs[1].name).toEqual('ExpirySet');
+      expect(logs[2].name).toEqual('ExpirySet');
+      expect(logs[3].name).toEqual('ExpirySet');
+      expect(logs[0].args.owner).toEqual(owner2);
+      expect(logs[0].args.number).toEqual(accountNumber2);
+      expect(logs[0].args.marketId).toEqual(owedMarket);
+      expect(logs[0].args.time).toEqual(zero);
+      expect(logs[1].args.owner).toEqual(owner1);
+      expect(logs[1].args.number).toEqual(accountNumber1);
+      expect(logs[1].args.marketId).toEqual(owedMarket);
+      expect(logs[1].args.time).toEqual(defaultTimeDelta.div(2).plus(timestamp));
+      expect(logs[2].args.owner).toEqual(rando);
+      expect(logs[2].args.number).toEqual(accountNumber1);
+      expect(logs[2].args.marketId).toEqual(heldMarket);
+      expect(logs[2].args.time).toEqual(defaultTimeDelta.times(2).plus(timestamp));
+      expect(logs[3].args.owner).toEqual(rando);
+      expect(logs[3].args.number).toEqual(accountNumber1);
+      expect(logs[3].args.marketId).toEqual(owedMarket);
+      expect(logs[3].args.time).toEqual(zero);
+
+      // check storage
+      const [
+        expiry1,
+        expiry2,
+        expiry3,
+        expiry4,
+      ] = await Promise.all([
+        solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket),
+        solo.expiryV2.getExpiry(owner1, accountNumber1, owedMarket),
+        solo.expiryV2.getExpiry(rando, accountNumber1, heldMarket),
+        solo.expiryV2.getExpiry(rando, accountNumber1, owedMarket),
+      ]);
+      expect(expiry1).toEqual(zero);
+      expect(expiry2).toEqual(defaultTimeDelta.div(2).plus(timestamp));
+      expect(expiry3).toEqual(defaultTimeDelta.times(2).plus(timestamp));
+      expect(expiry4).toEqual(zero);
+    });
+
+    it('Sets expiry to zero for non-negative balances', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      const txResult = await setExpiryForOther(defaultTimeDelta);
+      await expectExpiry(
+        txResult,
+        owner2,
+        accountNumber2,
+        owedMarket,
+        zero,
+      );
+    });
+
+    it('Allows setting expiry back to zero even for non-negative balances', async () => {
+      await solo.testing.setAccountBalance(owner2, accountNumber2, owedMarket, par);
+      const txResult = await setExpiryForOther(zero);
       await expectExpiry(
         txResult,
         owner2,
@@ -365,7 +616,7 @@ describe('Expiry', () => {
     });
 
     it('Fails for a future expiry', async () => {
-      await setExpiryForSelf(new BigNumber(1234));
+      await setExpiryForSelf(defaultTimeDelta);
       await expectExpireRevert(
         heldGlob,
         'ExpiryV2: Borrow not yet expired',
@@ -376,7 +627,7 @@ describe('Expiry', () => {
       await expectExpireRevert(
         {
           ...heldGlob,
-          data: toBytes(owedMarket, new BigNumber(1234)),
+          data: toBytes(owedMarket, defaultTimeDelta),
         },
         'ExpiryV2: Expiry past maxExpiry',
       );
@@ -587,7 +838,7 @@ describe('Expiry', () => {
     });
 
     it('Fails for a future expiry', async () => {
-      await setExpiryForSelf(new BigNumber(1234));
+      await setExpiryForSelf(defaultTimeDelta);
       await expectExpireRevert(
         {},
         'ExpiryV2: Borrow not yet expired',
@@ -597,7 +848,7 @@ describe('Expiry', () => {
     it('Fails for an expiry past maxExpiry', async () => {
       await expectExpireRevert(
         {
-          data: toBytes(owedMarket, new BigNumber(1234)),
+          data: toBytes(owedMarket, defaultTimeDelta),
         },
         'ExpiryV2: Expiry past maxExpiry',
       );
@@ -672,7 +923,7 @@ describe('Expiry', () => {
         prices,
         premiums,
         collateralPreferences,
-      ).commit();
+      ).commit({ from: owner1 });
 
       const balances = await Promise.all([
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -723,7 +974,7 @@ describe('Expiry', () => {
         prices,
         premiums,
         collateralPreferences,
-      ).commit();
+      ).commit({ from: owner1 });
 
       const balances = await Promise.all([
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -782,7 +1033,7 @@ describe('Expiry', () => {
         prices,
         premiums,
         collateralPreferences,
-      ).commit();
+      ).commit({ from: owner1 });
 
       const balances = await Promise.all([
         solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -859,7 +1110,7 @@ describe('Expiry', () => {
           denomination: AmountDenomination.Principal,
           reference: AmountReference.Target,
         },
-      }).commit();
+      }).commit({ from: owner1 });
 
       const [
         held1,
@@ -884,7 +1135,7 @@ describe('Expiry', () => {
 // ============ Helper Functions ============
 
 async function setExpiryForSelf(timeDelta: BigNumber, options?: any) {
-  const txResult = await solo.operation.initiate().setExpiryV2({
+  return solo.operation.initiate().setExpiryV2({
     primaryAccountOwner: owner2,
     primaryAccountId: accountNumber2,
     expiryV2Args: [{
@@ -894,7 +1145,19 @@ async function setExpiryForSelf(timeDelta: BigNumber, options?: any) {
       marketId: owedMarket,
     }],
   }).commit({ ...options, from: owner2 });
-  return txResult;
+}
+
+async function setExpiryForOther(timeDelta: BigNumber, options?: any) {
+  return solo.operation.initiate().setExpiryV2({
+    primaryAccountOwner: owner1,
+    primaryAccountId: accountNumber1,
+    expiryV2Args: [{
+      timeDelta,
+      accountOwner: owner2,
+      accountId: accountNumber2,
+      marketId: owedMarket,
+    }],
+  }).commit({ ...options, from: owner1 });
 }
 
 async function expectExpireOkay(
@@ -902,7 +1165,7 @@ async function expectExpireOkay(
   options?: Object,
 ) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().trade(combinedGlob).commit(options);
+  return solo.operation.initiate().trade(combinedGlob).commit({ ...options, from: owner1 });
 }
 
 async function expectExpireRevert(

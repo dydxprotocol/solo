@@ -24,6 +24,8 @@ import {
   OperationAuthorization,
   SetExpiry,
   SetExpiryV2,
+  SetApprovalForExpiryV2,
+  ExpiryV2CallFunctionType,
   Refund,
   AccountActionWithOrder,
   Call,
@@ -190,8 +192,25 @@ export class AccountOperation {
     return this;
   }
 
+  public setApprovalForExpiryV2(args: SetApprovalForExpiryV2): AccountOperation {
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.expiryV2.options.address,
+        data: toBytes(
+          ExpiryV2CallFunctionType.SetApproval,
+          args.sender,
+          args.minTimeDelta,
+        ),
+      },
+    );
+
+    return this;
+  }
+
   public setExpiryV2(args: SetExpiryV2): AccountOperation {
-    const callType = toBytes(INTEGERS.ZERO);
+    const callType = toBytes(ExpiryV2CallFunctionType.SetExpiry);
     let callData = callType;
     callData = callData.concat(toBytes(new BigNumber(64)));
     callData = callData.concat(toBytes(new BigNumber(args.expiryV2Args.length)));
@@ -328,8 +347,27 @@ export class AccountOperation {
     });
   }
 
-  public liquidateExpiredAccount(liquidate: Liquidate, minExpiry?: Integer): AccountOperation {
-    const maxExpiryTimestamp = minExpiry || INTEGERS.ONES_31;
+  public liquidateExpiredAccount(liquidate: Liquidate, maxExpiry?: Integer): AccountOperation {
+    return this.liquidateExpiredAccountInternal(
+      liquidate,
+      maxExpiry || INTEGERS.ONES_31,
+      this.contracts.expiry.options.address,
+    );
+  }
+
+  public liquidateExpiredAccountV2(liquidate: Liquidate, maxExpiry?: Integer): AccountOperation {
+    return this.liquidateExpiredAccountInternal(
+      liquidate,
+      maxExpiry || INTEGERS.ONES_31,
+      this.contracts.expiryV2.options.address,
+    );
+  }
+
+  private liquidateExpiredAccountInternal(
+    liquidate: Liquidate,
+    maxExpiryTimestamp: Integer,
+    contractAddress: address,
+  ): AccountOperation {
     this.addActionArgs(
       liquidate,
       {
@@ -338,7 +376,7 @@ export class AccountOperation {
         primaryMarketId: liquidate.liquidMarketId.toFixed(0),
         secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
         otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
-        otherAddress: this.contracts.expiry.options.address,
+        otherAddress: contractAddress,
         data: toBytes(liquidate.liquidMarketId, maxExpiryTimestamp),
       },
     );

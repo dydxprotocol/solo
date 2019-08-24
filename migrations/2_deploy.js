@@ -59,6 +59,7 @@ const WETH9 = artifacts.require('WETH9');
 // Second-Layer Contracts
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
+const ExpiryV2 = artifacts.require('ExpiryV2');
 const Refunder = artifacts.require('Refunder');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
@@ -187,6 +188,11 @@ async function deploySecondLayer(deployer, network) {
       getExpiryRampTime(),
     ),
     deployer.deploy(
+      ExpiryV2,
+      soloMargin.address,
+      getExpiryRampTime(),
+    ),
+    deployer.deploy(
       Refunder,
       soloMargin.address,
       [],
@@ -214,6 +220,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       Expiry.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      ExpiryV2.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(

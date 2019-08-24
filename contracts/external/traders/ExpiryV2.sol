@@ -286,7 +286,7 @@ contract ExpiryV2 is
                 if (minApprovedTimeDelta == 0) {
                     // don't do anything if sender is not approved
                     continue;
-                } else {
+                } else if (exp.timeDelta > 0) {
                     // bound the time by the minimum approved timeDelta
                     timeDelta = Math.max(minApprovedTimeDelta, exp.timeDelta).to32();
                 }
