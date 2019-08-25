@@ -3,15 +3,14 @@
 # dYdX Documentation
 
 - Trustless margin trading, borrowing, and lending
-
 - Built on Ethereum & Web3
 
 ## Table of Contents
 
 - [Protocol](protocol.md "dYdX Documentation - Protocol")
 - [TypeScript Client](typescript.md "dYdX Documentation - TypeScript Client")
-- [HTTP API](api.md "dYdX Documentation - HTTP API")
 - [Python Client](python.md "dYdX Documentation - Python Client")
+- [HTTP API](api.md "dYdX Documentation - HTTP API")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
 - [Security](security.md "dYdX Documentation - Security")
 

@@ -17,7 +17,7 @@ all orders are submitted to the blockchain by dYdX itself. You do not need to pr
 or send on-chain transactions yourself. This is especially useful for traders and market makers who
 wish to be able to quickly cancel their orders without waiting for a transaction to be mined.
 
-The below documents the underlying HTTP API. For easier implementation we recommend using the official [Python Client](https://github.com/dydxprotocol/dydx-python). We may build clients for other languages in the future, so if you have other language/framework needs, please let us know.
+The below documents the underlying HTTP API. For easier implementation we recommend using the official [Python Client](python.md) or [TypeScript Client](typescript.md#api). We may build clients for other languages in the future, so if you have other language/framework needs, please let us know.
 
 In order to submit an order, you (the maker) must first create a JSON object that specifies the
 details of your order. Once you create this object you must sign it with your Ethereum private key,
@@ -27,8 +27,8 @@ signing, and added only after signing the message.
 The order data is hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md).
 This includes the exact order format and version as well as information about the verifying contract and the chainId of the network. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
-When creating your order you _must_ specify the takerAccountOwner as `x` and the takerAccountNumber
-as `y`, otherwise your order will be rejected. __TODO__: Replace with real owner/number when known.
+When creating your order you _must_ specify the takerAccountOwner as `0xf809e07870dca762B9536d61A4fBEF1a17178092` and the takerAccountNumber
+as `0`, otherwise your order will be rejected.
 
 After this is done, the order is ready to be submitted to the API.
 

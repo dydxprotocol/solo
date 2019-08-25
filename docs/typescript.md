@@ -13,13 +13,13 @@
 
 TypeScript library for interacting with the dYdX smart contracts and http API
 
-## Install
+### Install
 
 ```
 npm i -s @dydxprotocol/solo
 ```
 
-## Initialize
+### Initialize
 
 You will need to initialize Solo using a [Web3 provider](https://web3js.readthedocs.io/en/v1.2.1/web3.html#providers) / Ethereum node endpoint and Network.
 
@@ -57,7 +57,7 @@ const solo = new Solo(
 );
 ```
 
-## Standard Actions
+### Standard Actions
 Solo exposes a number of "standard" actions for interacting with the protocol. These are a subset of what is possible with [Operations](#operations), but are simpler to use.
 
 #### Deposit
@@ -98,7 +98,7 @@ const result = await solo.standardActions.withdraw({
 ```
 - `MarketId.ETH` will send ETH whereas `MarketId.WETH` will send WETH. Both are the same market on the protocol
 
-## Operations
+### Operations
 The main way to interact with Solo is through Operations. See [Operations](protocol.md#operations)
 
 #### Initialize
@@ -162,7 +162,7 @@ const response = await operation.commit({
 });
 ```
 
-## Getters
+### Getters
 Solo provides a number of read-only getter functions which read information off the smart contracts on the blockchain. You can find them [here](https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts).
 
 Example of getting the balances of an Account:
@@ -173,14 +173,14 @@ const balances = await solo.getters.getAccountBalances(
 );
 ```
 
-## Logs
+### Logs
 Solo provides a helper to parse Solo-specific logs from a transaction.
 
 ```javascript
 const soloLogs = solo.logs.parseLogs(transactionReceipt);
 ```
 
-## Tokens
+### Tokens
 Solo provides helper functions to help with interacting with ERC20 tokens. You can find them all [here](https://github.com/dydxprotocol/solo/blob/master/src/modules/Token.ts).
 
 Example of setting DAI token allowance on Solo:
@@ -192,7 +192,7 @@ await solo.token.setMaximumSoloAllowance(
 );
 ```
 
-## Api
+### Api
 Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for making dex orders.
 
 #### Place Order
@@ -274,7 +274,7 @@ const account = await solo.api.getAccountBalances({
 });
 ```
 
-## Types
+### Types
 You can import types from Solo as:
 
 ```javascript
@@ -286,10 +286,10 @@ import {
 } from '@dydxprotocol/solo';
 ```
 
-## Web3
+### Web3
 Solo uses [Web3 1.2.X](https://web3js.readthedocs.io) under the hood. You can access it through `solo.web3`
 
-## BigNumber
+### BigNumber
 Solo uses [BigNumber 8.X](http://mikemcl.github.io/bignumber.js/). You can import this from Solo as:
 
 ```javascript
