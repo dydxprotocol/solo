@@ -65,16 +65,16 @@ export class Api {
       takerAccountNumber: TAKER_ACCOUNT_NUMBER,
       salt: generatePseudoRandom256BitNumber(),
     };
-    const signature: string = await this.limitOrders.signOrder(
+    const typedSignature: string = await this.limitOrders.signOrder(
       order,
       SigningMethod.Hash,
     );
 
     const jsonOrder = {
-      signature,
+      typedSignature,
       makerAccountOwner: order.makerAccountOwner,
       makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      takerAccountOwner: TAKER_ACCOUNT_OWNER,
+      takerAccountOwner: order.takerAccountOwner,
       takerAccountNumber: order.takerAccountNumber.toFixed(0),
       makerMarket: order.makerMarket.toFixed(0),
       takerMarket: order.takerMarket.toFixed(0),
