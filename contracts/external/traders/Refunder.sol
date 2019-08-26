@@ -79,7 +79,7 @@ contract Refunder is
         }
     }
 
-    // ============ Owner Functions ============
+    // ============ Admin Functions ============
 
     function addGiver(
         address giver

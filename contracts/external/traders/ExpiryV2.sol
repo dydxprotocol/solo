@@ -117,7 +117,7 @@ contract ExpiryV2 is
         g_expiryRampTime = expiryRampTime;
     }
 
-    // ============ Owner Functions ============
+    // ============ Admin Functions ============
 
     function ownerSetExpiryRampTime(
         uint256 newExpiryRampTime
@@ -138,49 +138,6 @@ contract ExpiryV2 is
         external
     {
         setApproval(msg.sender, sender, minTimeDelta);
-    }
-
-    // ============ Getters ============
-
-    function getExpiry(
-        Account.Info memory account,
-        uint256 marketId
-    )
-        public
-        view
-        returns (uint32)
-    {
-        return g_expiries[account.owner][account.number][marketId];
-    }
-
-    function getSpreadAdjustedPrices(
-        uint256 heldMarketId,
-        uint256 owedMarketId,
-        uint32 expiry
-    )
-        public
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
-            heldMarketId,
-            owedMarketId
-        );
-
-        uint256 expiryAge = Time.currentTime().sub(expiry);
-
-        if (expiryAge < g_expiryRampTime) {
-            spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
-        }
-
-        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
-        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
-        owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
-
-        return (heldPrice, owedPrice);
     }
 
     // ============ Only-Solo Functions ============
@@ -261,6 +218,49 @@ contract ExpiryV2 is
             owedMarketId,
             expiry
         );
+    }
+
+    // ============ Getters ============
+
+    function getExpiry(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        public
+        view
+        returns (uint32)
+    {
+        return g_expiries[account.owner][account.number][marketId];
+    }
+
+    function getSpreadAdjustedPrices(
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 expiry
+    )
+        public
+        view
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
+    {
+        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+            heldMarketId,
+            owedMarketId
+        );
+
+        uint256 expiryAge = Time.currentTime().sub(expiry);
+
+        if (expiryAge < g_expiryRampTime) {
+            spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
+        }
+
+        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
+        owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
+
+        return (heldPrice, owedPrice);
     }
 
     // ============ Private Functions ============
