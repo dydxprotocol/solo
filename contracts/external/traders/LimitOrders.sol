@@ -461,8 +461,13 @@ contract LimitOrders is
 
         // verify taker
         Require.that(
-            (orderInfo.order.takerAccountOwner == address(0) && orderInfo.order.takerAccountNumber == 0 ) ||
-            (orderInfo.order.takerAccountOwner == takerAccount.owner && orderInfo.order.takerAccountNumber == takerAccount.number),
+            (
+                orderInfo.order.takerAccountOwner == address(0) &&
+                orderInfo.order.takerAccountNumber == 0
+            ) || (
+                orderInfo.order.takerAccountOwner == takerAccount.owner &&
+                orderInfo.order.takerAccountNumber == takerAccount.number
+            ),
             FILE,
             "Order taker account mismatch",
             orderInfo.orderHash
@@ -470,8 +475,13 @@ contract LimitOrders is
 
         // verify markets
         Require.that(
-            (orderInfo.order.makerMarket == outputMarketId && orderInfo.order.takerMarket == inputMarketId) ||
-            (orderInfo.order.takerMarket == outputMarketId && orderInfo.order.makerMarket == inputMarketId),
+            (
+                orderInfo.order.makerMarket == outputMarketId &&
+                orderInfo.order.takerMarket == inputMarketId
+            ) || (
+                orderInfo.order.takerMarket == outputMarketId &&
+                orderInfo.order.makerMarket == inputMarketId
+            ),
             FILE,
             "Market mismatch",
             orderInfo.orderHash
