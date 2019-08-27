@@ -226,6 +226,17 @@ export interface SetExpiry extends AccountAction {
   expiryTime: Integer;
 }
 
+export interface ExpiryV2Arg {
+  accountOwner: address;
+  accountId: Integer;
+  marketId: Integer;
+  timeDelta: Integer;
+}
+
+export interface SetExpiryV2 extends AccountAction {
+  expiryV2Args: ExpiryV2Arg[];
+}
+
 export interface Refund extends AccountAction {
   receiverAccountOwner: address;
   receiverAccountId: Integer;
@@ -323,6 +334,34 @@ export interface Values {
 export interface BalanceUpdate {
   deltaWei: Integer;
   newPar: Integer;
+}
+
+// ============ Expiry ============
+
+export interface SetExpiry extends AccountAction {
+  marketId: Integer;
+  expiryTime: Integer;
+}
+
+export interface ExpiryV2Arg {
+  accountOwner: address;
+  accountId: Integer;
+  marketId: Integer;
+  timeDelta: Integer;
+}
+
+export interface SetExpiryV2 extends AccountAction {
+  expiryV2Args: ExpiryV2Arg[];
+}
+
+export interface SetApprovalForExpiryV2 extends AccountAction {
+  sender: address;
+  minTimeDelta: Integer;
+}
+
+export enum ExpiryV2CallFunctionType {
+  SetExpiry = 0,
+  SetApproval = 1,
 }
 
 // ============ Limit Orders ============

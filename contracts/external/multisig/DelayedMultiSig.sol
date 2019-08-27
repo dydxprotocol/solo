@@ -119,7 +119,7 @@ contract DelayedMultiSig is
         emit TimeLockChange(_secondsTimeLocked);
     }
 
-    // ============ Owner Functions ============
+    // ============ Admin Functions ============
 
     /**
      * Allows an owner to confirm a transaction.

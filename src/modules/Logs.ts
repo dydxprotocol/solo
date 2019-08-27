@@ -16,6 +16,7 @@ import { abi as operationAbi } from '../../build/published_contracts/Events.json
 import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
 import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
+import { abi as expiryV2Abi } from '../../build/published_contracts/ExpiryV2.json';
 import { abi as refunderAbi } from '../../build/published_contracts/Refunder.json';
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 import {
@@ -51,6 +52,7 @@ export class Logs {
     }
     if (options.skipExpiryLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, expiryAbi));
+      logs = logs.filter((log: any) => !this.logIsFrom(log, expiryV2Abi));
     }
     if (options.skipRefunderLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, refunderAbi));
@@ -115,6 +117,9 @@ export class Logs {
       }
       case this.contracts.expiry.options.address: {
         return this.parseLogWithContract(this.contracts.expiry, log);
+      }
+      case this.contracts.expiryV2.options.address: {
+        return this.parseLogWithContract(this.contracts.expiryV2, log);
       }
       case this.contracts.refunder.options.address: {
         return this.parseLogWithContract(this.contracts.refunder, log);

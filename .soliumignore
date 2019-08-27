@@ -1,3 +1,4 @@
 node_modules
+contracts/external/traders/ExpiryV2.sol
 contracts/testing
 contracts/Migrations.sol

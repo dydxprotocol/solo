@@ -272,7 +272,7 @@ contract MultiSig {
         emit RequirementChange(_required);
     }
 
-    // ============ Owner Functions ============
+    // ============ Admin Functions ============
 
     /**
      * Allows an owner to submit and confirm a transaction.
