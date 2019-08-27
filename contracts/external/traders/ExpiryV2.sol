@@ -289,6 +289,8 @@ contract ExpiryV2 is
                 } else if (exp.timeDelta > 0) {
                     // bound the time by the minimum approved timeDelta
                     timeDelta = Math.max(minApprovedTimeDelta, exp.timeDelta).to32();
+                } else {
+                    assert(exp.timeDelta == 0);
                 }
             }
 
