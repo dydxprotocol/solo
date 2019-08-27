@@ -131,28 +131,28 @@ export class Api {
     makerAccountNumber?: Integer | string,
     makerAccountOwner?: address,
   }): Promise<{ orders: ApiOrder[] }> {
-    const request: any = {};
+    const queryObj: any = {};
 
     if (startingBefore) {
-      request.startingBefore = startingBefore.toISOString();
+      queryObj.startingBefore = startingBefore.toISOString();
     }
     if (limit) {
-      request.limit = limit;
+      queryObj.limit = limit;
     }
     if (pairs) {
-      request.pairs = pairs.join();
+      queryObj.pairs = pairs.join();
     }
     if (makerAccountOwner) {
-      request.makerAccountOwner = makerAccountOwner;
+      queryObj.makerAccountOwner = makerAccountOwner;
 
       if (makerAccountNumber) {
-        request.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
+        queryObj.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
       } else {
-        request.makerAccountNumber = '0';
+        queryObj.makerAccountNumber = '0';
       }
     }
 
-    const query: string = queryString.stringify(request);
+    const query: string = queryString.stringify(queryObj);
 
     return request({
       uri: `${this.endpoint}/v1/dex/orders${query.length > 0 ? '?' : ''}${query}`,
@@ -174,24 +174,24 @@ export class Api {
     pairs?: string[],
     makerAccountNumber?: Integer | string,
   }): Promise<{ fills: ApiFill }> {
-    const request: any = { makerAccountOwner };
+    const queryObj: any = { makerAccountOwner };
 
     if (startingBefore) {
-      request.startingBefore = startingBefore.toISOString();
+      queryObj.startingBefore = startingBefore.toISOString();
     }
     if (limit) {
-      request.limit = limit;
+      queryObj.limit = limit;
     }
     if (pairs) {
-      request.pairs = pairs.join();
+      queryObj.pairs = pairs.join();
     }
     if (makerAccountNumber) {
-      request.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
+      queryObj.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
     } else {
-      request.makerAccountNumber = '0';
+      queryObj.makerAccountNumber = '0';
     }
 
-    const query: string = queryString.stringify(request);
+    const query: string = queryString.stringify(queryObj);
 
     return request({
       uri: `${this.endpoint}/v1/dex/fills?${query}`,
