@@ -29,7 +29,7 @@ async function run() {
     });
   });
 
-  const json = JSON.stringify(deployed, null, 4);
+  const json = JSON.stringify(deployed, null, 4) + '\n';
 
   const filename = 'deployed.json';
   await writeFileAsync(directory + filename, json, null);

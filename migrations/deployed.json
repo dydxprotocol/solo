@@ -174,5 +174,17 @@
             "address": "0x6d23ef7EAC5d4aD14597D2EBb1D28Ef5E2dF68c6",
             "transactionHash": "0x809b9263f66b557004ff6e7faf33aad0cf514400ef0505a5fa99d26f5d9ac14b"
         }
+    },
+    "ExpiryV2": {
+        "1": {
+            "links": {},
+            "address": "0x36c6655ddBF0a6c48C5b93C18A7cCc5650B167be",
+            "transactionHash": "0x38c74a15760f9b8283b1f8440c926eb858d98eab73515ecdd6d85da6bfd79328"
+        },
+        "42": {
+            "links": {},
+            "address": "0x213D833B56D0D39D3f1Ec67f25a4d49D951e5BC4",
+            "transactionHash": "0x652a14a39fb3df91209ed9934bc88f7e71f737008c1d916b96c83118e23ed4a1"
+        }
     }
 }
