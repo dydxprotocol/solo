@@ -40,6 +40,7 @@ import {
   Action,
 } from '../../types';
 import {
+  addressesAreEqual,
   bytesToHexString,
   hexStringToBytes,
   toBytes,
@@ -694,7 +695,7 @@ export class AccountOperation {
     };
 
     const correctIndex = (i: AccountInfo) =>
-      (i.owner === accountInfo.owner && i.number === accountInfo.number);
+      (addressesAreEqual(i.owner, accountInfo.owner) && i.number === accountInfo.number);
     const index = this.accounts.findIndex(correctIndex);
 
     if (index >= 0) {
