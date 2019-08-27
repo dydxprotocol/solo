@@ -101,7 +101,7 @@ contract LimitOrders is
     // ============ Enums ============
 
     enum OrderStatus {
-        Null,
+        Null, // Did they ever make that change to solidity where enums are guaranteed to be be 0,1,2,...
         Approved,
         Canceled
     }
@@ -210,6 +210,7 @@ contract LimitOrders is
     /**
      * The owner can shut down the exchange.
      */
+    // Need to set these shut downs as immediate functions on multisig
     function shutDown()
         external
         onlyOwner
@@ -662,6 +663,7 @@ contract LimitOrders is
 
         uint256 sigOffset = NUM_ORDER_BYTES;
         /* solium-disable-next-line security/no-inline-assembly */
+        // Is there a way to do this with abi.decode?
         assembly {
             let sigStart := add(data, sigOffset)
             mstore(add(signature, 0x020), mload(add(sigStart, 0x20)))
