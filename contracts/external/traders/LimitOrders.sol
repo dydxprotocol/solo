@@ -329,7 +329,7 @@ contract LimitOrders is
         onlySolo(msg.sender)
     {
         Require.that(
-            data.length >= NUM_CALLFUNCTIONDATA_BYTES,
+            data.length == NUM_CALLFUNCTIONDATA_BYTES,
             FILE,
             "Cannot parse CallFunctionData"
         );
@@ -585,7 +585,10 @@ contract LimitOrders is
         returns (OrderInfo memory)
     {
         Require.that(
-            data.length >= NUM_ORDER_BYTES,
+            (
+                data.length == NUM_ORDER_BYTES ||
+                data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES
+            ),
             FILE,
             "Cannot parse order from data"
         );
@@ -658,7 +661,7 @@ contract LimitOrders is
         returns (bytes memory)
     {
         Require.that(
-            data.length >= NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
+            data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
             FILE,
             "Cannot parse signature from data"
         );

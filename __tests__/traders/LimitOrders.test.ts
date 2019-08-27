@@ -408,12 +408,22 @@ describe('LimitOrders', () => {
       );
     });
 
-    it('Fails for bad signature data', async () => {
-      const shortSig = '0x0000';
-      const testOrderShortSig = { ...testOrder, typedSignature: shortSig };
+    it('Fails for no signature data', async () => {
+      const testOrderShortSig = { ...testOrder, typedSignature: '0x' };
       await expectThrow(
         fillLimitOrder(testOrderShortSig, {}),
         'LimitOrders: Cannot parse signature from data',
+      );
+    });
+
+    it('Fails for bad data length', async () => {
+      await expectThrow(
+        fillLimitOrder({ ...testOrder, typedSignature: '0x0000' }, {}),
+        'LimitOrders: Cannot parse order from data',
+      );
+      await expectThrow(
+        fillLimitOrder({ ...testOrder, typedSignature: `0x${'00'.repeat(100)}` }, {}),
+        'LimitOrders: Cannot parse order from data',
       );
     });
 
