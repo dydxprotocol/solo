@@ -172,7 +172,7 @@ Request Body:
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
-|clientId|string|(Optional)An abitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subseuqent requests.|
+|clientId|string|(Optional)An abitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
