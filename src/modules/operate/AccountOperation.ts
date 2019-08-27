@@ -689,7 +689,7 @@ export class AccountOperation {
 
   private getAccountId(accountOwner: string, accountNumber: Integer): number {
     const accountInfo: AccountInfo = {
-      owner: accountOwner,
+      owner: accountOwner.toLowerCase(),
       number: accountNumber.toFixed(0),
     };
 
