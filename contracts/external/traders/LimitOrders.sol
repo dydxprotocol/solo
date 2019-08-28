@@ -503,7 +503,8 @@ contract LimitOrders is
     }
 
     /**
-     * Returns the AssetAmount for the outputMarketId given the order and the inputs.
+     * Returns the AssetAmount for the outputMarketId given the order and the inputs. Updates the
+     * filled amount of the order in storage.
      */
     function getOutputAssetAmount(
         uint256 inputMarketId,
@@ -532,14 +533,7 @@ contract LimitOrders is
             makerFillAmount = inputWei.value;
         }
 
-        uint256 totalMakerFilledAmount = updateMakerFilledAmount(orderInfo, makerFillAmount);
-
-        emit LogLimitOrderFilled(
-            orderInfo.orderHash,
-            orderInfo.order.makerAccountOwner,
-            makerFillAmount,
-            totalMakerFilledAmount
-        );
+        updateMakerFilledAmount(orderInfo, makerFillAmount);
 
         return Types.AssetAmount({
             sign: orderInfo.order.takerMarket == outputMarketId,
@@ -558,7 +552,6 @@ contract LimitOrders is
         uint256 makerFillAmount
     )
         private
-        returns (uint256)
     {
         uint256 oldMakerFilledAmount = g_makerFilledAmount[orderInfo.orderHash];
         uint256 totalMakerFilledAmount = oldMakerFilledAmount.add(makerFillAmount);
@@ -570,8 +563,15 @@ contract LimitOrders is
             oldMakerFilledAmount,
             makerFillAmount
         );
+
         g_makerFilledAmount[orderInfo.orderHash] = totalMakerFilledAmount;
-        return totalMakerFilledAmount;
+
+        emit LogLimitOrderFilled(
+            orderInfo.orderHash,
+            orderInfo.order.makerAccountOwner,
+            makerFillAmount,
+            totalMakerFilledAmount
+        );
     }
 
     /**
