@@ -10,6 +10,7 @@ import {
   ApiOrder,
   ApiAccount,
   ApiFill,
+  ApiTrade,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -167,6 +168,18 @@ export class Api {
     });
   }
 
+  public async getOrder({
+    id,
+  }: {
+    id: string,
+  }): Promise<{ order: ApiOrder }> {
+    return request({
+      uri: `${this.endpoint}/v1/dex/orders/${id}`,
+      method: 'GET',
+      json: true,
+    });
+  }
+
   public async getFills({
     makerAccountOwner,
     startingBefore,
@@ -174,9 +187,9 @@ export class Api {
     pairs,
     makerAccountNumber,
   }: {
-    makerAccountOwner: address,
+    makerAccountOwner?: address,
     startingBefore?: Date,
-    limit: number,
+    limit?: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
   }): Promise<{ fills: ApiFill }> {
@@ -213,12 +226,12 @@ export class Api {
     pairs,
     makerAccountNumber,
   }: {
-    makerAccountOwner: address,
+    makerAccountOwner?: address,
     startingBefore?: Date,
-    limit: number,
+    limit?: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
-  }): Promise<{ fills: ApiFill }> {
+  }): Promise<{ trades: ApiTrade }> {
     const queryObj: any = { makerAccountOwner };
 
     if (startingBefore) {
