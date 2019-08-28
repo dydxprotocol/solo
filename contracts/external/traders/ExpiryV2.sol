@@ -284,10 +284,7 @@ contract ExpiryV2 is
             if (exp.account.owner != sender) {
                 // don't do anything if sender is not approved for this action
                 uint32 minApprovedTimeDelta = g_approvedSender[exp.account.owner][sender];
-                if (
-                    minApprovedTimeDelta == 0 ||
-                    (exp.timeDelta != 0 && exp.timeDelta < minApprovedTimeDelta)
-                ) {
+                if (minApprovedTimeDelta == 0 || exp.timeDelta < minApprovedTimeDelta) {
                     continue;
                 }
             }
