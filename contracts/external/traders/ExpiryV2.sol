@@ -68,6 +68,7 @@ contract ExpiryV2 is
         Account.Info account;
         uint256 marketId;
         uint32 timeDelta;
+        bool forceUpdate;
     }
 
     struct SetApprovalArg {
@@ -280,27 +281,29 @@ contract ExpiryV2 is
 
         for (uint256 i = 0; i < expiries.length; i++) {
             SetExpiryArg memory exp = expiries[i];
-            uint32 timeDelta = exp.timeDelta;
             if (exp.account.owner != sender) {
+                // don't do anything if sender is not approved for this action
                 uint32 minApprovedTimeDelta = g_approvedSender[exp.account.owner][sender];
-                if (minApprovedTimeDelta == 0) {
-                    // don't do anything if sender is not approved
+                if (
+                    minApprovedTimeDelta == 0 ||
+                    (exp.timeDelta != 0 && exp.timeDelta < minApprovedTimeDelta)
+                ) {
                     continue;
-                } else if (exp.timeDelta > 0) {
-                    // bound the time by the minimum approved timeDelta
-                    timeDelta = Math.max(minApprovedTimeDelta, exp.timeDelta).to32();
-                } else {
-                    assert(exp.timeDelta == 0);
                 }
             }
 
             // if timeDelta is zero, interpret it as unset expiry
             if (
-                timeDelta > 0 &&
+                exp.timeDelta != 0 &&
                 SOLO_MARGIN.getAccountPar(exp.account, exp.marketId).isNegative()
             ) {
-                setExpiry(exp.account, exp.marketId, Time.currentTime().add(timeDelta).to32());
+                // only change non-zero values if forceUpdate is true
+                if (exp.forceUpdate || getExpiry(exp.account, exp.marketId) == 0) {
+                    uint32 newExpiryTime = Time.currentTime().add(exp.timeDelta).to32();
+                    setExpiry(exp.account, exp.marketId, newExpiryTime);
+                }
             } else {
+                // timeDelta is zero or account has non-negative balance
                 setExpiry(exp.account, exp.marketId, 0);
             }
         }

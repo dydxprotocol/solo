@@ -14,23 +14,29 @@ export function bytesToHexString(input: (number[] | string)[]): string {
   return ethers.utils.hexlify(input.map(x => new BigNumber(x[0]).toNumber()));
 }
 
-export function toBytes(...args: (string | number | Integer)[]): number[][] {
-  return args.reduce(
-    (acc: number[], val: string | number | Integer): number[] => acc.concat(argToBytes(val)), [],
-  ).map(
-    (a :number): number[] => [a],
+export function toBytes(...args: (string | number | Integer | boolean)[]): number[][] {
+  const result = args.reduce(
+    (
+      acc: number[],
+      val: string | number | Integer | boolean,
+    ): number[] => acc.concat(argToBytes(val)),
+    [],
   );
+  return result.map((a :number): number[] => [a]);
 }
 
 export function argToBytes(
-  val: string | number | Integer,
+  val: string | number | Integer | boolean,
 ): number[] {
   let v: any = val;
+  if (typeof(val) === 'boolean') {
+    v = val ? '1' : '0';
+  }
   if (typeof(val) === 'number') {
     v = val.toString();
   }
   if (val instanceof BigNumber) {
-    v = val.toFixed();
+    v = val.toFixed(0);
   }
 
   return Web3.utils.hexToBytes(

@@ -231,6 +231,7 @@ export interface ExpiryV2Arg {
   accountId: Integer;
   marketId: Integer;
   timeDelta: Integer;
+  forceUpdate: boolean;
 }
 
 export interface SetExpiryV2 extends AccountAction {

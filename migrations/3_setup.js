@@ -79,7 +79,7 @@ async function setupProtocol(deployer, network, accounts) {
 
   if (isKovan(network)) {
     const testPriceOracle = await TestPriceOracle.deployed();
-    await testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed()); // ZRX
+    await testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)); // ZRX
   }
 
   if (isDocker(network)) {
@@ -95,9 +95,9 @@ async function setupProtocol(deployer, network, accounts) {
     );
     const testPriceOracle = await TestPriceOracle.deployed();
     await Promise.all([
-      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed()), // WETH
-      testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed()), // DAI
-      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed()), // ZRX
+      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed(0)), // WETH
+      testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed(0)), // DAI
+      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)), // ZRX
     ]);
   }
 
