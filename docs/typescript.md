@@ -223,6 +223,9 @@ const { order } = await solo.api.placeOrder({
 
   // OPTIONAL: defaults to false
   fillOrKill: false,
+
+  // OPTIONAL: defaults to undefined
+  clientId: 'foo',
 });
 ```
 
