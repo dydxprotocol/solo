@@ -45,11 +45,13 @@ library TypedSignature {
 
     // ============ Enums ============
 
+    // Different RPC providers may implement signing methods differently, so we allow different
+    // signature types depending on the string prepended to a hash before it was signed.
     enum SignatureType {
-        NoPrepend,
-        Decimal,
-        Hexadecimal,
-        Invalid
+        NoPrepend,   // No string was prepended.
+        Decimal,     // PREPEND_DEC was prepended.
+        Hexadecimal, // PREPEND_HEX was prepended.
+        Invalid      // Not a valid type. Used for bound-checking.
     }
 
     // ============ Functions ============

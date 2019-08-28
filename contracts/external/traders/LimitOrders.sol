@@ -329,7 +329,7 @@ contract LimitOrders is
         onlySolo(msg.sender)
     {
         Require.that(
-            data.length >= NUM_CALLFUNCTIONDATA_BYTES,
+            data.length == NUM_CALLFUNCTIONDATA_BYTES,
             FILE,
             "Cannot parse CallFunctionData"
         );
@@ -461,8 +461,13 @@ contract LimitOrders is
 
         // verify taker
         Require.that(
-            (orderInfo.order.takerAccountOwner == address(0) && orderInfo.order.takerAccountNumber == 0 ) ||
-            (orderInfo.order.takerAccountOwner == takerAccount.owner && orderInfo.order.takerAccountNumber == takerAccount.number),
+            (
+                orderInfo.order.takerAccountOwner == address(0) &&
+                orderInfo.order.takerAccountNumber == 0
+            ) || (
+                orderInfo.order.takerAccountOwner == takerAccount.owner &&
+                orderInfo.order.takerAccountNumber == takerAccount.number
+            ),
             FILE,
             "Order taker account mismatch",
             orderInfo.orderHash
@@ -470,8 +475,13 @@ contract LimitOrders is
 
         // verify markets
         Require.that(
-            (orderInfo.order.makerMarket == outputMarketId && orderInfo.order.takerMarket == inputMarketId) ||
-            (orderInfo.order.takerMarket == outputMarketId && orderInfo.order.makerMarket == inputMarketId),
+            (
+                orderInfo.order.makerMarket == outputMarketId &&
+                orderInfo.order.takerMarket == inputMarketId
+            ) || (
+                orderInfo.order.takerMarket == outputMarketId &&
+                orderInfo.order.makerMarket == inputMarketId
+            ),
             FILE,
             "Market mismatch",
             orderInfo.orderHash
@@ -493,7 +503,8 @@ contract LimitOrders is
     }
 
     /**
-     * Returns the AssetAmount for the outputMarketId given the order and the inputs.
+     * Returns the AssetAmount for the outputMarketId given the order and the inputs. Updates the
+     * filled amount of the order in storage.
      */
     function getOutputAssetAmount(
         uint256 inputMarketId,
@@ -522,14 +533,7 @@ contract LimitOrders is
             makerFillAmount = inputWei.value;
         }
 
-        uint256 totalMakerFilledAmount = updateMakerFilledAmount(orderInfo, makerFillAmount);
-
-        emit LogLimitOrderFilled(
-            orderInfo.orderHash,
-            orderInfo.order.makerAccountOwner,
-            makerFillAmount,
-            totalMakerFilledAmount
-        );
+        updateMakerFilledAmount(orderInfo, makerFillAmount);
 
         return Types.AssetAmount({
             sign: orderInfo.order.takerMarket == outputMarketId,
@@ -548,7 +552,6 @@ contract LimitOrders is
         uint256 makerFillAmount
     )
         private
-        returns (uint256)
     {
         uint256 oldMakerFilledAmount = g_makerFilledAmount[orderInfo.orderHash];
         uint256 totalMakerFilledAmount = oldMakerFilledAmount.add(makerFillAmount);
@@ -560,8 +563,15 @@ contract LimitOrders is
             oldMakerFilledAmount,
             makerFillAmount
         );
+
         g_makerFilledAmount[orderInfo.orderHash] = totalMakerFilledAmount;
-        return totalMakerFilledAmount;
+
+        emit LogLimitOrderFilled(
+            orderInfo.orderHash,
+            orderInfo.order.makerAccountOwner,
+            makerFillAmount,
+            totalMakerFilledAmount
+        );
     }
 
     /**
@@ -575,7 +585,10 @@ contract LimitOrders is
         returns (OrderInfo memory)
     {
         Require.that(
-            data.length >= NUM_ORDER_BYTES,
+            (
+                data.length == NUM_ORDER_BYTES ||
+                data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES
+            ),
             FILE,
             "Cannot parse order from data"
         );
@@ -648,7 +661,7 @@ contract LimitOrders is
         returns (bytes memory)
     {
         Require.that(
-            data.length >= NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
+            data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
             FILE,
             "Cannot parse signature from data"
         );
