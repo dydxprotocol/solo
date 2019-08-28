@@ -1,6 +1,7 @@
 import request from 'request-promise-native';
 import BigNumber from 'bignumber.js';
 import queryString from 'query-string';
+import { omit, isUndefined } from 'lodash';
 import {
   LimitOrder,
   address,
@@ -9,6 +10,7 @@ import {
   ApiOrder,
   ApiAccount,
   ApiFill,
+  ApiTrade,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -38,6 +40,7 @@ export class Api {
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
+    clientId,
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
@@ -47,6 +50,7 @@ export class Api {
     takerAmount: Integer | string,
     expiration: Integer | string,
     fillOrKill: boolean,
+    clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const realExpiration = new BigNumber(expiration).eq(0) ?
       new BigNumber(0)
@@ -84,14 +88,17 @@ export class Api {
       expiration: order.expiration.toFixed(0),
     };
 
+    const body = {
+      fillOrKill,
+      clientId,
+      order: jsonOrder,
+    };
+
     return request({
+      body: omit(body, isUndefined),
       uri: `${this.endpoint}/v1/dex/orders`,
       method: 'POST',
       json: true,
-      body: {
-        fillOrKill,
-        order: jsonOrder,
-      },
     });
   }
 
@@ -161,6 +168,18 @@ export class Api {
     });
   }
 
+  public async getOrder({
+    id,
+  }: {
+    id: string,
+  }): Promise<{ order: ApiOrder }> {
+    return request({
+      uri: `${this.endpoint}/v1/dex/orders/${id}`,
+      method: 'GET',
+      json: true,
+    });
+  }
+
   public async getFills({
     makerAccountOwner,
     startingBefore,
@@ -168,9 +187,9 @@ export class Api {
     pairs,
     makerAccountNumber,
   }: {
-    makerAccountOwner: address,
+    makerAccountOwner?: address,
     startingBefore?: Date,
-    limit: number,
+    limit?: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
   }): Promise<{ fills: ApiFill }> {
@@ -195,6 +214,45 @@ export class Api {
 
     return request({
       uri: `${this.endpoint}/v1/dex/fills?${query}`,
+      method: 'GET',
+      json: true,
+    });
+  }
+
+  public async getTrades({
+    makerAccountOwner,
+    startingBefore,
+    limit,
+    pairs,
+    makerAccountNumber,
+  }: {
+    makerAccountOwner?: address,
+    startingBefore?: Date,
+    limit?: number,
+    pairs?: string[],
+    makerAccountNumber?: Integer | string,
+  }): Promise<{ trades: ApiTrade }> {
+    const queryObj: any = { makerAccountOwner };
+
+    if (startingBefore) {
+      queryObj.startingBefore = startingBefore.toISOString();
+    }
+    if (limit) {
+      queryObj.limit = limit;
+    }
+    if (pairs) {
+      queryObj.pairs = pairs.join();
+    }
+    if (makerAccountNumber) {
+      queryObj.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
+    } else {
+      queryObj.makerAccountNumber = '0';
+    }
+
+    const query: string = queryString.stringify(queryObj);
+
+    return request({
+      uri: `${this.endpoint}/v1/dex/trades?${query}`,
       method: 'GET',
       json: true,
     });

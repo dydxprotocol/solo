@@ -518,6 +518,15 @@ export interface ApiFill extends ApiModel {
   order: ApiOrder;
 }
 
+export interface ApiTrade extends ApiModel {
+  status: ApiFillStatus;
+  transactionHash: string;
+  makerOrder: ApiOrder;
+  makerOrderId: string;
+  takerOrder: ApiOrder;
+  takerOrderId: string;
+}
+
 interface ApiModel {
   uuid: string;
   createdAt: string;

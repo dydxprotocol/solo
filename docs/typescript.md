@@ -223,6 +223,9 @@ const { order } = await solo.api.placeOrder({
 
   // OPTIONAL: defaults to false
   fillOrKill: false,
+
+  // OPTIONAL: defaults to undefined
+  clientId: 'foo',
 });
 ```
 
@@ -251,10 +254,32 @@ const { orders } = await solo.api.getOrders({
 });
 ```
 
+#### Get Order by ID
+```javascript
+// orders has type ApiOrder[]
+const { order } = await solo.api.getOrder({
+	id: '0x887ec43045d7f529564132f7cffce152eca6694d03e4594147569b977113becb',
+});
+```
+
 #### Get Fills
 ```javascript
 // fills has type ApiFill[]
 const { fills } = await solo.api.getFills({
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  startingBefore: new Date(), // OPTIONAL
+  limit: 50, // OPTIONAL: maximum 100
+  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
+
+  // OPTIONAL: defaults to 0 if makerAccountOwner provided
+  makerAccountNumber: new BigNumber(0),
+});
+```
+
+#### Get trades
+```javascript
+// trades has type ApiTrade[]
+const { trades } = await solo.api.getTrades({
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
   startingBefore: new Date(), // OPTIONAL
   limit: 50, // OPTIONAL: maximum 100
