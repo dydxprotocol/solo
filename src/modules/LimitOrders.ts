@@ -391,7 +391,7 @@ export class LimitOrders {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('LimitOrders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
