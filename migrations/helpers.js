@@ -79,19 +79,10 @@ async function getPolynomialParams(network) {
       coefficients: coefficientsToString([0, 20, 10, 0, 0, 0, 0, 0, 0, 0, 70]),
     };
   }
-  if (isKovan(network)) {
-    return {
-      maxAPR: decimalToString('1.00'), // 100%
-      coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
-    };
-  }
-  if (isDevNetwork(network)) {
-    return {
-      maxAPR: decimalToString('0.50'), // 50%
-      coefficients: coefficientsToString([0, 20, 10, 0, 0, 0, 0, 0, 0, 0, 70]),
-    };
-  }
-  throw new Error('Cannot find Polynomial Params');
+  return {
+    maxAPR: decimalToString('1.00'), // 100%
+    coefficients: coefficientsToString([0, 10, 10, 0, 0, 80]),
+  };
 }
 
 function getDaiPriceOracleParams(network) {
