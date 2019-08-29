@@ -4,28 +4,28 @@ const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts
 
 function isDevNetwork(network) {
   verifyNetwork(network);
-  return network === 'development'
-      || network === 'test'
-      || network === 'test_ci'
-      || network === 'develop'
-      || network === 'dev'
-      || network === 'docker'
-      || network === 'coverage';
+  return network.startsWith('development')
+      || network.startsWith('test')
+      || network.startsWith('test_ci')
+      || network.startsWith('develop')
+      || network.startsWith('dev')
+      || network.startsWith('docker')
+      || network.startsWith('coverage');
 }
 
 function isMainNet(network) {
   verifyNetwork(network);
-  return network === 'mainnet';
+  return network.startsWith('mainnet');
 }
 
 function isKovan(network) {
   verifyNetwork(network);
-  return network === 'kovan';
+  return network.startsWith('kovan');
 }
 
 function isDocker(network) {
   verifyNetwork(network);
-  return network === 'docker';
+  return network.startsWith('docker');
 }
 
 function getChainId(network) {
@@ -35,13 +35,13 @@ function getChainId(network) {
   if (isKovan(network)) {
     return 42;
   }
-  if (network === 'coverage') {
+  if (network.startsWith('coverage')) {
     return 1002;
   }
-  if (network === 'docker') {
+  if (network.startsWith('docker')) {
     return 1313;
   }
-  if (network === 'test' || network === 'test_ci') {
+  if (network.startsWith('test') || network.startsWith('test_ci')) {
     return 1001;
   }
   throw new Error('No chainId for network', network);
@@ -75,8 +75,8 @@ async function getRiskParams(network) {
 async function getPolynomialParams(network) {
   if (isMainNet(network)) {
     return {
-      maxAPR: decimalToString('0.75'), // 75%
-      coefficients: coefficientsToString([0, 15, 0, 0, 0, 0, 85]),
+      maxAPR: decimalToString('0.50'), // 50%
+      coefficients: coefficientsToString([0, 20, 10, 0, 0, 0, 0, 0, 0, 0, 70]),
     };
   }
   return {
