@@ -5,6 +5,7 @@ import { address, ConfirmationType, SoloOptions } from '../../src/types';
 const soloOptions: SoloOptions = {
   confirmationType: ConfirmationType.Confirmed,
   testing: true,
+  defaultGas: '4000000',
 };
 
 if (process.env.COVERAGE === 'true') {

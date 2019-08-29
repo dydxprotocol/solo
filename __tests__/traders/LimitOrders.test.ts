@@ -115,6 +115,11 @@ describe('LimitOrders', () => {
     });
 
     it('Succeeds for eth_signTypedData', async () => {
+      // TODO: remove conditional when ethereumjs-testrpc-sc supports arrays in eth_signTypedData
+      if (process.env.COVERAGE === 'true') {
+        return;
+      }
+
       const order = { ...testOrder };
       const cancelSig = await solo.limitOrders.signCancelOrder(order, SigningMethod.TypedData);
       expect(solo.limitOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(true);

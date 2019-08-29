@@ -381,6 +381,7 @@ export class LimitOrders {
   ): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
+      { t: 'bytes32', v: hashString('Cancel Orders') },
       { t: 'bytes32', v: Web3.utils.soliditySha3(orderHash) },
     );
     return this.getEIP712Hash(structHash);
@@ -449,7 +450,7 @@ export class LimitOrders {
   private getDomainData() {
     return {
       name: 'LimitOrders',
-      version: '1.0',
+      version: '1.1',
       chainId: this.networkId,
       verifyingContract: this.contracts.limitOrders.options.address,
     };
@@ -499,7 +500,10 @@ export class LimitOrders {
       },
       domain: this.getDomainData(),
       primaryType: 'CancelLimitOrder',
-      message: { orderHashes: [orderHash] },
+      message: {
+        action: 'Cancel Orders',
+        orderHashes: [orderHash],
+      },
     };
     return this.ethSignTypedDataInternal(
       signer,
@@ -525,7 +529,7 @@ export class LimitOrders {
         break;
       case SigningMethod.MetaMask:
         sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
+        rpcMethod = 'eth_signTypedData_v4';
         rpcData = JSON.stringify(data);
         break;
       default:

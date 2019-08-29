@@ -91,7 +91,6 @@ describe('ExpiryV2', () => {
     startingExpiry = await solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket);
 
     await fastForward(60 * 60 * 24);
-    await mineAvgBlock();
 
     snapshotId = await snapshot();
   });

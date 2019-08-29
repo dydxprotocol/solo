@@ -554,7 +554,6 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
           }),
         ]);
         await fastForward(3600);
-        await mineAvgBlock();
 
         await Promise.all([
           solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
