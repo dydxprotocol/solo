@@ -57,12 +57,14 @@ const EIP712_ORDER_STRUCT_STRING =
   ')';
 
 const EIP712_CANCEL_ORDER_STRUCT = [
-  { type: 'bytes32', name: 'orderHash' },
+  { type: 'string', name: 'action' },
+  { type: 'bytes32[]', name: 'orderHashes' },
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
   'CancelLimitOrder(' +
-  'bytes32 orderHash' +
+  'string action,' +
+  'bytes32[] orderHashes' +
   ')';
 
 export class LimitOrders {
@@ -379,7 +381,7 @@ export class LimitOrders {
   ): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
-      { t: 'bytes32', v: orderHash },
+      { t: 'bytes32', v: Web3.utils.soliditySha3(orderHash) },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -497,7 +499,7 @@ export class LimitOrders {
       },
       domain: this.getDomainData(),
       primaryType: 'CancelLimitOrder',
-      message: { orderHash },
+      message: { orderHashes: [orderHash] },
     };
     return this.ethSignTypedDataInternal(
       signer,
