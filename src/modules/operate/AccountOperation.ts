@@ -221,6 +221,7 @@ export class AccountOperation {
         expiryV2Arg.accountId,
         expiryV2Arg.marketId,
         expiryV2Arg.timeDelta,
+        expiryV2Arg.forceUpdate,
       ));
     }
     this.addActionArgs(

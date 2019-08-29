@@ -506,7 +506,7 @@ async function setUniswapBalances(
     solo.web3.eth.sendTransaction({
       from: accounts[9],
       to: uniswapAddress,
-      value: ethAmt.toFixed(),
+      value: ethAmt.toFixed(0),
     }),
   ]);
 }
@@ -556,9 +556,9 @@ async function createOasisOrder(
 ) {
   await solo.contracts.callContractFunction(
     solo.contracts.testOasisDex.methods.offer(
-      payAmt.toFixed(),
+      payAmt.toFixed(0),
       payGem,
-      buyAmt.toFixed(),
+      buyAmt.toFixed(0),
       buyGem,
       0,
     ),

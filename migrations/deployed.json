@@ -178,13 +178,13 @@
     "ExpiryV2": {
         "1": {
             "links": {},
-            "address": "0x36c6655ddBF0a6c48C5b93C18A7cCc5650B167be",
-            "transactionHash": "0x38c74a15760f9b8283b1f8440c926eb858d98eab73515ecdd6d85da6bfd79328"
+            "address": "0x739A1DF6725657f6a16dC2d5519DC36FD7911A12",
+            "transactionHash": "0xcea0c6a3cea5211512cb4d63b5a82b1573da8521d8e823133eebeaec3bf0c58f"
         },
         "42": {
             "links": {},
-            "address": "0x213D833B56D0D39D3f1Ec67f25a4d49D951e5BC4",
-            "transactionHash": "0x652a14a39fb3df91209ed9934bc88f7e71f737008c1d916b96c83118e23ed4a1"
+            "address": "0x4f1d5F59fbab20750266EA173267F3380E449F05",
+            "transactionHash": "0xac3aafe0ce3e012d8624b4896d92a55b145d568e69dac7a5af4f0d4d131effc5"
         }
     }
 }
