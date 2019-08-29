@@ -424,7 +424,6 @@ Example Response Body:
         }
     }
 }
-}
 ```
 
 ### GET /v1/dex/fills
