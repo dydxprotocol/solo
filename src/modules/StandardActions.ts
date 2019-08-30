@@ -39,6 +39,7 @@ export class StandardActions {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
       proxy: isEth ? ProxyType.Payable : ProxyType.None,
+      sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
     const depositTokensFrom = isEth ? this.contracts.payableProxy.options.address : accountOwner;
@@ -58,6 +59,9 @@ export class StandardActions {
     const commitOptions = options || {};
     if (!commitOptions.from) {
       commitOptions.from = accountOwner;
+    }
+    if (isEth && !commitOptions.value) {
+      commitOptions.value = new BigNumber(amount).toFixed(0);
     }
 
     return operation.commit(commitOptions);
@@ -79,7 +83,7 @@ export class StandardActions {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
       proxy: isEth ? ProxyType.Payable : ProxyType.None,
-      sendEthTo: isEth ? accountOwner : undefined,
+      sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
     const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;
@@ -118,7 +122,7 @@ export class StandardActions {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
       proxy: isEth ? ProxyType.Payable : ProxyType.None,
-      sendEthTo: isEth ? accountOwner : undefined,
+      sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
     const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;

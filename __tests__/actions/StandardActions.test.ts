@@ -98,6 +98,7 @@ describe('StandardActions', () => {
   describe('deposit', () => {
     it('Succeeds', async () => {
       for (let i = 0; i < markets.length; i += 1) {
+        await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
         await solo.standardActions.deposit({
@@ -105,7 +106,7 @@ describe('StandardActions', () => {
           accountOwner,
           amount,
           marketId,
-          options: { gasPrice: 0 },
+          options: { gasPrice: '0x00' },
         });
         await expectAccountWei(marketId, amount.times(3));
         if (marketId.eq(MarketId.ETH)) {
@@ -121,6 +122,7 @@ describe('StandardActions', () => {
   describe('withdraw', () => {
     it('Succeeds', async () => {
       for (let i = 0; i < markets.length; i += 1) {
+        await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
         await solo.standardActions.withdraw({
@@ -128,7 +130,7 @@ describe('StandardActions', () => {
           accountOwner,
           amount,
           marketId,
-          options: { gasPrice: 0 },
+          options: { gasPrice: '0x00' },
         });
         await expectAccountWei(marketId, amount);
         if (marketId.eq(MarketId.ETH)) {
@@ -144,6 +146,7 @@ describe('StandardActions', () => {
   describe('withdrawToZero', () => {
     it('Succeeds', async () => {
       for (let i = 0; i < markets.length; i += 1) {
+        await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
         await solo.testing.setAccountBalance(
@@ -156,7 +159,7 @@ describe('StandardActions', () => {
           accountNumber,
           accountOwner,
           marketId,
-          options: { gasPrice: 0 },
+          options: { gasPrice: '0x00' },
         });
         await expectAccountWei(marketId, INTEGERS.ZERO);
         if (marketId.eq(MarketId.ETH)) {
@@ -188,13 +191,9 @@ async function expectAccountWei(marketId: Integer, expectedWei: Integer) {
 }
 
 async function expectTokens(marketId: Integer, amount: Integer) {
-  if (marketId.eq(MarketId.ETH)) {
-
-  } else {
-    const accountTokens = await solo.token.getBalance(
-      tokens[marketId.toNumber()],
-      accountOwner,
-    );
-    expect(accountTokens).toEqual(amount);
-  }
+  const accountTokens = await solo.token.getBalance(
+    tokens[marketId.toNumber()],
+    accountOwner,
+  );
+  expect(accountTokens).toEqual(amount);
 }
