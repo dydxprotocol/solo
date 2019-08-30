@@ -15,6 +15,6 @@ export async function snapshot() {
 }
 
 export async function fastForward(seconds: number) {
-  return solo.testing.evm.increaseTime(seconds);
+  await solo.testing.evm.increaseTime(seconds);
   await solo.testing.evm.mineBlock();
 }
