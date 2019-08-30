@@ -41,6 +41,7 @@ export class StandardActions {
       proxy: isEth ? ProxyType.Payable : ProxyType.None,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
+    const depositTokensFrom = isEth ? this.contracts.payableProxy.options.address : accountOwner;
 
     operation.deposit({
       primaryAccountOwner: accountOwner,
@@ -51,11 +52,11 @@ export class StandardActions {
         reference: AmountReference.Delta,
         denomination: AmountDenomination.Actual,
       },
-      from: accountOwner,
+      from: depositTokensFrom,
     });
 
-    const commitOptions = options;
-    if (!options.from) {
+    const commitOptions = options || {};
+    if (!commitOptions.from) {
       commitOptions.from = accountOwner;
     }
 
@@ -81,6 +82,7 @@ export class StandardActions {
       sendEthTo: isEth ? accountOwner : undefined,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
+    const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;
 
     operation.withdraw({
       primaryAccountOwner: accountOwner,
@@ -91,11 +93,50 @@ export class StandardActions {
         reference: AmountReference.Delta,
         denomination: AmountDenomination.Actual,
       },
-      to: isEth ? this.contracts.payableProxy.options.address : accountOwner,
+      to: withdrawTokensTo,
     });
 
-    const commitOptions = options;
-    if (!options.from) {
+    const commitOptions = options || {};
+    if (!commitOptions.from) {
+      commitOptions.from = accountOwner;
+    }
+
+    return operation.commit(commitOptions);
+  }
+
+  public async withdrawToZero({
+    accountOwner,
+    marketId,
+    accountNumber = new BigNumber(0),
+    options,
+  }: {
+    accountOwner: address,
+    marketId: BigNumber | string,
+    accountNumber: BigNumber | string,
+    options?: ContractCallOptions,
+  }): Promise<TxResult> {
+    const isEth = new BigNumber(marketId).eq(MarketId.ETH);
+    const operation = this.operation.initiate({
+      proxy: isEth ? ProxyType.Payable : ProxyType.None,
+      sendEthTo: isEth ? accountOwner : undefined,
+    });
+    const realMarketId = isEth ? MarketId.WETH : marketId;
+    const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;
+
+    operation.withdraw({
+      primaryAccountOwner: accountOwner,
+      primaryAccountId: new BigNumber(accountNumber),
+      marketId: new BigNumber(realMarketId),
+      amount: {
+        value: new BigNumber(0),
+        reference: AmountReference.Target,
+        denomination: AmountDenomination.Par,
+      },
+      to: withdrawTokensTo,
+    });
+
+    const commitOptions = options || {};
+    if (!commitOptions.from) {
       commitOptions.from = accountOwner;
     }
 

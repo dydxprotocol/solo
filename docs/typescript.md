@@ -66,6 +66,7 @@ Deposit funds to dYdX
 ```javascript
 import { MarketId, BigNumber } from '@dydxprotocol/solo';
 
+// Deposits a certain amount of tokens for some asset.
 // By default resolves when transaction is received by the node - not when mined
 const result = await solo.standardActions.deposit({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
@@ -86,6 +87,7 @@ Withdraw funds from dYdX
 ```javascript
 import { MarketId, BigNumber } from '@dydxprotocol/solo';
 
+// Withdraws a certain amount of tokens for some asset.
 // By default resolves when transaction is received by the node - not when mined
 const result = await solo.standardActions.withdraw({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
@@ -95,8 +97,15 @@ const result = await solo.standardActions.withdraw({
    // NOTE: USDC has 6 decimal places, so 1e6 = 1 USDC
   amount: new BigNumber('1e18'),
 });
+
+// Withdraws all of your tokens for some asset.
+// By default resolves when transaction is received by the node - not when mined
+const result = await solo.standardActions.withdrawToZero({
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
+  marketId: MarketId.ETH,
+});
 ```
-- `MarketId.ETH` will send ETH whereas `MarketId.WETH` will send WETH. Both are the same market on the protocol
+- `MarketId.ETH` will withdraw as ETH whereas `MarketId.WETH` will withdraw as WETH. Both are the same market on the protocol
 
 ### Operations
 The main way to interact with Solo is through Operations. See [Operations](protocol.md#operations)
