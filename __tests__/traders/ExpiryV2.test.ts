@@ -36,7 +36,7 @@ const defaultTimeDelta = new BigNumber(1234);
 let defaultGlob: Trade;
 let heldGlob: Trade;
 
-describe('Expiry', () => {
+describe('ExpiryV2', () => {
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
