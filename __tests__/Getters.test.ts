@@ -750,7 +750,6 @@ describe('Getters', () => {
         expect(weiB1.lt(wei.div(-2))).toBeTruthy(); // lt is gt in the negative direction
 
         await fastForward(86400); // one day
-        await mineAvgBlock();
 
         const [
           weiA2,

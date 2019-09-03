@@ -59,7 +59,7 @@ contract LimitOrders is
     string constant private EIP712_DOMAIN_NAME = "LimitOrders";
 
     // EIP712 Domain Version value
-    string constant private EIP712_DOMAIN_VERSION = "1.0";
+    string constant private EIP712_DOMAIN_VERSION = "1.1";
 
     // Hash of the EIP712 Domain Separator Schema
     /* solium-disable-next-line indentation */

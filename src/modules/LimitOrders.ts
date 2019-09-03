@@ -57,12 +57,14 @@ const EIP712_ORDER_STRUCT_STRING =
   ')';
 
 const EIP712_CANCEL_ORDER_STRUCT = [
-  { type: 'bytes32', name: 'orderHash' },
+  { type: 'string', name: 'action' },
+  { type: 'bytes32[]', name: 'orderHashes' },
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
   'CancelLimitOrder(' +
-  'bytes32 orderHash' +
+  'string action,' +
+  'bytes32[] orderHashes' +
   ')';
 
 export class LimitOrders {
@@ -379,7 +381,8 @@ export class LimitOrders {
   ): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
-      { t: 'bytes32', v: orderHash },
+      { t: 'bytes32', v: hashString('Cancel Orders') },
+      { t: 'bytes32', v: Web3.utils.soliditySha3(orderHash) },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -391,7 +394,7 @@ export class LimitOrders {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('LimitOrders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.limitOrders.options.address) },
     );
@@ -447,7 +450,7 @@ export class LimitOrders {
   private getDomainData() {
     return {
       name: 'LimitOrders',
-      version: '1.0',
+      version: '1.1',
       chainId: this.networkId,
       verifyingContract: this.contracts.limitOrders.options.address,
     };
@@ -497,7 +500,10 @@ export class LimitOrders {
       },
       domain: this.getDomainData(),
       primaryType: 'CancelLimitOrder',
-      message: { orderHash },
+      message: {
+        action: 'Cancel Orders',
+        orderHashes: [orderHash],
+      },
     };
     return this.ethSignTypedDataInternal(
       signer,
@@ -523,7 +529,7 @@ export class LimitOrders {
         break;
       case SigningMethod.MetaMask:
         sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
+        rpcMethod = 'eth_signTypedData_v4';
         rpcData = JSON.stringify(data);
         break;
       default:

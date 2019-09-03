@@ -277,7 +277,6 @@ describe('DaiPriceOracle', () => {
   describe('getBoundedTargetPrice', () => {
     it('Upper-bounded by maximum absolute deviation', async () => {
       await fastForward(1000);
-      await mineAvgBlock();
 
       await Promise.all([
         setOasisLowPrice('1.10'),
@@ -290,7 +289,6 @@ describe('DaiPriceOracle', () => {
 
     it('Lower-bounded by maximum absolute deviation', async () => {
       await fastForward(1000);
-      await mineAvgBlock();
 
       await Promise.all([
         setOasisLowPrice('0.90'),

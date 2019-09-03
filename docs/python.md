@@ -513,12 +513,6 @@ canceled_order = {
 ### Ethereum Transactions
 
 ```python
-# Enable Limit Orders
-# must be called once, ever (only necessary during beta testing)
-tx_hash = client.enable_limit_orders() # does not wait for transaction to be mined
-receipt = client.get_receipt(tx_hash) # waits for transaction to be mined
-
-
 # deposit 10 ETH
 # does not require set_allowance
 tx_hash = client.deposit(

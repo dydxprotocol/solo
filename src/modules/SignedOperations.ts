@@ -577,7 +577,7 @@ export class SignedOperations {
         break;
       case SigningMethod.MetaMask:
         sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
+        rpcMethod = 'eth_signTypedData_v4';
         rpcData = JSON.stringify(data);
         break;
       default:
