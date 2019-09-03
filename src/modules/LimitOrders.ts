@@ -184,6 +184,7 @@ export class LimitOrders {
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
+      case SigningMethod.MetaMaskLatest:
         return this.ethSignTypedOrderInternal(
           order,
           signingMethod,
@@ -230,6 +231,7 @@ export class LimitOrders {
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
+      case SigningMethod.MetaMaskLatest:
         return this.ethSignTypedCancelOrderInternal(
           orderHash,
           signer,
@@ -528,6 +530,11 @@ export class LimitOrders {
         rpcData = data;
         break;
       case SigningMethod.MetaMask:
+        sendMethod = 'sendAsync';
+        rpcMethod = 'eth_signTypedData_v3';
+        rpcData = JSON.stringify(data);
+        break;
+      case SigningMethod.MetaMaskLatest:
         sendMethod = 'sendAsync';
         rpcMethod = 'eth_signTypedData_v4';
         rpcData = JSON.stringify(data);

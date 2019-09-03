@@ -57,7 +57,8 @@ export enum SigningMethod {
   UnsafeHash = 'UnsafeHash', // raw hash signed
   Hash = 'Hash',             // hash prepended according to EIP-191
   TypedData = 'TypedData',   // order hashed according to EIP-712
-  MetaMask = 'MetaMask',     // order hashed according to EIP-712 (MetaMask-specific)
+  MetaMask = 'MetaMask',     // order hashed according to EIP-712 (MetaMask-only)
+  MetaMaskLatest = 'MetaMaskLatest', // ... according to latest version of EIP-712 (MetaMask-only)
 }
 
 export interface SoloOptions {
