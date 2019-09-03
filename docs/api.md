@@ -322,6 +322,7 @@ Query Params:
 |?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
 |?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
 |?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
+|?status|(Optional) Array of status to filter by (e.g. ?status=CANCELED,FILLED)|
 
 Example Response Body:
 ```json
