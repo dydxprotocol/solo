@@ -52,7 +52,7 @@ contract SignedOperationProxy is
     string constant private EIP712_DOMAIN_NAME = "SignedOperationProxy";
 
     // EIP712 Domain Version value
-    string constant private EIP712_DOMAIN_VERSION = "1.0";
+    string constant private EIP712_DOMAIN_VERSION = "1.1";
 
     // EIP712 encodeType of EIP712Domain
     bytes constant private EIP712_DOMAIN_STRING = abi.encodePacked(
@@ -70,7 +70,8 @@ contract SignedOperationProxy is
         "Action[] actions,",
         "uint256 expiration,",
         "uint256 salt,",
-        "address sender",
+        "address sender,",
+        "address signer",
         ")"
     );
 

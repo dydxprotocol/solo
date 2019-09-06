@@ -36,6 +36,7 @@ const EIP712_OPERATION_STRUCT = [
   { type: 'uint256', name: 'expiration' },
   { type: 'uint256', name: 'salt' },
   { type: 'address', name: 'sender' },
+  { type: 'address', name: 'signer' },
 ];
 
 const EIP712_ACTION_STRUCT = [
@@ -86,17 +87,20 @@ const EIP712_OPERATION_STRING =
   'Action[] actions,' +
   'uint256 expiration,' +
   'uint256 salt,' +
-  'address sender' +
+  'address sender,' +
+  'address signer' +
   ')' +
   EIP712_ACTION_STRING;
 
 const EIP712_CANCEL_OPERATION_STRUCT = [
-  { type: 'bytes32', name: 'operationHash' },
+  { type: 'string', name: 'action' },
+  { type: 'bytes32[]', name: 'operationHashes' },
 ];
 
 const EIP712_CANCEL_OPERATION_STRUCT_STRING =
   'CancelOperation(' +
-  'bytes32 operationHash' +
+  'string action,' +
+  'bytes32[] operationHashes' +
   ')';
 
 export class SignedOperations {
@@ -454,7 +458,8 @@ export class SignedOperations {
   ): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_OPERATION_STRUCT_STRING) },
-      { t: 'bytes32', v: operationHash },
+      { t: 'bytes32', v: hashString('Cancel Operations') },
+      { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: operationHash }) },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -466,7 +471,7 @@ export class SignedOperations {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('SignedOperationProxy') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.signedOperationProxy.options.address) },
     );
@@ -490,7 +495,7 @@ export class SignedOperations {
   private getDomainData() {
     return {
       name: 'SignedOperationProxy',
-      version: '1.0',
+      version: '1.1',
       chainId: this.networkId,
       verifyingContract: this.contracts.signedOperationProxy.options.address,
     };
@@ -513,7 +518,7 @@ export class SignedOperations {
         },
         primaryMarketId: toString(action.primaryMarketId),
         secondaryMarketId: toString(action.secondaryMarketId),
-        otherAddress: toString(action.otherAddress),
+        otherAddress: action.otherAddress,
         otherAccountOwner: action.secondaryAccountOwner,
         otherAccountNumber: toString(action.secondaryAccountNumber),
         data: action.data,
@@ -524,6 +529,7 @@ export class SignedOperations {
       expiration: operation.expiration.toFixed(0),
       salt: operation.salt.toFixed(0),
       sender: operation.sender,
+      signer: operation.signer,
     };
     const data = {
       types: {
@@ -555,7 +561,10 @@ export class SignedOperations {
       },
       domain: this.getDomainData(),
       primaryType: 'CancelOperation',
-      message: { operationHash },
+      message: {
+        action: 'Cancel Operations',
+        operationHashes: [operationHash],
+      },
     };
     return this.ethSignTypedDataInternal(
       signer,
@@ -609,6 +618,7 @@ export class SignedOperations {
     if (response.error) {
       throw new Error(response.error.message);
     }
+
     return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
   }
 }
