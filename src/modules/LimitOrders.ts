@@ -185,6 +185,7 @@ export class LimitOrders {
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
       case SigningMethod.MetaMaskLatest:
+      case SigningMethod.CoinbaseWallet:
         return this.ethSignTypedOrderInternal(
           order,
           signingMethod,
@@ -232,6 +233,7 @@ export class LimitOrders {
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
       case SigningMethod.MetaMaskLatest:
+      case SigningMethod.CoinbaseWallet:
         return this.ethSignTypedCancelOrderInternal(
           orderHash,
           signer,
@@ -538,6 +540,11 @@ export class LimitOrders {
         sendMethod = 'sendAsync';
         rpcMethod = 'eth_signTypedData_v4';
         rpcData = JSON.stringify(data);
+        break;
+      case SigningMethod.CoinbaseWallet:
+        sendMethod = 'sendAsync';
+        rpcMethod = 'eth_signTypedData';
+        rpcData = data;
         break;
       default:
         throw new Error(`Invalid signing method ${signingMethod}`);

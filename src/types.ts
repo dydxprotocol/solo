@@ -59,6 +59,7 @@ export enum SigningMethod {
   TypedData = 'TypedData',   // order hashed according to EIP-712
   MetaMask = 'MetaMask',     // order hashed according to EIP-712 (MetaMask-only)
   MetaMaskLatest = 'MetaMaskLatest', // ... according to latest version of EIP-712 (MetaMask-only)
+  CoinbaseWallet = 'CoinbaseWallet', // ... according to latest version of EIP-712 (CoinbaseWallet)
 }
 
 export interface SoloOptions {
