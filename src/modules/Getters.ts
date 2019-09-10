@@ -240,6 +240,25 @@ export class Getters {
     return stringToDecimal(result.value);
   }
 
+  public async getMarketSupplyInterestRate(
+    marketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
+    const [
+      earningsRate,
+      borrowInterestRate,
+      market,
+    ] = await Promise.all([
+      this.getEarningsRate(options),
+      this.getMarketInterestRate(marketId, options),
+      this.getMarket(marketId, options),
+    ]);
+    const totalSupply: Decimal = market.totalPar.supply.times(market.index.supply);
+    const totalBorrow: Decimal = market.totalPar.borrow.times(market.index.borrow);
+    const util: Decimal = totalSupply.div(totalBorrow);
+    return borrowInterestRate.times(earningsRate).times(util);
+  }
+
   public async getLiquidationSpreadForPair(
     heldMarketId: Integer,
     owedMarketId: Integer,
