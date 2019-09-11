@@ -606,7 +606,7 @@ export class AccountOperation {
       salt?: Integer,
       sender?: address,
       signer?: address,
-    },
+    } = {},
   ): Operation {
     if (this.auths.length) {
       throw new Error('Cannot create operation out of operation with auths');

@@ -386,7 +386,7 @@ export class LimitOrders {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: hashString('Cancel Orders') },
-      { t: 'bytes32', v: Web3.utils.soliditySha3(orderHash) },
+      { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }) },
     );
     return this.getEIP712Hash(structHash);
   }

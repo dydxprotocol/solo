@@ -17,7 +17,7 @@ import {
   SigningMethod,
 } from '../../src/types';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
-import { expectThrow } from '../../src/lib/Expect';
+import { expectAssertFailure, expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
 
 let solo: Solo;
@@ -232,7 +232,15 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for eth_signTypedData', async () => {
-      // TODO: once ganache supports eth_signTypedData for arrays
+      // TODO: remove conditional when ethereumjs-testrpc-sc supports arrays in eth_signTypedData
+      if (process.env.COVERAGE === 'true') {
+        return;
+      }
+
+      const operation = { ...signedTradeOperation };
+      operation.typedSignature =
+        await solo.signedOperations.signOperation(operation, SigningMethod.TypedData);
+      expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(true);
     });
 
     it('Recognizes a bad signature', async () => {
@@ -253,6 +261,11 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for eth_signTypedData', async () => {
+      // TODO: remove conditional when ethereumjs-testrpc-sc supports arrays in eth_signTypedData
+      if (process.env.COVERAGE === 'true') {
+        return;
+      }
+
       const operation = { ...signedTradeOperation };
       const cancelSig =
         await solo.signedOperations.signCancelOperation(operation, SigningMethod.TypedData);
@@ -709,6 +722,94 @@ describe('SignedOperationProxy', () => {
       );
     });
 
+    it('Fails for authorization that overflows', async () => {
+      await expectAssertFailure(
+        solo.contracts.callContractFunction(
+          solo.contracts.signedOperationProxy.methods.operate(
+            [{
+              owner: defaultSigner,
+              number: defaultSignerNumber.toFixed(0),
+            }],
+            [{
+              actionType: ActionType.Deposit,
+              accountId: '0',
+              primaryMarketId: '0',
+              secondaryMarketId: '0',
+              otherAddress: ADDRESSES.ZERO,
+              otherAccountId: '0',
+              data: [],
+              amount: {
+                sign: false,
+                ref: AmountReference.Delta,
+                denomination: AmountDenomination.Par,
+                value: '0',
+              },
+            }],
+            [{
+              numActions: '2',
+              header: {
+                expiration: '0',
+                salt: '0',
+                sender: defaultSender,
+                signer: defaultSigner,
+              },
+              signature: toBytes(signedDepositOperation.typedSignature),
+            }],
+          ),
+          { from: defaultSender },
+        ),
+      );
+    });
+
+    it('Fails for authorization past end-of-actions', async () => {
+      const depositAction = signedDepositOperation.actions[0];
+      await expectAssertFailure(
+        solo.contracts.callContractFunction(
+          solo.contracts.signedOperationProxy.methods.operate(
+            [{
+              owner: defaultSigner,
+              number: defaultSignerNumber.toFixed(0),
+            }],
+            [{
+              ...depositAction,
+              accountId: '0',
+              otherAccountId: '0',
+              primaryMarketId: depositAction.primaryMarketId.toFixed(0),
+              secondaryMarketId: depositAction.secondaryMarketId.toFixed(0),
+              data: [],
+              amount: {
+                ...depositAction.amount,
+                value: depositAction.amount.value.toFixed(0),
+              },
+            }],
+            [
+              {
+                numActions: '1',
+                header: {
+                  expiration: '0',
+                  salt: '0',
+                  sender: defaultSender,
+                  signer: defaultSigner,
+                },
+                signature: toBytes(signedDepositOperation.typedSignature),
+              },
+              {
+                numActions: '1',
+                header: {
+                  expiration: '0',
+                  salt: '0',
+                  sender: defaultSender,
+                  signer: defaultSigner,
+                },
+                signature: toBytes(signedWithdrawOperation.typedSignature),
+              },
+            ],
+          ),
+          { from: defaultSender },
+        ),
+      );
+    });
+
     it('Fails if not all actions are signed', async () => {
       await expectThrow(
         solo.contracts.callContractFunction(
@@ -720,10 +821,10 @@ describe('SignedOperationProxy', () => {
             [{
               actionType: ActionType.Deposit,
               accountId: '0',
-              primaryMarketId: 0,
-              secondaryMarketId: 0,
+              primaryMarketId: '0',
+              secondaryMarketId: '0',
               otherAddress: ADDRESSES.ZERO,
-              otherAccountId: 0,
+              otherAccountId: '0',
               data: [],
               amount: {
                 sign: false,
@@ -947,6 +1048,67 @@ describe('SignedOperationProxy', () => {
         'LogDeposit',
       ]);
       await expectInvalid([signedWithdrawOperation, signedOperation2]);
+    });
+
+    it('Succeeds for zero-length proofs', async () => {
+      const emptyOperation = {
+        actions: [],
+        expiration: INTEGERS.ZERO,
+        salt: INTEGERS.ZERO,
+        sender: ADDRESSES.ZERO,
+        signer: defaultSender,
+      };
+      await solo.contracts.callContractFunction(
+        solo.contracts.signedOperationProxy.methods.operate(
+          [{
+            owner: defaultSender,
+            number: defaultSenderNumber.toFixed(0),
+          }],
+          [{
+            actionType: ActionType.Deposit,
+            accountId: '0',
+            primaryMarketId: '0',
+            secondaryMarketId: '0',
+            otherAddress: defaultSender,
+            otherAccountId: '0',
+            data: [],
+            amount: {
+              sign: false,
+              ref: AmountReference.Delta,
+              denomination: AmountDenomination.Par,
+              value: '0',
+            },
+          }],
+          [
+            {
+              numActions: '0',
+              header: {
+                expiration: '0',
+                salt: '0',
+                sender: ADDRESSES.ZERO,
+                signer: defaultSender,
+              },
+              signature: toBytes(
+                await solo.signedOperations.signOperation(
+                  emptyOperation,
+                  SigningMethod.Hash,
+                ),
+              ),
+            },
+            {
+              numActions: '1',
+              header: {
+                expiration: '0',
+                salt: '0',
+                sender: defaultSender,
+                signer: defaultSender,
+              },
+              signature: [],
+            },
+          ],
+        ),
+        { from: defaultSender },
+      );
     });
 
     it('Succeeds for multiple signed operations from different signers interleaved', async () => {
