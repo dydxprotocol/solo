@@ -408,10 +408,12 @@ export class SignedOperations {
   public getActionsHash(
     actions: Action[],
   ): string {
-    const actionsAsHashes = actions.map(
-      action => ({ t: 'bytes32', v: this.getActionHash(action) }),
-    );
-    return Web3.utils.soliditySha3(...actionsAsHashes);
+    const actionsAsHashes = actions.length
+      ? actions.map(
+        action => stripHexPrefix(this.getActionHash(action)),
+      ).join('')
+      : '';
+    return hashBytes(actionsAsHashes);
   }
 
   /**

@@ -1050,6 +1050,67 @@ describe('SignedOperationProxy', () => {
       await expectInvalid([signedWithdrawOperation, signedOperation2]);
     });
 
+    it('Succeeds for zero-length proofs', async () => {
+      const emptyOperation = {
+        actions: [],
+        expiration: INTEGERS.ZERO,
+        salt: INTEGERS.ZERO,
+        sender: ADDRESSES.ZERO,
+        signer: defaultSender,
+      };
+      await solo.contracts.callContractFunction(
+        solo.contracts.signedOperationProxy.methods.operate(
+          [{
+            owner: defaultSender,
+            number: defaultSenderNumber.toFixed(0),
+          }],
+          [{
+            actionType: ActionType.Deposit,
+            accountId: '0',
+            primaryMarketId: '0',
+            secondaryMarketId: '0',
+            otherAddress: defaultSender,
+            otherAccountId: '0',
+            data: [],
+            amount: {
+              sign: false,
+              ref: AmountReference.Delta,
+              denomination: AmountDenomination.Par,
+              value: '0',
+            },
+          }],
+          [
+            {
+              numActions: '0',
+              header: {
+                expiration: '0',
+                salt: '0',
+                sender: ADDRESSES.ZERO,
+                signer: defaultSender,
+              },
+              signature: toBytes(
+                await solo.signedOperations.signOperation(
+                  emptyOperation,
+                  SigningMethod.Hash,
+                ),
+              ),
+            },
+            {
+              numActions: '1',
+              header: {
+                expiration: '0',
+                salt: '0',
+                sender: defaultSender,
+                signer: defaultSender,
+              },
+              signature: [],
+            },
+          ],
+        ),
+        { from: defaultSender },
+      );
+    });
+
     it('Succeeds for multiple signed operations from different signers interleaved', async () => {
       // create second signed operation
       const operation2:Operation = solo.operation.initiate().deposit({
