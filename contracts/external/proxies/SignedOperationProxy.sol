@@ -296,8 +296,8 @@ contract SignedOperationProxy is
                 authIdx
             );
 
-            // consider the signer to be null unless there is a signature
-            address signer = address(0);
+            // consider the signer to be msg.sender unless there is a signature
+            address signer = msg.sender;
 
             // if there is a signature, then validate it
             if (auth.signature.length != 0) {
