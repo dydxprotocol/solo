@@ -227,6 +227,16 @@ export class Getters {
     return new BigNumber(result.value);
   }
 
+  public async getMarketUtilization(
+    marketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
+    const market = await this.getMarket(marketId, options);
+    const totalSupply: Decimal = market.totalPar.supply.times(market.index.supply);
+    const totalBorrow: Decimal = market.totalPar.borrow.times(market.index.borrow);
+    return totalBorrow.div(totalSupply);
+  };
+
   public async getMarketInterestRate(
     marketId: Integer,
     options?: ContractConstantCallOptions,
@@ -247,16 +257,13 @@ export class Getters {
     const [
       earningsRate,
       borrowInterestRate,
-      market,
+      utilization,
     ] = await Promise.all([
       this.getEarningsRate(options),
       this.getMarketInterestRate(marketId, options),
-      this.getMarket(marketId, options),
+      this.getMarketUtilization(marketId, options),
     ]);
-    const totalSupply: Decimal = market.totalPar.supply.times(market.index.supply);
-    const totalBorrow: Decimal = market.totalPar.borrow.times(market.index.borrow);
-    const util: Decimal = totalSupply.div(totalBorrow);
-    return borrowInterestRate.times(earningsRate).times(util);
+    return borrowInterestRate.times(earningsRate).times(utilization);
   }
 
   public async getLiquidationSpreadForPair(
