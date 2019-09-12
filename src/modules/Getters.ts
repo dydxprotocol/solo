@@ -235,7 +235,7 @@ export class Getters {
     const totalSupply: Decimal = market.totalPar.supply.times(market.index.supply);
     const totalBorrow: Decimal = market.totalPar.borrow.times(market.index.borrow);
     return totalBorrow.div(totalSupply);
-  };
+  }
 
   public async getMarketInterestRate(
     marketId: Integer,
