@@ -232,11 +232,6 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for eth_signTypedData', async () => {
-      // TODO: remove conditional when ethereumjs-testrpc-sc supports arrays in eth_signTypedData
-      if (process.env.COVERAGE === 'true') {
-        return;
-      }
-
       const operation = { ...signedTradeOperation };
       operation.typedSignature =
         await solo.signedOperations.signOperation(operation, SigningMethod.TypedData);
@@ -261,11 +256,6 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for eth_signTypedData', async () => {
-      // TODO: remove conditional when ethereumjs-testrpc-sc supports arrays in eth_signTypedData
-      if (process.env.COVERAGE === 'true') {
-        return;
-      }
-
       const operation = { ...signedTradeOperation };
       const cancelSig =
         await solo.signedOperations.signCancelOperation(operation, SigningMethod.TypedData);
