@@ -418,7 +418,7 @@ describe('SignedOperationProxy', () => {
       };
       await expectValid([signedOperation]);
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogDeposit']);
@@ -429,7 +429,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for deposit', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedDepositOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogDeposit']);
@@ -438,7 +438,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for withdraw', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogWithdraw']);
@@ -447,7 +447,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for transfer', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedTransferOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogTransfer']);
@@ -456,7 +456,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for buy', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedBuyOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogBuy']);
@@ -465,7 +465,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for sell', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedSellOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogSell']);
@@ -474,7 +474,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for trade', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedTradeOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogTrade']);
@@ -483,7 +483,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for call (0 bytes)', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogCall']);
@@ -501,7 +501,7 @@ describe('SignedOperationProxy', () => {
         },
       );
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallShortOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogCall']);
@@ -519,7 +519,7 @@ describe('SignedOperationProxy', () => {
         },
       );
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOddOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogCall']);
@@ -528,7 +528,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for liquidate', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedLiquidateOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogLiquidate']);
@@ -537,7 +537,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for vaporize', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedVaporizeOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogVaporize']);
@@ -564,7 +564,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedDepositOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -575,7 +575,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedWithdrawOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -586,7 +586,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedTransferOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -597,7 +597,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedBuyOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -608,7 +608,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedSellOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -619,7 +619,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedTradeOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -630,7 +630,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedCallOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -641,7 +641,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedLiquidateOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -652,7 +652,7 @@ describe('SignedOperationProxy', () => {
       const badOperation = await randoifySignedOperation(signedVaporizeOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
         `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -670,7 +670,7 @@ describe('SignedOperationProxy', () => {
         await solo.signedOperations.signOperation(expiredOperation, SigningMethod.Hash);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(expiredOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Signed operation is expired',
@@ -680,7 +680,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for msg.sender mismatch', async () => {
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedDepositOperation)
           .commit({ from: rando }),
         'SignedOperationProxy: Operation sender mismatch',
@@ -689,12 +689,12 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for hash already used', async () => {
       await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .commit({ from: defaultSender });
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedWithdrawOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Hash already used or canceled',
@@ -705,7 +705,7 @@ describe('SignedOperationProxy', () => {
       await solo.signedOperations.cancelOperation(signedWithdrawOperation);
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedWithdrawOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Hash already used or canceled',
@@ -838,7 +838,7 @@ describe('SignedOperationProxy', () => {
       };
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(invalidSigOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Invalid signature',
@@ -852,7 +852,7 @@ describe('SignedOperationProxy', () => {
       );
       await expectThrow(
         solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedDepositOperation)
           .commit({ from: defaultSender }),
         'SignedOperationProxy: Contract is not operational',
@@ -904,7 +904,7 @@ describe('SignedOperationProxy', () => {
       for (const o in allOperations) {
         const operation = allOperations[o];
         const txResult = await solo.operation
-          .initiate({ proxy: ProxyType.Sender })
+          .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(operation)
           .commit({ from: defaultSender });
         expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogTransfer']);
@@ -963,7 +963,7 @@ describe('SignedOperationProxy', () => {
         const operation = allOperations[o];
         await expectThrow(
           solo.operation
-            .initiate({ proxy: ProxyType.Sender })
+            .initiate({ proxy: ProxyType.Signed })
             .addSignedOperation(operation)
             .commit({ from: defaultSender }),
           `SignedOperationProxy: Signer not authorized <${defaultSigner.toLowerCase()}>`,
@@ -973,7 +973,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for data with less than 32 bytes', async () => {
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, ['LogOperationExecuted', 'LogOperation', 'LogCall']);
@@ -991,7 +991,7 @@ describe('SignedOperationProxy', () => {
         await solo.signedOperations.signOperation(multiActionOperation, SigningMethod.Hash);
 
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(multiActionOperation)
         .commit({ from: defaultSender });
       expectLogs(txResult, [
@@ -1026,7 +1026,7 @@ describe('SignedOperationProxy', () => {
 
       // commit the operations
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .addSignedOperation(signedOperation2)
         .commit({ from: defaultSender });
@@ -1128,7 +1128,7 @@ describe('SignedOperationProxy', () => {
 
       // commit the operations interleaved with others
       const txResult = await solo.operation
-        .initiate({ proxy: ProxyType.Sender })
+        .initiate({ proxy: ProxyType.Signed })
         .call(callData)
         .addSignedOperation(signedWithdrawOperation)
         .call(callData)
