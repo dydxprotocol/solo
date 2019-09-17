@@ -21,6 +21,7 @@ const {
   isKovan,
   isMainNet,
   getPolynomialParams,
+  getDoubleExponentParams,
   getRiskLimits,
   getRiskParams,
   getDaiPriceOracleParams,
@@ -53,6 +54,7 @@ const TestMakerOracle = artifacts.require('TestMakerOracle');
 const TestOasisDex = artifacts.require('TestOasisDex');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
+const TestDoubleExponentInterestSetter = artifacts.require('TestDoubleExponentInterestSetter');
 const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 
@@ -67,6 +69,7 @@ const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // Interest Setters
 const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
+const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
 
 // Oracles
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
@@ -104,6 +107,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestAutoTrader),
       deployer.deploy(TestExchangeWrapper),
       deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams(network)),
+      deployer.deploy(TestDoubleExponentInterestSetter, getDoubleExponentParams(network)),
       deployer.deploy(TestMakerOracle),
       deployer.deploy(TestOasisDex),
     ]);
@@ -136,7 +140,10 @@ async function deployInterestSetters(deployer, network) {
   if (isDevNetwork(network)) {
     await deployer.deploy(TestInterestSetter);
   }
-  await deployer.deploy(PolynomialInterestSetter, getPolynomialParams(network));
+  await Promise.all([
+    deployer.deploy(PolynomialInterestSetter, getPolynomialParams(network)),
+    deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network)),
+  ]);
 }
 
 async function deployPriceOracles(deployer, network, accounts) {

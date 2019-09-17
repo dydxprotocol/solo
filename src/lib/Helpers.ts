@@ -51,7 +51,19 @@ export function getInterestPerSecond(
   maxAPR: Decimal,
   coefficients: number[],
   totals: { totalBorrowed: Integer, totalSupply: Integer },
-) {
+): Decimal {
+  return getInterestPerSecondForPolynomial(
+    maxAPR,
+    coefficients,
+    totals,
+  );
+}
+
+export function getInterestPerSecondForPolynomial(
+  maxAPR: Decimal,
+  coefficients: number[],
+  totals: { totalBorrowed: Integer, totalSupply: Integer },
+): Decimal {
   if (totals.totalBorrowed.isZero()) {
     return new BigNumber(0);
   }
@@ -68,12 +80,7 @@ export function getInterestPerSecond(
       const coefficient = new BigNumber(coefficients[i]);
       const term = polynomial.times(coefficient);
       result = result.plus(term);
-      polynomial =
-        polynomial.times(
-          totals.totalBorrowed,
-        ).div(
-          totals.totalSupply,
-        ).integerValue(BigNumber.ROUND_DOWN);
+      polynomial = partial(polynomial, totals.totalBorrowed, totals.totalSupply);
     }
   }
 
@@ -83,4 +90,46 @@ export function getInterestPerSecond(
     .div(PERCENT)
     .integerValue(BigNumber.ROUND_DOWN)
     .div(BASE);
+}
+
+export function getInterestPerSecondForDoubleExponent(
+  maxAPR: Decimal,
+  coefficients: number[],
+  totals: { totalBorrowed: Integer, totalSupply: Integer },
+): Decimal {
+  if (totals.totalBorrowed.isZero()) {
+    return new BigNumber(0);
+  }
+
+  const PERCENT = new BigNumber('100');
+  const BASE = new BigNumber('1e18');
+  let result = new BigNumber(0);
+
+  if (totals.totalBorrowed.gt(totals.totalSupply)) {
+    result = BASE.times(PERCENT);
+  } else {
+    result = BASE.times(coefficients[0]);
+    let polynomial = partial(BASE, totals.totalBorrowed, totals.totalSupply);
+    for (let i = 1; i < coefficients.length; i += 1) {
+      const coefficient = new BigNumber(coefficients[i]);
+      const term = polynomial.times(coefficient);
+      result = result.plus(term);
+      polynomial = partial(polynomial, polynomial, BASE);
+    }
+  }
+
+  return result
+    .times(maxAPR)
+    .div(INTEGERS.ONE_YEAR_IN_SECONDS)
+    .div(PERCENT)
+    .integerValue(BigNumber.ROUND_DOWN)
+    .div(BASE);
+}
+
+function partial(
+  target: BigNumber,
+  numerator: BigNumber,
+  denominator: BigNumber,
+): BigNumber {
+  return target.times(numerator).div(denominator).integerValue(BigNumber.ROUND_DOWN);
 }

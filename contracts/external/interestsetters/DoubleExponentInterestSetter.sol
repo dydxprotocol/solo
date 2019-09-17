@@ -26,13 +26,13 @@ import { Math } from "../../protocol/lib/Math.sol";
 
 
 /**
- * @title DoubleExponentialInterestSetter
+ * @title DoubleExponentInterestSetter
  * @author dYdX
  *
  * Interest setter that sets interest based on a polynomial of the usage percentage of the market.
  * Interest = C_0 + C_1 * U^(2^0) + C_2 * U^(2^1) + C_3 * U^(2^2) ...
  */
-contract DoubleExponentialInterestSetter is
+contract DoubleExponentInterestSetter is
     IInterestSetter
 {
     using Math for uint256;
@@ -119,14 +119,19 @@ contract DoubleExponentialInterestSetter is
             });
         }
 
-        uint256 result = 0;
-        uint256 polynomial = BASE;
+        // process the first coefficient
+        uint256 coefficients = s.coefficients;
+        uint256 result = uint8(coefficients) * BASE;
+        coefficients >>= BYTE;
+
+        // initialize polynomial as the utilization
+        // no safeDiv since supplyWei must be non-zero at this point
+        uint256 polynomial = BASE.mul(borrowWei) / supplyWei;
 
         // for each non-zero coefficient...
-        uint256 coefficients = s.coefficients;
         while (true) {
             // gets the lowest-order byte
-            uint256 coefficient = coefficients % 256;
+            uint256 coefficient = uint256(uint8(coefficients));
 
             // if non-zero, add to result
             if (coefficient != 0) {
@@ -140,9 +145,10 @@ contract DoubleExponentialInterestSetter is
                 }
             }
 
-            // increase the order of the polynomial term
-            // no safeDiv since supplyWei must be stricly larger than borrowWei
-            polynomial = polynomial.mul(borrowWei) / supplyWei;
+            // double the order of the polynomial term
+            // no safeMul since polynomial <= 10^18
+            // no safeDiv since the divisor is a non-zero constant
+            polynomial = polynomial * polynomial / BASE;
 
             // move to next coefficient
             coefficients >>= BYTE;

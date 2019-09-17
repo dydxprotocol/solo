@@ -18,6 +18,8 @@ import { default as LiquidatorProxyV1ForSoloMargin }
   from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
 import { default as PolynomialInterestSetter }
   from '../build/contracts/PolynomialInterestSetter.json';
+import { default as DoubleExponentInterestSetter }
+  from '../build/contracts/DoubleExponentInterestSetter.json';
 import { default as WethPriceOracle } from '../build/contracts/WethPriceOracle.json';
 import { default as DaiPriceOracle } from '../build/contracts/DaiPriceOracle.json';
 import { default as UsdcPriceOracle } from '../build/contracts/UsdcPriceOracle.json';
@@ -44,6 +46,8 @@ import { default as TestMakerOracle } from '../build/contracts/TestMakerOracle.j
 import { default as TestOasisDex } from '../build/contracts/TestOasisDex.json';
 import { default as TestPolynomialInterestSetter }
   from '../build/contracts/TestPolynomialInterestSetter.json';
+import { default as TestDoubleExponentInterestSetter }
+  from '../build/contracts/TestDoubleExponentInterestSetter.json';
 import { default as TestInterestSetter } from '../build/contracts/TestInterestSetter.json';
 import { default as TestSoloMargin } from '../build/contracts/TestSoloMargin.json';
 
@@ -60,6 +64,7 @@ export default {
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
   PolynomialInterestSetter,
+  DoubleExponentInterestSetter,
   WethPriceOracle,
   DaiPriceOracle,
   UsdcPriceOracle,
@@ -80,6 +85,7 @@ export default {
   TestMakerOracle,
   TestOasisDex,
   TestPolynomialInterestSetter,
+  TestDoubleExponentInterestSetter,
   TestInterestSetter,
   TestSoloMargin,
   TestAutoTrader,

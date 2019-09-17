@@ -10,6 +10,7 @@ import { TestSimpleCallee } from './TestSimpleCallee';
 import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestPriceOracle } from './TestPriceOracle';
 import { TestPolynomialInterestSetter } from './TestPolynomialInterestSetter';
+import { TestDoubleExponentInterestSetter } from './TestDoubleExponentInterestSetter';
 import { TestInterestSetter } from './TestInterestSetter';
 import { decimalToString } from '../../lib/Helpers';
 import {
@@ -35,6 +36,7 @@ export class Testing {
   public exchangeWrapper: TestExchangeWrapper;
   public priceOracle: TestPriceOracle;
   public polynomialInterestSetter: TestPolynomialInterestSetter;
+  public doubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public interestSetter: TestInterestSetter;
 
   constructor(
@@ -55,6 +57,7 @@ export class Testing {
     this.exchangeWrapper = new TestExchangeWrapper(contracts);
     this.priceOracle = new TestPriceOracle(contracts);
     this.polynomialInterestSetter = new TestPolynomialInterestSetter(contracts);
+    this.doubleExponentInterestSetter = new TestDoubleExponentInterestSetter(contracts);
     this.interestSetter = new TestInterestSetter(contracts);
   }
 

@@ -85,6 +85,19 @@ async function getPolynomialParams(network) {
   };
 }
 
+async function getDoubleExponentParams(network) {
+  if (isMainNet(network)) {
+    return {
+      maxAPR: decimalToString('0.50'), // 50%
+      coefficients: coefficientsToString([0, 20, 10, 0, 0, 0, 0, 0, 0, 0, 70]),
+    };
+  }
+  return {
+    maxAPR: decimalToString('1.00'), // 100%
+    coefficients: coefficientsToString([20, 20, 20, 20, 20]),
+  };
+}
+
 function getDaiPriceOracleParams(network) {
   verifyNetwork(network);
   if (isDevNetwork) {
@@ -159,6 +172,7 @@ module.exports = {
   getRiskLimits,
   getRiskParams,
   getPolynomialParams,
+  getDoubleExponentParams,
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
