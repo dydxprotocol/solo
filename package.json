@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.16.1",
+  "version": "0.17.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -83,7 +83,7 @@
     "coveralls": "^3.0.3",
     "docsify-cli": "^4.3.0",
     "dotenv-flow": "^0.2.0",
-    "eslint": "^5.14.1",
+    "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "ethlint": "^1.2.4",
