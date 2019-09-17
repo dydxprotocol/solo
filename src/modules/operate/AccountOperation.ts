@@ -550,6 +550,11 @@ export class AccountOperation {
   public addSignedOperation(
     signedOperation: SignedOperation,
   ): AccountOperation {
+    // throw error if operation is not going to use the signed proxy
+    if (this.proxy !== ProxyType.Signed) {
+      throw new Error('Cannot add signed operation if not using signed operation proxy');
+    }
+
     // store the auth
     this.auths.push({
       startIndex: new BigNumber(this.actions.length),
