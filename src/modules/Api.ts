@@ -11,6 +11,7 @@ import {
   ApiAccount,
   ApiFill,
   ApiTrade,
+  OrderType,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -268,6 +269,41 @@ export class Api {
     const numberStr = new BigNumber(accountNumber).toFixed(0);
     return request({
       uri: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
+      method: 'GET',
+      json: true,
+    });
+  }
+
+  public async getOrderbook({
+    pair,
+    orderType,
+    minSize,
+    limit,
+    offset,
+  }: {
+    pair: string,
+    orderType: OrderType,
+    minSize?: Integer | string,
+    limit?: number,
+    offset?: number,
+  }): Promise<ApiOrder[]> {
+    const queryObj: any = {};
+
+    queryObj.orderType = orderType ? orderType : OrderType.DYDX;
+    if (limit) {
+      queryObj.limit = limit;
+    }
+    if (offset) {
+      queryObj.offset = offset;
+    }
+    if (minSize) {
+      queryObj.minSize = new BigNumber(minSize).toFixed(0);
+    }
+
+    const query: string = queryString.stringify(queryObj);
+
+    return request({
+      uri: `${this.endpoint}/v1/orders/${pair}?${query}`,
       method: 'GET',
       json: true,
     });
