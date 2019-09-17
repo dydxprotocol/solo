@@ -50,8 +50,8 @@ export const Networks = {
 export enum ProxyType {
   None = 'None',
   Payable = 'Payable',
-  Sender = 'Signed', // Deprecated
-  Signed = 'Signed',
+  Sender = 'Sender', // Deprecated
+  Signed = 'Sender',
 }
 
 export enum SigningMethod {
