@@ -50,7 +50,8 @@ export const Networks = {
 export enum ProxyType {
   None = 'None',
   Payable = 'Payable',
-  Sender = 'Sender',
+  Sender = 'Sender', // Deprecated
+  Signed = 'Sender',
 }
 
 export enum SigningMethod {
@@ -468,6 +469,7 @@ export enum ApiFillStatus {
 
 export interface ApiOrder extends ApiModel {
   id: string;
+  uuid: string;
   rawData: string;
   orderType: ApiOrderType;
   pairUuid: string;
@@ -535,4 +537,10 @@ interface ApiModel {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+}
+
+export enum OrderType {
+  DYDX = 'dydexLimitV1',
+  ETH_2_DAI = 'OasisV3',
+  ZERO_EX = '0x-V2',
 }

@@ -689,7 +689,7 @@ export class AccountOperation {
             this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
           );
           break;
-        case ProxyType.Sender:
+        case ProxyType.Signed:
           method = this.contracts.signedOperationProxy.methods.operate(
             this.accounts,
             this.actions,

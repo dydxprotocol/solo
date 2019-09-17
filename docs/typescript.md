@@ -308,6 +308,21 @@ const account = await solo.api.getAccountBalances({
 });
 ```
 
+#### Get Orderbook
+```javascript
+const bids = await solo.api.getAccountBalances({
+  pair: 'DAI-WETH',
+  orderType: OrderType.DYDX, // OPTIONAL: defaults to OrderType.DYDX
+  minSize: new BigNumber('1e18'), // OPTIONAL
+  limit: 20, // OPTIONAL: maximum 100
+  offset: 40, // OPTIONAL
+});
+
+const asks = await solo.api.getAccountBalances({
+  pair: 'WETH-DAI',
+});
+```
+
 ### Types
 You can import types from Solo as:
 
