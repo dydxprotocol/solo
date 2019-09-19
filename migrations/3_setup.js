@@ -158,6 +158,7 @@ async function getTokens(network) {
     return [
       { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' }, // Main WETH
       { address: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359' }, // Main DAI
+      { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }, // Main USDC
     ];
   }
   throw new Error('Cannot find Tokens');
@@ -182,6 +183,7 @@ async function getOracles(network) {
     return [
       { address: WethPriceOracle.address },
       { address: DaiPriceOracle.address },
+      { address: UsdcPriceOracle.address },
     ];
   }
   throw new Error('Cannot find Oracles');
@@ -204,6 +206,7 @@ async function getSetters(network) {
   }
   if (isMainNet(network)) {
     return [
+      { address: PolynomialInterestSetter.address },
       { address: PolynomialInterestSetter.address },
       { address: PolynomialInterestSetter.address },
     ];

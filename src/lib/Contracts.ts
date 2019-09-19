@@ -41,6 +41,7 @@ import {
   LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1,
 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
+import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
@@ -56,6 +57,9 @@ import { TestMakerOracle } from '../../build/wrappers/TestMakerOracle';
 import { TestOasisDex } from '../../build/wrappers/TestOasisDex';
 import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
 import { TestPolynomialInterestSetter } from '../../build/wrappers/TestPolynomialInterestSetter';
+import {
+  TestDoubleExponentInterestSetter,
+} from '../../build/wrappers/TestDoubleExponentInterestSetter';
 
 // JSON
 import soloMarginJson from '../../build/published_contracts/SoloMargin.json';
@@ -72,6 +76,8 @@ import signedOperationProxyJson from '../../build/published_contracts/SignedOper
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
 import polynomialInterestSetterJson
   from '../../build/published_contracts/PolynomialInterestSetter.json';
+import doubleExponentInterestSetterJson
+  from '../../build/published_contracts/DoubleExponentInterestSetter.json';
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
@@ -91,6 +97,8 @@ import testMakerOracleJson from '../../build/published_contracts/TestMakerOracle
 import testOasisDexJson from '../../build/published_contracts/TestOasisDex.json';
 import testPolynomialInterestSetterJson
   from '../../build/published_contracts/TestPolynomialInterestSetter.json';
+import testDoubleExponentInterestSetterJson
+  from '../../build/published_contracts/TestDoubleExponentInterestSetter.json';
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -128,6 +136,7 @@ export class Contracts {
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
   public polynomialInterestSetter: PolynomialInterestSetter;
+  public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
   public daiPriceOracle: DaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
@@ -149,6 +158,7 @@ export class Contracts {
   public testMakerOracle: TestMakerOracle;
   public testOasisDex: TestOasisDex;
   public testPolynomialInterestSetter: TestPolynomialInterestSetter;
+  public testDoubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public testInterestSetter: TestInterestSetter;
 
   constructor(
@@ -180,6 +190,8 @@ export class Contracts {
       LiquidatorProxyV1;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
       PolynomialInterestSetter;
+    this.doubleExponentInterestSetter = new this.web3.eth.Contract(
+      doubleExponentInterestSetterJson.abi) as DoubleExponentInterestSetter;
     this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
     this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
@@ -209,6 +221,8 @@ export class Contracts {
       testInterestSetterJson.abi) as TestInterestSetter;
     this.testPolynomialInterestSetter = new this.web3.eth.Contract(
       testPolynomialInterestSetterJson.abi) as TestPolynomialInterestSetter;
+    this.testDoubleExponentInterestSetter = new this.web3.eth.Contract(
+      testDoubleExponentInterestSetterJson.abi) as TestDoubleExponentInterestSetter;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -234,6 +248,7 @@ export class Contracts {
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
+      { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
@@ -255,6 +270,8 @@ export class Contracts {
       { contract: this.testMakerOracle, json: testMakerOracleJson },
       { contract: this.testOasisDex, json: testOasisDexJson },
       { contract: this.testPolynomialInterestSetter, json: testPolynomialInterestSetterJson },
+      { contract: this.testDoubleExponentInterestSetter,
+        json: testDoubleExponentInterestSetterJson },
       { contract: this.testInterestSetter, json: testInterestSetterJson },
     ];
 
@@ -284,6 +301,7 @@ export class Contracts {
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
     this.polynomialInterestSetter.options.from = account;
+    this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
     this.daiPriceOracle.options.from = account;
     this.usdcPriceOracle.options.from = account;
@@ -304,6 +322,7 @@ export class Contracts {
     this.testMakerOracle.options.from = account;
     this.testOasisDex.options.from = account;
     this.testPolynomialInterestSetter.options.from = account;
+    this.testDoubleExponentInterestSetter.options.from = account;
     this.testInterestSetter.options.from = account;
   }
 

@@ -5,7 +5,7 @@ import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
-import { coefficientsToString, getInterestPerSecondForPolynomial } from '../../src/lib/Helpers';
+import { coefficientsToString, getInterestPerSecondForDoubleExponent } from '../../src/lib/Helpers';
 
 let solo: Solo;
 let owner: address;
@@ -17,10 +17,10 @@ const par = new BigNumber(10000);
 const negPar = par.times(-1);
 const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
-const defaultCoefficients = [0, 10, 10, 0, 0, 80];
+const defaultCoefficients = [20, 20, 20, 20, 20];
 const defaultMaxAPR = new BigNumber('1.00');
 
-describe('PolynomialInterestSetter', () => {
+describe('DoubleExponentInterestSetter', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
@@ -36,7 +36,7 @@ describe('PolynomialInterestSetter', () => {
     await solo.admin.addMarket(
       solo.testing.tokenA.getAddress(),
       solo.testing.priceOracle.getAddress(),
-      solo.testing.polynomialInterestSetter.getAddress(),
+      solo.testing.doubleExponentInterestSetter.getAddress(),
       zero,
       zero,
       { from: admin },
@@ -90,7 +90,7 @@ describe('PolynomialInterestSetter', () => {
     ]);
     const rate = await solo.getters.getMarketInterestRate(zero);
     expect(rate).toEqual(
-      getInterestPerSecondForPolynomial(
+      getInterestPerSecondForDoubleExponent(
         defaultMaxAPR,
         defaultCoefficients,
         { totalBorrowed: par.div(2), totalSupply: par },
@@ -99,12 +99,12 @@ describe('PolynomialInterestSetter', () => {
   });
 
   it('Succeeds for 100% (javscript)', async () => {
-    const res1 = getInterestPerSecondForPolynomial(
+    const res1 = getInterestPerSecondForDoubleExponent(
       defaultMaxAPR,
       defaultCoefficients,
       { totalBorrowed: par, totalSupply: par },
     );
-    const res2 = getInterestPerSecondForPolynomial(
+    const res2 = getInterestPerSecondForDoubleExponent(
       defaultMaxAPR,
       defaultCoefficients,
       { totalBorrowed: par.times(2), totalSupply: par },
@@ -115,7 +115,7 @@ describe('PolynomialInterestSetter', () => {
 
   it('Succeeds for gas', async () => {
     const baseGasCost = 21000;
-    const getRateFunction = solo.contracts.testPolynomialInterestSetter.methods.getInterestRate;
+    const getRateFunction = solo.contracts.testDoubleExponentInterestSetter.methods.getInterestRate;
     const totalCosts = await Promise.all([
       await getRateFunction(ADDRESSES.ZERO, '0', '0').estimateGas(),
       await getRateFunction(ADDRESSES.ZERO, '1', '1').estimateGas(),
@@ -123,6 +123,58 @@ describe('PolynomialInterestSetter', () => {
     ]);
     const costs = totalCosts.map(x => x - baseGasCost);
     console.log(`\tInterest calculation gas used: ${costs[0]}, ${costs[1]}, ${costs[2]}`);
+  });
+
+  it('Succeeds for some hardcoded numbers (1)', async () => {
+    await setCoefficients(new BigNumber('1e18'), [20, 20, 20, 20, 20]);
+
+    // borrowWei, supplyWei, result
+    const testCases = [
+      [0, 0, '0'],
+      [0, 100, '0'],
+      [100, 100, '31709791983'],
+      [101, 100, '31709791983'],
+      [25, 100, '8348690441'],
+      [50, 100, '11519572869'],
+      [75, 100, '17307326008'],
+    ];
+
+    for (let i = 0; i < testCases.length; i += 1) {
+      const borrowWei = new BigNumber(testCases[i][0]);
+      const supplywei = new BigNumber(testCases[i][1]);
+      const result = await solo.testing.doubleExponentInterestSetter.getInterestRate(
+        borrowWei,
+        supplywei,
+      );
+      const expectedResult = new BigNumber(testCases[i][2]);
+      expect(result).toEqual(expectedResult);
+    }
+  });
+
+  it('Succeeds for some hardcoded numbers (2)', async () => {
+    await setCoefficients(new BigNumber('1e18'), [0, 25, 25, 0, 25, 25]);
+
+    // borrowWei, supplyWei, result
+    const testCases = [
+      [0, 0, '0'],
+      [0, 100, '0'],
+      [100, 100, '31709791983'],
+      [101, 100, '31709791983'],
+      [25, 100, '2477448463'],
+      [50, 100, '5976673553'],
+      [75, 100, '11277869029'],
+    ];
+
+    for (let i = 0; i < testCases.length; i += 1) {
+      const borrowWei = new BigNumber(testCases[i][0]);
+      const supplywei = new BigNumber(testCases[i][1]);
+      const result = await solo.testing.doubleExponentInterestSetter.getInterestRate(
+        borrowWei,
+        supplywei,
+      );
+      const expectedResult = new BigNumber(testCases[i][2]);
+      expect(result).toEqual(expectedResult);
+    }
   });
 
   it('Succeeds for bunch of utilization numbers', async () => {
@@ -134,7 +186,7 @@ describe('PolynomialInterestSetter', () => {
       ]);
       const rate = await solo.getters.getMarketInterestRate(zero);
       expect(rate).toEqual(
-        getInterestPerSecondForPolynomial(
+        getInterestPerSecondForDoubleExponent(
           defaultMaxAPR,
           defaultCoefficients,
           {
@@ -164,27 +216,27 @@ describe('PolynomialInterestSetter', () => {
 
   it('Succeeds for setting/getting maxAPR', async () => {
     const maxAPR1 =
-      await solo.contracts.testPolynomialInterestSetter.methods.getMaxAPR().call();
+      await solo.contracts.testDoubleExponentInterestSetter.methods.getMaxAPR().call();
     expect(maxAPR1).toEqual(new BigNumber('1e18').toFixed(0));
 
     const newAPR = new BigNumber('1.5e18').toFixed(0);
     expect(newAPR).not.toEqual(maxAPR1);
 
     await solo.contracts.callContractFunction(
-      solo.contracts.testPolynomialInterestSetter.methods.setParameters({
+      solo.contracts.testDoubleExponentInterestSetter.methods.setParameters({
         maxAPR: newAPR,
         coefficients: '100',
       }),
     );
 
     const maxAPR2 =
-      await solo.contracts.testPolynomialInterestSetter.methods.getMaxAPR().call();
+      await solo.contracts.testDoubleExponentInterestSetter.methods.getMaxAPR().call();
     expect(maxAPR2).toEqual(newAPR);
   });
 
   it("Fails to deploy contracts whose coefficients don't add to 100", async () => {
     await expectThrow(
-      solo.contracts.testPolynomialInterestSetter.methods.createNew({
+      solo.contracts.testDoubleExponentInterestSetter.methods.createNew({
         maxAPR: '0',
         coefficients: coefficientsToString([10, 0, 10]),
       }).call(),
@@ -199,7 +251,7 @@ async function expectCoefficients(
   expected: number[],
 ) {
   const coefficients =
-    await solo.contracts.testPolynomialInterestSetter.methods.getCoefficients().call();
+    await solo.contracts.testDoubleExponentInterestSetter.methods.getCoefficients().call();
   expect(coefficients).toEqual(expected.map(x => x.toString()));
 }
 
@@ -209,7 +261,7 @@ async function setCoefficients(
 ) {
   const coefficientsString = coefficientsToString(coefficients);
   await solo.contracts.callContractFunction(
-    solo.contracts.testPolynomialInterestSetter.methods.setParameters({
+    solo.contracts.testDoubleExponentInterestSetter.methods.setParameters({
       maxAPR: maximumRate.toFixed(0),
       coefficients: coefficientsString,
     }),
