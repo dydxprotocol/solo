@@ -131,6 +131,7 @@ export class Api {
       headers: {
         authorization: `Bearer ${signature}`,
       },
+      timeout: this.timeout,
     });
   }
 
@@ -174,6 +175,7 @@ export class Api {
       uri: `${this.endpoint}/v1/dex/orders${query.length > 0 ? '?' : ''}${query}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 
@@ -186,6 +188,7 @@ export class Api {
       uri: `${this.endpoint}/v1/dex/orders/${id}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 
@@ -225,6 +228,7 @@ export class Api {
       uri: `${this.endpoint}/v1/dex/fills?${query}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 
@@ -264,6 +268,7 @@ export class Api {
       uri: `${this.endpoint}/v1/dex/trades?${query}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 
@@ -279,6 +284,7 @@ export class Api {
       uri: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 
@@ -314,6 +320,7 @@ export class Api {
       uri: `${this.endpoint}/v1/orders/${pair}?${query}`,
       method: 'GET',
       json: true,
+      timeout: this.timeout,
     });
   }
 }
