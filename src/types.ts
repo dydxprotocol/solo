@@ -73,6 +73,7 @@ export interface SoloOptions {
   defaultGasPrice?: number | string;
   accounts?: EthereumAccount[];
   apiEndpoint?: string;
+  apiTimeout?: number;
   ethereumNodeTimeout?: number;
 }
 
