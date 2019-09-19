@@ -92,7 +92,7 @@ export class Solo {
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(this.contracts, this.limitOrders, networkId);
-    this.api = new Api(this.limitOrders, options.apiEndpoint);
+    this.api = new Api(this.limitOrders, options.apiEndpoint, options.apiTimeout);
     this.standardActions = new StandardActions(this.operation, this.contracts);
 
     if (options.accounts) {

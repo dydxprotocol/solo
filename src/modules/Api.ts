@@ -1,7 +1,6 @@
 import request from 'request-promise-native';
 import BigNumber from 'bignumber.js';
 import queryString from 'query-string';
-import { omit, isUndefined } from 'lodash';
 import {
   LimitOrder,
   address,
@@ -19,17 +18,21 @@ const FOUR_WEEKS_IN_SECONDS = 60 * 60 * 24 * 28;
 const TAKER_ACCOUNT_OWNER = '0xf809e07870dca762B9536d61A4fBEF1a17178092';
 const TAKER_ACCOUNT_NUMBER = new BigNumber(0);
 const DEFAULT_API_ENDPOINT = 'https://api.dydx.exchange';
+const DEFAULT_API_TIMEOUT = 10000;
 
 export class Api {
   private endpoint: String;
   private limitOrders: LimitOrders;
+  private timeout: number;
 
   constructor(
     limitOrders: LimitOrders,
     endpoint: string = DEFAULT_API_ENDPOINT,
+    timeout: number = DEFAULT_API_TIMEOUT,
   ) {
     this.endpoint = endpoint;
     this.limitOrders = limitOrders;
+    this.timeout = timeout;
   }
 
   public async placeOrder({
@@ -89,17 +92,22 @@ export class Api {
       expiration: order.expiration.toFixed(0),
     };
 
-    const body = {
-      fillOrKill,
-      clientId,
+    const body: any = {
       order: jsonOrder,
     };
+    if (clientId) {
+      body.clientId = clientId;
+    }
+    if (fillOrKill) {
+      body.fillOrKill = fillOrKill;
+    }
 
     return request({
-      body: omit(body, isUndefined),
+      body,
       uri: `${this.endpoint}/v1/dex/orders`,
       method: 'POST',
       json: true,
+      timeout: this.timeout,
     });
   }
 
