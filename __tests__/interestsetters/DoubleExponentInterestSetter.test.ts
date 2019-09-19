@@ -125,7 +125,7 @@ describe('DoubleExponentInterestSetter', () => {
     console.log(`\tInterest calculation gas used: ${costs[0]}, ${costs[1]}, ${costs[2]}`);
   });
 
-  it('Succeeds for some hardcoded numbers', async () => {
+  it('Succeeds for some hardcoded numbers (1)', async () => {
     await setCoefficients(new BigNumber('1e18'), [20, 20, 20, 20, 20]);
 
     // borrowWei, supplyWei, result
@@ -137,6 +137,32 @@ describe('DoubleExponentInterestSetter', () => {
       [25, 100, '8348690441'],
       [50, 100, '11519572869'],
       [75, 100, '17307326008'],
+    ];
+
+    for (let i = 0; i < testCases.length; i += 1) {
+      const borrowWei = new BigNumber(testCases[i][0]);
+      const supplywei = new BigNumber(testCases[i][1]);
+      const result = await solo.testing.doubleExponentInterestSetter.getInterestRate(
+        borrowWei,
+        supplywei,
+      );
+      const expectedResult = new BigNumber(testCases[i][2]);
+      expect(result).toEqual(expectedResult);
+    }
+  });
+
+  it('Succeeds for some hardcoded numbers (2)', async () => {
+    await setCoefficients(new BigNumber('1e18'), [0, 25, 25, 0, 25, 25]);
+
+    // borrowWei, supplyWei, result
+    const testCases = [
+      [0, 0, '0'],
+      [0, 100, '0'],
+      [100, 100, '31709791983'],
+      [101, 100, '31709791983'],
+      [25, 100, '2477448463'],
+      [50, 100, '5976673553'],
+      [75, 100, '11277869029'],
     ];
 
     for (let i = 0; i < testCases.length; i += 1) {
