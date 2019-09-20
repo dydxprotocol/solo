@@ -533,6 +533,32 @@ export interface ApiTrade extends ApiModel {
   takerOrderId: string;
 }
 
+export interface ApiMarket {
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  name: string;
+  symbol: string;
+  supplyIndex: string;
+  borrowIndex: string;
+  totalSupplyPar: string;
+  totalBorrowPar: string;
+  lastIndexUpdateSeconds: string;
+  oraclePrice: string;
+  collateralRatio: string;
+  marginPremium: string;
+  spreadPremium: string;
+  currencyUuid: string;
+  currency: ApiCurrency;
+  totalSupplyAPR: string;
+  totalBorrowAPR: string;
+  totalSupplyAPY: string;
+  totalBorrowAPY: string;
+  totalSupplyWei: string;
+  totalBorrowWei: string;
+}
+
 interface ApiModel {
   uuid: string;
   createdAt: string;

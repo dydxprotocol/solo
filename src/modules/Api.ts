@@ -11,6 +11,7 @@ import {
   ApiFill,
   ApiTrade,
   OrderType,
+  ApiMarket,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -316,6 +317,15 @@ export class Api {
 
     return request({
       uri: `${this.endpoint}/v1/orders/${pair}?${query}`,
+      method: 'GET',
+      json: true,
+      timeout: this.timeout,
+    });
+  }
+
+  public async getMarkets(): Promise<ApiMarket[]> {
+    return request({
+      uri: `${this.endpoint}/v1/markets`,
       method: 'GET',
       json: true,
       timeout: this.timeout,

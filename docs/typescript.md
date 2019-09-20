@@ -323,6 +323,13 @@ const asks = await solo.api.getAccountBalances({
 });
 ```
 
+#### Get Markets
+Get the markets that exist on the protocol. There is one market per asset (e.g. id 0 = ETH, id 1 = DAI, id 2 = USDC)
+
+```javascript
+const markets = await solo.api.getMarkets();
+```
+
 ### Types
 You can import types from Solo as:
 
