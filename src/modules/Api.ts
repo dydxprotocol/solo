@@ -203,7 +203,7 @@ export class Api {
     limit?: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
-  }): Promise<{ fills: ApiFill }> {
+  }): Promise<{ fills: ApiFill[] }> {
     const queryObj: any = { makerAccountOwner };
 
     if (startingBefore) {
@@ -243,7 +243,7 @@ export class Api {
     limit?: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
-  }): Promise<{ trades: ApiTrade }> {
+  }): Promise<{ trades: ApiTrade[] }> {
     const queryObj: any = { makerAccountOwner };
 
     if (startingBefore) {
@@ -299,7 +299,7 @@ export class Api {
     minSize?: Integer | string,
     limit?: number,
     offset?: number,
-  }): Promise<ApiOrder[]> {
+  }): Promise<{ orders: ApiOrder[] }> {
     const queryObj: any = {};
 
     queryObj.orderType = orderType ? orderType : OrderType.DYDX;
@@ -323,7 +323,7 @@ export class Api {
     });
   }
 
-  public async getMarkets(): Promise<ApiMarket[]> {
+  public async getMarkets(): Promise<{ markets: ApiMarket[] }> {
     return request({
       uri: `${this.endpoint}/v1/markets`,
       method: 'GET',

@@ -310,7 +310,7 @@ const account = await solo.api.getAccountBalances({
 
 #### Get Orderbook
 ```javascript
-const bids = await solo.api.getAccountBalances({
+const { orders: bids } = await solo.api.getOrderbook({
   pair: 'DAI-WETH',
   orderType: OrderType.DYDX, // OPTIONAL: defaults to OrderType.DYDX
   minSize: new BigNumber('1e18'), // OPTIONAL
@@ -318,7 +318,7 @@ const bids = await solo.api.getAccountBalances({
   offset: 40, // OPTIONAL
 });
 
-const asks = await solo.api.getAccountBalances({
+const { orders: asks } = await solo.api.getOrderbook({
   pair: 'WETH-DAI',
 });
 ```
@@ -327,7 +327,7 @@ const asks = await solo.api.getAccountBalances({
 Get the markets that exist on the protocol. There is one market per asset (e.g. id 0 = ETH, id 1 = DAI, id 2 = USDC)
 
 ```javascript
-const markets = await solo.api.getMarkets();
+const { markets } = await solo.api.getMarkets();
 ```
 
 ### Types
