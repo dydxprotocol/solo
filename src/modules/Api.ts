@@ -98,9 +98,7 @@ export class Api {
     if (clientId) {
       body.clientId = clientId;
     }
-    if (fillOrKill) {
-      body.fillOrKill = fillOrKill;
-    }
+    body.fillOrKill = !!fillOrKill;
 
     return request({
       body,
