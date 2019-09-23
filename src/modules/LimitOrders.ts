@@ -175,7 +175,7 @@ export class LimitOrders {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
-      case SigningMethod.Compatability:
+      case SigningMethod.Compatibility:
         const orderHash = this.getOrderHash(order);
         const rawSignature = await this.web3.eth.sign(orderHash, order.makerAccountOwner);
         const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
@@ -232,7 +232,7 @@ export class LimitOrders {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
-      case SigningMethod.Compatability:
+      case SigningMethod.Compatibility:
         const cancelHash = this.orderHashToCancelOrderHash(orderHash);
         const rawSignature = await this.web3.eth.sign(cancelHash, signer);
         const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
