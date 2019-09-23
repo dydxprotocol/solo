@@ -55,10 +55,11 @@ export enum ProxyType {
 }
 
 export enum SigningMethod {
-  UnsafeHash = 'UnsafeHash', // raw hash signed
-  Hash = 'Hash',             // hash prepended according to EIP-191
-  TypedData = 'TypedData',   // order hashed according to EIP-712
-  MetaMask = 'MetaMask',     // order hashed according to EIP-712 (MetaMask-only)
+  Compatability = 'Compatability',   // picks intelligently between UnsafeHash and Hash
+  UnsafeHash = 'UnsafeHash',         // raw hash signed
+  Hash = 'Hash',                     // hash prepended according to EIP-191
+  TypedData = 'TypedData',           // order hashed according to EIP-712
+  MetaMask = 'MetaMask',             // order hashed according to EIP-712 (MetaMask-only)
   MetaMaskLatest = 'MetaMaskLatest', // ... according to latest version of EIP-712 (MetaMask-only)
   CoinbaseWallet = 'CoinbaseWallet', // ... according to latest version of EIP-712 (CoinbaseWallet)
 }
