@@ -288,6 +288,7 @@ export class SignedOperations {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
+      case SigningMethod.Compatability:
         const cancelHash = this.operationHashToCancelOperationHash(operationHash);
         const rawSignature = await this.web3.eth.sign(cancelHash, signer);
         const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
