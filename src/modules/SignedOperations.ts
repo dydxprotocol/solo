@@ -230,12 +230,21 @@ export class SignedOperations {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
+      case SigningMethod.Compatability:
         const hash = this.getOperationHash(operation);
-        const signature = await this.web3.eth.sign(hash, operation.signer);
-        const sigType = (signingMethod === SigningMethod.UnsafeHash)
-          ? SIGNATURE_TYPES.NO_PREPEND
-          : SIGNATURE_TYPES.DECIMAL;
-        return createTypedSignature(signature, sigType);
+        const rawSignature = await this.web3.eth.sign(hash, operation.signer);
+        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        if (signingMethod === SigningMethod.Hash) {
+          return hashSig;
+        }
+        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        if (signingMethod === SigningMethod.UnsafeHash) {
+          return unsafeHashSig;
+        }
+        if (this.operationByHashHasValidSignature(hash, unsafeHashSig, operation.signer)) {
+          return unsafeHashSig;
+        }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
@@ -278,12 +287,21 @@ export class SignedOperations {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
+      case SigningMethod.Compatability:
         const cancelHash = this.operationHashToCancelOperationHash(operationHash);
-        const signature = await this.web3.eth.sign(cancelHash, signer);
-        const sigType = (signingMethod === SigningMethod.UnsafeHash)
-          ? SIGNATURE_TYPES.NO_PREPEND
-          : SIGNATURE_TYPES.DECIMAL;
-        return createTypedSignature(signature, sigType);
+        const rawSignature = await this.web3.eth.sign(cancelHash, signer);
+        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        if (signingMethod === SigningMethod.Hash) {
+          return hashSig;
+        }
+        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        if (signingMethod === SigningMethod.UnsafeHash) {
+          return unsafeHashSig;
+        }
+        if (this.cancelOperationByHashHasValidSignature(operationHash, unsafeHashSig, signer)) {
+          return unsafeHashSig;
+        }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
