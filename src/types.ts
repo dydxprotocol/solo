@@ -55,7 +55,7 @@ export enum ProxyType {
 }
 
 export enum SigningMethod {
-  Compatability = 'Compatability',   // picks intelligently between UnsafeHash and Hash
+  Compatibility = 'Compatibility',   // picks intelligently between UnsafeHash and Hash
   UnsafeHash = 'UnsafeHash',         // raw hash signed
   Hash = 'Hash',                     // hash prepended according to EIP-191
   TypedData = 'TypedData',           // order hashed according to EIP-712
