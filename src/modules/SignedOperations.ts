@@ -242,10 +242,9 @@ export class SignedOperations {
           return unsafeHashSig;
         }
         if (this.operationByHashHasValidSignature(hash, unsafeHashSig, operation.signer)) {
-          return unsafeHashSig
-        } else {
-          return hashSig;
+          return unsafeHashSig;
         }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
@@ -300,10 +299,9 @@ export class SignedOperations {
           return unsafeHashSig;
         }
         if (this.cancelOperationByHashHasValidSignature(operationHash, unsafeHashSig, signer)) {
-          return unsafeHashSig
-        } else {
-          return hashSig;
+          return unsafeHashSig;
         }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:

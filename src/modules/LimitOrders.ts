@@ -187,10 +187,9 @@ export class LimitOrders {
           return unsafeHashSig;
         }
         if (this.orderByHashHasValidSignature(orderHash, unsafeHashSig, order.makerAccountOwner)) {
-          return unsafeHashSig
-        } else {
-          return hashSig;
+          return unsafeHashSig;
         }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
@@ -246,9 +245,8 @@ export class LimitOrders {
         }
         if (this.cancelOrderByHashHasValidSignature(orderHash, unsafeHashSig, signer)) {
           return unsafeHashSig;
-        } else {
-          return hashSig;
         }
+        return hashSig;
 
       case SigningMethod.TypedData:
       case SigningMethod.MetaMask:
