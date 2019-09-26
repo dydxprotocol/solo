@@ -52,7 +52,7 @@ export function getInterestPerSecond(
   coefficients: number[],
   totals: { totalBorrowed: Integer, totalSupply: Integer },
 ): Decimal {
-  return getInterestPerSecondForPolynomial(
+  return getInterestPerSecondForDoubleExponent(
     maxAPR,
     coefficients,
     totals,
