@@ -11,15 +11,19 @@
   </a>
 </div>
 
-A python library for interacting with the Limit Order API.
+dYdX Python API for Limit Orders
 
 The library is currently tested against Python versions 2.7, 3.4, 3.5, and 3.6
 
-## Install
-Install with `pip`:
+## Installation
+`dydx-python` is available on [PyPI](https://pypi.org/project/dydx-python). Install with `pip`:
 ```
 pip install dydx-python
 ```
+
+## Documentation
+
+Check the [dYdX developer docs](https://docs.dydx.exchange/#/api?id=orderbook) for the API endpoint.
 
 ## Example Usage
 
@@ -187,40 +191,6 @@ orders = {
     ]
 }
 '''
-
-# Get one order by id
-order = client.get_order(
-	orderId,
-)
-'''
-order = {
-	order = {
-		"uuid": "6c2d9196-8b18-4749-9c80-3a40135ce325",
-		"id": "0x1bd537b8ccfa22c4d37e33062a5d88996819720b4748be5bd621c38f34d59708",
-		"makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
-		"makerAccountNumber": "0",
-		"status": "OPEN",
-		"price": "0.01",
-		"fillOrKill": false,
-		"rawData": "...",
-		"makerAmount": "10000000000000000000",
-		"unfillableAt": null,
-		"expiresAt": "2019-09-16T21:34:38.000Z",
-		"unfillableReason": null,
-		"takerAmount": "100000000000000000",
-		"makerAmountRemaining": "10000000000000000000",
-		"orderType": "dydexLimitV1",
-		"takerAmountRemaining": "100000000000000000",
-		"createdAt": "2019-08-19T21:34:41.626Z",
-		"pairUuid": "83b69358-a05e-4048-bc11-204da54a8b19",
-		"pair": {
-			"name": "DAI-WETH",
-			...
-		},
-		"fills": []
-	}
-}
-'''
 ```
 
 #### Historical Fills
@@ -284,6 +254,40 @@ fills = {
         }
         ...
     ]
+}
+'''
+
+# Get one order by id
+order = client.get_order(
+	orderId,
+)
+'''
+order = {
+	order = {
+		"uuid": "6c2d9196-8b18-4749-9c80-3a40135ce325",
+		"id": "0x1bd537b8ccfa22c4d37e33062a5d88996819720b4748be5bd621c38f34d59708",
+		"makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+		"makerAccountNumber": "0",
+		"status": "OPEN",
+		"price": "0.01",
+		"fillOrKill": false,
+		"rawData": "...",
+		"makerAmount": "10000000000000000000",
+		"unfillableAt": null,
+		"expiresAt": "2019-09-16T21:34:38.000Z",
+		"unfillableReason": null,
+		"takerAmount": "100000000000000000",
+		"makerAmountRemaining": "10000000000000000000",
+		"orderType": "dydexLimitV1",
+		"takerAmountRemaining": "100000000000000000",
+		"createdAt": "2019-08-19T21:34:41.626Z",
+		"pairUuid": "83b69358-a05e-4048-bc11-204da54a8b19",
+		"pair": {
+			"name": "DAI-WETH",
+			...
+		},
+		"fills": []
+	}
 }
 '''
 ```
@@ -515,44 +519,91 @@ canceled_order = {
 ```python
 # deposit 10 ETH
 # does not require set_allowance
-tx_hash = client.deposit(
+tx_hash = client.eth.deposit(
   market=consts.MARKET_WETH,
   wei=utils.token_to_wei(10, consts.MARKET_WETH)
 )
-receipt = client.get_receipt(tx_hash)
+receipt = client.eth.get_receipt(tx_hash)
 
 
 # deposit 100 DAI
-tx_hash = client.set_allowance(market=consts.MARKET_DAI) # must only be called once, ever
-receipt = client.get_receipt(tx_hash)
+tx_hash = client.eth.set_allowance(market=consts.MARKET_DAI) # must only be called once, ever
+receipt = client.eth.get_receipt(tx_hash)
 
-tx_hash = client.deposit(
+tx_hash = client.eth.deposit(
   market=consts.MARKET_DAI,
   wei=utils.token_to_wei(100, consts.MARKET_DAI)
 )
-receipt = client.get_receipt(tx_hash)
+receipt = client.eth.get_receipt(tx_hash)
 
 
 # deposit 100 USDC
-tx_hash = client.set_allowance(market=consts.MARKET_USDC) # must only be called once, ever
-receipt = client.get_receipt(tx_hash)
+tx_hash = client.eth.set_allowance(market=consts.MARKET_USDC) # must only be called once, ever
+receipt = client.eth.get_receipt(tx_hash)
 
-tx_hash = client.deposit(
+tx_hash = client.eth.deposit(
   market=consts.MARKET_USDC,
   wei=utils.token_to_wei(100, consts.MARKET_USDC)
 )
-receipt = client.get_receipt(tx_hash)
+receipt = client.eth.get_receipt(tx_hash)
 
 
 # withdraw 50 USDC
-tx_hash = client.withdraw(
+tx_hash = client.eth.withdraw(
   market=consts.MARKET_USDC,
   wei=utils.token_to_wei(50, consts.MARKET_USDC)
 )
-receipt = client.get_receipt(tx_hash)
+receipt = client.eth.get_receipt(tx_hash)
 
 
 # withdraw all DAI (including interest)
-tx_hash = client.withdraw_to_zero(market=consts.MARKET_DAI)
-receipt = client.get_receipt(tx_hash)
+tx_hash = client.eth.withdraw_to_zero(market=consts.MARKET_DAI)
+receipt = client.eth.get_receipt(tx_hash)
+```
+
+### Ethereum Getters
+
+Getting information directly from the blockchain by querying a node
+
+```python
+# get the USD value of one atomic unit of DAI
+dai_price = client.eth.get_oracle_price(consts.MARKET_DAI)
+
+# get dYdX balances
+balances = client.eth.get_my_balances()
+'''
+balances = [
+  -91971743707894,
+  3741715702031854553560,
+  2613206278
+]
+'''
+
+# get Wallet balances
+balance = client.eth.get_my_wallet_balance(consts.MARKET_DAI)
+'''
+balance = 1000000000000000000
+'''
+
+# get dYdX account collateralization
+collateralization = client.eth.get_my_collateralization()
+'''
+collateralization = 2.5 or float('inf')
+'''
+
+# collateralization must remain above the minimum to prevent liquidation
+assert(collateralization > consts.MINIMUM_COLLATERALIZATION)
+'''
+consts.MINIMUM_COLLATERALIZATION = 1.15
+'''
+```
+
+## Testing
+```
+# Install the requirements
+pip install -r requirements.txt
+
+# Run the tests
+docker-compose up
+tox
 ```
