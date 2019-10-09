@@ -110,24 +110,29 @@ export class Logs {
   }
 
   private parseLog(log: Log) {
-    switch (log.address) {
-      case this.contracts.soloMargin.options.address:
-      case this.contracts.testSoloMargin.options.address: {
+    let testSoloMarginAddress = this.contracts.testSoloMargin.options.address;
+    if (testSoloMarginAddress) {
+      testSoloMarginAddress = testSoloMarginAddress.toLowerCase();
+    }
+
+    switch (log.address.toLowerCase()) {
+      case this.contracts.soloMargin.options.address.toLowerCase():
+      case testSoloMarginAddress: {
         return this.parseLogWithContract(this.contracts.soloMargin, log);
       }
-      case this.contracts.expiry.options.address: {
+      case this.contracts.expiry.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiry, log);
       }
-      case this.contracts.expiryV2.options.address: {
+      case this.contracts.expiryV2.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiryV2, log);
       }
-      case this.contracts.refunder.options.address: {
+      case this.contracts.refunder.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.refunder, log);
       }
-      case this.contracts.limitOrders.options.address: {
+      case this.contracts.limitOrders.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.limitOrders, log);
       }
-      case this.contracts.signedOperationProxy.options.address: {
+      case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.signedOperationProxy, log);
       }
     }
