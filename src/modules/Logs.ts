@@ -1,5 +1,4 @@
 import { Log, EventLog } from 'web3/types';
-import { result } from 'lodash';
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
@@ -111,24 +110,29 @@ export class Logs {
   }
 
   private parseLog(log: Log) {
+    let testSoloMarginAddress = this.contracts.testSoloMargin.options.address;
+    if (testSoloMarginAddress) {
+      testSoloMarginAddress = testSoloMarginAddress.toLowerCase();
+    }
+
     switch (log.address.toLowerCase()) {
-      case result(this.contracts.soloMargin.options.address, 'toLowerCase'):
-      case result(this.contracts.testSoloMargin.options.address, 'toLowerCase'): {
+      case this.contracts.soloMargin.options.address.toLowerCase():
+      case testSoloMarginAddress: {
         return this.parseLogWithContract(this.contracts.soloMargin, log);
       }
-      case result(this.contracts.expiry.options.address, 'toLowerCase'): {
+      case this.contracts.expiry.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiry, log);
       }
-      case result(this.contracts.expiryV2.options.address, 'toLowerCase'): {
+      case this.contracts.expiryV2.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiryV2, log);
       }
-      case result(this.contracts.refunder.options.address, 'toLowerCase'): {
+      case this.contracts.refunder.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.refunder, log);
       }
-      case result(this.contracts.limitOrders.options.address, 'toLowerCase'): {
+      case this.contracts.limitOrders.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.limitOrders, log);
       }
-      case result(this.contracts.signedOperationProxy.options.address, 'toLowerCase'): {
+      case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.signedOperationProxy, log);
       }
     }
