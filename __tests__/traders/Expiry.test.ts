@@ -96,26 +96,14 @@ describe('Expiry', () => {
       const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
       expect(expiry).toEqual(newTime);
 
-      const logs = solo.logs.parseLogs(txResult);
-      expect(logs.length).toEqual(6);
-
-      const expirySetLog = logs[4];
-      expect(expirySetLog.name).toEqual('ExpirySet');
-      expect(expirySetLog.args.owner).toEqual(owner2);
-      expect(expirySetLog.args.number).toEqual(accountNumber2);
-      expect(expirySetLog.args.marketId).toEqual(owedMarket);
-      expect(expirySetLog.args.time).toEqual(newTime);
-
       console.log(`\tSet expiry gas used: ${txResult.gasUsed}`);
     });
 
-    it('Skips logs when necessary', async () => {
+    it('Does not parse logs', async () => {
       const newTime = defaultTime.plus(1000);
       const txResult = await setExpiry(newTime);
-      const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
-      const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
+      const noLogs = solo.logs.parseLogs(txResult);
       expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
-      expect(logs.filter((e: any) => e.name === 'ExpirySet').length).not.toEqual(0);
     });
 
     it('Doesnt set expiry for non-negative balances', async () => {
@@ -193,16 +181,9 @@ describe('Expiry', () => {
 
     it('Succeeds in expiring and setting expiry back to zero', async () => {
       await solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par.times(premium));
-      const txResult = await expectExpireOkay(heldGlob);
-
-      const logs = solo.logs.parseLogs(txResult);
-
-      const expiryLog = logs[4];
-      expect(expiryLog.name).toEqual('ExpirySet');
-      expect(expiryLog.args.owner).toEqual(owner2);
-      expect(expiryLog.args.number).toEqual(accountNumber2);
-      expect(expiryLog.args.marketId).toEqual(owedMarket);
-      expect(expiryLog.args.time).toEqual(zero);
+      await expectExpireOkay(heldGlob);
+      const expiry = await solo.getters.getExpiry(owner2, accountNumber2, heldMarket);
+      expect(expiry).toEqual(zero);
     });
 
     it('Succeeds in expiring part of a position', async () => {
@@ -385,15 +366,8 @@ describe('Expiry', () => {
   describe('expire account (owedAmount)', () => {
     it('Succeeds in expiring', async () => {
       const txResult = await expectExpireOkay({});
-
-      const logs = solo.logs.parseLogs(txResult);
-
-      const expiryLog = logs[4];
-      expect(expiryLog.name).toEqual('ExpirySet');
-      expect(expiryLog.args.owner).toEqual(owner2);
-      expect(expiryLog.args.number).toEqual(accountNumber2);
-      expect(expiryLog.args.marketId).toEqual(owedMarket);
-      expect(expiryLog.args.time).toEqual(zero);
+      const expiry = await solo.getters.getExpiry(owner2, accountNumber2, owedMarket);
+      expect(expiry).toEqual(zero);
 
       const [
         held1,
