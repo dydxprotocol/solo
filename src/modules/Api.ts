@@ -140,12 +140,14 @@ export class Api {
     pairs,
     makerAccountOwner,
     makerAccountNumber,
+    status,
   }: {
     startingBefore?: Date,
     limit: number,
     pairs?: string[],
     makerAccountNumber?: Integer | string,
     makerAccountOwner?: address,
+    status?: string[],
   }): Promise<{ orders: ApiOrder[] }> {
     const queryObj: any = {};
 
@@ -157,6 +159,9 @@ export class Api {
     }
     if (pairs) {
       queryObj.pairs = pairs.join();
+    }
+    if (status) {
+      queryObj.status = status.join();
     }
     if (makerAccountOwner) {
       queryObj.makerAccountOwner = makerAccountOwner;
