@@ -12,6 +12,7 @@ import {
   ApiTrade,
   OrderType,
   ApiMarket,
+  SignedLimitOrder,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -57,6 +58,42 @@ export class Api {
     fillOrKill: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
+    const order: SignedLimitOrder = await this.createOrder({
+      makerAccountOwner,
+      makerMarket,
+      takerMarket,
+      makerAmount,
+      takerAmount,
+      makerAccountNumber,
+      expiration,
+    });
+    return this.submitOrder({
+      order,
+      fillOrKill,
+      clientId,
+    });
+  }
+
+  /**
+   * Creates, but does not place a signed order
+   */
+  public async createOrder({
+    makerAccountOwner,
+    makerMarket,
+    takerMarket,
+    makerAmount,
+    takerAmount,
+    makerAccountNumber = new BigNumber(0),
+    expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
+  }: {
+    makerAccountOwner: address,
+    makerAccountNumber: Integer | string,
+    makerMarket: Integer | string,
+    takerMarket: Integer | string,
+    makerAmount: Integer | string,
+    takerAmount: Integer | string,
+    expiration: Integer | string,
+  }): Promise<SignedLimitOrder> {
     const realExpiration = new BigNumber(expiration).eq(0) ?
       new BigNumber(0)
       : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
@@ -79,8 +116,26 @@ export class Api {
       SigningMethod.Hash,
     );
 
-    const jsonOrder = {
+    return {
+      ...order,
       typedSignature,
+    };
+  }
+
+  /**
+   * Submits an already signed order
+   */
+  public async submitOrder({
+    order,
+    fillOrKill = false,
+    clientId,
+  }: {
+    order: SignedLimitOrder,
+    fillOrKill: boolean,
+    clientId?: string,
+  }): Promise<{ order: ApiOrder }> {
+    const jsonOrder = {
+      typedSignature: order.typedSignature,
       makerAccountOwner: order.makerAccountOwner,
       makerAccountNumber: order.makerAccountNumber.toFixed(0),
       takerAccountOwner: order.takerAccountOwner,
