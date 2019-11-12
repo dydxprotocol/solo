@@ -206,7 +206,7 @@ describe('Refunder', () => {
       );
     });
 
-    it('Fails for non-giver', async () => {
+    it('Fails for non-approved giver', async () => {
       await expectThrow(
         solo.operation.initiate().refund({
           ...defaultGlob,
@@ -216,7 +216,7 @@ describe('Refunder', () => {
       );
     });
 
-    it('Fails for non-giver', async () => {
+    it('Fails for non-solo caller', async () => {
       await expectThrow(
         solo.contracts.callContractFunction(
           solo.contracts.refunder.methods.getTradeCost(

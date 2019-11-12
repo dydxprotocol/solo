@@ -28,6 +28,7 @@ const SoloMargin = artifacts.require('SoloMargin');
 const Expiry = artifacts.require('Expiry');
 const ExpiryV2 = artifacts.require('ExpiryV2');
 const Refunder = artifacts.require('Refunder');
+const DaiMigrator = artifacts.require('DaiMigrator');
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
 const LimitOrders = artifacts.require('LimitOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
@@ -45,6 +46,7 @@ const migration = async (deployer, network) => {
       deployedExpiry,
       deployedExpiryV2,
       deployedRefunder,
+      deployedDaiMigrator,
       deployedLimitOrders,
       deployedSignedOperationProxy,
     ] = await Promise.all([
@@ -53,6 +55,7 @@ const migration = async (deployer, network) => {
       Expiry.deployed(),
       ExpiryV2.deployed(),
       Refunder.deployed(),
+      DaiMigrator.deployed(),
       LimitOrders.deployed(),
       SignedOperationProxy.deployed(),
     ]);
@@ -63,6 +66,7 @@ const migration = async (deployer, network) => {
       deployedExpiry.transferOwnership(partiallyDelayedMultisig),
       deployedExpiryV2.transferOwnership(partiallyDelayedMultisig),
       deployedRefunder.transferOwnership(partiallyDelayedMultisig),
+      deployedDaiMigrator.transferOwnership(partiallyDelayedMultisig),
       deployedLimitOrders.transferOwnership(partiallyDelayedMultisig),
       deployedSignedOperationProxy.transferOwnership(partiallyDelayedMultisig),
     ]);

@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { Solo } from '../../src/Solo';
 import { address } from '../../src/types';
 import { mineAvgBlock } from './EVM';
+import { ADDRESSES } from '../../src/lib/Constants';
 
 export async function setupMarkets(
   solo: Solo,
@@ -27,12 +28,17 @@ export async function setupMarkets(
       solo.testing.tokenC.getAddress(),
       price,
     ),
+    solo.testing.priceOracle.setPrice(
+      ADDRESSES.ZERO,
+      price,
+    ),
   ]);
 
   const tokens = [
     solo.testing.tokenA.getAddress(),
     solo.testing.tokenB.getAddress(),
     solo.testing.tokenC.getAddress(),
+    ADDRESSES.ZERO,
   ];
 
   for (let i = 0; i < numMarkets && i < tokens.length; i += 1) {
