@@ -513,6 +513,7 @@ export interface ApiAccount extends ApiModel {
       par: string;
       wei: string;
       expiresAt?: string;
+      expiryAddress?: string;
     };
   };
 }
