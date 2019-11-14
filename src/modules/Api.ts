@@ -1,4 +1,4 @@
-import request from 'request-promise-native';
+import { default as axios } from 'axios';
 import BigNumber from 'bignumber.js';
 import queryString from 'query-string';
 import {
@@ -148,21 +148,22 @@ export class Api {
       expiration: order.expiration.toFixed(0),
     };
 
-    const body: any = {
+    const data: any = {
       order: jsonOrder,
     };
     if (clientId) {
-      body.clientId = clientId;
+      data.clientId = clientId;
     }
-    body.fillOrKill = !!fillOrKill;
+    data.fillOrKill = !!fillOrKill;
 
-    return request({
-      body,
-      uri: `${this.endpoint}/v1/dex/orders`,
-      method: 'POST',
-      json: true,
+    const response = await axios({
+      data,
+      method: 'post',
+      url: `${this.endpoint}/v1/dex/orders`,
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async cancelOrder({
@@ -178,15 +179,16 @@ export class Api {
       SigningMethod.Hash,
     );
 
-    return request({
-      uri: `${this.endpoint}/v1/dex/orders/${orderId}`,
-      method: 'DELETE',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/dex/orders/${orderId}`,
+      method: 'delete',
       headers: {
         authorization: `Bearer ${signature}`,
       },
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getOrders({
@@ -230,12 +232,13 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj);
 
-    return request({
-      uri: `${this.endpoint}/v1/dex/orders${query.length > 0 ? '?' : ''}${query}`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/dex/orders${query.length > 0 ? '?' : ''}${query}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getOrder({
@@ -243,12 +246,13 @@ export class Api {
   }: {
     id: string,
   }): Promise<{ order: ApiOrder }> {
-    return request({
-      uri: `${this.endpoint}/v1/dex/orders/${id}`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/dex/orders/${id}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getFills({
@@ -283,12 +287,13 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj);
 
-    return request({
-      uri: `${this.endpoint}/v1/dex/fills?${query}`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/dex/fills?${query}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getTrades({
@@ -323,12 +328,13 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj);
 
-    return request({
-      uri: `${this.endpoint}/v1/dex/trades?${query}`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/dex/trades?${query}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getAccountBalances({
@@ -339,12 +345,14 @@ export class Api {
     accountNumber: Integer | string,
   }): Promise<ApiAccount> {
     const numberStr = new BigNumber(accountNumber).toFixed(0);
-    return request({
-      uri: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
-      method: 'GET',
-      json: true,
+
+    const response = await axios({
+      url: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getOrderbook({
@@ -375,21 +383,23 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj);
 
-    return request({
-      uri: `${this.endpoint}/v1/orders/${pair}?${query}`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/orders/${pair}?${query}`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 
   public async getMarkets(): Promise<{ markets: ApiMarket[] }> {
-    return request({
-      uri: `${this.endpoint}/v1/markets`,
-      method: 'GET',
-      json: true,
+    const response = await axios({
+      url: `${this.endpoint}/v1/markets`,
+      method: 'get',
       timeout: this.timeout,
     });
+
+    return response.data;
   }
 }
 
