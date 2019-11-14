@@ -110,15 +110,15 @@ Liquidates an undercollateralized Account. Operates on two Accounts: the liquida
 
 Starting Account Balances:
 
-Liquidating Account (L): +100 DAI
-Undercollateralized Account (U): -1 ETH, +150 DAI
-ETH oracle price: $125
-DAI oracle price: $1
+Liquidating Account (L): +100 DAI\
+Undercollateralized Account (U): -1 ETH, +150 DAI\
+ETH oracle price: $125\
+DAI oracle price: $1\
 Liquidation spread: 5%
 
 The liquidate action causes 1 ETH to be transferred from L -> U, and `1 ETH * (($125/ETH) / ($1/DAI)) * 1.05 = 131.25 DAI` to be transferred from U -> L. After the liquidation the balances will be:
 
-Liquidating Account (L): +231.25 DAI, -1 ETH
+Liquidating Account (L): +231.25 DAI, -1 ETH\
 Undercollateralized Account (U): +18.75 DAI
 
 ### Vaporize
