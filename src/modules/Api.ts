@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { default as axios, AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
 import queryString from 'query-string';
 import {
@@ -163,11 +163,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 201) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async cancelOrder({
@@ -192,11 +188,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getOrders({
@@ -246,11 +238,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getOrder({
@@ -264,11 +252,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getFills({
@@ -309,11 +293,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getTrades({
@@ -354,11 +334,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getAccountBalances({
@@ -376,11 +352,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getOrderbook({
@@ -417,11 +389,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 
   public async getMarkets(): Promise<{ markets: ApiMarket[] }> {
@@ -431,11 +399,7 @@ export class Api {
       timeout: this.timeout,
     });
 
-    if (response.status !== 200) {
-      throw new Error(`API Error Status: ${response.status}`);
-    }
-
-    return response.data;
+    return getResponseData(response);
   }
 }
 
@@ -449,4 +413,12 @@ function generatePseudoRandom256BitNumber(): BigNumber {
   const factor = new BigNumber(10).pow(MAX_DIGITS_IN_UNSIGNED_256_INT - 1);
   const randomNumberScaledTo256Bits = randomNumber.times(factor).integerValue();
   return randomNumberScaledTo256Bits;
+}
+
+function getResponseData(response: AxiosResponse): any {
+  if (response.status !== 200) {
+    throw new Error(`API Error Status: ${response.status}`);
+  }
+
+  return response.data;
 }
