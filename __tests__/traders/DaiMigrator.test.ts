@@ -27,6 +27,8 @@ const userNumber = INTEGERS.ONE;
 const saiMarket = new BigNumber(1);
 const daiMarket = new BigNumber(3);
 let defaultGlob: DaiMigrate;
+const weiString = AmountDenomination.Wei.toString();
+const deltaString = AmountReference.Delta.toString();
 
 describe('DaiMigrator', () => {
   beforeAll(async () => {
@@ -146,6 +148,62 @@ describe('DaiMigrator', () => {
         .commit({ from: migrator });
     });
 
+    it('Succeeds for pos->zero', async () => {
+      const result = await callTradeCost({
+        oldInputParBN: new BigNumber(1),
+        newInputParBN: new BigNumber(0),
+        inputWeiBN: new BigNumber(-1),
+      });
+      expect(result).toEqual({
+        sign: true,
+        denomination: weiString,
+        ref: deltaString,
+        value: '1',
+      });
+    });
+
+    it('Succeeds for pos->less pos', async () => {
+      const result = await callTradeCost({
+        oldInputParBN: new BigNumber(2),
+        newInputParBN: new BigNumber(1),
+        inputWeiBN: new BigNumber(-1),
+      });
+      expect(result).toEqual({
+        sign: true,
+        denomination: weiString,
+        ref: deltaString,
+        value: '1',
+      });
+    });
+
+    it('Succeeds for neg->zero', async () => {
+      const result = await callTradeCost({
+        oldInputParBN: new BigNumber(-1),
+        newInputParBN: new BigNumber(0),
+        inputWeiBN: new BigNumber(1),
+      });
+      expect(result).toEqual({
+        sign: false,
+        denomination: weiString,
+        ref: deltaString,
+        value: '1',
+      });
+    });
+
+    it('Succeeds for neg->less neg', async () => {
+      const result = await callTradeCost({
+        oldInputParBN: new BigNumber(-2),
+        newInputParBN: new BigNumber(-1),
+        inputWeiBN: new BigNumber(1),
+      });
+      expect(result).toEqual({
+        sign: false,
+        denomination: weiString,
+        ref: deltaString,
+        value: '1',
+      });
+    });
+
     it('Fails for pos->neg', async () => {
       await expectThrow(
         callTradeCost({
@@ -248,7 +306,7 @@ async function callTradeCost({
   newInputParBN,
   inputWeiBN,
 }) {
-  return solo.contracts.daiMigrator.methods.getTradeCost(
+  const result = await solo.contracts.daiMigrator.methods.getTradeCost(
     saiMarketBN.toFixed(0),
     daiMarketBN.toFixed(0),
     {
@@ -261,6 +319,12 @@ async function callTradeCost({
     bnToValue(inputWeiBN),
     [],
   ).call();
+  return {
+    sign: result[0],
+    denomination: result[1],
+    ref: result[2],
+    value: result[3],
+  };
 }
 
 function bnToValue(bn: BigNumber) {

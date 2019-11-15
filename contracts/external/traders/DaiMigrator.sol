@@ -109,6 +109,7 @@ contract DaiMigrator is
         bytes memory /* data */
     )
         public
+        /* view */
         returns (Types.AssetAmount memory)
     {
         Require.that(
