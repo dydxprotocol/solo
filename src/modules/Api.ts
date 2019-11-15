@@ -111,20 +111,7 @@ export class Api {
       makerAccountOwner,
       SigningMethod.Hash,
     );
-
-    const jsonOrder = {
-      typedSignature: order.typedSignature,
-      makerAccountOwner: order.makerAccountOwner,
-      makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      takerAccountOwner: order.takerAccountOwner,
-      takerAccountNumber: order.takerAccountNumber.toFixed(0),
-      makerMarket: order.makerMarket.toFixed(0),
-      takerMarket: order.takerMarket.toFixed(0),
-      makerAmount: order.makerAmount.toFixed(0),
-      takerAmount: order.takerAmount.toFixed(0),
-      salt: order.salt.toFixed(0),
-      expiration: order.expiration.toFixed(0),
-    };
+    const jsonOrder = this.jsonifyOrder(order);
 
     const data: any = {
       order: jsonOrder,
@@ -144,6 +131,22 @@ export class Api {
     });
 
     return response.data;
+  }
+
+  private jsonifyOrder(order) {
+    return {
+      typedSignature: order.typedSignature,
+      makerAccountOwner: order.makerAccountOwner,
+      makerAccountNumber: order.makerAccountNumber.toFixed(0),
+      takerAccountOwner: order.takerAccountOwner,
+      takerAccountNumber: order.takerAccountNumber.toFixed(0),
+      makerMarket: order.makerMarket.toFixed(0),
+      takerMarket: order.takerMarket.toFixed(0),
+      makerAmount: order.makerAmount.toFixed(0),
+      takerAmount: order.takerAmount.toFixed(0),
+      salt: order.salt.toFixed(0),
+      expiration: order.expiration.toFixed(0),
+    };
   }
 
   /**
@@ -206,20 +209,8 @@ export class Api {
     fillOrKill: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const jsonOrder = {
-      typedSignature: order.typedSignature,
-      makerAccountOwner: order.makerAccountOwner,
-      makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      takerAccountOwner: order.takerAccountOwner,
-      takerAccountNumber: order.takerAccountNumber.toFixed(0),
-      makerMarket: order.makerMarket.toFixed(0),
-      takerMarket: order.takerMarket.toFixed(0),
-      makerAmount: order.makerAmount.toFixed(0),
-      takerAmount: order.takerAmount.toFixed(0),
-      salt: order.salt.toFixed(0),
-      expiration: order.expiration.toFixed(0),
-    };
 
+    const jsonOrder = this.jsonifyOrder(order);
     const data: any = {
       order: jsonOrder,
     };
