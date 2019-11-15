@@ -201,7 +201,6 @@ Example Request Body:
 Returns:
 `201` if successful
 
-
 ### POST /v1/dex/orders/replace
 
 Description:
@@ -209,11 +208,11 @@ Replace an existing order in the orderbook.
 
 Please Note:
 
-* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
-your request will return `400` and will not be added to the book.
+* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine. The canceled order will also not be canceled until processed
+by our internal matching engine.
 
-* Your request will return `201`, but the order itself will still have a status of `PENDING` until
-it is processed by our internal matching engine.
+* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
 
 Headers:
 ```
@@ -255,10 +254,6 @@ Example Request Body:
 	  },
 };
 ```
-
-Returns:
-`201` if successful
-
 ### DELETE /v1/dex/orders/:hash
 
 Description:
@@ -267,7 +262,7 @@ Cancels an open order by hash.
 Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
 The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
-The response will have a status of 200 as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then 200 will be returned both times. For another example, canceling a fully-filled order will return 200 but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a 200 status does not necessarily mean that the order was canceled.
+The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
 
 Headers:
 ```
