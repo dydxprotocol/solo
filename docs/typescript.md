@@ -238,9 +238,44 @@ const { order } = await solo.api.placeOrder({
 });
 ```
 
+#### Replace Order
+```javascript
+
+const { id } = existingOrder;
+
+// order has type ApiOrder
+const { order } = await solo.api.replaceOrder({
+   // Your address. Account must be loaded onto Solo with private key for signing
+  cancelId: id,
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  makerMarket: MarketId.WETH,
+  takerMarket: MarketId.DAI,
+
+  // denominated in base units of the token. i.e. 1 ETH = 1e18
+  makerAmount: new BigNumber('1e18'),
+
+  // denominated in base units of the token. i.e. 100 DAI = 100e18
+  // (NOTE: USDC has 6 decimals so 100 USDC would be 100e6)
+  takerAmount: new BigNumber('100e18'),
+
+  // OPTIONAL: defaults to 0 (0 is the account number that displays
+  // on trade.dydx.exchange/balances)
+  makerAccountNumber: new BigNumber(0),
+
+  // OPTIONAL: number of seconds until the order expires.
+  // 0 indicates no expiry. Defaults to 28 days
+  expiration: new BigNumber('1000'),
+
+  // OPTIONAL: defaults to false
+  fillOrKill: false,
+
+  // OPTIONAL: defaults to undefined
+  clientId: 'foo',
+});
+```
+
 #### Cancel Order
 ```javascript
-const { id } = existingOrder;
 
 // order has type ApiOrder
 const { order } = await solo.api.cancelOrder({
