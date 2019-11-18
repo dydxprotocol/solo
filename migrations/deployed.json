@@ -198,5 +198,12 @@
             "address": "0x05e63c09CB4449a8f3d3e1642b3Bdf193D1373e0",
             "transactionHash": "0x8a843feec3b8e391c654837332ebd2b24d75f7190d8bf44d00728ef7448726da"
         }
+    },
+    "DaiMigrator": {
+        "1": {
+            "links": {},
+            "address": "0xAbe234e0D2D518bdB1d5a655014de18B1CfFFBEa",
+            "transactionHash": "0xc5151d218ac983a9cfc6ad754564e53478923506b7e8f3511ae0d55d47adb6e8"
+        }
     }
 }

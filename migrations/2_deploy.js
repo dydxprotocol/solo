@@ -63,6 +63,7 @@ const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin')
 const Expiry = artifacts.require('Expiry');
 const ExpiryV2 = artifacts.require('ExpiryV2');
 const Refunder = artifacts.require('Refunder');
+const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
@@ -205,6 +206,10 @@ async function deploySecondLayer(deployer, network) {
       [],
     ),
     deployer.deploy(
+      DaiMigrator,
+      [],
+    ),
+    deployer.deploy(
       LiquidatorProxyV1ForSoloMargin,
       soloMargin.address,
     ),
@@ -235,6 +240,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       Refunder.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      DaiMigrator.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(

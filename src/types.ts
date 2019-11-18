@@ -251,6 +251,12 @@ export interface Refund extends AccountAction {
   wei: Integer;
 }
 
+export interface DaiMigrate extends AccountAction {
+  userAccountOwner: address;
+  userAccountId: Integer;
+  amount: Amount;
+}
+
 export interface AccountActionWithOrder extends AccountAction {
   order: LimitOrder;
 }

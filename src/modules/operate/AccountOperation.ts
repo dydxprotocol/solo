@@ -27,6 +27,7 @@ import {
   SetApprovalForExpiryV2,
   ExpiryV2CallFunctionType,
   Refund,
+  DaiMigrate,
   AccountActionWithOrder,
   Call,
   Amount,
@@ -345,6 +346,22 @@ export class AccountOperation {
       },
       data: [],
       autoTrader: this.contracts.refunder.options.address,
+    });
+  }
+
+  public daiMigrate(migrateArgs: DaiMigrate): AccountOperation {
+    const saiMarket = new BigNumber(1);
+    const daiMarket = new BigNumber(3);
+    return this.trade({
+      primaryAccountOwner: migrateArgs.primaryAccountOwner,
+      primaryAccountId: migrateArgs.primaryAccountId,
+      inputMarketId: saiMarket,
+      outputMarketId: daiMarket,
+      otherAccountOwner: migrateArgs.userAccountOwner,
+      otherAccountId: migrateArgs.userAccountId,
+      amount: migrateArgs.amount,
+      data: [],
+      autoTrader: this.contracts.daiMigrator.options.address,
     });
   }
 
