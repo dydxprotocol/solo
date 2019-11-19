@@ -10,7 +10,6 @@ import {
   ApiAccount,
   ApiFill,
   ApiTrade,
-  OrderType,
   ApiMarket,
   SignedLimitOrder,
 } from '../types';
@@ -357,20 +356,20 @@ export class Api {
 
   public async getOrderbook({
     pair,
-    orderType,
     minSize,
     limit,
     offset,
   }: {
     pair: string,
-    orderType: OrderType,
     minSize?: Integer | string,
     limit?: number,
     offset?: number,
   }): Promise<{ orders: ApiOrder[] }> {
     const queryObj: any = {};
 
-    queryObj.orderType = orderType ? orderType : OrderType.DYDX;
+    if (pair) {
+      queryObj.pairs = pair;
+    }
     if (limit) {
       queryObj.limit = limit;
     }
@@ -384,7 +383,7 @@ export class Api {
     const query: string = queryString.stringify(queryObj);
 
     const response = await axios({
-      url: `${this.endpoint}/v1/orders/${pair}?${query}`,
+      url: `${this.endpoint}/v1/dex/orders?${query}`,
       method: 'get',
       timeout: this.timeout,
     });

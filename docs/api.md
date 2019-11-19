@@ -5,7 +5,7 @@ free to let us know via Intercom or Telegram if you have any questions or experi
 
 All of these endpoints live at `https://api.dydx.exchange/`
 
-e.g. `https://api.dydx.exchange/v1/orders`
+e.g. `https://api.dydx.exchange/v1/dex/orders`
 
 ## Orderbook
 
