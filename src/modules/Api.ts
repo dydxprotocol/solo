@@ -10,7 +10,6 @@ import {
   ApiAccount,
   ApiFill,
   ApiTrade,
-  OrderType,
   ApiMarket,
   SignedLimitOrder,
 } from '../types';
