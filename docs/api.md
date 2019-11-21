@@ -66,6 +66,66 @@ Example:
 };
 ```
 
+### GET /v1/orderbook/:market
+
+Description:
+Returns the active orderbook for a given market. All bids and asks that are fillable are returned.
+
+Market is one of: `[WETH-DAI, WETH-USDC, DAI-USDC]`
+
+Amounts for this endpoint are returned in the base asset for the market (e.g. WETH for WETH-DAI). Prices are denominated as `(quote amount) / (base amount)` for each given order. For markets where the tokens have different number of decimals (e.g. DAI-USDC & WETH-USDC) prices will include the decimal places (e.g. prices in DAI-USDC will return as `0.00000000000100252200`)
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Example Response Body:
+```json
+{
+  "bids": [
+    {
+      "id": "0xefa4562c0747a8f2a9aa69abb817474ee9e98c8505a71de6054a610ac744b0cd",
+      "uuid": "c58be890-6e76-4e98-95d4-27977a91af19",
+      "amount": "17459277053478281216",
+      "price": "160.06010000000002787211"
+    },
+    {
+      "id": "0xa2ab9f653106fefef5b1264a509b02eab021ffea442307e995908e5360f3cd4d",
+      "uuid": "d2dba4c6-6442-46bc-b097-1f37312cf279",
+      "amount": "149610989871929360384",
+      "price": "160.06010000000000157722"
+    },
+    {
+      "id": "0xec35d60dd1c5eab86cd7881fcbc1239193ceda695df2815d521a46f54bd90580",
+      "uuid": "24d5a4e1-195b-43fa-a7d8-1d794619e97e",
+      "amount": "54494000000000000000",
+      "price": "160.05999999999998977766"
+    },
+  ],
+  "asks": [
+    {
+      "id": "0xb242e2006a0d99c390fc7256d10558844a719d580e80eaa5a4f99dd14bd9ce5e",
+      "uuid": "6fdff2f3-0175-4297-bf23-89526eb9aa36",
+      "amount": "12074182754430260637",
+      "price": "160.30000000000000000000"
+    },
+    {
+      "id": "0xe32a00e11b91b6f8daa70fbe03ad0100fa458c0d87e5c59f2e629ce9d5d32921",
+      "uuid": "3f9b35a8-d843-4ae6-bc8b-b534b07e8093",
+      "amount": "50000000000000000000",
+      "price": "160.40000000000000000000"
+    },
+    {
+      "id": "0xcad0c2e92094bd1dd17a694bd25933a8825c6014aaf4ae2925512f62c15ae968",
+      "uuid": "5aefdfd2-4e4d-4b37-9c99-35e8eec0ed9a",
+      "amount": "50000000000000000000",
+      "price": "160.50000000000000000000"
+    },
+  ]
+}
+```
+
 ### GET /v1/dex/pairs
 
 Description:

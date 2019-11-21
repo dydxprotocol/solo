@@ -12,6 +12,8 @@ import {
   ApiTrade,
   ApiMarket,
   SignedLimitOrder,
+  ApiOrderOnOrderbook,
+  ApiMarketName,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 
@@ -384,6 +386,20 @@ export class Api {
 
     const response = await axios({
       url: `${this.endpoint}/v1/dex/orders?${query}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  public async getOrderbookV2({
+    market,
+  }: {
+    market: ApiMarketName,
+  }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
+    const response = await axios({
+      url: `${this.endpoint}/v1/orderbook/${market}`,
       method: 'get',
       timeout: this.timeout,
     });
