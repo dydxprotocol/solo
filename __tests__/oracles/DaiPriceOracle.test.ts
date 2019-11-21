@@ -47,8 +47,9 @@ describe('DaiPriceOracle', () => {
 
   describe('saiPriceOracle', () => {
     it('Returns the correct address', async () => {
-      expect(solo.contracts.saiPriceOracle.options.address).toEqual(ADDRESSES.TEST_SAI_PRICE_ORACLE);
-      expect(solo.contracts.saiPriceOracle._address).toEqual(ADDRESSES.TEST_SAI_PRICE_ORACLE);
+      const saiPriceOracleAddress = ADDRESSES.TEST_SAI_PRICE_ORACLE;
+      expect(solo.contracts.saiPriceOracle.options.address).toEqual(saiPriceOracleAddress);
+      expect(solo.contracts.saiPriceOracle._address).toEqual(saiPriceOracleAddress);
     });
   });
 
