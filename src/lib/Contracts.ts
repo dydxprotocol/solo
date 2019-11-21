@@ -45,6 +45,7 @@ import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInteres
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
+import { SaiPriceOracle } from '../../build/wrappers/SaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
 import { WETH9 as Weth } from '../../build/wrappers/WETH9';
 import { TestToken } from '../../build/wrappers/TestToken';
@@ -82,6 +83,7 @@ import doubleExponentInterestSetterJson
   from '../../build/published_contracts/DoubleExponentInterestSetter.json';
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
+import saiPriceOracleJson from '../../build/published_contracts/SaiPriceOracle.json';
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import tokenAJson from '../../build/published_contracts/TokenA.json';
@@ -142,6 +144,7 @@ export class Contracts {
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
   public daiPriceOracle: DaiPriceOracle;
+  public saiPriceOracle: SaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
   public weth: Weth;
 
@@ -198,6 +201,7 @@ export class Contracts {
       doubleExponentInterestSetterJson.abi) as DoubleExponentInterestSetter;
     this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
     this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
+    this.saiPriceOracle = new this.web3.eth.Contract(saiPriceOracleJson.abi) as SaiPriceOracle;
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
@@ -256,6 +260,7 @@ export class Contracts {
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
+      { contract: this.saiPriceOracle, json: saiPriceOracleJson },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
       { contract: this.weth, json: wethJson },
 
@@ -310,6 +315,7 @@ export class Contracts {
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
     this.daiPriceOracle.options.from = account;
+    this.saiPriceOracle.options.from = account;
     this.usdcPriceOracle.options.from = account;
     this.weth.options.from = account;
 

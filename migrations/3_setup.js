@@ -42,7 +42,7 @@ const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 
 // Oracles
 const WethPriceOracle = artifacts.require('WethPriceOracle');
-const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const SaiPriceOracle = artifacts.require('SaiPriceOracle');
 const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 
 // ============ Constants ============
@@ -175,14 +175,14 @@ async function getOracles(network) {
   if (isKovan(network)) {
     return [
       { address: WethPriceOracle.address },
-      { address: DaiPriceOracle.address },
+      { address: SaiPriceOracle.address },
       { address: UsdcPriceOracle.address },
     ];
   }
   if (isMainNet(network)) {
     return [
       { address: WethPriceOracle.address },
-      { address: DaiPriceOracle.address },
+      { address: SaiPriceOracle.address },
       { address: UsdcPriceOracle.address },
     ];
   }

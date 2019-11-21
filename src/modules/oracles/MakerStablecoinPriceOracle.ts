@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import Contract from 'web3/eth/contract';
 import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
 import {
@@ -10,13 +11,16 @@ import {
   TxResult,
 } from '../../types';
 
-export class DaiPriceOracle {
+export class MakerStablecoinPriceOracle {
   private contracts: Contracts;
+  private oracleContract: Contract;
 
   constructor(
     contracts: Contracts,
+    oracleContract: Contract,
   ) {
     this.contracts = contracts;
+    this.oracleContract = oracleContract;
   }
 
   // ============ Admin ============
@@ -26,7 +30,7 @@ export class DaiPriceOracle {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.daiPriceOracle.methods.ownerSetPokerAddress(newPoker),
+      this.oracleContract.methods.ownerSetPokerAddress(newPoker),
       options,
     );
   }
@@ -41,7 +45,7 @@ export class DaiPriceOracle {
     const minimumArg = minimum ? minimum : INTEGERS.ZERO;
     const maximumArg = maximum ? maximum : INTEGERS.ONES_255;
     return this.contracts.callContractFunction(
-      this.contracts.daiPriceOracle.methods.updatePrice(
+      this.oracleContract.methods.updatePrice(
         { value: minimumArg.toFixed(0) },
         { value: maximumArg.toFixed(0) },
       ),
@@ -55,7 +59,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.owner(),
+      this.oracleContract.methods.owner(),
       options,
     );
   }
@@ -64,7 +68,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<address> {
     const poker = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.g_poker(),
+      this.oracleContract.methods.g_poker(),
       options,
     );
     return poker;
@@ -74,7 +78,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getPrice(ADDRESSES.ZERO),
+      this.oracleContract.methods.getPrice(ADDRESSES.ZERO),
       options,
     );
     return new BigNumber(price.value);
@@ -84,7 +88,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<{ price: Decimal, lastUpdate: Integer }> {
     const priceInfo = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.g_priceInfo(),
+      this.oracleContract.methods.g_priceInfo(),
       options,
     );
     return {
@@ -97,7 +101,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getBoundedTargetPrice(),
+      this.oracleContract.methods.getBoundedTargetPrice(),
       options,
     );
     return new BigNumber(price.value);
@@ -107,7 +111,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getTargetPrice(),
+      this.oracleContract.methods.getTargetPrice(),
       options,
     );
     return new BigNumber(price.value);
@@ -117,7 +121,7 @@ export class DaiPriceOracle {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getMedianizerPrice(),
+      this.oracleContract.methods.getMedianizerPrice(),
       options,
     );
     return new BigNumber(price.value);
@@ -129,7 +133,7 @@ export class DaiPriceOracle {
   ): Promise<Integer> {
     const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getOasisPrice(
+      this.oracleContract.methods.getOasisPrice(
         { value: queryPrice.toFixed(0) },
       ),
       options,
@@ -143,7 +147,7 @@ export class DaiPriceOracle {
   ): Promise<Integer> {
     const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.getUniswapPrice(
+      this.oracleContract.methods.getUniswapPrice(
         { value: queryPrice.toFixed(0) },
       ),
       options,
@@ -158,7 +162,7 @@ export class DaiPriceOracle {
     maximumAbsolute: Decimal,
   }> {
     const params = await this.contracts.callConstantContractFunction(
-      this.contracts.daiPriceOracle.methods.DEVIATION_PARAMS(),
+      this.oracleContract.methods.DEVIATION_PARAMS(),
       options,
     );
     return {

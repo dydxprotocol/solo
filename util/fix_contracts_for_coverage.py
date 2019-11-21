@@ -48,8 +48,9 @@ def fixRequires(dir, filepath):
     for line in open(filepath, 'r').readlines():
         builder = line.rstrip();
 
-        indexOfFile = builder.find('FILE,')
-        if inARequire and indexOfFile >= 0:
+        indexOfFile1 = builder.find('FILE,')
+        indexOfFile2 = builder.find('getFileName(),')
+        if inARequire and (indexOfFile1 >= 0 or indexOfFile2 >= 0):
             inMessage = True
 
         if inARequire and not inMessage:
