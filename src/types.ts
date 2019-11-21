@@ -475,6 +475,12 @@ export enum ApiFillStatus {
   CONFIRMED = 'CONFIRMED',
 }
 
+export enum ApiMarketName {
+  WETH_DAI = 'WETH-DAI',
+  WETH_USDC = 'WETH-USDC',
+  DAI_USDC = 'DAI-USDC',
+}
+
 export interface ApiOrder extends ApiModel {
   id: string;
   uuid: string;
@@ -522,6 +528,13 @@ export interface ApiAccount extends ApiModel {
       expiryAddress?: string;
     };
   };
+}
+
+export interface ApiOrderOnOrderbook {
+  id: string;
+  uuid: string;
+  amount: string;
+  price: string;
 }
 
 export interface ApiFill extends ApiModel {
