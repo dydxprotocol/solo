@@ -74,7 +74,6 @@ const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSe
 
 // Oracles
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
-const SaiPriceOracle = artifacts.require('SaiPriceOracle');
 const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 const WethPriceOracle = artifacts.require('WethPriceOracle');
 
@@ -167,17 +166,6 @@ async function deployPriceOracles(deployer, network, accounts) {
       getMedianizerAddress(network),
       getOasisAddress(network),
       getDaiUniswapAddress(network),
-      daiPriceOracleParams.oasisEthAmount,
-      daiPriceOracleParams.deviationParams,
-    ),
-    deployer.deploy(
-      SaiPriceOracle,
-      getOraclePokerAddress(network, accounts),
-      getWethAddress(network),
-      getSaiAddress(network),
-      getMedianizerAddress(network),
-      getOasisAddress(network),
-      getSaiUniswapAddress(network),
       daiPriceOracleParams.oasisEthAmount,
       daiPriceOracleParams.deviationParams,
     ),
@@ -304,19 +292,6 @@ function getDaiAddress(network) {
   throw new Error('Cannot find Dai');
 }
 
-function getSaiAddress(network) {
-  if (isDevNetwork(network)) {
-    return TokenB.address;
-  }
-  if (isMainNet(network)) {
-    return '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359';
-  }
-  if (isKovan(network)) {
-    return '0xC4375B7De8af5a38a93548eb8453a498222C4fF2';
-  }
-  throw new Error('Cannot find Sai');
-}
-
 function getOasisAddress(network) {
   if (isDevNetwork(network)) {
     return TestOasisDex.address;
@@ -341,19 +316,6 @@ function getDaiUniswapAddress(network) {
     return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
   }
   throw new Error('Cannot find Uniswap for Dai');
-}
-
-function getSaiUniswapAddress(network) {
-  if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP;
-  }
-  if (isMainNet(network)) {
-    return '0x09cabec1ead1c0ba254b09efb3ee13841712be14';
-  }
-  if (isKovan(network)) {
-    return '0x47D4Af3BBaEC0dE4dba5F44ae8Ed2761977D32d6';
-  }
-  throw new Error('Cannot find Uniswap for Sai');
 }
 
 function getWethAddress(network) {

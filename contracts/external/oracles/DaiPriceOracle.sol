@@ -140,7 +140,7 @@ contract DaiPriceOracle is
     {
         Require.that(
             msg.sender == g_poker,
-            getFileName(),
+            FILE,
             "Only poker can call updatePrice",
             msg.sender
         );
@@ -149,7 +149,7 @@ contract DaiPriceOracle is
 
         Require.that(
             newPrice.value >= minimum.value,
-            getFileName(),
+            FILE,
             "newPrice below minimum",
             newPrice.value,
             minimum.value
@@ -157,7 +157,7 @@ contract DaiPriceOracle is
 
         Require.that(
             newPrice.value <= maximum.value,
-            getFileName(),
+            FILE,
             "newPrice above maximum",
             newPrice.value,
             maximum.value
@@ -360,13 +360,5 @@ contract DaiPriceOracle is
     {
         assert(minimum <= maximum);
         return Math.max(minimum, Math.min(maximum, value));
-    }
-
-    function getFileName()
-        private
-        pure
-        returns (bytes32)
-    {
-        return FILE;
     }
 }

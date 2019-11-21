@@ -45,7 +45,6 @@ import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInteres
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
-import { SaiPriceOracle } from '../../build/wrappers/SaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
 import { WETH9 as Weth } from '../../build/wrappers/WETH9';
 import { TestToken } from '../../build/wrappers/TestToken';
@@ -83,7 +82,6 @@ import doubleExponentInterestSetterJson
   from '../../build/published_contracts/DoubleExponentInterestSetter.json';
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
-import saiPriceOracleJson from '../../build/published_contracts/SaiPriceOracle.json';
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import tokenAJson from '../../build/published_contracts/TokenA.json';
@@ -104,6 +102,9 @@ import testPolynomialInterestSetterJson
 import testDoubleExponentInterestSetterJson
   from '../../build/published_contracts/TestDoubleExponentInterestSetter.json';
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
+import deployed from '../../migrations/deployed.json';
+
+import { ADDRESSES } from '../../src/lib/constants';
 import { SUBTRACT_GAS_LIMIT } from './Constants';
 import {
   ContractCallOptions,
@@ -144,7 +145,7 @@ export class Contracts {
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
   public daiPriceOracle: DaiPriceOracle;
-  public saiPriceOracle: SaiPriceOracle;
+  public saiPriceOracle: DaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
   public weth: Weth;
 
@@ -201,7 +202,7 @@ export class Contracts {
       doubleExponentInterestSetterJson.abi) as DoubleExponentInterestSetter;
     this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
     this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
-    this.saiPriceOracle = new this.web3.eth.Contract(saiPriceOracleJson.abi) as SaiPriceOracle;
+    this.saiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
@@ -260,7 +261,12 @@ export class Contracts {
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
-      { contract: this.saiPriceOracle, json: saiPriceOracleJson },
+      { contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
+        1: deployed.SaiPriceOracle[1].address,
+        42: deployed.SaiPriceOracle[42].address,
+        1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+        1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+      } },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
       { contract: this.weth, json: wethJson },
 
@@ -290,6 +296,7 @@ export class Contracts {
         contract.json,
         provider,
         networkId,
+        contract.overrides,
       ),
     );
   }
@@ -505,9 +512,14 @@ export class Contracts {
     contractJson: any,
     provider: Provider,
     networkId: number,
+    overrides: any,
   ): void {
     contract.setProvider(provider);
-    contract.options.address = contractJson.networks[networkId]
+
+    const contractAddress = contractJson.networks[networkId]
       && contractJson.networks[networkId].address;
+    const overrideAddress = overrides && overrides[networkId];
+
+    contract.options.address = overrideAddress || contractAddress;
   }
 }

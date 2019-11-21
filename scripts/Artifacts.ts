@@ -23,7 +23,6 @@ import { default as DoubleExponentInterestSetter }
   from '../build/contracts/DoubleExponentInterestSetter.json';
 import { default as WethPriceOracle } from '../build/contracts/WethPriceOracle.json';
 import { default as DaiPriceOracle } from '../build/contracts/DaiPriceOracle.json';
-import { default as SaiPriceOracle } from '../build/contracts/SaiPriceOracle.json';
 import { default as UsdcPriceOracle } from '../build/contracts/UsdcPriceOracle.json';
 import { default as TokenA } from '../build/contracts/TokenA.json';
 import { default as TokenB } from '../build/contracts/TokenB.json';
@@ -70,7 +69,6 @@ export default {
   DoubleExponentInterestSetter,
   WethPriceOracle,
   DaiPriceOracle,
-  SaiPriceOracle,
   UsdcPriceOracle,
   TokenA,
   TokenB,
