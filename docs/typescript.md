@@ -310,15 +310,11 @@ const account = await solo.api.getAccountBalances({
 
 #### Get Orderbook
 ```javascript
-const { orders: bids } = await solo.api.getOrderbook({
-  pair: 'DAI-WETH',
-  minSize: new BigNumber('1e18'), // OPTIONAL
-  limit: 20, // OPTIONAL: maximum 100
-  offset: 40, // OPTIONAL
-});
+import { ApiMarketName } from '@dydxprotocol/solo';
 
-const { orders: asks } = await solo.api.getOrderbook({
-  pair: 'WETH-DAI',
+// bids / asks have type ApiOrderOnOrderbook[]
+const { bids, asks } = await solo.api.getOrderbookV2({
+  market: ApiMarketName.WETH_DAI,
 });
 ```
 
