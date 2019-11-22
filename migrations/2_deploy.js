@@ -165,7 +165,7 @@ async function deployPriceOracles(deployer, network, accounts) {
       getDaiAddress(network),
       getMedianizerAddress(network),
       getOasisAddress(network),
-      getUniswapAddress(network),
+      getDaiUniswapAddress(network),
       daiPriceOracleParams.oasisEthAmount,
       daiPriceOracleParams.deviationParams,
     ),
@@ -284,10 +284,10 @@ function getDaiAddress(network) {
     return TokenB.address;
   }
   if (isMainNet(network)) {
-    return '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359';
+    return '0x6b175474e89094c44da98b954eedeac495271d0f';
   }
   if (isKovan(network)) {
-    return '0xC4375B7De8af5a38a93548eb8453a498222C4fF2';
+    return '0x5944413037920674d39049ec4844117a031eaa74';
   }
   throw new Error('Cannot find Dai');
 }
@@ -305,17 +305,17 @@ function getOasisAddress(network) {
   throw new Error('Cannot find OasisDex');
 }
 
-function getUniswapAddress(network) {
+function getDaiUniswapAddress(network) {
   if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP; // for testing
+    return ADDRESSES.TEST_UNISWAP;
   }
   if (isMainNet(network)) {
-    return '0x09cabec1ead1c0ba254b09efb3ee13841712be14';
+    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
   }
   if (isKovan(network)) {
-    return '0x47D4Af3BBaEC0dE4dba5F44ae8Ed2761977D32d6';
+    return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
   }
-  throw new Error('Cannot find Uniswap');
+  throw new Error('Cannot find Uniswap for Dai');
 }
 
 function getWethAddress(network) {

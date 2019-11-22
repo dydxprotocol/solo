@@ -132,7 +132,7 @@ function verifyNetwork(network) {
 
 function getOraclePokerAddress(network, accounts) {
   if (isMainNet(network)) {
-    return '0xac89e378758c97625d5448065d92f63f4851f1e2';
+    return '0x500dd93a74dbfa65a4eeda44da489adcef530cb9';
   }
   if (isKovan(network)) {
     return '0xa13cc3ab215bf669764a1a56a831c1bdc95659dd';

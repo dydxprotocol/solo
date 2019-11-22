@@ -45,6 +45,14 @@ describe('DaiPriceOracle', () => {
     await resetEVM(snapshotId);
   });
 
+  describe('saiPriceOracle', () => {
+    it('Returns the correct address', async () => {
+      const saiPriceOracleAddress = ADDRESSES.TEST_SAI_PRICE_ORACLE;
+      expect(solo.contracts.saiPriceOracle.options.address).toEqual(saiPriceOracleAddress);
+      expect(solo.contracts.saiPriceOracle._address).toEqual(saiPriceOracleAddress);
+    });
+  });
+
   describe('getPrice', () => {
     it('Returns the default value', async () => {
       const price = await solo.oracle.daiPriceOracle.getPrice();

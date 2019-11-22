@@ -102,7 +102,8 @@ import testPolynomialInterestSetterJson
 import testDoubleExponentInterestSetterJson
   from '../../build/published_contracts/TestDoubleExponentInterestSetter.json';
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
-import { SUBTRACT_GAS_LIMIT } from './Constants';
+
+import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
   ContractCallOptions,
   TxResult,
@@ -142,6 +143,7 @@ export class Contracts {
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
   public daiPriceOracle: DaiPriceOracle;
+  public saiPriceOracle: DaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
   public weth: Weth;
 
@@ -198,6 +200,7 @@ export class Contracts {
       doubleExponentInterestSetterJson.abi) as DoubleExponentInterestSetter;
     this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
     this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
+    this.saiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
@@ -256,6 +259,12 @@ export class Contracts {
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
+      { contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
+        1: '0x787F552BDC17332c98aA360748884513e3cB401a',
+        42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
+        1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+        1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+      } },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
       { contract: this.weth, json: wethJson },
 
@@ -285,6 +294,7 @@ export class Contracts {
         contract.json,
         provider,
         networkId,
+        contract.overrides,
       ),
     );
   }
@@ -310,6 +320,7 @@ export class Contracts {
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
     this.daiPriceOracle.options.from = account;
+    this.saiPriceOracle.options.from = account;
     this.usdcPriceOracle.options.from = account;
     this.weth.options.from = account;
 
@@ -499,9 +510,14 @@ export class Contracts {
     contractJson: any,
     provider: Provider,
     networkId: number,
+    overrides: any,
   ): void {
     contract.setProvider(provider);
-    contract.options.address = contractJson.networks[networkId]
+
+    const contractAddress = contractJson.networks[networkId]
       && contractJson.networks[networkId].address;
+    const overrideAddress = overrides && overrides[networkId];
+
+    contract.options.address = overrideAddress || contractAddress;
   }
 }

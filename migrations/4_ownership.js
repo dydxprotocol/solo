@@ -19,7 +19,6 @@
 const {
   isDevNetwork,
   getPartiallyDelayedMultisigAddress,
-  getNonDelayedMultisigAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -38,7 +37,6 @@ const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const migration = async (deployer, network) => {
   if (!isDevNetwork(network)) {
     const partiallyDelayedMultisig = getPartiallyDelayedMultisigAddress(network);
-    const nonDelayedMultisig = getNonDelayedMultisigAddress(network);
 
     const [
       deployedSoloMargin,
@@ -62,7 +60,7 @@ const migration = async (deployer, network) => {
 
     await Promise.all([
       deployedSoloMargin.transferOwnership(partiallyDelayedMultisig),
-      deployedDaiPriceOracle.transferOwnership(nonDelayedMultisig),
+      deployedDaiPriceOracle.transferOwnership(partiallyDelayedMultisig),
       deployedExpiry.transferOwnership(partiallyDelayedMultisig),
       deployedExpiryV2.transferOwnership(partiallyDelayedMultisig),
       deployedRefunder.transferOwnership(partiallyDelayedMultisig),
