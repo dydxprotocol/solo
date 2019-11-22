@@ -102,7 +102,6 @@ import testPolynomialInterestSetterJson
 import testDoubleExponentInterestSetterJson
   from '../../build/published_contracts/TestDoubleExponentInterestSetter.json';
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
-import deployed from '../../migrations/deployed.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -261,8 +260,8 @@ export class Contracts {
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
       { contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
-        1: deployed.SaiPriceOracle[1].address,
-        42: deployed.SaiPriceOracle[42].address,
+        1: '0x787F552BDC17332c98aA360748884513e3cB401a',
+        42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
         1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
         1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
       } },
