@@ -104,8 +104,7 @@ import testDoubleExponentInterestSetterJson
 import testInterestSetterJson from '../../build/published_contracts/TestInterestSetter.json';
 import deployed from '../../migrations/deployed.json';
 
-import { ADDRESSES } from '../../src/lib/constants';
-import { SUBTRACT_GAS_LIMIT } from './Constants';
+import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
   ContractCallOptions,
   TxResult,
