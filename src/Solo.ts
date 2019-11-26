@@ -34,6 +34,7 @@ import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
 import { Testing } from './modules/testing/Testing';
 import { Api } from './modules/Api';
+import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { SoloOptions, EthereumAccount, address, Networks } from './types';
 
@@ -55,6 +56,7 @@ export class Solo {
   public logs: Logs;
   public operation: Operation;
   public api: Api;
+  public websocket: Websocket;
   public standardActions: StandardActions;
 
   constructor(
@@ -92,7 +94,16 @@ export class Solo {
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(this.contracts, this.limitOrders, networkId);
-    this.api = new Api(this.limitOrders, options.apiEndpoint, options.apiTimeout);
+    this.api = new Api(
+      this.limitOrders,
+      options.apiEndpoint,
+      options.apiTimeout,
+    );
+    this.websocket = new Websocket(
+      options.wsTimeout,
+      options.wsEndpoint,
+      options.wsOrigin,
+    );
     this.standardActions = new StandardActions(this.operation, this.contracts);
 
     if (options.accounts) {

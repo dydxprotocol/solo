@@ -98,7 +98,7 @@ To subscribe send:
 
 #### Initial Response
 
-The initial response will contain the entire state of the active orderbook. The `contents` field will be of the same form as `GET /v1/orderbook/:market`(https://docs.dydx.exchange/#/api?id=get-v1orderbookmarket):
+The initial response will contain the entire state of the active orderbook. The `contents` field will be of the same form as [`GET /v1/orderbook/:market`](https://docs.dydx.exchange/#/api?id=get-v1orderbookmarket):
 
 ```json
 {

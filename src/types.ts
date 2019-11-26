@@ -76,6 +76,9 @@ export interface SoloOptions {
   apiEndpoint?: string;
   apiTimeout?: number;
   ethereumNodeTimeout?: number;
+  wsOrigin?: string;
+  wsEndpoint?: string;
+  wsTimeout?: number;
 }
 
 export interface EthereumAccount {
@@ -591,4 +594,23 @@ export enum OrderType {
   DYDX = 'dydexLimitV1',
   ETH_2_DAI = 'OasisV3',
   ZERO_EX = '0x-V2',
+}
+
+export enum ApiOrderUpdateType {
+  NEW = 'NEW',
+  REMOVED = 'REMOVED',
+  UPDATED = 'UPDATED',
+}
+
+export enum ApiSide {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}
+
+export interface ApiOrderbookUpdate {
+  type: ApiOrderUpdateType;
+  id: string;
+  side: ApiSide;
+  amount?: string;
+  price?: string;
 }
