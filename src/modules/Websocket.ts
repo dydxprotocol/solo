@@ -154,9 +154,8 @@ export class Websocket {
         const subscribedMessage = parsed as ChannelDataMessage;
 
         if (this.listeners[subscribedMessage.channel]) {
-          if (this.listeners[subscribedMessage.channel][subscribedMessage.id]) {
-            const callback = this.listeners[subscribedMessage.channel][subscribedMessage.id];
-
+          const callback = this.listeners[subscribedMessage.channel][subscribedMessage.id];
+          if (callback) {
             callback(subscribedMessage.contents);
           }
         }
