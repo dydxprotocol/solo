@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.27.0",
+  "version": "0.27.1",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -70,9 +70,11 @@
     "canonical-weth": "^1.4.0",
     "es6-promisify": "^6.0.1",
     "ethers": "^4.0.33",
+    "isomorphic-ws": "^4.0.1",
     "openzeppelin-solidity": "2.1.3",
     "query-string": "^6.8.2",
-    "web3": "1.2.1"
+    "web3": "1.2.1",
+    "ws": "^7.2.0"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",

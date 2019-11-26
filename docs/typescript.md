@@ -325,6 +325,44 @@ Get the markets that exist on the protocol. There is one market per asset (e.g. 
 const { markets } = await solo.api.getMarkets();
 ```
 
+### WebSocket
+Solo provides an easy way to interact with dYdX WebSocket endpoints.
+
+#### Connect
+Before using any other websocket functions, the websocket must first be connected:
+```javascript
+const onError = (error) => {
+  console.error(error);
+};
+const onClose = async () => {
+  // The websocket is closed, it must be reconnected
+  // You must also resubscribe to anything you had subscribed to
+  await solo.websocket.reconnect(...);
+  const newOrderbook = await solo.websocket.watchOrderbook(...);
+};
+
+await solo.websocket.connect({
+  onClose, // OPTIONAL
+  onError, // OPTIONAL
+});
+```
+
+#### Orderbook
+Watch the state of the active orderbook for a dYdX market:
+```javascript
+import { ApiMarketName } from '@dydxprotocol/solo';
+
+const onUpdates = (orderbookUpdates) => {
+  // Handle orderbook updates
+  // orderbookUpdates has type ApiOrderbookUpdate
+};
+
+const initialOrderbook = await solo.websocket.watchOrderbook({
+  market: ApiMarketName.WETH_DAI,
+  onUpdates,
+});
+```
+
 ### Types
 You can import types from Solo as:
 
