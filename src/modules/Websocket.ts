@@ -1,4 +1,5 @@
-import ws from 'isomorphic-ws';
+import ws from 'ws';
+
 import {
   ApiOrderOnOrderbook,
   ApiMarketName,
