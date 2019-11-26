@@ -1,4 +1,5 @@
-import ws from 'isomorphic-ws';
+import ws from 'ws';
+
 import {
   ApiOrderOnOrderbook,
   ApiMarketName,
@@ -108,14 +109,14 @@ export class Websocket {
       options,
     );
 
-    this.ws.onClose = () => {
+    this.ws.on('close', () => {
       this.ws = null;
       this.subscribedCallbacks = {};
       this.listeners = {};
       onClose();
-    };
+    });
 
-    this.ws.onMessage = (message: string) => {
+    this.ws.on('message', (message: string) => {
       let parsed: IncomingMessage;
       try {
         parsed = JSON.parse(message) as IncomingMessage;
@@ -162,17 +163,17 @@ export class Websocket {
 
         return;
       }
-    };
+    });
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(
         () => reject(new Error('Websocket connection timeout')),
         this.timeout,
       );
-      this.ws.onOpen = () => {
+      this.ws.on('open', () => {
         clearTimeout(timeout);
         resolve();
-      };
+      });
     });
   }
 
@@ -193,11 +194,13 @@ export class Websocket {
       id: market,
     };
 
-    if (
-      this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id]
-        || this.listeners[subscribeMessage.channel][subscribeMessage.id]
-    ) {
-      throw new Error(`Already watching orderbook market ${market}`);
+    if (this.subscribedCallbacks[subscribeMessage.channel]) {
+      if (
+        this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id]
+          || this.listeners[subscribeMessage.channel][subscribeMessage.id]
+      ) {
+        throw new Error(`Already watching orderbook market ${market}`);
+      }
     }
 
     this.listeners[subscribeMessage.channel][subscribeMessage.id] = (contents: any) => {
@@ -212,6 +215,11 @@ export class Websocket {
         () => reject(new Error(`Websocket orderbook subscribe timeout: ${market}`)),
         this.timeout,
       );
+
+      if (!this.subscribedCallbacks[subscribeMessage.channel]) {
+        this.subscribedCallbacks[subscribeMessage.channel] = {};
+      }
+
       this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id] = (contents: any) => {
         clearTimeout(timeout);
         resolve(contents);
