@@ -11,6 +11,7 @@
 - [TypeScript Client](typescript.md "dYdX Documentation - TypeScript Client")
 - [Python Client](python.md "dYdX Documentation - Python Client")
 - [HTTP API](api.md "dYdX Documentation - HTTP API")
+- [WebSocket API](websocket.md "dYdX Documentation - WebSocket API")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
 - [Security](security.md "dYdX Documentation - Security")
 

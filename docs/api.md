@@ -1,6 +1,6 @@
 # HTTP API
-dYdX offers a few HTTP APIs for retrieving information about the protocol, and submitting orders to
-our DEX. Feel free to use these APIs to build your own applications on top of dYdX. Please feel
+dYdX offers an HTTP API for retrieving information about the protocol, and submitting orders to
+our exchange. Feel free to use these APIs to build your own applications on top of dYdX. Please feel
 free to let us know via Intercom or Telegram if you have any questions or experience any issues.
 
 All of these endpoints live at `https://api.dydx.exchange/`
