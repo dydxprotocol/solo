@@ -194,7 +194,7 @@ export class Websocket {
       id: market,
     };
 
-    if (this.subscribedCallbacks[subscribedMessage.channel]) {
+    if (this.subscribedCallbacks[subscribeMessage.channel]) {
       if (
         this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id]
           || this.listeners[subscribeMessage.channel][subscribeMessage.id]
