@@ -63,7 +63,7 @@
   },
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
-    "@dydxprotocol/exchange-wrappers": "0.5.2",
+    "@dydxprotocol/exchange-wrappers": "0.5.3",
     "@types/web3": "1.0.18",
     "axios": "^0.19.0",
     "bignumber.js": "^8.1.1",
