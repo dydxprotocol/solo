@@ -34,8 +34,9 @@ export enum ConfirmationType {
 
 export const MarketId = {
   WETH: new BigNumber(0),
-  DAI: new BigNumber(1),
+  SAI: new BigNumber(1),
   USDC: new BigNumber(2),
+  DAI: new BigNumber(3),
 
   // This market number does not exist on the protocol,
   // but can be used for standard actions

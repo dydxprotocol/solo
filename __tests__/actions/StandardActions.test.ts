@@ -18,7 +18,7 @@ const accountNumber = INTEGERS.ZERO;
 const markets = [
   MarketId.ETH,
   MarketId.WETH,
-  MarketId.DAI,
+  MarketId.SAI,
   MarketId.USDC,
 ];
 
