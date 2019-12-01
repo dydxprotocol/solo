@@ -1,7 +1,7 @@
 # WebSocket API
 dYdX offers a WebSocket API for streaming updates to dYdX.
 
-You can connect to the WebSocket at `wss://api.dydx.exchange/ws`
+You can connect to the WebSocket at `wss://api.dydx.exchange/v1/ws`
 
 ## Introduction
 
