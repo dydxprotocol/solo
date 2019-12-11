@@ -290,13 +290,12 @@ const { fills } = await solo.api.getFills({
 // trades has type ApiTrade[]
 const { trades } = await solo.api.getTrades({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+  accountNumber: new BigNumber(0), // OPTIONAL: defaults to 0
   orderId: 'foo', // OPTIONAL
   transactionHash: '0xcf9852f71b2bbcc9ccad06e69619cac7e1e7eb5240648f6ffcad9b029ff39517', //Optional
   startingBefore: new Date(), // OPTIONAL
   limit: 50, // OPTIONAL: maximum 100
   market: 'WETH-DAI', // OPTIONAL
-  // OPTIONAL: defaults to 0 if accountOwner provided
-  accountNumber: new BigNumber(0),
 });
 ```
 
