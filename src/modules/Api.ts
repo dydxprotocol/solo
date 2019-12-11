@@ -298,19 +298,31 @@ export class Api {
   }
 
   public async getTrades({
-    makerAccountOwner,
-    startingBefore,
+    orderId,
+    market,
+    accountOwner,
+    accountNumber,
+    transactionHash,
     limit,
-    pairs,
-    makerAccountNumber,
+    startingBefore,
   }: {
-    makerAccountOwner?: address,
-    startingBefore?: Date,
+    orderId?: string,
+    market?: string,
+    accountOwner?: address,
+    accountNumber?: Integer | string,
+    transactionHash?: string,
     limit?: number,
-    pairs?: string[],
-    makerAccountNumber?: Integer | string,
+    startingBefore?: Date,
   }): Promise<{ trades: ApiTrade[] }> {
-    const queryObj: any = { makerAccountOwner };
+    const queryObj: any = {
+      orderId,
+      market,
+      accountOwner,
+      accountNumber,
+      transactionHash,
+      limit,
+      startingBefore,
+    };
 
     if (startingBefore) {
       queryObj.startingBefore = startingBefore.toISOString();
@@ -318,11 +330,9 @@ export class Api {
     if (limit) {
       queryObj.limit = limit;
     }
-    if (pairs) {
-      queryObj.pairs = pairs.join();
-    }
-    if (makerAccountNumber) {
-      queryObj.makerAccountNumber = new BigNumber(makerAccountNumber).toFixed(0);
+
+    if (accountNumber) {
+      queryObj.makerAccountNumber = new BigNumber(accountNumber).toFixed(0);
     } else {
       queryObj.makerAccountNumber = '0';
     }
@@ -330,7 +340,7 @@ export class Api {
     const query: string = queryString.stringify(queryObj);
 
     const response = await axios({
-      url: `${this.endpoint}/v1/dex/trades?${query}`,
+      url: `${this.endpoint}/v2/trades?${query}`,
       method: 'get',
       timeout: this.timeout,
     });

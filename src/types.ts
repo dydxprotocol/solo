@@ -552,10 +552,15 @@ export interface ApiFill extends ApiModel {
 export interface ApiTrade extends ApiModel {
   status: ApiFillStatus;
   transactionHash: string;
-  makerOrder: ApiOrder;
   makerOrderId: string;
-  takerOrder: ApiOrder;
   takerOrderId: string;
+  market: string;
+  price: string;
+  amount: string;
+  makerAccountOwner: address;
+  makerAccountNumber: number;
+  takerAccountOwner: address;
+  takerAccountNumber: number;
 }
 
 export interface ApiMarket {
