@@ -615,7 +615,8 @@ Example Response Body:
       "makerAccountNumber": "0",
       "takerOrderId": "0x3908e04d89741d802127be31ba0698fe6728da766cf1a820194e13346068da4d",
       "takerAccountOwner": "0xe184468b7103af442509dfb087a9c222353787b3",
-      "takerAccountNumber": "0"
+      "takerAccountNumber": "0",
+      "createdAt": "2019-12-11T21:29:58.032Z"
     },
     {
       "uuid": "f1b7a849-f765-4c18-8842-86e5750e08f5",
@@ -629,7 +630,8 @@ Example Response Body:
       "makerAccountNumber": "0",
       "takerOrderId": "0xa88bbd489128a0399c516a68d84622aba65971966d174cc98f692d07c70d9d1b",
       "takerAccountOwner": "0x3801d2d7e604e8333baacb2ab53ceeb8d7995416",
-      "takerAccountNumber": "0"
+      "takerAccountNumber": "0",
+      "createdAt": "2019-12-11T21:29:39.707Z"
     },
     {
       "uuid": "4711636c-8ac3-4d92-806b-7d811a2ee7d4",
@@ -643,7 +645,8 @@ Example Response Body:
       "makerAccountNumber": "0",
       "takerOrderId": "0xd93b9b62f44168b4cfa0f1877be5cf329288958c9024158870308d60fd2cc347",
       "takerAccountOwner": "0xe46fbdfc5ec01d5914a802aa06fd0e4c5cd41bd5",
-      "takerAccountNumber": "0"
+      "takerAccountNumber": "0",
+      "createdAt": "2019-12-11T21:19:59.157Z"
     },
     {
       "uuid": "22d04881-f427-45d7-88c8-da61fea00210",
@@ -657,7 +660,8 @@ Example Response Body:
       "makerAccountNumber": "0",
       "takerOrderId": "0x69ba7a2c7c2d4110e36af82c5f0a9076c4db70a5a3455e27a04a1c525d0233fd",
       "takerAccountOwner": "0xf03df965490882583018c64fd41fa82d7dee032f",
-      "takerAccountNumber": "107168784608729135660257601028275559138738399573533131184788900278475157896234"
+      "takerAccountNumber": "107168784608729135660257601028275559138738399573533131184788900278475157896234",
+      "createdAt": "2019-12-11T21:11:02.247Z"
     }
   ]
 }
