@@ -578,6 +578,30 @@ Example Response Body:
 }
 ```
 
+### GET /v2/trades
+Description:
+Get all historical trades. Where a fill represents one side of a trade, a trade contains both a
+maker and a taker. There will be single trade for each fill. The maker in this case represents
+the order that was already on the book, where the taker represents the order that was placed
+to fill the maker order(s).
+
+Headers:
+```
+Content-Type: application/json
+```
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?accountOwner|The Ethereum address of the account(s) to request fills for.|
+|?accountNumber|(Optional) The Solo account number of the account to request fills for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?market|(Optional) Market to query trades in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
+
+Example Response Body:
+
+
 ### GET /v1/dex/trades
 
 Description:
