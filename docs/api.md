@@ -843,24 +843,15 @@ Example Response Body:
   "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
   "number": "0",
   "uuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
-  "hasAtLeastOneNegativePar": false,
-  "hasAtLeastOnePositivePar": true,
-  "sumBorrowUsdValue": "0",
-  "sumSupplyUsdValue": "0",
   "balances": {
     "0": {
       "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
       "number": "0",
       "marketId": 0,
-      "newPar": "9994719126810778",
       "accountUuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
-      "isParPositive": true,
-      "isParNegative": false,
       "wei": "10000184397123234.892111593021043502",
       "expiresAt": null,
       "par": "9994719126810778",
-      "adjustedSupplyUsdValue": "0",
-      "adjustedBorrowUsdValue": "0"
     },
     "1": {
       "par": 0,
