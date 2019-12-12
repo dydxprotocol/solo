@@ -26,7 +26,7 @@ The WebSocket API accepts and sends messages in JSON format. All messages sent t
 
 On the WebSocket you can subscribe to various channels to receive updates. Subscribe messages sent by clients must be of the form:
 
-#### Subscribing
+### Subscribing
 
 ```json
 {
@@ -39,7 +39,7 @@ On the WebSocket you can subscribe to various channels to receive updates. Subsc
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
 |type|string|Must be set to "subscribe"|
-|channel|string|The channel to connect to|
+|channel|string|The channel to subscribe to|
 |id|string|An id to subscribe to on the channel|
 
 #### Initial Response
@@ -73,6 +73,35 @@ Where initial state is the initial state of what you have subscribed to. After t
   }
 }
 ```
+
+### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "orderbook",
+  "id": "WETH-DAI"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|An id to unsubscribe from on the channel|
+
+#### Response
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "1de645c9-9ed2-49d0-9192-1522cf5c45f7",
+  "message_id": 289,
+  "channel": "orderbook",
+  "id": "WETH-DAI"
+}
+```
+
 
 ### Orderbook
 
@@ -255,21 +284,21 @@ To subscribe, send:
 The initial response will contain the previous operations performed on the address. Eg:-
 
 ```json
-{ 
+{
    "type":"subscribed",
    "connection_id":"5b21af84-1c30-4290-83c5-762b1ada1018",
    "message_id":1,
    "channel":"operations",
    "id":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
-   "contents":{ 
-      "operations":[ 
-         { 
+   "contents":{
+      "operations":[
+         {
             "uuid":"96af48ce-ada7-4149-ba58-ab60b463b78d",
             "transactionHash":"0x6d56c91c6e11ee0f1646f734cef97ece3448e64e10173955e062ca9a8728b555",
             "orderIndex":"0",
             "createdAt":"2019-12-05T21:51:01.369Z",
             "updatedAt":"2019-12-05T21:51:01.369Z",
-            "transaction":{ 
+            "transaction":{
                "hash":"0x6d56c91c6e11ee0f1646f734cef97ece3448e64e10173955e062ca9a8728b555",
                "walletAddress":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
                "blockIndex":15,
@@ -282,10 +311,10 @@ The initial response will contain the previous operations performed on the addre
                "createdAt":"2019-12-05T21:51:01.366Z",
                "updatedAt":"2019-12-05T21:51:01.366Z"
             },
-            "operationTypes":[ 
-               { 
+            "operationTypes":[
+               {
                   "name":"DEPOSIT",
-                  "operationTag":{ 
+                  "operationTag":{
                      "operationUuid":"96af48ce-ada7-4149-ba58-ab60b463b78d",
                      "operationType":"DEPOSIT",
                      "createdAt":"2019-12-05T21:51:01.377Z",
@@ -293,14 +322,14 @@ The initial response will contain the previous operations performed on the addre
                   }
                }
             ],
-            "accounts":[ 
-               { 
+            "accounts":[
+               {
                   "uuid":"6a56f996-42ee-4925-8e2b-3437e7734c34",
                   "owner":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
                   "number":"0",
                   "createdAt":"2019-12-05T21:50:06.922Z",
                   "updatedAt":"2019-12-05T21:50:06.922Z",
-                  "accountOperation":{ 
+                  "accountOperation":{
                      "accountUuid":"6a56f996-42ee-4925-8e2b-3437e7734c34",
                      "operationUuid":"96af48ce-ada7-4149-ba58-ab60b463b78d",
                      "createdAt":"2019-12-05T21:51:01.422Z",
@@ -308,8 +337,8 @@ The initial response will contain the previous operations performed on the addre
                   }
                }
             ],
-            "actions":[ 
-               { 
+            "actions":[
+               {
                   "uuid":"ba288974-5ba9-4e33-86ce-164e12f71e82",
                   "type":"CALL",
                   "operationUuid":"96af48ce-ada7-4149-ba58-ab60b463b78d",
@@ -322,11 +351,11 @@ The initial response will contain the previous operations performed on the addre
                   "secondaryMarketId":null,
                   "createdAt":"2019-12-05T21:51:01.395Z",
                   "updatedAt":"2019-12-05T21:51:01.395Z",
-                  "balanceUpdates":[ 
+                  "balanceUpdates":[
 
                   ],
                   "expiration":null,
-                  "account":{ 
+                  "account":{
                      "uuid":"6a56f996-42ee-4925-8e2b-3437e7734c34",
                      "owner":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
                      "number":"0",
@@ -335,7 +364,7 @@ The initial response will contain the previous operations performed on the addre
                   },
                   "otherAccount":null
                },
-               { 
+               {
                   "uuid":"cf103dd6-595f-49c6-ac9d-2554796e8195",
                   "type":"DEPOSIT",
                   "operationUuid":"96af48ce-ada7-4149-ba58-ab60b463b78d",
@@ -348,8 +377,8 @@ The initial response will contain the previous operations performed on the addre
                   "secondaryMarketId":null,
                   "createdAt":"2019-12-05T21:51:01.396Z",
                   "updatedAt":"2019-12-05T21:51:01.396Z",
-                  "balanceUpdates":[ 
-                     { 
+                  "balanceUpdates":[
+                     {
                         "uuid":"c32128a1-c724-4aa6-8835-2d7183a7128e",
                         "deltaWei":"100000000000000000",
                         "newPar":"99925484145201246",
@@ -359,7 +388,7 @@ The initial response will contain the previous operations performed on the addre
                         "expiresAt":null,
                         "createdAt":"2019-12-05T21:51:01.417Z",
                         "updatedAt":"2019-12-05T21:51:01.417Z",
-                        "account":{ 
+                        "account":{
                            "uuid":"6a56f996-42ee-4925-8e2b-3437e7734c34",
                            "owner":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
                            "number":"0",
@@ -369,7 +398,7 @@ The initial response will contain the previous operations performed on the addre
                      }
                   ],
                   "expiration":null,
-                  "account":{ 
+                  "account":{
                      "uuid":"6a56f996-42ee-4925-8e2b-3437e7734c34",
                      "owner":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
                      "number":"0",
@@ -379,8 +408,8 @@ The initial response will contain the previous operations performed on the addre
                   "otherAccount":null
                }
             ],
-            "marketUpdates":{ 
-               "0":{ 
+            "marketUpdates":{
+               "0":{
                   "uuid":"c4d22d90-0e65-4517-aa98-6c87600468a1",
                   "supplyIndex":"1.000745714223315393",
                   "borrowIndex":"1.005938359765817194",
@@ -402,13 +431,13 @@ Operations on the wallet address are sent on the websocket channel. Currently th
 eg:
 
 ```json
-{ 
+{
    "type":"channel_data",
    "connection_id":"5b21af84-1c30-4290-83c5-762b1ada1018",
    "message_id":12,
    "channel":"operations",
    "id":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
-   "contents":{ 
+   "contents":{
       "type":"ADD",
       "pending":false,
       "hash":"0xe722db3006b704ea6277a277fa727f498aee8d1c9d1f21903e0bb14755e3a4fa",
