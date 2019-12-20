@@ -101,20 +101,50 @@ export class Api {
     cancelId: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const order: SignedLimitOrder = await this.createOrder({
-      makerAccountOwner,
-      makerMarket,
-      takerMarket,
-      makerAmount,
-      takerAmount,
-      makerAccountNumber,
-      expiration,
-    });
-    const cancelSignature = await this.limitOrders.signCancelOrderByHash(
+    const [
+      order,
+      cancelSignature,
+    ] = await Promise.all([
+      this.createOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+      }),
+      this.limitOrders.signCancelOrderByHash(
+        cancelId,
+        makerAccountOwner,
+        SigningMethod.Hash,
+      ),
+    ]);
+    return this.submitReplaceOrder({
+      order,
+      fillOrKill,
       cancelId,
-      makerAccountOwner,
-      SigningMethod.Hash,
-    );
+      cancelSignature,
+      clientId,
+    });
+  }
+
+    /**
+   * Submits an already signed replaceOrder
+   */
+  public async submitReplaceOrder({
+    order,
+    fillOrKill = false,
+    cancelId,
+    cancelSignature,
+    clientId,
+  }: {
+    order: SignedLimitOrder,
+    fillOrKill: boolean,
+    cancelId: string,
+    cancelSignature: string,
+    clientId?: string,
+  }): Promise<{ order: ApiOrder }> {
     const jsonOrder = this.jsonifyOrder(order);
 
     const data: any = {
