@@ -76,6 +76,98 @@ export class Api {
   }
 
   /**
+   * Creates, but does not place a signed order and signed cancel pair
+   */
+  public async replaceOrder({
+    makerAccountOwner,
+    makerMarket,
+    takerMarket,
+    makerAmount,
+    takerAmount,
+    makerAccountNumber = new BigNumber(0),
+    expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
+    fillOrKill = false,
+    cancelId,
+    clientId,
+  }: {
+    makerAccountOwner: address,
+    makerAccountNumber: Integer | string,
+    makerMarket: Integer | string,
+    takerMarket: Integer | string,
+    makerAmount: Integer | string,
+    takerAmount: Integer | string,
+    expiration: Integer | string,
+    fillOrKill: boolean,
+    cancelId: string,
+    clientId?: string,
+  }): Promise<{ order: ApiOrder }> {
+    const [
+      order,
+      cancelSignature,
+    ] = await Promise.all([
+      this.createOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+      }),
+      this.limitOrders.signCancelOrderByHash(
+        cancelId,
+        makerAccountOwner,
+        SigningMethod.Hash,
+      ),
+    ]);
+    return this.submitReplaceOrder({
+      order,
+      fillOrKill,
+      cancelId,
+      cancelSignature,
+      clientId,
+    });
+  }
+
+  /**
+   * Submits an already signed replaceOrder
+   */
+  public async submitReplaceOrder({
+    order,
+    fillOrKill = false,
+    cancelId,
+    cancelSignature,
+    clientId,
+  }: {
+    order: SignedLimitOrder,
+    fillOrKill: boolean,
+    cancelId: string,
+    cancelSignature: string,
+    clientId?: string,
+  }): Promise<{ order: ApiOrder }> {
+    const jsonOrder = jsonifyOrder(order);
+
+    const data: any = {
+      cancelId,
+      cancelSignature,
+      order: jsonOrder,
+      fillOrKill: !!fillOrKill,
+    };
+    if (clientId) {
+      data.clientId = clientId;
+    }
+
+    const response = await axios({
+      data,
+      method: 'post',
+      url: `${this.endpoint}/v1/dex/orders/replace`,
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  /**
    * Creates, but does not place a signed order
    */
   public async createOrder({
@@ -135,19 +227,7 @@ export class Api {
     fillOrKill: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const jsonOrder = {
-      typedSignature: order.typedSignature,
-      makerAccountOwner: order.makerAccountOwner,
-      makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      takerAccountOwner: order.takerAccountOwner,
-      takerAccountNumber: order.takerAccountNumber.toFixed(0),
-      makerMarket: order.makerMarket.toFixed(0),
-      takerMarket: order.takerMarket.toFixed(0),
-      makerAmount: order.makerAmount.toFixed(0),
-      takerAmount: order.takerAmount.toFixed(0),
-      salt: order.salt.toFixed(0),
-      expiration: order.expiration.toFixed(0),
-    };
+    const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       order: jsonOrder,
@@ -428,4 +508,20 @@ function generatePseudoRandom256BitNumber(): BigNumber {
   const factor = new BigNumber(10).pow(MAX_DIGITS_IN_UNSIGNED_256_INT - 1);
   const randomNumberScaledTo256Bits = randomNumber.times(factor).integerValue();
   return randomNumberScaledTo256Bits;
+}
+
+function jsonifyOrder(order) {
+  return {
+    typedSignature: order.typedSignature,
+    makerAccountOwner: order.makerAccountOwner,
+    makerAccountNumber: order.makerAccountNumber.toFixed(0),
+    takerAccountOwner: order.takerAccountOwner,
+    takerAccountNumber: order.takerAccountNumber.toFixed(0),
+    makerMarket: order.makerMarket.toFixed(0),
+    takerMarket: order.takerMarket.toFixed(0),
+    makerAmount: order.makerAmount.toFixed(0),
+    takerAmount: order.takerAmount.toFixed(0),
+    salt: order.salt.toFixed(0),
+    expiration: order.expiration.toFixed(0),
+  };
 }
