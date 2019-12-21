@@ -232,7 +232,7 @@ Request Body:
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
-|clientId|string|(Optional)An abitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -261,6 +261,59 @@ Example Request Body:
 Returns:
 `201` if successful
 
+### POST /v1/dex/orders/replace
+
+Description:
+Atomically cancel an old order and replace with a new order in the orderbook.
+
+Please Note:
+
+* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine. The canceled order will also not be canceled until processed
+by our internal matching engine.
+
+* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|cancelId|string|Order id for the order that is being canceled and replaced|
+|cancelSignature|string|Signature of the order being canceled and replaced|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+
+Example Request Body:
+```json
+{
+	"fillOrKill": true,
+  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+  "cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
+	"clientId": "foo",
+	"order": {
+		"makerMarket": "0",
+		"takerMarket": "1",
+		"makerAmount": "10000000000",
+		"takerAmount": "20000000000",
+		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+		"makerAccountNumber": "111",
+		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
+		"takerAccountNumber": "222",
+		"expiration": "4294967295",
+		"salt": "100",
+		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+	  },
+};
+```
 ### DELETE /v1/dex/orders/:hash
 
 Description:
@@ -269,7 +322,7 @@ Cancels an open order by hash.
 Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
 The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
 
-The response will have a status of 200 as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then 200 will be returned both times. For another example, canceling a fully-filled order will return 200 but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a 200 status does not necessarily mean that the order was canceled.
+The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
 
 Headers:
 ```
