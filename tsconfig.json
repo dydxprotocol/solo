@@ -8,7 +8,6 @@
     "declaration": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
-    "declaration": true,
     "outDir": "dist",
     "resolveJsonModule": true,
     "typeRoots": [

@@ -129,7 +129,7 @@ export class Api {
     });
   }
 
-    /**
+  /**
    * Submits an already signed replaceOrder
    */
   public async submitReplaceOrder({
@@ -145,17 +145,17 @@ export class Api {
     cancelSignature: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const jsonOrder = this.jsonifyOrder(order);
+    const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
+      cancelId,
+      cancelSignature,
       order: jsonOrder,
+      fillOrKill: !!fillOrKill,
     };
     if (clientId) {
       data.clientId = clientId;
     }
-    data.fillOrKill = !!fillOrKill;
-    data.cancelId = cancelId;
-    data.cancelSignature = cancelSignature;
 
     const response = await axios({
       data,
@@ -165,22 +165,6 @@ export class Api {
     });
 
     return response.data;
-  }
-
-  private jsonifyOrder(order) {
-    return {
-      typedSignature: order.typedSignature,
-      makerAccountOwner: order.makerAccountOwner,
-      makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      takerAccountOwner: order.takerAccountOwner,
-      takerAccountNumber: order.takerAccountNumber.toFixed(0),
-      makerMarket: order.makerMarket.toFixed(0),
-      takerMarket: order.takerMarket.toFixed(0),
-      makerAmount: order.makerAmount.toFixed(0),
-      takerAmount: order.takerAmount.toFixed(0),
-      salt: order.salt.toFixed(0),
-      expiration: order.expiration.toFixed(0),
-    };
   }
 
   /**
@@ -243,7 +227,7 @@ export class Api {
     fillOrKill: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const jsonOrder = this.jsonifyOrder(order);
+    const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       order: jsonOrder,
@@ -524,4 +508,20 @@ function generatePseudoRandom256BitNumber(): BigNumber {
   const factor = new BigNumber(10).pow(MAX_DIGITS_IN_UNSIGNED_256_INT - 1);
   const randomNumberScaledTo256Bits = randomNumber.times(factor).integerValue();
   return randomNumberScaledTo256Bits;
+}
+
+function jsonifyOrder(order) {
+  return {
+    typedSignature: order.typedSignature,
+    makerAccountOwner: order.makerAccountOwner,
+    makerAccountNumber: order.makerAccountNumber.toFixed(0),
+    takerAccountOwner: order.takerAccountOwner,
+    takerAccountNumber: order.takerAccountNumber.toFixed(0),
+    makerMarket: order.makerMarket.toFixed(0),
+    takerMarket: order.takerMarket.toFixed(0),
+    makerAmount: order.makerAmount.toFixed(0),
+    takerAmount: order.takerAmount.toFixed(0),
+    salt: order.salt.toFixed(0),
+    expiration: order.expiration.toFixed(0),
+  };
 }
