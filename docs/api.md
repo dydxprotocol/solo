@@ -264,7 +264,7 @@ Returns:
 ### POST /v1/dex/orders/replace
 
 Description:
-Atomically cancel an old order and replaces with a new order in the orderbook.
+Atomically cancel an old order and replace with a new order in the orderbook.
 
 Please Note:
 
