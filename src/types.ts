@@ -387,6 +387,7 @@ export interface LimitOrder {
   takerMarket: Integer;
   makerAmount: Integer;
   takerAmount: Integer;
+  triggerPrice?: Integer;
   makerAccountOwner: address;
   makerAccountNumber: Integer;
   takerAccountOwner: address;

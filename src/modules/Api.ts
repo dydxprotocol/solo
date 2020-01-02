@@ -44,6 +44,7 @@ export class Api {
     takerMarket,
     makerAmount,
     takerAmount,
+    triggerPrice = null,
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
@@ -51,6 +52,7 @@ export class Api {
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
+    triggerPrice: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
@@ -66,6 +68,7 @@ export class Api {
       makerAmount,
       takerAmount,
       makerAccountNumber,
+      triggerPrice,
       expiration,
     });
     return this.submitOrder({
@@ -84,6 +87,7 @@ export class Api {
     takerMarket,
     makerAmount,
     takerAmount,
+    triggerPrice = null,
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
@@ -92,6 +96,7 @@ export class Api {
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
+    triggerPrice: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
@@ -112,6 +117,7 @@ export class Api {
         makerAmount,
         takerAmount,
         makerAccountNumber,
+        triggerPrice,
         expiration,
       }),
       this.limitOrders.signCancelOrderByHash(
@@ -176,11 +182,13 @@ export class Api {
     takerMarket,
     makerAmount,
     takerAmount,
+    triggerPrice = null,
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
+    triggerPrice: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
@@ -204,6 +212,9 @@ export class Api {
       takerAccountNumber: TAKER_ACCOUNT_NUMBER,
       salt: generatePseudoRandom256BitNumber(),
     };
+    if (triggerPrice) {
+      order.triggerPrice = new BigNumber(triggerPrice);
+    }
     const typedSignature: string = await this.limitOrders.signOrder(
       order,
       SigningMethod.Hash,
