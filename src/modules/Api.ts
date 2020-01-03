@@ -87,7 +87,6 @@ export class Api {
     takerMarket,
     makerAmount,
     takerAmount,
-    triggerPrice = null,
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
@@ -96,7 +95,6 @@ export class Api {
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
-    triggerPrice: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
@@ -117,7 +115,6 @@ export class Api {
         makerAmount,
         takerAmount,
         makerAccountNumber,
-        triggerPrice,
         expiration,
       }),
       this.limitOrders.signCancelOrderByHash(
@@ -188,7 +185,7 @@ export class Api {
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
-    triggerPrice: Integer,
+    triggerPrice?: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
