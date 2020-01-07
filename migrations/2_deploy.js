@@ -66,6 +66,7 @@ const Refunder = artifacts.require('Refunder');
 const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
+const StopLimitOrders = artifacts.require('StopLimitOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // Interest Setters
@@ -219,6 +220,11 @@ async function deploySecondLayer(deployer, network) {
       getChainId(network),
     ),
     deployer.deploy(
+      StopLimitOrders,
+      soloMargin.address,
+      getChainId(network),
+    ),
+    deployer.deploy(
       SignedOperationProxy,
       soloMargin.address,
       getChainId(network),
@@ -248,6 +254,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       LimitOrders.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      StopLimitOrders.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(

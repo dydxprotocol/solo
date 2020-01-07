@@ -28,6 +28,7 @@ import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
 import { LimitOrders } from './modules/LimitOrders';
+import { StopLimitOrders } from './modules/StopLimitOrders';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
@@ -50,6 +51,7 @@ export class Solo {
   public admin: Admin;
   public getters: Getters;
   public limitOrders: LimitOrders;
+  public stopLimitOrders: StopLimitOrders;
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
   public permissions: Permissions;
@@ -89,11 +91,17 @@ export class Solo {
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
     this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
+    this.stopLimitOrders = new StopLimitOrders(this.contracts, this.web3, networkId);
     this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
-    this.operation = new Operation(this.contracts, this.limitOrders, networkId);
+    this.operation = new Operation(
+      this.contracts,
+      this.limitOrders,
+      this.stopLimitOrders,
+      networkId,
+    );
     this.api = new Api(
       this.limitOrders,
       options.apiEndpoint,
