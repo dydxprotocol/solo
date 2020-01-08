@@ -276,8 +276,8 @@ contract StopLimitOrders is
      * @param  outputMarketId  The market for which the trader wants the resulting amount specified
      * @param  makerAccount    The account for which this contract is making trades
      * @param  takerAccount    The account requesting the trade
-     *  param  oldInputPar     (unused)
-     *  param  newInputPar     (unused)
+     * @param  oldInputPar     The par balance of the makerAccount for inputMarketId pre-trade
+     * @param  newInputPar     The par balance of the makerAccount for inputMarketId post-trade
      * @param  inputWei        The change in token amount for the makerAccount for the inputMarketId
      * @param  data            Arbitrary data passed in by the trader
      * @return                 The AssetAmount for the makerAccount for the outputMarketId
@@ -549,7 +549,7 @@ contract StopLimitOrders is
         private
         view
     {
-        // verify inputMarketId
+        // verify that the balance of inputMarketId is not increased
         Require.that(
             newInputPar.isZero()
             || (newInputPar.value <= oldInputPar.value && newInputPar.sign == oldInputPar.sign),
@@ -557,7 +557,7 @@ contract StopLimitOrders is
             "inputMarket not decreased"
         );
 
-        // verify outputMarketId
+        // verify that the balance of outputMarketId is not increased
         Types.Wei memory oldOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
         Require.that(
             assetAmount.value == 0

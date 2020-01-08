@@ -33,6 +33,7 @@ let defaultTakerAddress: address;
 let rando: address;
 
 let testOrder: SignedStopLimitOrder;
+let decreaseOrder: SignedStopLimitOrder;
 
 describe('StopLimitOrders', () => {
   beforeAll(async () => {
@@ -61,6 +62,7 @@ describe('StopLimitOrders', () => {
     };
     testOrder.typedSignature =
         await solo.stopLimitOrders.signOrder(testOrder, SigningMethod.TypedData);
+    decreaseOrder = await getModifiedTestOrder({ decreaseOnly: true });
 
     await resetEVM();
 
@@ -763,17 +765,16 @@ describe('StopLimitOrders', () => {
     });
 
     it('Succeeds for output decreasing', async () => {
-      const order = await getModifiedTestOrder({ decreaseOnly: true });
       const fillOptions = {
         amount: defaultMakerAmount.div(-16),
         denominatedInMakerAmount: true,
       };
-      await fillLimitOrder(order, fillOptions);
-      await fillLimitOrder(order, fillOptions);
+      await fillLimitOrder(decreaseOrder, fillOptions);
+      await fillLimitOrder(decreaseOrder, fillOptions);
 
       // cannot go past zero
       await expectThrow(
-        fillLimitOrder(order, fillOptions),
+        fillLimitOrder(decreaseOrder, fillOptions),
         'StopLimitOrders: outputMarket not decreased',
       );
       await expectBalances(
@@ -785,17 +786,16 @@ describe('StopLimitOrders', () => {
     });
 
     it('Succeeds for input decreasing', async () => {
-      const order = await getModifiedTestOrder({ decreaseOnly: true });
       const fillOptions = {
         amount: defaultTakerAmount.div(16),
         denominatedInMakerAmount: false,
       };
-      await fillLimitOrder(order, fillOptions);
-      await fillLimitOrder(order, fillOptions);
+      await fillLimitOrder(decreaseOrder, fillOptions);
+      await fillLimitOrder(decreaseOrder, fillOptions);
 
       // cannot go past zero
       await expectThrow(
-        fillLimitOrder(order, fillOptions),
+        fillLimitOrder(decreaseOrder, fillOptions),
         'StopLimitOrders: inputMarket not decreased',
       );
       await expectBalances(
@@ -807,20 +807,36 @@ describe('StopLimitOrders', () => {
     });
 
     it('Fails when inputMarket crosses', async () => {
-      const order = await getModifiedTestOrder({ decreaseOnly: true });
       await expectThrow(
-        fillLimitOrder(order, {
+        fillLimitOrder(decreaseOrder, {
           amount: defaultMakerAmount.div(-4),
           denominatedInMakerAmount: true,
         }),
         'StopLimitOrders: outputMarket not decreased',
       );
       await expectThrow(
-        fillLimitOrder(order, {
+        fillLimitOrder(decreaseOrder, {
           amount: defaultMakerAmount.div(-2),
           denominatedInMakerAmount: true,
         }),
         'StopLimitOrders: outputMarket not decreased',
+      );
+    });
+
+    it('Fails when outputMarket crosses', async () => {
+      await expectThrow(
+        fillLimitOrder(decreaseOrder, {
+          amount: defaultTakerAmount.div(4),
+          denominatedInMakerAmount: false,
+        }),
+        'StopLimitOrders: inputMarket not decreased',
+      );
+      await expectThrow(
+        fillLimitOrder(decreaseOrder, {
+          amount: defaultTakerAmount.div(2),
+          denominatedInMakerAmount: false,
+        }),
+        'StopLimitOrders: inputMarket not decreased',
       );
     });
 
