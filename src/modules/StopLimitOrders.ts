@@ -1,13 +1,12 @@
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
-import { promisify } from 'es6-promisify';
+import { OrdersBaseClass } from './OrdersBaseClass';
 import { Contracts } from '../lib/Contracts';
 import { toString } from '../lib/Helpers';
 import {
   addressToBytes32,
   argToBytes,
   hashString,
-  stripHexPrefix,
   addressesAreEqual,
 } from '../lib/BytesHelper';
 import {
@@ -71,9 +70,8 @@ const EIP712_CANCEL_ORDER_STRUCT_STRING =
   'bytes32[] orderHashes' +
   ')';
 
-export class StopLimitOrders {
+export class StopLimitOrders extends OrdersBaseClass {
   private contracts: Contracts;
-  private web3: Web3;
   private networkId: number;
 
   // ============ Constructor ============
@@ -83,8 +81,8 @@ export class StopLimitOrders {
     web3: Web3,
     networkId: number,
   ) {
+    super(web3);
     this.contracts = contracts;
-    this.web3 = web3;
     this.networkId = networkId;
   }
 
@@ -542,53 +540,5 @@ export class StopLimitOrders {
       data,
       signingMethod,
     );
-  }
-
-  private async ethSignTypedDataInternal(
-    signer: string,
-    data: any,
-    signingMethod: SigningMethod,
-  ): Promise<string> {
-    let sendMethod: string;
-    let rpcMethod: string;
-    let rpcData: any;
-
-    switch (signingMethod) {
-      case SigningMethod.TypedData:
-        sendMethod = 'send';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      case SigningMethod.MetaMask:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.MetaMaskLatest:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v4';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.CoinbaseWallet:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      default:
-        throw new Error(`Invalid signing method ${signingMethod}`);
-    }
-
-    const provider = this.web3.currentProvider;
-    const sendAsync = promisify(provider[sendMethod]).bind(provider);
-    const response = await sendAsync({
-      method: rpcMethod,
-      params: [signer, rpcData],
-      jsonrpc: '2.0',
-      id: new Date().getTime(),
-    });
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-    return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
   }
 }
