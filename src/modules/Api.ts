@@ -45,6 +45,7 @@ export class Api {
     makerAmount,
     takerAmount,
     triggerPrice = null,
+    signedTriggerPrice = null,
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
@@ -53,6 +54,7 @@ export class Api {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
     triggerPrice: Integer,
+    signedTriggerPrice: Integer,
     makerMarket: Integer | string,
     takerMarket: Integer | string,
     makerAmount: Integer | string,
@@ -68,13 +70,14 @@ export class Api {
       makerAmount,
       takerAmount,
       makerAccountNumber,
-      triggerPrice,
       expiration,
+      triggerPrice: signedTriggerPrice,
     });
     return this.submitOrder({
       order,
       fillOrKill,
       clientId,
+      triggerPrice,
     });
   }
 
@@ -229,10 +232,12 @@ export class Api {
   public async submitOrder({
     order,
     fillOrKill = false,
+    triggerPrice = null,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
+    triggerPrice?: Integer,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
@@ -244,6 +249,9 @@ export class Api {
       data.clientId = clientId;
     }
     data.fillOrKill = !!fillOrKill;
+    if (triggerPrice) {
+      data.triggerPrice = triggerPrice;
+    }
 
     const response = await axios({
       data,
