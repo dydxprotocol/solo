@@ -34,6 +34,7 @@ let rando: address;
 
 let testOrder: SignedStopLimitOrder;
 let decreaseOrder: SignedStopLimitOrder;
+let reverseDecreaseOrder: SignedStopLimitOrder;
 
 describe('StopLimitOrders', () => {
   beforeAll(async () => {
@@ -63,6 +64,13 @@ describe('StopLimitOrders', () => {
     testOrder.typedSignature =
         await solo.stopLimitOrders.signOrder(testOrder, SigningMethod.TypedData);
     decreaseOrder = await getModifiedTestOrder({ decreaseOnly: true });
+    reverseDecreaseOrder = await getModifiedTestOrder({
+      makerMarket: defaultTakerMarket,
+      takerMarket: defaultMakerMarket,
+      makerAmount: defaultTakerAmount,
+      takerAmount: defaultMakerAmount,
+      decreaseOnly: true,
+    });
 
     await resetEVM();
 
@@ -735,169 +743,289 @@ describe('StopLimitOrders', () => {
   });
 
   describe('decreaseOnly', () => {
-    beforeEach(async () => {
-      await Promise.all([
-        solo.testing.setAccountBalance(
-          testOrder.takerAccountOwner,
-          testOrder.takerAccountNumber,
-          defaultTakerMarket,
-          defaultTakerAmount,
-        ),
-        solo.testing.setAccountBalance(
-          testOrder.takerAccountOwner,
-          testOrder.takerAccountNumber,
-          defaultMakerMarket,
-          defaultMakerAmount,
-        ),
-        solo.testing.setAccountBalance(
-          testOrder.makerAccountOwner,
-          testOrder.makerAccountNumber,
-          defaultMakerMarket,
-          defaultMakerAmount.div(2),
-        ),
-        solo.testing.setAccountBalance(
-          testOrder.makerAccountOwner,
-          testOrder.makerAccountNumber,
-          defaultTakerMarket,
-          defaultTakerAmount.div(-8),
-        ),
-      ]);
-    });
-
-    it('Succeeds for output decreasing', async () => {
-      const fillOptions = {
-        amount: defaultMakerAmount.div(-16),
-        denominatedInMakerAmount: true,
-      };
-      await fillLimitOrder(decreaseOrder, fillOptions);
-      await fillLimitOrder(decreaseOrder, fillOptions);
-
-      // cannot go past zero
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, fillOptions),
-        'StopLimitOrders: outputMarket not decreased',
-      );
-      await expectBalances(
-        defaultTakerAmount.times(7).div(8),
-        defaultMakerAmount.times(9).div(8),
-        INTEGERS.ZERO,
-        defaultMakerAmount.times(3).div(8),
-      );
-    });
-
-    it('Succeeds for input decreasing', async () => {
-      const fillOptions = {
-        amount: defaultTakerAmount.div(16),
-        denominatedInMakerAmount: false,
-      };
-      await fillLimitOrder(decreaseOrder, fillOptions);
-      await fillLimitOrder(decreaseOrder, fillOptions);
-
-      // cannot go past zero
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, fillOptions),
-        'StopLimitOrders: inputMarket not decreased',
-      );
-      await expectBalances(
-        defaultTakerAmount.times(7).div(8),
-        defaultMakerAmount.times(9).div(8),
-        INTEGERS.ZERO,
-        defaultMakerAmount.times(3).div(8),
-      );
-    });
-
-    it('Fails when inputMarket crosses', async () => {
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, {
-          amount: defaultMakerAmount.div(-4),
-          denominatedInMakerAmount: true,
-        }),
-        'StopLimitOrders: outputMarket not decreased',
-      );
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, {
-          amount: defaultMakerAmount.div(-2),
-          denominatedInMakerAmount: true,
-        }),
-        'StopLimitOrders: outputMarket not decreased',
-      );
-    });
-
-    it('Fails when outputMarket crosses', async () => {
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, {
-          amount: defaultTakerAmount.div(4),
-          denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
-      await expectThrow(
-        fillLimitOrder(decreaseOrder, {
-          amount: defaultTakerAmount.div(2),
-          denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
-    });
-
-    it('Fails when outputMarket crosses', async () => {
-      const order = await getModifiedTestOrder({ decreaseOnly: true });
-      await expectThrow(
-        fillLimitOrder(order, {
-          amount: defaultTakerAmount.div(4),
-          denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
-      await expectThrow(
-        fillLimitOrder(order, {
-          amount: defaultTakerAmount.div(2),
-          denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
-    });
-
-    it('Fails when increasing position', async () => {
-      const order = await getModifiedTestOrder({
-        makerMarket: defaultTakerMarket,
-        takerMarket: defaultMakerMarket,
-        makerAmount: defaultTakerAmount,
-        takerAmount: defaultMakerAmount,
-        decreaseOnly: true,
+    describe('long position', () => {
+      beforeEach(async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(
+            testOrder.takerAccountOwner,
+            testOrder.takerAccountNumber,
+            defaultTakerMarket,
+            defaultTakerAmount,
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.takerAccountOwner,
+            testOrder.takerAccountNumber,
+            defaultMakerMarket,
+            defaultMakerAmount,
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultMakerMarket,
+            defaultMakerAmount.div(2),
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultTakerMarket,
+            defaultTakerAmount.div(-8),
+          ),
+        ]);
       });
-      await expectThrow(
-        fillLimitOrder(order, {
-          amount: INTEGERS.ONE,
+
+      it('Succeeds for output decreasing', async () => {
+        const fillOptions = {
+          amount: defaultMakerAmount.div(-16),
+          denominatedInMakerAmount: true,
+        };
+        await fillLimitOrder(decreaseOrder, fillOptions);
+        await fillLimitOrder(decreaseOrder, fillOptions);
+
+        // cannot go past zero
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, fillOptions),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+        await expectBalances(
+          defaultTakerAmount.times(7).div(8),
+          defaultMakerAmount.times(9).div(8),
+          INTEGERS.ZERO,
+          defaultMakerAmount.times(3).div(8),
+        );
+      });
+
+      it('Succeeds for input decreasing', async () => {
+        const fillOptions = {
+          amount: defaultTakerAmount.div(16),
           denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
+        };
+        await fillLimitOrder(decreaseOrder, fillOptions);
+        await fillLimitOrder(decreaseOrder, fillOptions);
+
+        // cannot go past zero
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, fillOptions),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+        await expectBalances(
+          defaultTakerAmount.times(7).div(8),
+          defaultMakerAmount.times(9).div(8),
+          INTEGERS.ZERO,
+          defaultMakerAmount.times(3).div(8),
+        );
+      });
+
+      it('Fails when inputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultMakerAmount.div(-4),
+            denominatedInMakerAmount: true,
+          }),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultMakerAmount.div(-2),
+            denominatedInMakerAmount: true,
+          }),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+      });
+
+      it('Fails when outputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultTakerAmount.div(4),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultTakerAmount.div(2),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+
+      it('Fails when outputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultTakerAmount.div(4),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: defaultTakerAmount.div(2),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+
+      it('Fails when increasing position', async () => {
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: INTEGERS.ONE,
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
     });
 
-    it('Fails when position was originally zero', async () => {
-      await Promise.all([
-        solo.testing.setAccountBalance(
-          testOrder.makerAccountOwner,
-          testOrder.makerAccountNumber,
-          defaultMakerMarket,
-          INTEGERS.ZERO,
-        ),
-        solo.testing.setAccountBalance(
-          testOrder.makerAccountOwner,
-          testOrder.makerAccountNumber,
-          defaultTakerMarket,
-          INTEGERS.ZERO,
-        ),
-      ]);
-      const order = await getModifiedTestOrder({ decreaseOnly: true });
-      await expectThrow(
-        fillLimitOrder(order, {
-          amount: INTEGERS.ONE,
+    describe('short position', () => {
+      beforeEach(async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(
+            testOrder.takerAccountOwner,
+            testOrder.takerAccountNumber,
+            defaultTakerMarket,
+            defaultMakerAmount,
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.takerAccountOwner,
+            testOrder.takerAccountNumber,
+            defaultMakerMarket,
+            defaultTakerAmount,
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultMakerMarket,
+            defaultMakerAmount.div(-8),
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultTakerMarket,
+            defaultTakerAmount.div(2),
+          ),
+        ]);
+      });
+
+      it('Succeeds for output decreasing', async () => {
+        const fillOptions = {
+          amount: defaultTakerAmount.div(-16),
+          denominatedInMakerAmount: true,
+        };
+        await fillLimitOrder(reverseDecreaseOrder, fillOptions);
+        await fillLimitOrder(reverseDecreaseOrder, fillOptions);
+
+        // cannot go past zero
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, fillOptions),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+      });
+
+      it('Succeeds for input decreasing', async () => {
+        const fillOptions = {
+          amount: defaultMakerAmount.div(16),
           denominatedInMakerAmount: false,
-        }),
-        'StopLimitOrders: inputMarket not decreased',
-      );
+        };
+        await fillLimitOrder(reverseDecreaseOrder, fillOptions);
+        await fillLimitOrder(reverseDecreaseOrder, fillOptions);
+
+        // cannot go past zero
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, fillOptions),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+
+      it('Fails when inputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultTakerAmount.div(-4),
+            denominatedInMakerAmount: true,
+          }),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultTakerAmount.div(-2),
+            denominatedInMakerAmount: true,
+          }),
+          'StopLimitOrders: outputMarket not decreased',
+        );
+      });
+
+      it('Fails when outputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultMakerAmount.div(4),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultMakerAmount.div(2),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+
+      it('Fails when outputMarket crosses', async () => {
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultMakerAmount.div(4),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+        await expectThrow(
+          fillLimitOrder(reverseDecreaseOrder, {
+            amount: defaultMakerAmount.div(2),
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+
+      it('Fails when increasing position', async () => {
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: INTEGERS.ONE,
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
+    });
+
+    describe('zero position', () => {
+      beforeEach(async () => {
+        await Promise.all([
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultMakerMarket,
+            INTEGERS.ZERO,
+          ),
+          solo.testing.setAccountBalance(
+            testOrder.makerAccountOwner,
+            testOrder.makerAccountNumber,
+            defaultTakerMarket,
+            INTEGERS.ZERO,
+          ),
+        ]);
+      });
+
+      it('Fails when position was originally zero', async () => {
+        await expectThrow(
+          fillLimitOrder(decreaseOrder, {
+            amount: INTEGERS.ONE,
+            denominatedInMakerAmount: false,
+          }),
+          'StopLimitOrders: inputMarket not decreased',
+        );
+      });
     });
   });
 
