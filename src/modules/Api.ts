@@ -243,11 +243,11 @@ export class Api {
     const data: any = {
       postOnly,
       order: jsonOrder,
+      fillOrKill: !!fillOrKill,
     };
     if (clientId) {
       data.clientId = clientId;
     }
-    data.fillOrKill = !!fillOrKill;
 
     const response = await axios({
       data,
