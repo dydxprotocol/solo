@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { LimitOrders } from '../LimitOrders';
+import { StopLimitOrders } from '../StopLimitOrders';
 import { Contracts } from '../../lib/Contracts';
 import {
   AmountReference,
@@ -37,6 +38,8 @@ import {
   address,
   LimitOrder,
   SignedLimitOrder,
+  StopLimitOrder,
+  SignedStopLimitOrder,
   LimitOrderCallFunctionType,
   ProxyType,
   Operation,
@@ -69,6 +72,7 @@ export class AccountOperation {
   private committed: boolean;
   private orderMapper: OrderMapper;
   private limitOrders: LimitOrders;
+  private stopLimitOrders: StopLimitOrders;
   private accounts: AccountInfo[];
   private proxy: ProxyType;
   private sendEthTo: address;
@@ -79,6 +83,7 @@ export class AccountOperation {
     contracts: Contracts,
     orderMapper: OrderMapper,
     limitOrders: LimitOrders,
+    stopLimitOrders: StopLimitOrders,
     networkId: number,
     options: AccountOperationOptions,
   ) {
@@ -93,6 +98,7 @@ export class AccountOperation {
     this.committed = false;
     this.orderMapper = orderMapper;
     this.limitOrders = limitOrders;
+    this.stopLimitOrders = stopLimitOrders;
     this.accounts = [];
     this.proxy = proxy;
     this.sendEthTo = options.sendEthTo;
@@ -245,7 +251,7 @@ export class AccountOperation {
         otherAddress: this.contracts.limitOrders.options.address,
         data: toBytes(
           LimitOrderCallFunctionType.Approve,
-          this.limitOrders.unsignedOrderToBytes(args.order),
+          this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
         ),
       },
     );
@@ -260,7 +266,37 @@ export class AccountOperation {
         otherAddress: this.contracts.limitOrders.options.address,
         data: toBytes(
           LimitOrderCallFunctionType.Cancel,
-          this.limitOrders.unsignedOrderToBytes(args.order),
+          this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
+        ),
+      },
+    );
+    return this;
+  }
+
+  public approveStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.stopLimitOrders.options.address,
+        data: toBytes(
+          LimitOrderCallFunctionType.Approve,
+          this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
+        ),
+      },
+    );
+    return this;
+  }
+
+  public cancelStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.stopLimitOrders.options.address,
+        data: toBytes(
+          LimitOrderCallFunctionType.Cancel,
+          this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
         ),
       },
     );
@@ -322,6 +358,40 @@ export class AccountOperation {
     denotedInMakerAmount: boolean = false,
   ): AccountOperation {
     return this.fillLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      false,
+    );
+  }
+
+  public fillSignedStopLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: SignedStopLimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    return this.fillStopLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      weiAmount,
+      denotedInMakerAmount,
+      true,
+    );
+  }
+
+  public fillPreApprovedStopLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: StopLimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    return this.fillStopLimitOrderInternal(
       primaryAccountOwner,
       primaryAccountNumber,
       order,
@@ -753,6 +823,38 @@ export class AccountOperation {
       primaryAccountOwner,
       primaryAccountId: primaryAccountNumber,
       autoTrader: this.contracts.limitOrders.options.address,
+      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
+      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      amount: {
+        denomination: AmountDenomination.Wei,
+        reference: AmountReference.Delta,
+        value: amount,
+      },
+      data: hexStringToBytes(dataString),
+    });
+  }
+
+  /**
+   * Internal logic for filling stop-limit orders (either signed or pre-approved orders)
+   */
+  private fillStopLimitOrderInternal(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: StopLimitOrder,
+    weiAmount: Integer,
+    denotedInMakerAmount: boolean,
+    isSignedOrder: boolean,
+  ): AccountOperation {
+    const dataString = isSignedOrder
+      ? this.stopLimitOrders.signedOrderToBytes(order as SignedStopLimitOrder)
+      : this.stopLimitOrders.unsignedOrderToBytes(order);
+    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.stopLimitOrders.options.address,
       inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
       outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
       otherAccountOwner: order.makerAccountOwner,

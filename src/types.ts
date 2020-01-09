@@ -262,7 +262,7 @@ export interface DaiMigrate extends AccountAction {
 }
 
 export interface AccountActionWithOrder extends AccountAction {
-  order: LimitOrder;
+  order: LimitOrder | StopLimitOrder;
 }
 
 export interface Call extends AccountAction {
@@ -397,6 +397,15 @@ export interface LimitOrder {
 }
 
 export interface SignedLimitOrder extends LimitOrder {
+  typedSignature: string;
+}
+
+export interface StopLimitOrder extends LimitOrder {
+  triggerPrice: Integer;
+  decreaseOnly: boolean;
+}
+
+export interface SignedStopLimitOrder extends StopLimitOrder {
   typedSignature: string;
 }
 

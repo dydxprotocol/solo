@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/solo",
-  "version": "0.28.2",
+  "version": "0.28.4",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -89,7 +89,7 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "ethlint": "^1.2.4",
-    "ganache-cli": "6.7.0",
+    "ganache-cli": "6.8.1",
     "jest": "^24.1.0",
     "mocha-junit-reporter": "^1.18.0",
     "solidity-coverage": "0.6.7",

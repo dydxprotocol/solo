@@ -49,6 +49,7 @@ export class Api {
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
+    postOnly = false,
     clientId,
   }: {
     makerAccountOwner: address,
@@ -61,6 +62,7 @@ export class Api {
     takerAmount: Integer | string,
     expiration: Integer | string,
     fillOrKill: boolean,
+    postOnly: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const order: SignedLimitOrder = await this.createOrder({
@@ -76,6 +78,7 @@ export class Api {
     return this.submitOrder({
       order,
       fillOrKill,
+      postOnly,
       clientId,
       triggerPrice,
     });
@@ -93,6 +96,7 @@ export class Api {
     makerAccountNumber = new BigNumber(0),
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
+    postOnly = false,
     cancelId,
     clientId,
   }: {
@@ -104,6 +108,7 @@ export class Api {
     takerAmount: Integer | string,
     expiration: Integer | string,
     fillOrKill: boolean,
+    postOnly: boolean,
     cancelId: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
@@ -129,6 +134,7 @@ export class Api {
     return this.submitReplaceOrder({
       order,
       fillOrKill,
+      postOnly,
       cancelId,
       cancelSignature,
       clientId,
@@ -141,12 +147,14 @@ export class Api {
   public async submitReplaceOrder({
     order,
     fillOrKill = false,
+    postOnly = false,
     cancelId,
     cancelSignature,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
+    postOnly: boolean,
     cancelId: string,
     cancelSignature: string,
     clientId?: string,
@@ -156,6 +164,7 @@ export class Api {
     const data: any = {
       cancelId,
       cancelSignature,
+      postOnly,
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
     };
@@ -233,17 +242,21 @@ export class Api {
     order,
     fillOrKill = false,
     triggerPrice = null,
+    postOnly = false,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
     triggerPrice?: Integer,
+    postOnly: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
+      postOnly,
       order: jsonOrder,
+      fillOrKill: !!fillOrKill,
     };
     if (clientId) {
       data.clientId = clientId;
