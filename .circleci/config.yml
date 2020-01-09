@@ -63,8 +63,8 @@ jobs:
   test:
     docker:
       - image: dydxprotocol/node:10.16.3-alpine
-      - image: trufflesuite/ganache-cli:v6.8.1
-        command: -d -k=istanbul -i 1001
+      - image: trufflesuite/ganache-cli:v6.9.0
+        command: -d -i 1001
     working_directory: ~/build
     parallelism: 3
     steps:
