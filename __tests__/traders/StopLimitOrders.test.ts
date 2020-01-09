@@ -857,6 +857,48 @@ describe('StopLimitOrders', () => {
         'StopLimitOrders: inputMarket not decreased',
       );
     });
+
+    it('Fails when increasing position', async () => {
+      const order = await getModifiedTestOrder({
+        makerMarket: defaultTakerMarket,
+        takerMarket: defaultMakerMarket,
+        makerAmount: defaultTakerAmount,
+        takerAmount: defaultMakerAmount,
+        decreaseOnly: true,
+      });
+      await expectThrow(
+        fillLimitOrder(order, {
+          amount: INTEGERS.ONE,
+          denominatedInMakerAmount: false,
+        }),
+        'StopLimitOrders: inputMarket not decreased',
+      );
+    });
+
+    it('Fails when position was originally zero', async () => {
+      await Promise.all([
+        solo.testing.setAccountBalance(
+          testOrder.makerAccountOwner,
+          testOrder.makerAccountNumber,
+          defaultMakerMarket,
+          INTEGERS.ZERO,
+        ),
+        solo.testing.setAccountBalance(
+          testOrder.makerAccountOwner,
+          testOrder.makerAccountNumber,
+          defaultTakerMarket,
+          INTEGERS.ZERO,
+        ),
+      ]);
+      const order = await getModifiedTestOrder({ decreaseOnly: true });
+      await expectThrow(
+        fillLimitOrder(order, {
+          amount: INTEGERS.ONE,
+          denominatedInMakerAmount: false,
+        }),
+        'StopLimitOrders: inputMarket not decreased',
+      );
+    });
   });
 
   describe('integration', () => {
