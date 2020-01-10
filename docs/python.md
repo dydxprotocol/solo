@@ -274,7 +274,7 @@ order = {
 		"status": "OPEN",
 		"price": "0.01",
 		"fillOrKill": false,
-        "postOnly": false,
+        	"postOnly": false,
 		"rawData": "...",
 		"makerAmount": "10000000000000000000",
 		"unfillableAt": null,
