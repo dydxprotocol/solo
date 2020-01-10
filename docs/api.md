@@ -244,8 +244,8 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-  "fillOrKill": true,
-  "postOnly": false,
+	"fillOrKill": true,
+	"postOnly": false,
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
