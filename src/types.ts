@@ -508,6 +508,7 @@ export interface ApiOrder extends ApiModel {
   takerAmountRemaining: string;
   price: string;
   fillOrKill: boolean;
+  postOnly: boolean;
   status: ApiOrderStatus;
   expiresAt?: string;
   unfillableReason?: string;
