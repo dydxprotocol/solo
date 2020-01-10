@@ -210,7 +210,7 @@ import { MarketId, BigNumber } from '@dydxprotocol/solo';
 
 // order has type ApiOrder
 const { order } = await solo.api.placeOrder({
-   // Your address. Account must be loaded onto Solo with private key for signing
+  // Your address. Account must be loaded onto Solo with private key for signing
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
   makerMarket: MarketId.WETH,
   takerMarket: MarketId.DAI,

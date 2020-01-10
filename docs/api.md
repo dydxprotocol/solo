@@ -244,8 +244,8 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-	"fillOrKill": true,
-	"postOnly": false,
+    	"fillOrKill": true,
+    	"postOnly": false,
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
@@ -303,10 +303,10 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-  "fillOrKill": true,
-  "postOnly": false,
-  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-  "cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
+  	"fillOrKill": true,
+  	"postOnly": false,
+  	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+  	"cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
@@ -460,7 +460,7 @@ Example Response Body:
             "makerAccountNumber": "0",
             "status": "PENDING",
             "price": "1",
-			      "clientId": "foo",
+            "clientId": "foo",
             "fillOrKill": false,
             "postOnly": false,
             "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
