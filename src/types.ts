@@ -514,12 +514,12 @@ export enum ApiOrderCancelReason {
 
 export interface ApiOrderQueryV2 {
   accountOwner?: string;
-  accountNumber?: BigNumber;
+  accountNumber?: Integer | string;
   status?: ApiOrderStatus[];
   market?: ApiMarketName[];
   side?: ApiSide;
   orderType?: ApiOrderTypeV2[];
-  limit?: number;
+  limit?: Integer | string;
   startingBefore?: Date;
 }
 
@@ -528,15 +528,15 @@ export interface ApiOrderV2 extends ApiModel {
   id: string;
   status: ApiOrderStatus;
   accountOwner: string;
-  accountNumber: BigNumber;
+  accountNumber: string;
   orderType: ApiOrderTypeV2;
   fillOrKill: boolean;
   market: ApiMarketName;
   side: ApiSide;
-  baseAmount: BigNumber;
-  quoteAmount: BigNumber;
-  filledAmount: BigNumber;
-  price: BigNumber;
+  baseAmount: string;
+  quoteAmount: string;
+  filledAmount: string;
+  price: string;
   cancelReason: ApiOrderCancelReason;
 }
 
@@ -603,9 +603,9 @@ export interface ApiFillQueryV2 {
   market?: Market[];
   transactionHash?: string;
   accountOwner?: string;
-  accountNumber?: BigNumber;
+  accountNumber?: Integer | string;
   startingBefore?: Date;
-  limit?: BigNumber;
+  limit?: Integer | string;
 }
 
 export interface ApiFill extends ApiModel {
@@ -626,11 +626,11 @@ export interface ApiFillV2 extends ApiModel {
   status: ApiFillStatus;
   market: ApiMarketName;
   side: ApiSide;
-  price: BigNumber;
-  amount: BigNumber;
+  price: string;
+  amount: string;
   orderId: string;
   accountOwner: string;
-  accountNumber: BigNumber;
+  accountNumber: string;
   liquidity: Liquidity;
 }
 
@@ -640,9 +640,9 @@ export interface ApiTradeQueryV2 {
   market?: ApiMarketName[];
   transactionHash?: string;
   accountOwner?: string;
-  accountNumber?: BigNumber;
+  accountNumber?: Integer | string;
   startingBefore?: Date;
-  limit?: BigNumber;
+  limit?: Integer | string;
 }
 
 export interface ApiTrade extends ApiModel {
@@ -659,14 +659,14 @@ export interface ApiTradeV2 extends ApiModel {
   status: ApiFillStatus;
   market: ApiMarketName;
   side: ApiSide;
-  price: BigNumber;
-  amount: BigNumber;
+  price: string;
+  amount: string;
   makerOrderId: string;
   makerAccountOwner: string;
-  makerAccountNumber: BigNumber;
+  makerAccountNumber: string;
   takerOrderId: string;
   takerAccountOwner: string;
-  takerAccountNumber: BigNumber;
+  takerAccountNumber: string;
 }
 
 export interface ApiMarket {
