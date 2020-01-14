@@ -514,7 +514,7 @@ export enum ApiOrderCancelReason {
 
 export interface ApiOrderQueryV2 {
   accountOwner?: string;
-  accountNumber?: number;
+  accountNumber?: BigNumber;
   status?: ApiOrderStatus[];
   market?: ApiMarketName[];
   side?: ApiSide;
@@ -526,10 +526,9 @@ export interface ApiOrderQueryV2 {
 export interface ApiOrderV2 extends ApiModel {
   uuid: string;
   id: string;
-  createdAt: string;
   status: ApiOrderStatus;
   accountOwner: string;
-  accountNumber: number;
+  accountNumber: BigNumber;
   orderType: ApiOrderTypeV2;
   fillOrKill: boolean;
   market: ApiMarketName;
@@ -604,9 +603,9 @@ export interface ApiFillQueryV2 {
   market?: Market[];
   transactionHash?: string;
   accountOwner?: string;
-  accountNumber?: number;
+  accountNumber?: BigNumber;
   startingBefore?: Date;
-  limit?: number;
+  limit?: BigNumber;
 }
 
 export interface ApiFill extends ApiModel {
@@ -622,8 +621,8 @@ export interface ApiFillV2 extends ApiModel {
   status: ApiFillStatus;
   market: ApiMarketName;
   side: ApiSide;
-  price: string;
-  amount: string;
+  price: BigNumber;
+  amount: BigNumber;
   orderId: string;
   accountOwner: string;
   accountNumber: string;
@@ -636,9 +635,9 @@ export interface ApiTradeQueryV2 {
   market?: ApiMarketName[];
   transactionHash?: string;
   accountOwner?: string;
-  accountNumber?: number;
+  accountNumber?: BigNumber;
   startingBefore?: Date;
-  limit?: number;
+  limit?: BigNumber;
 }
 
 export interface ApiTrade extends ApiModel {
@@ -655,8 +654,8 @@ export interface ApiTradeV2 extends ApiModel {
   status: ApiFillStatus;
   market: ApiMarketName;
   side: ApiSide;
-  price: string;
-  amount: string;
+  price: BigNumber;
+  amount: BigNumber;
   makerOrderId: string;
   makerAccountOwner: string;
   makerAccountNumber: string;
@@ -667,7 +666,7 @@ export interface ApiTradeV2 extends ApiModel {
 
 export interface ApiMarket {
   id: number;
-  createdAt: string;
+  createdAt: Date;
   updatedAt: string;
   deletedAt?: string;
   name: string;
@@ -693,9 +692,9 @@ export interface ApiMarket {
 
 interface ApiModel {
   uuid: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
 }
 
 export enum OrderType {
