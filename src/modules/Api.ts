@@ -300,42 +300,20 @@ export class Api {
     limit,
     startingBefore,
   }: ApiOrderQueryV2): Promise<{ orders: ApiOrderV2[] }> {
-    const queryObj: any = {};
+    const queryObj: any = {
+      side,
+      orderType,
+      limit,
+      market,
+      status,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
 
-    if (side) {
-      queryObj.side = side;
-    }
-
-    if (orderType) {
-      queryObj.orderType = orderType;
-    }
-
-    if (startingBefore) {
-      queryObj.startingBefore = startingBefore.toISOString();
-    }
-    if (limit) {
-      queryObj.limit = limit;
-    }
-    if (market) {
-      queryObj.market = market.join();
-    }
-    if (status) {
-      queryObj.status = status.join();
-    }
-    if (accountOwner) {
-      queryObj.accountOwner = accountOwner;
-
-      if (accountNumber) {
-        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
-      } else {
-        queryObj.accountNumber = '0';
-      }
-    }
-
-    const query: string = queryString.stringify(queryObj);
-
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
     const response = await axios({
-      url: `${this.endpoint}/v2/orders${query.length > 0 ? '?' : ''}${query}`,
+      url: `${this.endpoint}/v2/orders?${query}`,
       method: 'get',
       timeout: this.timeout,
     });
@@ -430,41 +408,19 @@ export class Api {
     startingBefore,
     limit,
   }: ApiFillQueryV2): Promise<{ fills: ApiFillV2[] }> {
-    const queryObj: any = {};
+    const queryObj: any = {
+      orderId,
+      side,
+      limit,
+      market,
+      status,
+      transactionHash,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
 
-    if (orderId) {
-      queryObj.orderId = orderId;
-    }
-
-    if (side) {
-      queryObj.side = side;
-    }
-
-    if (transactionHash) {
-      queryObj.transactionHash = transactionHash;
-    }
-
-    if (startingBefore) {
-      queryObj.startingBefore = startingBefore.toISOString();
-    }
-    if (limit) {
-      queryObj.limit = limit;
-    }
-    if (market) {
-      queryObj.market = market.join();
-    }
-
-    if (accountOwner) {
-      queryObj.accountOwner = accountOwner;
-
-      if (accountNumber) {
-        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
-      } else {
-        queryObj.accountNumber = '0';
-      }
-    }
-
-    const query: string = queryString.stringify(queryObj);
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
     const response = await axios({
       url: `${this.endpoint}/v2/fills${query.length > 0 ? '?' : ''}${query}`,
@@ -526,41 +482,19 @@ export class Api {
     startingBefore,
     limit,
   }: ApiTradeQueryV2): Promise<{ trades: ApiTradeV2[] }> {
-    const queryObj: any = {};
+    const queryObj: any = {
+      orderId,
+      side,
+      limit,
+      market,
+      status,
+      transactionHash,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
 
-    if (orderId) {
-      queryObj.orderId = orderId;
-    }
-
-    if (side) {
-      queryObj.side = side;
-    }
-
-    if (transactionHash) {
-      queryObj.transactionHash = transactionHash;
-    }
-
-    if (startingBefore) {
-      queryObj.startingBefore = startingBefore.toISOString();
-    }
-    if (limit) {
-      queryObj.limit = limit;
-    }
-    if (market) {
-      queryObj.market = market.join();
-    }
-
-    if (accountOwner) {
-      queryObj.accountOwner = accountOwner;
-
-      if (accountNumber) {
-        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
-      } else {
-        queryObj.accountNumber = '0';
-      }
-    }
-
-    const query: string = queryString.stringify(queryObj);
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
     const response = await axios({
       url: `${this.endpoint}/v2/trades${query.length > 0 ? '?' : ''}${query}`,

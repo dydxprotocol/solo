@@ -616,6 +616,11 @@ export interface ApiFill extends ApiModel {
   order: ApiOrder;
 }
 
+export enum Liquidity {
+  TAKER = 'TAKER',
+  MAKER = 'MAKER',
+}
+
 export interface ApiFillV2 extends ApiModel {
   transactionHash: string;
   status: ApiFillStatus;
@@ -625,8 +630,8 @@ export interface ApiFillV2 extends ApiModel {
   amount: BigNumber;
   orderId: string;
   accountOwner: string;
-  accountNumber: string;
-  liquidity: string;
+  accountNumber: BigNumber;
+  liquidity: Liquidity;
 }
 
 export interface ApiTradeQueryV2 {
