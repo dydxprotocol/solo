@@ -429,7 +429,7 @@ export class Api {
     accountNumber,
     startingBefore,
     limit,
-  }: ApiFillQueryV2): Promise<{ orders: ApiFillV2[] }> {
+  }: ApiFillQueryV2): Promise<{ fills: ApiFillV2[] }> {
     const queryObj: any = {};
 
     if (orderId) {
@@ -525,7 +525,7 @@ export class Api {
     accountNumber,
     startingBefore,
     limit,
-  }: ApiTradeQueryV2): Promise<{ orders: ApiTradeV2[] }> {
+  }: ApiTradeQueryV2): Promise<{ trades: ApiTradeV2[] }> {
     const queryObj: any = {};
 
     if (orderId) {
