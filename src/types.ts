@@ -616,7 +616,7 @@ export interface ApiFill extends ApiModel {
   order: ApiOrder;
 }
 
-export enum Liquidity {
+export enum ApiLiquidity {
   TAKER = 'TAKER',
   MAKER = 'MAKER',
 }
@@ -631,7 +631,7 @@ export interface ApiFillV2 extends ApiModel {
   orderId: string;
   accountOwner: string;
   accountNumber: string;
-  liquidity: Liquidity;
+  liquidity: ApiLiquidity;
 }
 
 export interface ApiTradeQueryV2 {
@@ -697,9 +697,9 @@ export interface ApiMarket {
 
 interface ApiModel {
   uuid: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 export enum OrderType {
