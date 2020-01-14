@@ -658,10 +658,10 @@ export interface ApiTradeV2 extends ApiModel {
   amount: BigNumber;
   makerOrderId: string;
   makerAccountOwner: string;
-  makerAccountNumber: string;
+  makerAccountNumber: BigNumber;
   takerOrderId: string;
   takerAccountOwner: string;
-  takerAccountNumber: string;
+  takerAccountNumber: BigNumber;
 }
 
 export interface ApiMarket {
