@@ -503,7 +503,6 @@ export class Api {
     });
 
     return response.data;
-
   }
 
   public async getTrades({
