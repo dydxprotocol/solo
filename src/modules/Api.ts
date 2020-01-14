@@ -6,9 +6,15 @@ import {
   address,
   Integer,
   SigningMethod,
+  ApiOrderQueryV2,
+  ApiOrderV2,
   ApiOrder,
   ApiAccount,
+  ApiFillQueryV2,
+  ApiFillV2,
   ApiFill,
+  ApiTradeQueryV2,
+  ApiTradeV2,
   ApiTrade,
   ApiMarket,
   SignedLimitOrder,
@@ -284,6 +290,59 @@ export class Api {
     return response.data;
   }
 
+  public async getOrdersV2({
+    accountOwner,
+    accountNumber,
+    side,
+    status,
+    orderType,
+    market,
+    limit,
+    startingBefore,
+  }: ApiOrderQueryV2): Promise<{ orders: ApiOrderV2[] }> {
+    const queryObj: any = {};
+
+    if (side) {
+      queryObj.side = side;
+    }
+
+    if (orderType) {
+      queryObj.orderType = orderType;
+    }
+
+    if (startingBefore) {
+      queryObj.startingBefore = startingBefore.toISOString();
+    }
+    if (limit) {
+      queryObj.limit = limit;
+    }
+    if (market) {
+      queryObj.market = market.join();
+    }
+    if (status) {
+      queryObj.status = status.join();
+    }
+    if (accountOwner) {
+      queryObj.accountOwner = accountOwner;
+
+      if (accountNumber) {
+        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
+      } else {
+        queryObj.accountNumber = '0';
+      }
+    }
+
+    const query: string = queryString.stringify(queryObj);
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/orders${query.length > 0 ? '?' : ''}${query}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
   public async getOrders({
     startingBefore,
     limit,
@@ -334,6 +393,19 @@ export class Api {
     return response.data;
   }
 
+  public async getOrderV2({
+    id,
+  }: {
+    id: string,
+  }): Promise<{ order: ApiOrderV2 }> {
+    const response = await axios({
+      url: `${this.endpoint}/v2/orders/${id}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+    return response.data;
+  }
+
   public async getOrder({
     id,
   }: {
@@ -341,6 +413,61 @@ export class Api {
   }): Promise<{ order: ApiOrder }> {
     const response = await axios({
       url: `${this.endpoint}/v1/dex/orders/${id}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  public async getFillsV2({
+    orderId,
+    side,
+    market,
+    transactionHash,
+    accountOwner,
+    accountNumber,
+    startingBefore,
+    limit,
+  }: ApiFillQueryV2): Promise<{ orders: ApiFillV2[] }> {
+    const queryObj: any = {};
+
+    if (orderId) {
+      queryObj.orderId = orderId;
+    }
+
+    if (side) {
+      queryObj.side = side;
+    }
+
+    if (transactionHash) {
+      queryObj.transactionHash = transactionHash;
+    }
+
+    if (startingBefore) {
+      queryObj.startingBefore = startingBefore.toISOString();
+    }
+    if (limit) {
+      queryObj.limit = limit;
+    }
+    if (market) {
+      queryObj.market = market.join();
+    }
+
+    if (accountOwner) {
+      queryObj.accountOwner = accountOwner;
+
+      if (accountNumber) {
+        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
+      } else {
+        queryObj.accountNumber = '0';
+      }
+    }
+
+    const query: string = queryString.stringify(queryObj);
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/fills${query.length > 0 ? '?' : ''}${query}`,
       method: 'get',
       timeout: this.timeout,
     });
@@ -387,6 +514,62 @@ export class Api {
     });
 
     return response.data;
+  }
+
+  public async getTradesV2({
+    orderId,
+    side,
+    market,
+    transactionHash,
+    accountOwner,
+    accountNumber,
+    startingBefore,
+    limit,
+  }: ApiTradeQueryV2): Promise<{ orders: ApiTradeV2[] }> {
+    const queryObj: any = {};
+
+    if (orderId) {
+      queryObj.orderId = orderId;
+    }
+
+    if (side) {
+      queryObj.side = side;
+    }
+
+    if (transactionHash) {
+      queryObj.transactionHash = transactionHash;
+    }
+
+    if (startingBefore) {
+      queryObj.startingBefore = startingBefore.toISOString();
+    }
+    if (limit) {
+      queryObj.limit = limit;
+    }
+    if (market) {
+      queryObj.market = market.join();
+    }
+
+    if (accountOwner) {
+      queryObj.accountOwner = accountOwner;
+
+      if (accountNumber) {
+        queryObj.accountNumber = new BigNumber(accountNumber).toFixed(0);
+      } else {
+        queryObj.accountNumber = '0';
+      }
+    }
+
+    const query: string = queryString.stringify(queryObj);
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/trades${query.length > 0 ? '?' : ''}${query}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+
   }
 
   public async getTrades({
