@@ -519,7 +519,7 @@ export interface ApiOrderQueryV2 {
   market?: ApiMarketName[];
   side?: ApiSide;
   orderType?: ApiOrderTypeV2[];
-  limit?: Integer | string;
+  limit?: number;
   startingBefore?: Date;
 }
 
@@ -605,7 +605,7 @@ export interface ApiFillQueryV2 {
   accountOwner?: string;
   accountNumber?: Integer | string;
   startingBefore?: Date;
-  limit?: Integer | string;
+  limit?: number;
 }
 
 export interface ApiFill extends ApiModel {
@@ -642,7 +642,7 @@ export interface ApiTradeQueryV2 {
   accountOwner?: string;
   accountNumber?: Integer | string;
   startingBefore?: Date;
-  limit?: Integer | string;
+  limit?: number;
 }
 
 export interface ApiTrade extends ApiModel {
@@ -671,7 +671,7 @@ export interface ApiTradeV2 extends ApiModel {
 
 export interface ApiMarket {
   id: number;
-  createdAt: Date;
+  createdAt: string;
   updatedAt: string;
   deletedAt?: string;
   name: string;
