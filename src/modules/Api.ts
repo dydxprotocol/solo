@@ -423,7 +423,7 @@ export class Api {
     const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
     const response = await axios({
-      url: `${this.endpoint}/v2/fills${query.length > 0 ? '?' : ''}${query}`,
+      url: `${this.endpoint}/v2/fills?${query}`,
       method: 'get',
       timeout: this.timeout,
     });
@@ -497,7 +497,7 @@ export class Api {
     const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
     const response = await axios({
-      url: `${this.endpoint}/v2/trades${query.length > 0 ? '?' : ''}${query}`,
+      url: `${this.endpoint}/v2/trades?${query}`,
       method: 'get',
       timeout: this.timeout,
     });
