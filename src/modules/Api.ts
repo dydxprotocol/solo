@@ -6,9 +6,15 @@ import {
   address,
   Integer,
   SigningMethod,
+  ApiOrderQueryV2,
+  ApiOrderV2,
   ApiOrder,
   ApiAccount,
+  ApiFillQueryV2,
+  ApiFillV2,
   ApiFill,
+  ApiTradeQueryV2,
+  ApiTradeV2,
   ApiTrade,
   ApiMarket,
   SignedLimitOrder,
@@ -284,6 +290,37 @@ export class Api {
     return response.data;
   }
 
+  public async getOrdersV2({
+    accountOwner,
+    accountNumber,
+    side,
+    status,
+    orderType,
+    market,
+    limit,
+    startingBefore,
+  }: ApiOrderQueryV2): Promise<{ orders: ApiOrderV2[] }> {
+    const queryObj: any = {
+      side,
+      orderType,
+      limit,
+      market,
+      status,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
+
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+    const response = await axios({
+      url: `${this.endpoint}/v2/orders?${query}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
   public async getOrders({
     startingBefore,
     limit,
@@ -334,6 +371,19 @@ export class Api {
     return response.data;
   }
 
+  public async getOrderV2({
+    id,
+  }: {
+    id: string,
+  }): Promise<{ order: ApiOrderV2 }> {
+    const response = await axios({
+      url: `${this.endpoint}/v2/orders/${id}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+    return response.data;
+  }
+
   public async getOrder({
     id,
   }: {
@@ -341,6 +391,39 @@ export class Api {
   }): Promise<{ order: ApiOrder }> {
     const response = await axios({
       url: `${this.endpoint}/v1/dex/orders/${id}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  public async getFillsV2({
+    orderId,
+    side,
+    market,
+    transactionHash,
+    accountOwner,
+    accountNumber,
+    startingBefore,
+    limit,
+  }: ApiFillQueryV2): Promise<{ fills: ApiFillV2[] }> {
+    const queryObj: any = {
+      orderId,
+      side,
+      limit,
+      market,
+      status,
+      transactionHash,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
+
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/fills?${query}`,
       method: 'get',
       timeout: this.timeout,
     });
@@ -382,6 +465,39 @@ export class Api {
 
     const response = await axios({
       url: `${this.endpoint}/v1/dex/fills?${query}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  public async getTradesV2({
+    orderId,
+    side,
+    market,
+    transactionHash,
+    accountOwner,
+    accountNumber,
+    startingBefore,
+    limit,
+  }: ApiTradeQueryV2): Promise<{ trades: ApiTradeV2[] }> {
+    const queryObj: any = {
+      orderId,
+      side,
+      limit,
+      market,
+      status,
+      transactionHash,
+      accountOwner,
+      accountNumber: accountNumber && new BigNumber(accountNumber).toFixed(0),
+      startingBefore: startingBefore && startingBefore.toISOString(),
+    };
+
+    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/trades?${query}`,
       method: 'get',
       timeout: this.timeout,
     });

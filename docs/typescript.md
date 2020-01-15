@@ -241,6 +241,63 @@ const { order } = await solo.api.placeOrder({
 });
 ```
 
+### Orderbook V2 Endpoints
+
+#### Get Order
+```typescript
+const { id } = existingOrder;
+// O
+const { order }: { order: ApiOrderV2 } = await solo.api.getOrderV2({ id });
+```
+
+#### Get Orders
+```typescript
+const { orders }: { orders: ApiOrderV2[] } = await solo.api.getOrdersV2({
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
+  accountNumber: '0', // OPTIONAL
+  side: 'BUY', // OPTIONAL
+  market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
+  status: ['OPEN', 'FILLED'], // OPTIONAL
+  orderType: ['LIMIT', 'ISOLATED_MARKET'], // OPTIONAL
+  limit: 40 // OPTIONAL, max: 100
+  startingBefore: new Date() // OPTIONAL
+})
+```
+
+#### Get Fills
+```typescript
+const { id } = existingOrder;
+
+const { fills }: { fills: ApiFillV2[] } = await solo.api.getFillsV2({
+  orderId: id, // OPTIONAL
+  side: 'BUY', // OPTIONAL
+  market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
+  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba' // OPTIONAL
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
+  accountNumber: '0', // OPTIONAL
+  startingBefore: new Date() // OPTIONAL
+  limit: 40 // OPTIONAL, max: 100
+})
+```
+
+#### Get Trades
+```typescript
+const { id } = existingOrder;
+// order has type ApiTradeV2
+const { trades }: { trades: ApiTradeV2[] } = await solo.api.getTradesV2({
+  orderId: id, // OPTIONAL
+  side: 'BUY', // OPTIONAL
+  market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
+  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba' // OPTIONAL
+  accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
+  accountNumber: '0', // OPTIONAL
+  startingBefore: new Date() // OPTIONAL
+  limit: 40 // OPTIONAL, max: 100
+})
+```
+
+### Orderbook V1 Endpoints
+
 #### Cancel Order
 ```javascript
 const { id } = existingOrder;
