@@ -5,7 +5,7 @@ free to let us know via Intercom or Telegram if you have any questions or experi
 
 All of these endpoints live at `https://api.dydx.exchange/`
 
-e.g. `https://api.dydx.exchange/v1/dex/orders`
+e.g. `https://api.dydx.exchange/v2/orders`
 
 ## Orderbook
 
@@ -66,6 +66,7 @@ Example:
 };
 ```
 
+## V1 Endpoints
 ### GET /v1/orderbook/:market
 
 Description:
@@ -643,6 +644,72 @@ Example Response Body:
     ]
 }
 ```
+## V2 Endpoints
+### GET /v2/orders
+Description:
+Get all orders from the orderbook. Orders can be queried on markets, statuses, as well as accepted order statuses
+
+Headers:
+```
+Content-Type: application/json
+```
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?accountOwner| The Ethereum address of the account(s) to request fills for.|
+|?accountNumber| (Optional) The Solo account number of the account to request fills for.|
+|?side| (Optional) Side of the order in (`BUY`, `SELL`)|
+|?status| (Optional) Status(es) of the orders to query in (`PENDING`, `OPEN`, `FILLED`, `PARTIALLY_FILLED`, `CANCELED`, `UNTRIGGERED`)
+|?orderType| (Optional) Type(s) of orders to query in (`LIMIT`, `ISOLATED_MARKET`, `STOP_LIMIT`)
+|?market| (Optional) Market(s) to query trades in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
+|?limit| (Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore| (Optional) ISO8601 string. Starts returning orders created before this date.|
+
+Example Response Body:
+```json
+{
+  "orders": [
+    {
+      "uuid": "ffb8f5e3-68aa-4dc9-89d2-1de6738b8c3f",
+      "id": "0xd17ae8439b99c6c7637808be36d856c6f6f497ab132a7f394f611396b5594844",
+      "createdAt": "2020-01-15T22:30:55.533Z",
+      "status": "OPEN",
+      "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": null,
+      "market": "WETH-DAI",
+      "side": "BUY",
+      "baseAmount": "50900000000000000000",
+      "quoteAmount": "8386480372200000000000",
+      "filledAmount": "0",
+      "price": "164.763858",
+      "cancelReason": null
+    },
+    {
+      "uuid": "da43af50-56dd-4884-a540-a7314a628b06",
+      "id": "0xfb65cfa2ff31e5fbc6629da82cb0a2d7eefcf92ac8b00d94da4c541b60293e8f",
+      "createdAt": "2020-01-15T22:30:55.498Z",
+      "status": "OPEN",
+      "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": null,
+      "market": "WETH-DAI",
+      "side": "BUY",
+      "baseAmount": "50500000000000000000",
+      "quoteAmount": "8323093314500000000000",
+      "filledAmount": "0",
+      "price": "164.813729",
+      "cancelReason": null
+    }
+  ]
+}
+```
+
 
 ### GET /v2/trades
 Description:
@@ -732,6 +799,63 @@ Example Response Body:
       "takerAccountOwner": "0xf03df965490882583018c64fd41fa82d7dee032f",
       "takerAccountNumber": "107168784608729135660257601028275559138738399573533131184788900278475157896234",
       "createdAt": "2019-12-11T21:11:02.247Z"
+    }
+  ]
+}
+```
+
+### GET /v2/fills
+Description:
+Get all historical fills.
+ It's most useful when you care
+about the outcome of the trade from the perspective of a particular `accountOwner`.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?accountOwner|The Ethereum address of the account(s) to request fills for.|
+|?accountNumber|(Optional) The Solo account number of the account to request fills for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?market|(Optional) Market to query trades in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
+
+Example Response Body:
+```json
+{
+  "fills": [
+    {
+      "uuid": "8994f3a0-f5a6-4aa8-a19f-075f076ad999",
+      "createdAt": "2020-01-15T00:50:17.042Z",
+      "transactionHash": "0x8350fae014702ce62c73762f9f38d29704d9dbf1909dd1fc02526c897207a35a",
+      "status": "CONFIRMED",
+      "market": "WETH-DAI",
+      "side": "SELL",
+      "price": "169.98523710095444091",
+      "amount": "100000000000000000",
+      "orderId": "0x773a0afd79bcc4c005c79d85ab7da21ff3e6bb11d73e5b3757b25fb1bc9c0f97",
+      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+      "accountNumber": "0",
+      "liquidity": "TAKER"
+    },
+    {
+      "uuid": "15a0d654-76d6-4bb4-ad1a-15c088def1b7",
+      "createdAt": "2020-01-15T00:49:55.580Z",
+      "transactionHash": "0x7419547186ee1c54785162fd6752f4c2e88ca09f0944d8b9c038a0e2cf169a8c",
+      "status": "CONFIRMED",
+      "market": "WETH-DAI",
+      "side": "BUY",
+      "price": "170.94678134323509863",
+      "amount": "100000000000000000",
+      "orderId": "0x4ef2ab5b3735c43c6ca6d91088884fe3ea43be9b03c3f16eab19aecf259420ab",
+      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+      "accountNumber": "0",
+      "liquidity": "TAKER"
     }
   ]
 }
