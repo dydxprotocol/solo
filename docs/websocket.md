@@ -310,11 +310,11 @@ eg:
 
 ### Orders
 
-The orders channel allowsa clients to subscribe to orders and fills pertaining to the wallet address.
+The orders channel allows clients to subscribe to orders and fills pertaining to the wallet address.
 
 #### Subscribing
 
-To subscribe send:
+To subscribe, send:
 
 ```json
 {
@@ -332,8 +332,8 @@ To subscribe send:
 
 #### Initial Response
 
-The initial response will be all the user's open and pending orders. The `contents` field will be of the same
-form as [`GET /v2/orders?walletAddress=${userAddress}&status=OPEN,PENDING`].
+The initial response will be all the user's open and pending orders, inside the
+`contents` field.
 
 ```json
 {
@@ -369,11 +369,43 @@ form as [`GET /v2/orders?walletAddress=${userAddress}&status=OPEN,PENDING`].
 
 #### Updates
 
-Updates to the orders are posted on the channel. If an order is filled, the corresponding fill will also be
+Updates to the orders are posted on the channel. If an order is filled, the corresponding fills will also be
 sent on the channel. eg:
 
-An order was cancelled:
+An order is first placed:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "a17dcc8e-9468-4308-96f5-3f458bf485d9",
+  "message_id": 4,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "ORDER",
+    "order": {
+      "uuid": "29c9d044-4e13-468f-8cf4-7e529e614296",
+      "id": "0xb0751a113c759779ff5fd6a53b37b26211a9f8845d443323b9f877f32d9aafd9",
+      "createdAt": "2020-01-14T22:22:19.131Z",
+      "status": "OPEN",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": false,
+      "market": "DAI-USDC",
+      "side": "BUY",
+      "baseAmount": "20000000000000000000",
+      "quoteAmount": "20018000",
+      "filledAmount": "0",
+      "price": "0.0000000000010009",
+      "cancelReason": null,
+      "updatedAt": "2020-01-14T22:22:19.153Z"
+    }
+  }
+}
+```
 
+An order was cancelled:
 ```json
 {
   "type": "channel_data",
@@ -406,7 +438,7 @@ An order was cancelled:
 }
 ```
 
-#### An order was filled:
+An order was filled:
 ```json
 {
   "type": "channel_data",
@@ -494,8 +526,8 @@ When the fill is confirmed:
   }
 }
 ```
-An order expired
 
+An order expired:
 ```json
 {
   "type": "channel_data",
@@ -539,11 +571,12 @@ An order expired
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
+|type|string|Must be set to "unsubscribe"|
 |channel|string|The channel to unsubscribe from|
 |id|string|An id to unsubscribe from on the channel|
 
 #### Response
+
 Once unsubscribed, clients will receive a message:
 ```json
 {
