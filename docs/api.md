@@ -665,6 +665,7 @@ Query Params:
 |?market| (Optional) Market(s) to query trades in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
 |?limit| (Optional) The maximum number of orders to return. Defaults to 100.|
 |?startingBefore| (Optional) ISO8601 string. Starts returning orders created before this date.|
+
 Example Response Body:
 ```json
 {
