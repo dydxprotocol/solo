@@ -318,7 +318,7 @@ The initial response will be all the user's open and pending orders, inside the
 
 #### Updates
 
-Updates to the orders are posted on the channel. If an order is filled, the corresponding fills will also be sent on the channel. The orders and fills are in the same format as the [`V2 HTTP API`](https://docs.dydx.exchange/#/api?id=v2-endpoints) eg:
+Updates to the orders are posted on the channel. If an order is filled, the corresponding fills will also be sent on the channel. The orders and fills are in the same format as the [`V2 HTTP API`](https://docs.dydx.exchange/#/api?id=v2-endpoints):
 
 An order is first placed:
 ```json
