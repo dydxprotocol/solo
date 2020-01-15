@@ -163,6 +163,13 @@
             "transactionHash": "0x7ca8a116e9e4ea01d9a8e0c96138a5cf0e96b77c8d64165cc07daa2008011933"
         }
     },
+    "StopLimitOrders": {
+        "1": {
+            "links": {},
+            "address": "0x93ae58cc1d029bBdF8b53a89337F4aBb63F6D588",
+            "transactionHash": "0x3a763de91c878bc07209ea67cebff6279a9740b9541276c47dcca66232f1a5c8"
+        }
+    },
     "SignedOperationProxy": {
         "1": {
             "links": {},

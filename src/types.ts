@@ -387,7 +387,6 @@ export interface LimitOrder {
   takerMarket: Integer;
   makerAmount: Integer;
   takerAmount: Integer;
-  triggerPrice?: Integer;
   makerAccountOwner: address;
   makerAccountNumber: Integer;
   takerAccountOwner: address;
@@ -471,6 +470,12 @@ export interface SignedOperation extends Operation {
 
 // ============ Api ============
 
+export enum ApiOrderTypeV2 {
+  LIMIT = 'LIMIT',
+  ISOLATED_MARKET = 'ISOLATED_MARKET',
+  STOP_LIMIT = 'STOP_LIMIT',
+}
+
 export enum ApiOrderType {
   LIMIT_V1 = 'dydexLimitV1',
 }
@@ -481,6 +486,7 @@ export enum ApiOrderStatus {
   FILLED = 'FILLED',
   PARTIALLY_FILLED = 'PARTIALLY_FILLED',
   CANCELED = 'CANCELED',
+  UNTRIGGERED = 'UNTRIGGERED',
 }
 
 export enum ApiFillStatus {
@@ -493,6 +499,45 @@ export enum ApiMarketName {
   WETH_DAI = 'WETH-DAI',
   WETH_USDC = 'WETH-USDC',
   DAI_USDC = 'DAI-USDC',
+}
+
+export enum ApiOrderCancelReason {
+  EXPIRED = 'EXPIRED',
+  UNDERCOLLATERALIZED = 'UNDERCOLLATERALIZED',
+  CANCELED_ON_CHAIN = 'CANCELED_ON_CHAIN',
+  USER_CANCELED = 'USER_CANCELED',
+  SELF_TRADE = 'SELF_TRADE',
+  FAILED = 'FAILED',
+  COULD_NOT_FILL = 'COULD_NOT_FILL',
+  POST_ONLY_WOULD_CROSS = 'POST_ONLY_WOULD_CROSS',
+}
+
+export interface ApiOrderQueryV2 {
+  accountOwner?: string;
+  accountNumber?: Integer | string;
+  status?: ApiOrderStatus[];
+  market?: ApiMarketName[];
+  side?: ApiSide;
+  orderType?: ApiOrderTypeV2[];
+  limit?: number;
+  startingBefore?: Date;
+}
+
+export interface ApiOrderV2 extends ApiModel {
+  uuid: string;
+  id: string;
+  status: ApiOrderStatus;
+  accountOwner: string;
+  accountNumber: string;
+  orderType: ApiOrderTypeV2;
+  fillOrKill: boolean;
+  market: ApiMarketName;
+  side: ApiSide;
+  baseAmount: string;
+  quoteAmount: string;
+  filledAmount: string;
+  price: string;
+  cancelReason: ApiOrderCancelReason;
 }
 
 export interface ApiOrder extends ApiModel {
@@ -509,6 +554,7 @@ export interface ApiOrder extends ApiModel {
   takerAmountRemaining: string;
   price: string;
   fillOrKill: boolean;
+  postOnly: boolean;
   status: ApiOrderStatus;
   expiresAt?: string;
   unfillableReason?: string;
@@ -551,12 +597,52 @@ export interface ApiOrderOnOrderbook {
   price: string;
 }
 
+export interface ApiFillQueryV2 {
+  orderId?: string;
+  side?: ApiSide;
+  market?: Market[];
+  transactionHash?: string;
+  accountOwner?: string;
+  accountNumber?: Integer | string;
+  startingBefore?: Date;
+  limit?: number;
+}
+
 export interface ApiFill extends ApiModel {
   status: ApiFillStatus;
   orderId: string;
   transactionHash: string;
   fillAmount: string;
   order: ApiOrder;
+}
+
+export enum ApiLiquidity {
+  TAKER = 'TAKER',
+  MAKER = 'MAKER',
+}
+
+export interface ApiFillV2 extends ApiModel {
+  transactionHash: string;
+  status: ApiFillStatus;
+  market: ApiMarketName;
+  side: ApiSide;
+  price: string;
+  amount: string;
+  orderId: string;
+  accountOwner: string;
+  accountNumber: string;
+  liquidity: ApiLiquidity;
+}
+
+export interface ApiTradeQueryV2 {
+  orderId?: string;
+  side?: ApiSide;
+  market?: ApiMarketName[];
+  transactionHash?: string;
+  accountOwner?: string;
+  accountNumber?: Integer | string;
+  startingBefore?: Date;
+  limit?: number;
 }
 
 export interface ApiTrade extends ApiModel {
@@ -566,6 +652,21 @@ export interface ApiTrade extends ApiModel {
   makerOrderId: string;
   takerOrder: ApiOrder;
   takerOrderId: string;
+}
+
+export interface ApiTradeV2 extends ApiModel {
+  transactionHash: string;
+  status: ApiFillStatus;
+  market: ApiMarketName;
+  side: ApiSide;
+  price: string;
+  amount: string;
+  makerOrderId: string;
+  makerAccountOwner: string;
+  makerAccountNumber: string;
+  takerOrderId: string;
+  takerAccountOwner: string;
+  takerAccountNumber: string;
 }
 
 export interface ApiMarket {

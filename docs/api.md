@@ -232,15 +232,20 @@ Request Body:
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
 
 Example Request Body:
 ```json
 {
-	"fillOrKill": true,
+    	"fillOrKill": true,
+    	"postOnly": false,
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
@@ -285,19 +290,23 @@ Request Body:
 |----------|---------|-----------|
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |cancelId|string|Order id for the order that is being canceled and replaced|
 |cancelSignature|string|Signature of the order being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
 
 Example Request Body:
 ```json
 {
-	"fillOrKill": true,
-  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-  "cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
+  	"fillOrKill": true,
+  	"postOnly": false,
+  	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+  	"cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
@@ -342,6 +351,7 @@ Example Response Body:
             "status": "PENDING",
             "price": "1",
             "fillOrKill": false,
+            "postOnly": false,
             "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
             "makerAmount": "10",
             "unfillableAt": null,
@@ -450,8 +460,9 @@ Example Response Body:
             "makerAccountNumber": "0",
             "status": "PENDING",
             "price": "1",
-			"clientId": "foo",
+            "clientId": "foo",
             "fillOrKill": false,
+            "postOnly": false,
             "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
             "makerAmount": "10",
             "expiresAt": null,
@@ -515,6 +526,7 @@ Example Response Body:
         "status": "PARTIALLY_FILLED",
         "price": "0.004974629390110436772460451696348622027658939409014028454880111431698338473784",
         "fillOrKill": false,
+        "postOnly": false,
         "rawData": "{\"makerMarket\":\"1\",\"takerMarket\":\"0\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"0\",\"makerAccountOwner\":\"0x5F5A46a8471F60b1E9F2eD0b8fc21Ba8b48887D8\",\"takerAccountOwner\":\"0xf809e07870dca762B9536d61A4fBEF1a17178092\",\"makerAmount\":\"2010200000000000000\",\"takerAmount\":\"10000000000000000\",\"salt\":\"63517970482988907828502269663484214646761418296755166268654358377296169568397\",\"expiration\":\"1569280418\",\"typedSignature\":\"0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00\"}",
         "makerAmount": "2010200000000000000",
         "unfillableAt": null,
@@ -584,6 +596,7 @@ Example Response Body:
                 "status": "FILLED",
                 "price": "1",
                 "fillOrKill": false,
+                "postOnly": false,
                 "rawData": "{\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"0\",\"expiration\":\"0\",\"typedSignature\":\"0xd9561c880b9572899eb97901f58423a610640357c1d36138f0bd31b16ca17edb715ec175b7cd7a308d70e88a6654ac706672419765720b6d8e357e60a9a5ce9b1c01\"}",
                 "makerAmount": "10",
                 "expiresAt": null,
