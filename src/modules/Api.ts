@@ -20,8 +20,11 @@ import {
   SignedLimitOrder,
   ApiOrderOnOrderbook,
   ApiMarketName,
+  SignedStopLimitOrder,
+  StopLimitOrder,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
+import { StopLimitOrders } from './StopLimitOrders';
 
 const FOUR_WEEKS_IN_SECONDS = 60 * 60 * 24 * 28;
 const TAKER_ACCOUNT_OWNER = '0xf809e07870dca762B9536d61A4fBEF1a17178092';
@@ -32,15 +35,18 @@ const DEFAULT_API_TIMEOUT = 10000;
 export class Api {
   private endpoint: String;
   private limitOrders: LimitOrders;
+  private stopLimitOrders: StopLimitOrders;
   private timeout: number;
 
   constructor(
     limitOrders: LimitOrders,
+    stopLimitOrders: StopLimitOrders,
     endpoint: string = DEFAULT_API_ENDPOINT,
     timeout: number = DEFAULT_API_TIMEOUT,
   ) {
     this.endpoint = endpoint;
     this.limitOrders = limitOrders;
+    this.stopLimitOrders = stopLimitOrders;
     this.timeout = timeout;
   }
 
@@ -54,6 +60,9 @@ export class Api {
     expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
     fillOrKill = false,
     postOnly = false,
+    triggerPrice,
+    signedTriggerPrice,
+    decreaseOnly,
     clientId,
   }: {
     makerAccountOwner: address,
@@ -65,22 +74,41 @@ export class Api {
     expiration: Integer | string,
     fillOrKill: boolean,
     postOnly: boolean,
+    triggerPrice?: Integer,
+    signedTriggerPrice?: Integer,
+    decreaseOnly?: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const order: SignedLimitOrder = await this.createOrder({
-      makerAccountOwner,
-      makerMarket,
-      takerMarket,
-      makerAmount,
-      takerAmount,
-      makerAccountNumber,
-      expiration,
-    });
+    let order: SignedLimitOrder | SignedStopLimitOrder;
+    if (triggerPrice) {
+      order = await this.createStopLimitOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+        decreaseOnly,
+        triggerPrice: signedTriggerPrice,
+      });
+    } else {
+      order = await this.createOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+      });
+    }
     return this.submitOrder({
       order,
       fillOrKill,
       postOnly,
       clientId,
+      triggerPrice,
     });
   }
 
@@ -202,11 +230,7 @@ export class Api {
     takerAmount: Integer | string,
     expiration: Integer | string,
   }): Promise<SignedLimitOrder> {
-    const realExpiration = new BigNumber(expiration).eq(0) ?
-      new BigNumber(0)
-      : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
-        new BigNumber(expiration),
-      );
+    const realExpiration: BigNumber = getRealExpiration(expiration);
     const order: LimitOrder = {
       makerAccountOwner,
       makerAccountNumber: new BigNumber(makerAccountNumber),
@@ -231,17 +255,70 @@ export class Api {
   }
 
   /**
+   * Creates, but does not place a signed order
+   */
+  public async createStopLimitOrder({
+    makerAccountOwner,
+    makerMarket,
+    takerMarket,
+    makerAmount,
+    takerAmount,
+    makerAccountNumber = new BigNumber(0),
+    expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
+    decreaseOnly,
+    triggerPrice,
+  }: {
+    makerAccountOwner: address,
+    makerAccountNumber: Integer | string,
+    makerMarket: Integer | string,
+    takerMarket: Integer | string,
+    makerAmount: Integer | string,
+    takerAmount: Integer | string,
+    expiration: Integer | string,
+    decreaseOnly: boolean,
+    triggerPrice: Integer,
+  }): Promise<SignedStopLimitOrder> {
+    const realExpiration: BigNumber = getRealExpiration(expiration);
+    const order: StopLimitOrder = {
+      makerAccountOwner,
+      decreaseOnly,
+      makerAccountNumber: new BigNumber(makerAccountNumber),
+      makerMarket: new BigNumber(makerMarket),
+      takerMarket: new BigNumber(takerMarket),
+      makerAmount: new BigNumber(makerAmount),
+      takerAmount: new BigNumber(takerAmount),
+      expiration: realExpiration,
+      takerAccountOwner: TAKER_ACCOUNT_OWNER,
+      takerAccountNumber: TAKER_ACCOUNT_NUMBER,
+      salt: generatePseudoRandom256BitNumber(),
+      triggerPrice: new BigNumber(triggerPrice),
+    };
+
+    const typedSignature: string = await this.stopLimitOrders.signOrder(
+      order,
+      SigningMethod.Hash,
+    );
+
+    return {
+      ...order,
+      typedSignature,
+    };
+  }
+
+  /**
    * Submits an already signed order
    */
   public async submitOrder({
     order,
     fillOrKill = false,
     postOnly = false,
+    triggerPrice,
     clientId,
   }: {
-    order: SignedLimitOrder,
+    order: SignedLimitOrder | SignedStopLimitOrder,
     fillOrKill: boolean,
     postOnly: boolean,
+    triggerPrice?: Integer,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
@@ -251,6 +328,9 @@ export class Api {
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
     };
+    if (triggerPrice) {
+      data.triggerPrice = triggerPrice;
+    }
     if (clientId) {
       data.clientId = clientId;
     }
@@ -652,4 +732,12 @@ function jsonifyOrder(order) {
     salt: order.salt.toFixed(0),
     expiration: order.expiration.toFixed(0),
   };
+}
+
+function getRealExpiration(expiration: Integer | string): BigNumber {
+  return new BigNumber(expiration).eq(0) ?
+    new BigNumber(0)
+    : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
+      new BigNumber(expiration),
+    );
 }
