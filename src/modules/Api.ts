@@ -40,11 +40,13 @@ export class Api {
 
   constructor(
     limitOrders: LimitOrders,
+    stopLimitOrders: StopLimitOrders,
     endpoint: string = DEFAULT_API_ENDPOINT,
     timeout: number = DEFAULT_API_TIMEOUT,
   ) {
     this.endpoint = endpoint;
     this.limitOrders = limitOrders;
+    this.stopLimitOrders = stopLimitOrders;
     this.timeout = timeout;
   }
 
@@ -78,7 +80,7 @@ export class Api {
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     let order: SignedLimitOrder | SignedStopLimitOrder;
-    if (signedTriggerPrice || decreaseOnly) {
+    if (triggerPrice) {
       order = await this.createStopLimitOrder({
         makerAccountOwner,
         makerMarket,
