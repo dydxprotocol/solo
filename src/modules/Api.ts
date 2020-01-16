@@ -275,8 +275,8 @@ export class Api {
     makerAmount: Integer | string,
     takerAmount: Integer | string,
     expiration: Integer | string,
-    decreaseOnly?: boolean,
-    triggerPrice?: Integer,
+    decreaseOnly: boolean,
+    triggerPrice: Integer,
   }): Promise<SignedStopLimitOrder> {
     const realExpiration: BigNumber = getRealExpiration(expiration);
     const order: StopLimitOrder = {
@@ -291,7 +291,7 @@ export class Api {
       takerAccountOwner: TAKER_ACCOUNT_OWNER,
       takerAccountNumber: TAKER_ACCOUNT_NUMBER,
       salt: generatePseudoRandom256BitNumber(),
-      triggerPrice: triggerPrice ? new BigNumber(triggerPrice) : triggerPrice,
+      triggerPrice: new BigNumber(triggerPrice),
     };
 
     const typedSignature: string = await this.stopLimitOrders.signOrder(
