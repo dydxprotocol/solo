@@ -257,6 +257,285 @@ An order was removed from the orderbook (e.g. cancelled or fully filled), and an
 }
 ```
 
+### Orders
+
+The orders channel allows clients to subscribe to orders and fills pertaining to the wallet address.
+
+#### Subscribing
+
+To subscribe, send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "orders"|
+|id|string|The wallet address to listen to|
+
+#### Initial Response
+
+The initial response will be all the user's open and pending orders, inside the
+`contents` field.
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "a3f64f25-4744-46f8-8456-f456f75616b2",
+  "message_id": 1,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "orders": [
+      {
+        "uuid": "210ab138-017d-4983-8d87-2ca6ff0955c8",
+        "id": "0x119f4e6e453a90c0eb64f6c2d3015386c4d201e89ea35a35495cba4c7edb4665",
+        "createdAt": "2020-01-14T21:56:18.765Z",
+        "status": "OPEN",
+        "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "accountNumber": "0",
+        "orderType": "LIMIT",
+        "fillOrKill": false,
+        "postOnly": true,
+        "market": "DAI-USDC",
+        "side": "BUY",
+        "baseAmount": "20000000000000000000",
+        "quoteAmount": "1000000",
+        "filledAmount": "0",
+        "price": "0.00000000000005",
+        "cancelReason": null
+      }
+    ]
+  }
+}
+```
+
+#### Updates
+
+Updates to the orders are posted on the channel. If an order is filled, the corresponding fills will also be sent on the channel. The orders and fills are in the same format as the [`V2 HTTP API`](https://docs.dydx.exchange/#/api?id=v2-endpoints):
+
+An order is first placed:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "a17dcc8e-9468-4308-96f5-3f458bf485d9",
+  "message_id": 4,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "ORDER",
+    "order": {
+      "uuid": "29c9d044-4e13-468f-8cf4-7e529e614296",
+      "id": "0xb0751a113c759779ff5fd6a53b37b26211a9f8845d443323b9f877f32d9aafd9",
+      "createdAt": "2020-01-14T22:22:19.131Z",
+      "status": "OPEN",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": false,
+      "market": "DAI-USDC",
+      "side": "BUY",
+      "baseAmount": "20000000000000000000",
+      "quoteAmount": "20018000",
+      "filledAmount": "0",
+      "price": "0.0000000000010009",
+      "cancelReason": null,
+      "updatedAt": "2020-01-14T22:22:19.153Z"
+    }
+  }
+}
+```
+
+An order was cancelled:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "8c510abb-2e45-4f9a-be17-9c992b441da8",
+  "message_id": 7,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "ORDER",
+    "order": {
+      "uuid": "d98b3b81-8ffa-45c8-8e1a-38a31ab9f690",
+      "id": "0x1002e3ae34834109e8f0a8429df1faf9597b39701dc6a51e1950e4c170afa21f",
+      "createdAt": "2020-01-14T21:28:04.719Z",
+      "status": "CANCELED",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": false,
+      "market": "DAI-USDC",
+      "side": "BUY",
+      "baseAmount": "20000000000000000000",
+      "quoteAmount": "100000",
+      "filledAmount": "0",
+      "price": "0.000000000000005",
+      "cancelReason": "USER_CANCELED",
+      "updatedAt": "2020-01-14T21:28:19.191Z"
+    }
+  }
+}
+```
+
+An order was filled:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "839bd50b-77f6-4568-b758-cdc4b2962efb",
+  "message_id": 5,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "ORDER",
+    "order": {
+      "uuid": "5137f016-80dc-47e8-89b5-aee3b2db15d0",
+      "id": "0x03dfd18edc2f26fc9298edcd28ca6cad4971bd1f44d40253d5154b0d1f217680",
+      "createdAt": "2020-01-14T21:15:13.561Z",
+      "status": "FILLED",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": true,
+      "postOnly": false,
+      "market": "DAI-USDC",
+      "side": "SELL",
+      "baseAmount": "20000000000000000000",
+      "quoteAmount": "19900000",
+      "filledAmount": "20000000000000000000",
+      "price": "0.000000000000995",
+      "cancelReason": null,
+      "updatedAt": "2020-01-14T21:15:14.020Z"
+    }
+  }
+}
+```
+
+The PENDING fill for the order:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "839bd50b-77f6-4568-b758-cdc4b2962efb",
+  "message_id": 6,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "FILL",
+    "fill": {
+      "uuid": "5a2efda1-39f7-44c3-a62b-d5ca925937f9",
+      "status": "PENDING",
+      "orderId": "0x03dfd18edc2f26fc9298edcd28ca6cad4971bd1f44d40253d5154b0d1f217680",
+      "transactionHash": "0xbc331c8894dbe19f65cf4132a98ff81793d1a9e5a437ecf62801d28f4d09caa9",
+      "createdAt": "2020-01-14T21:15:14.008Z",
+      "updatedAt": "2020-01-14T21:15:14.026Z",
+      "amount": "20000000000000000000",
+      "price": "0.000000000001",
+      "side": "SELL",
+      "market": "DAI-USDC",
+      "liquidity": "TAKER",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+    }
+  }
+}
+```
+
+When the fill is confirmed:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "839bd50b-77f6-4568-b758-cdc4b2962efb",
+  "message_id": 7,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "FILL",
+    "fill": {
+      "uuid": "5a2efda1-39f7-44c3-a62b-d5ca925937f9",
+      "status": "CONFIRMED",
+      "orderId": "0x03dfd18edc2f26fc9298edcd28ca6cad4971bd1f44d40253d5154b0d1f217680",
+      "transactionHash": "0xbc331c8894dbe19f65cf4132a98ff81793d1a9e5a437ecf62801d28f4d09caa9",
+      "createdAt": "2020-01-14T21:15:14.008Z",
+      "updatedAt": "2020-01-14T21:17:40.591Z",
+      "amount": "20000000000000000000",
+      "price": "0.000000000001",
+      "side": "SELL",
+      "market": "DAI-USDC",
+      "liquidity": "TAKER",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+    }
+  }
+}
+```
+
+An order expired:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "a17dcc8e-9468-4308-96f5-3f458bf485d9",
+  "message_id": 5,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "ORDER",
+    "order": {
+      "uuid": "807e79de-9e60-40d1-9bff-51a50e5249f8",
+      "id": "0x40245ed8282415a40a8583ef5b2f12de50a2f610ac6a1ffd4efac6a652c67287",
+      "createdAt": "2020-01-14T22:13:57.156Z",
+      "status": "CANCELED",
+      "accountOwner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "accountNumber": "0",
+      "orderType": "LIMIT",
+      "fillOrKill": false,
+      "postOnly": false,
+      "market": "DAI-USDC",
+      "side": "BUY",
+      "baseAmount": "20000000000000000000",
+      "quoteAmount": "19972000",
+      "filledAmount": "0",
+      "price": "0.0000000000009986",
+      "cancelReason": "EXPIRED",
+      "updatedAt": "2020-01-14T22:25:28.955Z"
+    }
+  }
+}
+```
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|An id to unsubscribe from on the channel|
+
+#### Response
+
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "e7259ee2-98f5-4187-8623-9175234d5fb2",
+  "message_id": 3,
+  "channel": "orders",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
 ### Operations
 
 The operations channel allows clients to subscribe to operations on a provided wallet address.
