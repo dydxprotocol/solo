@@ -168,6 +168,11 @@
             "links": {},
             "address": "0x93ae58cc1d029bBdF8b53a89337F4aBb63F6D588",
             "transactionHash": "0x3a763de91c878bc07209ea67cebff6279a9740b9541276c47dcca66232f1a5c8"
+        },
+        "42": {
+            "links": {},
+            "address": "0x6600D9321f760e63434c63De0657121301b57276",
+            "transactionHash": "0xac40b38e47dd8f45e86685dcbdde8950401193ba3b4a67071d213d9c29ad7b4a"
         }
     },
     "SignedOperationProxy": {
