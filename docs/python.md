@@ -43,62 +43,6 @@ client = Client(
 
 ### HTTP API Calls
 
-#### Trading Pairs
-
-```python
-# Get all trading pairs for dydx
-pairs = client.get_pairs()
-'''
-pairs = {
-    "pairs": [
-        {
-            "uuid": "83b69358-a05e-4048-bc11-204da54a8b19",
-            "name": "DAI-WETH",
-            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-            "makerCurrency": {
-                "symbol": "DAI",
-                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                "decimals": 18,
-                "soloMarket": 1,
-            },
-            "takerCurrency": {
-                "symbol": "WETH",
-                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                "decimals": 18,
-                "soloMarket": 0,
-                ...
-            },
-            ...
-        },
-        {
-            "uuid": "5a40f128-ced5-4947-ab10-2f5afee8e56b",
-            "name": "WETH-DAI",
-            "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-            "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-            "makerCurrency": {
-                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                "symbol": "WETH",
-                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                "decimals": 18,
-                "soloMarket": 0,
-                ...
-            },
-            "takerCurrency": {
-                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                "symbol": "DAI",
-                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                "decimals": 18,
-                "soloMarket": 1,
-                ...
-            },
-            ...
-        }
-    ]
-}
-'''
-```
-
 #### Account Balances
 
 ```python
@@ -204,7 +148,7 @@ orders = {
 '''
 ```
 
-#### Historical Fills
+#### Fills
 
 ```python
 # Get fills created by my account for both sides of the orderbook
@@ -290,7 +234,7 @@ order = {
 '''
 ```
 
-#### Historical Trades
+#### Trades
 
 ```python
 # Get trades created by my account for both sides of the orderbook

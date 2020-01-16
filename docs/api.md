@@ -66,7 +66,7 @@ Example:
 };
 ```
 
-## V1 Endpoints
+## Trading Endpoints
 ### GET /v1/orderbook/:market
 
 Description:
@@ -126,88 +126,6 @@ Example Response Body:
   ]
 }
 ```
-
-### GET /v1/dex/pairs
-
-Description:
-Returns all dex-compatible pairs. Be aware that there are two "pairs" for each unique order pair.
-
-For example, in the unique pair WETH and DAI, there are two pairs, one for each side of the book.
-The pairs are always named as `MAKER-TAKER`.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Example Response Body:
-```json
-{
-    "pairs": [
-		{
-            "uuid": "e401535b-e43a-4a79-933f-7c1950cabbdf",
-            "name": "DAI-WETH",
-            "createdAt": "2019-08-13T19:12:27.386Z",
-            "updatedAt": "2019-08-13T19:12:27.386Z",
-            "deletedAt": null,
-            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-            "makerCurrency": {
-                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                "symbol": "DAI",
-                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                "decimals": 18,
-                "soloMarket": 1,
-                "createdAt": "2019-08-13T19:12:27.365Z",
-                "updatedAt": "2019-08-13T19:12:27.365Z",
-                "deletedAt": null
-            },
-            "takerCurrency": {
-                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                "symbol": "WETH",
-                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                "decimals": 18,
-                "soloMarket": 0,
-                "createdAt": "2019-08-13T19:12:27.227Z",
-                "updatedAt": "2019-08-13T19:12:27.227Z",
-                "deletedAt": null
-            }
-        },
-        {
-            "uuid": "65354d23-f9a0-49fa-b823-4c0592e0fa60",
-            "name": "WETH-DAI",
-            "createdAt": "2019-08-13T19:12:27.386Z",
-            "updatedAt": "2019-08-13T19:12:27.386Z",
-            "deletedAt": null,
-            "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-            "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-            "makerCurrency": {
-                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                "symbol": "WETH",
-                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                "decimals": 18,
-                "soloMarket": 0,
-                "createdAt": "2019-08-13T19:12:27.227Z",
-                "updatedAt": "2019-08-13T19:12:27.227Z",
-                "deletedAt": null
-            },
-            "takerCurrency": {
-                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                "symbol": "DAI",
-                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                "decimals": 18,
-                "soloMarket": 1,
-                "createdAt": "2019-08-13T19:12:27.365Z",
-                "updatedAt": "2019-08-13T19:12:27.365Z",
-                "deletedAt": null
-            }
-        }
-    ]
-}
-```
-
-Returns:
-`200` if successful
 
 ### POST /v1/dex/orders
 
@@ -428,223 +346,6 @@ export const STATUSES = {
 };
 ```
 
-### GET /v1/dex/orders
-
-Description:
-Get all open orders from the orderbook. This includes both unfilled and partially filled orders, but
-does not include canceled, pruned, or unfillable orders.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-|?makerAccountOwner|(Optional) The Ethereum address of the account(s) to request orders for.|
-|?makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
-|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
-|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
-|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
-|?status|(Optional) Array of status to filter by (e.g. ?status=CANCELED,FILLED)|
-
-Example Response Body:
-```json
-{
-    "orders": [
-        {
-            "uuid": "d13aadc8-49fb-4420-a5a0-03c15b668705",
-            "id": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-            "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
-            "makerAccountNumber": "0",
-            "status": "PENDING",
-            "price": "1",
-            "clientId": "foo",
-            "fillOrKill": false,
-            "postOnly": false,
-            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
-            "makerAmount": "10",
-            "expiresAt": null,
-            "unfillableAt": null,
-            "unfillableReason": null,
-            "takerAmount": "10",
-            "makerAmountRemaining": "10",
-            "takerAmountRemaining": "10",
-            "createdAt": "2019-07-29T23:56:25.522Z",
-            "updatedAt": "2019-07-29T23:56:25.522Z",
-            "deletedAt": null,
-            "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-            "pair": {
-                "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-                "name": "WETH-DAI",
-                "createdAt": "2019-07-26T17:19:34.955Z",
-                "updatedAt": "2019-07-26T17:19:34.955Z",
-                "deletedAt": null,
-                "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                "makerCurrency": {
-                    "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                    "symbol": "WETH",
-                    "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                    "decimals": 18,
-                    "soloMarket": 0,
-                    "createdAt": "2019-07-26T17:19:34.627Z",
-                    "updatedAt": "2019-07-26T17:19:34.627Z",
-                    "deletedAt": null
-                },
-                "takerCurrency": {
-                    "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                    "symbol": "DAI",
-                    "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                    "decimals": 18,
-                    "soloMarket": 1,
-                    "createdAt": "2019-07-26T17:19:34.919Z",
-                    "updatedAt": "2019-07-26T17:19:34.919Z",
-                    "deletedAt": null
-                }
-            },
-            "fills": []
-        }
-    ]
-}
-```
-
-### GET /v1/dex/orders/:id
-
-Description:
-Get an order by orderId
-
-Example Response Body:
-```json
-{
-    "order": {
-        "uuid": "80d500c0-683b-4b62-852c-aff0646dac3f",
-        "id": "0x887ec43045d7f529564132f7cffce152eca6694d03e4594147569b977113becb",
-        "makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
-        "makerAccountNumber": "0",
-        "status": "PARTIALLY_FILLED",
-        "price": "0.004974629390110436772460451696348622027658939409014028454880111431698338473784",
-        "fillOrKill": false,
-        "postOnly": false,
-        "rawData": "{\"makerMarket\":\"1\",\"takerMarket\":\"0\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"0\",\"makerAccountOwner\":\"0x5F5A46a8471F60b1E9F2eD0b8fc21Ba8b48887D8\",\"takerAccountOwner\":\"0xf809e07870dca762B9536d61A4fBEF1a17178092\",\"makerAmount\":\"2010200000000000000\",\"takerAmount\":\"10000000000000000\",\"salt\":\"63517970482988907828502269663484214646761418296755166268654358377296169568397\",\"expiration\":\"1569280418\",\"typedSignature\":\"0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00\"}",
-        "makerAmount": "2010200000000000000",
-        "unfillableAt": null,
-        "expiresAt": "2019-09-23T23:13:38.000Z",
-        "unfillableReason": null,
-        "clientId": null,
-        "takerAmount": "10000000000000000",
-        "makerAmountRemaining": "10050999989438200",
-        "orderType": "dydexLimitV1",
-        "takerAmountRemaining": "49999999947458",
-        "createdAt": "2019-08-26T23:13:42.257Z",
-        "updatedAt": "2019-08-27T17:16:24.064Z",
-        "deletedAt": null,
-        "pairUuid": "83b69358-a05e-4048-bc11-204da54a8b19",
-        "pair": {
-            "uuid": "83b69358-a05e-4048-bc11-204da54a8b19",
-            "name": "DAI-WETH",
-            "createdAt": "2018-08-24T16:26:46.963Z",
-            "updatedAt": "2018-08-24T16:26:46.963Z",
-            "deletedAt": null,
-            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c"
-        }
-    }
-}
-```
-
-### GET /v1/dex/fills
-
-Description:
-Get all historical fills. A fill represents one side of a trade. It's most useful when you care
-about the outcome of the trade from the perspective of a particular `makerAccountOwner`.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-|?makerAccountOwner|The Ethereum address of the account(s) to request fills for.|
-|?makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
-|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
-|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
-|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
-
-Example Response Body:
-```json
-{
-    "fills": [
-        {
-            "uuid": "c389c0de-a193-49c3-843a-eebee25d1bfa",
-            "status": "PENDING",
-            "orderId": "0x66a5b2d4bca3414ed902bd7cda0500df5947fadbfd48c280a206d44606c1c906",
-            "transactionHash": "0x811cf67aca5fb8d085efcc47cd8213e767410866c7c840f2177391bf6e6b2fd0",
-            "fillAmount": "10",
-            "createdAt": "2019-07-27T00:48:15.963Z",
-            "updatedAt": "2019-07-27T00:48:15.963Z",
-            "deletedAt": null,
-            "order": {
-                "uuid": "b415de0d-a54c-4496-a8af-0a15d9fb95d5",
-                "id": "0x66a5b2d4bca3414ed902bd7cda0500df5947fadbfd48c280a206d44606c1c906",
-                "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
-                "makerAccountNumber": "0",
-                "status": "FILLED",
-                "price": "1",
-                "fillOrKill": false,
-                "postOnly": false,
-                "rawData": "{\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"0\",\"expiration\":\"0\",\"typedSignature\":\"0xd9561c880b9572899eb97901f58423a610640357c1d36138f0bd31b16ca17edb715ec175b7cd7a308d70e88a6654ac706672419765720b6d8e357e60a9a5ce9b1c01\"}",
-                "makerAmount": "10",
-                "expiresAt": null,
-                "unfillableAt": "2019-07-27T00:48:16.000Z",
-                "unfillableReason": "ENTIRELY_FILLED",
-                "takerAmount": "10",
-                "makerAmountRemaining": "0",
-                "takerAmountRemaining": "0",
-                "createdAt": "2019-07-26T17:20:36.999Z",
-                "updatedAt": "2019-07-27T00:48:16.001Z",
-                "deletedAt": null,
-                "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-                "pair": {
-                    "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-                    "name": "WETH-DAI",
-                    "createdAt": "2019-07-26T17:19:34.955Z",
-                    "updatedAt": "2019-07-26T17:19:34.955Z",
-                    "deletedAt": null,
-                    "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                    "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                    "makerCurrency": {
-                        "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                        "symbol": "WETH",
-                        "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                        "decimals": 18,
-                        "soloMarket": 0,
-                        "createdAt": "2019-07-26T17:19:34.627Z",
-                        "updatedAt": "2019-07-26T17:19:34.627Z",
-                        "deletedAt": null
-                    },
-                    "takerCurrency": {
-                        "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                        "symbol": "DAI",
-                        "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                        "decimals": 18,
-                        "soloMarket": 1,
-                        "createdAt": "2019-07-26T17:19:34.919Z",
-                        "updatedAt": "2019-07-26T17:19:34.919Z",
-                        "deletedAt": null
-                    }
-                }
-            }
-        },
-    ]
-}
-```
-## V2 Endpoints
 ### GET /v2/orders
 Description:
 Get all orders from the orderbook. Orders can be queried on markets, statuses, as well as accepted order statuses
@@ -709,7 +410,6 @@ Example Response Body:
   ]
 }
 ```
-
 
 ### GET /v2/trades
 Description:
@@ -909,5 +609,305 @@ Example Response Body:
       "expiresAt": null
     }
   }
+}
+```
+
+## Deprecated Endpoints
+### GET /v1/dex/pairs [DEPRECATED]
+
+Description:
+Returns all dex-compatible pairs. Be aware that there are two "pairs" for each unique order pair.
+
+For example, in the unique pair WETH and DAI, there are two pairs, one for each side of the book.
+The pairs are always named as `MAKER-TAKER`.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Example Response Body:
+```json
+{
+    "pairs": [
+		{
+            "uuid": "e401535b-e43a-4a79-933f-7c1950cabbdf",
+            "name": "DAI-WETH",
+            "createdAt": "2019-08-13T19:12:27.386Z",
+            "updatedAt": "2019-08-13T19:12:27.386Z",
+            "deletedAt": null,
+            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "makerCurrency": {
+                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+                "createdAt": "2019-08-13T19:12:27.365Z",
+                "updatedAt": "2019-08-13T19:12:27.365Z",
+                "deletedAt": null
+            },
+            "takerCurrency": {
+                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                "createdAt": "2019-08-13T19:12:27.227Z",
+                "updatedAt": "2019-08-13T19:12:27.227Z",
+                "deletedAt": null
+            }
+        },
+        {
+            "uuid": "65354d23-f9a0-49fa-b823-4c0592e0fa60",
+            "name": "WETH-DAI",
+            "createdAt": "2019-08-13T19:12:27.386Z",
+            "updatedAt": "2019-08-13T19:12:27.386Z",
+            "deletedAt": null,
+            "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+            "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "makerCurrency": {
+                "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "symbol": "WETH",
+                "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "decimals": 18,
+                "soloMarket": 0,
+                "createdAt": "2019-08-13T19:12:27.227Z",
+                "updatedAt": "2019-08-13T19:12:27.227Z",
+                "deletedAt": null
+            },
+            "takerCurrency": {
+                "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "symbol": "DAI",
+                "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                "decimals": 18,
+                "soloMarket": 1,
+                "createdAt": "2019-08-13T19:12:27.365Z",
+                "updatedAt": "2019-08-13T19:12:27.365Z",
+                "deletedAt": null
+            }
+        }
+    ]
+}
+```
+
+Returns:
+`200` if successful
+
+### GET /v1/dex/orders [DEPRECATED - use /v2/orders]
+
+Description:
+Get all open orders from the orderbook. This includes both unfilled and partially filled orders, but
+does not include canceled, pruned, or unfillable orders.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?makerAccountOwner|(Optional) The Ethereum address of the account(s) to request orders for.|
+|?makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
+|?status|(Optional) Array of status to filter by (e.g. ?status=CANCELED,FILLED)|
+
+Example Response Body:
+```json
+{
+    "orders": [
+        {
+            "uuid": "d13aadc8-49fb-4420-a5a0-03c15b668705",
+            "id": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+            "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
+            "makerAccountNumber": "0",
+            "status": "PENDING",
+            "price": "1",
+            "clientId": "foo",
+            "fillOrKill": false,
+            "postOnly": false,
+            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
+            "makerAmount": "10",
+            "expiresAt": null,
+            "unfillableAt": null,
+            "unfillableReason": null,
+            "takerAmount": "10",
+            "makerAmountRemaining": "10",
+            "takerAmountRemaining": "10",
+            "createdAt": "2019-07-29T23:56:25.522Z",
+            "updatedAt": "2019-07-29T23:56:25.522Z",
+            "deletedAt": null,
+            "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+            "pair": {
+                "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+                "name": "WETH-DAI",
+                "createdAt": "2019-07-26T17:19:34.955Z",
+                "updatedAt": "2019-07-26T17:19:34.955Z",
+                "deletedAt": null,
+                "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "makerCurrency": {
+                    "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                    "symbol": "WETH",
+                    "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                    "decimals": 18,
+                    "soloMarket": 0,
+                    "createdAt": "2019-07-26T17:19:34.627Z",
+                    "updatedAt": "2019-07-26T17:19:34.627Z",
+                    "deletedAt": null
+                },
+                "takerCurrency": {
+                    "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                    "symbol": "DAI",
+                    "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                    "decimals": 18,
+                    "soloMarket": 1,
+                    "createdAt": "2019-07-26T17:19:34.919Z",
+                    "updatedAt": "2019-07-26T17:19:34.919Z",
+                    "deletedAt": null
+                }
+            },
+            "fills": []
+        }
+    ]
+}
+```
+
+### GET /v1/dex/orders/:id [DEPRECATED - use /v2/orders/:id]
+
+Description:
+Get an order by orderId
+
+Example Response Body:
+```json
+{
+    "order": {
+        "uuid": "80d500c0-683b-4b62-852c-aff0646dac3f",
+        "id": "0x887ec43045d7f529564132f7cffce152eca6694d03e4594147569b977113becb",
+        "makerAccountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+        "makerAccountNumber": "0",
+        "status": "PARTIALLY_FILLED",
+        "price": "0.004974629390110436772460451696348622027658939409014028454880111431698338473784",
+        "fillOrKill": false,
+        "postOnly": false,
+        "rawData": "{\"makerMarket\":\"1\",\"takerMarket\":\"0\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"0\",\"makerAccountOwner\":\"0x5F5A46a8471F60b1E9F2eD0b8fc21Ba8b48887D8\",\"takerAccountOwner\":\"0xf809e07870dca762B9536d61A4fBEF1a17178092\",\"makerAmount\":\"2010200000000000000\",\"takerAmount\":\"10000000000000000\",\"salt\":\"63517970482988907828502269663484214646761418296755166268654358377296169568397\",\"expiration\":\"1569280418\",\"typedSignature\":\"0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00\"}",
+        "makerAmount": "2010200000000000000",
+        "unfillableAt": null,
+        "expiresAt": "2019-09-23T23:13:38.000Z",
+        "unfillableReason": null,
+        "clientId": null,
+        "takerAmount": "10000000000000000",
+        "makerAmountRemaining": "10050999989438200",
+        "orderType": "dydexLimitV1",
+        "takerAmountRemaining": "49999999947458",
+        "createdAt": "2019-08-26T23:13:42.257Z",
+        "updatedAt": "2019-08-27T17:16:24.064Z",
+        "deletedAt": null,
+        "pairUuid": "83b69358-a05e-4048-bc11-204da54a8b19",
+        "pair": {
+            "uuid": "83b69358-a05e-4048-bc11-204da54a8b19",
+            "name": "DAI-WETH",
+            "createdAt": "2018-08-24T16:26:46.963Z",
+            "updatedAt": "2018-08-24T16:26:46.963Z",
+            "deletedAt": null,
+            "makerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+            "takerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c"
+        }
+    }
+}
+```
+
+### GET /v1/dex/fills [Deprecated - use /v2/fills]
+
+Description:
+Get all historical fills. A fill represents one side of a trade. It's most useful when you care
+about the outcome of the trade from the perspective of a particular `makerAccountOwner`.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+|?makerAccountOwner|The Ethereum address of the account(s) to request fills for.|
+|?makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
+|?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
+|?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
+|?pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
+
+Example Response Body:
+```json
+{
+    "fills": [
+        {
+            "uuid": "c389c0de-a193-49c3-843a-eebee25d1bfa",
+            "status": "PENDING",
+            "orderId": "0x66a5b2d4bca3414ed902bd7cda0500df5947fadbfd48c280a206d44606c1c906",
+            "transactionHash": "0x811cf67aca5fb8d085efcc47cd8213e767410866c7c840f2177391bf6e6b2fd0",
+            "fillAmount": "10",
+            "createdAt": "2019-07-27T00:48:15.963Z",
+            "updatedAt": "2019-07-27T00:48:15.963Z",
+            "deletedAt": null,
+            "order": {
+                "uuid": "b415de0d-a54c-4496-a8af-0a15d9fb95d5",
+                "id": "0x66a5b2d4bca3414ed902bd7cda0500df5947fadbfd48c280a206d44606c1c906",
+                "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
+                "makerAccountNumber": "0",
+                "status": "FILLED",
+                "price": "1",
+                "fillOrKill": false,
+                "postOnly": false,
+                "rawData": "{\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"0\",\"expiration\":\"0\",\"typedSignature\":\"0xd9561c880b9572899eb97901f58423a610640357c1d36138f0bd31b16ca17edb715ec175b7cd7a308d70e88a6654ac706672419765720b6d8e357e60a9a5ce9b1c01\"}",
+                "makerAmount": "10",
+                "expiresAt": null,
+                "unfillableAt": "2019-07-27T00:48:16.000Z",
+                "unfillableReason": "ENTIRELY_FILLED",
+                "takerAmount": "10",
+                "makerAmountRemaining": "0",
+                "takerAmountRemaining": "0",
+                "createdAt": "2019-07-26T17:20:36.999Z",
+                "updatedAt": "2019-07-27T00:48:16.001Z",
+                "deletedAt": null,
+                "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+                "pair": {
+                    "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+                    "name": "WETH-DAI",
+                    "createdAt": "2019-07-26T17:19:34.955Z",
+                    "updatedAt": "2019-07-26T17:19:34.955Z",
+                    "deletedAt": null,
+                    "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                    "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                    "makerCurrency": {
+                        "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                        "symbol": "WETH",
+                        "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "decimals": 18,
+                        "soloMarket": 0,
+                        "createdAt": "2019-07-26T17:19:34.627Z",
+                        "updatedAt": "2019-07-26T17:19:34.627Z",
+                        "deletedAt": null
+                    },
+                    "takerCurrency": {
+                        "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                        "symbol": "DAI",
+                        "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                        "decimals": 18,
+                        "soloMarket": 1,
+                        "createdAt": "2019-07-26T17:19:34.919Z",
+                        "updatedAt": "2019-07-26T17:19:34.919Z",
+                        "deletedAt": null
+                    }
+                }
+            }
+        },
+    ]
 }
 ```

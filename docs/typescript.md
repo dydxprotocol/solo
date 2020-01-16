@@ -201,7 +201,7 @@ await solo.token.setMaximumSoloAllowance(
 );
 ```
 
-### Api
+### Trading Api
 Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for making dex orders.
 
 #### Place Order
@@ -241,7 +241,27 @@ const { order } = await solo.api.placeOrder({
 });
 ```
 
-### Orderbook V2 Endpoints
+#### Cancel Order
+```javascript
+const { id } = existingOrder;
+
+// order has type ApiOrder
+const { order } = await solo.api.cancelOrder({
+  orderId: id,
+  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
+});
+```
+
+#### Replace Order
+```javascript
+const { id } = existingOrder;
+
+// order has type ApiOrder
+const { order } = await solo.api.replaceOrder({
+  ...order, // Same as arguments to placeOrder
+  cancelId: id,
+});
+```
 
 #### Get Order
 ```typescript
@@ -296,66 +316,13 @@ const { trades }: { trades: ApiTradeV2[] } = await solo.api.getTradesV2({
 })
 ```
 
-### Orderbook V1 Endpoints
-
-#### Cancel Order
+#### Get Orderbook
 ```javascript
-const { id } = existingOrder;
+import { ApiMarketName } from '@dydxprotocol/solo';
 
-// order has type ApiOrder
-const { order } = await solo.api.cancelOrder({
-  orderId: id,
-  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
-});
-```
-
-#### Get Orders
-```javascript
-// orders has type ApiOrder[]
-const { orders } = await solo.api.getOrders({
-  startingBefore: new Date(), // OPTIONAL
-  limit: 50, // OPTIONAL: maximum 100
-  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
-  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
-
-  // OPTIONAL: defaults to 0 if makerAccountOwner provided
-  makerAccountNumber: new BigNumber(0),
-});
-```
-
-#### Get Order by ID
-```javascript
-// orders has type ApiOrder[]
-const { order } = await solo.api.getOrder({
-	id: '0x887ec43045d7f529564132f7cffce152eca6694d03e4594147569b977113becb',
-});
-```
-
-#### Get Fills
-```javascript
-// fills has type ApiFill[]
-const { fills } = await solo.api.getFills({
-  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
-  startingBefore: new Date(), // OPTIONAL
-  limit: 50, // OPTIONAL: maximum 100
-  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
-
-  // OPTIONAL: defaults to 0 if makerAccountOwner provided
-  makerAccountNumber: new BigNumber(0),
-});
-```
-
-#### Get trades
-```javascript
-// trades has type ApiTrade[]
-const { trades } = await solo.api.getTrades({
-  makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
-  startingBefore: new Date(), // OPTIONAL
-  limit: 50, // OPTIONAL: maximum 100
-  pairs: ['WETH-DAI, DAI-WETH'], // OPTIONAL
-
-  // OPTIONAL: defaults to 0 if makerAccountOwner provided
-  makerAccountNumber: new BigNumber(0),
+// bids / asks have type ApiOrderOnOrderbook[]
+const { bids, asks } = await solo.api.getOrderbookV2({
+  market: ApiMarketName.WETH_DAI,
 });
 ```
 
@@ -368,59 +335,11 @@ const account = await solo.api.getAccountBalances({
 });
 ```
 
-#### Get Orderbook
-```javascript
-import { ApiMarketName } from '@dydxprotocol/solo';
-
-// bids / asks have type ApiOrderOnOrderbook[]
-const { bids, asks } = await solo.api.getOrderbookV2({
-  market: ApiMarketName.WETH_DAI,
-});
-```
-
 #### Get Markets
 Get the markets that exist on the protocol. There is one market per asset (e.g. id 0 = ETH, id 1 = DAI, id 2 = USDC)
 
 ```javascript
 const { markets } = await solo.api.getMarkets();
-```
-
-### WebSocket
-Solo provides an easy way to interact with dYdX WebSocket endpoints.
-
-#### Connect
-Before using any other websocket functions, the websocket must first be connected:
-```javascript
-const onError = (error) => {
-  console.error(error);
-};
-const onClose = async () => {
-  // The websocket is closed, it must be reconnected
-  // You must also resubscribe to anything you had subscribed to
-  await solo.websocket.reconnect(...);
-  const newOrderbook = await solo.websocket.watchOrderbook(...);
-};
-
-await solo.websocket.connect({
-  onClose, // OPTIONAL
-  onError, // OPTIONAL
-});
-```
-
-#### Orderbook
-Watch the state of the active orderbook for a dYdX market:
-```javascript
-import { ApiMarketName } from '@dydxprotocol/solo';
-
-const onUpdates = (orderbookUpdates) => {
-  // Handle orderbook updates
-  // orderbookUpdates has type ApiOrderbookUpdate
-};
-
-const initialOrderbook = await solo.websocket.watchOrderbook({
-  market: ApiMarketName.WETH_DAI,
-  onUpdates,
-});
 ```
 
 ### Types
