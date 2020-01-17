@@ -112,9 +112,6 @@ export class Api {
     });
   }
 
-  /**
-   * Creates, but does not place a signed order and signed cancel pair
-   */
   public async replaceOrder({
     makerAccountOwner,
     makerMarket,
