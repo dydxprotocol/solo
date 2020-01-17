@@ -201,8 +201,8 @@ await solo.token.setMaximumSoloAllowance(
 );
 ```
 
-### Trading Api
-Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for making dex orders.
+### Api
+Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for placing & canceling orders.
 
 #### Place Order
 ```javascript
