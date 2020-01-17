@@ -614,6 +614,7 @@ Description:
 Get historical trading data
 
 Query Params:
+
 |Field Name|Description|
 |----------|-----------|
 |res|1HOUR or 1DAY|
