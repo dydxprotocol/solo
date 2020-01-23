@@ -60,7 +60,7 @@ contract StopLimitOrders is
     string constant private EIP712_DOMAIN_NAME = "StopLimitOrders";
 
     // EIP712 Domain Version value
-    string constant private EIP712_DOMAIN_VERSION = "1.0";
+    string constant private EIP712_DOMAIN_VERSION = "1.1";
 
     // Hash of the EIP712 Domain Separator Schema
     /* solium-disable-next-line indentation */
@@ -469,7 +469,7 @@ contract StopLimitOrders is
                 orderInfo.order.takerMarket
             );
             Require.that(
-                orderInfo.order.triggerPrice >= currentPrice,
+                currentPrice >= orderInfo.order.triggerPrice,
                 FILE,
                 "Order triggerPrice not triggered",
                 currentPrice
@@ -651,8 +651,8 @@ contract StopLimitOrders is
         view
         returns (uint256)
     {
-        Monetary.Price memory makerPrice = SOLO_MARGIN.getMarketPrice(makerMarket);
         Monetary.Price memory takerPrice = SOLO_MARGIN.getMarketPrice(takerMarket);
+        Monetary.Price memory makerPrice = SOLO_MARGIN.getMarketPrice(makerMarket);
         return takerPrice.value.mul(PRICE_BASE).div(makerPrice.value);
     }
 
