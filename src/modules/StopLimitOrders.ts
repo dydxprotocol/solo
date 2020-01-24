@@ -420,7 +420,7 @@ export class StopLimitOrders extends OrdersBaseClass {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('StopLimitOrders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.stopLimitOrders.options.address) },
     );
@@ -478,7 +478,7 @@ export class StopLimitOrders extends OrdersBaseClass {
   private getDomainData() {
     return {
       name: 'StopLimitOrders',
-      version: '1.0',
+      version: '1.1',
       chainId: this.networkId,
       verifyingContract: this.contracts.stopLimitOrders.options.address,
     };

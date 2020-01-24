@@ -726,14 +726,14 @@ describe('StopLimitOrders', () => {
     }
 
     it('Succeeds for met triggerPrice', async () => {
-      const triggerPrice = (await getCurrentPrice()).integerValue(BigNumber.ROUND_UP);
+      const triggerPrice = (await getCurrentPrice()).integerValue(BigNumber.ROUND_DOWN);
       const order = await getModifiedTestOrder({ triggerPrice });
       const txResult = await fillLimitOrder(order, { amount: defaultTakerAmount });
       console.log(`\tStopLimitOrder Trade (w/ triggerPrice) gas used: ${txResult.gasUsed}`);
     });
 
     it('Fails for unmet triggerPrice', async () => {
-      const triggerPrice = (await getCurrentPrice()).minus(1).integerValue(BigNumber.ROUND_DOWN);
+      const triggerPrice = (await getCurrentPrice()).plus(1).integerValue(BigNumber.ROUND_UP);
       const order = await getModifiedTestOrder({ triggerPrice });
       await expectThrow(
         fillLimitOrder(order, { amount: defaultTakerAmount }),
