@@ -139,7 +139,6 @@ export class Api {
   }): Promise<{ order: ApiOrder }> {
     const [
       order,
-      cancelSignature,
     ] = await Promise.all([
       this.createOrder({
         makerAccountOwner,
@@ -161,7 +160,6 @@ export class Api {
       fillOrKill,
       postOnly,
       cancelId,
-      cancelSignature,
       clientId,
     });
   }
@@ -174,21 +172,18 @@ export class Api {
     fillOrKill = false,
     postOnly = false,
     cancelId,
-    cancelSignature,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
     postOnly: boolean,
     cancelId: string,
-    cancelSignature: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       cancelId,
-      cancelSignature,
       postOnly,
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
