@@ -211,7 +211,6 @@ Request Body:
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |cancelId|string|Order id for the order that is being canceled and replaced|
-|cancelSignature|string|Signature of the order being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
@@ -225,7 +224,6 @@ Example Request Body:
   	"fillOrKill": true,
   	"postOnly": false,
   	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-  	"cancelSignature": "0x29d4c79f1ef15bb489eaf1bc4bb4eb0a1eb63ef8e83ef0c68b19a61159041e2f29c283797f0fc4fae56728f0dd8e47f67b51287795c163ceedb77b5b6672ca231c00",
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",

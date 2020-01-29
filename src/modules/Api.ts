@@ -137,31 +137,21 @@ export class Api {
     cancelId: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const [
-      order,
-      cancelSignature,
-    ] = await Promise.all([
-      this.createOrder({
-        makerAccountOwner,
-        makerMarket,
-        takerMarket,
-        makerAmount,
-        takerAmount,
-        makerAccountNumber,
-        expiration,
-      }),
-      this.limitOrders.signCancelOrderByHash(
-        cancelId,
-        makerAccountOwner,
-        SigningMethod.Hash,
-      ),
-    ]);
+
+    const order = await this.createOrder({
+      makerAccountOwner,
+      makerMarket,
+      takerMarket,
+      makerAmount,
+      takerAmount,
+      makerAccountNumber,
+      expiration,
+    });
     return this.submitReplaceOrder({
       order,
       fillOrKill,
       postOnly,
       cancelId,
-      cancelSignature,
       clientId,
     });
   }
@@ -174,21 +164,18 @@ export class Api {
     fillOrKill = false,
     postOnly = false,
     cancelId,
-    cancelSignature,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
     postOnly: boolean,
     cancelId: string,
-    cancelSignature: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       cancelId,
-      cancelSignature,
       postOnly,
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
