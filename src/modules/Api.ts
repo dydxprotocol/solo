@@ -137,24 +137,16 @@ export class Api {
     cancelId: string,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-    const [
-      order,
-    ] = await Promise.all([
-      this.createOrder({
-        makerAccountOwner,
-        makerMarket,
-        takerMarket,
-        makerAmount,
-        takerAmount,
-        makerAccountNumber,
-        expiration,
-      }),
-      this.limitOrders.signCancelOrderByHash(
-        cancelId,
-        makerAccountOwner,
-        SigningMethod.Hash,
-      ),
-    ]);
+
+    const order = await this.createOrder({
+      makerAccountOwner,
+      makerMarket,
+      takerMarket,
+      makerAmount,
+      takerAmount,
+      makerAccountNumber,
+      expiration,
+    });
     return this.submitReplaceOrder({
       order,
       fillOrKill,
