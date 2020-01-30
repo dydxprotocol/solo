@@ -25,6 +25,15 @@ export const EIP712_DOMAIN_STRUCT = [
   { name: 'verifyingContract', type: 'address' },
 ];
 
+export const EIP712_DOMAIN_STRING_NO_CONTRACT: string =
+  'EIP712Domain(string name,string version,uint256 chainId)';
+
+export const EIP712_DOMAIN_STRUCT_NO_CONTRACT = [
+  { name: 'name', type: 'string' },
+  { name: 'version', type: 'string' },
+  { name: 'chainId', type: 'uint256' },
+];
+
 export function isValidSigType(
   sigType: number,
 ): boolean {

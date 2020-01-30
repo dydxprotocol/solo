@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import { OrdersBaseClass } from './OrdersBaseClass';
+import { Signer } from './Signer';
 import { Contracts } from '../lib/Contracts';
 import { ADDRESSES } from '../lib/Constants';
 import { toString } from '../lib/Helpers';
@@ -103,7 +103,7 @@ const EIP712_CANCEL_OPERATION_STRUCT_STRING =
   'bytes32[] operationHashes' +
   ')';
 
-export class SignedOperations extends OrdersBaseClass {
+export class SignedOperations extends Signer {
   private contracts: Contracts;
   private networkId: number;
 

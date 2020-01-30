@@ -10,7 +10,7 @@ import {
   SigningMethod,
 } from '../../src/types';
 
-export class OrdersBaseClass {
+export abstract class Signer {
   protected web3: Web3;
 
   // ============ Constructor ============
@@ -22,6 +22,24 @@ export class OrdersBaseClass {
   }
 
   // ============ Functions ============
+
+  /**
+   * Returns a signable EIP712 Hash of a struct
+   */
+  public getEIP712Hash(
+    structHash: string,
+  ): string {
+    return Web3.utils.soliditySha3(
+      { t: 'bytes2', v: '0x1901' },
+      { t: 'bytes32', v: this.getDomainHash() },
+      { t: 'bytes32', v: structHash },
+    );
+  }
+
+  /**
+   * Returns the EIP712 domain separator hash.
+   */
+  public abstract getDomainHash(): string;
 
   protected async ethSignTypedDataInternal(
     signer: string,
