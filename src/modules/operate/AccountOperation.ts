@@ -367,6 +367,27 @@ export class AccountOperation {
     );
   }
 
+  public fillSignedDecreaseOnlyStopLimitOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: SignedStopLimitOrder,
+    denotedInMakerAmount: boolean = false,
+  ): AccountOperation {
+    const amount: Amount = {
+      denomination: AmountDenomination.Par,
+      reference: AmountReference.Target,
+      value: INTEGERS.ZERO,
+    };
+    return this.fillStopLimitOrderInternal(
+      primaryAccountOwner,
+      primaryAccountNumber,
+      order,
+      amount,
+      denotedInMakerAmount,
+      true,
+    );
+  }
+
   public fillSignedStopLimitOrder(
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
@@ -374,11 +395,16 @@ export class AccountOperation {
     weiAmount: Integer,
     denotedInMakerAmount: boolean = false,
   ): AccountOperation {
+    const amount: Amount = {
+      denomination: AmountDenomination.Wei,
+      reference: AmountReference.Delta,
+      value: weiAmount.abs().times(denotedInMakerAmount ? -1 : 1),
+    };
     return this.fillStopLimitOrderInternal(
       primaryAccountOwner,
       primaryAccountNumber,
       order,
-      weiAmount,
+      amount,
       denotedInMakerAmount,
       true,
     );
@@ -391,11 +417,16 @@ export class AccountOperation {
     weiAmount: Integer,
     denotedInMakerAmount: boolean = false,
   ): AccountOperation {
+    const amount: Amount = {
+      denomination: AmountDenomination.Wei,
+      reference: AmountReference.Delta,
+      value: weiAmount.abs().times(denotedInMakerAmount ? -1 : 1),
+    };
     return this.fillStopLimitOrderInternal(
       primaryAccountOwner,
       primaryAccountNumber,
       order,
-      weiAmount,
+      amount,
       denotedInMakerAmount,
       false,
     );
@@ -843,14 +874,13 @@ export class AccountOperation {
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
     order: StopLimitOrder,
-    weiAmount: Integer,
+    amount: Amount,
     denotedInMakerAmount: boolean,
     isSignedOrder: boolean,
   ): AccountOperation {
     const dataString = isSignedOrder
       ? this.stopLimitOrders.signedOrderToBytes(order as SignedStopLimitOrder)
       : this.stopLimitOrders.unsignedOrderToBytes(order);
-    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
     return this.trade({
       primaryAccountOwner,
       primaryAccountId: primaryAccountNumber,
@@ -859,11 +889,7 @@ export class AccountOperation {
       outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
-      amount: {
-        denomination: AmountDenomination.Wei,
-        reference: AmountReference.Delta,
-        value: amount,
-      },
+      amount,
       data: hexStringToBytes(dataString),
     });
   }
