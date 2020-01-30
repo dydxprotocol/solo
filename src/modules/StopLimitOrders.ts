@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
-import { OrdersBaseClass } from './OrdersBaseClass';
+import { Signer } from './Signer';
 import { Contracts } from '../lib/Contracts';
 import { toString } from '../lib/Helpers';
 import {
@@ -70,7 +70,7 @@ const EIP712_CANCEL_ORDER_STRUCT_STRING =
   'bytes32[] orderHashes' +
   ')';
 
-export class StopLimitOrders extends OrdersBaseClass {
+export class StopLimitOrders extends Signer {
   private contracts: Contracts;
   private networkId: number;
 
@@ -423,19 +423,6 @@ export class StopLimitOrders extends OrdersBaseClass {
       { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.stopLimitOrders.options.address) },
-    );
-  }
-
-  /**
-   * Returns a signable EIP712 Hash of a struct
-   */
-  public getEIP712Hash(
-    structHash: string,
-  ): string {
-    return Web3.utils.soliditySha3(
-      { t: 'bytes2', v: '0x1901' },
-      { t: 'bytes32', v: this.getDomainHash() },
-      { t: 'bytes32', v: structHash },
     );
   }
 

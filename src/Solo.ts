@@ -37,6 +37,7 @@ import { Testing } from './modules/testing/Testing';
 import { Api } from './modules/Api';
 import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
+import { WalletLogin } from './modules/WalletLogin';
 import { SoloOptions, EthereumAccount, address, Networks } from './types';
 
 export class Solo {
@@ -60,6 +61,7 @@ export class Solo {
   public api: Api;
   public websocket: Websocket;
   public standardActions: StandardActions;
+  public walletLogin: WalletLogin;
 
   constructor(
     provider: Provider | string,
@@ -114,6 +116,7 @@ export class Solo {
       options.wsOrigin,
     );
     this.standardActions = new StandardActions(this.operation, this.contracts);
+    this.walletLogin = new WalletLogin(this.web3, networkId);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
