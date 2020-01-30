@@ -882,6 +882,7 @@ export class AccountOperation {
       ? this.stopLimitOrders.signedOrderToBytes(order as SignedStopLimitOrder)
       : this.stopLimitOrders.unsignedOrderToBytes(order);
     return this.trade({
+      amount,
       primaryAccountOwner,
       primaryAccountId: primaryAccountNumber,
       autoTrader: this.contracts.stopLimitOrders.options.address,
@@ -889,7 +890,6 @@ export class AccountOperation {
       outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
-      amount,
       data: hexStringToBytes(dataString),
     });
   }
