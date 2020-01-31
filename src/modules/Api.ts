@@ -123,6 +123,9 @@ export class Api {
     fillOrKill = false,
     postOnly = false,
     cancelId,
+    triggerPrice,
+    signedTriggerPrice,
+    decreaseOnly,
     clientId,
   }: {
     makerAccountOwner: address,
@@ -135,24 +138,42 @@ export class Api {
     fillOrKill: boolean,
     postOnly: boolean,
     cancelId: string,
+    triggerPrice?: Integer,
+    signedTriggerPrice?: Integer,
+    decreaseOnly?: boolean,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
-
-    const order = await this.createOrder({
-      makerAccountOwner,
-      makerMarket,
-      takerMarket,
-      makerAmount,
-      takerAmount,
-      makerAccountNumber,
-      expiration,
-    });
+    let order: SignedLimitOrder | SignedStopLimitOrder;
+    if (triggerPrice) {
+      order = await this.createStopLimitOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+        decreaseOnly,
+        triggerPrice: signedTriggerPrice,
+      });
+    } else {
+      order = await this.createOrder({
+        makerAccountOwner,
+        makerMarket,
+        takerMarket,
+        makerAmount,
+        takerAmount,
+        makerAccountNumber,
+        expiration,
+      });
+    }
     return this.submitReplaceOrder({
       order,
       fillOrKill,
       postOnly,
       cancelId,
       clientId,
+      triggerPrice,
     });
   }
 
@@ -164,12 +185,14 @@ export class Api {
     fillOrKill = false,
     postOnly = false,
     cancelId,
+    triggerPrice,
     clientId,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
     postOnly: boolean,
     cancelId: string,
+    triggerPrice?: Integer,
     clientId?: string,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
@@ -180,6 +203,9 @@ export class Api {
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
     };
+    if (triggerPrice) {
+      data.triggerPrice = triggerPrice;
+    }
     if (clientId) {
       data.clientId = clientId;
     }
