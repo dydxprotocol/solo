@@ -44,6 +44,8 @@ __Order fields__
 |takerAccountOwner|string|The Ethereum address of the Taker. This must be to the dYdX account owner listed above|
 |makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
 |takerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Taker. This must be set to teh dYdX account number listed above|
+|triggerPrice|string|(Optional)The price at which the order will go to market.|
+|decreaseOnly|boolean|(Optional)If the Stop-Limit order is tied to an existing Isolated Position.|
 |expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
 |salt|string|A random number to make the orderHash unique.|
 |typedSignature|string|The signature of the order.|
@@ -59,6 +61,8 @@ Example:
     "makerAccountNumber": "111",
     "takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
     "takerAccountNumber": "222",
+    "triggerPrice": "10000000000",
+    "decreaseOnly": false,
     "expiration": "4294967295",
     "salt": "100",
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -152,6 +156,7 @@ Request Body:
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
@@ -164,7 +169,8 @@ Example Request Body:
 ```json
 {
     	"fillOrKill": true,
-    	"postOnly": false,
+      	"postOnly": false,
+      	"triggerPrice": "10100000000",
 	"clientId": "foo",
 	"order": {
 		"makerMarket": "0",
@@ -175,6 +181,8 @@ Example Request Body:
 		"makerAccountNumber": "111",
 		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
 		"takerAccountNumber": "222",
+		"triggerPrice": "10000000000",
+		"decreaseOnly": false,
 		"expiration": "4294967295",
 		"salt": "100",
 		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -210,6 +218,7 @@ Request Body:
 |order|Object|A valid signed order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |cancelId|string|Order id for the order that is being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
 
@@ -222,7 +231,8 @@ Example Request Body:
 ```json
 {
   	"fillOrKill": true,
-  	"postOnly": false,
+    	"postOnly": false,
+    	"triggerPrice": "10100000000",
   	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
 	"clientId": "foo",
 	"order": {
@@ -233,7 +243,9 @@ Example Request Body:
 		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
 		"makerAccountNumber": "111",
 		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
-		"takerAccountNumber": "222",
+    		"takerAccountNumber": "222",
+    		"triggerPrice": "10000000000",
+    		"decreaseOnly": false,
 		"expiration": "4294967295",
 		"salt": "100",
 		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -268,8 +280,10 @@ Example Response Body:
             "status": "PENDING",
             "price": "1",
             "fillOrKill": false,
+            "triggerPrice": "10100000000",
+            "decreaseOnly": false,
             "postOnly": false,
-            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\"}",
+            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\":\"triggerPrice\"10000000000\"}",
             "makerAmount": "10",
             "unfillableAt": null,
             "unfillableReason": null,

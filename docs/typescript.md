@@ -236,6 +236,15 @@ const { order } = await solo.api.placeOrder({
   // OPTIONAL: defaults to false
   postOnly: false,
 
+  // OPTIONAL: defaults to null
+  triggerPrice: new BigNumber('1e18'),
+
+  // OPTIONAL: defaults to null
+  signedTriggerPrice: new BigNumber('1e18'),
+
+  // OPTIONAL: defaults to false
+  decreaseOnly: false,
+
   // OPTIONAL: defaults to undefined
   clientId: 'foo',
 });
