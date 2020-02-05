@@ -262,7 +262,7 @@ export interface DaiMigrate extends AccountAction {
 }
 
 export interface AccountActionWithOrder extends AccountAction {
-  order: LimitOrder | StopLimitOrder;
+  order: LimitOrder | StopLimitOrder | CanonicalOrder;
 }
 
 export interface Call extends AccountAction {
@@ -382,21 +382,27 @@ export enum ExpiryV2CallFunctionType {
 
 // ============ Limit Orders ============
 
-export interface LimitOrder {
+export interface SignableOrder {
+  makerAccountOwner: address;
+  makerAccountNumber: Integer;
+}
+
+export interface SignedOrder extends SignableOrder {
+  typedSignature: string;
+}
+
+export interface LimitOrder extends SignableOrder {
   makerMarket: Integer;
   takerMarket: Integer;
   makerAmount: Integer;
   takerAmount: Integer;
-  makerAccountOwner: address;
-  makerAccountNumber: Integer;
   takerAccountOwner: address;
   takerAccountNumber: Integer;
   expiration: Integer;
   salt: Integer;
 }
 
-export interface SignedLimitOrder extends LimitOrder {
-  typedSignature: string;
+export interface SignedLimitOrder extends LimitOrder, SignedOrder {
 }
 
 export interface StopLimitOrder extends LimitOrder {
@@ -404,8 +410,25 @@ export interface StopLimitOrder extends LimitOrder {
   decreaseOnly: boolean;
 }
 
-export interface SignedStopLimitOrder extends StopLimitOrder {
-  typedSignature: string;
+export interface SignedStopLimitOrder extends StopLimitOrder, SignedOrder {
+}
+
+export interface CanonicalOrder extends SignableOrder {
+  isBuy: boolean;
+  isNegativeFee: boolean;
+  isDecreaseOnly: boolean;
+  baseMarket: Integer;
+  quoteMarket: Integer;
+  amount: Integer;
+  limitPrice: Integer;
+  triggerPrice: Integer;
+  limitFee: Integer;
+  taker: address;
+  expiration: Integer;
+  salt: Integer;
+}
+
+export interface SignedCanonicalOrder extends CanonicalOrder, SignedOrder {
 }
 
 export enum LimitOrderStatus {
@@ -419,9 +442,15 @@ export interface LimitOrderState {
   totalMakerFilledAmount: Integer;
 }
 
+export interface CanonicalOrderState {
+  status: LimitOrderStatus;
+  totalFilledAmount: Integer;
+}
+
 export enum LimitOrderCallFunctionType {
   Approve = 0,
   Cancel = 1,
+  SetTradeArgs = 2,
 }
 
 // ============ Sender Proxy ============

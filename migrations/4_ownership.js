@@ -31,6 +31,7 @@ const DaiMigrator = artifacts.require('DaiMigrator');
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
 const LimitOrders = artifacts.require('LimitOrders');
 const StopLimitOrders = artifacts.require('StopLimitOrders');
+const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // ============ Main Migration ============
@@ -48,6 +49,7 @@ const migration = async (deployer, network) => {
       deployedDaiMigrator,
       deployedLimitOrders,
       deployedStopLimitOrders,
+      deployedCanonicalOrders,
       deployedSignedOperationProxy,
     ] = await Promise.all([
       SoloMargin.deployed(),
@@ -58,6 +60,7 @@ const migration = async (deployer, network) => {
       DaiMigrator.deployed(),
       LimitOrders.deployed(),
       StopLimitOrders.deployed(),
+      CanonicalOrders.deployed(),
       SignedOperationProxy.deployed(),
     ]);
 
@@ -70,6 +73,7 @@ const migration = async (deployer, network) => {
       deployedDaiMigrator.transferOwnership(partiallyDelayedMultisig),
       deployedLimitOrders.transferOwnership(partiallyDelayedMultisig),
       deployedStopLimitOrders.transferOwnership(partiallyDelayedMultisig),
+      deployedCanonicalOrders.transferOwnership(partiallyDelayedMultisig),
       deployedSignedOperationProxy.transferOwnership(partiallyDelayedMultisig),
     ]);
   }

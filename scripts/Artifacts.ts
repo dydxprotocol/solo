@@ -12,6 +12,7 @@ import { default as Refunder } from '../build/contracts/Refunder.json';
 import { default as DaiMigrator } from '../build/contracts/DaiMigrator.json';
 import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
 import { default as StopLimitOrders } from '../build/contracts/StopLimitOrders.json';
+import { default as CanonicalOrders } from '../build/contracts/CanonicalOrders.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
 import { default as SignedOperationProxy }
@@ -64,6 +65,7 @@ export default {
   DaiMigrator,
   LimitOrders,
   StopLimitOrders,
+  CanonicalOrders,
   PayableProxyForSoloMargin,
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,

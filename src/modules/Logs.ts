@@ -19,6 +19,7 @@ import { abi as expiryV2Abi } from '../../build/published_contracts/ExpiryV2.jso
 import { abi as refunderAbi } from '../../build/published_contracts/Refunder.json';
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 import { abi as stopLimitOrdersAbi } from '../../build/published_contracts/StopLimitOrders.json';
+import { abi as canonicalOrdersAbi } from '../../build/published_contracts/CanonicalOrders.json';
 import {
   abi as signedOperationProxyAbi,
 } from '../../build/published_contracts/SignedOperationProxy.json';
@@ -59,6 +60,7 @@ export class Logs {
     if (options.skipLimitOrdersLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
       logs = logs.filter((log: any) => !this.logIsFrom(log, stopLimitOrdersAbi));
+      logs = logs.filter((log: any) => !this.logIsFrom(log, canonicalOrdersAbi));
     }
     if (options.skipSignedOperationProxyLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, signedOperationProxyAbi));
@@ -131,6 +133,9 @@ export class Logs {
       }
       case this.contracts.stopLimitOrders.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.stopLimitOrders, log);
+      }
+      case this.contracts.canonicalOrders.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.canonicalOrders, log);
       }
       case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.signedOperationProxy, log);

@@ -25,6 +25,7 @@ import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Math } from "../../protocol/lib/Math.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { OnlySolo } from "../helpers/OnlySolo.sol";
@@ -32,12 +33,12 @@ import { TypedSignature } from "../lib/TypedSignature.sol";
 
 
 /**
- * @title LimitOrders
+ * @title CanonicalOrders
  * @author dYdX
  *
- * Allows for Limit Orders to be used with dYdX
+ * Allows for Canonical Orders to be used with dYdX
  */
-contract LimitOrders is
+contract CanonicalOrders is
     Ownable,
     OnlySolo,
     IAutoTrader,
@@ -50,16 +51,16 @@ contract LimitOrders is
 
     // ============ Constants ============
 
-    bytes32 constant private FILE = "LimitOrders";
+    bytes32 constant private FILE = "CanonicalOrders";
 
     // EIP191 header for EIP712 prefix
     bytes2 constant private EIP191_HEADER = 0x1901;
 
     // EIP712 Domain Name value
-    string constant private EIP712_DOMAIN_NAME = "LimitOrders";
+    string constant private EIP712_DOMAIN_NAME = "CanonicalOrders";
 
     // EIP712 Domain Version value
-    string constant private EIP712_DOMAIN_VERSION = "1.1";
+    string constant private EIP712_DOMAIN_VERSION = "1.0";
 
     // Hash of the EIP712 Domain Separator Schema
     /* solium-disable-next-line indentation */
@@ -72,31 +73,37 @@ contract LimitOrders is
         ")"
     ));
 
-    // Hash of the EIP712 LimitOrder struct
+    // Hash of the EIP712 CanonicalOrder struct
     /* solium-disable-next-line indentation */
-    bytes32 constant private EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
-        "LimitOrder(",
-        "uint256 makerMarket,",
-        "uint256 takerMarket,",
-        "uint256 makerAmount,",
-        "uint256 takerAmount,",
+    bytes32 constant private EIP712_ORDER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
+        "CanonicalOrder(",
+        "bytes32 flags,",
+        "uint256 baseMarket,",
+        "uint256 quoteMarket,",
+        "uint256 amount,",
+        "uint256 limitPrice,",
+        "uint256 triggerPrice,",
+        "uint256 limitFee,",
         "address makerAccountOwner,",
         "uint256 makerAccountNumber,",
-        "address takerAccountOwner,",
-        "uint256 takerAccountNumber,",
-        "uint256 expiration,",
-        "uint256 salt",
+        "address taker,",
+        "uint256 expiration",
         ")"
     ));
 
-    // Number of bytes in an Order struct
-    uint256 constant private NUM_ORDER_BYTES = 320;
+    // Number of bytes in an Order struct (plus orderInfo.price/fee/isNegativeFee)
+    uint256 constant private NUM_ORDER_BYTES = 448;
 
     // Number of bytes in a typed signature
     uint256 constant private NUM_SIGNATURE_BYTES = 66;
 
-    // Number of bytes in a CallFunctionData struct
-    uint256 constant private NUM_CALLFUNCTIONDATA_BYTES = 32 + NUM_ORDER_BYTES;
+    // The number of decimal places of precision in the price ratio of a triggerPrice
+    uint256 constant private PRICE_BASE = 10 ** 18;
+
+    // Bitmasks for the order.flag argument
+    bytes32 constant private IS_BUY_FLAG = bytes32(uint256(0xf));
+    bytes32 constant private IS_DECREASE_ONLY_FLAG = bytes32(uint256(0xf0));
+    bytes32 constant private IS_NEGATIVE_FEE_FLAG = bytes32(uint256(0xf00));
 
     // ============ Enums ============
 
@@ -108,37 +115,41 @@ contract LimitOrders is
 
     enum CallFunctionType {
         Approve,
-        Cancel
+        Cancel,
+        SetTradeArgs
     }
 
     // ============ Structs ============
 
     struct Order {
-        uint256 makerMarket;
-        uint256 takerMarket;
-        uint256 makerAmount;
-        uint256 takerAmount;
+        bytes32 flags; // salt, negativeFee, decreaseOnly, isBuy
+        uint256 baseMarket;
+        uint256 quoteMarket;
+        uint256 amount;
+        uint256 limitPrice;
+        uint256 triggerPrice;
+        uint256 limitFee;
         address makerAccountOwner;
         uint256 makerAccountNumber;
-        address takerAccountOwner;
-        uint256 takerAccountNumber;
+        address taker;
         uint256 expiration;
-        uint256 salt;
+    }
+
+    struct TradeArgs {
+        uint256 price;
+        uint128 fee;
+        bool isNegativeFee;
     }
 
     struct OrderInfo {
         Order order;
+        TradeArgs tradeArgs;
         bytes32 orderHash;
-    }
-
-    struct CallFunctionData {
-        CallFunctionType callType;
-        Order order;
     }
 
     struct OrderQueryOutput {
         OrderStatus orderStatus;
-        uint256 orderMakerFilledAmount;
+        uint256 filledAmount;
     }
 
     // ============ Events ============
@@ -147,25 +158,25 @@ contract LimitOrders is
         bool operational
     );
 
-    event LogLimitOrderCanceled(
+    event LogCanonicalOrderCanceled(
         bytes32 indexed orderHash,
         address indexed canceler,
-        uint256 makerMarket,
-        uint256 takerMarket
+        uint256 baseMarket,
+        uint256 quoteMarket
     );
 
-    event LogLimitOrderApproved(
+    event LogCanonicalOrderApproved(
         bytes32 indexed orderHash,
         address indexed approver,
-        uint256 makerMarket,
-        uint256 takerMarket
+        uint256 baseMarket,
+        uint256 quoteMarket
     );
 
-    event LogLimitOrderFilled(
+    event LogCanonicalOrderFilled(
         bytes32 indexed orderHash,
         address indexed orderMaker,
-        uint256 makerFillAmount,
-        uint256 totalMakerFilledAmount
+        uint256 fillAmount,
+        uint256 totalFilledAmount
     );
 
     // ============ Immutable Storage ============
@@ -178,11 +189,14 @@ contract LimitOrders is
     // true if this contract can process orders
     bool public g_isOperational;
 
-    // order hash => filled amount (in makerAmount)
-    mapping (bytes32 => uint256) public g_makerFilledAmount;
+    // order hash => filled amount (in baseAmount)
+    mapping (bytes32 => uint256) public g_filledAmount;
 
     // order hash => status
     mapping (bytes32 => OrderStatus) public g_status;
+
+    // stored tradeArgs
+    TradeArgs public g_tradeArgs;
 
     // ============ Constructor ============
 
@@ -268,8 +282,8 @@ contract LimitOrders is
      * @param  outputMarketId  The market for which the trader wants the resulting amount specified
      * @param  makerAccount    The account for which this contract is making trades
      * @param  takerAccount    The account requesting the trade
-     *  param  oldInputPar     (unused)
-     *  param  newInputPar     (unused)
+     * @param  oldInputPar     The par balance of the makerAccount for inputMarketId pre-trade
+     * @param  newInputPar     The par balance of the makerAccount for inputMarketId post-trade
      * @param  inputWei        The change in token amount for the makerAccount for the inputMarketId
      * @param  data            Arbitrary data passed in by the trader
      * @return                 The AssetAmount for the makerAccount for the outputMarketId
@@ -279,8 +293,8 @@ contract LimitOrders is
         uint256 outputMarketId,
         Account.Info memory makerAccount,
         Account.Info memory takerAccount,
-        Types.Par memory /* oldInputPar */,
-        Types.Par memory /* newInputPar */,
+        Types.Par memory oldInputPar,
+        Types.Par memory newInputPar,
         Types.Wei memory inputWei,
         bytes memory data
     )
@@ -305,12 +319,24 @@ contract LimitOrders is
             inputWei
         );
 
-        return getOutputAssetAmount(
+        Types.AssetAmount memory assetAmount = getOutputAssetAmount(
             inputMarketId,
             outputMarketId,
             inputWei,
             orderInfo
         );
+
+        if (isDecreaseOnly(orderInfo.order)) {
+            verifyDecreaseOnly(
+                oldInputPar,
+                newInputPar,
+                assetAmount,
+                makerAccount,
+                outputMarketId
+            );
+        }
+
+        return assetAmount;
     }
 
     /**
@@ -328,26 +354,28 @@ contract LimitOrders is
         public
         onlySolo(msg.sender)
     {
-        Require.that(
-            data.length == NUM_CALLFUNCTIONDATA_BYTES,
-            FILE,
-            "Cannot parse CallFunctionData"
-        );
+        CallFunctionType cft = abi.decode(data, (CallFunctionType));
 
-        CallFunctionData memory cfd = abi.decode(data, (CallFunctionData));
-
-        if (cfd.callType == CallFunctionType.Approve) {
-            approveOrderInternal(accountInfo.owner, cfd.order);
+        if (cft == CallFunctionType.SetTradeArgs) {
+            TradeArgs memory tradeArgs;
+            (cft, tradeArgs) = abi.decode(data, (CallFunctionType, TradeArgs));
+            g_tradeArgs = tradeArgs;
         } else {
-            assert(cfd.callType == CallFunctionType.Cancel);
-            cancelOrderInternal(accountInfo.owner, cfd.order);
+            Order memory order;
+            (cft, order) = abi.decode(data, (CallFunctionType, Order));
+            if (cft == CallFunctionType.Approve) {
+                approveOrderInternal(accountInfo.owner, order);
+            } else {
+                assert(cft == CallFunctionType.Cancel);
+                cancelOrderInternal(accountInfo.owner, order);
+            }
         }
     }
 
     // ============ Getters ============
 
     /**
-     * Returns the status and the filled amount (in makerAmount) of several orders.
+     * Returns the status and the filled amount of several orders.
      */
     function getOrderStates(
         bytes32[] memory orderHashes
@@ -364,7 +392,7 @@ contract LimitOrders is
             bytes32 orderHash = orderHashes[i];
             output[i] = OrderQueryOutput({
                 orderStatus: g_status[orderHash],
-                orderMakerFilledAmount: g_makerFilledAmount[orderHash]
+                filledAmount: g_filledAmount[orderHash]
             });
         }
         return output;
@@ -388,11 +416,11 @@ contract LimitOrders is
         );
         bytes32 orderHash = getOrderHash(order);
         g_status[orderHash] = OrderStatus.Canceled;
-        emit LogLimitOrderCanceled(
+        emit LogCanonicalOrderCanceled(
             orderHash,
             canceler,
-            order.makerMarket,
-            order.takerMarket
+            order.baseMarket,
+            order.quoteMarket
         );
     }
 
@@ -418,11 +446,11 @@ contract LimitOrders is
             orderHash
         );
         g_status[orderHash] = OrderStatus.Approved;
-        emit LogLimitOrderApproved(
+        emit LogCanonicalOrderApproved(
             orderHash,
             approver,
-            order.makerMarket,
-            order.takerMarket
+            order.baseMarket,
+            order.quoteMarket
         );
     }
 
@@ -442,6 +470,22 @@ contract LimitOrders is
         private
         view
     {
+        // verify triggerPrice
+        if (orderInfo.order.triggerPrice > 0) {
+            uint256 currentPrice = getCurrentPrice(
+                orderInfo.order.baseMarket,
+                orderInfo.order.quoteMarket
+            );
+            Require.that(
+                isBuy(orderInfo.order)
+                    ? currentPrice >= orderInfo.order.triggerPrice
+                    : currentPrice <= orderInfo.order.triggerPrice,
+                FILE,
+                "Order triggerPrice not triggered",
+                currentPrice
+            );
+        }
+
         // verify expriy
         Require.that(
             orderInfo.order.expiration == 0 || orderInfo.order.expiration >= block.timestamp,
@@ -461,26 +505,20 @@ contract LimitOrders is
 
         // verify taker
         Require.that(
-            (
-                orderInfo.order.takerAccountOwner == address(0) &&
-                orderInfo.order.takerAccountNumber == 0
-            ) || (
-                orderInfo.order.takerAccountOwner == takerAccount.owner &&
-                orderInfo.order.takerAccountNumber == takerAccount.number
-            ),
+            orderInfo.order.taker == address(0) || orderInfo.order.taker == takerAccount.owner,
             FILE,
-            "Order taker account mismatch",
+            "Order taker mismatch",
             orderInfo.orderHash
         );
 
         // verify markets
         Require.that(
             (
-                orderInfo.order.makerMarket == outputMarketId &&
-                orderInfo.order.takerMarket == inputMarketId
+                orderInfo.order.baseMarket == outputMarketId &&
+                orderInfo.order.quoteMarket == inputMarketId
             ) || (
-                orderInfo.order.takerMarket == outputMarketId &&
-                orderInfo.order.makerMarket == inputMarketId
+                orderInfo.order.quoteMarket == outputMarketId &&
+                orderInfo.order.baseMarket == inputMarketId
             ),
             FILE,
             "Market mismatch",
@@ -495,10 +533,42 @@ contract LimitOrders is
             orderInfo.orderHash
         );
         Require.that(
-            inputWei.sign == (orderInfo.order.takerMarket == inputMarketId),
+            inputWei.sign ==
+                ((orderInfo.order.baseMarket == inputMarketId) == isBuy(orderInfo.order)),
             FILE,
             "InputWei sign mismatch",
             orderInfo.orderHash
+        );
+    }
+
+    /**
+     * Verifies that the order is decreasing the size of the maker's position.
+     */
+    function verifyDecreaseOnly(
+        Types.Par memory oldInputPar,
+        Types.Par memory newInputPar,
+        Types.AssetAmount memory assetAmount,
+        Account.Info memory makerAccount,
+        uint256 outputMarketId
+    )
+        private
+        view
+    {
+        // verify that the balance of inputMarketId is not increased
+        Require.that(
+            newInputPar.isZero()
+            || (newInputPar.value <= oldInputPar.value && newInputPar.sign == oldInputPar.sign),
+            FILE,
+            "inputMarket not decreased"
+        );
+
+        // verify that the balance of outputMarketId is not increased
+        Types.Wei memory oldOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
+        Require.that(
+            assetAmount.value == 0
+            || (assetAmount.value <= oldOutputWei.value && assetAmount.sign != oldOutputWei.sign),
+            FILE,
+            "outputMarket not decreased"
         );
     }
 
@@ -515,28 +585,26 @@ contract LimitOrders is
         private
         returns (Types.AssetAmount memory)
     {
-        uint256 outputAmount;
-        uint256 makerFillAmount;
+        uint256 fee = orderInfo.tradeArgs.price.getPartial(orderInfo.tradeArgs.fee, PRICE_BASE);
+        uint256 adjustedPrice = (isBuy(orderInfo.order) == orderInfo.tradeArgs.isNegativeFee)
+            ? orderInfo.tradeArgs.price.sub(fee)
+            : orderInfo.tradeArgs.price.add(fee);
 
-        if (orderInfo.order.takerMarket == inputMarketId) {
-            outputAmount = inputWei.value.getPartial(
-                orderInfo.order.makerAmount,
-                orderInfo.order.takerAmount
-            );
-            makerFillAmount = outputAmount;
+        uint256 outputAmount;
+        uint256 fillAmount;
+        if (orderInfo.order.quoteMarket == inputMarketId) {
+            outputAmount = inputWei.value.getPartial(PRICE_BASE, adjustedPrice);
+            fillAmount = outputAmount;
         } else {
-            assert(orderInfo.order.takerMarket == outputMarketId);
-            outputAmount = inputWei.value.getPartialRoundUp(
-                orderInfo.order.takerAmount,
-                orderInfo.order.makerAmount
-            );
-            makerFillAmount = inputWei.value;
+            assert(orderInfo.order.quoteMarket == outputMarketId);
+            outputAmount = inputWei.value.getPartial(adjustedPrice, PRICE_BASE);
+            fillAmount = inputWei.value;
         }
 
-        updateMakerFilledAmount(orderInfo, makerFillAmount);
+        updateFilledAmount(orderInfo, fillAmount);
 
         return Types.AssetAmount({
-            sign: orderInfo.order.takerMarket == outputMarketId,
+            sign: !inputWei.sign,
             denomination: Types.AssetDenomination.Wei,
             ref: Types.AssetReference.Delta,
             value: outputAmount
@@ -544,34 +612,51 @@ contract LimitOrders is
     }
 
     /**
-     * Increases the stored filled amount (in makerAmount) of the order by makerFillAmount.
-     * Returns the new total filled amount (in makerAmount).
+     * Increases the stored filled amount of the order by fillAmount.
+     * Returns the new total filled amount.
      */
-    function updateMakerFilledAmount(
+    function updateFilledAmount(
         OrderInfo memory orderInfo,
-        uint256 makerFillAmount
+        uint256 fillAmount
     )
         private
     {
-        uint256 oldMakerFilledAmount = g_makerFilledAmount[orderInfo.orderHash];
-        uint256 totalMakerFilledAmount = oldMakerFilledAmount.add(makerFillAmount);
+        uint256 oldFilledAmount = g_filledAmount[orderInfo.orderHash];
+        uint256 totalFilledAmount = oldFilledAmount.add(fillAmount);
         Require.that(
-            totalMakerFilledAmount <= orderInfo.order.makerAmount,
+            totalFilledAmount <= orderInfo.order.amount,
             FILE,
             "Cannot overfill order",
             orderInfo.orderHash,
-            oldMakerFilledAmount,
-            makerFillAmount
+            oldFilledAmount,
+            fillAmount
         );
 
-        g_makerFilledAmount[orderInfo.orderHash] = totalMakerFilledAmount;
+        g_filledAmount[orderInfo.orderHash] = totalFilledAmount;
 
-        emit LogLimitOrderFilled(
+        emit LogCanonicalOrderFilled(
             orderInfo.orderHash,
             orderInfo.order.makerAccountOwner,
-            makerFillAmount,
-            totalMakerFilledAmount
+            fillAmount,
+            totalFilledAmount
         );
+    }
+
+    /**
+     * Returns the current price of baseMarket divided by the current price of quoteMarket. This
+     * value is multiplied by 10^18.
+     */
+    function getCurrentPrice(
+        uint256 baseMarket,
+        uint256 quoteMarket
+    )
+        private
+        view
+        returns (uint256)
+    {
+        Monetary.Price memory basePrice = SOLO_MARGIN.getMarketPrice(baseMarket);
+        Monetary.Price memory quotePrice = SOLO_MARGIN.getMarketPrice(quoteMarket);
+        return basePrice.value.mul(PRICE_BASE).div(quotePrice.value);
     }
 
     /**
@@ -581,7 +666,6 @@ contract LimitOrders is
         bytes memory data
     )
         private
-        view
         returns (OrderInfo memory)
     {
         Require.that(
@@ -593,10 +677,29 @@ contract LimitOrders is
             "Cannot parse order from data"
         );
 
+        // load orderInfo from calldata
         OrderInfo memory orderInfo;
-        orderInfo.order = abi.decode(data, (Order));
-        orderInfo.orderHash = getOrderHash(orderInfo.order);
+        (
+            orderInfo.order,
+            orderInfo.tradeArgs
+        ) = abi.decode(data, (Order, TradeArgs));
 
+        // load tradeArgs from storage if price is zero
+        if (orderInfo.tradeArgs.price == 0) {
+            orderInfo.tradeArgs = g_tradeArgs;
+            g_tradeArgs = TradeArgs({
+                price: 0,
+                fee: 0,
+                isNegativeFee: false
+            });
+        }
+        Require.that(
+            orderInfo.tradeArgs.price != 0,
+            FILE,
+            "TradeArgs loaded price is zero"
+        );
+
+        orderInfo.orderHash = getOrderHash(orderInfo.order);
         OrderStatus orderStatus = g_status[orderInfo.orderHash];
 
         // verify valid signature or is pre-approved
@@ -619,6 +722,27 @@ contract LimitOrders is
             assert(orderStatus == OrderStatus.Approved);
         }
 
+        // verify price
+        TradeArgs memory tradeArgs = orderInfo.tradeArgs;
+        bool validPrice = isBuy(orderInfo.order)
+            ? tradeArgs.price <= orderInfo.order.limitPrice
+            : tradeArgs.price >= orderInfo.order.limitPrice;
+        Require.that(
+            validPrice,
+            FILE,
+            "Fill invalid price"
+        );
+
+        // verify fee
+        bool validFee = isNegativeFee(orderInfo.order)
+            ? (tradeArgs.fee >= orderInfo.order.limitFee) && tradeArgs.isNegativeFee
+            : (tradeArgs.fee <= orderInfo.order.limitFee) || tradeArgs.isNegativeFee;
+        Require.that(
+            validFee,
+            FILE,
+            "Fill invalid fee"
+        );
+
         return orderInfo;
     }
 
@@ -637,7 +761,7 @@ contract LimitOrders is
         // compute the overall signed struct hash
         /* solium-disable-next-line indentation */
         bytes32 structHash = keccak256(abi.encode(
-            EIP712_LIMIT_ORDER_STRUCT_SCHEMA_HASH,
+            EIP712_ORDER_STRUCT_SCHEMA_HASH,
             order
         ));
 
@@ -678,5 +802,35 @@ contract LimitOrders is
         }
 
         return signature;
+    }
+
+    function isBuy(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & IS_BUY_FLAG) != bytes32(0);
+    }
+
+    function isDecreaseOnly(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & IS_DECREASE_ONLY_FLAG) != bytes32(0);
+    }
+
+    function isNegativeFee(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & IS_NEGATIVE_FEE_FLAG) != bytes32(0);
     }
 }

@@ -849,23 +849,6 @@ describe('StopLimitOrders', () => {
         );
       });
 
-      it('Fails when outputMarket crosses', async () => {
-        await expectThrow(
-          fillLimitOrder(decreaseOrder, {
-            amount: defaultTakerAmount.div(4),
-            denominatedInMakerAmount: false,
-          }),
-          'StopLimitOrders: inputMarket not decreased',
-        );
-        await expectThrow(
-          fillLimitOrder(decreaseOrder, {
-            amount: defaultTakerAmount.div(2),
-            denominatedInMakerAmount: false,
-          }),
-          'StopLimitOrders: inputMarket not decreased',
-        );
-      });
-
       it('Fails when increasing position', async () => {
         await expectThrow(
           fillLimitOrder(reverseDecreaseOrder, {
@@ -951,23 +934,6 @@ describe('StopLimitOrders', () => {
             denominatedInMakerAmount: true,
           }),
           'StopLimitOrders: outputMarket not decreased',
-        );
-      });
-
-      it('Fails when outputMarket crosses', async () => {
-        await expectThrow(
-          fillLimitOrder(reverseDecreaseOrder, {
-            amount: defaultMakerAmount.div(4),
-            denominatedInMakerAmount: false,
-          }),
-          'StopLimitOrders: inputMarket not decreased',
-        );
-        await expectThrow(
-          fillLimitOrder(reverseDecreaseOrder, {
-            amount: defaultMakerAmount.div(2),
-            denominatedInMakerAmount: false,
-          }),
-          'StopLimitOrders: inputMarket not decreased',
         );
       });
 
