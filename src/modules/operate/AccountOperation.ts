@@ -518,6 +518,30 @@ export class AccountOperation {
     });
   }
 
+  public fillDecreaseOnlyCanonicalOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: CanonicalOrder | SignedCanonicalOrder,
+    price: Integer,
+    fee: Integer,
+  ): AccountOperation {
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.canonicalOrders.options.address,
+      inputMarketId: order.isBuy ? order.baseMarket : order.quoteMarket,
+      outputMarketId: order.isBuy ? order.quoteMarket : order.baseMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      data: hexStringToBytes(this.canonicalOrders.orderToBytes(order, price, fee)),
+      amount: {
+        denomination: AmountDenomination.Par,
+        reference: AmountReference.Target,
+        value: INTEGERS.ZERO,
+      },
+    });
+  }
+
   public refund(refundArgs: Refund): AccountOperation {
     return this.trade({
       primaryAccountOwner: refundArgs.primaryAccountOwner,

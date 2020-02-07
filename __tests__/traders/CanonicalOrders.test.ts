@@ -771,6 +771,22 @@ describe('CanonicalOrders', () => {
         );
       });
 
+      it('Succeeds for full close', async () => {
+        await solo.operation.initiate().fillDecreaseOnlyCanonicalOrder(
+          defaultTakerAddress,
+          defaultTakerNumber,
+          reverseDecreaseOrder,
+          reverseDecreaseOrder.limitPrice,
+          INTEGERS.ZERO,
+        ).commit({ from: defaultTakerAddress });
+        await expectBalances(
+          defaultAmount.times(9).div(8),
+          defaultQuoteAmount.times(7).div(8),
+          defaultAmount.times(3).div(8),
+          INTEGERS.ZERO,
+        );
+      });
+
       it('Succeeds for decreasing', async () => {
         const fillOptions = { amount: defaultAmount.div(16) };
         await fillOrder(reverseDecreaseOrder, fillOptions);
@@ -818,10 +834,32 @@ describe('CanonicalOrders', () => {
         );
       });
 
+      it('Succeeds for full close', async () => {
+        await solo.operation.initiate().fillDecreaseOnlyCanonicalOrder(
+          defaultTakerAddress,
+          defaultTakerNumber,
+          decreaseOrder,
+          decreaseOrder.limitPrice,
+          INTEGERS.ZERO,
+        ).commit({ from: defaultTakerAddress });
+        await expectBalances(
+          defaultAmount.times(7).div(8),
+          defaultQuoteAmount.times(9).div(8),
+          INTEGERS.ZERO,
+          defaultQuoteAmount.times(3).div(8),
+        );
+      });
+
       it('Succeeds for decreasing', async () => {
         const fillOptions = { amount: defaultAmount.div(16) };
         await fillOrder(decreaseOrder, fillOptions);
         await fillOrder(decreaseOrder, fillOptions);
+        await expectBalances(
+          defaultAmount.times(7).div(8),
+          defaultQuoteAmount.times(9).div(8),
+          INTEGERS.ZERO,
+          defaultQuoteAmount.times(3).div(8),
+        );
 
         // cannot go past zero
         await expectThrow(

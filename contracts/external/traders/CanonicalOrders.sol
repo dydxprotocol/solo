@@ -176,7 +176,10 @@ contract CanonicalOrders is
         bytes32 indexed orderHash,
         address indexed orderMaker,
         uint256 fillAmount,
-        uint256 totalFilledAmount
+        uint256 totalFilledAmount,
+        uint256 price,
+        uint256 fee,
+        bool isNegativeFee
     );
 
     // ============ Immutable Storage ============
@@ -638,7 +641,10 @@ contract CanonicalOrders is
             orderInfo.orderHash,
             orderInfo.order.makerAccountOwner,
             fillAmount,
-            totalFilledAmount
+            totalFilledAmount,
+            orderInfo.tradeArgs.price,
+            orderInfo.tradeArgs.fee,
+            orderInfo.tradeArgs.isNegativeFee
         );
     }
 
