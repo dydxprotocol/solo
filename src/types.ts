@@ -450,7 +450,7 @@ export interface CanonicalOrderState {
 export enum LimitOrderCallFunctionType {
   Approve = 0,
   Cancel = 1,
-  SetTradeArgs = 2,
+  SetFillArgs = 2,
 }
 
 // ============ Sender Proxy ============

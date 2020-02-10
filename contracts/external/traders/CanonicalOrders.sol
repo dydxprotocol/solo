@@ -92,7 +92,7 @@ contract CanonicalOrders is
     ));
 
     // Number of bytes in an Order struct (plus orderInfo.price/fee/isNegativeFee)
-    uint256 constant private NUM_ORDER_BYTES = 448;
+    uint256 constant private NUM_ORDER_AND_TRADE_BYTES = 448;
 
     // Number of bytes in a typed signature
     uint256 constant private NUM_SIGNATURE_BYTES = 66;
@@ -101,9 +101,9 @@ contract CanonicalOrders is
     uint256 constant private PRICE_BASE = 10 ** 18;
 
     // Bitmasks for the order.flag argument
-    bytes32 constant private IS_BUY_FLAG = bytes32(uint256(0xf));
-    bytes32 constant private IS_DECREASE_ONLY_FLAG = bytes32(uint256(0xf0));
-    bytes32 constant private IS_NEGATIVE_FEE_FLAG = bytes32(uint256(0xf00));
+    bytes32 constant private IS_BUY_FLAG = bytes32(uint256(1));
+    bytes32 constant private IS_DECREASE_ONLY_FLAG = bytes32(uint256(1 << 1));
+    bytes32 constant private IS_NEGATIVE_FEE_FLAG = bytes32(uint256(1 << 2));
 
     // ============ Enums ============
 
@@ -116,7 +116,7 @@ contract CanonicalOrders is
     enum CallFunctionType {
         Approve,
         Cancel,
-        SetTradeArgs
+        SetFillArgs
     }
 
     // ============ Structs ============
@@ -135,7 +135,7 @@ contract CanonicalOrders is
         uint256 expiration;
     }
 
-    struct TradeArgs {
+    struct FillArgs {
         uint256 price;
         uint128 fee;
         bool isNegativeFee;
@@ -143,7 +143,7 @@ contract CanonicalOrders is
 
     struct OrderInfo {
         Order order;
-        TradeArgs tradeArgs;
+        FillArgs fill;
         bytes32 orderHash;
     }
 
@@ -177,9 +177,8 @@ contract CanonicalOrders is
         address indexed orderMaker,
         uint256 fillAmount,
         uint256 totalFilledAmount,
-        uint256 price,
-        uint256 fee,
-        bool isNegativeFee
+        bool isBuy,
+        FillArgs fill
     );
 
     // ============ Immutable Storage ============
@@ -198,8 +197,8 @@ contract CanonicalOrders is
     // order hash => status
     mapping (bytes32 => OrderStatus) public g_status;
 
-    // stored tradeArgs
-    TradeArgs public g_tradeArgs;
+    // stored fillArgs
+    FillArgs public g_fillArgs;
 
     // ============ Constructor ============
 
@@ -249,7 +248,7 @@ contract CanonicalOrders is
     // ============ External Functions ============
 
     /**
-     * Cancels an order. Cannot already be canceled.
+     * Cancels an order.
      *
      * @param  order  The order to cancel
      */
@@ -262,7 +261,7 @@ contract CanonicalOrders is
     }
 
     /**
-     * Approves an order. Cannot already be approved or canceled.
+     * Approves an order. Cannot already be canceled.
      *
      * @param  order  The order to approve
      */
@@ -311,9 +310,11 @@ contract CanonicalOrders is
             "Contract is not operational"
         );
 
-        OrderInfo memory orderInfo = getOrderAndValidateSignature(data);
+        OrderInfo memory orderInfo = getOrderInfo(data);
 
-        verifyOrderAndAccountsAndMarkets(
+        verifySignature(orderInfo, data);
+
+        verifyOrderInfo(
             orderInfo,
             makerAccount,
             takerAccount,
@@ -359,10 +360,10 @@ contract CanonicalOrders is
     {
         CallFunctionType cft = abi.decode(data, (CallFunctionType));
 
-        if (cft == CallFunctionType.SetTradeArgs) {
-            TradeArgs memory tradeArgs;
-            (cft, tradeArgs) = abi.decode(data, (CallFunctionType, TradeArgs));
-            g_tradeArgs = tradeArgs;
+        if (cft == CallFunctionType.SetFillArgs) {
+            FillArgs memory fillArgs;
+            (cft, fillArgs) = abi.decode(data, (CallFunctionType, FillArgs));
+            g_fillArgs = fillArgs;
         } else {
             Order memory order;
             (cft, order) = abi.decode(data, (CallFunctionType, Order));
@@ -460,9 +461,84 @@ contract CanonicalOrders is
     // ============ Private Helper Functions ============
 
     /**
+     * Parses the order, verifies that it is not expired or canceled, and verifies the signature.
+     */
+    function getOrderInfo(
+        bytes memory data
+    )
+        private
+        returns (OrderInfo memory)
+    {
+        Require.that(
+            (
+                data.length == NUM_ORDER_AND_TRADE_BYTES ||
+                data.length == NUM_ORDER_AND_TRADE_BYTES + NUM_SIGNATURE_BYTES
+            ),
+            FILE,
+            "Cannot parse order from data"
+        );
+
+        // load orderInfo from calldata
+        OrderInfo memory orderInfo;
+        (
+            orderInfo.order,
+            orderInfo.fill
+        ) = abi.decode(data, (Order, FillArgs));
+
+        // load fillArgs from storage if price is zero
+        if (orderInfo.fill.price == 0) {
+            orderInfo.fill = g_fillArgs;
+            g_fillArgs = FillArgs({
+                price: 0,
+                fee: 0,
+                isNegativeFee: false
+            });
+        }
+        Require.that(
+            orderInfo.fill.price != 0,
+            FILE,
+            "FillArgs loaded price is zero"
+        );
+
+        orderInfo.orderHash = getOrderHash(orderInfo.order);
+
+        return orderInfo;
+    }
+
+    function verifySignature(
+        OrderInfo memory orderInfo,
+        bytes memory data
+    )
+        private
+        view
+    {
+        OrderStatus orderStatus = g_status[orderInfo.orderHash];
+
+        // verify valid signature or is pre-approved
+        if (orderStatus == OrderStatus.Null) {
+            bytes memory signature = parseSignature(data);
+            address signer = TypedSignature.recover(orderInfo.orderHash, signature);
+            Require.that(
+                orderInfo.order.makerAccountOwner == signer,
+                FILE,
+                "Order invalid signature",
+                orderInfo.orderHash
+            );
+        } else {
+            Require.that(
+                orderStatus != OrderStatus.Canceled,
+                FILE,
+                "Order canceled",
+                orderInfo.orderHash
+            );
+            assert(orderStatus == OrderStatus.Approved);
+        }
+    }
+
+    /**
      * Verifies that the order is still fillable for the particular accounts and markets specified.
      */
-    function verifyOrderAndAccountsAndMarkets(
+    function verifyOrderInfo(
         OrderInfo memory orderInfo,
         Account.Info memory makerAccount,
         Account.Info memory takerAccount,
@@ -473,6 +549,27 @@ contract CanonicalOrders is
         private
         view
     {
+        // verify fill price
+        FillArgs memory fill = orderInfo.fill;
+        bool validPrice = isBuy(orderInfo.order)
+            ? fill.price <= orderInfo.order.limitPrice
+            : fill.price >= orderInfo.order.limitPrice;
+        Require.that(
+            validPrice,
+            FILE,
+            "Fill invalid price"
+        );
+
+        // verify fill fee
+        bool validFee = isNegativeFee(orderInfo.order)
+            ? (fill.fee >= orderInfo.order.limitFee) && fill.isNegativeFee
+            : (fill.fee <= orderInfo.order.limitFee) || fill.isNegativeFee;
+        Require.that(
+            validFee,
+            FILE,
+            "Fill invalid fee"
+        );
+
         // verify triggerPrice
         if (orderInfo.order.triggerPrice > 0) {
             uint256 currentPrice = getCurrentPrice(
@@ -588,10 +685,10 @@ contract CanonicalOrders is
         private
         returns (Types.AssetAmount memory)
     {
-        uint256 fee = orderInfo.tradeArgs.price.getPartial(orderInfo.tradeArgs.fee, PRICE_BASE);
-        uint256 adjustedPrice = (isBuy(orderInfo.order) == orderInfo.tradeArgs.isNegativeFee)
-            ? orderInfo.tradeArgs.price.sub(fee)
-            : orderInfo.tradeArgs.price.add(fee);
+        uint256 fee = orderInfo.fill.price.getPartial(orderInfo.fill.fee, PRICE_BASE);
+        uint256 adjustedPrice = (isBuy(orderInfo.order) == orderInfo.fill.isNegativeFee)
+            ? orderInfo.fill.price.sub(fee)
+            : orderInfo.fill.price.add(fee);
 
         uint256 outputAmount;
         uint256 fillAmount;
@@ -642,9 +739,8 @@ contract CanonicalOrders is
             orderInfo.order.makerAccountOwner,
             fillAmount,
             totalFilledAmount,
-            orderInfo.tradeArgs.price,
-            orderInfo.tradeArgs.fee,
-            orderInfo.tradeArgs.isNegativeFee
+            isBuy(orderInfo.order),
+            orderInfo.fill
         );
     }
 
@@ -663,93 +759,6 @@ contract CanonicalOrders is
         Monetary.Price memory basePrice = SOLO_MARGIN.getMarketPrice(baseMarket);
         Monetary.Price memory quotePrice = SOLO_MARGIN.getMarketPrice(quoteMarket);
         return basePrice.value.mul(PRICE_BASE).div(quotePrice.value);
-    }
-
-    /**
-     * Parses the order, verifies that it is not expired or canceled, and verifies the signature.
-     */
-    function getOrderAndValidateSignature(
-        bytes memory data
-    )
-        private
-        returns (OrderInfo memory)
-    {
-        Require.that(
-            (
-                data.length == NUM_ORDER_BYTES ||
-                data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES
-            ),
-            FILE,
-            "Cannot parse order from data"
-        );
-
-        // load orderInfo from calldata
-        OrderInfo memory orderInfo;
-        (
-            orderInfo.order,
-            orderInfo.tradeArgs
-        ) = abi.decode(data, (Order, TradeArgs));
-
-        // load tradeArgs from storage if price is zero
-        if (orderInfo.tradeArgs.price == 0) {
-            orderInfo.tradeArgs = g_tradeArgs;
-            g_tradeArgs = TradeArgs({
-                price: 0,
-                fee: 0,
-                isNegativeFee: false
-            });
-        }
-        Require.that(
-            orderInfo.tradeArgs.price != 0,
-            FILE,
-            "TradeArgs loaded price is zero"
-        );
-
-        orderInfo.orderHash = getOrderHash(orderInfo.order);
-        OrderStatus orderStatus = g_status[orderInfo.orderHash];
-
-        // verify valid signature or is pre-approved
-        if (orderStatus == OrderStatus.Null) {
-            bytes memory signature = parseSignature(data);
-            address signer = TypedSignature.recover(orderInfo.orderHash, signature);
-            Require.that(
-                orderInfo.order.makerAccountOwner == signer,
-                FILE,
-                "Order invalid signature",
-                orderInfo.orderHash
-            );
-        } else {
-            Require.that(
-                orderStatus != OrderStatus.Canceled,
-                FILE,
-                "Order canceled",
-                orderInfo.orderHash
-            );
-            assert(orderStatus == OrderStatus.Approved);
-        }
-
-        // verify price
-        TradeArgs memory tradeArgs = orderInfo.tradeArgs;
-        bool validPrice = isBuy(orderInfo.order)
-            ? tradeArgs.price <= orderInfo.order.limitPrice
-            : tradeArgs.price >= orderInfo.order.limitPrice;
-        Require.that(
-            validPrice,
-            FILE,
-            "Fill invalid price"
-        );
-
-        // verify fee
-        bool validFee = isNegativeFee(orderInfo.order)
-            ? (tradeArgs.fee >= orderInfo.order.limitFee) && tradeArgs.isNegativeFee
-            : (tradeArgs.fee <= orderInfo.order.limitFee) || tradeArgs.isNegativeFee;
-        Require.that(
-            validFee,
-            FILE,
-            "Fill invalid fee"
-        );
-
-        return orderInfo;
     }
 
     // ============ Private Parsing Functions ============
@@ -791,14 +800,14 @@ contract CanonicalOrders is
         returns (bytes memory)
     {
         Require.that(
-            data.length == NUM_ORDER_BYTES + NUM_SIGNATURE_BYTES,
+            data.length == NUM_ORDER_AND_TRADE_BYTES + NUM_SIGNATURE_BYTES,
             FILE,
             "Cannot parse signature from data"
         );
 
         bytes memory signature = new bytes(NUM_SIGNATURE_BYTES);
 
-        uint256 sigOffset = NUM_ORDER_BYTES;
+        uint256 sigOffset = NUM_ORDER_AND_TRADE_BYTES;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             let sigStart := add(data, sigOffset)
@@ -810,6 +819,9 @@ contract CanonicalOrders is
         return signature;
     }
 
+    /**
+     * Returns true if the order is a buy order.
+     */
     function isBuy(
         Order memory order
     )
@@ -820,6 +832,9 @@ contract CanonicalOrders is
         return (order.flags & IS_BUY_FLAG) != bytes32(0);
     }
 
+    /**
+     * Returns true if the order is a decrease-only order.
+     */
     function isDecreaseOnly(
         Order memory order
     )
@@ -830,6 +845,9 @@ contract CanonicalOrders is
         return (order.flags & IS_DECREASE_ONLY_FLAG) != bytes32(0);
     }
 
+    /**
+     * Returns true if the order's limitFee is negative.
+     */
     function isNegativeFee(
         Order memory order
     )

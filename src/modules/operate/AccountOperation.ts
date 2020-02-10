@@ -339,7 +339,7 @@ export class AccountOperation {
     return this;
   }
 
-  public setCanonicalOrderTradeArgs(
+  public setCanonicalOrderFillArgs(
     primaryAccountOwner: address,
     primaryAccountId: Integer,
     price: Integer,
@@ -354,7 +354,7 @@ export class AccountOperation {
         actionType: ActionType.Call,
         otherAddress: this.contracts.canonicalOrders.options.address,
         data: toBytes(
-          LimitOrderCallFunctionType.SetTradeArgs,
+          LimitOrderCallFunctionType.SetFillArgs,
           price,
           fee.abs(),
           fee.isNegative(),

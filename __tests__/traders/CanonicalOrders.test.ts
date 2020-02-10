@@ -1095,9 +1095,9 @@ describe('CanonicalOrders', () => {
     });
   });
 
-  describe('loading tradeArgs', () => {
+  describe('loading fillArgs', () => {
     it('Succeeds in loading in a price', async () => {
-      await solo.operation.initiate().setCanonicalOrderTradeArgs(
+      const txResult = await solo.operation.initiate().setCanonicalOrderFillArgs(
         defaultTakerAddress,
         defaultTakerNumber,
         testOrder.limitPrice,
@@ -1116,18 +1116,19 @@ describe('CanonicalOrders', () => {
         defaultAmount,
         INTEGERS.ZERO,
       );
+      console.log(`\tCanonicalOrder Trade (w/ setting fillArgs) gas used: ${txResult.gasUsed}`);
     });
 
     it('Cannot load in a null price', async () => {
       await expectThrow(
         fillOrder(testOrder, { price: INTEGERS.ZERO }),
-        'CanonicalOrders: TradeArgs loaded price is zero',
+        'CanonicalOrders: FillArgs loaded price is zero',
       );
     });
 
     it('Cannot load in a price past the limit', async () => {
       await expectThrow(
-        solo.operation.initiate().setCanonicalOrderTradeArgs(
+        solo.operation.initiate().setCanonicalOrderFillArgs(
           defaultTakerAddress,
           defaultTakerNumber,
           testOrder.limitPrice.times(2),
@@ -1146,7 +1147,7 @@ describe('CanonicalOrders', () => {
 
     it('Cannot load in a fee past the limit', async () => {
       await expectThrow(
-        solo.operation.initiate().setCanonicalOrderTradeArgs(
+        solo.operation.initiate().setCanonicalOrderFillArgs(
           defaultTakerAddress,
           defaultTakerNumber,
           testOrder.limitPrice,

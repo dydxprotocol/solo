@@ -241,6 +241,16 @@ export class Logs {
       return this.parseIntegerValue(eventArgs[input.name]);
     }
 
+    if (
+      Array.isArray(input.components)
+      && input.components.length === 3
+      && input.components[0].name === 'price'
+      && input.components[1].name === 'fee'
+      && input.components[2].name === 'isNegativeFee'
+    ) {
+      return this.parseFillData(eventArgs[input.name]);
+    }
+
     throw new Error('Unknown tuple type in event');
   }
 
@@ -277,5 +287,19 @@ export class Logs {
 
   private parseIntegerValue(value: any): Integer {
     return new BigNumber(value.value);
+  }
+
+  private parseFillData(
+    fillData: any,
+  ): {
+    price: BigNumber,
+    fee: BigNumber,
+    isNegativeFee: boolean,
+  } {
+    return {
+      price: stringToDecimal(fillData.price),
+      fee: stringToDecimal(fillData.fee),
+      isNegativeFee: fillData.isNegativeFee,
+    };
   }
 }
