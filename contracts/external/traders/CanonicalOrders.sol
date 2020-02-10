@@ -86,13 +86,12 @@ contract CanonicalOrders is
         "uint256 limitFee,",
         "address makerAccountOwner,",
         "uint256 makerAccountNumber,",
-        "address taker,",
         "uint256 expiration",
         ")"
     ));
 
     // Number of bytes in an Order struct (plus orderInfo.price/fee/isNegativeFee)
-    uint256 constant private NUM_ORDER_AND_TRADE_BYTES = 448;
+    uint256 constant private NUM_ORDER_AND_TRADE_BYTES = 416;
 
     // Number of bytes in a typed signature
     uint256 constant private NUM_SIGNATURE_BYTES = 66;
@@ -131,7 +130,6 @@ contract CanonicalOrders is
         uint256 limitFee;
         address makerAccountOwner;
         uint256 makerAccountNumber;
-        address taker;
         uint256 expiration;
     }
 
@@ -154,8 +152,12 @@ contract CanonicalOrders is
 
     // ============ Events ============
 
-    event ContractStatusSet(
+    event LogContractStatusSet(
         bool operational
+    );
+
+    event LogTakerSet(
+        address taker
     );
 
     event LogCanonicalOrderCanceled(
@@ -200,16 +202,21 @@ contract CanonicalOrders is
     // stored fillArgs
     FillArgs public g_fillArgs;
 
+    // required taker address
+    address public g_taker;
+
     // ============ Constructor ============
 
     constructor (
         address soloMargin,
+        address taker,
         uint256 chainId
     )
         public
         OnlySolo(soloMargin)
     {
         g_isOperational = true;
+        g_taker = taker;
 
         /* solium-disable-next-line indentation */
         EIP712_DOMAIN_HASH = keccak256(abi.encode(
@@ -231,7 +238,7 @@ contract CanonicalOrders is
         onlyOwner
     {
         g_isOperational = false;
-        emit ContractStatusSet(false);
+        emit LogContractStatusSet(false);
     }
 
     /**
@@ -242,7 +249,20 @@ contract CanonicalOrders is
         onlyOwner
     {
         g_isOperational = true;
-        emit ContractStatusSet(true);
+        emit LogContractStatusSet(true);
+    }
+
+    /**
+     * The owner can set the taker address.
+     */
+    function setTakerAddress(
+        address taker
+    )
+        external
+        onlyOwner
+    {
+        g_taker = taker;
+        emit LogTakerSet(taker);
     }
 
     // ============ External Functions ============
@@ -605,7 +625,7 @@ contract CanonicalOrders is
 
         // verify taker
         Require.that(
-            orderInfo.order.taker == address(0) || orderInfo.order.taker == takerAccount.owner,
+            takerAccount.owner == g_taker,
             FILE,
             "Order taker mismatch",
             orderInfo.orderHash
@@ -625,13 +645,17 @@ contract CanonicalOrders is
             orderInfo.orderHash
         );
 
-        // verify inputWei
+        // verify inputWei is non-zero
         Require.that(
             !inputWei.isZero(),
             FILE,
             "InputWei is zero",
             orderInfo.orderHash
         );
+
+        // verify inputWei is positive if-and-only-if:
+        // 1) inputMarket is the baseMarket and the order is a buy order
+        // 2) inputMarket is the quoteMarket and the order is a sell order
         Require.that(
             inputWei.sign ==
                 ((orderInfo.order.baseMarket == inputMarketId) == isBuy(orderInfo.order)),

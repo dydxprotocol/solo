@@ -16,6 +16,8 @@ import {
   EIP712_DOMAIN_STRUCT,
 } from '../lib/SignatureHelper';
 import {
+  address,
+  ContractCallOptions,
   ContractConstantCallOptions,
   CanonicalOrder,
   SignedCanonicalOrder,
@@ -34,7 +36,6 @@ const EIP712_ORDER_STRUCT = [
   { type: 'uint256', name: 'limitFee' },
   { type: 'address', name: 'makerAccountOwner' },
   { type: 'uint256', name: 'makerAccountNumber' },
-  { type: 'address', name: 'taker' },
   { type: 'uint256', name: 'expiration' },
 ];
 
@@ -49,7 +50,6 @@ const EIP712_ORDER_STRUCT_STRING =
   'uint256 limitFee,' +
   'address makerAccountOwner,' +
   'uint256 makerAccountNumber,' +
-  'address taker,' +
   'uint256 expiration' +
   ')';
 
@@ -116,6 +116,27 @@ export class CanonicalOrders extends OrderSigner {
     });
   }
 
+  public async getTakerAddress(
+    options?: ContractConstantCallOptions,
+  ): Promise<address> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.canonicalOrders.methods.g_taker(),
+      options,
+    );
+  }
+
+  // ============ Setter Contract Methods ============
+
+  public async setTakerAddress(
+    taker: address,
+    options?: ContractCallOptions,
+  ): Promise<any> {
+    return this.contracts.callContractFunction(
+      this.contracts.canonicalOrders.methods.setTakerAddress(taker),
+      options,
+    );
+  }
+
   // ============ Hashing Functions ============
 
   /**
@@ -135,7 +156,6 @@ export class CanonicalOrders extends OrderSigner {
       { t: 'uint256', v: toString(order.limitFee) },
       { t: 'bytes32', v: addressToBytes32(order.makerAccountOwner) },
       { t: 'uint256', v: toString(order.makerAccountNumber) },
-      { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: toString(order.expiration) },
     );
     return this.getEIP712Hash(structHash);
@@ -185,7 +205,6 @@ export class CanonicalOrders extends OrderSigner {
       .concat(argToBytes(order.limitFee))
       .concat(argToBytes(order.makerAccountOwner))
       .concat(argToBytes(order.makerAccountNumber))
-      .concat(argToBytes(order.taker))
       .concat(argToBytes(order.expiration));
 
     if (price && fee) {
@@ -227,7 +246,6 @@ export class CanonicalOrders extends OrderSigner {
       limitFee: order.limitFee.toFixed(0),
       makerAccountOwner: order.makerAccountOwner,
       makerAccountNumber: order.makerAccountNumber.toFixed(0),
-      taker: order.taker,
       expiration: order.expiration.toFixed(0),
     };
     const data = {

@@ -48,7 +48,7 @@ describe('CanonicalOrders', () => {
     accounts = r.accounts;
     admin = accounts[0];
     defaultMakerAddress = accounts[6];
-    defaultTakerAddress = accounts[7];
+    defaultTakerAddress = await solo.canonicalOrders.getTakerAddress();
     rando = accounts[9];
 
     testOrder = {
@@ -205,6 +205,20 @@ describe('CanonicalOrders', () => {
           solo.contracts.canonicalOrders.methods.startUp(),
           { from: rando },
         ),
+      );
+    });
+  });
+
+  describe('setTakerAddress', () => {
+    it('Succeeds for owner', async () => {
+      expect(await solo.canonicalOrders.getTakerAddress()).toBe(admin);
+      await solo.canonicalOrders.setTakerAddress(rando, { from: admin });
+      expect(await solo.canonicalOrders.getTakerAddress()).toBe(rando);
+    });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        solo.canonicalOrders.setTakerAddress(rando, { from: rando }),
       );
     });
   });
