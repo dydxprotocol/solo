@@ -27,6 +27,7 @@ const {
   getDaiPriceOracleParams,
   getExpiryRampTime,
   getOraclePokerAddress,
+  getSenderAddress,
   getChainId,
 } = require('./helpers');
 const { ADDRESSES } = require('../src/lib/Constants.ts');
@@ -67,6 +68,7 @@ const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
 const StopLimitOrders = artifacts.require('StopLimitOrders');
+const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // Interest Setters
@@ -88,7 +90,7 @@ const migration = async (deployer, network, accounts) => {
   await Promise.all([
     deployInterestSetters(deployer, network),
     deployPriceOracles(deployer, network, accounts),
-    deploySecondLayer(deployer, network),
+    deploySecondLayer(deployer, network, accounts),
   ]);
 };
 
@@ -175,7 +177,7 @@ async function deployPriceOracles(deployer, network, accounts) {
   ]);
 }
 
-async function deploySecondLayer(deployer, network) {
+async function deploySecondLayer(deployer, network, accounts) {
   const soloMargin = await getSoloMargin(network);
 
   if (isDevNetwork(network)) {
@@ -225,6 +227,12 @@ async function deploySecondLayer(deployer, network) {
       getChainId(network),
     ),
     deployer.deploy(
+      CanonicalOrders,
+      soloMargin.address,
+      getSenderAddress(network, accounts),
+      getChainId(network),
+    ),
+    deployer.deploy(
       SignedOperationProxy,
       soloMargin.address,
       getChainId(network),
@@ -258,6 +266,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     soloMargin.ownerSetGlobalOperator(
       StopLimitOrders.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      CanonicalOrders.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(

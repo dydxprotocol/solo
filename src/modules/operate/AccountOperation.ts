@@ -3,6 +3,7 @@ import { TransactionObject } from 'web3/eth/types';
 import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
 import { LimitOrders } from '../LimitOrders';
 import { StopLimitOrders } from '../StopLimitOrders';
+import { CanonicalOrders } from '../CanonicalOrders';
 import { Contracts } from '../../lib/Contracts';
 import {
   AmountReference,
@@ -40,6 +41,8 @@ import {
   SignedLimitOrder,
   StopLimitOrder,
   SignedStopLimitOrder,
+  CanonicalOrder,
+  SignedCanonicalOrder,
   LimitOrderCallFunctionType,
   ProxyType,
   Operation,
@@ -73,6 +76,7 @@ export class AccountOperation {
   private orderMapper: OrderMapper;
   private limitOrders: LimitOrders;
   private stopLimitOrders: StopLimitOrders;
+  private canonicalOrders: CanonicalOrders;
   private accounts: AccountInfo[];
   private proxy: ProxyType;
   private sendEthTo: address;
@@ -84,6 +88,7 @@ export class AccountOperation {
     orderMapper: OrderMapper,
     limitOrders: LimitOrders,
     stopLimitOrders: StopLimitOrders,
+    canonicalOrders: CanonicalOrders,
     networkId: number,
     options: AccountOperationOptions,
   ) {
@@ -99,6 +104,7 @@ export class AccountOperation {
     this.orderMapper = orderMapper;
     this.limitOrders = limitOrders;
     this.stopLimitOrders = stopLimitOrders;
+    this.canonicalOrders = canonicalOrders;
     this.accounts = [];
     this.proxy = proxy;
     this.sendEthTo = options.sendEthTo;
@@ -303,6 +309,61 @@ export class AccountOperation {
     return this;
   }
 
+  public approveCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.canonicalOrders.options.address,
+        data: toBytes(
+          LimitOrderCallFunctionType.Approve,
+          this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
+        ),
+      },
+    );
+    return this;
+  }
+
+  public cancelCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
+    this.addActionArgs(
+      args,
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.canonicalOrders.options.address,
+        data: toBytes(
+          LimitOrderCallFunctionType.Cancel,
+          this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
+        ),
+      },
+    );
+    return this;
+  }
+
+  public setCanonicalOrderFillArgs(
+    primaryAccountOwner: address,
+    primaryAccountId: Integer,
+    price: Integer,
+    fee: Integer,
+  ): AccountOperation {
+    this.addActionArgs(
+      {
+        primaryAccountOwner,
+        primaryAccountId,
+      },
+      {
+        actionType: ActionType.Call,
+        otherAddress: this.contracts.canonicalOrders.options.address,
+        data: toBytes(
+          LimitOrderCallFunctionType.SetFillArgs,
+          price,
+          fee.abs(),
+          fee.isNegative(),
+        ),
+      },
+    );
+    return this;
+  }
+
   public call(args: Call): AccountOperation {
     this.addActionArgs(
       args,
@@ -430,6 +491,55 @@ export class AccountOperation {
       denotedInMakerAmount,
       false,
     );
+  }
+
+  public fillCanonicalOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: CanonicalOrder | SignedCanonicalOrder,
+    amount: Integer,
+    price: Integer,
+    fee: Integer,
+  ): AccountOperation {
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.canonicalOrders.options.address,
+      inputMarketId: order.baseMarket,
+      outputMarketId: order.quoteMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      data: hexStringToBytes(this.canonicalOrders.orderToBytes(order, price, fee)),
+      amount: {
+        denomination: AmountDenomination.Wei,
+        reference: AmountReference.Delta,
+        value: order.isBuy ? amount : amount.negated(),
+      },
+    });
+  }
+
+  public fillDecreaseOnlyCanonicalOrder(
+    primaryAccountOwner: address,
+    primaryAccountNumber: Integer,
+    order: CanonicalOrder | SignedCanonicalOrder,
+    price: Integer,
+    fee: Integer,
+  ): AccountOperation {
+    return this.trade({
+      primaryAccountOwner,
+      primaryAccountId: primaryAccountNumber,
+      autoTrader: this.contracts.canonicalOrders.options.address,
+      inputMarketId: order.isBuy ? order.baseMarket : order.quoteMarket,
+      outputMarketId: order.isBuy ? order.quoteMarket : order.baseMarket,
+      otherAccountOwner: order.makerAccountOwner,
+      otherAccountId: order.makerAccountNumber,
+      data: hexStringToBytes(this.canonicalOrders.orderToBytes(order, price, fee)),
+      amount: {
+        denomination: AmountDenomination.Par,
+        reference: AmountReference.Target,
+        value: INTEGERS.ZERO,
+      },
+    });
   }
 
   public refund(refundArgs: Refund): AccountOperation {

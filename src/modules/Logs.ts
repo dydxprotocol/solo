@@ -19,6 +19,7 @@ import { abi as expiryV2Abi } from '../../build/published_contracts/ExpiryV2.jso
 import { abi as refunderAbi } from '../../build/published_contracts/Refunder.json';
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 import { abi as stopLimitOrdersAbi } from '../../build/published_contracts/StopLimitOrders.json';
+import { abi as canonicalOrdersAbi } from '../../build/published_contracts/CanonicalOrders.json';
 import {
   abi as signedOperationProxyAbi,
 } from '../../build/published_contracts/SignedOperationProxy.json';
@@ -59,6 +60,7 @@ export class Logs {
     if (options.skipLimitOrdersLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
       logs = logs.filter((log: any) => !this.logIsFrom(log, stopLimitOrdersAbi));
+      logs = logs.filter((log: any) => !this.logIsFrom(log, canonicalOrdersAbi));
     }
     if (options.skipSignedOperationProxyLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, signedOperationProxyAbi));
@@ -131,6 +133,9 @@ export class Logs {
       }
       case this.contracts.stopLimitOrders.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.stopLimitOrders, log);
+      }
+      case this.contracts.canonicalOrders.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.canonicalOrders, log);
       }
       case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.signedOperationProxy, log);
@@ -236,6 +241,16 @@ export class Logs {
       return this.parseIntegerValue(eventArgs[input.name]);
     }
 
+    if (
+      Array.isArray(input.components)
+      && input.components.length === 3
+      && input.components[0].name === 'price'
+      && input.components[1].name === 'fee'
+      && input.components[2].name === 'isNegativeFee'
+    ) {
+      return this.parseFillData(eventArgs[input.name]);
+    }
+
     throw new Error('Unknown tuple type in event');
   }
 
@@ -272,5 +287,19 @@ export class Logs {
 
   private parseIntegerValue(value: any): Integer {
     return new BigNumber(value.value);
+  }
+
+  private parseFillData(
+    fillData: any,
+  ): {
+    price: BigNumber,
+    fee: BigNumber,
+    isNegativeFee: boolean,
+  } {
+    return {
+      price: stringToDecimal(fillData.price),
+      fee: stringToDecimal(fillData.fee),
+      isNegativeFee: fillData.isNegativeFee,
+    };
   }
 }

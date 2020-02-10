@@ -1,24 +1,18 @@
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
-import { Signer } from './Signer';
+import { OrderSigner } from './OrderSigner';
 import { Contracts } from '../lib/Contracts';
 import { toString } from '../lib/Helpers';
 import {
   addressToBytes32,
   argToBytes,
   hashString,
-  addressesAreEqual,
 } from '../lib/BytesHelper';
 import {
-  SIGNATURE_TYPES,
   EIP712_DOMAIN_STRING,
   EIP712_DOMAIN_STRUCT,
-  createTypedSignature,
-  ecRecoverTypedSignature,
 } from '../lib/SignatureHelper';
 import {
-  address,
-  ContractCallOptions,
   ContractConstantCallOptions,
   Decimal,
   Integer,
@@ -66,8 +60,7 @@ const EIP712_CANCEL_ORDER_STRUCT_STRING =
   'bytes32[] orderHashes' +
   ')';
 
-export class LimitOrders extends Signer {
-  private contracts: Contracts;
+export class LimitOrders extends OrderSigner {
   private networkId: number;
 
   // ============ Constructor ============
@@ -77,67 +70,11 @@ export class LimitOrders extends Signer {
     web3: Web3,
     networkId: number,
   ) {
-    super(web3);
-    this.contracts = contracts;
+    super(web3, contracts);
     this.networkId = networkId;
   }
 
-  // ============ On-Chain Approve / On-Chain Cancel ============
-
-  /**
-   * Sends an transaction to pre-approve an order on-chain (so that no signature is required when
-   * filling the order).
-   */
-  public async approveOrder(
-    order: LimitOrder,
-    options?: ContractCallOptions,
-  ): Promise<any> {
-    const stringifiedOrder = this.stringifyOrder(order);
-    return this.contracts.callContractFunction(
-      this.contracts.limitOrders.methods.approveOrder(stringifiedOrder),
-      options,
-    );
-  }
-
-  /**
-   * Sends an transaction to cancel an order on-chain.
-   */
-  public async cancelOrder(
-    order: LimitOrder,
-    options?: ContractCallOptions,
-  ): Promise<any> {
-    const stringifiedOrder = this.stringifyOrder(order);
-    return this.contracts.callContractFunction(
-      this.contracts.limitOrders.methods.cancelOrder(stringifiedOrder),
-      options,
-    );
-  }
-
-  private stringifyOrder(
-    order: LimitOrder,
-  ): any {
-    const stringifiedOrder = { ... order };
-    for (const [key, value] of Object.entries(order)) {
-      if (typeof value !== 'string') {
-        stringifiedOrder[key] = toString(value);
-      }
-    }
-    return stringifiedOrder;
-  }
-
   // ============ Getter Contract Methods ============
-
-  /**
-   * Returns true if the contract can process orders.
-   */
-  public async isOperational(
-    options?: ContractConstantCallOptions,
-  ): Promise<boolean> {
-    return this.contracts.callConstantContractFunction(
-      this.contracts.limitOrders.methods.g_isOperational(),
-      options,
-    );
-  }
 
   /**
    * Gets the status and the current filled amount (in makerAmount) of all given orders.
@@ -158,161 +95,6 @@ export class LimitOrders extends Signer {
         totalMakerFilledAmount: new BigNumber(state[1]),
       };
     });
-  }
-
-  // ============ Signing Methods ============
-
-  /**
-   * Sends order to current provider for signing. Can sign locally if the signing account is
-   * loaded into web3 and SigningMethod.Hash is used.
-   */
-  public async signOrder(
-    order: LimitOrder,
-    signingMethod: SigningMethod,
-  ): Promise<string> {
-    switch (signingMethod) {
-      case SigningMethod.Hash:
-      case SigningMethod.UnsafeHash:
-      case SigningMethod.Compatibility:
-        const orderHash = this.getOrderHash(order);
-        const rawSignature = await this.web3.eth.sign(orderHash, order.makerAccountOwner);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
-        if (signingMethod === SigningMethod.Hash) {
-          return hashSig;
-        }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
-        if (signingMethod === SigningMethod.UnsafeHash) {
-          return unsafeHashSig;
-        }
-        if (this.orderByHashHasValidSignature(orderHash, unsafeHashSig, order.makerAccountOwner)) {
-          return unsafeHashSig;
-        }
-        return hashSig;
-
-      case SigningMethod.TypedData:
-      case SigningMethod.MetaMask:
-      case SigningMethod.MetaMaskLatest:
-      case SigningMethod.CoinbaseWallet:
-        return this.ethSignTypedOrderInternal(
-          order,
-          signingMethod,
-        );
-
-      default:
-        throw new Error(`Invalid signing method ${signingMethod}`);
-    }
-  }
-
-  /**
-   * Sends order to current provider for signing of a cancel message. Can sign locally if the
-   * signing account is loaded into web3 and SigningMethod.Hash is used.
-   */
-  public async signCancelOrder(
-    order: LimitOrder,
-    signingMethod: SigningMethod,
-  ): Promise<string> {
-    return this.signCancelOrderByHash(
-      this.getOrderHash(order),
-      order.makerAccountOwner,
-      signingMethod,
-    );
-  }
-
-  /**
-   * Sends orderHash to current provider for signing of a cancel message. Can sign locally if
-   * the signing account is loaded into web3 and SigningMethod.Hash is used.
-   */
-  public async signCancelOrderByHash(
-    orderHash: string,
-    signer: string,
-    signingMethod: SigningMethod,
-  ): Promise<string> {
-    switch (signingMethod) {
-      case SigningMethod.Hash:
-      case SigningMethod.UnsafeHash:
-      case SigningMethod.Compatibility:
-        const cancelHash = this.orderHashToCancelOrderHash(orderHash);
-        const rawSignature = await this.web3.eth.sign(cancelHash, signer);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
-        if (signingMethod === SigningMethod.Hash) {
-          return hashSig;
-        }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
-        if (signingMethod === SigningMethod.UnsafeHash) {
-          return unsafeHashSig;
-        }
-        if (this.cancelOrderByHashHasValidSignature(orderHash, unsafeHashSig, signer)) {
-          return unsafeHashSig;
-        }
-        return hashSig;
-
-      case SigningMethod.TypedData:
-      case SigningMethod.MetaMask:
-      case SigningMethod.MetaMaskLatest:
-      case SigningMethod.CoinbaseWallet:
-        return this.ethSignTypedCancelOrderInternal(
-          orderHash,
-          signer,
-          signingMethod,
-        );
-
-      default:
-        throw new Error(`Invalid signing method ${signingMethod}`);
-    }
-  }
-
-  // ============ Signature Verification ============
-
-  /**
-   * Returns true if the order object has a non-null valid signature from the maker of the order.
-   */
-  public orderHasValidSignature(
-    order: SignedLimitOrder,
-  ): boolean {
-    return this.orderByHashHasValidSignature(
-      this.getOrderHash(order),
-      order.typedSignature,
-      order.makerAccountOwner,
-    );
-  }
-
-  /**
-   * Returns true if the order hash has a non-null valid signature from a particular signer.
-   */
-  public orderByHashHasValidSignature(
-    orderHash: string,
-    typedSignature: string,
-    expectedSigner: address,
-  ): boolean {
-    const signer = ecRecoverTypedSignature(orderHash, typedSignature);
-    return addressesAreEqual(signer, expectedSigner);
-  }
-
-  /**
-   * Returns true if the cancel order message has a valid signature.
-   */
-  public cancelOrderHasValidSignature(
-    order: LimitOrder,
-    typedSignature: string,
-  ): boolean {
-    return this.cancelOrderByHashHasValidSignature(
-      this.getOrderHash(order),
-      typedSignature,
-      order.makerAccountOwner,
-    );
-  }
-
-  /**
-   * Returns true if the cancel order message has a valid signature.
-   */
-  public cancelOrderByHashHasValidSignature(
-    orderHash: string,
-    typedSignature: string,
-    expectedSigner: address,
-  ): boolean {
-    const cancelHash = this.orderHashToCancelOrderHash(orderHash);
-    const signer = ecRecoverTypedSignature(cancelHash, typedSignature);
-    return addressesAreEqual(signer, expectedSigner);
   }
 
   // ============ Off-Chain Collateralization Calculation Methods ============
@@ -463,7 +245,7 @@ export class LimitOrders extends Signer {
     };
   }
 
-  private async ethSignTypedOrderInternal(
+  protected async ethSignTypedOrderInternal(
     order: LimitOrder,
     signingMethod: SigningMethod,
   ): Promise<string> {
@@ -495,7 +277,7 @@ export class LimitOrders extends Signer {
     );
   }
 
-  private async ethSignTypedCancelOrderInternal(
+  protected async ethSignTypedCancelOrderInternal(
     orderHash: string,
     signer: string,
     signingMethod: SigningMethod,
@@ -517,5 +299,21 @@ export class LimitOrders extends Signer {
       data,
       signingMethod,
     );
+  }
+
+  protected stringifyOrder(
+    order: LimitOrder,
+  ): any {
+    const stringifiedOrder = { ... order };
+    for (const [key, value] of Object.entries(order)) {
+      if (typeof value !== 'string') {
+        stringifiedOrder[key] = toString(value);
+      }
+    }
+    return stringifiedOrder;
+  }
+
+  protected getContract() {
+    return this.contracts.limitOrders;
   }
 }

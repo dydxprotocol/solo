@@ -29,6 +29,7 @@ import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
 import { LimitOrders } from './modules/LimitOrders';
 import { StopLimitOrders } from './modules/StopLimitOrders';
+import { CanonicalOrders } from './modules/CanonicalOrders';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
@@ -53,6 +54,7 @@ export class Solo {
   public getters: Getters;
   public limitOrders: LimitOrders;
   public stopLimitOrders: StopLimitOrders;
+  public canonicalOrders: CanonicalOrders;
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
   public permissions: Permissions;
@@ -94,6 +96,7 @@ export class Solo {
     this.getters = new Getters(this.contracts);
     this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
     this.stopLimitOrders = new StopLimitOrders(this.contracts, this.web3, networkId);
+    this.canonicalOrders = new CanonicalOrders(this.contracts, this.web3, networkId);
     this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
@@ -102,6 +105,7 @@ export class Solo {
       this.contracts,
       this.limitOrders,
       this.stopLimitOrders,
+      this.canonicalOrders,
       networkId,
     );
     this.api = new Api(

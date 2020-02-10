@@ -35,6 +35,7 @@ import { Refunder } from '../../build/wrappers/Refunder';
 import { DaiMigrator } from '../../build/wrappers/DaiMigrator';
 import { LimitOrders } from '../../build/wrappers/LimitOrders';
 import { StopLimitOrders } from '../../build/wrappers/StopLimitOrders';
+import { CanonicalOrders } from '../../build/wrappers/CanonicalOrders';
 import {
   PayableProxyForSoloMargin as PayableProxy,
 } from '../../build/wrappers/PayableProxyForSoloMargin';
@@ -75,6 +76,7 @@ import refunderJson from '../../build/published_contracts/Refunder.json';
 import daiMigratorJson from '../../build/published_contracts/DaiMigrator.json';
 import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
 import stopLimitOrdersJson from '../../build/published_contracts/StopLimitOrders.json';
+import canonicalOrdersJson from '../../build/published_contracts/CanonicalOrders.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
@@ -139,6 +141,7 @@ export class Contracts {
   public daiMigrator: DaiMigrator;
   public limitOrders: LimitOrders;
   public stopLimitOrders: StopLimitOrders;
+  public canonicalOrders: CanonicalOrders;
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
@@ -193,6 +196,7 @@ export class Contracts {
     this.daiMigrator = new this.web3.eth.Contract(daiMigratorJson.abi) as DaiMigrator;
     this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
     this.stopLimitOrders = new this.web3.eth.Contract(stopLimitOrdersJson.abi) as StopLimitOrders;
+    this.canonicalOrders = new this.web3.eth.Contract(canonicalOrdersJson.abi) as CanonicalOrders;
     this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
     this.signedOperationProxy = new this.web3.eth.Contract(signedOperationProxyJson.abi) as
       SignedOperationProxy;
@@ -257,6 +261,7 @@ export class Contracts {
       { contract: this.daiMigrator, json: daiMigratorJson },
       { contract: this.limitOrders, json: limitOrdersJson },
       { contract: this.stopLimitOrders, json: stopLimitOrdersJson },
+      { contract: this.canonicalOrders, json: canonicalOrdersJson },
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
@@ -319,6 +324,7 @@ export class Contracts {
     this.daiMigrator.options.from = account;
     this.limitOrders.options.from = account;
     this.stopLimitOrders.options.from = account;
+    this.canonicalOrders.options.from = account;
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
