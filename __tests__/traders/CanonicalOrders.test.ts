@@ -56,14 +56,13 @@ describe('CanonicalOrders', () => {
       quoteMarket,
       isBuy: true,
       isDecreaseOnly: false,
-      isNegativeFee: false,
+      isNegativeLimitFee: false,
       amount: defaultAmount,
       limitPrice: defaultPrice,
       triggerPrice: INTEGERS.ZERO,
       limitFee: defaultFee,
       makerAccountOwner: defaultMakerAddress,
       makerAccountNumber: defaultMakerNumber,
-      taker: defaultTakerAddress,
       expiration: INTEGERS.ONES_31,
       salt: new BigNumber(100),
       typedSignature: null,
@@ -79,7 +78,7 @@ describe('CanonicalOrders', () => {
     ] = await Promise.all([
       getModifiedTestOrder({ isBuy: false }),
       getModifiedTestOrder({ limitFee: INTEGERS.ZERO }),
-      getModifiedTestOrder({ isNegativeFee: true }),
+      getModifiedTestOrder({ isNegativeLimitFee: true }),
       getModifiedTestOrder({ isDecreaseOnly: true }),
       getModifiedTestOrder({ isBuy: false, isDecreaseOnly: true }),
     ]);
@@ -253,15 +252,6 @@ describe('CanonicalOrders', () => {
       await fillOrder(testOrderNoExpiry, {});
       await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
       await expectFilledAmount(testOrderNoExpiry, defaultAmount);
-    });
-
-    it('Succeeds for no specific taker', async () => {
-      const testOrderNoTaker = await getModifiedTestOrder({
-        taker: ADDRESSES.ZERO,
-      });
-      await fillOrder(testOrderNoTaker, {});
-      await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
-      await expectFilledAmount(testOrderNoTaker, defaultAmount);
     });
 
     it('Succeeds for pre-approved order', async () => {

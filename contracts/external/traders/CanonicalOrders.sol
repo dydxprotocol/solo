@@ -90,8 +90,8 @@ contract CanonicalOrders is
         ")"
     ));
 
-    // Number of bytes in an Order struct (plus orderInfo.price/fee/isNegativeFee)
-    uint256 constant private NUM_ORDER_AND_TRADE_BYTES = 416;
+    // Number of bytes in an Order struct plus number of bytes in a FillArgs struct
+    uint256 constant private NUM_ORDER_AND_FILL_BYTES = 416;
 
     // Number of bytes in a typed signature
     uint256 constant private NUM_SIGNATURE_BYTES = 66;
@@ -491,8 +491,8 @@ contract CanonicalOrders is
     {
         Require.that(
             (
-                data.length == NUM_ORDER_AND_TRADE_BYTES ||
-                data.length == NUM_ORDER_AND_TRADE_BYTES + NUM_SIGNATURE_BYTES
+                data.length == NUM_ORDER_AND_FILL_BYTES ||
+                data.length == NUM_ORDER_AND_FILL_BYTES + NUM_SIGNATURE_BYTES
             ),
             FILE,
             "Cannot parse order from data"
@@ -581,7 +581,7 @@ contract CanonicalOrders is
         );
 
         // verify fill fee
-        bool validFee = isNegativeFee(orderInfo.order)
+        bool validFee = isNegativeLimitFee(orderInfo.order)
             ? (fill.fee >= orderInfo.order.limitFee) && fill.isNegativeFee
             : (fill.fee <= orderInfo.order.limitFee) || fill.isNegativeFee;
         Require.that(
@@ -824,14 +824,14 @@ contract CanonicalOrders is
         returns (bytes memory)
     {
         Require.that(
-            data.length == NUM_ORDER_AND_TRADE_BYTES + NUM_SIGNATURE_BYTES,
+            data.length == NUM_ORDER_AND_FILL_BYTES + NUM_SIGNATURE_BYTES,
             FILE,
             "Cannot parse signature from data"
         );
 
         bytes memory signature = new bytes(NUM_SIGNATURE_BYTES);
 
-        uint256 sigOffset = NUM_ORDER_AND_TRADE_BYTES;
+        uint256 sigOffset = NUM_ORDER_AND_FILL_BYTES;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             let sigStart := add(data, sigOffset)
@@ -872,7 +872,7 @@ contract CanonicalOrders is
     /**
      * Returns true if the order's limitFee is negative.
      */
-    function isNegativeFee(
+    function isNegativeLimitFee(
         Order memory order
     )
         private
