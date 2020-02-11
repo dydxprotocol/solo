@@ -292,7 +292,7 @@ export class CanonicalOrders extends OrderSigner {
     order: CanonicalOrder,
   ): string {
     let booleanFlags = 0;
-    booleanFlags += order.isNegativeFee ? 4 : 0;
+    booleanFlags += order.isNegativeLimitFee ? 4 : 0;
     booleanFlags += order.isDecreaseOnly ? 2 : 0;
     booleanFlags += order.isBuy ? 1 : 0;
     return `0x${bytesToHexString(toBytes(order.salt)).slice(-63)}${booleanFlags}`;
