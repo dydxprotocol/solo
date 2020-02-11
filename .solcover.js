@@ -1,12 +1,17 @@
 module.exports = {
-  compileCommand: 'npm run build',
-  copyPackages: ['openzeppelin-solidity', '@dydxprotocol/exchange-wrappers'],
+
+  // client: require('ganache-cli'), // Use version installed as npm dep
+
   skipFiles: [
     'testing/',
     'external/multisig/MultiSig.sol',
     'external/multisig/DelayedMultiSig.sol',
     'Migrations.sol'
   ],
-  testCommand: 'npm run test_cov',
-  testrpcOptions: '-d -k=petersburg -p 8555 -i 1002',
+  providerOptions: {
+    port: 8555,
+    network_id: 1002,
+    hardfork: 'petersburg',
+    hdPath: "m/44'/60'/0'/0/"
+  }
 };
