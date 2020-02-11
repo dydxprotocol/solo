@@ -175,6 +175,18 @@
             "transactionHash": "0xac40b38e47dd8f45e86685dcbdde8950401193ba3b4a67071d213d9c29ad7b4a"
         }
     },
+    "CanonicalOrders": {
+        "1": {
+            "links": {},
+            "address": "0x98f20ffFB266F7249b831E5aAc42970440a273aE",
+            "transactionHash": "0x47f851aa2411bfb3b5e11ede345f03366498740a003230def7f73620a1159667"
+        },
+        "42": {
+            "links": {},
+            "address": "0x103993ff75159f2BF40566DBF92A686df3F7a5e8",
+            "transactionHash": "0x0c00364ff8ce9d42160826f422284e37a8b830b6a1fca4962778fab098382bc1"
+        }
+    },
     "SignedOperationProxy": {
         "1": {
             "links": {},
