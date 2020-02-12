@@ -13,132 +13,125 @@ const shell = require('shelljs');
 const truffleJS = require('./../truffle.js');
 
 async function coverage() {
-  let error;
   let config;
   let api;
+  death(utils.finish.bind(null, config, api)); // Catch interrupt signals
 
-  try {
-    death(utils.finish.bind(null, config, api)); // Catch interrupt signals
+  // =======
+  // Configs
+  // =======
+  config = (new TruffleConfig()).with(truffleJS);
+  config.temp = 'build'; // --temp build
+  config.network = 'coverage'; // --network coverage
+  config = truffleUtils.normalizeConfig(config);
 
-    // =======
-    // Configs
-    // =======
-    config = (new TruffleConfig()).with(truffleJS);
-    config.temp = 'build'; // --temp build
-    config.network = 'coverage'; // --network coverage
-    config = truffleUtils.normalizeConfig(config);
+  const ui = new PluginUI(config.logger.log);
+  const truffle = truffleUtils.loadLibrary(config);
+  api = new API(utils.loadSolcoverJS(config));
 
-    const ui = new PluginUI(config.logger.log);
-    const truffle = truffleUtils.loadLibrary(config);
-    api = new API(utils.loadSolcoverJS(config));
+  truffleUtils.setNetwork(config, api);
 
-    truffleUtils.setNetwork(config, api);
+  // ========
+  // Ganache
+  // ========
+  const client = api.client || truffle.ganache;
+  const address = await api.ganache(client);
 
-    // ========
-    // Ganache
-    // ========
-    const client = api.client || truffle.ganache;
-    const address = await api.ganache(client);
+  const web3 = new Web3(address);
+  const accounts = await web3.eth.getAccounts();
+  const nodeInfo = await web3.eth.getNodeInfo();
+  const ganacheVersion = nodeInfo.split('/')[1];
 
-    const web3 = new Web3(address);
-    const accounts = await web3.eth.getAccounts();
-    const nodeInfo = await web3.eth.getNodeInfo();
-    const ganacheVersion = nodeInfo.split('/')[1];
+  truffleUtils.setNetworkFrom(config, accounts);
 
-    truffleUtils.setNetworkFrom(config, accounts);
+  // Version Info
+  ui.report('versions', [
+    truffle.version,
+    ganacheVersion,
+    pkg.version,
+  ]);
 
-    // Version Info
-    ui.report('versions', [
-      truffle.version,
-      ganacheVersion,
-      pkg.version,
-    ]);
+  // Exit if --version
+  if (config.version) return await utils.finish(config, api);
 
-    // Exit if --version
-    if (config.version) return await utils.finish(config, api);
+  ui.report('network', [
+    config.network,
+    config.networks[config.network].network_id,
+    config.networks[config.network].port,
+  ]);
 
-    ui.report('network', [
-      config.network,
-      config.networks[config.network].network_id,
-      config.networks[config.network].port,
-    ]);
+  // =====================
+  // Instrument Contracts
+  // =====================
+  const skipFiles = api.skipFiles || [];
 
-    // =====================
-    // Instrument Contracts
-    // =====================
-    const skipFiles = api.skipFiles || [];
+  const {
+    targets: uninstrumentedTargets,
+    skipped,
+  } = utils.assembleFiles(config, skipFiles);
 
-    const {
-      targets: uninstrumentedTargets,
-      skipped,
-    } = utils.assembleFiles(config, skipFiles);
+  const targets = api.instrument(uninstrumentedTargets);
+  utils.reportSkipped(config, skipped);
 
-    const targets = api.instrument(uninstrumentedTargets);
-    utils.reportSkipped(config, skipped);
+  // =================================
+  // Filesys and compile configuration
+  // =================================
+  const {
+    tempArtifactsDir,
+    tempContractsDir,
+  } = utils.getTempLocations(config);
 
-    // =================================
-    // Filesys and compile configuration
-    // =================================
-    const {
-      tempArtifactsDir,
-      tempContractsDir,
-    } = utils.getTempLocations(config);
+  utils.setupTempFolders(config, tempContractsDir, tempArtifactsDir);
+  utils.save(targets, config.contracts_directory, tempContractsDir);
+  utils.save(skipped, config.contracts_directory, tempContractsDir);
 
-    utils.setupTempFolders(config, tempContractsDir, tempArtifactsDir);
-    utils.save(targets, config.contracts_directory, tempContractsDir);
-    utils.save(skipped, config.contracts_directory, tempContractsDir);
+  config.contracts_directory = tempContractsDir;
+  config.build_directory = tempArtifactsDir;
 
-    config.contracts_directory = tempContractsDir;
-    config.build_directory = tempArtifactsDir;
+  config.contracts_build_directory = path.join(
+    tempArtifactsDir,
+    path.basename(config.contracts_build_directory),
+  );
 
-    config.contracts_build_directory = path.join(
-      tempArtifactsDir,
-      path.basename(config.contracts_build_directory),
-    );
+  config.all = true;
+  config.compilers.solc.settings.optimizer.enabled = false;
 
-    config.all = true;
-    config.compilers.solc.settings.optimizer.enabled = false;
+  // ========
+  // Compile
+  // ========
+  await truffle.contracts.compile(config);
 
-    // ========
-    // Compile
-    // ========
-    await truffle.contracts.compile(config);
+  // ========
+  // TS Build
+  // ========
+  shell.exec('npm run build:cov');
 
-    // ========
-    // TS Build
-    // ========
-    shell.exec('npm run build:cov');
+  // ==============
+  // Deploy / test
+  // ==============
 
-    // ==============
-    // Deploy / test
-    // ==============
+  const command = 'npm run test_cov';
+  const finished = 'Force exiting Jest';
 
-    const command = 'npm run test_cov';
-    const finished = 'Force exiting Jest';
+  await new Promise((resolve) => {
+    const child = shell.exec(command, { async: true });
 
-    await new Promise((resolve) => {
-      const child = shell.exec(command, { async: true });
-
-      // Jest routes all output to stderr
-      child.stderr.on('data', (data) => {
-        if (data.includes(finished)) resolve();
-      });
+    // Jest routes all output to stderr
+    child.stderr.on('data', (data) => {
+      if (data.includes(finished)) resolve();
     });
+  });
 
-    // ========
-    // Istanbul
-    // ========
-    await api.report();
-  } catch (e) {
-    error = e;
-  }
+  // ========
+  // Istanbul
+  // ========
+  await api.report();
+
 
   // ====
   // Exit
   // ====
   await utils.finish(config, api);
-
-  if (error !== undefined) throw error;
 }
 
 // Run coverage

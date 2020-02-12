@@ -6,7 +6,7 @@ module.exports = {
     'Migrations.sol'
   ],
   providerOptions: {
+    port: 8555,
     network_id: 1002,
-    hdPath: "m/44'/60'/0'/0/"
   }
 };
