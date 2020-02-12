@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/* eslint-disable import/no-extraneous-dependencies */
 const API = require('solidity-coverage/api');
 const utils = require('solidity-coverage/utils');
 const truffleUtils = require('solidity-coverage/plugins/resources/truffle.utils');
@@ -11,8 +12,9 @@ const path = require('path');
 const Web3 = require('web3');
 const shell = require('shelljs');
 const truffleJS = require('./../truffle.js');
+/* eslint-enable import/no-extraneous-dependencies */
 
-async function coverage() {
+async function coverage() { // eslint-disable-line consistent-return
   let config;
   let api;
   death(utils.finish.bind(null, config, api)); // Catch interrupt signals
@@ -52,7 +54,9 @@ async function coverage() {
   ]);
 
   // Exit if --version
-  if (config.version) return await utils.finish(config, api);
+  if (config.version) {
+    return utils.finish(config, api);
+  }
 
   ui.report('network', [
     config.network,
@@ -109,16 +113,12 @@ async function coverage() {
   // ==============
   // Deploy / test
   // ==============
-
-  const command = 'npm run test_cov';
-  const finished = 'Force exiting Jest';
-
   await new Promise((resolve) => {
-    const child = shell.exec(command, { async: true });
+    const child = shell.exec('npm run test_cov', { async: true });
 
     // Jest routes all output to stderr
     child.stderr.on('data', (data) => {
-      if (data.includes(finished)) resolve();
+      if (data.includes('Force exiting Jest')) resolve();
     });
   });
 
@@ -126,7 +126,6 @@ async function coverage() {
   // Istanbul
   // ========
   await api.report();
-
 
   // ====
   // Exit

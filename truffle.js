@@ -1,6 +1,6 @@
-require('ts-node/register');
-require('dotenv-flow').config();
-const HDWalletProvider = require('truffle-hdwallet-provider');
+require('ts-node/register'); // eslint-disable-line
+require('dotenv-flow').config(); // eslint-disable-line
+const HDWalletProvider = require('truffle-hdwallet-provider'); // eslint-disable-line
 const path = require('path');
 
 const covContractsDir = path.join(process.cwd(), '.coverage_contracts');
