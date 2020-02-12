@@ -10,13 +10,12 @@ const death = require('death');
 const path = require('path');
 const Web3 = require('web3');
 const shell = require('shelljs');
+const truffleJS = require('./../truffle.js');
 
 async function coverage() {
-  let ui;
-  let api;
   let error;
-  let truffle;
   let config;
+  let api;
 
   try {
     death(utils.finish.bind(null, config, api)); // Catch interrupt signals
@@ -24,16 +23,13 @@ async function coverage() {
     // =======
     // Configs
     // =======
-    const truffleJS = require('./../truffle.js');
-
     config = (new TruffleConfig()).with(truffleJS);
     config.temp = 'build'; // --temp build
     config.network = 'coverage'; // --network coverage
-
     config = truffleUtils.normalizeConfig(config);
 
-    ui = new PluginUI(config.logger.log);
-    truffle = truffleUtils.loadLibrary(config);
+    const ui = new PluginUI(config.logger.log);
+    const truffle = truffleUtils.loadLibrary(config);
     api = new API(utils.loadSolcoverJS(config));
 
     truffleUtils.setNetwork(config, api);
