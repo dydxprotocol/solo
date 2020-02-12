@@ -1,6 +1,10 @@
 require('ts-node/register');
 require('dotenv-flow').config();
 const HDWalletProvider = require('truffle-hdwallet-provider');
+const path = require('path');
+
+const covContractsDir = path.join(process.cwd(), '.coverage_contracts');
+const regContractsDir = path.join(process.cwd(), 'contracts');
 
 module.exports = {
   compilers: {
@@ -18,6 +22,7 @@ module.exports = {
       },
     },
   },
+  contracts_directory: process.env.COVERAGE ? covContractsDir : regContractsDir,
   networks: {
     test: {
       host: '0.0.0.0',
@@ -65,10 +70,10 @@ module.exports = {
       gas: 7900000,
     },
     coverage: {
-      host: '0.0.0.0',
+      host: '127.0.0.1',
       network_id: '1002',
       port: 8555,
-      gas: 0xfffffffffff,
+      gas: 0xffffffffff,
       gasPrice: 1,
     },
     docker: {
