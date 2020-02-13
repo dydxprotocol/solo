@@ -234,7 +234,7 @@ const { order } = await solo.api.placeOrder({
   fillOrKill: false,
 
   // OPTIONAL: defaults to false
-  cancelOnRevert: false,
+  cancelAmountOnRevert: false,
 
   // OPTIONAL: defaults to false
   postOnly: false,

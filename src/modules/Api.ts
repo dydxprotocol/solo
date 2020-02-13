@@ -64,7 +64,7 @@ export class Api {
     signedTriggerPrice,
     decreaseOnly,
     clientId,
-    cancelOnRevert,
+    cancelAmountOnRevert,
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
@@ -79,7 +79,7 @@ export class Api {
     signedTriggerPrice?: Integer,
     decreaseOnly?: boolean,
     clientId?: string,
-    cancelOnRevert?: boolean,
+    cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
     let order: SignedLimitOrder | SignedStopLimitOrder;
     if (triggerPrice) {
@@ -111,7 +111,7 @@ export class Api {
       postOnly,
       clientId,
       triggerPrice,
-      cancelOnRevert,
+      cancelAmountOnRevert,
     });
   }
 
@@ -130,7 +130,7 @@ export class Api {
     signedTriggerPrice,
     decreaseOnly,
     clientId,
-    cancelOnRevert,
+    cancelAmountOnRevert,
   }: {
     makerAccountOwner: address,
     makerAccountNumber: Integer | string,
@@ -146,7 +146,7 @@ export class Api {
     signedTriggerPrice?: Integer,
     decreaseOnly?: boolean,
     clientId?: string,
-    cancelOnRevert?: boolean,
+    cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
     let order: SignedLimitOrder | SignedStopLimitOrder;
     if (triggerPrice) {
@@ -179,7 +179,7 @@ export class Api {
       cancelId,
       clientId,
       triggerPrice,
-      cancelOnRevert,
+      cancelAmountOnRevert,
     });
   }
 
@@ -193,7 +193,7 @@ export class Api {
     cancelId,
     triggerPrice,
     clientId,
-    cancelOnRevert,
+    cancelAmountOnRevert,
   }: {
     order: SignedLimitOrder,
     fillOrKill: boolean,
@@ -201,14 +201,14 @@ export class Api {
     cancelId: string,
     triggerPrice?: Integer,
     clientId?: string,
-    cancelOnRevert?: boolean,
+    cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       cancelId,
       postOnly,
-      cancelOnRevert,
+      cancelAmountOnRevert,
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
     };
@@ -333,20 +333,20 @@ export class Api {
     postOnly = false,
     triggerPrice,
     clientId,
-    cancelOnRevert,
+    cancelAmountOnRevert,
   }: {
     order: SignedLimitOrder | SignedStopLimitOrder,
     fillOrKill: boolean,
     postOnly: boolean,
     triggerPrice?: Integer,
     clientId?: string,
-    cancelOnRevert?: boolean,
+    cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyOrder(order);
 
     const data: any = {
       postOnly,
-      cancelOnRevert,
+      cancelAmountOnRevert,
       order: jsonOrder,
       fillOrKill: !!fillOrKill,
     };
