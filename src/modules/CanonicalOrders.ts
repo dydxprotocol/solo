@@ -22,8 +22,10 @@ import {
   CanonicalOrder,
   SignedCanonicalOrder,
   CanonicalOrderState,
+  LimitOrder,
   SigningMethod,
   Integer,
+  Decimal,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -135,6 +137,80 @@ export class CanonicalOrders extends OrderSigner {
       this.contracts.canonicalOrders.methods.setTakerAddress(taker),
       options,
     );
+  }
+
+  // ============ Off-Chain Collateralization Calculation Methods ============
+
+  /**
+   * Returns the estimated account collateralization after making each of the orders provided.
+   * The makerAccount of each order should be associated with the same account.
+   * This function does not make any on-chain calls and so all information must be passed in
+   * (including asset prices and remaining amounts on the orders).
+   * - 150% collateralization will be returned as BigNumber(1.5).
+   * - Accounts with zero borrow will be returned as BigNumber(infinity) regardless of supply.
+   */
+  public getAccountCollateralizationAfterMakingOrders(
+    weis: Integer[],
+    prices: Integer[],
+    orders: (LimitOrder | CanonicalOrder)[],
+    remainingAmounts: Integer[],
+  ): Decimal {
+    const runningWeis = weis.map(x => new BigNumber(x));
+
+    // for each order, modify the wei value of the account
+    for (let i = 0; i < orders.length; i += 1) {
+      const isCanonical = (!!orders[i] as any).limitPrice;
+
+      if (isCanonical) {
+        // calculate base and quote amounts
+        const order = orders[i] as CanonicalOrder;
+        let baseAmount = remainingAmounts[i];
+        const totalQuoteAmount = order.amount.times(order.limitPrice);
+        let quoteAmount = totalQuoteAmount.times(baseAmount).div(order.amount);
+
+        // update running weis
+        const baseMarket = order.baseMarket.toNumber();
+        const quoteMarket = order.quoteMarket.toNumber();
+        if (order.isBuy) {
+          quoteAmount = quoteAmount.negated();
+        } else {
+          baseAmount = baseAmount.negated();
+        }
+        runningWeis[baseMarket] = runningWeis[baseMarket].plus(baseAmount);
+        runningWeis[quoteMarket] = runningWeis[quoteMarket].plus(quoteAmount);
+      } else {
+        // calculate maker and taker amounts
+        const order = orders[i] as LimitOrder;
+        const makerAmount = remainingAmounts[i];
+        const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
+          .integerValue(BigNumber.ROUND_UP);
+
+        // update running weis
+        const makerMarket = order.makerMarket.toNumber();
+        const takerMarket = order.takerMarket.toNumber();
+        runningWeis[makerMarket] = runningWeis[makerMarket].minus(makerAmount);
+        runningWeis[takerMarket] = runningWeis[takerMarket].plus(takerAmount);
+      }
+    }
+
+    // calculate the final collateralization
+    let supplyValue = new BigNumber(0);
+    let borrowValue = new BigNumber(0);
+    for (let i = 0; i < runningWeis.length; i += 1) {
+      const value = runningWeis[i].times(prices[i]);
+      if (value.gt(0)) {
+        supplyValue = supplyValue.plus(value.abs());
+      } else if (value.lt(0)) {
+        borrowValue = borrowValue.plus(value.abs());
+      }
+    }
+
+    // return infinity if borrow amount is zero (even if supply is also zero)
+    if (borrowValue.isZero()) {
+      return new BigNumber(Infinity);
+    }
+
+    return supplyValue.div(borrowValue);
   }
 
   // ============ Hashing Functions ============
