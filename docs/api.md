@@ -342,10 +342,11 @@ export const STATUS = {
   FILLED: 'FILLED', // The order has been completely filled
   PARTIALLY_FILLED: 'PARTIALLY_FILLED', // The order has been partially filled
   CANCELED: 'CANCELED', // The order has been canceled and can no longer be filled
+  FAILED: 'FAILED', // The order failed to be processed due to an internal error
 };
 ```
 
-If the order was canceled, additional information will be provided by the `unfillableReason`
+If the order was canceled, additional information will be provided by the `cancelReason`
 field.
 
 For fills the status field represents the status of the transaction on-chain.
@@ -357,6 +358,8 @@ export const STATUSES = {
   CONFIRMED: 'CONFIRMED', // The fill was sent to the blockchain and successfully mined
 };
 ```
+
+To get pending balances related to fills in `PENDING` status, see [GET /v1/accounts/:address](#accounts)
 
 ### GET /v2/orders
 Description:
@@ -670,7 +673,7 @@ Example Response Body:
 ### GET /v1/accounts/:address
 
 Description:
-Get account balances for a particular account owner
+Get account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
 
 Headers:
 ```
@@ -699,6 +702,7 @@ Example Response Body:
       "marketId": 0,
       "accountUuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
       "wei": "10000184397123234.892111593021043502",
+      "pendingWei": "20000184397123234.892111593021043502",
       "expiresAt": null,
       "par": "9994719126810778",
     },
