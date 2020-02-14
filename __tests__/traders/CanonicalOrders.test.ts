@@ -967,7 +967,7 @@ describe('CanonicalOrders', () => {
         INVALID_FEE_MESSAGE,
       );
       await expectThrow(
-        fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.negated().plus(1) }),
+        fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.plus(1) }),
         INVALID_FEE_MESSAGE,
       );
     });
@@ -994,7 +994,7 @@ describe('CanonicalOrders', () => {
     });
 
     it('Can take a satisfying negative fee', async () => {
-      await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.negated() });
+      await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee });
       const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
       await expectBalances(
         INTEGERS.ZERO,
@@ -1005,7 +1005,7 @@ describe('CanonicalOrders', () => {
     });
 
     it('Can take an extra-negative fee', async () => {
-      await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.times(2).negated() });
+      await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.times(2) });
       const feeAmount = defaultQuoteAmount.times(defaultFee).times(2).div('1e18');
       await expectBalances(
         INTEGERS.ZERO,
