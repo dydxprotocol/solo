@@ -415,7 +415,6 @@ export interface SignedStopLimitOrder extends StopLimitOrder, SignedOrder {
 
 export interface CanonicalOrder extends SignableOrder {
   isBuy: boolean;
-  isNegativeLimitFee: boolean;
   isDecreaseOnly: boolean;
   baseMarket: Integer;
   quoteMarket: Integer;

@@ -56,7 +56,6 @@ describe('CanonicalOrders', () => {
       quoteMarket,
       isBuy: true,
       isDecreaseOnly: false,
-      isNegativeLimitFee: false,
       amount: defaultAmount,
       limitPrice: defaultPrice,
       triggerPrice: INTEGERS.ZERO,
@@ -78,7 +77,7 @@ describe('CanonicalOrders', () => {
     ] = await Promise.all([
       getModifiedTestOrder({ isBuy: false }),
       getModifiedTestOrder({ limitFee: INTEGERS.ZERO }),
-      getModifiedTestOrder({ isNegativeLimitFee: true }),
+      getModifiedTestOrder({ limitFee: defaultFee.negated() }),
       getModifiedTestOrder({ isDecreaseOnly: true }),
       getModifiedTestOrder({ isBuy: false, isDecreaseOnly: true }),
     ]);
