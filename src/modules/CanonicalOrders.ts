@@ -229,7 +229,7 @@ export class CanonicalOrders extends OrderSigner {
       { t: 'uint256', v: toString(order.amount) },
       { t: 'uint256', v: toString(order.limitPrice) },
       { t: 'uint256', v: toString(order.triggerPrice) },
-      { t: 'uint256', v: toString(order.limitFee) },
+      { t: 'uint256', v: toString(order.limitFee.abs()) },
       { t: 'bytes32', v: addressToBytes32(order.makerAccountOwner) },
       { t: 'uint256', v: toString(order.makerAccountNumber) },
       { t: 'uint256', v: toString(order.expiration) },
@@ -278,7 +278,7 @@ export class CanonicalOrders extends OrderSigner {
       .concat(argToBytes(order.amount))
       .concat(argToBytes(order.limitPrice))
       .concat(argToBytes(order.triggerPrice))
-      .concat(argToBytes(order.limitFee))
+      .concat(argToBytes(order.limitFee.abs()))
       .concat(argToBytes(order.makerAccountOwner))
       .concat(argToBytes(order.makerAccountNumber))
       .concat(argToBytes(order.expiration));
@@ -319,7 +319,7 @@ export class CanonicalOrders extends OrderSigner {
       amount: order.amount.toFixed(0),
       limitPrice: order.limitPrice.toFixed(0),
       triggerPrice: order.triggerPrice.toFixed(0),
-      limitFee: order.limitFee.toFixed(0),
+      limitFee: order.limitFee.abs().toFixed(0),
       makerAccountOwner: order.makerAccountOwner,
       makerAccountNumber: order.makerAccountNumber.toFixed(0),
       expiration: order.expiration.toFixed(0),
@@ -368,7 +368,7 @@ export class CanonicalOrders extends OrderSigner {
     order: CanonicalOrder,
   ): string {
     let booleanFlags = 0;
-    booleanFlags += order.isNegativeLimitFee ? 4 : 0;
+    booleanFlags += order.limitFee.isNegative() ? 4 : 0;
     booleanFlags += order.isDecreaseOnly ? 2 : 0;
     booleanFlags += order.isBuy ? 1 : 0;
     return `0x${bytesToHexString(toBytes(order.salt)).slice(-63)}${booleanFlags}`;
