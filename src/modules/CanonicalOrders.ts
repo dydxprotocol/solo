@@ -159,7 +159,7 @@ export class CanonicalOrders extends OrderSigner {
 
     // for each order, modify the wei value of the account
     for (let i = 0; i < orders.length; i += 1) {
-      const isCanonical = (!!orders[i] as any).limitPrice;
+      const isCanonical = !!(orders[i] as any).limitPrice;
 
       if (isCanonical) {
         // calculate base and quote amounts
