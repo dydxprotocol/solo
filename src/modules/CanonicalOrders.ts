@@ -26,6 +26,7 @@ import {
   SigningMethod,
   Integer,
   Decimal,
+  MarketId,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -139,6 +140,38 @@ export class CanonicalOrders extends OrderSigner {
     );
   }
 
+  // ============ Off-Chain Fee Calculation Methods ============
+
+  public getFeeForOrder(
+    baseMarketBN: Integer,
+    amount: Integer,
+    isTaker: boolean = true,
+  ): Integer {
+    const ZERO = new BigNumber(0);
+    const BIPS = new BigNumber('1e14');
+    const ONE = new BigNumber('1e18');
+
+    const ETH_SMALL_ORDER_THRESHOLD = ONE.times('0.5');
+    const DAI_SMALL_ORDER_THRESHOLD = ONE.times('100');
+
+    switch (baseMarketBN.toNumber()) {
+      case MarketId.ETH.toNumber():
+        if (amount.lt(ETH_SMALL_ORDER_THRESHOLD)) {
+          return isTaker ? BIPS.times(50) : ZERO;
+        } else {
+          return isTaker ? BIPS.times(15) : ZERO;
+        }
+      case MarketId.DAI.toNumber():
+        if (amount.lt(DAI_SMALL_ORDER_THRESHOLD)) {
+          return isTaker ? BIPS.times(50) : ZERO;
+        } else {
+          return isTaker ? BIPS.times(15) : ZERO;
+        }
+      default:
+        throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
+    }
+  }
+
   // ============ Off-Chain Collateralization Calculation Methods ============
 
   /**
@@ -153,7 +186,7 @@ export class CanonicalOrders extends OrderSigner {
     weis: Integer[],
     prices: Integer[],
     orders: (LimitOrder | CanonicalOrder)[],
-    remainingAmounts: Integer[],
+    remainingMakerAmounts: Integer[],
   ): Decimal {
     const runningWeis = weis.map(x => new BigNumber(x));
 
@@ -162,26 +195,22 @@ export class CanonicalOrders extends OrderSigner {
       const isCanonical = !!(orders[i] as any).limitPrice;
 
       if (isCanonical) {
-        // calculate base and quote amounts
+        // calculate maker and taker amounts
         const order = orders[i] as CanonicalOrder;
-        let baseAmount = remainingAmounts[i];
-        const totalQuoteAmount = order.amount.times(order.limitPrice);
-        let quoteAmount = totalQuoteAmount.times(baseAmount).div(order.amount);
+        const makerAmount = remainingMakerAmounts[i];
+        const takerAmount = order.isBuy
+          ? makerAmount.times('1e18').div(order.limitPrice)
+          : makerAmount.times(order.limitPrice).div('1e18');
 
         // update running weis
-        const baseMarket = order.baseMarket.toNumber();
-        const quoteMarket = order.quoteMarket.toNumber();
-        if (order.isBuy) {
-          quoteAmount = quoteAmount.negated();
-        } else {
-          baseAmount = baseAmount.negated();
-        }
-        runningWeis[baseMarket] = runningWeis[baseMarket].plus(baseAmount);
-        runningWeis[quoteMarket] = runningWeis[quoteMarket].plus(quoteAmount);
+        const makerMarket = (order.isBuy ? order.quoteMarket : order.baseMarket).toNumber();
+        const takerMarket = (order.isBuy ? order.baseMarket : order.quoteMarket).toNumber();
+        runningWeis[makerMarket] = runningWeis[makerMarket].minus(makerAmount);
+        runningWeis[takerMarket] = runningWeis[takerMarket].plus(takerAmount);
       } else {
         // calculate maker and taker amounts
         const order = orders[i] as LimitOrder;
-        const makerAmount = remainingAmounts[i];
+        const makerAmount = remainingMakerAmounts[i];
         const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
           .integerValue(BigNumber.ROUND_UP);
 
