@@ -156,17 +156,13 @@ export class CanonicalOrders extends OrderSigner {
 
     switch (baseMarketBN.toNumber()) {
       case MarketId.ETH.toNumber():
-        if (amount.lt(ETH_SMALL_ORDER_THRESHOLD)) {
-          return isTaker ? BIPS.times(50) : ZERO;
-        } else {
-          return isTaker ? BIPS.times(15) : ZERO;
-        }
+        return amount.lt(ETH_SMALL_ORDER_THRESHOLD)
+          ? (isTaker ? BIPS.times(50) : ZERO)
+          : (isTaker ? BIPS.times(15) : ZERO);
       case MarketId.DAI.toNumber():
-        if (amount.lt(DAI_SMALL_ORDER_THRESHOLD)) {
-          return isTaker ? BIPS.times(50) : ZERO;
-        } else {
-          return isTaker ? BIPS.times(15) : ZERO;
-        }
+        return amount.lt(DAI_SMALL_ORDER_THRESHOLD)
+          ? (isTaker ? BIPS.times(50) : ZERO)
+          : (isTaker ? BIPS.times(15) : ZERO);
       default:
         throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
     }
