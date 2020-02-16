@@ -419,9 +419,9 @@ export interface CanonicalOrder extends SignableOrder {
   baseMarket: Integer;
   quoteMarket: Integer;
   amount: Integer;
-  limitPrice: Integer;
-  triggerPrice: Integer;
-  limitFee: Integer;
+  limitPrice: Decimal;
+  triggerPrice: Decimal;
+  limitFee: Decimal;
   expiration: Integer;
   salt: Integer;
 }
