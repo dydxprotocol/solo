@@ -33,6 +33,7 @@ import {
   AccountActionWithOrder,
   Call,
   Amount,
+  Decimal,
   Integer,
   AccountOperationOptions,
   ConfirmationType,
@@ -342,8 +343,8 @@ export class AccountOperation {
   public setCanonicalOrderFillArgs(
     primaryAccountOwner: address,
     primaryAccountId: Integer,
-    price: Integer,
-    fee: Integer,
+    price: Decimal,
+    fee: Decimal,
   ): AccountOperation {
     this.addActionArgs(
       {
@@ -355,8 +356,8 @@ export class AccountOperation {
         otherAddress: this.contracts.canonicalOrders.options.address,
         data: toBytes(
           LimitOrderCallFunctionType.SetFillArgs,
-          price,
-          fee.abs(),
+          this.canonicalOrders.toSolidity(price),
+          this.canonicalOrders.toSolidity(fee.abs()),
           fee.isNegative(),
         ),
       },
@@ -498,8 +499,8 @@ export class AccountOperation {
     primaryAccountNumber: Integer,
     order: CanonicalOrder | SignedCanonicalOrder,
     amount: Integer,
-    price: Integer,
-    fee: Integer,
+    price: Decimal,
+    fee: Decimal,
   ): AccountOperation {
     return this.trade({
       primaryAccountOwner,
@@ -522,8 +523,8 @@ export class AccountOperation {
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
     order: CanonicalOrder | SignedCanonicalOrder,
-    price: Integer,
-    fee: Integer,
+    price: Decimal,
+    fee: Decimal,
   ): AccountOperation {
     return this.trade({
       primaryAccountOwner,
