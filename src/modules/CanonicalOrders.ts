@@ -26,6 +26,7 @@ import {
   SigningMethod,
   Integer,
   Decimal,
+  MarketId,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -83,13 +84,16 @@ export class CanonicalOrders extends OrderSigner {
   protected stringifyOrder(
     order: CanonicalOrder,
   ): any {
-    const stringifiedOrder = {
+    const stringifiedOrder: any = {
       ...order,
       flags: this.getCanonicalOrderFlags(order),
+      limitPrice: this.toSolidity(order.limitPrice),
+      triggerPrice: this.toSolidity(order.triggerPrice),
+      limitFee: this.toSolidity(order.limitFee),
     };
-    for (const [key, value] of Object.entries(order)) {
-      if (typeof value !== 'string' && typeof value !== 'boolean') {
-        stringifiedOrder[key] = toString(value);
+    for (const [key, value] of Object.entries(stringifiedOrder)) {
+      if (!['string', 'boolean'].includes(typeof value)) {
+        stringifiedOrder[key] = toString(value as BigNumber);
       }
     }
     return stringifiedOrder;
@@ -139,6 +143,33 @@ export class CanonicalOrders extends OrderSigner {
     );
   }
 
+  // ============ Off-Chain Fee Calculation Methods ============
+
+  public getFeeForOrder(
+    baseMarketBN: Integer,
+    amount: Integer,
+    isTaker: boolean = true,
+  ): Integer {
+    const ZERO = new BigNumber(0);
+    const BIPS = new BigNumber('1e-4');
+
+    const ETH_SMALL_ORDER_THRESHOLD = new BigNumber('0.5e18');
+    const DAI_SMALL_ORDER_THRESHOLD = new BigNumber('100e18');
+
+    switch (baseMarketBN.toNumber()) {
+      case MarketId.ETH.toNumber():
+        return amount.lt(ETH_SMALL_ORDER_THRESHOLD)
+          ? (isTaker ? BIPS.times(50) : ZERO)
+          : (isTaker ? BIPS.times(15) : ZERO);
+      case MarketId.DAI.toNumber():
+        return amount.lt(DAI_SMALL_ORDER_THRESHOLD)
+          ? (isTaker ? BIPS.times(50) : ZERO)
+          : (isTaker ? BIPS.times(15) : ZERO);
+      default:
+        throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
+    }
+  }
+
   // ============ Off-Chain Collateralization Calculation Methods ============
 
   /**
@@ -153,35 +184,31 @@ export class CanonicalOrders extends OrderSigner {
     weis: Integer[],
     prices: Integer[],
     orders: (LimitOrder | CanonicalOrder)[],
-    remainingAmounts: Integer[],
+    remainingMakerAmounts: Integer[],
   ): Decimal {
     const runningWeis = weis.map(x => new BigNumber(x));
 
     // for each order, modify the wei value of the account
     for (let i = 0; i < orders.length; i += 1) {
-      const isCanonical = (!!orders[i] as any).limitPrice;
+      const isCanonical = !!(orders[i] as any).limitPrice;
 
       if (isCanonical) {
-        // calculate base and quote amounts
+        // calculate maker and taker amounts
         const order = orders[i] as CanonicalOrder;
-        let baseAmount = remainingAmounts[i];
-        const totalQuoteAmount = order.amount.times(order.limitPrice);
-        let quoteAmount = totalQuoteAmount.times(baseAmount).div(order.amount);
+        const makerAmount = remainingMakerAmounts[i];
+        const takerAmount = order.isBuy
+          ? makerAmount.div(order.limitPrice)
+          : makerAmount.times(order.limitPrice);
 
         // update running weis
-        const baseMarket = order.baseMarket.toNumber();
-        const quoteMarket = order.quoteMarket.toNumber();
-        if (order.isBuy) {
-          quoteAmount = quoteAmount.negated();
-        } else {
-          baseAmount = baseAmount.negated();
-        }
-        runningWeis[baseMarket] = runningWeis[baseMarket].plus(baseAmount);
-        runningWeis[quoteMarket] = runningWeis[quoteMarket].plus(quoteAmount);
+        const makerMarket = (order.isBuy ? order.quoteMarket : order.baseMarket).toNumber();
+        const takerMarket = (order.isBuy ? order.baseMarket : order.quoteMarket).toNumber();
+        runningWeis[makerMarket] = runningWeis[makerMarket].minus(makerAmount);
+        runningWeis[takerMarket] = runningWeis[takerMarket].plus(takerAmount);
       } else {
         // calculate maker and taker amounts
         const order = orders[i] as LimitOrder;
-        const makerAmount = remainingAmounts[i];
+        const makerAmount = remainingMakerAmounts[i];
         const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
           .integerValue(BigNumber.ROUND_UP);
 
@@ -213,6 +240,14 @@ export class CanonicalOrders extends OrderSigner {
     return supplyValue.div(borrowValue);
   }
 
+  // ============ Public Helper Functions ============
+
+  public toSolidity(
+    price: BigNumber,
+  ): BigNumber {
+    return price.shiftedBy(18).integerValue();
+  }
+
   // ============ Hashing Functions ============
 
   /**
@@ -227,9 +262,9 @@ export class CanonicalOrders extends OrderSigner {
       { t: 'uint256', v: toString(order.baseMarket) },
       { t: 'uint256', v: toString(order.quoteMarket) },
       { t: 'uint256', v: toString(order.amount) },
-      { t: 'uint256', v: toString(order.limitPrice) },
-      { t: 'uint256', v: toString(order.triggerPrice) },
-      { t: 'uint256', v: toString(order.limitFee.abs()) },
+      { t: 'uint256', v: toString(this.toSolidity(order.limitPrice)) },
+      { t: 'uint256', v: toString(this.toSolidity(order.triggerPrice)) },
+      { t: 'uint256', v: toString(this.toSolidity(order.limitFee.abs())) },
       { t: 'bytes32', v: addressToBytes32(order.makerAccountOwner) },
       { t: 'uint256', v: toString(order.makerAccountNumber) },
       { t: 'uint256', v: toString(order.expiration) },
@@ -268,25 +303,25 @@ export class CanonicalOrders extends OrderSigner {
 
   public orderToBytes(
     order: CanonicalOrder | SignedCanonicalOrder,
-    price?: Integer,
-    fee?: Integer,
+    price?: Decimal,
+    fee?: Decimal,
   ): string {
     let orderBytes = []
       .concat(argToBytes(this.getCanonicalOrderFlags(order)))
       .concat(argToBytes(order.baseMarket))
       .concat(argToBytes(order.quoteMarket))
       .concat(argToBytes(order.amount))
-      .concat(argToBytes(order.limitPrice))
-      .concat(argToBytes(order.triggerPrice))
-      .concat(argToBytes(order.limitFee.abs()))
+      .concat(argToBytes(this.toSolidity(order.limitPrice)))
+      .concat(argToBytes(this.toSolidity(order.triggerPrice)))
+      .concat(argToBytes(this.toSolidity(order.limitFee.abs())))
       .concat(argToBytes(order.makerAccountOwner))
       .concat(argToBytes(order.makerAccountNumber))
       .concat(argToBytes(order.expiration));
 
     if (price && fee) {
       orderBytes = orderBytes
-        .concat(argToBytes(price))
-        .concat(argToBytes(fee.abs()))
+        .concat(argToBytes(this.toSolidity(price)))
+        .concat(argToBytes(this.toSolidity(fee.abs())))
         .concat(argToBytes(fee.isNegative()));
     }
 
@@ -317,9 +352,9 @@ export class CanonicalOrders extends OrderSigner {
       baseMarket: order.baseMarket.toFixed(0),
       quoteMarket: order.quoteMarket.toFixed(0),
       amount: order.amount.toFixed(0),
-      limitPrice: order.limitPrice.toFixed(0),
-      triggerPrice: order.triggerPrice.toFixed(0),
-      limitFee: order.limitFee.abs().toFixed(0),
+      limitPrice: this.toSolidity(order.limitPrice).toFixed(0),
+      triggerPrice: this.toSolidity(order.triggerPrice).toFixed(0),
+      limitFee: this.toSolidity(order.limitFee.abs()).toFixed(0),
       makerAccountOwner: order.makerAccountOwner,
       makerAccountNumber: order.makerAccountNumber.toFixed(0),
       expiration: order.expiration.toFixed(0),

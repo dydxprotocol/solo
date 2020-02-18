@@ -20,15 +20,18 @@ import {
 let solo: Solo;
 let accounts: address[];
 let snapshotId: string;
+const BIP = new BigNumber('1e-4');
+const MINIMAL_PRICE_INCREMENT = new BigNumber('1e-18');
+const MINIMAL_FEE_INCREMENT = new BigNumber('1e-18');
 const baseMarket = new BigNumber(0);
 const quoteMarket = new BigNumber(1);
 const incorrectMarket = new BigNumber(2);
 const defaultMakerNumber = new BigNumber(111);
 const defaultTakerNumber = new BigNumber(222);
 const defaultAmount = new BigNumber('16e18');
-const defaultPrice = new BigNumber('160e18');
-const defaultQuoteAmount = defaultAmount.times(defaultPrice).div('1e18');
-const defaultFee = new BigNumber('2e15');
+const defaultPrice = new BigNumber('160');
+const defaultQuoteAmount = defaultAmount.times(defaultPrice);
+const defaultLimitFee = BIP.times(20);
 let admin: address;
 let defaultMakerAddress: address;
 let defaultTakerAddress: address;
@@ -59,7 +62,7 @@ describe('CanonicalOrders', () => {
       amount: defaultAmount,
       limitPrice: defaultPrice,
       triggerPrice: INTEGERS.ZERO,
-      limitFee: defaultFee,
+      limitFee: defaultLimitFee,
       makerAccountOwner: defaultMakerAddress,
       makerAccountNumber: defaultMakerNumber,
       expiration: INTEGERS.ONES_31,
@@ -77,7 +80,7 @@ describe('CanonicalOrders', () => {
     ] = await Promise.all([
       getModifiedTestOrder({ isBuy: false }),
       getModifiedTestOrder({ limitFee: INTEGERS.ZERO }),
-      getModifiedTestOrder({ limitFee: defaultFee.negated() }),
+      getModifiedTestOrder({ limitFee: defaultLimitFee.negated() }),
       getModifiedTestOrder({ isDecreaseOnly: true }),
       getModifiedTestOrder({ isBuy: false, isDecreaseOnly: true }),
     ]);
@@ -90,7 +93,7 @@ describe('CanonicalOrders', () => {
     await Promise.all([
       setBalances(defaultAmount, INTEGERS.ZERO, INTEGERS.ZERO, defaultQuoteAmount),
       solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), defaultPrice),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), new BigNumber('1e18')),
+      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), INTEGERS.ONE),
     ]);
 
     await mineAvgBlock();
@@ -718,7 +721,7 @@ describe('CanonicalOrders', () => {
     });
   });
 
-  describe('triggerPrice', () => {
+  describe('', () => {
     async function getCurrentPrice() {
       const [
         basePrice,
@@ -727,18 +730,18 @@ describe('CanonicalOrders', () => {
         solo.getters.getMarketPrice(baseMarket),
         solo.getters.getMarketPrice(quoteMarket),
       ]);
-      return basePrice.times('1e18').div(quotePrice);
+      return basePrice.div(quotePrice);
     }
 
     it('Succeeds for met triggerPrice (buy)', async () => {
-      const triggerPrice = (await getCurrentPrice()).integerValue(BigNumber.ROUND_DOWN);
+      const triggerPrice = await getCurrentPrice();
       const order = await getModifiedTestOrder({ triggerPrice });
       const txResult = await fillOrder(order, {});
       console.log(`\tCanonicalOrder Trade (w/ triggerPrice) gas used: ${txResult.gasUsed}`);
     });
 
     it('Fails for unmet triggerPrice (buy)', async () => {
-      const triggerPrice = (await getCurrentPrice()).plus(1).integerValue(BigNumber.ROUND_UP);
+      const triggerPrice = (await getCurrentPrice()).plus(MINIMAL_PRICE_INCREMENT);
       const order = await getModifiedTestOrder({ triggerPrice });
       await expectThrow(
         fillOrder(order, {}),
@@ -748,13 +751,13 @@ describe('CanonicalOrders', () => {
 
     it('Succeeds for met triggerPrice (sell)', async () => {
       await setBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
-      const triggerPrice = (await getCurrentPrice()).integerValue(BigNumber.ROUND_UP);
+      const triggerPrice = await getCurrentPrice();
       const order = await getModifiedTestOrder({ triggerPrice, isBuy: false });
       await fillOrder(order, {});
     });
 
     it('Fails for unmet triggerPrice (sell)', async () => {
-      const triggerPrice = (await getCurrentPrice()).minus(1).integerValue(BigNumber.ROUND_DOWN);
+      const triggerPrice = (await getCurrentPrice()).minus(MINIMAL_PRICE_INCREMENT);
       const order = await getModifiedTestOrder({ triggerPrice, isBuy: false });
       await expectThrow(
         fillOrder(order, {}),
@@ -908,7 +911,7 @@ describe('CanonicalOrders', () => {
     it('Cannot violate limitPrice (buy)', async () => {
       const buyOrder = testOrder;
       await expectThrow(
-        fillOrder(buyOrder, { price: buyOrder.limitPrice.plus(1) }),
+        fillOrder(buyOrder, { price: buyOrder.limitPrice.plus(MINIMAL_PRICE_INCREMENT) }),
         'CanonicalOrders: Fill invalid price',
       );
     });
@@ -916,7 +919,7 @@ describe('CanonicalOrders', () => {
     it('Cannot violate limitPrice (sell)', async () => {
       const sellOrder = await getModifiedTestOrder({ isBuy: false });
       await expectThrow(
-        fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(1) }),
+        fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(MINIMAL_PRICE_INCREMENT) }),
         'CanonicalOrders: Fill invalid price',
       );
     });
@@ -955,7 +958,7 @@ describe('CanonicalOrders', () => {
 
     it('Cannot violate fees', async () => {
       await expectThrow(
-        fillOrder(testOrder, { fee: testOrder.limitFee.plus(1) }),
+        fillOrder(testOrder, { fee: testOrder.limitFee.plus(MINIMAL_FEE_INCREMENT) }),
         INVALID_FEE_MESSAGE,
       );
       await expectThrow(
@@ -967,7 +970,7 @@ describe('CanonicalOrders', () => {
         INVALID_FEE_MESSAGE,
       );
       await expectThrow(
-        fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.plus(1) }),
+        fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.plus(MINIMAL_FEE_INCREMENT) }),
         INVALID_FEE_MESSAGE,
       );
     });
@@ -984,7 +987,7 @@ describe('CanonicalOrders', () => {
 
     it('Can take negative fee for a zero fee order', async () => {
       await fillOrder(noFeeOrder, { fee: testOrder.limitFee.negated() });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount.minus(feeAmount),
@@ -995,7 +998,7 @@ describe('CanonicalOrders', () => {
 
     it('Can take a satisfying negative fee', async () => {
       await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount.minus(feeAmount),
@@ -1006,7 +1009,7 @@ describe('CanonicalOrders', () => {
 
     it('Can take an extra-negative fee', async () => {
       await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.times(2) });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).times(2).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee).times(2);
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount.minus(feeAmount),
@@ -1017,7 +1020,7 @@ describe('CanonicalOrders', () => {
 
     it('Positive fees work properly for buys', async () => {
       await fillOrder(testOrder, { fee: testOrder.limitFee });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount.plus(feeAmount),
@@ -1038,7 +1041,7 @@ describe('CanonicalOrders', () => {
 
     it('Negative fees work properly for buys', async () => {
       await fillOrder(testOrder, { fee: testOrder.limitFee.negated() });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount.minus(feeAmount),
@@ -1055,7 +1058,7 @@ describe('CanonicalOrders', () => {
         INTEGERS.ZERO,
       );
       await fillOrder(sellOrder, { fee: sellOrder.limitFee });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         defaultAmount,
         feeAmount,
@@ -1088,7 +1091,7 @@ describe('CanonicalOrders', () => {
         INTEGERS.ZERO,
       );
       await fillOrder(sellOrder, { fee: sellOrder.limitFee.negated() });
-      const feeAmount = defaultQuoteAmount.times(defaultFee).div('1e18');
+      const feeAmount = defaultQuoteAmount.times(defaultLimitFee);
       await expectBalances(
         defaultAmount,
         feeAmount.negated(),
