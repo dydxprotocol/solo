@@ -158,6 +158,7 @@ Request Body:
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -168,7 +169,8 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-    	"fillOrKill": true,
+      	"fillOrKill": true,
+      	"cancelAmountOnRevert": true,
       	"postOnly": false,
       	"triggerPrice": "10100000000",
 	"clientId": "foo",
@@ -221,6 +223,7 @@ Request Body:
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |cancelId|string|Order id for the order that is being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -230,7 +233,8 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-  	"fillOrKill": true,
+    	"fillOrKill": true,
+    	"cancelAmountOnRevert": true,
     	"postOnly": false,
     	"triggerPrice": "10100000000",
   	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
