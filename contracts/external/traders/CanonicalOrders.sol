@@ -178,7 +178,7 @@ contract CanonicalOrders is
         bytes32 indexed orderHash,
         address indexed orderMaker,
         uint256 fillAmount,
-        uint256 totalFilledAmount,
+        uint256 triggerPrice,
         bytes32 orderFlags,
         FillArgs fill
     );
@@ -762,7 +762,7 @@ contract CanonicalOrders is
             orderInfo.orderHash,
             orderInfo.order.makerAccountOwner,
             fillAmount,
-            totalFilledAmount,
+            orderInfo.order.triggerPrice,
             orderInfo.order.flags,
             orderInfo.fill
         );

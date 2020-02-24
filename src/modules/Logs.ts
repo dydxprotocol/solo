@@ -172,7 +172,7 @@ export class Logs {
   }
 
   private parseArgs(eventJson: any, eventArgs: any) {
-    const parsed = {};
+    const parsed: any = {};
 
     eventJson.inputs.forEach((input: any) => {
       let val: any;
@@ -191,9 +191,29 @@ export class Logs {
         throw new Error(`Unknown evnt arg type ${input.type}`);
       }
       parsed[input.name] = val;
+
+      if (input.name === 'orderFlags') {
+        const parsedOrderFlags = this.parseOrderFlags(eventArgs[input.name]);
+        parsed.isBuy = parsedOrderFlags.isBuy;
+        parsed.isDecreaseOnly = parsedOrderFlags.isDecreaseOnly;
+        parsed.isNegativeLimitFee = parsedOrderFlags.isNegativeLimitFee;
+      }
     });
 
     return parsed;
+  }
+
+  private parseOrderFlags(flags: string): {
+    isBuy: boolean,
+    isDecreaseOnly: boolean,
+    isNegativeLimitFee: boolean,
+  } {
+    const flag = new BigNumber(flags.charAt(flags.length - 1)).toNumber();
+    return {
+      isBuy: (flag & 1) !== 0,
+      isDecreaseOnly: (flag & 2) !== 0,
+      isNegativeLimitFee: (flag & 4) !== 0,
+    };
   }
 
   private parseTuple(input: any, eventArgs: any) {
