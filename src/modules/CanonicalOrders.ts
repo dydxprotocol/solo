@@ -158,6 +158,7 @@ export class CanonicalOrders extends OrderSigner {
 
     switch (baseMarketBN.toNumber()) {
       case MarketId.ETH.toNumber():
+      case MarketId.WETH.toNumber():
         return amount.lt(ETH_SMALL_ORDER_THRESHOLD)
           ? (isTaker ? BIPS.times(50) : ZERO)
           : (isTaker ? BIPS.times(15) : ZERO);
