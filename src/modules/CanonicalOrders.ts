@@ -294,7 +294,7 @@ export class CanonicalOrders extends OrderSigner {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('CanonicalOrders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
       { t: 'bytes32', v: addressToBytes32(this.contracts.canonicalOrders.options.address) },
     );
@@ -338,7 +338,7 @@ export class CanonicalOrders extends OrderSigner {
   private getDomainData() {
     return {
       name: 'CanonicalOrders',
-      version: '1.0',
+      version: '1.1',
       chainId: this.networkId,
       verifyingContract: this.contracts.canonicalOrders.options.address,
     };
