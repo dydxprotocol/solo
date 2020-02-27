@@ -319,7 +319,7 @@ function getOasisAddress(network) {
     return TestOasisDex.address;
   }
   if (isMainNet(network)) {
-    return '0x39755357759cE0d7f32dC8dC45414CCa409AE24e';
+    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
   }
   if (isKovan(network)) {
     return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';

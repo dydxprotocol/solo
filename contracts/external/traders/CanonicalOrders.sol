@@ -60,7 +60,7 @@ contract CanonicalOrders is
     string constant private EIP712_DOMAIN_NAME = "CanonicalOrders";
 
     // EIP712 Domain Version value
-    string constant private EIP712_DOMAIN_VERSION = "1.0";
+    string constant private EIP712_DOMAIN_VERSION = "1.1";
 
     // Hash of the EIP712 Domain Separator Schema
     /* solium-disable-next-line indentation */
@@ -178,8 +178,8 @@ contract CanonicalOrders is
         bytes32 indexed orderHash,
         address indexed orderMaker,
         uint256 fillAmount,
-        uint256 totalFilledAmount,
-        bool isBuy,
+        uint256 triggerPrice,
+        bytes32 orderFlags,
         FillArgs fill
     );
 
@@ -762,8 +762,8 @@ contract CanonicalOrders is
             orderInfo.orderHash,
             orderInfo.order.makerAccountOwner,
             fillAmount,
-            totalFilledAmount,
-            isBuy(orderInfo.order),
+            orderInfo.order.triggerPrice,
+            orderInfo.order.flags,
             orderInfo.fill
         );
     }

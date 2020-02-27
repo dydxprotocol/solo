@@ -70,8 +70,8 @@
     "DaiPriceOracle": {
         "1": {
             "links": {},
-            "address": "0xccfcF083335633C48e99872899586113A2BD08D8",
-            "transactionHash": "0x0df8b1228ceb70c97935bbbc9c895e0ca8d9dc815f45504907759dc8a1a65538"
+            "address": "0x0fBd14718d8FAB8f9f40Ee5c5612b1F0717100A2",
+            "transactionHash": "0x13fa7e3d0cfe80778cbc058237176932f46b4c21bf2eaffe9d4b1e5b8b4f0299"
         },
         "42": {
             "links": {},
@@ -178,8 +178,8 @@
     "CanonicalOrders": {
         "1": {
             "links": {},
-            "address": "0x98f20ffFB266F7249b831E5aAc42970440a273aE",
-            "transactionHash": "0x47f851aa2411bfb3b5e11ede345f03366498740a003230def7f73620a1159667"
+            "address": "0xCd81398895bEa7AD9EFF273aeFFc41A9d83B4dAD",
+            "transactionHash": "0x310881389e800deb976fd4f8c31a211eadd94d4ee87f089f604c49d46391b842"
         },
         "42": {
             "links": {},

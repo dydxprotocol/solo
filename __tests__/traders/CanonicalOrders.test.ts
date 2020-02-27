@@ -1201,11 +1201,12 @@ describe('CanonicalOrders', () => {
     });
 
     it('Succeeds for logs', async () => {
-      const orderHash = solo.canonicalOrders.getOrderHash(testOrder);
+      const order = await getModifiedTestOrder({ triggerPrice: INTEGERS.ONE });
+      const orderHash = solo.canonicalOrders.getOrderHash(order);
 
       // fill half, once
-      const txResult1 = await fillOrder(testOrder, { amount: defaultAmount.div(2) });
-      await expectFilledAmount(testOrder, defaultAmount.div(2));
+      const txResult1 = await fillOrder(order, { amount: defaultAmount.div(2) });
+      await expectFilledAmount(order, defaultAmount.div(2));
 
       // check logs for first tx
       const logs1 = solo.logs.parseLogs(txResult1);
@@ -1213,26 +1214,12 @@ describe('CanonicalOrders', () => {
       const logOrderTaken1 = logs1[3];
       expect(logOrderTaken1.name).toEqual('LogCanonicalOrderFilled');
       expect(logOrderTaken1.args.orderHash).toEqual(orderHash);
-      expect(logOrderTaken1.args.orderMaker).toEqual(testOrder.makerAccountOwner);
+      expect(logOrderTaken1.args.orderMaker).toEqual(order.makerAccountOwner);
       expect(logOrderTaken1.args.fillAmount).toEqual(defaultAmount.div(2));
-      expect(logOrderTaken1.args.totalFilledAmount).toEqual(defaultAmount.div(2));
-
-      // wait so that the indexes will update
-      await mineAvgBlock();
-
-      // fill a quarter
-      const txResult2 = await fillOrder(testOrder, { amount: defaultAmount.div(4) });
-      await expectFilledAmount(testOrder, defaultAmount.times(3).div(4));
-
-      // check logs for second tx
-      const logs2 = solo.logs.parseLogs(txResult2);
-      expect(logs2.length).toEqual(5);
-      const logOrderTaken2 = logs2[3];
-      expect(logOrderTaken2.name).toEqual('LogCanonicalOrderFilled');
-      expect(logOrderTaken2.args.orderHash).toEqual(orderHash);
-      expect(logOrderTaken2.args.orderMaker).toEqual(testOrder.makerAccountOwner);
-      expect(logOrderTaken2.args.fillAmount).toEqual(defaultAmount.div(4));
-      expect(logOrderTaken2.args.totalFilledAmount).toEqual(defaultAmount.times(3).div(4));
+      expect(logOrderTaken1.args.isBuy).toEqual(true);
+      expect(logOrderTaken1.args.isDecreaseOnly).toEqual(false);
+      expect(logOrderTaken1.args.isNegativeLimitFee).toEqual(false);
+      expect(logOrderTaken1.args.triggerPrice).toEqual(new BigNumber('1e18'));
     });
   });
 
