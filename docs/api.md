@@ -543,6 +543,7 @@ Query Params:
 |?limit|(Optional) The maximum number of orders to return. Defaults to 100.|
 |?startingBefore|(Optional) ISO8601 string. Starts returning orders created before this date.|
 |?market|(Optional) Market to query trades in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
+|?orderClientId|(Optional) clientId of order.|
 
 Example Response Body:
 ```json
@@ -555,6 +556,7 @@ Example Response Body:
       "status": "CONFIRMED",
       "market": "WETH-DAI",
       "side": "SELL",
+      "orderClientId": null,
       "price": "169.98523710095444091",
       "amount": "100000000000000000",
       "orderId": "0x773a0afd79bcc4c005c79d85ab7da21ff3e6bb11d73e5b3757b25fb1bc9c0f97",
@@ -569,6 +571,7 @@ Example Response Body:
       "status": "CONFIRMED",
       "market": "WETH-DAI",
       "side": "BUY",
+      "orderClientId": "d025f607-9827-4043-9445-aec9c4b2e9af",
       "price": "170.94678134323509863",
       "amount": "100000000000000000",
       "orderId": "0x4ef2ab5b3735c43c6ca6d91088884fe3ea43be9b03c3f16eab19aecf259420ab",
