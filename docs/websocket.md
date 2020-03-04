@@ -587,9 +587,9 @@ eg:
 }
 ```
 
-### Trades
+### Positions
 
-The trades channel allows clients to receive all trades for the market. This is the fastest way to receive trades made on the market.
+The positions channel allows clients to receive updates about their existing positions.
 
 #### Subscribing
 
@@ -598,114 +598,102 @@ To subscribe send:
 ```json
 {
   "type": "subscribe",
-  "channel": "trades",
-  "id": "DAI-USDC"
+  "channel": "positions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
 }
 ```
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
 |type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "trades"|
-|id|string|The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC|
+|channel|string|Must be set to "positions"|
+|id|string|The wallet address to subscribe to|
 
 #### Initial Response
 
-The initial response will contain the most recent 100 orders from the active market:
+The initial response will contain the positions that are open. 
 
 ```json
 {
-  "type": "channel_data",
-  "connection_id": "1de645c9-9ed2-49d0-9192-1522cf5c45f7",
-  "message_id": 290,
-  "channel": "trades",
-  "id": "DAI-USDC",
+  "type": "subscribed",
+  "connection_id": "e08534fb-f52b-4754-85b2-4a81e26f2cd4",
+  "message_id": 1,
+  "channel": "positions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
   "contents": {
-    "trades": [
+    "positions": [
       {
-        "uuid": "f363d287-932e-4008-a688-fe62e9fac687",
-        "createdAt": "2020-03-25T21:46:31.302Z",
-        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
-        "status": "PENDING",
-        "market": "DAI-USDC",
-        "side": "SELL",
-        "price": "0.0000000000010226022495140206638887019651459949910297896178723973394978374208193",
-        "amount": "957489517355305926656",
-        "makerOrderId": "0xe5cdaa6dfea6e04d2f520d24b94d730b0de8cf58ee6e1e326bbdfe172b5f402a",
-        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
-        "makerAccountNumber": "0",
-        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
-        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
-        "takerAccountNumber": "0"
-      },
-      {
-        "uuid": "f1909f3d-7d07-438a-8962-985083ad2e2d",
-        "createdAt": "2020-03-25T21:46:31.294Z",
-        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
-        "status": "PENDING",
-        "market": "DAI-USDC",
-        "side": "SELL",
-        "price": "0.0000000000010231",
-        "amount": "2929446700000000081920",
-        "makerOrderId": "0x5060c37571e2d243961623a8bc0d76fd63c46387ccf37241c4ee95a167e02e72",
-        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
-        "makerAccountNumber": "0",
-        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
-        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
-        "takerAccountNumber": "0"
-      },
-      {
-        "uuid": "39c55c38-4829-4344-a723-dc44f867019d",
-        "createdAt": "2020-03-25T21:46:31.290Z",
-        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
-        "status": "PENDING",
-        "market": "DAI-USDC",
-        "side": "SELL",
-        "price": "0.0000000000010216",
-        "amount": "1002063782644693991424",
-        "makerOrderId": "0x289b2cb5ad4673beff2b1b8819a7a17df7d1ddfecde352cd53344343787bbaaf",
-        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
-        "makerAccountNumber": "0",
-        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
-        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
-        "takerAccountNumber": "0"
-      },
-    ],
+        "uuid": "d4b60574-f1d3-478c-921b-48b416640b0a",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "number": "18391807697043682023758523528032951427719342564248970230470210680141737387458",
+        "market": "WETH-DAI",
+        "type": "ISOLATED_LONG",
+        "status": "OPEN",
+        "accountUuid": "6793b2f8-5b07-4bce-ba54-da33372ae988",
+        "expiresAt": "2020-03-26T23:10:31.000Z",
+        "createdAt": "2020-02-27T23:10:37.319Z",
+        "updatedAt": "2020-02-27T23:11:31.773Z",
+        "account": {
+          "uuid": "6793b2f8-5b07-4bce-ba54-da33372ae988",
+          "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+          "number": "18391807697043682023758523528032951427719342564248970230470210680141737387458",
+          "createdAt": "2020-02-27T23:08:55.303Z",
+          "updatedAt": "2020-02-27T23:08:55.303Z"
+        },
+        "standardActions": [
+          {
+            "uuid": "b95fa3fc-84a7-46f1-9ce0-1eca1b144117",
+            "type": "ISOLATED_OPEN",
+            "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+            "transferAmount": "33720746949513441",
+            "tradeAmount": "66666666666666667",
+            "price": "227.9799999999999999901000000000000000494999999999999997525000000000000012375",
+            "market": "WETH-DAI",
+            "asset": "WETH",
+            "side": "LONG",
+            "operationUuid": "3ce07798-433f-4cab-b699-3cd17f90308f",
+            "transactionHash": "0x028e9c22856673a89e649d0d13ded6cb7ff6968313e52ababd66b49900d39123",
+            "positionUuid": "d4b60574-f1d3-478c-921b-48b416640b0a",
+            "borrowAmount": null,
+            "orderNumber": "956855500050000",
+            "confirmedAt": "2020-02-27T23:10:31.000Z",
+            "createdAt": "2020-02-27T23:11:31.758Z",
+            "updatedAt": "2020-02-27T23:11:31.778Z"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
 #### Updates
 
-New trades are sent in array form.
+Updates to the users position are posted to the positions channel.
+eg:- A position is closed:
 
-A trade executed for the market:
 ```json
 {
   "type": "channel_data",
-  "connection_id": "0b88ebf2-98ec-4de6-b781-62e1648ae657",
-  "message_id": 1277,
-  "channel": "trades",
-  "id": "DAI-USDC",
+  "connection_id": "fcccc0a9-20af-4c55-ab48-a7f285efdfde",
+  "message_id": 6,
+  "channel": "positions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
   "contents": {
-    "updates": [
-      {
-        "uuid": "7cb4e283-20bf-4ccf-a15b-dc84b86965dd",
-        "createdAt": "2020-03-25T21:46:23.351Z",
-        "transactionHash": "0xe7cd5f4fafc05c707205d8090d9cd592a87daec3977c5d1c7f0953c68f562bf6",
-        "status": "CONFIRMED",
-        "market": "DAI-USDC",
-        "side": "BUY",
-        "price": "0.0000000000010245",
-        "amount": "1024685243041289076736",
-        "makerOrderId": "0x9bd33ad14caa817135dd92d062b449ffa477f75c4f28f85825e752148e22a96e",
-        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
-        "makerAccountNumber": "0",
-        "takerOrderId": "0x195a54220932ccb9416e9eba6189ffee4248b2e37b403f340982ba695c55a311",
-        "takerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
-        "takerAccountNumber": "0"
-      }
-    ]
+    "pending": true,
+    "hash": "0x2dbe08ace3c10a16dfc7137333ba32463631d698f768b97b28cb9e8265075a3d",
+    "position": {
+      "uuid": "e2827c5f-a651-40b6-aaf7-01b2a04bd2d4",
+      "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "number": "10301656009924513450047526987008292264633253953002046801477043073002343349750",
+      "market": "WETH-DAI",
+      "type": "ISOLATED_SHORT",
+      "status": "CLOSED",
+      "accountUuid": "eda666d3-8a89-4f8d-adb5-2e47b6aa630c",
+      "expiresAt": "2020-04-01T00:03:20.000Z",
+      "createdAt": "2020-03-04T00:03:50.175Z",
+      "updatedAt": "2020-03-04T00:07:47.296Z"
+    }
   }
 }
 ```
@@ -715,8 +703,8 @@ A trade executed for the market:
 ```json
 {
   "type": "unsubscribe",
-  "channel": "trades",
-  "id": "DAI-USDC"
+  "channel": "positions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
 }
 ```
 
@@ -724,7 +712,7 @@ A trade executed for the market:
 |----------|---------|-----------|
 |type|string|Must be set to "unsubscribe"|
 |channel|string|The channel to unsubscribe from|
-|id|string|A market to unsubscribe from on the channel|
+|id|string|An id to unsubscribe from on the channel|
 
 #### Response
 
@@ -732,8 +720,220 @@ Once unsubscribed, clients will receive a message:
 ```json
 {
   "type": "unsubscribed",
-  "connection_id": "e7259ee2-98f5-4187-8623-9175234d5fb2",
-  "message_id": 3,
-  "channel": "trades",
-  "id": "DAI-USDC"
+  "connection_id": "e08534fb-f52b-4754-85b2-4a81e26f2cd4",
+  "message_id": 7,
+  "channel": "positions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
 }
+```
+
+### Standard Actions
+
+The standard actions channel allows clients to receive updates about actions such as DEPOSIT, 
+ISOLATED_OPEN, etc.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "standard_actions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "standard_actions"|
+|id|string|The wallet address to subscribe to|
+
+#### Initial Response
+
+The initial response will be the latest 100 standard actions on the user's account.
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "63b32e89-a572-4e6b-833e-2faf6fe1e195",
+  "message_id": 1,
+  "channel": "standard_actions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "standardActions": [
+      {
+        "uuid": "b95fa3fc-84a7-46f1-9ce0-1eca1b144117",
+        "type": "ISOLATED_OPEN",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": "33720746949513441",
+        "tradeAmount": "66666666666666667",
+        "price": "227.9799999999999999901000000000000000494999999999999997525000000000000012375",
+        "market": "WETH-DAI",
+        "asset": "WETH",
+        "side": "LONG",
+        "operationUuid": "3ce07798-433f-4cab-b699-3cd17f90308f",
+        "transactionHash": "0x028e9c22856673a89e649d0d13ded6cb7ff6968313e52ababd66b49900d39123",
+        "positionUuid": "d4b60574-f1d3-478c-921b-48b416640b0a",
+        "borrowAmount": null,
+        "orderNumber": "956855500050000",
+        "confirmedAt": "2020-02-27T23:10:31.000Z",
+        "createdAt": "2020-02-27T23:11:31.758Z",
+        "updatedAt": "2020-02-27T23:11:31.778Z"
+      },
+      {
+        "uuid": "c237ec6d-9599-40fa-acb5-e8b4c89827ad",
+        "type": "ISOLATED_FULL_CLOSE",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": "7208389487816291503",
+        "tradeAmount": "100000001487414238",
+        "price": "225.85999763831216716128108275674475187561565528432069314401462859563656946568221903",
+        "market": "WETH-DAI",
+        "asset": "DAI",
+        "side": "SHORT",
+        "operationUuid": "0a0971b0-1fe2-45f9-bed5-b576bdacb732",
+        "transactionHash": "0x16d9eed48b0cf10ffe96999c6c458fbbb6edd36f9d81fac3cc34e8d968f55e79",
+        "positionUuid": "8ed5867f-aa3a-4cbf-a661-47cd0f24db85",
+        "borrowAmount": null,
+        "orderNumber": "956189301250000",
+        "confirmedAt": "2020-02-26T22:35:39.000Z",
+        "createdAt": "2020-02-26T22:38:17.152Z",
+        "updatedAt": "2020-02-26T22:38:17.180Z"
+      },
+      {
+        "uuid": "9b3738a0-92d3-46e2-b8fc-9211e5969ae8",
+        "type": "ISOLATED_OPEN",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": "7379308716494646154",
+        "tradeAmount": "100000000000000000",
+        "price": "225.27999999999999644",
+        "market": "WETH-DAI",
+        "asset": "DAI",
+        "side": "SHORT",
+        "operationUuid": "130bc3fa-5ed7-42ca-b972-d1ade4d7c9f2",
+        "transactionHash": "0xc98e1246c180278ffd1851e11b56afd59feeda26144d8f89d8e3dca02aab780e",
+        "positionUuid": "8ed5867f-aa3a-4cbf-a661-47cd0f24db85",
+        "borrowAmount": null,
+        "orderNumber": "956188200160000",
+        "confirmedAt": "2020-02-26T22:32:54.000Z",
+        "createdAt": "2020-02-26T22:33:51.920Z",
+        "updatedAt": "2020-02-26T22:33:51.946Z"
+      },
+      {
+        "uuid": "e418ec53-d7fb-4f74-a4c4-5a8ecb6b7f73",
+        "type": "ISOLATED_FULL_CLOSE",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": "50337795123416145",
+        "tradeAmount": "50002015563715323",
+        "price": "266.06001958983337426563213321841718225957351026342936018892644893242773949836804886",
+        "market": "WETH-DAI",
+        "asset": "WETH",
+        "side": "LONG",
+        "operationUuid": "719177b1-34be-4872-be11-c76da55358e4",
+        "transactionHash": "0x68427cf28e08b0b00be4d58fa7e074adb595cf71f7409377398bc8b3ec3a740f",
+        "positionUuid": "c088f1aa-cf10-4122-b767-1c78376865c0",
+        "borrowAmount": null,
+        "orderNumber": "954926000820000",
+        "confirmedAt": "2020-02-24T23:56:56.000Z",
+        "createdAt": "2020-02-24T23:58:02.477Z",
+        "updatedAt": "2020-02-24T23:58:02.496Z"
+      },
+      {
+        "uuid": "c94687cd-68d6-4b92-a34e-eac80be17028",
+        "type": "DEPOSIT",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": "1000000000000000000",
+        "tradeAmount": null,
+        "price": null,
+        "market": null,
+        "asset": "WETH",
+        "side": null,
+        "operationUuid": "6bc95ff7-9c1e-4fab-9cf7-8d2c3492329b",
+        "transactionHash": "0xfa53ce0a88f71d5671dd7695d3f3cd3344e9a0e0a638f710f5ec8bc791171c0d",
+        "positionUuid": null,
+        "borrowAmount": null,
+        "orderNumber": "954918100860000",
+        "confirmedAt": "2020-02-24T23:41:45.000Z",
+        "createdAt": "2020-02-24T23:42:49.788Z",
+        "updatedAt": "2020-02-24T23:42:49.792Z"
+      },
+      {
+        "uuid": "ae1bffd4-95bc-45e1-87cc-08cb3c0f8af7",
+        "type": "TRADE",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "transferAmount": null,
+        "tradeAmount": "20000000000000000000",
+        "price": "0.000000000000994204",
+        "market": "DAI-USDC",
+        "asset": null,
+        "side": "SELL",
+        "operationUuid": "7837d560-5d13-4bdc-874b-0762eede1173",
+        "transactionHash": "0x5fdc86ffb39350070801130c5beb82c7e98c5e9fd2ccd63880f51c5026af034b",
+        "positionUuid": null,
+        "borrowAmount": null,
+        "orderNumber": "954918100580000",
+        "confirmedAt": "2020-02-24T23:41:45.000Z",
+        "createdAt": "2020-02-24T23:43:19.711Z",
+        "updatedAt": "2020-02-24T23:43:19.717Z"
+      }
+    ]
+  }
+}
+```
+
+#### Updates
+
+New actions performed by the user are posted on the channel.
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "8427b0ba-d703-43e5-acb6-3f04d9fbebea",
+  "message_id": 10,
+  "channel": "standard_actions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "pending": true,
+    "hash": "0xa0acbb3ebeae61d692267ec7269fa851e12189e9238ad03ee48bc843fdb80b96",
+    "standardAction": {
+      "uuid": "a13255e8-586a-4a4c-8e9a-2454b138ffb9",
+      "type": "DEPOSIT",
+      "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "number": "0",
+      "transferAmount": "100000000000000000",
+      "tradeAmount": null,
+      "price": null,
+      "market": null,
+      "asset": "WETH",
+      "side": null,
+      "operationUuid": "b4f8f664-7238-452d-89dd-69a45fb1a0be",
+      "transactionHash": "0xa0acbb3ebeae61d692267ec7269fa851e12189e9238ad03ee48bc843fdb80b96",
+      "positionUuid": null,
+      "borrowAmount": null,
+      "orderNumber": "960121200610000",
+      "confirmedAt": "2020-03-03T23:37:00.000Z",
+      "feeAmount": null,
+      "feeAsset": null,
+      "createdAt": "2020-03-03T23:37:04.198Z",
+      "updatedAt": "2020-03-03T23:37:04.200Z"
+    }
+  }
+}
+```
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "standard_actions",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|An id to unsubscribe from on the channel|
