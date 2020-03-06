@@ -3,5 +3,6 @@
 - [Python Client](python.md "dYdX Documentation - Python Client")
 - [HTTP API](api.md "dYdX Documentation - HTTP API")
 - [WebSocket API](websocket.md "dYdX Documentation - WebSocket API")
+- [Trading](trading.md "dYdX Documentation - Trading")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
 - [Security](security.md "dYdX Documentation - Security")
