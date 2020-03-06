@@ -81,8 +81,8 @@ __V2 Order fields__
 |amount|string|The amount of token being offered in base units|
 |limitPrice|string| The worst base/quote price at which the transaction will be accepted|
 |triggerPrice|string|(Optional)The price at which the order will go to market.|
-|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to .5Eth in the transaction will pay .15% of ETH-DAI and ETH-USDC transactions and .05% for DAI-USDC transactions.
-For transactions below .5Eth they will pay .50% fees.
+|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to 0.5Eth in the transaction will pay 0.15% of ETH-DAI and ETH-USDC transactions and 0.05% for DAI-USDC transactions.
+For transactions below 0.5Eth they will pay 0.50% fees.
 |makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
 |makerAccountOwner|string|The Ethereum address of the Maker.|
 |expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
@@ -92,14 +92,14 @@ For transactions below .5Eth they will pay .50% fees.
 Example:
 ```json
 {
-    "isBuy": "true",
-    "isDecreaseOnly": "false",
+    "isBuy": true,
+    "isDecreaseOnly": false,
     "baseMarket": "0",
     "quoteMarket": "3",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
-    "limitFee": ".0015",
+    "limitFee": "0.0015",
     "makerAccountNumber": "0",
     "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
     "expiration": "4294967295",
@@ -108,7 +108,7 @@ Example:
   },
 };
 
-Note: The tick size is 0.01 for ETH-DAI, 0.01e-12 for ETH-USDC and 0.0001e-12 for DAI-USDC transactions. The negative twelfth power is because USDC has 8 decimal places of specificity whereas ETH and DAI have 18. This tick check prevents unreasonable values from being set
+Note: The tick size is 0.01 for ETH-DAI, 0.01e-12 for ETH-USDC and 0.0001e-12 for DAI-USDC transactions. The negative twelfth power is because USDC has 6 decimal places of specificity whereas ETH and DAI have 18.
 The `limitPrice` must be divisible by the tick size.
 If `triggerPrice` is set, it must be divisible by the tick size.
 
@@ -219,17 +219,16 @@ Example Request Body:
       	"cancelAmountOnRevert": true,
       	"postOnly": false,
       	"triggerPrice": "0",
-	"cancelId": "false",
 	"clientId": "foo",
 	"order": {
-      		"isBuy": "true",
-      		"isDecreaseOnly": "false",
+      		"isBuy": true,
+      		"isDecreaseOnly": false,
       		"baseMarket": "0",
       		"quoteMarket": "3",
       		"amount": "10000000000",
       		"limitPrice": "20.3",
       		"triggerPrice": "0",
-      		"limitFee": ".0015",
+      		"limitFee": "0.0015",
       		"makerAccountNumber": "0",
 		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
 		"expiration": "4294967295",
