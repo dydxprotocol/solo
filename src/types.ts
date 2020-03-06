@@ -24,6 +24,7 @@ import { TransactionReceipt, Log, EventLog } from 'web3/types';
 export type address = string;
 export type Integer = BigNumber;
 export type Decimal = BigNumber;
+export type BigNumberable = BigNumber | string | number;
 
 export enum ConfirmationType {
   Hash = 0,
