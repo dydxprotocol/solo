@@ -23,6 +23,7 @@ import {
   SignedStopLimitOrder,
   StopLimitOrder,
   CanonicalOrder,
+  ApiSide,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 import { StopLimitOrders } from './StopLimitOrders';
@@ -51,6 +52,7 @@ export class Api {
     this.endpoint = endpoint;
     this.limitOrders = limitOrders;
     this.stopLimitOrders = stopLimitOrders;
+    this.canonicalOrders = canonicalOrders;
     this.timeout = timeout;
   }
 
@@ -188,20 +190,21 @@ export class Api {
   }
 
   public async canonicalOrder({
-    isBuy,
-    isDecreaseOnly,
-    baseMarket,
-    quoteMarket,
-    amount,
-    limitPrice,
-    signedTriggerPrice,
-    limitFee,
-    makerAccountNumber,
-    makerAccountOwner,
-    expiration,
+    order: {
+      side,
+      market,
+      amount,
+      limitPrice,
+      isDecreaseOnly = false,
+      signedTriggerPrice = '0',
+      makerAccountNumber = '0',
+      makerAccountOwner,
+      expiration  = new BigNumber(FOUR_WEEKS_IN_SECONDS),
+      limitFee,
+    },
+    triggerPrice = '0',
     fillOrKill,
     postOnly,
-    triggerPrice,
     marginDeposit,
     payoutAmount,
     clientId,
@@ -209,20 +212,21 @@ export class Api {
     cancelId,
     cancelAmountOnRevert,
   }: {
-    isBuy: boolean,
-    isDecreaseOnly: boolean,
-    baseMarket: Integer | string,
-    quoteMarket: Integer | string,
-    amount: Integer | string,
-    limitPrice: string,
-    signedTriggerPrice: string,
-    limitFee: string,
-    makerAccountNumber: Integer | string,
-    makerAccountOwner: string,
-    expiration: Integer | string,
+    order: {
+      side: ApiSide,
+      market: ApiMarketName,
+      amount: Integer | string,
+      limitPrice: string,
+      isDecreaseOnly: boolean,
+      signedTriggerPrice: string,
+      makerAccountNumber: Integer | string,
+      makerAccountOwner: address,
+      expiration: Integer | string,
+      limitFee?: string,
+    },
+    triggerPrice: string,
     fillOrKill?: boolean,
     postOnly?: boolean,
-    triggerPrice?: string,
     marginDeposit?: Integer | string,
     payoutAmount?: Integer | string,
     clientId?: string,
@@ -231,28 +235,37 @@ export class Api {
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
     const realExpiration: BigNumber = getRealExpiration(expiration);
+
+    const markets: string[] = market.split('-');
+    const baseMarket: BigNumber = new BigNumber(markets[0]);
+    const amountNumber: BigNumber =  new BigNumber(amount);
+    const isBuy: boolean = side === ApiSide.BUY;
+    const limitFeeNumber: BigNumber = limitFee
+      ? new BigNumber(limitFee)
+      : this.canonicalOrders.getFeeForOrder(baseMarket, amountNumber, isBuy);
+
     const unsignedOrder: CanonicalOrder = {
-      isBuy,
       isDecreaseOnly,
       makerAccountOwner,
-      baseMarket: new BigNumber(baseMarket),
-      quoteMarket: new BigNumber(quoteMarket),
-      amount: new BigNumber(amount),
+      baseMarket,
+      isBuy,
+      quoteMarket: new BigNumber(markets[1]),
+      amount: amountNumber,
       limitPrice: new BigNumber(limitPrice),
       triggerPrice: new BigNumber(signedTriggerPrice),
-      limitFee: new BigNumber(limitFee),
+      limitFee: limitFeeNumber,
       makerAccountNumber: new BigNumber(makerAccountNumber),
       expiration: realExpiration,
       salt: generatePseudoRandom256BitNumber(),
     };
+
     const typedSignature: string = await this.canonicalOrders.signOrder(
       unsignedOrder,
       SigningMethod.Hash,
     );
+    const signedOrder = { ...unsignedOrder, typedSignature };
 
-    const order = { ...unsignedOrder, typedSignature };
-
-    const jsonOrder = jsonifyOrder(order);
+    const jsonOrder = jsonifyOrder(signedOrder);
 
     const data: any = {
       fillOrKill,

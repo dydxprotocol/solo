@@ -111,6 +111,7 @@ export class Solo {
     this.api = new Api(
       this.limitOrders,
       this.stopLimitOrders,
+      this.canonicalOrders,
       options.apiEndpoint,
       options.apiTimeout,
     );
