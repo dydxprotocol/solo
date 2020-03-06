@@ -32,7 +32,7 @@ as `0`, otherwise your order will be rejected.
 
 After this is done, the order is ready to be submitted to the API.
 
-__V1 Order fields__
+__V1 Order fields__[DEPRECATED]
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
@@ -94,13 +94,13 @@ Example:
 {
     "isBuy": "true",
     "isDecreaseOnly": "false",
-    "baseMarket": "WETH",
-    "quoteMarket": "DAI",
+    "baseMarket": "0",
+    "quoteMarket": "3",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
-    "limitFee": ".15",
-    "makerAccountNumber": "111",
+    "limitFee": ".0015",
+    "makerAccountNumber": "0",
     "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
     "expiration": "4294967295",
     "salt": "100",
@@ -108,9 +108,9 @@ Example:
   },
 };
 
-Note: The tick size is 0.01 for ETH-DAI transactions and 0.01e-12 for ETH-USDC and DAI-USDC transactions.
+Note: The tick size is 0.01 for ETH-DAI, 0.01e-12 for ETH-USDC and 0.0001e-12 for DAI-USDC transactions. The negative twelfth power is because USDC has 8 decimal places of specificity whereas ETH and DAI have 18. This tick check prevents unreasonable values from being set
 The `limitPrice` must be divisible by the tick size.
-If `triggerPrice` is set, it must be divisible by the ticks size.
+If `triggerPrice` is set, it must be divisible by the tick size.
 
 ```
 
@@ -218,19 +218,19 @@ Example Request Body:
       	"fillOrKill": true,
       	"cancelAmountOnRevert": true,
       	"postOnly": false,
-       "triggerPrice": "0",
-  	"cancelId": "false",
+      	"triggerPrice": "0",
+	"cancelId": "false",
 	"clientId": "foo",
 	"order": {
-    		"isBuy": "true",
-    		"isDecreaseOnly": "false",
-    		"baseMarket": "WETH",
-    		"quoteMarket": "DAI",
-    		"amount": "10000000000",
-    		"limitPrice": "20.3",
-    		"triggerPrice": "0",
-    		"limitFee": ".15",
-    		"makerAccountNumber": "111",
+      		"isBuy": "true",
+      		"isDecreaseOnly": "false",
+      		"baseMarket": "0",
+      		"quoteMarket": "3",
+      		"amount": "10000000000",
+      		"limitPrice": "20.3",
+      		"triggerPrice": "0",
+      		"limitFee": ".0015",
+      		"makerAccountNumber": "0",
 		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
 		"expiration": "4294967295",
 		"salt": "100",

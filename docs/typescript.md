@@ -269,8 +269,8 @@ const { order } = await solo.api.placeCanonicalOrder({
     // denominated in base units. i.e. 1 ETH = 1e18
     amount: new BigNumber('1e18'),
 
-    // denominated in base/quote.
-    price: '2.1',
+    // denominated in base/quote. Since ETH and DAI have 18 decimals and are represented in e-18 while USDC has 8 decimals and is e-8, USDC amounts are represented in e-12
+    price: '230.1',
 
     // Your address. Account must be loaded onto Solo with private key for signing
     makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
@@ -282,7 +282,7 @@ const { order } = await solo.api.placeCanonicalOrder({
     //OPTIONAL: Maximum fee you are willing to accept. Note, if limitFee is below calculated restriction and no exemption was given, the request will 400
     //Makers will pay 0% fees. Takers with greater than or equal to .5Eth in the transaction will pay .15% of ETH-DAI and ETH-USDC transactions and .05% for DAI-USDC transactions.
     //For transactions below .5Eth they will pay .50% fees.
-    limitFee: '.15'
+    limitFee: '.0015'
   }
 
   // OPTIONAL: defaults to false
@@ -294,7 +294,7 @@ const { order } = await solo.api.placeCanonicalOrder({
   // OPTIONAL: defaults to undefined
   clientId: 'foo',
 
-  // OPTIONAL: order to be replaced
+  // OPTIONAL: Turns this order into a replace order with the cancelId being the replaced order
   cancelId: '0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2',
 
   // OPTIONAL: defaults to false
