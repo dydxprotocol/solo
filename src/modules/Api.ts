@@ -192,7 +192,7 @@ export class Api {
     });
   }
 
-  public async canonicalOrder({
+  public async placeCanonicalOrder({
     order: {
       side,
       market,
@@ -223,10 +223,6 @@ export class Api {
     cancelId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
-    if (!side || !market) {
-      return;
-    }
-
     const order: SignedCanonicalOrder = await this.createCanonicalOrder({
       side,
       market,
@@ -270,22 +266,28 @@ export class Api {
     limitFee?: BigNumberable,
     postOnly?: boolean,
   }): Promise<SignedCanonicalOrder> {
-    const realExpiration: BigNumber = getRealExpiration(expiration);
+    if (!Object.values(ApiSide).includes(side)) {
+      throw new Error(`side: ${side} is invalid`);
+    }
+    if (!Object.values(ApiMarketName).includes(market)) {
+      throw new Error(`market: ${market} is invalid`);
+    }
 
+    const amountNumber: BigNumber = new BigNumber(amount);
+    const isTaker: boolean = !postOnly;
     const markets: string[] = market.split('-');
     const baseMarket: BigNumber = MarketId[markets[0]];
-    const amountNumber: BigNumber = new BigNumber(amount);
-    const isTaker: boolean = postOnly ? !postOnly : false;
     const limitFeeNumber: BigNumber = limitFee
       ? new BigNumber(limitFee)
       : this.canonicalOrders.getFeeForOrder(baseMarket, amountNumber, isTaker);
 
+    const realExpiration: BigNumber = getRealExpiration(expiration);
     const order: CanonicalOrder = {
       baseMarket,
       makerAccountOwner,
+      quoteMarket: MarketId[markets[1]],
       isBuy: side === ApiSide.BUY,
       isDecreaseOnly: false,
-      quoteMarket: MarketId[markets[1]],
       amount: amountNumber,
       limitPrice: new BigNumber(price),
       triggerPrice: new BigNumber('0'),
