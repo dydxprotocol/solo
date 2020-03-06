@@ -25,6 +25,8 @@ import {
   CanonicalOrder,
   ApiSide,
   MarketId,
+  BigNumberable,
+  SignedCanonicalOrder,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 import { StopLimitOrders } from './StopLimitOrders';
@@ -209,11 +211,11 @@ export class Api {
     order: {
       side: ApiSide,
       market: ApiMarketName,
-      amount: Integer | string,
-      price: string,
+      amount: BigNumberable,
+      price: BigNumberable,
       makerAccountOwner: address,
-      expiration: Integer | string,
-      limitFee?: string,
+      expiration: BigNumberable,
+      limitFee?: BigNumberable,
     },
     fillOrKill?: boolean,
     postOnly?: boolean,
@@ -221,22 +223,69 @@ export class Api {
     cancelId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
+    if (!side || !market) {
+      return;
+    }
+
+    const order: SignedCanonicalOrder = await this.createCanonicalOrder({
+      side,
+      market,
+      amount,
+      price,
+      makerAccountOwner,
+      expiration,
+      limitFee,
+      postOnly,
+    });
+
+    return this.submitCanonicalOrder({
+      order,
+      fillOrKill,
+      postOnly,
+      cancelId,
+      clientId,
+      cancelAmountOnRevert,
+    });
+  }
+
+  /**
+   * Creates but does not place a signed canonicalOrder
+   */
+  async createCanonicalOrder({
+    side,
+    market,
+    amount,
+    price,
+    makerAccountOwner,
+    expiration,
+    limitFee,
+    postOnly,
+  }: {
+    side: ApiSide,
+    market: ApiMarketName,
+    amount: BigNumberable,
+    price: BigNumberable,
+    makerAccountOwner: address,
+    expiration: BigNumberable,
+    limitFee?: BigNumberable,
+    postOnly?: boolean,
+  }): Promise<SignedCanonicalOrder> {
     const realExpiration: BigNumber = getRealExpiration(expiration);
 
     const markets: string[] = market.split('-');
-    const baseMarket: BigNumber = new BigNumber(MarketId[markets[0]]);
+    const baseMarket: BigNumber = MarketId[markets[0]];
     const amountNumber: BigNumber = new BigNumber(amount);
-    const isBuy: boolean = side === ApiSide.BUY;
+    const isTaker: boolean = postOnly ? !postOnly : false;
     const limitFeeNumber: BigNumber = limitFee
       ? new BigNumber(limitFee)
-      : this.canonicalOrders.getFeeForOrder(baseMarket, amountNumber, isBuy);
+      : this.canonicalOrders.getFeeForOrder(baseMarket, amountNumber, isTaker);
 
-    const unsignedOrder: CanonicalOrder = {
+    const order: CanonicalOrder = {
       baseMarket,
-      isBuy,
       makerAccountOwner,
+      isBuy: side === ApiSide.BUY,
       isDecreaseOnly: false,
-      quoteMarket: new BigNumber(MarketId[markets[1]]),
+      quoteMarket: MarketId[markets[1]],
       amount: amountNumber,
       limitPrice: new BigNumber(price),
       triggerPrice: new BigNumber('0'),
@@ -247,12 +296,35 @@ export class Api {
     };
 
     const typedSignature: string = await this.canonicalOrders.signOrder(
-      unsignedOrder,
+      order,
       SigningMethod.Hash,
     );
-    const signedOrder = { ...unsignedOrder, typedSignature };
 
-    const jsonOrder = jsonifyOrder(signedOrder);
+    return {
+      ...order,
+      typedSignature,
+    };
+  }
+
+  /**
+   * Submits an already signed canonicalOrder
+   */
+  public async submitCanonicalOrder({
+    order,
+    fillOrKill = false,
+    postOnly = false,
+    cancelId,
+    clientId,
+    cancelAmountOnRevert,
+  }: {
+    order: SignedCanonicalOrder,
+    fillOrKill: boolean,
+    postOnly: boolean,
+    cancelId: string,
+    clientId?: string,
+    cancelAmountOnRevert?: boolean,
+  }): Promise<{ order: ApiOrder }> {
+    const jsonOrder = jsonifyCanonicalOrder(order);
 
     const data: any = {
       fillOrKill,
@@ -846,7 +918,25 @@ function jsonifyOrder(order) {
   };
 }
 
-function getRealExpiration(expiration: Integer | string): BigNumber {
+function jsonifyCanonicalOrder(order: SignedCanonicalOrder) {
+  return {
+    isBuy: order.isBuy,
+    isDecreaseOnly: order.isDecreaseOnly,
+    baseMarket: order.baseMarket.toFixed(0),
+    quoteMarket: order.quoteMarket.toFixed(0),
+    amount: order.amount.toFixed(0),
+    limitPrice: order.limitPrice.toString(),
+    triggerPrice: order.triggerPrice.toString(),
+    limitFee: order.limitFee.toString(),
+    makerAccountNumber: order.makerAccountNumber.toFixed(0),
+    makerAccountOwner: order.makerAccountOwner,
+    expiration: order.expiration.toFixed(0),
+    typedSignature: order.typedSignature,
+    salt: order.salt.toFixed(0),
+  };
+}
+
+function getRealExpiration(expiration: BigNumberable): BigNumber {
   return new BigNumber(expiration).eq(0) ?
     new BigNumber(0)
     : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
