@@ -22,9 +22,11 @@ import {
   ApiMarketName,
   SignedStopLimitOrder,
   StopLimitOrder,
+  CanonicalOrder,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 import { StopLimitOrders } from './StopLimitOrders';
+import { CanonicalOrders } from './CanonicalOrders';
 
 const FOUR_WEEKS_IN_SECONDS = 60 * 60 * 24 * 28;
 const TAKER_ACCOUNT_OWNER = '0xf809e07870dca762B9536d61A4fBEF1a17178092';
@@ -36,11 +38,13 @@ export class Api {
   private endpoint: String;
   private limitOrders: LimitOrders;
   private stopLimitOrders: StopLimitOrders;
+  private canonicalOrders: CanonicalOrders;
   private timeout: number;
 
   constructor(
     limitOrders: LimitOrders,
     stopLimitOrders: StopLimitOrders,
+    canonicalOrders: CanonicalOrders,
     endpoint: string = DEFAULT_API_ENDPOINT,
     timeout: number = DEFAULT_API_TIMEOUT,
   ) {
@@ -181,6 +185,96 @@ export class Api {
       triggerPrice,
       cancelAmountOnRevert,
     });
+  }
+
+  public async canonicalOrder({
+    isBuy,
+    isDecreaseOnly,
+    baseMarket,
+    quoteMarket,
+    amount,
+    limitPrice,
+    signedTriggerPrice,
+    limitFee,
+    makerAccountNumber,
+    makerAccountOwner,
+    expiration,
+    fillOrKill,
+    postOnly,
+    triggerPrice,
+    marginDeposit,
+    payoutAmount,
+    clientId,
+    setExpirationOnFill,
+    cancelId,
+    cancelAmountOnRevert,
+  }: {
+    isBuy: boolean,
+    isDecreaseOnly: boolean,
+    baseMarket: Integer | string,
+    quoteMarket: Integer | string,
+    amount: Integer | string,
+    limitPrice: string,
+    signedTriggerPrice: string,
+    limitFee: string,
+    makerAccountNumber: Integer | string,
+    makerAccountOwner: string,
+    expiration: Integer | string,
+    fillOrKill?: boolean,
+    postOnly?: boolean,
+    triggerPrice?: string,
+    marginDeposit?: Integer | string,
+    payoutAmount?: Integer | string,
+    clientId?: string,
+    setExpirationOnFill?: boolean,
+    cancelId?: string,
+    cancelAmountOnRevert?: boolean,
+  }): Promise<{ order: ApiOrder }> {
+    const realExpiration: BigNumber = getRealExpiration(expiration);
+    const unsignedOrder: CanonicalOrder = {
+      isBuy,
+      isDecreaseOnly,
+      makerAccountOwner,
+      baseMarket: new BigNumber(baseMarket),
+      quoteMarket: new BigNumber(quoteMarket),
+      amount: new BigNumber(amount),
+      limitPrice: new BigNumber(limitPrice),
+      triggerPrice: new BigNumber(signedTriggerPrice),
+      limitFee: new BigNumber(limitFee),
+      makerAccountNumber: new BigNumber(makerAccountNumber),
+      expiration: realExpiration,
+      salt: generatePseudoRandom256BitNumber(),
+    };
+    const typedSignature: string = await this.canonicalOrders.signOrder(
+      unsignedOrder,
+      SigningMethod.Hash,
+    );
+
+    const order = { ...unsignedOrder, typedSignature };
+
+    const jsonOrder = jsonifyOrder(order);
+
+    const data: any = {
+      fillOrKill,
+      postOnly,
+      triggerPrice,
+      marginDeposit,
+      payoutAmount,
+      clientId,
+      setExpirationOnFill,
+      cancelId,
+      cancelAmountOnRevert,
+      order: jsonOrder,
+    };
+
+    const response = await axios({
+      data,
+      method: 'post',
+      url: `${this.endpoint}/v2/orders`,
+      timeout: this.timeout,
+    });
+
+    return response.data;
   }
 
   /**
