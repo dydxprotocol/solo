@@ -115,6 +115,208 @@ If `triggerPrice` is set, it must be divisible by the tick size.
 ```
 
 ## Trading Endpoints
+
+### POST /v2/orders
+
+Description:
+Post a new order to the orderbook.
+
+Please Note:
+
+* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
+your request will return `400` and will not be added to the book.
+
+* Your request will return `201`, but the order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed V2 order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|setExpirationOnFill|boolean|(Optional)Expiration field for order will be applied upon the order filling.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
+
+Example Request Body:
+```json
+{
+  "fillOrKill": true,
+  "cancelAmountOnRevert": true,
+  "postOnly": false,
+  "triggerPrice": "0",
+  "clientId": "foo",
+  "order": {
+    "isBuy": true,
+    "isDecreaseOnly": false,
+    "baseMarket": "0",
+    "quoteMarket": "3",
+    "amount": "10000000000",
+    "limitPrice": "20.3",
+    "triggerPrice": "0",
+    "limitFee": "0.0015",
+    "makerAccountNumber": "0",
+    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
+};
+```
+
+Returns:
+`201` if successful
+
+### POST /v1/dex/orders/replace
+
+Description:
+Atomically cancel an old order and replace with a new order in the orderbook.
+
+Please Note:
+
+* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine. The canceled order will also not be canceled until processed
+by our internal matching engine.
+
+* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|cancelId|string|Order id for the order that is being canceled and replaced|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
+Example Request Body:
+```json
+{
+  "fillOrKill": true,
+  "cancelAmountOnRevert": true,
+  "postOnly": false,
+  "triggerPrice": "10100000000",
+  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+  "clientId": "foo",
+  "order": {
+    "makerMarket": "0",
+    "takerMarket": "1",
+    "makerAmount": "10000000000",
+    "takerAmount": "20000000000",
+    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "makerAccountNumber": "111",
+    "takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
+    "takerAccountNumber": "222",
+    "triggerPrice": "10000000000",
+    "decreaseOnly": false,
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
+};
+```
+
+### DELETE /v2/orders/:hash
+
+Description:
+Cancels an open order by hash.
+
+Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
+The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [CanonicalOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/CanonicalOrders.ts) module of Solo.js.
+
+The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
+
+Headers:
+```
+Content-Type: application/json
+Authorization: Bearer [A valid cancel signature]
+```
+
+Example Response Body:
+```json
+{
+  "orders": [
+    {
+      "uuid": "ffb8f5e3-68aa-4dc9-89d2-1de6738b8c3f",
+      "id": "0xd17ae8439b99c6c7637808be36d856c6f6f497ab132a7f394f611396b5594844",
+      "createdAt": "2020-01-15T22:30:55.533Z",
+      "status": "PENDING",
+      "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
+      "accountNumber": "0",
+      "orderType": "CANONICAL_CROSS",
+      "fillOrKill": false,
+      "postOnly": null,
+      "market": "WETH-DAI",
+      "side": "BUY",
+      "baseAmount": "50900000000000000000",
+      "quoteAmount": "8386480372200000000000",
+      "filledAmount": "0",
+      "price": "231.763858",
+      "cancelReason": null
+    },
+  ]
+}
+```
+
+### A note about Order and Fill status
+
+Both orders and fills returned from the API will provide a status field.
+
+For orders this field represents the current status of the order.
+```javascript
+export const STATUS = {
+  PENDING: 'PENDING', // The order is not yet processed by our internal matching engine
+  OPEN: 'OPEN', // The order is open and can be filled
+  FILLED: 'FILLED', // The order has been completely filled
+  PARTIALLY_FILLED: 'PARTIALLY_FILLED', // The order has been partially filled
+  CANCELED: 'CANCELED', // The order has been canceled and can no longer be filled
+  FAILED: 'FAILED', // The order failed to be processed due to an internal error
+};
+```
+
+If the order was canceled, additional information will be provided by the `cancelReason`
+field.
+
+For fills the status field represents the status of the transaction on-chain.
+
+```javascript
+export const STATUSES = {
+  PENDING: 'PENDING', // The fill has been sent to the blockchain but not yet mined
+  REVERTED: 'REVERTED', // The fill was sent to the blockchain, but was reverted on-chain
+  CONFIRMED: 'CONFIRMED', // The fill was sent to the blockchain and successfully mined
+};
+```
+
+To get pending balances related to fills in `PENDING` status, see [GET /v1/accounts/:address](#accounts)
+
 ### GET /v1/orderbook/:market
 
 Description:
@@ -174,242 +376,6 @@ Example Response Body:
   ]
 }
 ```
-
-### POST /v2/orders
-
-Description:
-Post a new order to the orderbook.
-
-Please Note:
-
-* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
-your request will return `400` and will not be added to the book.
-
-* Your request will return `201`, but the order itself will still have a status of `PENDING` until
-it is processed by our internal matching engine.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Request Body:
-
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed V2 order JSON object|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
-|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
-|cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
-|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|setExpirationOnFill|boolean|(Optional)Expiration field for order will be applied upon the order filling.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
-
-Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
-book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
-`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
-they go on the open order book.
-
-
-Example Request Body:
-```json
-{
-      	"fillOrKill": true,
-      	"cancelAmountOnRevert": true,
-      	"postOnly": false,
-      	"triggerPrice": "0",
-	"clientId": "foo",
-	"order": {
-      		"isBuy": true,
-      		"isDecreaseOnly": false,
-      		"baseMarket": "0",
-      		"quoteMarket": "3",
-      		"amount": "10000000000",
-      		"limitPrice": "20.3",
-      		"triggerPrice": "0",
-      		"limitFee": "0.0015",
-      		"makerAccountNumber": "0",
-		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
-		"expiration": "4294967295",
-		"salt": "100",
-		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
-	  },
-};
-```
-
-Returns:
-`201` if successful
-
-### POST /v1/dex/orders/replace
-
-Description:
-Atomically cancel an old order and replace with a new order in the orderbook.
-
-Please Note:
-
-* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
-it is processed by our internal matching engine. The canceled order will also not be canceled until processed
-by our internal matching engine.
-
-* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Request Body:
-
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed order JSON object|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
-|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
-|cancelId|string|Order id for the order that is being canceled and replaced|
-|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
-
-Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
-book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
-`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
-they go on the open order book.
-
-Example Request Body:
-```json
-{
-    	"fillOrKill": true,
-    	"cancelAmountOnRevert": true,
-    	"postOnly": false,
-    	"triggerPrice": "10100000000",
-  	"cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-	"clientId": "foo",
-	"order": {
-		"makerMarket": "0",
-		"takerMarket": "1",
-		"makerAmount": "10000000000",
-		"takerAmount": "20000000000",
-		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
-		"makerAccountNumber": "111",
-		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
-    		"takerAccountNumber": "222",
-    		"triggerPrice": "10000000000",
-    		"decreaseOnly": false,
-		"expiration": "4294967295",
-		"salt": "100",
-		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
-	  },
-};
-```
-### DELETE /v1/dex/orders/:hash
-
-Description:
-Cancels an open order by hash.
-
-Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
-The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
-
-The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
-
-Headers:
-```
-Content-Type: application/json
-Authorization: Bearer [A valid cancel signature]
-```
-
-Example Response Body:
-```json
-{
-    "orders": [
-        {
-            "uuid": "d13aadc8-49fb-4420-a5a0-03c15b668705",
-            "id": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-            "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
-            "makerAccountNumber": "0",
-            "status": "PENDING",
-            "price": "1",
-            "fillOrKill": false,
-            "triggerPrice": "10100000000",
-            "decreaseOnly": false,
-            "postOnly": false,
-            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\":\"triggerPrice\"10000000000\"}",
-            "makerAmount": "10",
-            "unfillableAt": null,
-            "unfillableReason": null,
-            "takerAmount": "10",
-            "expiresAt": null,
-            "makerAmountRemaining": "10",
-            "takerAmountRemaining": "10",
-            "createdAt": "2019-07-29T23:56:25.522Z",
-            "updatedAt": "2019-07-29T23:56:25.522Z",
-            "deletedAt": null,
-            "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-            "pair": {
-                "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
-                "name": "WETH-DAI",
-                "createdAt": "2019-07-26T17:19:34.955Z",
-                "updatedAt": "2019-07-26T17:19:34.955Z",
-                "deletedAt": null,
-                "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                "makerCurrency": {
-                    "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
-                    "symbol": "WETH",
-                    "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-                    "decimals": 18,
-                    "soloMarket": 0,
-                    "createdAt": "2019-07-26T17:19:34.627Z",
-                    "updatedAt": "2019-07-26T17:19:34.627Z",
-                    "deletedAt": null
-                },
-                "takerCurrency": {
-                    "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
-                    "symbol": "DAI",
-                    "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-                    "decimals": 18,
-                    "soloMarket": 1,
-                    "createdAt": "2019-07-26T17:19:34.919Z",
-                    "updatedAt": "2019-07-26T17:19:34.919Z",
-                    "deletedAt": null
-                }
-            },
-            "fills": []
-        }
-    ]
-}
-```
-
-### A note about Order and Fill status
-
-Both orders and fills returned from the API will provide a status field.
-
-For orders this field represents the current status of the order.
-```javascript
-export const STATUS = {
-  PENDING: 'PENDING', // The order is not yet processed by our internal matching engine
-  OPEN: 'OPEN', // The order is open and can be filled
-  FILLED: 'FILLED', // The order has been completely filled
-  PARTIALLY_FILLED: 'PARTIALLY_FILLED', // The order has been partially filled
-  CANCELED: 'CANCELED', // The order has been canceled and can no longer be filled
-  FAILED: 'FAILED', // The order failed to be processed due to an internal error
-};
-```
-
-If the order was canceled, additional information will be provided by the `cancelReason`
-field.
-
-For fills the status field represents the status of the transaction on-chain.
-
-```javascript
-export const STATUSES = {
-  PENDING: 'PENDING', // The fill has been sent to the blockchain but not yet mined
-  REVERTED: 'REVERTED', // The fill was sent to the blockchain, but was reverted on-chain
-  CONFIRMED: 'CONFIRMED', // The fill was sent to the blockchain and successfully mined
-};
-```
-
-To get pending balances related to fills in `PENDING` status, see [GET /v1/accounts/:address](#accounts)
 
 ### GET /v2/orders
 Description:
@@ -572,7 +538,7 @@ Example Response Body:
 ### GET /v2/fills
 Description:
 Get all historical fills.
- It's most useful when you care
+It's most useful when you care
 about the outcome of the trade from the perspective of a particular `accountOwner`.
 
 Headers:
@@ -602,13 +568,14 @@ Example Response Body:
       "status": "CONFIRMED",
       "market": "WETH-DAI",
       "side": "SELL",
+      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+      "accountNumber": "0",
+      "orderId": "0x773a0afd79bcc4c005c79d85ab7da21ff3e6bb11d73e5b3757b25fb1bc9c0f97",
       "orderClientId": null,
       "price": "169.98523710095444091",
       "amount": "100000000000000000",
-      "orderId": "0x773a0afd79bcc4c005c79d85ab7da21ff3e6bb11d73e5b3757b25fb1bc9c0f97",
-      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
-      "accountNumber": "0",
-      "liquidity": "TAKER"
+      "feeAmount": "0",
+      "liquidity": "MAKER"
     },
     {
       "uuid": "15a0d654-76d6-4bb4-ad1a-15c088def1b7",
@@ -617,12 +584,13 @@ Example Response Body:
       "status": "CONFIRMED",
       "market": "WETH-DAI",
       "side": "BUY",
+      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
+      "accountNumber": "0",
+      "orderId": "0x4ef2ab5b3735c43c6ca6d91088884fe3ea43be9b03c3f16eab19aecf259420ab",
       "orderClientId": "d025f607-9827-4043-9445-aec9c4b2e9af",
       "price": "170.94678134323509863",
       "amount": "100000000000000000",
-      "orderId": "0x4ef2ab5b3735c43c6ca6d91088884fe3ea43be9b03c3f16eab19aecf259420ab",
-      "accountOwner": "0x5f5a46a8471f60b1e9f2ed0b8fc21ba8b48887d8",
-      "accountNumber": "0",
+      "feeAmount": "0",
       "liquidity": "TAKER"
     }
   ]
@@ -812,26 +780,26 @@ they go on the open order book.
 Example Request Body:
 ```json
 {
-      	"fillOrKill": true,
-      	"cancelAmountOnRevert": true,
-      	"postOnly": false,
-      	"triggerPrice": "10100000000",
-	"clientId": "foo",
-	"order": {
-		"makerMarket": "0",
-		"takerMarket": "1",
-		"makerAmount": "10000000000",
-		"takerAmount": "20000000000",
-		"price": "10100000000",
-		"makerAccountNumber": "111",
-		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
-		"takerAccountNumber": "222",
-		"triggerPrice": "10000000000",
-		"decreaseOnly": false,
-		"expiration": "4294967295",
-		"salt": "100",
-		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
-	  },
+        "fillOrKill": true,
+        "cancelAmountOnRevert": true,
+        "postOnly": false,
+        "triggerPrice": "10100000000",
+  "clientId": "foo",
+  "order": {
+    "makerMarket": "0",
+    "takerMarket": "1",
+    "makerAmount": "10000000000",
+    "takerAmount": "20000000000",
+    "price": "10100000000",
+    "makerAccountNumber": "111",
+    "takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
+    "takerAccountNumber": "222",
+    "triggerPrice": "10000000000",
+    "decreaseOnly": false,
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+    },
 };
 ```
 
@@ -852,7 +820,7 @@ Example Response Body:
 ```json
 {
     "pairs": [
-		{
+        {
             "uuid": "e401535b-e43a-4a79-933f-7c1950cabbdf",
             "name": "DAI-WETH",
             "createdAt": "2019-08-13T19:12:27.386Z",
@@ -1130,6 +1098,84 @@ Example Response Body:
                 }
             }
         },
+    ]
+}
+```
+
+### DELETE /v1/dex/orders/:hash [DEPRECATED - use /v2/orders/:hash]
+
+Description:
+Cancels an open order by hash.
+
+Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
+The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [LimitOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/LimitOrders.ts) module of Solo.js.
+
+The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
+
+Headers:
+```
+Content-Type: application/json
+Authorization: Bearer [A valid cancel signature]
+```
+
+Example Response Body:
+```json
+{
+    "orders": [
+        {
+            "uuid": "d13aadc8-49fb-4420-a5a0-03c15b668705",
+            "id": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+            "makerAccountOwner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
+            "makerAccountNumber": "0",
+            "status": "PENDING",
+            "price": "1",
+            "fillOrKill": false,
+            "triggerPrice": "10100000000",
+            "decreaseOnly": false,
+            "postOnly": false,
+            "rawData": "{\"makerMarket\":\"0\",\"takerMarket\":\"1\",\"makerAccountNumber\":\"0\",\"takerAccountNumber\":\"222\",\"makerAccountOwner\":\"0x0913017c740260fea4b2c62828a4008ca8b0d6e4\",\"takerAccountOwner\":\"0x28a8746e75304c0780e011bed21c72cd78cd535e\",\"makerAmount\":\"10\",\"takerAmount\":\"10\",\"salt\":\"79776019296374116968729143546164248655125424402698335194396863096742023853053\",\"expiration\":\"0\",\"typedSignature\":\"0x9db8cc7ee2e06525949a0ae87301d890aee9973c464b276661d760ca8db4c73522ba48b94bf36d4aada7627656f79be9e40225a52f0adec079b07263b9e8ee0c1b01\":\"triggerPrice\"10000000000\"}",
+            "makerAmount": "10",
+            "unfillableAt": null,
+            "unfillableReason": null,
+            "takerAmount": "10",
+            "expiresAt": null,
+            "makerAmountRemaining": "10",
+            "takerAmountRemaining": "10",
+            "createdAt": "2019-07-29T23:56:25.522Z",
+            "updatedAt": "2019-07-29T23:56:25.522Z",
+            "deletedAt": null,
+            "pairUuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+            "pair": {
+                "uuid": "b9b38876-c3a6-470e-81cf-d352d26685d0",
+                "name": "WETH-DAI",
+                "createdAt": "2019-07-26T17:19:34.955Z",
+                "updatedAt": "2019-07-26T17:19:34.955Z",
+                "deletedAt": null,
+                "makerCurrencyUuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                "takerCurrencyUuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                "makerCurrency": {
+                    "uuid": "84298577-6a82-4057-8523-27b05d3f5b8c",
+                    "symbol": "WETH",
+                    "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                    "decimals": 18,
+                    "soloMarket": 0,
+                    "createdAt": "2019-07-26T17:19:34.627Z",
+                    "updatedAt": "2019-07-26T17:19:34.627Z",
+                    "deletedAt": null
+                },
+                "takerCurrency": {
+                    "uuid": "b656c441-68ab-4776-927c-d894f4d6483b",
+                    "symbol": "DAI",
+                    "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+                    "decimals": 18,
+                    "soloMarket": 1,
+                    "createdAt": "2019-07-26T17:19:34.919Z",
+                    "updatedAt": "2019-07-26T17:19:34.919Z",
+                    "deletedAt": null
+                }
+            },
+            "fills": []
+        }
     ]
 }
 ```
