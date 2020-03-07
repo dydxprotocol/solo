@@ -556,6 +556,31 @@ export class Api {
     return response.data;
   }
 
+  public async cancelOrderV2({
+    orderId,
+    makerAccountOwner,
+  }: {
+    orderId: string,
+    makerAccountOwner: address,
+  }): Promise<{ order: ApiOrder }> {
+    const signature = await this.canonicalOrders.signCancelOrderByHash(
+      orderId,
+      makerAccountOwner,
+      SigningMethod.Hash,
+    );
+
+    const response = await axios({
+      url: `${this.endpoint}/v2/orders/${orderId}`,
+      method: 'delete',
+      headers: {
+        authorization: `Bearer ${signature}`,
+      },
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
   public async getOrdersV2({
     accountOwner,
     accountNumber,
