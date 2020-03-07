@@ -32,7 +32,7 @@ as `0`, otherwise your order will be rejected.
 
 After this is done, the order is ready to be submitted to the API.
 
-__Order fields__
+__V1 Order fields__[DEPRECATED]
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
@@ -68,6 +68,50 @@ Example:
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
   },
 };
+```
+
+__V2 Order fields__
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|isBuy|boolean|If the order is a buy order|
+|isDecreaseOnly|boolean|(Optional)If the Stop-Limit order is tied to an existing Isolated Position|
+|baseMarket|string|The Solo base [market](https://docs.dydx.exchange/#/overview?id=markets)|
+|quoteMarket|string|The Solo quote [market](https://docs.dydx.exchange/#/overview?id=markets)|
+|amount|string|The amount of token being offered in base units|
+|limitPrice|string| The worst base/quote price at which the transaction will be accepted|
+|triggerPrice|string|(Optional)The price at which the order will go to market.|
+|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to 0.5Eth in the transaction will pay 0.15% of ETH-DAI and ETH-USDC transactions and 0.05% for DAI-USDC transactions.
+For transactions below 0.5Eth they will pay 0.50% fees.
+|makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
+|makerAccountOwner|string|The Ethereum address of the Maker.|
+|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
+|salt|string|A random number to make the orderHash unique.|
+|typedSignature|string|The signature of the order.|
+
+Example:
+```json
+{
+    "isBuy": true,
+    "isDecreaseOnly": false,
+    "baseMarket": "0",
+    "quoteMarket": "3",
+    "amount": "10000000000",
+    "limitPrice": "20.3",
+    "triggerPrice": "0",
+    "limitFee": "0.0015",
+    "makerAccountNumber": "0",
+    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
+};
+
+Note: The tick size is 0.01 for ETH-DAI, 0.01e-12 for ETH-USDC and 0.0001e-12 for DAI-USDC transactions. The negative twelfth power is because USDC has 6 decimal places of specificity whereas ETH and DAI have 18.
+The `limitPrice` must be divisible by the tick size.
+If `triggerPrice` is set, it must be divisible by the tick size.
+
 ```
 
 ## Trading Endpoints
@@ -131,7 +175,7 @@ Example Response Body:
 }
 ```
 
-### POST /v1/dex/orders
+### POST /v2/orders
 
 Description:
 Post a new order to the orderbook.
@@ -153,11 +197,13 @@ Request Body:
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
-|order|Object|A valid signed order JSON object|
+|order|Object|A valid signed V2 order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|setExpirationOnFill|boolean|(Optional)Expiration field for order will be applied upon the order filling.|
 |cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
@@ -172,19 +218,19 @@ Example Request Body:
       	"fillOrKill": true,
       	"cancelAmountOnRevert": true,
       	"postOnly": false,
-      	"triggerPrice": "10100000000",
+      	"triggerPrice": "0",
 	"clientId": "foo",
 	"order": {
-		"makerMarket": "0",
-		"takerMarket": "1",
-		"makerAmount": "10000000000",
-		"takerAmount": "20000000000",
+      		"isBuy": true,
+      		"isDecreaseOnly": false,
+      		"baseMarket": "0",
+      		"quoteMarket": "3",
+      		"amount": "10000000000",
+      		"limitPrice": "20.3",
+      		"triggerPrice": "0",
+      		"limitFee": "0.0015",
+      		"makerAccountNumber": "0",
 		"makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
-		"makerAccountNumber": "111",
-		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
-		"takerAccountNumber": "222",
-		"triggerPrice": "10000000000",
-		"decreaseOnly": false,
 		"expiration": "4294967295",
 		"salt": "100",
 		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -728,6 +774,67 @@ Example Response Body:
 ```
 
 ## Deprecated Endpoints
+### POST /v1/dex/orders[DEPRECATED]
+
+Description:
+Post a new order to the orderbook.
+
+Please Note:
+
+* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
+your request will return `400` and will not be added to the book.
+
+* Your request will return `201`, but the order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
+
+Example Request Body:
+```json
+{
+      	"fillOrKill": true,
+      	"cancelAmountOnRevert": true,
+      	"postOnly": false,
+      	"triggerPrice": "10100000000",
+	"clientId": "foo",
+	"order": {
+		"makerMarket": "0",
+		"takerMarket": "1",
+		"makerAmount": "10000000000",
+		"takerAmount": "20000000000",
+		"price": "10100000000",
+		"makerAccountNumber": "111",
+		"takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
+		"takerAccountNumber": "222",
+		"triggerPrice": "10000000000",
+		"decreaseOnly": false,
+		"expiration": "4294967295",
+		"salt": "100",
+		"typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+	  },
+};
+```
+
 ### GET /v1/dex/pairs [DEPRECATED]
 
 Description:

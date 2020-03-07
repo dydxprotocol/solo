@@ -204,7 +204,7 @@ await solo.token.setMaximumSoloAllowance(
 ### Api
 Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for placing & canceling orders.
 
-#### Place Order
+#### Place Order(v1)[DEPRECATED]
 ```javascript
 import { MarketId, BigNumber } from '@dydxprotocol/solo';
 
@@ -253,6 +253,55 @@ const { order } = await solo.api.placeOrder({
 });
 ```
 
+#### Place Order(v2)
+```javascript
+import { ApiSide, ApiMarketName, BigNumber } from '@dydxprotocol/solo';
+
+// order has type ApiOrder
+const { order } = await solo.api.placeCanonicalOrder({
+  order: {
+    //Side your order is being placed on
+    side: ApiSide.BUY
+
+    //Market the trade is in
+    market: ApiMarketName.WETH_DAI
+
+    // denominated in base units. i.e. 1 ETH = 1e18
+    amount: new BigNumber('1e18'),
+
+    // denominated in base/quote. Since ETH and DAI have 18 decimals and are represented in e-18 while USDC has 6 decimals and is e-6, USDC prices are represented in e-12
+    price: '230.1',
+
+    // Your address. Account must be loaded onto Solo with private key for signing
+    makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
+
+    // OPTIONAL: number of seconds until the order expires.
+    // 0 indicates no expiry. Defaults to 28 days
+    expiration: new BigNumber('1000'),
+
+    //OPTIONAL: Maximum fee you are willing to accept. Note, if limitFee is below calculated restriction and no exemption was given, the request will 400
+    //Makers will pay 0% fees. Takers with greater than or equal to .5Eth in the transaction will pay .15% of ETH-DAI and ETH-USDC transactions and .05% for DAI-USDC transactions.
+    //For transactions below .5Eth they will pay .50% fees.
+    limitFee: '0.0015'
+  }
+
+  // OPTIONAL: defaults to false
+  fillOrKill: false,
+
+  // OPTIONAL: defaults to false
+  postOnly: false,
+
+  // OPTIONAL: defaults to undefined
+  clientId: 'foo',
+
+  // OPTIONAL: Turns this order into a replace order with the cancelId being the replaced order
+  cancelId: '0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2',
+
+  // OPTIONAL: defaults to false
+  cancelAmountOnRevert: false,
+});
+```
+
 #### Cancel Order
 ```javascript
 const { id } = existingOrder;
@@ -264,7 +313,7 @@ const { order } = await solo.api.cancelOrder({
 });
 ```
 
-#### Replace Order
+#### Replace Order[DEPRECATED]
 ```javascript
 const { id } = existingOrder;
 
