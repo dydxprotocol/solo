@@ -89,7 +89,7 @@ async function getDoubleExponentParams(network) {
   if (isMainNet(network)) {
     return {
       maxAPR: decimalToString('0.50'), // 50%
-      coefficients: coefficientsToString([0, 15, 0, 0, 0, 0, 15, 70]),
+      coefficients: coefficientsToString([0, 20, 0, 0, 0, 0, 20, 60]),
     };
   }
   return {

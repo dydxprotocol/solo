@@ -3,19 +3,19 @@
     "earningsRate": "0.95",
     "0": {
       "maxAPR": "0.50",
-      "coefficients": [0, 15, 0, 0, 0, 0, 15, 70]
+      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
     },
     "1": {
       "maxAPR": "0.50",
-      "coefficients": [0, 15, 0, 0, 0, 0, 15, 70]
+      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
     },
     "2": {
       "maxAPR": "0.50",
-      "coefficients": [0, 15, 0, 0, 0, 0, 15, 70]
+      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
     },
     "3": {
       "maxAPR": "0.50",
-      "coefficients": [0, 15, 0, 0, 0, 0, 15, 70]
+      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
     }
   },
   "42": {
