@@ -182,68 +182,6 @@ Example Request Body:
 Returns:
 `201` if successful
 
-### POST /v1/dex/orders/replace
-
-Description:
-Atomically cancel an old order and replace with a new order in the orderbook.
-
-Please Note:
-
-* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
-it is processed by our internal matching engine. The canceled order will also not be canceled until processed
-by our internal matching engine.
-
-* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Request Body:
-
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed order JSON object|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
-|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
-|cancelId|string|Order id for the order that is being canceled and replaced|
-|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
-
-Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
-book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
-`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
-they go on the open order book.
-
-Example Request Body:
-```json
-{
-  "fillOrKill": true,
-  "cancelAmountOnRevert": true,
-  "postOnly": false,
-  "triggerPrice": "10100000000",
-  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
-  "clientId": "foo",
-  "order": {
-    "makerMarket": "0",
-    "takerMarket": "1",
-    "makerAmount": "10000000000",
-    "takerAmount": "20000000000",
-    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
-    "makerAccountNumber": "111",
-    "takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
-    "takerAccountNumber": "222",
-    "triggerPrice": "10000000000",
-    "decreaseOnly": false,
-    "expiration": "4294967295",
-    "salt": "100",
-    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
-  },
-};
-```
-
 ### DELETE /v2/orders/:hash
 
 Description:
@@ -800,6 +738,68 @@ Example Request Body:
     "salt": "100",
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
     },
+};
+```
+
+### POST /v1/dex/orders/replace[DEPRECATED]
+
+Description:
+Atomically cancel an old order and replace with a new order in the orderbook.
+
+Please Note:
+
+* Your request will return `201`, but the new order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine. The canceled order will also not be canceled until processed
+by our internal matching engine.
+
+* The response will have a status of `201` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user tries to make the same replace order twice, then `201` will be returned both times. For another example, replacing a fully-filled order will return `201` but will NOT update the status of the order from `FILLED` to `REPLACED`. Therefore, receiving a `201` status does not necessarily mean that the order was replaced.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|cancelId|string|Order id for the order that is being canceled and replaced|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
+Example Request Body:
+```json
+{
+  "fillOrKill": true,
+  "cancelAmountOnRevert": true,
+  "postOnly": false,
+  "triggerPrice": "10100000000",
+  "cancelId": "0x2c45cdcd3bce2dd0f2b40502e6bea7975f6daa642d12d28620deb18736619fa2",
+  "clientId": "foo",
+  "order": {
+    "makerMarket": "0",
+    "takerMarket": "1",
+    "makerAmount": "10000000000",
+    "takerAmount": "20000000000",
+    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "makerAccountNumber": "111",
+    "takerAccountOwner": "0x28a8746e75304c0780E011BEd21C72cD78cd535E",
+    "takerAccountNumber": "222",
+    "triggerPrice": "10000000000",
+    "decreaseOnly": false,
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
 };
 ```
 
