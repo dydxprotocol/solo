@@ -165,7 +165,7 @@ export class CanonicalOrders extends OrderSigner {
       case MarketId.DAI.toNumber():
         return amount.lt(DAI_SMALL_ORDER_THRESHOLD)
           ? (isTaker ? BIPS.times(50) : ZERO)
-          : (isTaker ? BIPS.times(15) : ZERO);
+          : (isTaker ? BIPS.times(5) : ZERO);
       default:
         throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
     }
