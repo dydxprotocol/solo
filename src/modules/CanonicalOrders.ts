@@ -197,9 +197,7 @@ export class CanonicalOrders extends OrderSigner {
         // calculate maker and taker amounts
         const order = orders[i] as CanonicalOrder;
         const makerAmount = remainingMakerAmounts[i];
-        const takerAmount = order.isBuy
-          ? makerAmount.div(order.limitPrice)
-          : makerAmount.times(order.limitPrice);
+        const takerAmount = makerAmount.times(order.limitPrice);
 
         // update running weis
         const makerMarket = (order.isBuy ? order.quoteMarket : order.baseMarket).toNumber();
