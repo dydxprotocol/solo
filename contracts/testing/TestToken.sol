@@ -38,6 +38,23 @@ contract TestToken {
         issueTo(msg.sender, amount);
     }
 
+    function setBalance(address _target, uint _value) public {
+        balances[_target] = _value;
+        emit Transfer(address(this), address(0x0), _target, _value);
+    }
+
+    function addBalance(
+        address _target,
+        uint _value
+    )
+    public
+    {
+        uint currBalance = balanceOf(_target);
+        require(_value + currBalance >= currBalance, "INVALID_VALUE");
+        balances[_target] = currBalance.add(_value);
+        emit Transfer(address(this), address(0x0), _target, _value);
+    }
+
     function issueTo(address who, uint256 amount) public {
         supply = supply.add(amount);
         balances[who] = balances[who].add(amount);
