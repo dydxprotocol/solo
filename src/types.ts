@@ -74,6 +74,7 @@ export interface SoloOptions {
   testing?: boolean;
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
+  blockGasLimit?: number;
   accounts?: EthereumAccount[];
   apiEndpoint?: string;
   apiTimeout?: number;
