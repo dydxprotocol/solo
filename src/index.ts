@@ -18,6 +18,7 @@
 
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
+import { DateTime } from 'luxon';
 
 BigNumber.config({
   EXPONENTIAL_AT: 1000,
@@ -28,5 +29,6 @@ export { Solo } from './Solo';
 export {
   Web3,
   BigNumber,
+  DateTime,
 };
 export * from './types';
