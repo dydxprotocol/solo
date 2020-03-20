@@ -184,6 +184,7 @@ export class Contracts {
     this.confirmationType = options.confirmationType || ConfirmationType.Confirmed;
     this.defaultGas = options.defaultGas;
     this.defaultGasPrice = options.defaultGasPrice;
+    this.blockGasLimit = options.blockGasLimit;
 
     // Contracts
     this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
