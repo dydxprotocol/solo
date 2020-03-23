@@ -27,6 +27,7 @@ import {
   MarketId,
   BigNumberable,
   SignedCanonicalOrder,
+  ApiMarketMessageV2,
 } from '../types';
 import { LimitOrders } from './LimitOrders';
 import { StopLimitOrders } from './StopLimitOrders';
@@ -669,6 +670,29 @@ export class Api {
   }): Promise<{ order: ApiOrderV2 }> {
     const response = await axios({
       url: `${this.endpoint}/v2/orders/${id}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+    return response.data;
+  }
+
+  public async getMarketV2({
+    market,
+  }: {
+    market: string,
+  }): Promise<{ market: ApiMarketMessageV2 }> {
+    const response = await axios({
+      url: `${this.endpoint}/v2/markets/${market}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+    return response.data;
+  }
+
+  public async getMarketsV2():
+    Promise<{ markets: { [market: string]: ApiMarketMessageV2 } }> {
+    const response = await axios({
+      url: `${this.endpoint}/v2/markets`,
       method: 'get',
       timeout: this.timeout,
     });
