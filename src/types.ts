@@ -755,3 +755,23 @@ export interface ApiOrderbookUpdate {
   amount?: string;
   price?: string;
 }
+
+export interface ApiMarketMessageV2 {
+  name: Market;
+  baseCurrency: {
+    currency: ApiCurrency;
+    decimals: number;
+    soloMarketId: number;
+  };
+  quoteCurrency: {
+    currency: ApiCurrency;
+    decimals: number;
+    soloMarketId: number;
+  };
+  minimumTickSize: BigNumber;
+  minimumOrderSize: BigNumber;
+  smallOrderThreshold: BigNumber;
+  makerFee: BigNumber;
+  largeTakerFee: BigNumber;
+  smallTakerFee: BigNumber;
+}
