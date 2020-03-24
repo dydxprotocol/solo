@@ -937,3 +937,130 @@ New actions performed by the user are posted on the channel.
 |type|string|Must be set to "unsubscribe"|
 |channel|string|The channel to unsubscribe from|
 |id|string|An id to unsubscribe from on the channel|
+
+### Balance updates
+
+The balance updates channel allows clients to receive updates about balances and
+expirations when an operation is confirmed etc.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "balance_updates",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "balance_updates"|
+|id|string|The wallet address to subscribe to|
+
+#### Initial Response
+
+The initial response will be the latest 100 balance updates on the user's account.
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "fbb65bfb-b460-49a0-9afa-029420b1b6d2",
+  "message_id": 1,
+  "channel": "balance_updates",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "balanceUpdates": [
+      {
+        "uuid": "787bc050-dc06-4d41-8dd0-43db57e0ba1b",
+        "deltaWei": "-6443662021540585812",
+        "newPar": "0",
+        "accountUuid": "a108e8dc-043f-4e35-a61c-8c0d8bd605e6",
+        "actionUuid": "55efbba1-08ba-4af5-b03a-bf50a47ae6c0",
+        "marketId": 3,
+        "expiresAt": null,
+        "orderNumber": "963883600170002",
+        "newWei": "0",
+        "confirmedAt": "2020-03-09T18:26:06.000Z",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "number": "23250809876488196813448176070712780961598248407839150544631431380708932406146",
+        "isPendingBlock": null,
+        "createdAt": "2020-03-22T11:48:11.941Z",
+        "updatedAt": "2020-03-22T11:48:11.941Z"
+      },
+      {
+        "uuid": "8970e854-32b6-49a7-99eb-d5d491be03c0",
+        "deltaWei": "6443662021540585812",
+        "newPar": "9723610723617108642",
+        "accountUuid": "6a56f996-42ee-4925-8e2b-3437e7734c34",
+        "actionUuid": "55efbba1-08ba-4af5-b03a-bf50a47ae6c0",
+        "marketId": 3,
+        "expiresAt": null,
+        "orderNumber": "963883600170002",
+        "newWei": "9860083718207192031.997074607802540022",
+        "confirmedAt": "2020-03-09T18:26:06.000Z",
+        "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+        "number": "0",
+        "isPendingBlock": null,
+        "createdAt": "2020-03-22T11:48:11.942Z",
+        "updatedAt": "2020-03-22T11:48:11.942Z"
+      }
+    ]
+  }
+}
+```
+
+#### Updates
+
+New actions performed by the user are posted on the channel.
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "fbb65bfb-b460-49a0-9afa-029420b1b6d2",
+  "message_id": 7,
+  "channel": "balance_updates",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+  "contents": {
+    "type": "BALANCE_UPDATE",
+    "pending": false,
+    "hash": "0xc7d682dcd18cf84e4b04cde01e65a9f4961faad476a12b9b6b66e7fcb48e53dd",
+    "balanceUpdate": {
+      "uuid": "63016bd1-fbc5-4544-876a-3b9eef6d60ca",
+      "deltaWei": "-100000000000000000",
+      "newPar": "1508081686843845130",
+      "accountUuid": "6a56f996-42ee-4925-8e2b-3437e7734c34",
+      "actionUuid": "1c900392-0589-4567-9d80-7b4427b4dd8a",
+      "marketId": 0,
+      "expiresAt": null,
+      "orderNumber": "973118700550002",
+      "newWei": "1509359692212859652.41423281486264464",
+      "confirmedAt": "2020-03-24T01:14:10.000Z",
+      "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
+      "number": "0",
+      "isPendingBlock": null,
+      "createdAt": "2020-03-24T01:15:04.269Z",
+      "updatedAt": "2020-03-24T01:15:04.269Z"
+    }
+  }
+}
+```
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "balance_updates",
+  "id": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|An id to unsubscribe from on the channel|
