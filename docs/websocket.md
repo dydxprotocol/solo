@@ -536,57 +536,6 @@ Once unsubscribed, clients will receive a message:
 }
 ```
 
-### Operations
-
-The operations channel allows clients to subscribe to operations on a provided wallet address.
-
-#### Subscribing
-
-To subscribe, send:
-
-```json
-{
-  "type": "subscribe",
-  "channel": "operations",
-  "id": "0x014bE43BF2d72a7a151A761a1bD5224f7Ad4973c"
-}
-```
-
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "operations"|
-|id|string|The wallet address to listen to|
-
-#### Initial Response
-
-The operations channel does not currently support an initial response
-
-```json
-{}
-```
-
-#### Updates
-
-Operations on the wallet address are sent on the websocket channel. Currently the operation type is 'ADD'.
-eg:
-
-```json
-{
-   "type":"channel_data",
-   "connection_id":"5b21af84-1c30-4290-83c5-762b1ada1018",
-   "message_id":12,
-   "channel":"operations",
-   "id":"0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
-   "contents":{
-      "type":"ADD",
-      "pending":false,
-      "hash":"0xe722db3006b704ea6277a277fa727f498aee8d1c9d1f21903e0bb14755e3a4fa",
-      "operation": {} //operation field
-   }
-}
-```
-
 ### Positions
 
 The positions channel allows clients to receive updates about their existing positions.
