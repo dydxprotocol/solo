@@ -611,7 +611,7 @@ To subscribe send:
 
 #### Initial Response
 
-The initial response will contain the entire state of the active market:
+The initial response will contain the most recent 100 orders from the active market:
 
 ```json
 {
