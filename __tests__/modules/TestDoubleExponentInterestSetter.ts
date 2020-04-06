@@ -1,18 +1,18 @@
 import BigNumber from 'bignumber.js';
-import { Contracts } from '../../lib/Contracts';
-import { ADDRESSES } from '../../lib/Constants';
+import { TestContracts } from './TestContracts';
+import { ADDRESSES } from '../../src/lib/Constants';
 import {
   ContractConstantCallOptions,
   ContractCallOptions,
   TxResult,
   Integer,
-} from '../../types';
+} from '../../src/types';
 
 export class TestDoubleExponentInterestSetter {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

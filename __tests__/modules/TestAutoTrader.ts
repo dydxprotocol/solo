@@ -1,11 +1,11 @@
-import { Contracts } from '../../lib/Contracts';
-import { Amount, ContractCallOptions, TxResult, Integer } from '../../types';
+import { TestContracts } from './TestContracts';
+import { Amount, ContractCallOptions, TxResult, Integer } from '../../src/types';
 
 export class TestAutoTrader {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

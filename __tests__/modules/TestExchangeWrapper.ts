@@ -1,10 +1,10 @@
-import { Contracts } from '../../lib/Contracts';
+import { TestContracts } from './TestContracts';
 
 export class TestExchangeWrapper {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

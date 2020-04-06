@@ -112,14 +112,8 @@ export class Logs {
   }
 
   private parseLog(log: Log) {
-    let testSoloMarginAddress = this.contracts.testSoloMargin.options.address;
-    if (testSoloMarginAddress) {
-      testSoloMarginAddress = testSoloMarginAddress.toLowerCase();
-    }
-
     switch (log.address.toLowerCase()) {
-      case this.contracts.soloMargin.options.address.toLowerCase():
-      case testSoloMarginAddress: {
+      case this.contracts.soloMargin.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.soloMargin, log);
       }
       case this.contracts.expiryV2.options.address.toLowerCase(): {

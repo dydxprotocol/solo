@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
@@ -20,7 +20,7 @@ const halfAmount = amount.div(2);
 const zero = new BigNumber(0);
 
 describe('Integration', () => {
-  let solo: Solo;
+  let solo: TestSolo;
   let accounts: address[];
   let snapshotId: string;
   let who:address;

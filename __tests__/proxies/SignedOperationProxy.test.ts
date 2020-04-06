@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import {
@@ -20,7 +20,7 @@ import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectAssertFailure, expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let snapshotId: string;
 let defaultSender: address;

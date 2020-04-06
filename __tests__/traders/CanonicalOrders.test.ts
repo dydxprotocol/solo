@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -17,7 +17,7 @@ import {
   SigningMethod,
 } from '../../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let snapshotId: string;
 const BIP = new BigNumber('1e-4');

@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { snapshot, resetEVM } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let admin: address;
 const USDC_PRICE = new BigNumber('1e30');

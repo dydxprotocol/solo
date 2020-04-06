@@ -3,9 +3,9 @@ import {
   address,
 } from '../src/types';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let signer: address;
 
