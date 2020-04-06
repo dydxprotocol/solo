@@ -1,18 +1,18 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { deployContract } from '../helpers/Deploy';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot, fastForward } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { address } from '../../src/types';
 import MultiSigJson from '../../build/published_contracts/PartiallyDelayedMultiSig.json';
-import TestCounterJson from '../../build/published_contracts/TestCounter.json';
+import TestCounterJson from '../../build/testing_contracts/TestCounter.json';
 
 let multiSig: any;
 let testCounterA: any;
 let testCounterB: any;
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let owner1: address;
 let owner2: address;

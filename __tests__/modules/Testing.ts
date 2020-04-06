@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { Provider } from 'web3/providers';
-import { Contracts } from '../../lib/Contracts';
+import { TestContracts } from './TestContracts';
 import { EVM } from './EVM';
 import { TestToken } from './TestToken';
-import { Token } from '../Token';
+import { Token } from '../../src/modules/Token';
 import { TestAutoTrader } from './TestAutoTrader';
 import { TestCallee } from './TestCallee';
 import { TestSimpleCallee } from './TestSimpleCallee';
@@ -12,7 +12,7 @@ import { TestPriceOracle } from './TestPriceOracle';
 import { TestPolynomialInterestSetter } from './TestPolynomialInterestSetter';
 import { TestDoubleExponentInterestSetter } from './TestDoubleExponentInterestSetter';
 import { TestInterestSetter } from './TestInterestSetter';
-import { decimalToString } from '../../lib/Helpers';
+import { decimalToString } from '../../src/lib/Helpers';
 import {
   AccountStatus,
   ContractCallOptions,
@@ -20,10 +20,10 @@ import {
   Integer,
   TxResult,
   address,
-} from '../../types';
+} from '../../src/types';
 
 export class Testing {
-  private contracts: Contracts;
+  private contracts: TestContracts;
   public evm: EVM;
   public tokenA: TestToken;
   public tokenB: TestToken;
@@ -41,7 +41,7 @@ export class Testing {
 
   constructor(
     provider: Provider,
-    contracts: Contracts,
+    contracts: TestContracts,
     token: Token,
   ) {
     this.contracts = contracts;

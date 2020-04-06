@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
-import { Contracts } from '../../lib/Contracts';
-import { ContractCallOptions, TxResult, address, Integer } from '../../types';
+import { TestContracts } from './TestContracts';
+import { ContractCallOptions, TxResult, address, Integer } from '../../src/types';
 
 export class TestPriceOracle {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

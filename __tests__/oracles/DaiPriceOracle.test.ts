@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { snapshot, resetEVM, fastForward, mineAvgBlock } from '../helpers/EVM';
 import { INTEGERS, ADDRESSES } from '../../src/lib/Constants';
 import { address, ContractCallOptions } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let admin: address;
 let poker: address;

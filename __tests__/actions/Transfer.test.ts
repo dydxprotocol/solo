@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
@@ -20,7 +20,7 @@ let admin: address;
 let operator: address;
 const accountNumber1 = new BigNumber(133);
 const accountNumber2 = new BigNumber(244);
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 const market = INTEGERS.ZERO;
 const collateralMarket = new BigNumber(2);
