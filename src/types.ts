@@ -637,14 +637,6 @@ export interface ApiFillQueryV2 {
   limit?: number;
 }
 
-export interface ApiFill extends ApiModel {
-  status: ApiFillStatus;
-  orderId: string;
-  transactionHash: string;
-  fillAmount: string;
-  order: ApiOrder;
-}
-
 export enum ApiLiquidity {
   TAKER = 'TAKER',
   MAKER = 'MAKER',
@@ -672,15 +664,6 @@ export interface ApiTradeQueryV2 {
   accountNumber?: Integer | string;
   startingBefore?: Date;
   limit?: number;
-}
-
-export interface ApiTrade extends ApiModel {
-  status: ApiFillStatus;
-  transactionHash: string;
-  makerOrder: ApiOrder;
-  makerOrderId: string;
-  takerOrder: ApiOrder;
-  takerOrderId: string;
 }
 
 export interface ApiTradeV2 extends ApiModel {

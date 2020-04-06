@@ -109,8 +109,6 @@ export class Solo {
       networkId,
     );
     this.api = new Api(
-      this.limitOrders,
-      this.stopLimitOrders,
       this.canonicalOrders,
       options.apiEndpoint,
       options.apiTimeout,
