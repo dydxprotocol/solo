@@ -68,8 +68,8 @@ jobs:
           name: Deploy Contracts
           command: npm run deploy_test_ci
       - run:
-          name: Remove uncleaned contracts
-          command: rm -rf ./build/contracts ./scripts/*.ts
+          name: Remove unused scripts
+          command: rm -rf ./scripts/*.ts
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "__tests__/**/*.test.ts" | circleci tests split --split-by=filesize) && npm run ci_test -- ${TESTFILES}
