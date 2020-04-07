@@ -12,7 +12,7 @@ import {
   AmountDenomination,
   AmountReference,
 } from '../../src/types';
-import DaiMigratorJson from '../../build/published_contracts/DaiMigrator.json';
+import DaiMigratorJson from '../../build/contracts/DaiMigrator.json';
 
 let solo: TestSolo;
 let accounts: address[];

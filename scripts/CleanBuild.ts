@@ -33,10 +33,7 @@ async function clean(): Promise<void> {
     const cleaned = {
       contractName: contract.contractName,
       abi: contract.abi,
-      bytecode: contract.bytecode,
-      deployedBytecode: contract.deployedBytecode,
       networks: {},
-      schemaVersion: contract.schemaVersion,
     };
 
     if (externalDeployed[contractName]) {

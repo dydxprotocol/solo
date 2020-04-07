@@ -7,7 +7,7 @@ import { INTEGERS } from '../../src/lib/Constants';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { expectThrow } from '../../src/lib/Expect';
 import { address, Refund } from '../../src/types';
-import RefunderJson from '../../build/published_contracts/Refunder.json';
+import RefunderJson from '../../build/contracts/Refunder.json';
 
 let solo: TestSolo;
 let accounts: address[];

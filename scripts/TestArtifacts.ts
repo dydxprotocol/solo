@@ -1,6 +1,7 @@
 import { default as TokenA } from '../build/contracts/TokenA.json';
 import { default as TokenB } from '../build/contracts/TokenB.json';
 import { default as TokenC } from '../build/contracts/TokenC.json';
+import { default as TestToken } from '../build/contracts/TestToken.json';
 import { default as ErroringToken } from '../build/contracts/ErroringToken.json';
 import { default as OmiseToken } from '../build/contracts/OmiseToken.json';
 import { default as TestCounter } from '../build/contracts/TestCounter.json';
@@ -23,6 +24,7 @@ export default {
   TokenA,
   TokenB,
   TokenC,
+  TestToken,
   ErroringToken,
   OmiseToken,
   TestCounter,

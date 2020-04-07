@@ -6,8 +6,8 @@ import { resetEVM, snapshot, fastForward } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { address } from '../../src/types';
-import MultiSigJson from '../../build/published_contracts/PartiallyDelayedMultiSig.json';
-import TestCounterJson from '../../build/testing_contracts/TestCounter.json';
+import MultiSigJson from '../../build/contracts/PartiallyDelayedMultiSig.json';
+import TestCounterJson from '../../build/contracts/TestCounter.json';
 
 let multiSig: any;
 let testCounterA: any;
