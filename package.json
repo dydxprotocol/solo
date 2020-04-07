@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "build": "npm run compile && npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
+    "build": "npm run compile -- --all && npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
     "copy_tew": "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "compile": "node_modules/.bin/truffle compile",
