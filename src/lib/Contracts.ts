@@ -47,7 +47,7 @@ import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponen
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
-import { WETH9 as Weth } from '../../build/wrappers/WETH9';
+import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
 import soloMarginJson from '../../build/published_contracts/SoloMargin.json';

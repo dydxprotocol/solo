@@ -20,21 +20,21 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 
 // Contracts
-import { TestSoloMargin } from '../../build/wrappers/TestSoloMargin';
-import { TestToken } from '../../build/wrappers/TestToken';
-import { TestLib } from '../../build/wrappers/TestLib';
-import { TestAutoTrader } from '../../build/wrappers/TestAutoTrader';
-import { TestCallee } from '../../build/wrappers/TestCallee';
-import { TestSimpleCallee } from '../../build/wrappers/TestSimpleCallee';
-import { TestExchangeWrapper } from '../../build/wrappers/TestExchangeWrapper';
-import { TestPriceOracle } from '../../build/wrappers/TestPriceOracle';
-import { TestMakerOracle } from '../../build/wrappers/TestMakerOracle';
-import { TestOasisDex } from '../../build/wrappers/TestOasisDex';
-import { TestInterestSetter } from '../../build/wrappers/TestInterestSetter';
-import { TestPolynomialInterestSetter } from '../../build/wrappers/TestPolynomialInterestSetter';
-import {
-  TestDoubleExponentInterestSetter,
-} from '../../build/wrappers/TestDoubleExponentInterestSetter';
+import { TestSoloMargin } from '../../build/testing_wrappers/TestSoloMargin';
+import { TestToken } from '../../build/testing_wrappers/TestToken';
+import { TestLib } from '../../build/testing_wrappers/TestLib';
+import { TestAutoTrader } from '../../build/testing_wrappers/TestAutoTrader';
+import { TestCallee } from '../../build/testing_wrappers/TestCallee';
+import { TestSimpleCallee } from '../../build/testing_wrappers/TestSimpleCallee';
+import { TestExchangeWrapper } from '../../build/testing_wrappers/TestExchangeWrapper';
+import { TestPriceOracle } from '../../build/testing_wrappers/TestPriceOracle';
+import { TestMakerOracle } from '../../build/testing_wrappers/TestMakerOracle';
+import { TestOasisDex } from '../../build/testing_wrappers/TestOasisDex';
+import { TestInterestSetter } from '../../build/testing_wrappers/TestInterestSetter';
+import { TestPolynomialInterestSetter }
+  from '../../build/testing_wrappers/TestPolynomialInterestSetter';
+import { TestDoubleExponentInterestSetter }
+  from '../../build/testing_wrappers/TestDoubleExponentInterestSetter';
 
 // JSON
 import testSoloMarginJson from '../../build/testing_contracts/TestSoloMargin.json';

@@ -1,6 +1,6 @@
 import { TestContracts } from './TestContracts';
 import { Token } from '../../src/modules/Token';
-import { TestToken as TestTokenContract } from '../../build/wrappers/TestToken';
+import { TestToken as TestTokenContract } from '../../build/testing_wrappers/TestToken';
 import {
   ContractCallOptions,
   ContractConstantCallOptions,
