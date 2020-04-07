@@ -31,7 +31,7 @@
     "node": "ganache-cli",
     "debug": "truffle debug",
     "build:js": "rm -rf dist/ && tsc && cp -r build/wrappers dist/build",
-    "build:cov": "npm run copy_tew && npm run build:wrappers && npm run clean_contract_json",
+    "build:cov": "npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
