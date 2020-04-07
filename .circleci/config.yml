@@ -84,7 +84,7 @@ jobs:
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -149,7 +149,7 @@ workflows:
             - build_contracts
       - coverage:
           requires:
-            - build_contracts
+            - checkout_and_install
       - build_js:
           requires:
             - build_contracts
