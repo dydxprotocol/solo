@@ -1385,7 +1385,7 @@ Example Response Body:
 
 
 ### GET /v1/standard-actions
-This is the same as the existing standard actions endpoint.
+This will return the standard actions for a particular user.
 
 Query Params:
 
@@ -1436,56 +1436,6 @@ Example Response Body:
 |createdAt|The ISO time the standard action was created|
 |confirmedAt|The ISO time the standard action was confirmed|
 |product|The product type, eg: perpetual or solo|
-
-### GET /v1/perpetual-accounts
-This will return all the perpetual accounts in the database.
-
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-|isLiquidatable|if set to true, returns all accounts that are at risk of under-collateralization|
-
-Example Response Body:
-
-```json
-[
-  {
-    "owner": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc3",
-    "balances": {
-      "PBTC-USDC": {
-        "margin": "120000",
-        "position": "20",
-        "indexValue": "6000000000000000000000",
-        "indexTimestamp": "1585933964",
-        "cachedMargin": "11997",
-      }
-    }
-  },
-  {
-    "owner": "0x014be43bf2d72a7a151a761a1bd5224f7ad4973c",
-    "balances": {
-      "PBTC-USDC": {
-        "margin": "-60000",
-        "position": "-10",
-        "indexValue": "6000000000000000000000",
-        "indexTimestamp": "1585933964",
-        "cachedMargin": "-5976",
-      }
-    }
-  }
-]
-```
-
-### Accounts Response Object
-
-|Field Name|Description|
-|----------|-----------|
-|owner|The user's wallet address|
-|uuid|The identifier for the user's account|
-|balances|An object with the user's balances for each market|
-|margin|The balance in settlement token (eg USDC)|
-|position|The amount in position token (e.g. PBTC)|
 
 ### GET /v1/perpetual-accounts/`{walletAddress}` 
 
