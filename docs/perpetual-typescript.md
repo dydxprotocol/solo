@@ -105,7 +105,7 @@ const account = await perpetual.api.getAccountBalances({
 Get all v2 Market objects
 
 ```javascript
-const { markets } = await perpetual.api.getMarketsV2();
+const { markets } = await perpetual.api.getMarkets();
 ```
 
 ### Types
