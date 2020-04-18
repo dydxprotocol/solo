@@ -1,3 +1,5 @@
+# Perpetual Protocol
+
 # HTTP API
 dYdX offers an HTTP API for retrieving information about the protocol, and submitting orders to
 our exchange. Feel free to use these APIs to build your own applications on top of dYdX. Please feel
