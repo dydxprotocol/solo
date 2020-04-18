@@ -39,20 +39,6 @@ const perpetual = new Perpetual(
     ], // Optional: loading in an account for signing transactions
   }, // Optional
 );
-// --- OR Initialize with Ethereum node endpoint ---
-const perpetual = new Perpetual(
-  'https://mainnet.infura.io/v3/YOUR-PROJECT-ID',
-  Networks.MAINNET,
-  {
-    defaultAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional - but needed if using Infura
-    accounts: [
-      {
-        address: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', // Optional
-        privateKey: '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d',
-      },
-    ], // Optional: loading in an account for signing transactions
-  }, // Optional
-);
 ```
 
 ### Api
@@ -127,10 +113,8 @@ You can import types from Perpetual as:
 
 ```javascript
 import {
-  ProxyType,
-  AmountDenomination,
-  AmountReference,
-  ConfirmationType,
+  Order,
+  SignedOrder,
 } from '@dydxprotocol/perpetual';
 ```
 

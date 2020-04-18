@@ -99,7 +99,6 @@ Request Body:
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|setExpirationOnFill|boolean|(Optional)Expiration field for order will be applied upon the order filling.|
 |cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
@@ -248,15 +247,6 @@ Headers:
 ```
 Content-Type: application/json
 ```
-
-Note: To get any account's collateralization, simply take `sumSupplyUsdValue / sumBorrowUsdValue`.
-The minimum collateralization where liquidation occurs on the protocol using this formula is 1.15.
-
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-|maker|string|The Ethereum address of the Maker.|
 
 Example Response Body:
 ```json
