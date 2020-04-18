@@ -4,6 +4,7 @@
 - [Perpetual TypeScript Client](perpetual-typescript.md "dYdX Documentation - Perpetual TypeScript Client")
 - [Python Client](python.md "dYdX Documentation - Python Client")
 - [HTTP API](api.md "dYdX Documentation - HTTP API")
+- [HTTP Perpetual API](perpetual-api.md "dYdX Documentation - HTTP Perpetual API")
 - [WebSocket API](websocket.md "dYdX Documentation - WebSocket API")
 - [Trading](trading.md "dYdX Documentation - Trading")
 - [Contracts](contracts.md "dYdX Documentation - Contracts")
