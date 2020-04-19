@@ -70,7 +70,7 @@ Example:
 };
 ```
 
-__V2 Order fields__
+__Solo V2 Order fields__
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
@@ -114,9 +114,47 @@ If `triggerPrice` is set, it must be divisible by the tick size.
 
 ```
 
+__Perpetual V2 Order fields__
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|isBuy|boolean|If the order is a buy order|
+|isDecreaseOnly|boolean|(Optional)Positions can only decrease in magnitude when trading this order. Note - must be false currently|
+|market|string|The perpetual market|
+|amount|string|The amount of token being offered in base units|
+|limitPrice|string| The worst base/quote price at which the transaction will be accepted|
+|triggerPrice|string|(Optional)The price at which the order will go to market.|
+|limitFee|string| Makers with greater than or equal to 0.01Sats in the transaction will will be paid 0.025% fees, otherwise they will pay no fee. Takers with greater than or equal to 0.01Sats in the transaction will pay 0.075% for PBTC-USDC transactions. For transactions below 0.01Sats they will pay 0.50% fees.
+|maker|string|The Ethereum address of the Maker.|
+|taker|string|The Ethereum address of the Taker.|
+|expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
+|salt|string|A random number to make the orderHash unique.|
+|typedSignature|string|The signature of the order.|
+
+Example:
+```json
+{
+    "isBuy": true,
+    "isDecreaseOnly": false,
+    "market": "PBTC-USDC",
+    "amount": "10000000000",
+    "limitPrice": "20.3",
+    "triggerPrice": "0",
+    "limitFee": "0.0015",
+    "maker": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "taker": "0x7a94831b66a7ae1948b1a94a9555a7efa99cb426",
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
+};
+Note: The tick size is 1 for PBTC-USDC. The `limitPrice` must be divisible by the tick size.
+If `triggerPrice` is set, it must be divisible by the tick size.
+```
+
 ## Trading Endpoints
 
-### POST /v2/orders
+### POST /v2/orders (SOLO)
 
 Description:
 Post a new order to the orderbook.
@@ -172,6 +210,70 @@ Example Request Body:
     "limitFee": "0.0015",
     "makerAccountNumber": "0",
     "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "expiration": "4294967295",
+    "salt": "100",
+    "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
+  },
+};
+```
+
+Returns:
+`201` if successful
+
+### POST /v2/orders (PERPETUAL)
+
+Description:
+Post a new order to the orderbook.
+
+Please Note:
+
+* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
+your request will return `400` and will not be added to the book.
+
+* Your request will return `201`, but the order itself will still have a status of `PENDING` until
+it is processed by our internal matching engine.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Request Body:
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|order|Object|A valid signed V2 order JSON object|
+|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
+|postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
+|triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
+|cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
+|clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
+
+Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
+book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
+`postOnly` orders will be canceled immediately if they would fill. If `postOnly` orders do not immediately cancel,
+they go on the open order book.
+
+
+Example Request Body:
+```json
+{
+  "fillOrKill": true,
+  "cancelAmountOnRevert": true,
+  "postOnly": false,
+  "triggerPrice": "0",
+  "clientId": "foo",
+  "order": {
+    "isBuy": true,
+    "isDecreaseOnly": false,
+    "market": "PBTC-USDC",
+    "amount": "10000000000",
+    "limitPrice": "20.3",
+    "triggerPrice": "0",
+    "limitFee": "0.0015",
+    "maker": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "taker": "0x7a94831b66a7ae1948b1a94a9555a7efa99cb426",
     "expiration": "4294967295",
     "salt": "100",
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -795,6 +897,65 @@ Example Response Body:
       "expiresAt": null
     }
   }
+}
+```
+
+### GET /v1/perpetual-markets
+Description:
+Get all information on all markets
+
+Headers:
+```
+Content-Type: application/json
+```
+Query Params:
+
+|Field Name|Description|
+|----------|-----------|
+
+Example Response Body:
+```json
+{
+  "markets": [
+    {
+      "createdAt": "2020-02-18T17:56:06.219Z",
+      "updatedAt": "2020-02-18T17:56:06.219Z",
+      "market": "PBTC-USDC",
+      "oraclePrice": "6000000000000000000000",
+      "fundingRate": "0.999991",
+      "globalIndexValue": "6000000000000000000000",
+      "globalIndexTimestamp": "1585933964",
+    },
+  ]
+}
+```
+
+## Accounts
+
+### GET /v1/perpetual-accounts/:address
+
+Description:
+Get account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
+
+Headers:
+```
+Content-Type: application/json
+```
+
+Example Response Body:
+```json
+{
+  "owner": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc3",
+  "uuid": "5ad65af5-3fd3-40d9-9e4a-247cfe3fe43a",
+  "balances": {
+    "BTC-USDC": {
+      "margin": "120000",
+      "position": "20",
+      "indexValue": "6000000000000000000000",
+      "indexTimestamp": "1585933964",
+      "cachedMargin": "12005",
+    },
+  },
 }
 ```
 
@@ -1437,7 +1598,7 @@ Example Response Body:
 |confirmedAt|The ISO time the standard action was confirmed|
 |product|The product type, eg: perpetual or solo|
 
-### GET /v1/perpetual-accounts/`{walletAddress}` 
+### GET /v1/perpetual-accounts/`{walletAddress}`
 
 This endpoint takes in the user's walletAddress, and returns balances
 for the account.
