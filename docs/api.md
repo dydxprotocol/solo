@@ -120,7 +120,6 @@ __Perpetual V2 Order fields__
 |----------|---------|-----------|
 |isBuy|boolean|If the order is a buy order|
 |isDecreaseOnly|boolean|(Optional)Positions can only decrease in magnitude when trading this order. Note - must be false currently|
-|market|string|The perpetual market|
 |amount|string|The amount of token being offered in base units|
 |limitPrice|string| The worst base/quote price at which the transaction will be accepted|
 |triggerPrice|string|(Optional)The price at which the order will go to market.|
@@ -136,7 +135,6 @@ Example:
 {
     "isBuy": true,
     "isDecreaseOnly": false,
-    "market": "PBTC-USDC",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
@@ -154,7 +152,7 @@ If `triggerPrice` is set, it must be divisible by the tick size.
 
 ## Trading Endpoints
 
-### POST /v2/orders (SOLO)
+### POST /v2/orders
 
 Description:
 Post a new order to the orderbook.
@@ -167,16 +165,18 @@ your request will return `400` and will not be added to the book.
 * Your request will return `201`, but the order itself will still have a status of `PENDING` until
 it is processed by our internal matching engine.
 
+* For Solo orders and Perpetual orders, the order fields are different. Please refer to the Solo V2 order fields or Perpetual order fields above respectively. For Perpetual orders, the market field is also required.
+
 Headers:
 ```
 Content-Type: application/json
 ```
 
-Request Body:
+Request Body (SOLO):
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
-|order|Object|A valid signed V2 order JSON object|
+|order|Object|A valid signed Solo V2 order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
@@ -215,39 +215,18 @@ Example Request Body:
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
   },
 };
-```
 
-Returns:
-`201` if successful
-
-### POST /v2/orders (PERPETUAL)
-
-Description:
-Post a new order to the orderbook.
-
-Please Note:
-
-* There is a limit of 50 active orders on each book per-side. If you exceed this limit,
-your request will return `400` and will not be added to the book.
-
-* Your request will return `201`, but the order itself will still have a status of `PENDING` until
-it is processed by our internal matching engine.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Request Body:
+Request Body (PERPETUAL):
 
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
-|order|Object|A valid signed V2 order JSON object|
+|order|Object|A valid signed Perpetual V2 order JSON object|
 |fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled|
 |postOnly|boolean|Whether the order should be canceled if it would be immediately filled|
 |triggerPrice|(Optional)The price at which the order will go to market. Must be greater than triggerPrice in the order|
 |cancelId|string|(Optional)Order id for the order that is being canceled and replaced|
 |clientId|string|(Optional)An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
+|market|string|The perpetual market|
 |cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill|
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
@@ -264,10 +243,10 @@ Example Request Body:
   "postOnly": false,
   "triggerPrice": "0",
   "clientId": "foo",
+  "market": "PBTC-USDC",
   "order": {
     "isBuy": true,
     "isDecreaseOnly": false,
-    "market": "PBTC-USDC",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
@@ -897,65 +876,6 @@ Example Response Body:
       "expiresAt": null
     }
   }
-}
-```
-
-### GET /v1/perpetual-markets
-Description:
-Get all information on all markets
-
-Headers:
-```
-Content-Type: application/json
-```
-Query Params:
-
-|Field Name|Description|
-|----------|-----------|
-
-Example Response Body:
-```json
-{
-  "markets": [
-    {
-      "createdAt": "2020-02-18T17:56:06.219Z",
-      "updatedAt": "2020-02-18T17:56:06.219Z",
-      "market": "PBTC-USDC",
-      "oraclePrice": "6000000000000000000000",
-      "fundingRate": "0.999991",
-      "globalIndexValue": "6000000000000000000000",
-      "globalIndexTimestamp": "1585933964",
-    },
-  ]
-}
-```
-
-## Accounts
-
-### GET /v1/perpetual-accounts/:address
-
-Description:
-Get account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
-
-Headers:
-```
-Content-Type: application/json
-```
-
-Example Response Body:
-```json
-{
-  "owner": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc3",
-  "uuid": "5ad65af5-3fd3-40d9-9e4a-247cfe3fe43a",
-  "balances": {
-    "BTC-USDC": {
-      "margin": "120000",
-      "position": "20",
-      "indexValue": "6000000000000000000000",
-      "indexTimestamp": "1585933964",
-      "cachedMargin": "12005",
-    },
-  },
 }
 ```
 
