@@ -1,4 +1,4 @@
-# Protocol
+# Solo Protocol
 
 <br>
 <a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
