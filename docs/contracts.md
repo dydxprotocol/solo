@@ -1,11 +1,12 @@
-# Contracts
+# Smart Contracts
 
-<br>
+## Solo
+
 <a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
   <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
 </a>
 
-## Mainnet
+### Mainnet
 
 |Contract Name|Description|Address|
 |---|---|---|
@@ -26,3 +27,21 @@
 |[`CanonicalOrders`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/CanonicalOrders.sol)|Contract for making canonical limit and canonical stop-limit orders using dYdX funds|[0xCd81398895bEa7AD9EFF273aeFFc41A9d83B4dAD](https://etherscan.io/address/0xcd81398895bea7ad9eff273aeffc41a9d83b4dad)|
 |[`SignedOperationProxy`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55](https://etherscan.io/address/0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55)|
 |[`Refunder`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Refunder.sol)|Allows sending of funds to other accounts|[0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74](https://etherscan.io/address/0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74)|
+
+## Perpetual
+
+<a href='https://github.com/dydxprotocol/perpetual' style="text-decoration:none;">
+  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fperpetual-lightgrey' alt='GitHub'/>
+</a>
+
+### Mainnet
+
+|Contract Name|Description|Address|
+|---|---|---|
+|[`PerpetualProxy`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/PerpetualProxy.sol)|Proxy contract and entrypoint for the core protocol|[0x07aBe965500A49370D331eCD613c7AC47dD6e547](https://etherscan.io/address/0x07aBe965500A49370D331eCD613c7AC47dD6e547)|
+|[`PerpetualV1`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/PerpetualV1.sol)|Upgradeable logic contract for the core protocol|[0x364508A5cA0538d8119D3BF40A284635686C98c4](https://etherscan.io/address/0x364508A5cA0538d8119D3BF40A284635686C98c4)|
+|[`P1FundingOracle`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/oracles/P1FundingOracle.sol)|Funding rate oracle|[0x4525D2B71f7f018c9EBddFcD336852A85404e75B](https://etherscan.io/address/0x4525D2B71f7f018c9EBddFcD336852A85404e75B)|
+|[`P1MakerOracle`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/oracles/P1MakerOracle.sol)|Price oracle|[0x538038E526517680735568f9C5342c6E68bbDA12](https://etherscan.io/address/0x538038E526517680735568f9C5342c6E68bbDA12)|
+|[`P1Orders`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/traders/P1Orders.sol)|Trader contract for limit and stop-limit orders|[0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3](https://etherscan.io/address/0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3)|
+|[`P1Liquidation`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/traders/P1Liquidation.sol)|Trader contract for liquidations|[0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8](https://etherscan.io/address/0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8)|
+|[`P1Deleveraging`](https://github.com/dydxprotocol/perpetual/blob/master/contracts/protocol/v1/traders/P1Deleveraging.sol)|Trader contract for deleveraging|[0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280](https://etherscan.io/address/0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280)|

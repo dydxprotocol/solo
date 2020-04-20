@@ -11,7 +11,7 @@
   </a>
 </div>
 
-TypeScript library for interacting with the dYdX smart contracts and http API
+TypeScript library for interacting with the dYdX Solo smart contracts and HTTP API.
 
 ### Install
 
