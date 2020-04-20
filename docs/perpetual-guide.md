@@ -1,6 +1,6 @@
 # Perpetual Guide and Contract Specification
 
-The dYdX Perpetual is a non-custodial, decentralized derivative product that gives traders synthetic exposure to assets that cannot normally be traded on the Ethereum blockchain. Like other margin trading products offered by dYdX, the market is primarily governed by Ethereum smart contracts, while hosting of the order book and matching of orders is handled off-chain by dYdX.
+The dYdX Perpetual is a non-custodial, decentralized margin product that gives traders synthetic exposure to assets that cannot normally be traded on the Ethereum blockchain. Like other margin trading products offered by dYdX, the market is primarily governed by Ethereum smart contracts, while hosting of the order book and matching of orders is handled off-chain by dYdX.
 
 This article focuses on the technical information needed to trade the perpetual and compare it to other perpetual products. More details on the dYdX Perpetual Contracts Protocol and decentralization can be found [here](perpetual-protocol.md).
 
@@ -144,7 +144,7 @@ Trader A’s remaining position still has a margin percentage of 3.45%, and thei
 
 ## Funding
 
-Perpetual contracts are inspired by traditional futures contracts, but differ in that there is no expiry date and therefore no final settlement or delivery. Funding payments are therefore used to incentivize the price of the perpetual to trade at the price of the underlying.
+Perpetual contracts have no expiry date and therefore no final settlement or delivery. Funding payments are therefore used to incentivize the price of the perpetual to trade at the price of the underlying.
 
 Funding is calculated like an interest rate, and is determined by a funding rate which is calculated algorithmically based on the price of the underlying and market prices for the perpetual. When the rate is positive, traders who are long will make payments to traders who are short. When the rate is negative, this is reversed and shorts will pay longs. Traders make or receive payments in proportion to the size of their market position. These payments are exchanged solely between traders, and are neither paid nor received by the exchange.
 
@@ -277,7 +277,7 @@ At the time of launching the perpetual market, dYdX will seed an insurance fund 
 
 ### Deleveraging
 
-Deleveraging is a feature made available by the perpetual smart contract, which is used as a last resort to close underwater positions if the insurance fund is depleted. Deleveraging works similarly to “auto-deleveraging” in other high-leverage futures and perpetual markets, and is a mechanism which requires profitable traders to contribute part of their profits to offset underwater accounts.
+Deleveraging is a feature made available by the perpetual smart contract, which is used as a last resort to close underwater positions if the insurance fund is depleted. Deleveraging works similarly to “auto-deleveraging” in other perpetual markets, and is a mechanism which requires profitable traders to contribute part of their profits to offset underwater accounts.
 * Deleveraging will only be used if the insurance fund is depleted.
 * Deleveraging is performed by automatically reducing the positions of some traders—prioritizing accounts with a combination of high profit and high leverage—and using their profits to offset underwater accounts.
 * Deleveraging is chosen over a socialized loss mechanism to reduce the uncertainty faced by traders trading at lower risk levels.
