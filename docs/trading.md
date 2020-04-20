@@ -1,14 +1,18 @@
 # Trading
 
-## Programmatic trading
+## Programmatic Trading
 
-To programmatically trade on dYdX, you can use one of:
+To programmatically trade on dYdX, you can use one of the following:
 
-- [Python client](python.md)
-- [TypeScript client](typescript.md)
+- TypeScript clients:
+  - [Solo](typescript.md)
+  - [Perpetual](perpetual-typescript.md)
+- Python clients:
+  - [Solo](python.md)
+  - Perpetual (coming soon)
 - [HTTP API](api.md)
 
-Also see this [basic intro guide to getting started](https://medium.com/dydxderivatives/programatic-trading-on-dydx-4c74b8e86d88)
+Also see this [basic intro guide to getting started](https://medium.com/dydxderivatives/programatic-trading-on-dydx-4c74b8e86d88).
 
 The [WebSocket API](wensocket.md) is also useful for trading.
 
