@@ -7,9 +7,7 @@ To programmatically trade on dYdX, you can use one of the following:
 - TypeScript clients:
   - [Solo](typescript.md)
   - [Perpetual](perpetual-typescript.md)
-- Python clients:
-  - [Solo](python.md)
-  - Perpetual (coming soon)
+- [Python client](python.md)
 - [HTTP API](api.md)
 
 Also see this [basic intro guide to getting started](https://medium.com/dydxderivatives/programatic-trading-on-dydx-4c74b8e86d88).
