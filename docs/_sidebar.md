@@ -7,4 +7,4 @@
 - [WebSocket API](websocket.md "dYdX Documentation - WebSocket API")
 - [Trading](trading.md "dYdX Documentation - Trading")
 - [Smart Contracts](contracts.md "dYdX Documentation - Smart Contracts")
-- [Security](security.md "dYdX Documentation - Security")
+- [Security](security-page.md "dYdX Documentation - Security")
