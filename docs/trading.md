@@ -5,7 +5,7 @@
 To programmatically trade on dYdX, you can use one of:
 
 - [Python client](python.md)
-- [TypeScript client](python.md)
+- [TypeScript client](typescript.md)
 - [HTTP API](api.md)
 
 Also see this [basic intro guide to getting started](https://medium.com/dydxderivatives/programatic-trading-on-dydx-4c74b8e86d88)
