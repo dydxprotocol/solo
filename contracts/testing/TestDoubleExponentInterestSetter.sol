@@ -16,11 +16,10 @@
 
 */
 
-pragma solidity 0.5.7;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { DoubleExponentInterestSetter } from
-    "../external/interestsetters/DoubleExponentInterestSetter.sol";
+import { DoubleExponentInterestSetter } from "../external/interestsetters/DoubleExponentInterestSetter.sol";
 
 
 /**

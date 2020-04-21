@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.7;
+pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { OnlySolo } from "../external/helpers/OnlySolo.sol";
