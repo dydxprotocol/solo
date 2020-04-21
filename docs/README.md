@@ -2,7 +2,7 @@
 
 # dYdX Documentation
 
-- Trustless margin trading, borrowing, and lending
+- Trustless perpetual contract markets, margin trading, borrowing, and lending
 - Built on Ethereum & Web3
 
 ## Table of Contents
