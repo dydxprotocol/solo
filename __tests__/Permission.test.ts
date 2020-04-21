@@ -1,10 +1,10 @@
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { address } from '../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let operator1: address;
 let operator2: address;

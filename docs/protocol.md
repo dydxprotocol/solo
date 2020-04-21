@@ -1,4 +1,4 @@
-# Protocol
+# Solo Protocol
 
 <br>
 <a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
@@ -34,8 +34,9 @@ Markets are referenced by their numerical IDs. Currently on Mainnet Solo has the
 |id|Asset|
 |---|---|
 |0|WETH|
-|1|DAI|
+|1|SAI|
 |2|USDC|
+|3|DAI|
 
 ## Interest
 

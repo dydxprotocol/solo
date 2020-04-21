@@ -586,3 +586,154 @@ eg:
    }
 }
 ```
+
+### Trades
+
+The trades channel allows clients to receive all trades for the market. This is the fastest way to receive trades made on the market.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "trades",
+  "id": "DAI-USDC"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "trades"|
+|id|string|The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC|
+
+#### Initial Response
+
+The initial response will contain the most recent 100 orders from the active market:
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "1de645c9-9ed2-49d0-9192-1522cf5c45f7",
+  "message_id": 290,
+  "channel": "trades",
+  "id": "DAI-USDC",
+  "contents": {
+    "trades": [
+      {
+        "uuid": "f363d287-932e-4008-a688-fe62e9fac687",
+        "createdAt": "2020-03-25T21:46:31.302Z",
+        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
+        "status": "PENDING",
+        "market": "DAI-USDC",
+        "side": "SELL",
+        "price": "0.0000000000010226022495140206638887019651459949910297896178723973394978374208193",
+        "amount": "957489517355305926656",
+        "makerOrderId": "0xe5cdaa6dfea6e04d2f520d24b94d730b0de8cf58ee6e1e326bbdfe172b5f402a",
+        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
+        "makerAccountNumber": "0",
+        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
+        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
+        "takerAccountNumber": "0"
+      },
+      {
+        "uuid": "f1909f3d-7d07-438a-8962-985083ad2e2d",
+        "createdAt": "2020-03-25T21:46:31.294Z",
+        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
+        "status": "PENDING",
+        "market": "DAI-USDC",
+        "side": "SELL",
+        "price": "0.0000000000010231",
+        "amount": "2929446700000000081920",
+        "makerOrderId": "0x5060c37571e2d243961623a8bc0d76fd63c46387ccf37241c4ee95a167e02e72",
+        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
+        "makerAccountNumber": "0",
+        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
+        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
+        "takerAccountNumber": "0"
+      },
+      {
+        "uuid": "39c55c38-4829-4344-a723-dc44f867019d",
+        "createdAt": "2020-03-25T21:46:31.290Z",
+        "transactionHash": "0x87bfd011dc8dcc43c512d19686d41ea9a56da3fc4cc332f245615f289d8702e0",
+        "status": "PENDING",
+        "market": "DAI-USDC",
+        "side": "SELL",
+        "price": "0.0000000000010216",
+        "amount": "1002063782644693991424",
+        "makerOrderId": "0x289b2cb5ad4673beff2b1b8819a7a17df7d1ddfecde352cd53344343787bbaaf",
+        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
+        "makerAccountNumber": "0",
+        "takerOrderId": "0x8cd16a9964d83707d840cd6e26f54ab4ca425176f479d9fd1b8642fbc8f50a2c",
+        "takerAccountOwner": "0x8ebab0129ffea1145a505d8d6d5d046770dd97e6",
+        "takerAccountNumber": "0"
+      },
+    ],
+  }
+}
+```
+
+#### Updates
+
+New trades are sent in array form.
+
+A trade executed for the market:
+```json
+{
+  "type": "channel_data",
+  "connection_id": "0b88ebf2-98ec-4de6-b781-62e1648ae657",
+  "message_id": 1277,
+  "channel": "trades",
+  "id": "DAI-USDC",
+  "contents": {
+    "updates": [
+      {
+        "uuid": "7cb4e283-20bf-4ccf-a15b-dc84b86965dd",
+        "createdAt": "2020-03-25T21:46:23.351Z",
+        "transactionHash": "0xe7cd5f4fafc05c707205d8090d9cd592a87daec3977c5d1c7f0953c68f562bf6",
+        "status": "CONFIRMED",
+        "market": "DAI-USDC",
+        "side": "BUY",
+        "price": "0.0000000000010245",
+        "amount": "1024685243041289076736",
+        "makerOrderId": "0x9bd33ad14caa817135dd92d062b449ffa477f75c4f28f85825e752148e22a96e",
+        "makerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
+        "makerAccountNumber": "0",
+        "takerOrderId": "0x195a54220932ccb9416e9eba6189ffee4248b2e37b403f340982ba695c55a311",
+        "takerAccountOwner": "0x97ef7039309b938e2893d97ef75c0ceebccfbd55",
+        "takerAccountNumber": "0"
+      }
+    ]
+  }
+}
+```
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "trades",
+  "id": "DAI-USDC"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|A market to unsubscribe from on the channel|
+
+#### Response
+
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "e7259ee2-98f5-4187-8623-9175234d5fb2",
+  "message_id": 3,
+  "channel": "trades",
+  "id": "DAI-USDC"
+}

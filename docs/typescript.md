@@ -11,7 +11,7 @@
   </a>
 </div>
 
-TypeScript library for interacting with the dYdX smart contracts and http API
+TypeScript library for interacting with the dYdX Solo smart contracts and HTTP API.
 
 ### Install
 
@@ -342,6 +342,23 @@ Get the markets that exist on the protocol. There is one market per asset (e.g. 
 
 ```javascript
 const { markets } = await solo.api.getMarkets();
+```
+
+#### Get Market(v2)
+Get v2 Market object by Pair
+
+```javascript
+const { market } = await solo.api.getMarketV2({
+  // market pair (e.g. WETH-DAI, WETH-USDC, DAI-USDC)
+  market: string
+});
+```
+
+#### Get Markets(v2)
+Get all v2 Market objects
+
+```javascript
+const { markets } = await solo.api.getMarketsV2();
 ```
 
 #### Deprecated Functions

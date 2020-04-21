@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { snapshot, resetEVM } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
@@ -10,7 +10,7 @@ import {
   MarketId,
 } from '../../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let tokens: address[];
 let accountOwner: address;
 const amount = new BigNumber(123456);

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
@@ -15,7 +15,7 @@ import {
 } from '../../src/types';
 
 let who: address;
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let operator: address;
 const accountNumber = INTEGERS.ZERO;

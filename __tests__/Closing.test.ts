@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
@@ -13,7 +13,7 @@ import {
 
 let owner: address;
 let admin: address;
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 const accountOne = new BigNumber(111);
 const accountTwo = new BigNumber(222);

@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { address } from '../../src/types';
 import { mineAvgBlock } from './EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 
 export async function setupMarkets(
-  solo: Solo,
+  solo: TestSolo,
   accounts: address[],
   numMarkets: number = 3,
 ): Promise<void> {

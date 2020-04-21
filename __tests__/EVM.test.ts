@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { address } from '../src/types';
 import { resetEVM } from './helpers/EVM';
 
 describe('EVM', () => {
-  let solo: Solo;
+  let solo: TestSolo;
   let accounts: address[];
 
   beforeAll(async () => {

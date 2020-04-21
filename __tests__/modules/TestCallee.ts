@@ -1,11 +1,11 @@
-import { Contracts } from '../../lib/Contracts';
-import { address, Integer, ContractConstantCallOptions } from '../../types';
+import { TestContracts } from './TestContracts';
+import { address, Integer, ContractConstantCallOptions } from '../../src/types';
 
 export class TestCallee {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }
