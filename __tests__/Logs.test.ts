@@ -1,6 +1,6 @@
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
-let solo: Solo;
+import { TestSolo } from './modules/TestSolo';
+let solo: TestSolo;
 
 describe('Logs', () => {
   beforeAll(async () => {

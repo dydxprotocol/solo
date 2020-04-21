@@ -1,6 +1,6 @@
 import { Contracts } from '../lib/Contracts';
 import { Token } from './Token';
-import { WETH9 as WethContract } from '../../build/wrappers/WETH9';
+import { Weth as WethContract } from '../../build/wrappers/Weth';
 import {
   ContractCallOptions,
   ContractConstantCallOptions,

@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
 import { coefficientsToString, getInterestPerSecondForPolynomial } from '../../src/lib/Helpers';
 
-let solo: Solo;
+let solo: TestSolo;
 let owner: address;
 let admin: address;
 const accountNumber1 = new BigNumber(111);

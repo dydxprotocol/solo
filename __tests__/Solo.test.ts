@@ -1,12 +1,12 @@
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { provider } from './helpers/Provider';
-import SoloMarginJson from '../build/published_contracts/SoloMargin.json';
-import OperationImplJson from '../build/published_contracts/OperationImpl.json';
-import AdminImplJson from '../build/published_contracts/AdminImpl.json';
+import SoloMarginJson from '../build/contracts/SoloMargin.json';
+import OperationImplJson from '../build/contracts/OperationImpl.json';
+import AdminImplJson from '../build/contracts/AdminImpl.json';
 
 describe('Solo', () => {
   it('Initializes a new instance successfully', async () => {
-    new Solo(provider, Number(process.env.NETWORK_ID));
+    new TestSolo(provider, Number(process.env.NETWORK_ID));
   });
 
   it('Has a bytecode that does not exceed the maximum', async () => {

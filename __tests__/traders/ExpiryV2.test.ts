@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { toBytes } from '../../src/lib/BytesHelper';
@@ -14,7 +14,7 @@ import {
   TxResult,
 } from '../../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let snapshotId: string;
 let admin: address;

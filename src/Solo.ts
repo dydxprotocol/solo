@@ -34,7 +34,6 @@ import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
-import { Testing } from './modules/testing/Testing';
 import { Api } from './modules/Api';
 import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
@@ -44,7 +43,6 @@ import { SoloOptions, EthereumAccount, address, Networks } from './types';
 export class Solo {
   public contracts: Contracts;
   public interest: Interest;
-  public testing: Testing;
   public token: Token;
   public expiryV2: ExpiryV2;
   public oracle: Oracle;
@@ -85,13 +83,12 @@ export class Solo {
       this.web3.eth.defaultAccount = options.defaultAccount;
     }
 
-    this.contracts = new Contracts(realProvider, networkId, this.web3, options);
+    this.contracts = this.createContractsModule(realProvider, networkId, this.web3, options);
     this.interest = new Interest(networkId);
     this.token = new Token(this.contracts);
     this.expiryV2 = new ExpiryV2(this.contracts);
     this.oracle = new Oracle(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
-    this.testing = new Testing(realProvider, this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
     this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
@@ -109,8 +106,6 @@ export class Solo {
       networkId,
     );
     this.api = new Api(
-      this.limitOrders,
-      this.stopLimitOrders,
       this.canonicalOrders,
       options.apiEndpoint,
       options.apiTimeout,
@@ -134,7 +129,6 @@ export class Solo {
   ): void {
     this.web3.setProvider(provider);
     this.contracts.setProvider(provider, networkId);
-    this.testing.setProvider(provider);
     this.interest.setNetworkId(networkId);
     this.operation.setNetworkId(networkId);
   }
@@ -165,5 +159,16 @@ export class Solo {
       throw new Error(`Loaded account address mismatch.
         Expected ${account.address}, got ${newAccount ? newAccount.address : null}`);
     }
+  }
+
+  // ============ Helper Functions ============
+
+  protected createContractsModule(
+    provider: Provider,
+    networkId: number,
+    web3: Web3,
+    options: SoloOptions,
+  ): any {
+    return new Contracts(provider, networkId, web3, options);
   }
 }

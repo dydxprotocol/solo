@@ -74,6 +74,7 @@ export interface SoloOptions {
   testing?: boolean;
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
+  blockGasLimit?: number;
   accounts?: EthereumAccount[];
   apiEndpoint?: string;
   apiTimeout?: number;
@@ -636,14 +637,6 @@ export interface ApiFillQueryV2 {
   limit?: number;
 }
 
-export interface ApiFill extends ApiModel {
-  status: ApiFillStatus;
-  orderId: string;
-  transactionHash: string;
-  fillAmount: string;
-  order: ApiOrder;
-}
-
 export enum ApiLiquidity {
   TAKER = 'TAKER',
   MAKER = 'MAKER',
@@ -671,15 +664,6 @@ export interface ApiTradeQueryV2 {
   accountNumber?: Integer | string;
   startingBefore?: Date;
   limit?: number;
-}
-
-export interface ApiTrade extends ApiModel {
-  status: ApiFillStatus;
-  transactionHash: string;
-  makerOrder: ApiOrder;
-  makerOrderId: string;
-  takerOrder: ApiOrder;
-  takerOrderId: string;
 }
 
 export interface ApiTradeV2 extends ApiModel {
@@ -753,4 +737,24 @@ export interface ApiOrderbookUpdate {
   side: ApiSide;
   amount?: string;
   price?: string;
+}
+
+export interface ApiMarketMessageV2 {
+  name: Market;
+  baseCurrency: {
+    currency: ApiCurrency;
+    decimals: number;
+    soloMarketId: number;
+  };
+  quoteCurrency: {
+    currency: ApiCurrency;
+    decimals: number;
+    soloMarketId: number;
+  };
+  minimumTickSize: BigNumber;
+  minimumOrderSize: BigNumber;
+  smallOrderThreshold: BigNumber;
+  makerFee: BigNumber;
+  largeTakerFee: BigNumber;
+  smallTakerFee: BigNumber;
 }

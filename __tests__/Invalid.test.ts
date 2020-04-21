@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { snapshot, resetEVM, fastForward } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { expectThrow } from '../src/lib/Expect';
@@ -13,7 +13,7 @@ import {
   AmountReference,
 } from '../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let owner1: address;
 let account1: any;

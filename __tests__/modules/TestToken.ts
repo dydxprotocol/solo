@@ -1,21 +1,21 @@
-import { Contracts } from '../../lib/Contracts';
-import { Token } from '../Token';
-import { TestToken as TestTokenContract } from '../../../build/wrappers/TestToken';
+import { TestContracts } from './TestContracts';
+import { Token } from '../../src/modules/Token';
+import { TestToken as TestTokenContract } from '../../build/testing_wrappers/TestToken';
 import {
   ContractCallOptions,
   ContractConstantCallOptions,
   TxResult,
   address,
   Integer,
-} from '../../types';
+} from '../../src/types';
 
 export class TestToken {
-  private contracts: Contracts;
+  private contracts: TestContracts;
   private token: Token;
   private testTokenContract: TestTokenContract;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
     token: Token,
     testTokenContract: TestTokenContract,
   ) {

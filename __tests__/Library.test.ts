@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
 import { getSolo } from './helpers/Solo';
-import { Solo } from '../src/Solo';
+import { TestSolo } from './modules/TestSolo';
 import { resetEVM, mineAvgBlock } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
@@ -14,7 +14,7 @@ import {
 } from '../src/lib/SignatureHelper';
 import { address } from '../src/types';
 
-let solo: Solo;
+let solo: TestSolo;
 let owner: address;
 const zero = '0';
 const amount = '100';

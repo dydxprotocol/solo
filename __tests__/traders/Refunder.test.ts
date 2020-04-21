@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
-import { Solo } from '../../src/Solo';
+import { TestSolo } from '../modules/TestSolo';
 import { deployContract } from '../helpers/Deploy';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { INTEGERS } from '../../src/lib/Constants';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { expectThrow } from '../../src/lib/Expect';
 import { address, Refund } from '../../src/types';
-import RefunderJson from '../../build/published_contracts/Refunder.json';
+import RefunderJson from '../../build/contracts/Refunder.json';
 
-let solo: Solo;
+let solo: TestSolo;
 let accounts: address[];
 let snapshotId: string;
 let admin: address;

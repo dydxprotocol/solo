@@ -2,6 +2,7 @@ import fs from 'fs';
 import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
 import contracts from './Artifacts';
+import testContracts from './TestArtifacts';
 import deployed from '../migrations/deployed.json';
 import externalDeployed from '../migrations/external-deployed.json';
 import { abi as operationAbi } from '../build/contracts/Events.json';
@@ -16,18 +17,23 @@ const COVERAGE_NETWORK_ID: string = '1002';
 
 async function clean(): Promise<void> {
   const directory = `${__dirname}/../build/published_contracts/`;
+  const testDirectory = `${__dirname}/../build/testing_contracts/`;
   await mkdirAsync(directory);
+  await mkdirAsync(testDirectory);
 
-  const promises = Object.keys(contracts).map(async (contractName) => {
-    const contract = contracts[contractName];
+  const allContractNames = Object.keys(contracts).concat(Object.keys(testContracts));
+
+  const promises = allContractNames.map(async (contractName) => {
+    let contract = contracts[contractName];
+    const finalDirectory = contract ? directory : testDirectory;
+    if (!contract) {
+      contract = testContracts[contractName];
+    }
 
     const cleaned = {
       contractName: contract.contractName,
       abi: contract.abi,
-      bytecode: contract.bytecode,
-      deployedBytecode: contract.deployedBytecode,
       networks: {},
-      schemaVersion: contract.schemaVersion,
     };
 
     if (externalDeployed[contractName]) {
@@ -61,9 +67,9 @@ async function clean(): Promise<void> {
     const json = JSON.stringify(cleaned, null, 4);
 
     const filename = `${contractName}.json`;
-    await writeFileAsync(directory + filename, json, null);
+    await writeFileAsync(finalDirectory + filename, json, null);
 
-    console.log(`Wrote ${directory}${filename}`);
+    console.log(`Wrote ${finalDirectory}${filename}`);
   });
 
   await Promise.all(promises);
