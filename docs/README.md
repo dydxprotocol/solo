@@ -8,7 +8,8 @@
 ## Table of Contents
 
 - [Solo Protocol](protocol.md "dYdX Documentation - Solo Protocol")
-- [Perpetual Guide](perpetual-guide.md "dYdX Documentation - Perpetual Guide")
+- [Perpetual Protocol](perpetual-protocol.md "dYdX Documentation - Perpetual Protocol")
+- [Perpetual Contract Guide](perpetual-guide.md "dYdX Documentation - Perpetual Contract Guide")
 - [Solo TypeScript Client](typescript.md "dYdX Documentation - Solo TypeScript Client")
 - [Perpetual TypeScript Client](perpetual-typescript.md "dYdX Documentation - Perpetual TypeScript Client")
 - [Python Client](python.md "dYdX Documentation - Python Client")
