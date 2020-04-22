@@ -137,7 +137,6 @@ it is processed by our internal matching engine.
 * The request fields are different for Solo and Perpetual orders. Please refer to the Solo V2 and Perpetual V2 order fields above. Note that the market field is required on the request body for Perpetual orders.
 
 Headers:
-
 ```
 Content-Type: application/json
 ```
@@ -245,7 +244,6 @@ The response will have a status of `200` as long as the order already existed an
 
 Headers:
 ```
-Content-Type: application/json
 Authorization: Bearer [A valid cancel signature]
 ```
 
@@ -316,11 +314,6 @@ Market is one of: `[WETH-DAI, WETH-USDC, DAI-USDC, PBTC-USDC]`
 
 Amounts for this endpoint are returned in the base asset for the market (e.g. WETH for WETH-DAI). Prices are denominated as `(quote amount) / (base amount)` for each given order. For markets where the tokens have different number of decimals (e.g. DAI-USDC & WETH-USDC) prices will include the decimal places (e.g. prices in DAI-USDC will look like `0.00000000000100252200`)
 
-Headers:
-```
-Content-Type: application/json
-```
-
 Example Response Body:
 ```json
 {
@@ -374,11 +367,6 @@ Get orders from the active orderbook and order history.
 
 Orders can be filtered on fields like market, status, and accepted order status, and are returned in descending order by `createdAt`. At most 100 orders are returned.
 
-Headers:
-```
-Content-Type: application/json
-```
-
 Query Params:
 
 | Field Name     | Description                                                                                                                  |
@@ -388,7 +376,7 @@ Query Params:
 | side           | (Optional) Side of the order in (`BUY`, `SELL`)                                                                              |
 | status         | (Optional) Status(es) of the orders to query in (`PENDING`, `OPEN`, `FILLED`, `PARTIALLY_FILLED`, `CANCELED`, `UNTRIGGERED`) |
 | orderType      | (Optional) Type(s) of orders to query in (`LIMIT`, `ISOLATED_MARKET`, `STOP_LIMIT`)                                          |
-| market         | (Optional) Market(s) to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)                                                       |
+| market         | (Optional) Market(s) to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`, `PBTC-USDC`)                                          |
 | limit          | (Optional) The maximum number of orders to return. The default, and maximum, is 100.                                         |
 | startingBefore | (Optional) ISO 8601 date and time. Starts returning orders created before this date.                                         |
 
@@ -444,10 +432,6 @@ maker and a taker. There will be single trade for each fill. The maker in this c
 the order that was already on the book, where the taker represents the order that was placed
 to fill the maker order(s).
 
-Headers:
-```
-Content-Type: application/json
-```
 Query Params:
 
 | Field Name     | Description                                                                          |
@@ -534,11 +518,6 @@ Example Response Body:
 
 Description:
 Get all historical fills. This endpoint is most useful if you care about the outcome of the trade from the perspective of a particular `accountOwner`.
-
-Headers:
-```
-Content-Type: application/json
-```
 
 Query Params:
 
@@ -693,11 +672,6 @@ Example Response Body:
 Description:
 Get high-level information on a specific Solo market.
 
-Headers:
-```
-Content-Type: application/json
-```
-
 Query Params:
 
 | Field Name | Description                    |
@@ -734,11 +708,6 @@ Example Response Body:
 ### GET `/v2/markets`
 Description:
 Get high-level information on all Solo markets.
-
-Headers:
-```
-Content-Type: application/json
-```
 
 Query Params:
 None
@@ -812,11 +781,6 @@ Example Response Body:
 
 Description:
 Get Solo account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
-
-Headers:
-```
-Content-Type: application/json
-```
 
 Note: To get any account's collateralization, simply take `sumSupplyUsdValue / sumBorrowUsdValue`.
 The minimum collateralization where liquidation occurs on the protocol using this formula is `1.15`.
@@ -1204,11 +1168,6 @@ Returns all dex-compatible pairs. Be aware that there are two "pairs" for each u
 For example, in the unique pair WETH and DAI, there are two pairs, one for each side of the book.
 The pairs are always named as `MAKER-TAKER`.
 
-Headers:
-```
-Content-Type: application/json
-```
-
 Example Response Body:
 ```json
 {
@@ -1283,11 +1242,6 @@ Returns:
 Description:
 Get all open orders from the orderbook. This includes both unfilled and partially filled orders, but
 does not include canceled, pruned, or unfillable orders.
-
-Headers:
-```
-Content-Type: application/json
-```
 
 Query Params:
 
@@ -1411,11 +1365,6 @@ Description:
 Get all historical fills. A fill represents one side of a trade. It's most useful when you care
 about the outcome of the trade from the perspective of a particular `makerAccountOwner`.
 
-Headers:
-```
-Content-Type: application/json
-```
-
 Query Params:
 
 | Field Name         | Description                                                                          |
@@ -1507,7 +1456,6 @@ The response will have a status of `200` as long as the order already existed an
 
 Headers:
 ```
-Content-Type: application/json
 Authorization: Bearer [A valid cancel signature]
 ```
 
