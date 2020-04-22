@@ -35,21 +35,21 @@ After this is done, the order is ready to be submitted to the API.
 
 ### Solo V2 order fields
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|isBuy|boolean|Whether the order is a buy order.|
-|isDecreaseOnly|boolean|(Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.|
-|baseMarket|string|The Solo base [market](protocol.md#markets).|
-|quoteMarket|string|The Solo quote [market](protocol.md#markets).|
-|amount|string|The amount of token being offered, in base units.|
-|limitPrice|string| The worst base/quote price at which a fill will be accepted.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market.|
-|limitFee|string| Makers pay 0% fees. Takers with an amount greater than or equal to 0.5 ETH pay 0.15% in the ETH-DAI and ETH-USDC markets, and 0.05% for DAI-USDC. This fee is increased to 0.50% for amounts less than 0.5 ETH.
-|makerAccountNumber|string|The Solo [account number](protocol.md#accounts) of the Maker|
-|makerAccountOwner|string|The Ethereum address of the Maker.|
-|expiration|string|The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.|
-|salt|string|A random number to make the order hash unique.|
-|typedSignature|string|The signature of the order.|
+| Field Name         | JSON type | Description                                                                                                                                                                                                     |
+|--------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy              | boolean   | Whether the order is a buy order.                                                                                                                                                                               |
+| isDecreaseOnly     | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                                                                                               |
+| baseMarket         | string    | The Solo base [market](protocol.md#markets).                                                                                                                                                                    |
+| quoteMarket        | string    | The Solo quote [market](protocol.md#markets).                                                                                                                                                                   |
+| amount             | string    | The amount of token being offered, in base units.                                                                                                                                                               |
+| limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                                                                                    |
+| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                                                                                 |
+| limitFee           | string    | Makers pay 0% fees. Takers with an amount greater than or equal to 0.5 ETH pay 0.15% in the ETH-DAI and ETH-USDC markets, and 0.05% for DAI-USDC. This fee is increased to 0.50% for amounts less than 0.5 ETH. |
+| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                                                                                    |
+| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                                                                              |
+| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.                                                                      |
+| salt               | string    | A random number to make the order hash unique.                                                                                                                                                                  |
+| typedSignature     | string    | The signature of the order.                                                                                                                                                                                     |
 
 **Tick size:**
 
@@ -79,19 +79,19 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 
 ### Perpetual V2 order fields
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|isBuy|boolean|Whether the order is a buy order.|
-|isDecreaseOnly|boolean|(Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*|
-|amount|string|The amount of token being offered, in base units.|
-|limitPrice|string| The worst base/quote price at which the transaction will be accepted.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market.|
-|limitFee|string| Makers use a fee of -0.025% (i.e. they receive a rebate). Takers pay a fee of 0.075%, unless the order amount is less than the “small order” size of 0.01 BTC, in which case they must pay a 0.50% fee.
-|maker|string|The Ethereum address of the Maker.|
-|taker|string|The Ethereum address of the Taker.|
-|expiration|string|The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.|
-|salt|string|A random number to make the orderHash unique.|
-|typedSignature|string|The signature of the order.|
+| Field Name     | JSON type | Description                                                                                                                                                                                             |
+|----------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy          | boolean   | Whether the order is a buy order.                                                                                                                                                                       |
+| isDecreaseOnly | boolean   | (Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*                                                                                                 |
+| amount         | string    | The amount of token being offered, in base units.                                                                                                                                                       |
+| limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                                                                                   |
+| triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                                                                                         |
+| limitFee       | string    | Makers use a fee of -0.025% (i.e. they receive a rebate). Takers pay a fee of 0.075%, unless the order amount is less than the “small order” size of 0.01 BTC, in which case they must pay a 0.50% fee. |
+| maker          | string    | The Ethereum address of the Maker.                                                                                                                                                                      |
+| taker          | string    | The Ethereum address of the Taker.                                                                                                                                                                      |
+| expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.                                                              |
+| salt           | string    | A random number to make the orderHash unique.                                                                                                                                                           |
+| typedSignature | string    | The signature of the order.                                                                                                                                                                             |
 
 **Tick size:**
 
@@ -118,21 +118,21 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 
 ### Solo V1 order fields [DEPRECATED]
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|makerMarket|string|The Solo [market](protocol.md#markets) of the Maker amount.|
-|takerMarket|string|The Solo [market](protocol.md#markets) of the Taker amount.|
-|makerAmount|string|The amount of token the Maker is offering, in base units.|
-|takerAmount|string|The amount of token the Maker is requesting from the Taker, in base units.|
-|makerAccountOwner|string|The Ethereum address of the Maker.|
-|takerAccountOwner|string|The Ethereum address of the Taker. This must be set to the dYdX account owner address listed above.|
-|makerAccountNumber|string|The Solo [account number](protocol.md#accounts) of the Maker.|
-|takerAccountNumber|string|The Solo [account number](protocol.md#accounts) of the Taker. This must be set to the dYdX account number listed above.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market.|
-|decreaseOnly|boolean|(Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.|
-|expiration|string|The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.|
-|salt|string|A random number to make the order hash unique.|
-|typedSignature|string|The signature of the order.|
+| Field Name         | JSON type | Description                                                                                                                                |
+|--------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| makerMarket        | string    | The Solo [market](protocol.md#markets) of the Maker amount.                                                                                |
+| takerMarket        | string    | The Solo [market](protocol.md#markets) of the Taker amount.                                                                                |
+| makerAmount        | string    | The amount of token the Maker is offering, in base units.                                                                                  |
+| takerAmount        | string    | The amount of token the Maker is requesting from the Taker, in base units.                                                                 |
+| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                         |
+| takerAccountOwner  | string    | The Ethereum address of the Taker. This must be set to the dYdX account owner address listed above.                                        |
+| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker.                                                                              |
+| takerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Taker. This must be set to the dYdX account number listed above.                    |
+| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                            |
+| decreaseOnly       | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                          |
+| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire. |
+| salt               | string    | A random number to make the order hash unique.                                                                                             |
+| typedSignature     | string    | The signature of the order.                                                                                                                |
 
 **Example:**
 
@@ -178,16 +178,16 @@ Content-Type: application/json
 
 Request Body (Solo):
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed Solo V2 order JSON object.|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled.|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market. Must be greater than or equal to triggerPrice in the order.|
-|cancelId|string|(Optional) ID of an order to cancel and replace.|
-|clientId|string|(Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|setExpirationOnFill|boolean|(Optional) Expiration field for order will be applied upon the order filling.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill.|
+| Field Name           | JSON type | Description                                                                                                                                     |
+|----------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| order                | Object    | A valid signed Solo V2 order JSON object.                                                                                                       |
+| fillOrKill           | boolean   | Whether the order should be canceled if it cannot be immediately filled.                                                                        |
+| postOnly             | boolean   | Whether the order should be canceled if it would be immediately filled.                                                                         |
+| triggerPrice         | string    | (Optional) The stop price at which the order will go to market. Must be greater than or equal to triggerPrice in the order.                     |
+| cancelId             | string    | (Optional) ID of an order to cancel and replace.                                                                                                |
+| clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
+| setExpirationOnFill  | boolean   | (Optional) Expiration field for order will be applied upon the order filling.                                                                   |
+| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -223,16 +223,16 @@ Example Request Body:
 
 Request Body (Perpetual):
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed Perpetual V2 order JSON object.|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled.|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market. Must be greater than or equal to triggerPrice in the order.|
-|cancelId|string|(Optional) ID of an order to cancel and replace.|
-|clientId|string|(Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|market|string|The perpetual [market](protocol.md#markets).|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill.|
+| Field Name           | JSON type | Description                                                                                                                                     |
+|----------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| order                | Object    | A valid signed Perpetual V2 order JSON object.                                                                                                  |
+| fillOrKill           | boolean   | Whether the order should be canceled if it cannot be immediately filled.                                                                        |
+| postOnly             | boolean   | Whether the order should be canceled if it would be immediately filled.                                                                         |
+| triggerPrice         | string    | (Optional) The stop price at which the order will go to market. Must be greater than or equal to triggerPrice in the order.                     |
+| cancelId             | string    | (Optional) ID of an order to cancel and replace.                                                                                                |
+| clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
+| market               | string    | The perpetual [market](protocol.md#markets).                                                                                                    |
+| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -415,16 +415,16 @@ Content-Type: application/json
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|accountOwner| (Optional) The Ethereum address of the account(s) to request orders for.|
-|accountNumber| (Optional) The Solo account number of the account to request orders for.|
-|side| (Optional) Side of the order in (`BUY`, `SELL`)|
-|status| (Optional) Status(es) of the orders to query in (`PENDING`, `OPEN`, `FILLED`, `PARTIALLY_FILLED`, `CANCELED`, `UNTRIGGERED`)
-|orderType| (Optional) Type(s) of orders to query in (`LIMIT`, `ISOLATED_MARKET`, `STOP_LIMIT`)
-|market| (Optional) Market(s) to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
-|limit| (Optional) The maximum number of orders to return. The default, and maximum, is 100.|
-|startingBefore| (Optional) ISO 8601 date and time. Starts returning orders created before this date.|
+| Field Name     | Description                                                                                                                  |
+|----------------|------------------------------------------------------------------------------------------------------------------------------|
+| accountOwner   | (Optional) The Ethereum address of the account(s) to request orders for.                                                     |
+| accountNumber  | (Optional) The Solo account number of the account to request orders for.                                                     |
+| side           | (Optional) Side of the order in (`BUY`, `SELL`)                                                                              |
+| status         | (Optional) Status(es) of the orders to query in (`PENDING`, `OPEN`, `FILLED`, `PARTIALLY_FILLED`, `CANCELED`, `UNTRIGGERED`) |
+| orderType      | (Optional) Type(s) of orders to query in (`LIMIT`, `ISOLATED_MARKET`, `STOP_LIMIT`)                                          |
+| market         | (Optional) Market(s) to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)                                                       |
+| limit          | (Optional) The maximum number of orders to return. The default, and maximum, is 100.                                         |
+| startingBefore | (Optional) ISO 8601 date and time. Starts returning orders created before this date.                                         |
 
 Example Response Body:
 ```json
@@ -484,13 +484,13 @@ Content-Type: application/json
 ```
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|accountOwner|(Optional) The Ethereum address of the account(s) to request trades for.|
-|accountNumber|(Optional) The Solo account number of the account to request trades for.|
-|limit|(Optional) The maximum number of trades to return. The default, and maximum, is 100.|
-|startingBefore|(Optional) ISO 8601 date and time. Starts returning trades created before this date.|
-|market|(Optional) Market to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
+| Field Name     | Description                                                                          |
+|----------------|--------------------------------------------------------------------------------------|
+| accountOwner   | (Optional) The Ethereum address of the account(s) to request trades for.             |
+| accountNumber  | (Optional) The Solo account number of the account to request trades for.             |
+| limit          | (Optional) The maximum number of trades to return. The default, and maximum, is 100. |
+| startingBefore | (Optional) ISO 8601 date and time. Starts returning trades created before this date. |
+| market         | (Optional) Market to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)                  |
 
 Example Response Body:
 ```json
@@ -576,14 +576,14 @@ Content-Type: application/json
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|accountOwner|(Optional) The Ethereum address of the account(s) to request fills for.|
-|accountNumber|(Optional) The Solo account number of the account to request fills for.|
-|limit|(Optional) The maximum number of fills to return. The default, and maximum, is 100.|
-|startingBefore|(Optional) ISO 8601 date and time. Starts returning fills created before this date.|
-|market|(Optional) Market to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)|
-|orderClientId|(Optional) clientId of order.|
+| Field Name     | Description                                                                         |
+|----------------|-------------------------------------------------------------------------------------|
+| accountOwner   | (Optional) The Ethereum address of the account(s) to request fills for.             |
+| accountNumber  | (Optional) The Solo account number of the account to request fills for.             |
+| limit          | (Optional) The maximum number of fills to return. The default, and maximum, is 100. |
+| startingBefore | (Optional) ISO 8601 date and time. Starts returning fills created before this date. |
+| market         | (Optional) Market to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`)                 |
+| orderClientId  | (Optional) clientId of order.                                                       |
 
 Example Response Body:
 ```json
@@ -637,9 +637,9 @@ Content-Type: application/json
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|market| The market pair being queried.|
+| Field Name | Description                    |
+|------------|--------------------------------|
+| market     | The market pair being queried. |
 
 Example Response Body:
 ```json
@@ -802,11 +802,11 @@ Get historical trade statistics.
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|res|`1HOUR` or `1DAY`|
-|fromISO|Start ISO 8601 date and time.|
-|toISO|End ISO 8601 date and time.|
+| Field Name | Description                   |
+|------------|-------------------------------|
+| res        | `1HOUR` or `1DAY`             |
+| fromISO    | Start ISO 8601 date and time. |
+| toISO      | End ISO 8601 date and time.   |
 
 Example Response Body:
 ```json
@@ -857,9 +857,9 @@ The minimum collateralization where liquidation occurs on the protocol using thi
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|number|(Optional) The Solo Acount number of the account to request balances for.|
+| Field Name | Description                                                               |
+|------------|---------------------------------------------------------------------------|
+| number     | (Optional) The Solo Acount number of the account to request balances for. |
 
 Example Response Body:
 ```json
@@ -922,21 +922,21 @@ Example Response Body:
 
 Market Response Object:
 
-| Field Name | Description |
-|------------|-------------|
-| market               | The market string, e.g.: `PBTC-USDC`. |
-| oraclePrice          | The index price from the oracle. |
-| fundingRate          | The funding rate for the market. |
-| globalIndexValue     | The global index value for the market. |
+| Field Name           | Description                                                           |
+|----------------------|-----------------------------------------------------------------------|
+| market               | The market string, e.g.: `PBTC-USDC`.                                 |
+| oraclePrice          | The index price from the oracle.                                      |
+| fundingRate          | The funding rate for the market.                                      |
+| globalIndexValue     | The global index value for the market.                                |
 | globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index. |
 
 ### GET `/v1/perpetual-balance-updates`
 
 Query Params:
-| Field Name | Description |
-|------------|-------------|
-| owner | The wallet address of the user. |
-| limit | The maximum number of balance updates to retrieve. |
+| Field Name | Description                                        |
+|------------|----------------------------------------------------|
+| owner      | The wallet address of the user.                    |
+| limit      | The maximum number of balance updates to retrieve. |
 
 Example Response Body:
 
@@ -963,18 +963,18 @@ Example Response Body:
 
 Balance Update Response Object:
 
-| Field Name | Description |
-|------------|-------------|
-| uuid           | The unique ID for the balance update. |
-| owner          | The wallet address of the user. |
-| market         | The perpetual market, e.g. `PBTC-USDC`. |
-| deltaMargin    | The change in settlement token (e.g. USDC). |
+| Field Name     | Description                                      |
+|----------------|--------------------------------------------------|
+| uuid           | The unique ID for the balance update.            |
+| owner          | The wallet address of the user.                  |
+| market         | The perpetual market, e.g. `PBTC-USDC`.          |
+| deltaMargin    | The change in settlement token (e.g. USDC).      |
 | newMargin      | The new balance of settlement token (e.g. USDC). |
-| deltaPosition  | The change in position token (e.g. PBTC). |
-| newPosition    | The amount in position token (e.g. PBTC). |
-| indexValue     | The new index value of the account. |
-| indexTimestamp | The new index timestamp of the account. |
-| orderNumber    | Number used for ordering the balance updates. |
+| deltaPosition  | The change in position token (e.g. PBTC).        |
+| newPosition    | The amount in position token (e.g. PBTC).        |
+| indexValue     | The new index value of the account.              |
+| indexTimestamp | The new index timestamp of the account.          |
+| orderNumber    | Number used for ordering the balance updates.    |
 
 
 ### GET `/v1/standard-actions`
@@ -984,13 +984,13 @@ Get the standard actions for a particular user.
 
 Query Params:
 
-| Field Name | Description |
-|------------|-------------|
-| owner   | The wallet address of the user. |
-| type    | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`. |
-| market  | The market of the action e.g. `PBTC-USDC`. |
-| limit   | The maximum number of standard actions to retrieve. |
-| product | The product of the standard action, e.g. `perpetual` or `solo`. |
+| Field Name | Description                                                     |
+|------------|-----------------------------------------------------------------|
+| owner      | The wallet address of the user.                                 |
+| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| market     | The market of the action e.g. `PBTC-USDC`.                      |
+| limit      | The maximum number of standard actions to retrieve.             |
+| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
 
 Example Response Body:
 
@@ -1017,20 +1017,20 @@ Example Response Body:
 
 ### Standard Action Response Object
 
-| Field Name | Description |
-|------------|-------------|
-| uuid | The unique id for the action. |
-| owner | The wallet address of the user. |
-| type | The type of standard action e.g. `DEPOSIT`. |
-| market | The perpetual market, e.g. `PBTC-USDC`. |
-| side | The side for the standard action e.g. `LONG`, `SHORT`. |
-| transferAmount | The amount in settlement token that is transferred. |
-| price | The price in settlement token. |
-| orderNumber | Number used for ordering the standard actions. |
-| updatedAt | The ISO 8601 date and time the standard action was updated. |
-| createdAt | The ISO 8601 date and time the standard action was created. |
-| confirmedAt | The ISO 8601 date and time the standard action was confirmed. |
-| product | The product type, e.g. `perpetual` or `solo`. |
+| Field Name     | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| uuid           | The unique id for the action.                                 |
+| owner          | The wallet address of the user.                               |
+| type           | The type of standard action e.g. `DEPOSIT`.                   |
+| market         | The perpetual market, e.g. `PBTC-USDC`.                       |
+| side           | The side for the standard action e.g. `LONG`, `SHORT`.        |
+| transferAmount | The amount in settlement token that is transferred.           |
+| price          | The price in settlement token.                                |
+| orderNumber    | Number used for ordering the standard actions.                |
+| updatedAt      | The ISO 8601 date and time the standard action was updated.   |
+| createdAt      | The ISO 8601 date and time the standard action was created.   |
+| confirmedAt    | The ISO 8601 date and time the standard action was confirmed. |
+| product        | The product type, e.g. `perpetual` or `solo`.                 |
 
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
@@ -1060,12 +1060,12 @@ Example Response Body:
 
 ### Account Response Object
 
-| Field Name | Description |
-|------------|-------------|
-| owner    | The user's wallet address. |
-| balances | An object with the user's balances for each market. |
-| margin   | The balance in settlement token (e.g. USDC). |
-| position | The balance in position token (e.g. PBTC). |
+| Field Name | Description                                         |
+|------------|-----------------------------------------------------|
+| owner      | The user's wallet address.                          |
+| balances   | An object with the user's balances for each market. |
+| margin     | The balance in settlement token (e.g. USDC).        |
+| position   | The balance in position token (e.g. PBTC).          |
 
 ## Deprecated Endpoints
 
@@ -1089,14 +1089,14 @@ Content-Type: application/json
 
 Request Body:
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed order JSON object.|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled.|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled.|
-|triggerPrice|string|(Optional) The stop price at which the order will go to market. Must be greater than triggerPrice in the order.|
-|clientId|string|(Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill.|
+| Field Name           | JSON type | Description                                                                                                                                     |
+|----------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| order                | Object    | A valid signed order JSON object.                                                                                                               |
+| fillOrKill           | boolean   | Whether the order should be canceled if it cannot be immediately filled.                                                                        |
+| postOnly             | boolean   | Whether the order should be canceled if it would be immediately filled.                                                                         |
+| triggerPrice         | string    | (Optional) The stop price at which the order will go to market. Must be greater than triggerPrice in the order.                                 |
+| clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
+| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -1150,15 +1150,15 @@ Content-Type: application/json
 
 Request Body:
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|order|Object|A valid signed order JSON object.|
-|fillOrKill|boolean|Whether the order should be canceled if it cannot be immediately filled.|
-|postOnly|boolean|Whether the order should be canceled if it would be immediately filled.|
-|triggerPrice|string|(Optional) The price at which the order will go to market. Must be greater than triggerPrice in the order.|
-|cancelId|string|Order id for the order that is being canceled and replaced.|
-|clientId|string|(Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests.|
-|cancelAmountOnRevert|boolean|Whether to try the order again if it is involved in a reverted fill.|
+| Field Name           | JSON type | Description                                                                                                                                     |
+|----------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| order                | Object    | A valid signed order JSON object.                                                                                                               |
+| fillOrKill           | boolean   | Whether the order should be canceled if it cannot be immediately filled.                                                                        |
+| postOnly             | boolean   | Whether the order should be canceled if it would be immediately filled.                                                                         |
+| triggerPrice         | string    | (Optional) The price at which the order will go to market. Must be greater than triggerPrice in the order.                                      |
+| cancelId             | string    | Order id for the order that is being canceled and replaced.                                                                                     |
+| clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
+| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -1287,14 +1287,14 @@ Content-Type: application/json
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|makerAccountOwner|(Optional) The Ethereum address of the account(s) to request orders for.|
-|makerAccountNumber|(Optional) The Solo account number of the account to request orders for.|
-|limit|(Optional) The maximum number of orders to return. Defaults to 100.|
-|startingBefore|(Optional) ISO 8601 string. Starts returning orders created before this date.|
-|pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
-|status|(Optional) Array of status to filter by (e.g. ?status=CANCELED,FILLED)|
+| Field Name         | Description                                                                   |
+|--------------------|-------------------------------------------------------------------------------|
+| makerAccountOwner  | (Optional) The Ethereum address of the account(s) to request orders for.      |
+| makerAccountNumber | (Optional) The Solo account number of the account to request orders for.      |
+| limit              | (Optional) The maximum number of orders to return. Defaults to 100.           |
+| startingBefore     | (Optional) ISO 8601 string. Starts returning orders created before this date. |
+| pairs              | (Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)        |
+| status             | (Optional) Array of status to filter by (e.g. ?status=CANCELED,FILLED)        |
 
 Example Response Body:
 ```json
@@ -1414,13 +1414,13 @@ Content-Type: application/json
 
 Query Params:
 
-|Field Name|Description|
-|----------|-----------|
-|makerAccountOwner|(Optional) The Ethereum address of the account(s) to request fills for.|
-|makerAccountNumber|(Optional) The Solo account number of the account to request fills for.|
-|limit|(Optional) The maximum number of orders to return. Defaults to 100.|
-|startingBefore|(Optional) ISO 8601 date and time. Starts returning orders created before this date.|
-|pairs|(Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)|
+| Field Name         | Description                                                                          |
+|--------------------|--------------------------------------------------------------------------------------|
+| makerAccountOwner  | (Optional) The Ethereum address of the account(s) to request fills for.              |
+| makerAccountNumber | (Optional) The Solo account number of the account to request fills for.              |
+| limit              | (Optional) The maximum number of orders to return. Defaults to 100.                  |
+| startingBefore     | (Optional) ISO 8601 date and time. Starts returning orders created before this date. |
+| pairs              | (Optional) Array of pairs to filter by (e.g. ?pairs=WETH-DAI,DAI-WETH)               |
 
 Example Response Body:
 ```json
