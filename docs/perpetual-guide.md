@@ -8,7 +8,7 @@ This article focuses on the technical information needed to trade the perpetual 
 
 * Underlying market: BTC–USD
 * Margin/settlement asset: USDC
-* Tick size: $0.50
+* Tick size: $1
 * Min order size: 0.001 BTC (~$7.20)
 * Quantity step: 0.00000001 BTC (1 satoshi)
 * Max order size: None
