@@ -81,8 +81,7 @@ __Solo V2 Order fields__
 |amount|string|The amount of token being offered in base units|
 |limitPrice|string| The worst base/quote price at which the transaction will be accepted|
 |triggerPrice|string|(Optional)The price at which the order will go to market.|
-|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to 0.5Eth in the transaction will pay 0.15% of ETH-DAI and ETH-USDC transactions and 0.05% for DAI-USDC transactions.
-For transactions below 0.5Eth they will pay 0.50% fees.
+|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to 0.5Eth in the transaction will pay 0.15% of ETH-DAI and ETH-USDC transactions and 0.05% for DAI-USDC transactions. For transactions below 0.5Eth they will pay 0.50% fees.
 |makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
 |makerAccountOwner|string|The Ethereum address of the Maker.|
 |expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
@@ -123,7 +122,7 @@ __Perpetual V2 Order fields__
 |amount|string|The amount of token being offered in base units|
 |limitPrice|string| The worst base/quote price at which the transaction will be accepted|
 |triggerPrice|string|(Optional)The price at which the order will go to market.|
-|limitFee|string| Makers with greater than or equal to 0.01Sats in the transaction will will be paid 0.025% fees, otherwise they will pay no fee. Takers with greater than or equal to 0.01Sats in the transaction will pay 0.075% for PBTC-USDC transactions. For transactions below 0.01Sats they will pay 0.50% fees.
+|limitFee|string| Maker orders use a fee of -0.025% (i.e. a rebate). Takers pay a fee of 0.075%, unless the order amount is less than the “small order” size of 0.01 BTC, in which case they must pay a 0.50% fee.
 |maker|string|The Ethereum address of the Maker.|
 |taker|string|The Ethereum address of the Taker.|
 |expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
