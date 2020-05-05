@@ -40,7 +40,7 @@ module.exports = {
       network_id: '1',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'https://parity.expotrading.com',
+        process.env.ETHEREUM_NODE_MAINNET,
         0,
         1,
       ),
@@ -53,7 +53,7 @@ module.exports = {
       network_id: '42',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'http://54.235.26.63:8545',
+        process.env.ETHEREUM_NODE_KOVAN,
         0,
         1,
       ),

@@ -71,7 +71,6 @@ export interface SoloOptions {
   confirmationType?: ConfirmationType;
   defaultConfirmations?: number;
   autoGasMultiplier?: number;
-  testing?: boolean;
   defaultGas?: number | string;
   defaultGasPrice?: number | string;
   blockGasLimit?: number;
