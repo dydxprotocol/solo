@@ -20,18 +20,17 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
-contract TestToken {
+contract TestToken is IERC20 {
     using SafeMath for uint256;
 
     uint256 supply;
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer(address token, address from, address to, uint256 value);
-    event Approval(address token, address owner, address spender, uint256 value);
-    event Issue(address token, address owner, uint256 value);
+    event Issue(address indexed token, address indexed owner, uint256 value);
 
     // Allow anyone to get new token
     function issue(uint256 amount) public {
