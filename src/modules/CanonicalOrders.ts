@@ -153,8 +153,8 @@ export class CanonicalOrders extends OrderSigner {
     const ZERO = new BigNumber(0);
     const BIPS = new BigNumber('1e-4');
 
-    const ETH_SMALL_ORDER_THRESHOLD = new BigNumber('0.5e18');
-    const DAI_SMALL_ORDER_THRESHOLD = new BigNumber('100e18');
+    const ETH_SMALL_ORDER_THRESHOLD = new BigNumber('5e18');
+    const DAI_SMALL_ORDER_THRESHOLD = new BigNumber('1000e18');
 
     switch (baseMarketBN.toNumber()) {
       case MarketId.ETH.toNumber():
