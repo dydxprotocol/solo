@@ -822,6 +822,83 @@ Example Response Body:
 }
 ```
 
+### GET `/v1/markets/`
+
+Description:
+This endpoint returns information for a particular Solo asset.
+
+Note: This is different from the v2/markets endpoint mentioned above. 
+
+Query Params:
+
+| Field Name | Description  |
+|------------|--------------|
+| id         | The asset id |
+
+Response body:
+
+| Field name | Description |
+|------------|-------------|
+| id | Id of asset determined by protocol |
+| name | Name of asset |
+| supplyIndex | Current index of the supply |
+| borrowIndex | Current index of the borrow |
+| totalSupplyPar | Summation of total available asset par in asset |
+| totalBorrowPar | Summation of total asset borrowed par from asset |
+| totalSupplyWei | `totalSupplyPar` multiplied by `supplyIndex` |
+| totalBorrowWei | `totalBorrowPar` multiplied by `borrowIndex` |
+| supplyInterestRateSeconds | Current interest rate per second earned from lending assets |
+| borrowInterestRateSeconds | Current interest rate per second paid to borrowed assets |
+| supplyInterestAPY | Current interest rate per second earned from lending assets including compound interest |
+| borrowInterestAPY | Current interest rate per second paid to borrowed assets including compound interest |
+| supplyInterestAPR | Current interest rate per second earned from lending assets, multiplied by 1 year in seconds |
+| borrowInterestAPR | Current interest rate per second paid to borrowed assets, multiplied by 1 year in seconds |
+| oraclePrice | Price determined by oracle |
+| lastIndexUpdateSeconds | Timestamp of last `indexUpdate` associated with the current asset values |
+| marginPremium | Current `marginPremium` of the particular asset |
+| spreadPremium | Current `spreadPremium` of the particular asset |
+
+Example Response Body:
+
+```json
+{
+  "market": {
+    "id": 0,
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "supplyIndex": "1.001306342154952813",
+    "borrowIndex": "1.009828284827031753",
+    "supplyInterestRateSeconds": "0.00000000004969840736422012284564765239517392930721200621215594692201109713616485",
+    "borrowInterestRateSeconds": "0.000000000407292234",
+    "totalSupplyPar": "98971283228248394332654",
+    "totalBorrowPar": "12604957188509875228312",
+    "lastIndexUpdateSeconds": "1589227490",
+    "oraclePrice": "186720000000000000000",
+    "collateralRatio": "1.15",
+    "marginPremium": "0",
+    "spreadPremium": "0",
+    "currencyUuid": "9debe831-5ccd-448b-91f7-cd247ecddc22",
+    "createdAt": "2019-04-03T01:11:55.990Z",
+    "updatedAt": "2020-05-11T20:05:03.473Z",
+    "deletedAt": null,
+    "currency": {
+      "uuid": "9debe831-5ccd-448b-91f7-cd247ecddc22",
+      "symbol": "WETH",
+      "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "decimals": 18,
+      "createdAt": "2018-07-10T04:08:53.352Z",
+      "updatedAt": "2018-07-10T04:08:53.352Z"
+    },
+    "totalSupplyAPR": "0.0015672889746380457940603443659342050346322378279065499421325419592860947096",
+    "totalBorrowAPR": "0.012844367891424",
+    "totalSupplyAPY": "0.0015685178139013267",
+    "totalBorrowAPY": "0.01292721109424222",
+    "totalSupplyWei": "99100573587659229539040.117656245995055702",
+    "totalBorrowWei": "12728842297991091658963.688744490148590936"
+  }
+}
+```
+
 ## Perpetual Endpoints
 
 ### GET `/v1/perpetual-markets`
