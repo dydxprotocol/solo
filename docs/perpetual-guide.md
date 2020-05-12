@@ -9,7 +9,7 @@ This article focuses on the technical information needed to trade the perpetual 
 * Underlying market: BTC–USD
 * Margin/settlement asset: USDC
 * Tick size: $1
-* Min order size: 0.001 BTC (~$7.20)
+* Min order size: 0.001 BTC
 * Quantity step: 0.00000001 BTC (1 satoshi)
 * Max order size: None
 * Max position size: None
@@ -18,12 +18,12 @@ This article focuses on the technical information needed to trade the perpetual 
 * Initial margin requirement: 10%
 * Maintenance margin requirement: 7.5%
 * Fees: -0.025% Maker, 0.075% Taker
-* Custom fees for ‘Small’ orders: 0.5% Taker
-* ‘Small’ order size: 0.01 BTC (~$72.00)
+* Custom fees for “small” orders: 0.5% Taker
+* Min order size to avoid “small” order fees: 0.1 BTC
 * Mark price for liquidations: The mark price is the on-chain index price, given by the [MakerDAO BTC–USD Oracle V2](https://blog.makerdao.com/introducing-oracles-v2-and-defi-feeds/) which reports the median spot price of [seven exchanges](https://github.com/makerdao/setzer-mcd/blob/c528da640393a3d79ef314a7f86ae363d503a240/libexec/setzer/setzer-price-btcusd#L5-L11): Binance, Bitfinex, Bitstamp, Bittrex, Coinbase Pro, Gemini, and Kraken.
 * Funding: Funding payments are made every second according to a rate which is updated hourly. The funding premium is scaled so as to have a realization period of 8 hours.
 * Contract loss mechanism: Deleveraging (centralized, but verifiable insurance fund is the first backstop before deleveraging)
-* Trading hours: 24 x 7 x 365
+* Trading hours: 24/7/365
 
 Additional details are provided below.
 
