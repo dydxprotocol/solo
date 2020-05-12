@@ -822,7 +822,7 @@ Example Response Body:
 }
 ```
 
-### GET `/v1/markets/`
+### GET `/v1/markets/:id`
 
 Description:
 This endpoint returns information for a particular Solo asset.
