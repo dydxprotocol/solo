@@ -1,13 +1,15 @@
 import BigNumber from 'bignumber.js';
+import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
+import { INTEGERS, ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   AccountStatus,
   address,
+  Amount,
   AmountDenomination,
   AmountReference,
   Vaporize,
@@ -30,6 +32,22 @@ const wei = new BigNumber(15000);
 const negPar = par.times(-1);
 const negWei = wei.times(-1);
 const premium = new BigNumber('1.05');
+const testOrder: TestOrder = {
+  type: OrderType.Test,
+  exchangeWrapperAddress: ADDRESSES.ZERO,
+  originator: ADDRESSES.ZERO,
+  makerToken: ADDRESSES.ZERO,
+  takerToken: ADDRESSES.ZERO,
+  makerAmount: INTEGERS.ZERO,
+  takerAmount: INTEGERS.ZERO,
+  allegedTakerAmount: INTEGERS.ZERO,
+  desiredMakerAmount: INTEGERS.ZERO,
+};
+const defaultAmount: Amount = {
+  value: zero,
+  denomination: AmountDenomination.Principal,
+  reference: AmountReference.Target,
+};
 let defaultGlob: Vaporize;
 
 describe('Vaporize', () => {
@@ -49,11 +67,7 @@ describe('Vaporize', () => {
       vaporAccountId: vaporAccountNumber,
       vaporMarketId: owedMarket,
       payoutMarketId: heldMarket,
-      amount: {
-        value: zero,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
-      },
+      amount: defaultAmount,
     };
 
     await resetEVM();
@@ -420,7 +434,7 @@ describe('Vaporize', () => {
     );
   });
 
-  it('Fails if vaporizing after account used as primary', async () => {
+  it('Fails if vaporizing after account used to deposit', async () => {
     await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
     const operation = solo.operation.initiate();
     operation.deposit({
@@ -428,11 +442,190 @@ describe('Vaporize', () => {
       primaryAccountId: vaporAccountNumber,
       marketId: owedMarket,
       from: vaporOwner,
-      amount: {
-        value: par.div(2),
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Delta,
-      },
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to withdraw', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.withdraw({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      marketId: owedMarket,
+      to: vaporOwner,
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to buy', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.buy({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      makerMarketId: owedMarket,
+      takerMarketId: heldMarket,
+      amount: defaultAmount,
+      order: testOrder,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to sell', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.sell({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      makerMarketId: owedMarket,
+      takerMarketId: heldMarket,
+      amount: defaultAmount,
+      order: testOrder,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to transfer (account one)', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.transfer({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      marketId: owedMarket,
+      toAccountOwner: solidOwner,
+      toAccountId: solidAccountNumber,
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to transfer (account two)', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.transfer({
+      primaryAccountOwner: solidOwner,
+      primaryAccountId: solidAccountNumber,
+      marketId: owedMarket,
+      toAccountOwner: vaporOwner,
+      toAccountId: vaporAccountNumber,
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to trade (account one)', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.trade({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      otherAccountOwner: solidOwner,
+      otherAccountId: solidAccountNumber,
+      inputMarketId: owedMarket,
+      outputMarketId: heldMarket,
+      autoTrader: ADDRESSES.ZERO,
+      data: [],
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to trade (account two)', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.trade({
+      primaryAccountOwner: solidOwner,
+      primaryAccountId: solidAccountNumber,
+      otherAccountOwner: vaporOwner,
+      otherAccountId: vaporAccountNumber,
+      inputMarketId: owedMarket,
+      outputMarketId: heldMarket,
+      autoTrader: ADDRESSES.ZERO,
+      data: [],
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to liquidate', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.liquidate({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      liquidAccountOwner: ADDRESSES.ZERO,
+      liquidAccountId: INTEGERS.ZERO,
+      liquidMarketId: owedMarket,
+      payoutMarketId: heldMarket,
+      amount: defaultAmount,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to vaporize', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.vaporize({
+      ...defaultGlob,
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      vaporAccountOwner: ADDRESSES.ZERO,
+      vaporAccountId: INTEGERS.ZERO,
+    });
+    operation.vaporize(defaultGlob);
+    await expectThrow(
+      operation.commit(),
+      'OperationImpl: Requires non-primary account',
+    );
+  });
+
+  it('Fails if vaporizing after account used to call', async () => {
+    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = solo.operation.initiate();
+    operation.call({
+      primaryAccountOwner: vaporOwner,
+      primaryAccountId: vaporAccountNumber,
+      callee: ADDRESSES.ZERO,
+      data: [],
     });
     operation.vaporize(defaultGlob);
     await expectThrow(
