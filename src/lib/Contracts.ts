@@ -390,7 +390,12 @@ export class Contracts {
     options: ContractConstantCallOptions = {},
   ): Promise<T> {
     const m2 = method as CallableTransactionObject<T>;
-    const { blockNumber, ...txOptions } = options;
+    const {
+      blockNumber,
+      gas, // don't send gas
+      gasPrice, // don't send gasPrice
+      ...txOptions
+    } = options;
     return m2.call(txOptions, blockNumber);
   }
 
