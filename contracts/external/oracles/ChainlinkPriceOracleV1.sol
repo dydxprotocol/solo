@@ -50,6 +50,17 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     // Should defaults to IChainlinkAggregator.USD_AGGREGATOR_DECIMALS when value is empty
     mapping(address => uint8) public tokenToAggregatorDecimalsMap;
 
+    /**
+     * Note, these arrays are set up, such that each index corresponds with one-another.
+     *
+     * @param tokens                The tokens that are supported by this adapter.
+     * @param chainlinkAggregators  The Chainlink aggregators that have on-chain prices.
+     * @param tokenDecimals         The number of decimals that each token has.
+     * @param tokenPairs            The token against which this token's value is compared using the aggregator. The
+     *                              zero address means USD.
+     * @param aggregatorDecimals    The number of decimals that the value has that comes back from the corresponding
+     *                              Chainlink Aggregator.
+     */
     constructor(
         address[] memory tokens,
         address[] memory chainlinkAggregators,
