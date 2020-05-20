@@ -80,6 +80,10 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
             tokenDecimals.length == tokenPairs.length,
             "INVALID_LENGTH: tokenPairs"
         );
+        require(
+            tokenPairs.length == aggregatorDecimals.length,
+            "INVALID_LENGTH: aggregatorDecimals"
+        );
 
         for (uint i = 0; i < tokens.length; i++) {
             address token = tokens[i];
