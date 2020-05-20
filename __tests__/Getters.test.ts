@@ -35,6 +35,7 @@ const rates = [
   new BigNumber(303).div(INTEGERS.INTEREST_RATE_BASE),
 ];
 const defaultPremium = new BigNumber(0);
+const defaultIsClosing = false;
 const highPremium = new BigNumber('.2');
 const market1 = new BigNumber(0);
 const market2 = new BigNumber(1);
@@ -200,6 +201,7 @@ describe('Getters', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultIsClosing,
           { from: admin },
         );
         const nm2 = await solo.getters.getNumMarkets();

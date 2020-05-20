@@ -24,13 +24,20 @@ const {
   getDoubleExponentParams,
   getRiskLimits,
   getRiskParams,
-  getDaiPriceOracleParams,
   getExpiryRampTime,
-  getOraclePokerAddress,
   getSenderAddress,
   getChainId,
+  getOraclePokerAddress,
+  getDaiPriceOracleParams,
 } = require('./helpers');
-const { ADDRESSES } = require('../src/lib/Constants.ts');
+const {
+  getChainlinkPriceOracleV1Params,
+} = require('./oracle_helpers');
+const {
+  getDaiAddress,
+  getWethAddress,
+} = require('./token_helpers');
+const { ADDRESSES } = require('../src/lib/Constants');
 
 // ============ Contracts ============
 
@@ -44,6 +51,9 @@ const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
+const TokenD = artifacts.require('TokenD');
+const TokenE = artifacts.require('TokenE');
+const TokenF = artifacts.require('TokenF');
 const ErroringToken = artifacts.require('ErroringToken');
 const OmiseToken = artifacts.require('OmiseToken');
 const TestLib = artifacts.require('TestLib');
@@ -51,6 +61,12 @@ const TestAutoTrader = artifacts.require('TestAutoTrader');
 const TestCallee = artifacts.require('TestCallee');
 const TestSimpleCallee = artifacts.require('TestSimpleCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
+const TestBtcUsdChainlinkAggregator = artifacts.require('TestBtcUsdChainlinkAggregator');
+const TestDaiEthChainlinkAggregator = artifacts.require('TestDaiEthChainlinkAggregator');
+const TestEthUsdChainlinkAggregator = artifacts.require('TestEthUsdChainlinkAggregator');
+const TestLinkUsdChainlinkAggregator = artifacts.require('TestLinkUsdChainlinkAggregator');
+const TestLrcEthChainlinkAggregator = artifacts.require('TestLrcEthChainlinkAggregator');
+const TestUsdcEthChainlinkAggregator = artifacts.require('TestUsdcEthChainlinkAggregator');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
 const TestOasisDex = artifacts.require('TestOasisDex');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
@@ -72,13 +88,13 @@ const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 // Interest Setters
-const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
 
 // Oracles
 const DaiPriceOracle = artifacts.require('DaiPriceOracle');
-const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 const WethPriceOracle = artifacts.require('WethPriceOracle');
+const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
+const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // ============ Main Migration ============
 
@@ -104,6 +120,9 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TokenA),
       deployer.deploy(TokenB),
       deployer.deploy(TokenC),
+      deployer.deploy(TokenD),
+      deployer.deploy(TokenE),
+      deployer.deploy(TokenF),
       deployer.deploy(WETH9),
       deployer.deploy(ErroringToken),
       deployer.deploy(OmiseToken),
@@ -121,7 +140,7 @@ async function deployTestContracts(deployer, network) {
 async function deployBaseProtocol(deployer, network) {
   await Promise.all([
     deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl),
+    deployer.deploy(OperationImpl, { gas: 7500000 }),
   ]);
 
   let soloMargin;
@@ -145,27 +164,58 @@ async function deployInterestSetters(deployer, network) {
     await deployer.deploy(TestInterestSetter);
   }
   await Promise.all([
-    deployer.deploy(PolynomialInterestSetter, getPolynomialParams(network)),
     deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network)),
   ]);
 }
 
 async function deployPriceOracles(deployer, network, accounts) {
-  if (
-    isDevNetwork(network)
-    || isKovan(network)
-  ) {
+  if (isDevNetwork(network) || isKovan(network)) {
     await deployer.deploy(TestPriceOracle);
   }
 
-  const daiPriceOracleParams = getDaiPriceOracleParams(network);
+  if (isDevNetwork(network)) {
+    await Promise.all([
+      deployer.deploy(TestBtcUsdChainlinkAggregator),
+      deployer.deploy(TestDaiEthChainlinkAggregator),
+      deployer.deploy(TestEthUsdChainlinkAggregator),
+      deployer.deploy(TestLinkUsdChainlinkAggregator),
+      deployer.deploy(TestLrcEthChainlinkAggregator),
+      deployer.deploy(TestUsdcEthChainlinkAggregator),
+    ]);
+  }
 
+  const tokens = {
+    TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
+  };
+
+  const aggregators = {
+    TestBtcUsdChainlinkAggregator,
+    TestDaiEthChainlinkAggregator,
+    TestEthUsdChainlinkAggregator,
+    TestLinkUsdChainlinkAggregator,
+    TestLrcEthChainlinkAggregator,
+    TestUsdcEthChainlinkAggregator,
+  };
+
+  const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);
+  await Promise.all([
+    deployer.deploy(
+      ChainlinkPriceOracleV1,
+      params.tokens,
+      params.aggregators,
+      params.tokenDecimals,
+      params.tokenPairs,
+      params.aggregatorDecimals,
+    ),
+  ]);
+
+  const daiPriceOracleParams = getDaiPriceOracleParams(network);
   await Promise.all([
     deployer.deploy(
       DaiPriceOracle,
       getOraclePokerAddress(network, accounts),
-      getWethAddress(network),
-      getDaiAddress(network),
+      getWethAddress(network, WETH9),
+      getDaiAddress(network, TokenB),
       getMedianizerAddress(network),
       getOasisAddress(network),
       getDaiUniswapAddress(network),
@@ -191,7 +241,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     deployer.deploy(
       PayableProxyForSoloMargin,
       soloMargin.address,
-      getWethAddress(network),
+      getWethAddress(network, WETH9),
     ),
     deployer.deploy(
       Expiry,
@@ -301,19 +351,6 @@ function getMedianizerAddress(network) {
   throw new Error('Cannot find Medianizer');
 }
 
-function getDaiAddress(network) {
-  if (isDevNetwork(network)) {
-    return TokenB.address;
-  }
-  if (isMainNet(network)) {
-    return '0x6b175474e89094c44da98b954eedeac495271d0f';
-  }
-  if (isKovan(network)) {
-    return '0x5944413037920674d39049ec4844117a031eaa74';
-  }
-  throw new Error('Cannot find Dai');
-}
-
 function getOasisAddress(network) {
   if (isDevNetwork(network)) {
     return TestOasisDex.address;
@@ -338,17 +375,4 @@ function getDaiUniswapAddress(network) {
     return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
   }
   throw new Error('Cannot find Uniswap for Dai');
-}
-
-function getWethAddress(network) {
-  if (isDevNetwork(network)) {
-    return WETH9.address;
-  }
-  if (isMainNet(network)) {
-    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-  }
-  if (isKovan(network)) {
-    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
-  }
-  throw new Error('Cannot find Weth');
 }

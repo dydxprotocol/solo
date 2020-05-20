@@ -20,7 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { SafeMath } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 
 contract TestToken is IERC20 {
@@ -39,7 +39,7 @@ contract TestToken is IERC20 {
 
     function setBalance(address _target, uint _value) public {
         balances[_target] = _value;
-        emit Transfer(address(this), address(0x0), _target, _value);
+        emit Transfer(address(0x0), _target, _value);
     }
 
     function addBalance(
@@ -51,7 +51,7 @@ contract TestToken is IERC20 {
         uint currBalance = balanceOf(_target);
         require(_value + currBalance >= currBalance, "INVALID_VALUE");
         balances[_target] = currBalance.add(_value);
-        emit Transfer(address(this), address(0x0), _target, _value);
+        emit Transfer(address(0x0), _target, _value);
     }
 
     function issueTo(address who, uint256 amount) public {
@@ -89,7 +89,6 @@ contract TestToken is IERC20 {
             balances[msg.sender] = balances[msg.sender].sub(value);
             balances[to] = balances[to].add(value);
             emit Transfer(
-                address(this),
                 msg.sender,
                 to,
                 value
@@ -106,7 +105,6 @@ contract TestToken is IERC20 {
             balances[from] = balances[from].sub(value);
             allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             emit Transfer(
-                address(this),
                 from,
                 to,
                 value
@@ -120,7 +118,6 @@ contract TestToken is IERC20 {
     function approve(address spender, uint256 value) public returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
-            address(this),
             msg.sender,
             spender,
             value

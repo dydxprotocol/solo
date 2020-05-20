@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
 import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setGlobalOperator, setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { address, AccountStatus } from '../../src/types';
@@ -31,6 +31,7 @@ const prices = [
   new BigNumber('1e18'),
   new BigNumber('1e21'),
 ];
+const defaultIsClosing = false;
 
 describe('LiquidatorProxyV1ForSoloMargin', () => {
   beforeAll(async () => {
@@ -43,6 +44,7 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
     operator = accounts[6];
 
     await resetEVM();
+    await setGlobalOperator(solo, accounts, solo.contracts.liquidatorProxyV1._address);
     await setupMarkets(solo, accounts);
     await Promise.all([
       solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), prices[0]),
@@ -61,6 +63,7 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       solo.testing.interestSetter.getAddress(),
       zero,
       zero,
+      defaultIsClosing,
       { from: admin },
     );
     await mineAvgBlock();
@@ -506,14 +509,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       it('Fails for proxy is non-operator', async () => {
         await Promise.all([
           setUpBasicBalances(),
-          solo.permissions.disapproveOperator(
+          solo.permissions.disapproveGlobalOperator(
             solo.contracts.liquidatorProxyV1.options.address,
-            { from: owner1 },
+            { from: accounts[0] },
           ),
         ]);
         await expectThrow(
           liquidate(),
-          'Storage: Unpermissioned operator',
+          'Storage: Unpermissioned global operator',
         );
       });
 

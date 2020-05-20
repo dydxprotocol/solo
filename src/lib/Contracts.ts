@@ -44,9 +44,10 @@ import {
 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
-import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
+import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
+import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
 import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
@@ -71,6 +72,8 @@ import doubleExponentInterestSetterJson
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
+import chainlinkPriceOracleV1Json
+  from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
@@ -117,6 +120,7 @@ export class Contracts {
   public daiPriceOracle: DaiPriceOracle;
   public saiPriceOracle: DaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
+  public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
   public weth: Weth;
 
   constructor(
@@ -158,6 +162,8 @@ export class Contracts {
     this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
     this.saiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
+    this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(chainlinkPriceOracleV1Json.abi) as
+      ChainlinkPriceOracleV1;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
     this.setProvider(provider, networkId);
@@ -197,6 +203,7 @@ export class Contracts {
         1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
       } },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
+      { contract: this.chainlinkPriceOracleV1, json: chainlinkPriceOracleV1Json },
       { contract: this.weth, json: wethJson },
     ];
 
@@ -234,6 +241,7 @@ export class Contracts {
     this.daiPriceOracle.options.from = account;
     this.saiPriceOracle.options.from = account;
     this.usdcPriceOracle.options.from = account;
+    this.chainlinkPriceOracleV1.options.from = account;
     this.weth.options.from = account;
   }
 

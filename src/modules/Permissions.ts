@@ -55,4 +55,14 @@ export class Permissions {
       options,
     );
   }
+
+  public async disapproveGlobalOperator(
+    operator: address,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.soloMargin.methods.ownerSetGlobalOperator(operator, false),
+      options,
+    );
+  }
 }

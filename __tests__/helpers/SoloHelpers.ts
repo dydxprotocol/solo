@@ -4,6 +4,14 @@ import { address } from '../../src/types';
 import { mineAvgBlock } from './EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 
+export async function setGlobalOperator(
+  solo: TestSolo,
+  accounts: address[],
+  operator: string,
+): Promise<void> {
+  return solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }).then(() => undefined);
+}
+
 export async function setupMarkets(
   solo: TestSolo,
   accounts: address[],
@@ -14,6 +22,7 @@ export async function setupMarkets(
   const price = new BigNumber('1e40'); // large to prevent hitting minBorrowValue check
   const marginPremium = new BigNumber(0);
   const spreadPremium = new BigNumber(0);
+  const isClosing = false;
 
   await Promise.all([
     solo.testing.priceOracle.setPrice(
@@ -42,12 +51,14 @@ export async function setupMarkets(
   ];
 
   for (let i = 0; i < numMarkets && i < tokens.length; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
     await solo.admin.addMarket(
       tokens[i],
       priceOracle,
       interestSetter,
       marginPremium,
       spreadPremium,
+      isClosing,
       { from: accounts[0] },
     );
   }

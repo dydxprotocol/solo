@@ -626,7 +626,7 @@ library OperationImpl {
     )
         private
     {
-        state.requireIsOperator(args.solidAccount, msg.sender);
+        state.requireIsGlobalOperator(msg.sender);
 
         // verify liquidatable
         if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {

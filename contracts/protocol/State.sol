@@ -30,6 +30,5 @@ import { Storage } from "./lib/Storage.sol";
  */
 contract State
 {
-    Storage.
-    State g_state;
+    Storage.State g_state;
 }

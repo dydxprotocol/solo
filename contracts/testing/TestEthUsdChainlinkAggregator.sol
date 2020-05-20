@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2020 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,20 +17,17 @@
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
-import { TestToken } from "./TestToken.sol";
+import "../external/interfaces/IChainlinkAggregator.sol";
 
+/**
+ * @dev Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
+ */
+contract TestEthUsdChainlinkAggregator is IChainlinkAggregator {
 
-/* solium-disable-next-line */
-contract TokenA is TestToken {
-    function decimals() public pure returns (uint8) {
-        return 6;
+    function latestAnswer() external view returns (uint) {
+        // $211.40
+        return 21140000000;
     }
-    function symbol() public pure returns (string memory) {
-        return "USDC";
-    }
-    function name() public pure returns (string memory) {
-        return "USD//C";
-    }
+
 }

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setGlobalOperator, setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -17,6 +17,7 @@ import {
 let liquidOwner: address;
 let solidOwner: address;
 let operator: address;
+let nonOperator: address;
 let solo: TestSolo;
 let accounts: address[];
 const liquidAccountNumber = INTEGERS.ZERO;
@@ -45,6 +46,7 @@ describe('Liquidate', () => {
     solidOwner = solo.getDefaultAccount();
     liquidOwner = accounts[6];
     operator = accounts[7];
+    nonOperator = accounts[9];
     defaultGlob = {
       primaryAccountOwner: solidOwner,
       primaryAccountId: solidAccountNumber,
@@ -60,6 +62,8 @@ describe('Liquidate', () => {
     };
 
     await resetEVM();
+    await setGlobalOperator(solo, accounts, solidOwner);
+    await setGlobalOperator(solo, accounts, operator);
     await setupMarkets(solo, accounts);
     const defaultIndex = {
       lastUpdate: INTEGERS.ZERO,
@@ -291,11 +295,11 @@ describe('Liquidate', () => {
     await expectLiquidateRevert({}, 'OperationImpl: Unliquidatable account');
   });
 
-  it('Fails for non-operator', async () => {
+  it('Fails for non-global operator', async () => {
     await expectLiquidateRevert(
       {},
-      'Storage: Unpermissioned operator',
-      { from: operator },
+      'Storage: Unpermissioned global operator',
+      { from: nonOperator },
     );
   });
 

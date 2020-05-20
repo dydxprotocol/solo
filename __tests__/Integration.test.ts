@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { TestSolo } from './modules/TestSolo';
 import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
+import { setGlobalOperator, setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { stringToDecimal } from '../src/lib/Helpers';
@@ -31,6 +31,7 @@ describe('Integration', () => {
     accounts = r.accounts;
     who = solo.getDefaultAccount();
     await resetEVM();
+    await setGlobalOperator(solo, accounts, solo.getDefaultAccount());
     await setupMarkets(solo, accounts);
     snapshotId = await snapshot();
   });

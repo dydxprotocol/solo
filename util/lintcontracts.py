@@ -5,6 +5,7 @@ import string
 import os
 import glob
 import copy
+import re
 
 # overwrite a single file, fixing the import lines
 def lintImports(dir, filepath):
@@ -69,7 +70,7 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     fileName = os.path.basename(filepath)
     strippedFileName = fileName.split(".sol")[0]
     titleLine = " * @title " + strippedFileName + "\n"
-    authorLine = " * @author dYdX\n"
+    authorLine = " * @author .+\n"
     blankLine = " *\n"
     solidityLine = "pragma solidity " + solidityVersion + ";\n"
     abiEncoderLine = "pragma experimental ABIEncoderV2;\n"
@@ -79,7 +80,8 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     if titleLine not in allLines:
         print "No title (or incorrect title) line in " + fileName
         everythingOkay = False
-    if authorLine not in allLines:
+#     if authorLine not in allLines:
+    if len(filter(lambda line : re.match(authorLine, line), allLines)) > 0:
         print "No author (or incorrect author) line in " + fileName
         everythingOkay = False
     if blankLine not in allLines:
@@ -178,7 +180,7 @@ def main():
     for file in files:
         everythingOkay &= lintFunctionComments(dir_path, file)
         everythingOkay &= lintImports(dir_path, file)
-        everythingOkay &= lintCommentHeader(dir_path, file, "0.5.7")
+        everythingOkay &= lintCommentHeader(dir_path, file, "^0.5.7")
 
     if everythingOkay:
         print "No contract linting issues found."

@@ -55,6 +55,7 @@ export class Admin {
     interestSetter: address,
     marginPremium: Decimal,
     spreadPremium: Decimal,
+    isClosing: boolean,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
@@ -64,6 +65,7 @@ export class Admin {
         interestSetter,
         { value: decimalToString(marginPremium) },
         { value: decimalToString(spreadPremium) },
+        isClosing,
       ),
       options,
     );

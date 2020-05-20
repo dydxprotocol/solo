@@ -110,8 +110,8 @@ library AdminImpl {
         uint256 marketId,
         address recipient
     )
-        public
-        returns (uint256)
+    public
+    returns (uint256)
     {
         _validateMarketId(state, marketId);
         Types.Wei memory excessWei = state.getNumExcessTokens(marketId);
@@ -141,8 +141,8 @@ library AdminImpl {
         address token,
         address recipient
     )
-        public
-        returns (uint256)
+    public
+    returns (uint256)
     {
         _requireNoMarket(state, token);
 
@@ -162,9 +162,10 @@ library AdminImpl {
         IPriceOracle priceOracle,
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
-        Decimal.D256 memory spreadPremium
+        Decimal.D256 memory spreadPremium,
+        bool isClosing
     )
-        public
+    public
     {
         _requireNoMarket(state, token);
 
@@ -173,8 +174,12 @@ library AdminImpl {
         state.numMarkets++;
         state.markets[marketId].token = token;
         state.markets[marketId].index = Interest.newIndex();
+        state.markets[marketId].isClosing = isClosing;
 
         emit LogAddMarket(marketId, token);
+        if (isClosing) {
+            emit LogSetIsClosing(marketId, isClosing);
+        }
 
         _setPriceOracle(state, marketId, priceOracle);
         _setInterestSetter(state, marketId, interestSetter);
@@ -187,7 +192,7 @@ library AdminImpl {
         uint256 marketId,
         bool isClosing
     )
-        public
+    public
     {
         _validateMarketId(state, marketId);
         state.markets[marketId].isClosing = isClosing;
@@ -199,7 +204,7 @@ library AdminImpl {
         uint256 marketId,
         IPriceOracle priceOracle
     )
-        public
+    public
     {
         _validateMarketId(state, marketId);
         _setPriceOracle(state, marketId, priceOracle);
@@ -210,7 +215,7 @@ library AdminImpl {
         uint256 marketId,
         IInterestSetter interestSetter
     )
-        public
+    public
     {
         _validateMarketId(state, marketId);
         _setInterestSetter(state, marketId, interestSetter);
@@ -221,7 +226,7 @@ library AdminImpl {
         uint256 marketId,
         Decimal.D256 memory marginPremium
     )
-        public
+    public
     {
         _validateMarketId(state, marketId);
         _setMarginPremium(state, marketId, marginPremium);
@@ -232,7 +237,7 @@ library AdminImpl {
         uint256 marketId,
         Decimal.D256 memory spreadPremium
     )
-        public
+    public
     {
         _validateMarketId(state, marketId);
         _setSpreadPremium(state, marketId, spreadPremium);
@@ -244,7 +249,7 @@ library AdminImpl {
         Storage.State storage state,
         Decimal.D256 memory ratio
     )
-        public
+    public
     {
         Require.that(
             ratio.value <= state.riskLimits.marginRatioMax,
@@ -264,7 +269,7 @@ library AdminImpl {
         Storage.State storage state,
         Decimal.D256 memory spread
     )
-        public
+    public
     {
         Require.that(
             spread.value <= state.riskLimits.liquidationSpreadMax,
@@ -284,7 +289,7 @@ library AdminImpl {
         Storage.State storage state,
         Decimal.D256 memory earningsRate
     )
-        public
+    public
     {
         Require.that(
             earningsRate.value <= state.riskLimits.earningsRateMax,
@@ -299,7 +304,7 @@ library AdminImpl {
         Storage.State storage state,
         Monetary.Value memory minBorrowedValue
     )
-        public
+    public
     {
         Require.that(
             minBorrowedValue.value <= state.riskLimits.minBorrowedValueMax,
@@ -317,7 +322,7 @@ library AdminImpl {
         address operator,
         bool approved
     )
-        public
+    public
     {
         state.globalOperators[operator] = approved;
 
@@ -331,7 +336,7 @@ library AdminImpl {
         uint256 marketId,
         IPriceOracle priceOracle
     )
-        private
+    private
     {
         // require oracle can return non-zero price
         address token = state.markets[marketId].token;
@@ -352,7 +357,7 @@ library AdminImpl {
         uint256 marketId,
         IInterestSetter interestSetter
     )
-        private
+    private
     {
         // ensure interestSetter can return a value without reverting
         address token = state.markets[marketId].token;
@@ -368,7 +373,7 @@ library AdminImpl {
         uint256 marketId,
         Decimal.D256 memory marginPremium
     )
-        private
+    private
     {
         Require.that(
             marginPremium.value <= state.riskLimits.marginPremiumMax,
@@ -385,7 +390,7 @@ library AdminImpl {
         uint256 marketId,
         Decimal.D256 memory spreadPremium
     )
-        private
+    private
     {
         Require.that(
             spreadPremium.value <= state.riskLimits.spreadPremiumMax,
@@ -401,8 +406,8 @@ library AdminImpl {
         Storage.State storage state,
         address token
     )
-        private
-        view
+    private
+    view
     {
         uint256 numMarkets = state.numMarkets;
 
@@ -426,8 +431,8 @@ library AdminImpl {
         Storage.State storage state,
         uint256 marketId
     )
-        private
-        view
+    private
+    view
     {
         Require.that(
             marketId < state.numMarkets,

@@ -40,6 +40,7 @@ describe('StandardActions', () => {
       solo.testing.interestSetter.getAddress(),
       INTEGERS.ZERO,
       INTEGERS.ZERO,
+      false,
       { from: r.accounts[0] },
     );
     await setupMarkets(solo, r.accounts, 2);

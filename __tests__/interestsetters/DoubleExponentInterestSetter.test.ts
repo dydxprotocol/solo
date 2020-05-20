@@ -19,6 +19,7 @@ const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
 const defaultCoefficients = [20, 20, 20, 20, 20];
 const defaultMaxAPR = new BigNumber('1.00');
+const defaultIsClosing = false;
 
 describe('DoubleExponentInterestSetter', () => {
   let snapshotId: string;
@@ -39,6 +40,7 @@ describe('DoubleExponentInterestSetter', () => {
       solo.testing.doubleExponentInterestSetter.getAddress(),
       zero,
       zero,
+      defaultIsClosing,
       { from: admin },
     );
     snapshotId = await snapshot();

@@ -23,14 +23,14 @@ import { TestToken } from "./TestToken.sol";
 
 
 /* solium-disable-next-line */
-contract TokenA is TestToken {
+contract TokenD is TestToken {
     function decimals() public pure returns (uint8) {
-        return 6;
+        return 8;
     }
     function symbol() public pure returns (string memory) {
-        return "USDC";
+        return "BTC";
     }
     function name() public pure returns (string memory) {
-        return "USD//C";
+        return "Bitcoin";
     }
 }

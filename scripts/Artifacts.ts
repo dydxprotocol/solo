@@ -33,6 +33,7 @@ import { default as OperationImpl } from '../build/contracts/OperationImpl.json'
 import { default as Permission } from '../build/contracts/Permission.json';
 import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
+import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkPriceOracleV1.json';
 
 export default {
   SoloMargin,
@@ -60,4 +61,5 @@ export default {
   OperationImpl,
   Permission,
   PartiallyDelayedMultiSig,
+  ChainlinkPriceOracleV1,
 };

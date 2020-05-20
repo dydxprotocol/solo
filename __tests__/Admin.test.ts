@@ -33,6 +33,7 @@ const defaultRate = new BigNumber(0);
 const defaultPremium = new BigNumber(0);
 const highPremium = new BigNumber('0.2');
 const defaultMarket = new BigNumber(1);
+const defaultIsClosing = false;
 const secondaryMarket = new BigNumber(0);
 const invalidMarket = new BigNumber(101);
 
@@ -276,6 +277,7 @@ describe('Admin', () => {
         setterAddress,
         marginPremium,
         spreadPremium,
+        defaultIsClosing,
         { from: admin },
       );
 
@@ -341,6 +343,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultIsClosing,
           { from: admin },
         ),
         'AdminImpl: Market exists',
@@ -356,6 +359,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultIsClosing,
           { from: admin },
         ),
         'AdminImpl: Invalid oracle price',
@@ -374,6 +378,7 @@ describe('Admin', () => {
           setterAddress,
           riskLimits.marginPremiumMax.plus(smallestDecimal),
           defaultPremium,
+          defaultIsClosing,
           { from: admin },
         ),
         'AdminImpl: Margin premium too high',
@@ -392,6 +397,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           riskLimits.spreadPremiumMax.plus(smallestDecimal),
+          defaultIsClosing,
           { from: admin },
         ),
         'AdminImpl: Spread premium too high',
@@ -410,6 +416,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultIsClosing,
           { from: nonAdmin },
         ),
       );

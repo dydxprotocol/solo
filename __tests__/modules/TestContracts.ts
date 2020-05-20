@@ -41,6 +41,9 @@ import testSoloMarginJson from '../../build/testing_contracts/TestSoloMargin.jso
 import tokenAJson from '../../build/testing_contracts/TokenA.json';
 import tokenBJson from '../../build/testing_contracts/TokenB.json';
 import tokenCJson from '../../build/testing_contracts/TokenC.json';
+import tokenDJson from '../../build/testing_contracts/TokenD.json';
+import tokenEJson from '../../build/testing_contracts/TokenE.json';
+import tokenFJson from '../../build/testing_contracts/TokenF.json';
 import erroringTokenJson from '../../build/testing_contracts/ErroringToken.json';
 import omiseTokenJson from '../../build/testing_contracts/OmiseToken.json';
 import testLibJson from '../../build/testing_contracts/TestLib.json';
@@ -70,6 +73,9 @@ export class TestContracts extends Contracts {
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
+  public tokenD: TestToken;
+  public tokenE: TestToken;
+  public tokenF: TestToken;
   public erroringToken: TestToken;
   public omiseToken: TestToken;
   public testLib: TestLib;
@@ -98,6 +104,9 @@ export class TestContracts extends Contracts {
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
+    this.tokenD = new this.web3.eth.Contract(tokenDJson.abi) as TestToken;
+    this.tokenE = new this.web3.eth.Contract(tokenEJson.abi) as TestToken;
+    this.tokenF = new this.web3.eth.Contract(tokenFJson.abi) as TestToken;
     this.erroringToken = new this.web3.eth.Contract(erroringTokenJson.abi) as TestToken;
     this.omiseToken = new this.web3.eth.Contract(omiseTokenJson.abi) as TestToken;
     this.testLib = new this.web3.eth.Contract(testLibJson.abi) as TestLib;
@@ -140,6 +149,9 @@ export class TestContracts extends Contracts {
       { contract: this.tokenA, json: tokenAJson },
       { contract: this.tokenB, json: tokenBJson },
       { contract: this.tokenC, json: tokenCJson },
+      { contract: this.tokenD, json: tokenDJson },
+      { contract: this.tokenE, json: tokenEJson },
+      { contract: this.tokenF, json: tokenFJson },
       { contract: this.erroringToken, json: erroringTokenJson },
       { contract: this.omiseToken, json: omiseTokenJson },
       { contract: this.testLib, json: testLibJson },
@@ -180,6 +192,9 @@ export class TestContracts extends Contracts {
     this.tokenA.options.from = account;
     this.tokenB.options.from = account;
     this.tokenC.options.from = account;
+    this.tokenD.options.from = account;
+    this.tokenE.options.from = account;
+    this.tokenF.options.from = account;
     this.erroringToken.options.from = account;
     this.omiseToken.options.from = account;
     this.testLib.options.from = account;

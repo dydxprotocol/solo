@@ -18,7 +18,7 @@ module.exports = {
           enabled: true,
           runs: 10000,
         },
-        evmVersion: 'byzantium',
+        evmVersion: 'petersburg',
       },
     },
   },

@@ -95,7 +95,8 @@ contract Admin is
         IPriceOracle priceOracle,
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
-        Decimal.D256 memory spreadPremium
+        Decimal.D256 memory spreadPremium,
+        bool isClosing
     )
         public
         onlyOwner
@@ -107,7 +108,8 @@ contract Admin is
             priceOracle,
             interestSetter,
             marginPremium,
-            spreadPremium
+            spreadPremium,
+            isClosing
         );
     }
 

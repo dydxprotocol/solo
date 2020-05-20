@@ -9,6 +9,7 @@ let solo: TestSolo;
 let accounts: address[];
 let admin: address;
 const USDC_PRICE = new BigNumber('1e30');
+const defaultIsClosing = false;
 
 describe('UsdcPriceOracle', () => {
   let snapshotId: string;
@@ -41,6 +42,7 @@ describe('UsdcPriceOracle', () => {
       solo.contracts.testInterestSetter.options.address,
       INTEGERS.ZERO,
       INTEGERS.ZERO,
+      defaultIsClosing,
       { from: admin },
     );
     const price = await solo.getters.getMarketPrice(INTEGERS.ZERO);

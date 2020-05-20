@@ -32,6 +32,7 @@ const wethMarket = new BigNumber(3);
 const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const negPar = par.times(-1);
+const defaultIsClosing = false;
 
 const PRIMARY_REVERT_REASON = 'PayableProxyForSoloMargin: Sender must be primary account';
 const SECONDARY_REVERT_REASON = 'PayableProxyForSoloMargin: Sender must be secondary account';
@@ -111,6 +112,7 @@ describe('PayableProxy', () => {
       solo.testing.interestSetter.getAddress(),
       zero,
       zero,
+      defaultIsClosing,
       { from: admin },
     );
     snapshotId = await snapshot();

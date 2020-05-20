@@ -25,7 +25,7 @@ import { TestToken } from "./TestToken.sol";
 /* solium-disable-next-line */
 contract TokenC is TestToken {
     function decimals() public pure returns (uint8) {
-        return 33;
+        return 24;
     }
     function symbol() public pure returns (string memory) {
         return "CCC";

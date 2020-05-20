@@ -414,6 +414,23 @@ library Storage {
         return state.operators[owner][operator];
     }
 
+    function requireIsGlobalOperator(
+        Storage.State storage state,
+        address operator
+    )
+        internal
+        view
+    {
+        bool isValidOperator = state.isGlobalOperator(operator);
+
+        Require.that(
+            isValidOperator,
+            FILE,
+            "Unpermissioned global operator",
+            operator
+        );
+    }
+
     function requireIsOperator(
         Storage.State storage state,
         Account.Info memory account,

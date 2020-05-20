@@ -24,6 +24,14 @@ const {
   isMainNet,
   isDocker,
 } = require('./helpers');
+const {
+  getDaiAddress,
+  getLinkAddress,
+  getLrcAddress,
+  getUsdcAddress,
+  getWbtcAddress,
+  getWethAddress,
+} = require('./token_helpers');
 
 // ============ Contracts ============
 
@@ -34,15 +42,17 @@ const SoloMargin = artifacts.require('SoloMargin');
 const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
-const TokenC = artifacts.require('TokenC');
+const TokenD = artifacts.require('TokenD');
+const TokenE = artifacts.require('TokenE');
+const TokenF = artifacts.require('TokenF');
+const WETH9 = artifacts.require('WETH9');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 
 // Interest Setters
-const PolynomialInterestSetter = artifacts.require('PolynomialInterestSetter');
+const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
 
 // Oracles
-const WethPriceOracle = artifacts.require('WethPriceOracle');
-const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
+const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // ============ Constants ============
 
@@ -116,6 +126,7 @@ async function addMarkets(
 ) {
   const marginPremium = { value: '0' };
   const spreadPremium = { value: '0' };
+  const isClosed = false;
 
   for (let i = 0; i < tokens.length; i += 1) {
     // eslint-disable-next-line no-await-in-loop
@@ -125,6 +136,7 @@ async function addMarkets(
       interestSetters[i].address,
       marginPremium,
       spreadPremium,
+      isClosed,
     );
   }
 }
@@ -139,76 +151,38 @@ async function getSoloMargin(network) {
 }
 
 async function getTokens(network) {
-  if (isDocker(network)) {
-    return Promise.all([
-      TokenA.deployed(),
-      TokenB.deployed(),
-      TokenC.deployed(),
-    ]);
-  }
-  if (isKovan(network)) {
-    return [
-      { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c' }, // Kovan WETH
-      { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' }, // Kovan DAI
-      { address: '0x03226d9241875DbFBfE0e814ADF54151e4F3fd4B' }, // Kovan USDC
-    ];
-  }
-  if (isMainNet(network)) {
-    return [
-      { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' }, // Main WETH
-      { address: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359' }, // Main DAI
-      { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }, // Main USDC
-    ];
-  }
-  throw new Error('Cannot find Tokens');
+  return [
+    { address: getDaiAddress(network, TokenB) },
+    { address: getLinkAddress(network, TokenE) },
+    { address: getLrcAddress(network, TokenF) },
+    { address: getUsdcAddress(network, TokenA) },
+    { address: getWethAddress(network, WETH9) },
+    { address: getWbtcAddress(network, TokenD) },
+  ];
 }
 
 async function getOracles(network) {
   if (isDocker(network)) {
-    return Promise.all([
-      { address: TestPriceOracle.address },
-      { address: TestPriceOracle.address },
-      { address: TestPriceOracle.address },
-    ]);
+    return getTokens(network).map(() => ({ address: TestPriceOracle.address }));
   }
   if (isKovan(network)) {
-    return [
-      { address: WethPriceOracle.address },
-      { address: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055' },
-      { address: UsdcPriceOracle.address },
-    ];
+    return getTokens(network).map(() => ({ address: ChainlinkPriceOracleV1.address }));
   }
   if (isMainNet(network)) {
-    return [
-      { address: WethPriceOracle.address },
-      { address: '0x787F552BDC17332c98aA360748884513e3cB401a' },
-      { address: UsdcPriceOracle.address },
-    ];
+    return getTokens(network).map(() => ({ address: ChainlinkPriceOracleV1.address }));
   }
   throw new Error('Cannot find Oracles');
 }
 
 async function getSetters(network) {
   if (isDocker(network)) {
-    return Promise.all([
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-    ]);
+    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isKovan(network)) {
-    return [
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-    ];
+    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isMainNet(network)) {
-    return [
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-      { address: PolynomialInterestSetter.address },
-    ];
+    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   throw new Error('Cannot find Setters');
 }

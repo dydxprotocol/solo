@@ -19,6 +19,7 @@ const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
 const defaultCoefficients = [0, 10, 10, 0, 0, 80];
 const defaultMaxAPR = new BigNumber('1.00');
+const defaultIsClosing = false;
 
 describe('PolynomialInterestSetter', () => {
   let snapshotId: string;
@@ -39,6 +40,7 @@ describe('PolynomialInterestSetter', () => {
       solo.testing.polynomialInterestSetter.getAddress(),
       zero,
       zero,
+      defaultIsClosing,
       { from: admin },
     );
     snapshotId = await snapshot();
