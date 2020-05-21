@@ -1164,3 +1164,261 @@ Once unsubscribed, clients will receive a message:
   "channel": "trades",
   "id": "DAI-USDC"
 }
+```
+
+### Perpetual Balance Updates
+
+The perpetual balance updates channel allows clients to receive balance updates for the perpetual product for their account.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "perpetual_balance_updates",
+  "id": "<account address>"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "perpetual_balance_updates"|
+|id|string|The account address to receive perpetual balance updates for|
+
+#### Initial Response
+
+The initial response will contain the most recent 100 perpetual balance updates for the account:
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "5da13205-2f3a-41c8-9f4a-cb0e5aa72dd4",
+  "message_id": 1,
+  "channel": "perpetual_balance_updates",
+  "id": "0x77A035b677D5A0900E4848Ae885103cD49af9633",
+  "contents": {
+    "balanceUpdates": [
+      {
+        "uuid": "3d7d6a8d-0202-4e40-ae2b-dff670efbbf9",
+        "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+        "market": "PBTC-USDC",
+        "deltaMargin": "-1741062",
+        "newMargin": "40181034",
+        "deltaPosition": "20000",
+        "newPosition": "10000",
+        "indexValue": "0.057858741951992068",
+        "indexTimestamp": "1588271672",
+        "isPendingBlock": false,
+        "orderNumber": "997556200290002",
+        "createdAt": "2020-05-03T02:53:41.421Z",
+        "updatedAt": "2020-05-03T02:53:41.421Z"
+      },
+      {
+        "uuid": "45bb37d9-f608-428a-9868-b1a9c1925e57",
+        "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+        "market": "PBTC-USDC",
+        "deltaMargin": "0",
+        "newMargin": "41922096",
+        "deltaPosition": "0",
+        "newPosition": "-10000",
+        "indexValue": "0.057858741951992068",
+        "indexTimestamp": "1588271672",
+        "isPendingBlock": false,
+        "orderNumber": "997556200290000",
+        "createdAt": "2020-05-03T02:53:41.419Z",
+        "updatedAt": "2020-05-03T02:53:41.419Z"
+      }
+    ]
+  }
+}
+```
+
+#### Updates
+
+New perpetual balance updates are sent in array form.
+
+Example:
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "5a767699-aad6-425e-b18a-a96eb5711a1d",
+  "message_id": 7,
+  "channel": "perpetual_balance_updates",
+  "id": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+  "contents": {
+    "pending": true,
+    "hash": "0xdcd230955f15d1c4747c36d0d094a6fb5c596ed3d43854d773f4a112a33bf7e6",
+    "perpetualBalanceUpdate": {
+      "uuid": "4bda3a11-f261-4dc8-ae40-7990541c7226",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "market": "PBTC-USDC",
+      "deltaMargin": "2321",
+      "newMargin": "129190281",
+      "deltaPosition": "0",
+      "newPosition": "-990000",
+      "indexValue": "1.205724630104738866",
+      "indexTimestamp": "1590092070",
+      "isPendingBlock": true,
+      "orderNumber": "1011133800340001",
+      "updatedAt": "2020-05-21T20:14:52.626Z",
+      "createdAt": "2020-05-21T20:14:52.626Z"
+    }
+  }
+}
+```
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "perpetual_balance_updates",
+  "id": "<the account address>"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|A market to unsubscribe from on the channel|
+
+#### Response
+
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "6c9cfd91-d20e-4920-9545-70640876a677",
+  "message_id": 1,
+  "channel": "perpetual_balance_updates",
+  "id": "0x77A035b677D5A0900E4848Ae885103cD49af9633"
+}
+```
+
+
+### Perpetual Markets
+
+The perpetual markets channel allows clients to updates about a particular market.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "perpetual_markets",
+  "id": "<market name>"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "subscribe"|
+|channel|string|Must be set to "perpetual_markets"|
+|id|string|The market to receive updates for eg: "PBTC-USDC"|
+
+#### Initial Response
+
+The initial response will contain the information for the specified market:
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "e0107276-e4dd-4b33-9cbf-7746f87b7799",
+  "message_id": 1,
+  "channel": "perpetual_markets",
+  "id": "PBTC-USDC",
+  "contents": {
+    "market": {
+      "uuid": "f6d20698-32ac-4f3a-a9c4-b6b7528b7b94",
+      "market": "PBTC-USDC",
+      "oraclePrice": "90.3551",
+      "fundingRate": "0.000000017511403011",
+      "minCollateral": "1.075",
+      "globalIndexValue": "1.207692942350066675",
+      "globalIndexTimestamp": "1590093314",
+      "decimals": "8",
+      "minimumTickSize": "0.01",
+      "minimumOrderSize": "10000",
+      "smallOrderThreshold": "1000000",
+      "makerFee": "-0.00025",
+      "largeTakerFee": "0.005",
+      "smallTakerFee": "0.00075",
+      "openInterest": "2835957144",
+      "createdAt": "2020-04-09T22:42:35.696Z",
+      "updatedAt": "2020-05-21T20:46:35.941Z"
+    }
+  }
+}
+```
+#### Updates
+
+New perpetual market updates are sent to the channel:
+
+Example:
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "e0107276-e4dd-4b33-9cbf-7746f87b7799",
+  "message_id": 16,
+  "channel": "perpetual_markets",
+  "id": "PBTC-USDC",
+  "contents": {
+    "market": {
+      "uuid": "f6d20698-32ac-4f3a-a9c4-b6b7528b7b94",
+      "market": "PBTC-USDC",
+      "oraclePrice": "90.3551",
+      "fundingRate": "0.000000017511403011",
+      "minCollateral": "1.075",
+      "globalIndexValue": "1.207692942350066675",
+      "globalIndexTimestamp": "1590093314",
+      "decimals": "8",
+      "minimumTickSize": "0.01",
+      "minimumOrderSize": "10000",
+      "smallOrderThreshold": "1000000",
+      "makerFee": "-0.00025",
+      "largeTakerFee": "0.005",
+      "smallTakerFee": "0.00075",
+      "openInterest": "2835957144",
+      "createdAt": "2020-04-09T22:42:35.696Z",
+      "updatedAt": "2020-05-21T20:49:05.482Z"
+    }
+  }
+}
+```
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "perpetual_markets",
+  "id": "<the market name>"
+}
+```
+
+|Field Name|JSON type|Description|
+|----------|---------|-----------|
+|type|string|Must be set to "unsubscribe"|
+|channel|string|The channel to unsubscribe from|
+|id|string|A market to unsubscribe from on the channel|
+
+#### Response
+
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "e0107276-e4dd-4b33-9cbf-7746f87b7799",
+  "message_id": 27,
+  "channel": "perpetual_markets",
+  "id": "PBTC-USDC"
+}
+```

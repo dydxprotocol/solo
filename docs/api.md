@@ -914,6 +914,101 @@ Example Response Body:
 }
 ```
 
+### GET `/v1/standard-actions`
+
+Description:
+Get the standard actions for a particular user. This endpoint can be used for both solo & perpetual.
+
+Query Params:
+
+| Field Name | Description                                                     |
+|------------|-----------------------------------------------------------------|
+| owner      | The wallet address of the user.                                 |
+| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| market     | The market of the action e.g. `PBTC-USDC`.                      |
+| limit      | The maximum number of standard actions to retrieve.             |
+| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
+
+Example Response Body:
+
+```json
+{
+  "standardActions": [
+    {
+      "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
+      "type": "ISOLATED_FULL_CLOSE",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "139940891786496509",
+      "tradeAmount": "160307343231895490",
+      "price": "197.76",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "1011061200670000",
+      "confirmedAt": "2020-05-21T17:34:22.000Z",
+      "feeAmount": "158511900987698260.512",
+      "feeAsset": "DAI",
+      "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
+      "payoutAmount": "139940891786496509",
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-21T17:35:57.265Z",
+      "updatedAt": "2020-05-21T17:35:57.280Z"
+    },
+    {
+      "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
+      "type": "ISOLATED_OPEN",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "150200220768708569",
+      "tradeAmount": "150000000000000000",
+      "price": "208.62",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "998298000710000",
+      "confirmedAt": "2020-05-01T22:13:39.000Z",
+      "feeAmount": "156465000000000000",
+      "feeAsset": "DAI",
+      "pnl": null,
+      "payoutAmount": null,
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-03T04:06:48.813Z",
+      "updatedAt": "2020-05-03T04:06:48.834Z"
+    }
+  ]
+}
+```
+
+#### Standard Action Response Object
+
+| Field Name     | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| uuid           | The unique id for the action.                                 |
+| owner          | The wallet address of the user.                               |
+| type           | The type of standard action e.g. `DEPOSIT`.                   |
+| market         | The perpetual market, e.g. `PBTC-USDC`.                       |
+| side           | The side for the standard action e.g. `LONG`, `SHORT`.        |
+| transferAmount | The amount in settlement token that is transferred.           |
+| price          | The price in settlement token.                                |
+| orderNumber    | Number used for ordering the standard actions.                |
+| updatedAt      | The ISO 8601 date and time the standard action was updated.   |
+| createdAt      | The ISO 8601 date and time the standard action was created.   |
+| confirmedAt    | The ISO 8601 date and time the standard action was confirmed. |
+| product        | The product type, e.g. `perpetual` or `solo`.                 |
+
 ## Perpetual Endpoints
 
 ### GET `/v1/perpetual-markets`
@@ -930,13 +1025,23 @@ Example Response Body:
 {
   "markets": [
     {
-      "createdAt": "2020-02-18T17:56:06.219Z",
-      "updatedAt": "2020-02-18T17:56:06.219Z",
+      "uuid": "f6d20698-32ac-4f3a-a9c4-b6b7528b7b94",
       "market": "PBTC-USDC",
-      "oraclePrice": "6000000000000000000000",
-      "fundingRate": "0.999991",
-      "globalIndexValue": "6000000000000000000000",
-      "globalIndexTimestamp": "1585933964",
+      "oraclePrice": "90.3551",
+      "fundingRate": "0.000000017511403011",
+      "minCollateral": "1.075",
+      "globalIndexValue": "1.207692942350066675",
+      "globalIndexTimestamp": "1590093314",
+      "decimals": "8",
+      "minimumTickSize": "0.01",
+      "minimumOrderSize": "10000",
+      "smallOrderThreshold": "1000000",
+      "makerFee": "-0.00025",
+      "largeTakerFee": "0.005",
+      "smallTakerFee": "0.00075",
+      "openInterest": "2835957144",
+      "createdAt": "2020-04-09T22:42:35.696Z",
+      "updatedAt": "2020-05-21T20:50:55.334Z"
     }
   ]
 }
@@ -951,6 +1056,15 @@ Market Response Object:
 | fundingRate          | The funding rate for the market.                                      |
 | globalIndexValue     | The global index value for the market.                                |
 | globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index. |
+| minCollateral        | The minimum collaterization before getting liquidated eg: 1.07 |
+| decimals             | Corresponds to the position units eg: if decimals = 8, then 100000000 = 1 BTC |
+| minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)|
+| minimumOrderSize     | The minimum size, in position units, required for an order |
+| smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers |
+| makerFee             | The fee charged for the maker of an order eg -0.00025 (equal to -0.025%) |
+| largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%) |
+| smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%) |
+| openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts)|
 
 ### GET `/v1/perpetual-balance-updates`
 
@@ -966,18 +1080,19 @@ Example Response Body:
 {
   "balanceUpdates": [
     {
-      "uuid": "6c2f7a09-d602-4c1a-a435-e915ed64423d",
-      "owner": "0xba7353ff41853ca0429a594584ae256231decb51",
-      "createdAt": "2020-01-18T17:56:06.219Z",
-      "updatedAt": "2020-02-14T19:01:06.198Z",
+      "uuid": "35f3d8cc-22a9-447e-b0b6-051f3e7272b7",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
       "market": "PBTC-USDC",
-      "deltaMargin": "0.00000000121",
-      "newMargin": "10.00000000001",
-      "deltaPosition": "0",
-      "newPosition": "15000",
-      "indexValue": "6000000000000000000000",
-      "indexTimestamp": "1585934124",
-      "orderNumber": "956855500050000",
+      "deltaMargin": "89957950",
+      "newMargin": "130127513",
+      "deltaPosition": "-1000000",
+      "newPosition": "-990000",
+      "indexValue": "1.204924898727124293",
+      "indexTimestamp": "1590089676",
+      "isPendingBlock": false,
+      "orderNumber": "1011116901510002",
+      "createdAt": "2020-05-21T19:36:03.270Z",
+      "updatedAt": "2020-05-21T19:36:03.270Z"
     }
   ]
 }
@@ -985,18 +1100,19 @@ Example Response Body:
 
 Balance Update Response Object:
 
-| Field Name     | Description                                      |
-|----------------|--------------------------------------------------|
-| uuid           | The unique ID for the balance update.            |
-| owner          | The wallet address of the user.                  |
-| market         | The perpetual market, e.g. `PBTC-USDC`.          |
-| deltaMargin    | The change in settlement token (e.g. USDC).      |
-| newMargin      | The new balance of settlement token (e.g. USDC). |
-| deltaPosition  | The change in position token (e.g. PBTC).        |
-| newPosition    | The amount in position token (e.g. PBTC).        |
-| indexValue     | The new index value of the account.              |
-| indexTimestamp | The new index timestamp of the account.          |
-| orderNumber    | Number used for ordering the balance updates.    |
+| Field Name     | Description                                           |
+|----------------|-------------------------------------------------------|
+| uuid           | The unique ID for the balance update.                 |
+| owner          | The wallet address of the user.                       |
+| market         | The perpetual market, e.g. `PBTC-USDC`.               |
+| deltaMargin    | The change in settlement token (e.g. USDC).           |
+| newMargin      | The new balance of settlement token (e.g. USDC).      |
+| deltaPosition  | The change in position token (e.g. PBTC).             |
+| newPosition    | The amount in position token (e.g. PBTC).             |
+| indexValue     | The new index value of the account.                   |
+| indexTimestamp | The timestamp for when the index value was set.       |
+| orderNumber    | Number used for ordering the balance updates.         |
+| isPendingBlock | Whether the specific balance update is pending or not |
 
 
 ### GET `/v1/standard-actions`
@@ -1037,7 +1153,7 @@ Example Response Body:
 }
 ```
 
-### Standard Action Response Object
+#### Standard Action Response Object
 
 | Field Name     | Description                                                   |
 |----------------|---------------------------------------------------------------|
@@ -1082,7 +1198,7 @@ Example Response Body:
 }
 ```
 
-### Account Response Object
+#### Account Response Object
 
 | Field Name      | Description                                                                    |
 |-----------------|--------------------------------------------------------------------------------|
