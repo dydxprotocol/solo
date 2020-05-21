@@ -1102,7 +1102,7 @@ Example Response Body:
 | feeAmount      | The fee amount charged                                                          |
 | feeAsset       | The asset of the `feeAmount` eg `DAI`                                           | 
 | asset          | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                      |
-| payoutAmount   |                                                                                 |
+| payoutAmount   | The amount refunded to the user when maker fee is negative                      |
 
 ## Perpetual Endpoints
 
@@ -1281,7 +1281,9 @@ Example Response Body:
 | confirmedAt    | The ISO 8601 date and time the standard action was confirmed. |
 | transactionHash| The transaction corresponding to this standard action         |
 | feeAmount      | The fee amount charged                                        |
-| feeAsset       | The asset of the `feeAmount` eg `USDC`                        |                                                       
+| feeAsset       | The asset of the `feeAmount` eg `USDC`                        |
+| payoutAmount   | The amount refunded to the user when maker fee is negative    |
+| pnl            | Currently not set in the standard action for perpetual        |                                               
 
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
