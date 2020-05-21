@@ -233,7 +233,7 @@ const { order } = await solo.api.placeCanonicalOrder({
 
     //OPTIONAL: Maximum fee you are willing to accept. Note, if limitFee is below calculated restriction and no exemption was given, the request will 400
     //Makers will pay 0% fees. Takers with greater than or equal to .5Eth in the transaction will pay .15% of ETH-DAI and ETH-USDC transactions and .05% for DAI-USDC transactions.
-    //For transactions below .5Eth they will pay .50% fees.
+    //For transactions below 5Eth they will pay .50% fees.
     limitFee: '0.0015'
   }
 
