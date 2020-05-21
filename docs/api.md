@@ -584,37 +584,52 @@ Example Response Body:
 {
   "markets": {
     "ETH-DAI": {
+      "symbol": "ETH-DAI",
       "low": "162.4405999999999897",
       "high": "174.2499999999999868",
       "open": "164.2299999999999944",
       "last": "172.3",
-      "symbol": "ETH-DAI",
+      "count": "471",
       "baseVolume": "5843.639421040800787051",
       "quoteVolume": "989969.012877626028804362",
       "usdVolume": "986637.73064075646796575518",
-      "count": "471"
+      "type": "SPOT"
     },
     "ETH-USDC": {
+      "symbol": "ETH-USDC",
       "low": "164.6288399939555261",
       "high": "172.3813",
       "open": "165.6253902",
       "last": "172.024530000172056",
-      "symbol": "ETH-USDC",
+      "count": "39",
       "baseVolume": "1242.716813796154791774",
       "quoteVolume": "208529.481209",
       "usdVolume": "208996.90504319296510926476",
-      "count": "39"
+      "type": "SPOT"
     },
     "DAI-USDC": {
+      "symbol": "DAI-USDC",
       "low": "0.9955",
       "high": "0.99990000047398794804",
       "open": "0.997",
       "last": "0.9992585",
-      "symbol": "DAI-USDC",
+      "count": "70",
       "baseVolume": "125214.755274428622751688",
       "quoteVolume": "124872.38461",
       "usdVolume": "125214.755274428622751688",
-      "count": "70"
+      "type": "SPOT"
+    },
+    "PBTC-USDC": {
+      "symbol": "PBTC-USDC",
+      "low": "8909.0000",
+      "high": "9592.0000",
+      "open": "9488.0000",
+      "last": "8944.0000",
+      "count": "221",
+      "baseVolume": "116.5380",
+      "quoteVolume": "1057559.1430",
+      "usdVolume": "1057559.1430",
+      "type": "PERPETUAL"
     }
   }
 }
@@ -827,7 +842,7 @@ Example Response Body:
 Description:
 This endpoint returns information for a particular Solo asset.
 
-Note: This is different from the v2/markets endpoint mentioned above. 
+Note: This is different from the v2/markets endpoint mentioned above.
 
 Query Params:
 
