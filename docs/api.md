@@ -1067,14 +1067,16 @@ Example Response Body:
 
 ```json
 {
-  "owner": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc3",
+  "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
   "balances": {
     "PBTC-USDC": {
-      "margin": "120000",
-      "position": "20",
-      "indexValue": "6000000000000000000000",
-      "indexTimestamp": "1585933964",
-      "cachedMargin": "12005",
+      "cachedMargin": "40181034",
+      "margin": "40169512",
+      "position": "10000",
+      "pendingMargin": "0",
+      "pendingPosition": "0",
+      "indexValue": "0.057858741951992068",
+      "indexTimestamp": "1588271672"
     }
   }
 }
@@ -1082,12 +1084,17 @@ Example Response Body:
 
 ### Account Response Object
 
-| Field Name | Description                                         |
-|------------|-----------------------------------------------------|
-| owner      | The user's wallet address.                          |
-| balances   | An object with the user's balances for each market. |
-| margin     | The balance in settlement token (e.g. USDC).        |
-| position   | The balance in position token (e.g. PBTC).          |
+| Field Name      | Description                                                                    |
+|-----------------|--------------------------------------------------------------------------------|
+| owner           | The user's wallet address.                                                     |
+| balances        | An object with the user's balances for each market.                            |
+| margin          | The balance in settlement token (e.g. USDC).                                   |
+| position        | The balance in position token (e.g. PBTC).                                     |
+| cachedMargin    | This is calculated as (index value - global index value)*position              |
+| pendingMargin   | This is the new (pending) value of the margin when a fill is still pending     |
+| pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
+| indexValue      | The value of the global index from the last interaction with the account       |
+| indexTimestamp  | The timestamp when the index value was set                                     |
 
 ## Deprecated APIs
 
