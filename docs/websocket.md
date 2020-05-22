@@ -560,7 +560,7 @@ To subscribe send:
 
 #### Initial Response
 
-The initial response will contain the positions that are open. 
+The initial response is an array of positions that are open.
 
 ```json
 {
@@ -646,6 +646,19 @@ eg:- A position is closed:
   }
 }
 ```
+
+#### Websocket updates message contents structure
+
+| Field   | Description                                               |
+|---------|-----------------------------------------------------------|
+| pending | Whether the position is still waiting to be confirmed     |
+| hash    | The transaction hash corresponding to the position        |
+| uuid    | The unique identifier for the position                    |
+| owner   | The account address                                       |
+| number  | The account number                                        |
+| market  | The market for this position eg `WETH-DAI`                |
+| type    | The position type er: `ISOLATED_LONG` or `ISOLATED_SHORT` |
+| status  | The position status eg: `OPEN`,  `CLOSED`                 |
 
 #### Unsubscribing
 
@@ -871,6 +884,33 @@ New actions performed by the user are posted on the channel.
 }
 ```
 
+#### Websocket updates message contents structure
+
+| Field           | Description                                                                                                      |
+|-----------------|------------------------------------------------------------------------------------------------------------------|
+| pending         | Whether the standard action is still waiting to be confirmed                                                     |
+| hash            | The transaction hash corresponding to the standard action                                                        |
+| standardAction  | The standardAction object                                                                                        |
+| uuid            | The unique id for the action.                                                                                    |
+| owner           | The wallet address of the user.                                                                                  |
+| type            | The type of standard action e.g. `DEPOSIT`, `ISOLATED_OPEN` (for solo), `OPEN`, `ACCOUNT_SETTLE` (for perpetual) |
+| market          | The market, e.g. `WETH-USDC` or `PBTC-USDC`.                                                                     |
+| side            | The side for the standard action e.g. `LONG`, `SHORT`.                                                           |
+| transferAmount  | The amount in settlement token that is transferred.                                                              |
+| tradeAmount     | The amount traded. i.e. the base token amount in a trade                                                         |
+| price           | The price in settlement token.                                                                                   |
+| orderNumber     | Number used for ordering the standard actions.                                                                   |
+| updatedAt       | The ISO 8601 date and time the standard action was updated.                                                      |
+| createdAt       | The ISO 8601 date and time the standard action was created.                                                      |
+| confirmedAt     | The ISO 8601 date and time the standard action was confirmed.                                                    |
+| product         | The product type, e.g. `perpetual` or `solo`.                                                                    |
+| transactionHash | The transaction corresponding to this standard action                                                            |
+| pnl             | The PnL for the corresponding position. Currently not set in the standard action for perpetual.                  |
+| feeAmount       | The fee amount charged                                                                                           |
+| feeAsset        | The asset of the `feeAmount` eg `DAI`, `USDC`                                                                    |
+| asset           | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                                                       |
+| payoutAmount    | The amount refunded to the user when maker fee is negative                                                       |
+
 #### Unsubscribing
 
 ```json
@@ -997,6 +1037,26 @@ New actions performed by the user are posted on the channel.
   }
 }
 ```
+
+#### Websocket update message content structure
+
+| Field          | Description                                                  |
+|----------------|--------------------------------------------------------------|
+| pending        | Whether the balance update is still waiting to be confirmed  |
+| hash           | The transaction hash corresponding to the balance update     |
+| balanceUpdate  | The balanceUpdate object                                     |
+| uuid           | Unique identifier for a balance update                       |
+| deltaWei       | The change in wei in a balance update                        |
+| newPar         | The new par value due to the balance update                  |
+| newWei         | The new wei value due to the balance update                  |
+| orderNumber    | Used for ordering a balance update                           |
+| isPendingBlock | Whether the balance update is still pending                  |
+| owner          | The account address                                          |
+| number         | The account number                                           |
+| marketId       | The id of the market for this balance update                 |
+| confirmedAt    | The ISO 8601 date and time this balance update was confirmed |
+| createdAt      | The ISO 8601 date and time this balance update was created   |
+| updatedAt      | The ISO 8601 date and time this balance update was updated   |
 
 #### Unsubscribing
 
@@ -1271,6 +1331,24 @@ Example:
 }
 ```
 
+#### Websocket update message content structure
+
+| Field          | Description                                                           |
+|----------------|-----------------------------------------------------------------------|
+| pending        | Whether the perpetual balance update is still waiting to be confirmed |
+| hash           | The transaction hash corresponding to the perpetual balance update    |
+| uuid           | The unique ID for the balance update.                                 |
+| owner          | The wallet address of the user.                                       |
+| market         | The perpetual market, e.g. `PBTC-USDC`.                               |
+| deltaMargin    | The change in settlement token (e.g. USDC).                           |
+| newMargin      | The new balance of settlement token (e.g. USDC).                      |
+| deltaPosition  | The change in position token (e.g. PBTC).                             |
+| newPosition    | The amount in position token (e.g. PBTC).                             |
+| indexValue     | The new index value of the account.                                   |
+| indexTimestamp | The timestamp for when the index value was set.                       |
+| orderNumber    | Number used for ordering the balance updates.                         |
+| isPendingBlock | Whether the specific balance update is pending or not                 |
+
 #### Unsubscribing
 
 ```json
@@ -1393,6 +1471,25 @@ Example:
   }
 }
 ```
+
+#### Websocket update message content structure
+
+| Field                | Description                                                                                        |
+|----------------------|----------------------------------------------------------------------------------------------------|
+| market               | The market string, e.g.: `PBTC-USDC`.                                                              |
+| oraclePrice          | The index price from the oracle.                                                                   |
+| fundingRate          | The funding rate for the market.                                                                   |
+| globalIndexValue     | The global index value for the market.                                                             |
+| globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index.                              |
+| minCollateral        | The minimum collaterization before getting liquidated eg: 1.07                                     |
+| decimals             | Corresponds to the precision for the position units eg: if decimals = 8, then 100000000 = 1 BTC    |
+| minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)                                                    |
+| minimumOrderSize     | The minimum size, in position units, required for an order                                         |
+| smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers                     |
+| makerFee             | The percentage fee charged for the maker of an order eg -0.00025 (equal to -0.025%)                |
+| largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
+| smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
+| openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
 
 #### Unsubscribing
 
