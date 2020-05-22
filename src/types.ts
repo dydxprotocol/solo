@@ -138,6 +138,7 @@ export interface TxResult {
   events?: {
     [eventName: string]: EventLog;
   };
+  nonce?: number,
   status?: boolean;
   confirmation?: Promise<TransactionReceipt>;
   gasEstimate?: number;
