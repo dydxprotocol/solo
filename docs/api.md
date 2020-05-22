@@ -1166,8 +1166,6 @@ Example Response Body:
 }
 ```
 
-
-
 ## Perpetual Endpoints
 
 ### GET `/v1/perpetual-markets`
