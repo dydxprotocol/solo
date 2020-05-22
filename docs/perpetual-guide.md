@@ -20,7 +20,7 @@ This article focuses on the technical information needed to trade the perpetual 
 * Fees: -0.025% Maker, 0.075% Taker
 * Custom fees for “small” orders: 0.5% Taker
 * Min order size to avoid “small” order fees: 0.1 BTC
-* Mark price for liquidations: The mark price is the on-chain index price, given by the [MakerDAO BTC–USD Oracle V2](https://blog.makerdao.com/introducing-oracles-v2-and-defi-feeds/) which reports the median spot price of [seven exchanges](https://github.com/makerdao/setzer-mcd/blob/c528da640393a3d79ef314a7f86ae363d503a240/libexec/setzer/setzer-price-btcusd#L5-L11): Binance, Bitfinex, Bitstamp, Bittrex, Coinbase Pro, Gemini, and Kraken.
+* Mark price for liquidations: The mark price is the on-chain index price, given by the [MakerDAO BTC–USD Oracle V2](https://blog.makerdao.com/introducing-oracles-v2-and-defi-feeds/) which reports the median spot price of [five exchanges](https://github.com/makerdao/setzer-mcd/blob/ee89b1835f170eaf0ef585a4ae9f897bb6dfef8d/libexec/setzer/setzer-price-btcusd#L5-L9): Bitstamp, Bittrex, Coinbase Pro, Gemini, and Kraken.
 * Funding: Funding payments are made every second according to a rate which is updated hourly. The funding premium is scaled so as to have a realization period of 8 hours.
 * Contract loss mechanism: Deleveraging (centralized, but verifiable insurance fund is the first backstop before deleveraging)
 * Trading hours: 24/7/365
@@ -200,7 +200,7 @@ At the end of each hour, the 1-hour premium is calculated as the simple average 
 
 ### Index Price for Funding
 
-Funding payments occur on-chain, so the calculation of funding payments from the funding rate uses an on-chain index given by a MakerDAO v2 oracle. The funding rate itself is calculated off-chain, and uses an off-chain index which is updated more frequently than the on-chain index. The indices are each calculated the same way, as the median spot price of seven exchanges: Binance, Bitfinex, Bitstamp, Bittrex, Coinbase Pro, Gemini, and Kraken.
+Funding payments occur on-chain, so the calculation of funding payments from the funding rate uses an on-chain index given by a MakerDAO v2 oracle. The funding rate itself is calculated off-chain, and uses an off-chain index which is updated more frequently than the on-chain index. The indices are each calculated the same way, as the median spot price of five exchanges: Bitstamp, Bittrex, Coinbase Pro, Gemini, and Kraken.
 
 ### Funding Rate Updates
 
