@@ -16,11 +16,11 @@ The WebSocket API accepts and sends messages in JSON format. All messages sent t
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|The type of the message|
-|connection_id|string|A uuid unique to your connection. Will remain the same for the life of the connection|
-|message_id|number|A sequential number starting at 0 that increases by 1 for each message sent|
+| Field Name    | JSON type | Description                                                                           |
+|---------------|-----------|---------------------------------------------------------------------------------------|
+| type          | string    | The type of the message                                                               |
+| connection_id | string    | A uuid unique to your connection. Will remain the same for the life of the connection |
+| message_id    | number    | A sequential number starting at 0 that increases by 1 for each message sent           |
 
 ## Subscribe
 
@@ -36,11 +36,11 @@ On the WebSocket you can subscribe to various channels to receive updates. Subsc
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|The channel to subscribe to|
-|id|string|An id to subscribe to on the channel|
+| Field Name | JSON type | Description                          |
+|------------|-----------|--------------------------------------|
+| type       | string    | Must be set to "subscribe"           |
+| channel    | string    | The channel to subscribe to          |
+| id         | string    | An id to subscribe to on the channel |
 
 #### Initial Response
 
@@ -84,11 +84,11 @@ Where initial state is the initial state of what you have subscribed to. After t
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                              |
+|------------|-----------|------------------------------------------|
+| type       | string    | Must be set to "subscribe"               |
+| channel    | string    | The channel to unsubscribe from          |
+| id         | string    | An id to unsubscribe from on the channel |
 
 #### Response
 Once unsubscribed, clients will receive a message:
@@ -119,11 +119,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "orderbook"|
-|id|string|The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC|
+| Field Name | JSON type | Description                                                    |
+|------------|-----------|----------------------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                                     |
+| channel    | string    | Must be set to "orderbook"                                     |
+| id         | string    | The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC |
 
 #### Initial Response
 
@@ -273,11 +273,11 @@ To subscribe, send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "orders"|
-|id|string|The wallet address to listen to|
+| Field Name | JSON type | Description                     |
+|------------|-----------|---------------------------------|
+| type       | string    | Must be set to "subscribe"      |
+| channel    | string    | Must be set to "orders"         |
+| id         | string    | The wallet address to listen to |
 
 #### Initial Response
 
@@ -517,11 +517,11 @@ An order expired:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                              |
+|------------|-----------|------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"             |
+| channel    | string    | The channel to unsubscribe from          |
+| id         | string    | An id to unsubscribe from on the channel |
 
 #### Response
 
@@ -552,11 +552,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "positions"|
-|id|string|The wallet address to subscribe to|
+| Field Name | JSON type | Description                        |
+|------------|-----------|------------------------------------|
+| type       | string    | Must be set to "subscribe"         |
+| channel    | string    | Must be set to "positions"         |
+| id         | string    | The wallet address to subscribe to |
 
 #### Initial Response
 
@@ -657,11 +657,11 @@ eg:- A position is closed:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                              |
+|------------|-----------|------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"             |
+| channel    | string    | The channel to unsubscribe from          |
+| id         | string    | An id to unsubscribe from on the channel |
 
 #### Response
 
@@ -693,11 +693,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "standard_actions"|
-|id|string|The wallet address to subscribe to|
+| Field Name | JSON type | Description                        |
+|------------|-----------|------------------------------------|
+| type       | string    | Must be set to "subscribe"         |
+| channel    | string    | Must be set to "standard_actions"  |
+| id         | string    | The wallet address to subscribe to |
 
 #### Initial Response
 
@@ -881,11 +881,11 @@ New actions performed by the user are posted on the channel.
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                              |
+|------------|-----------|------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"             |
+| channel    | string    | The channel to unsubscribe from          |
+| id         | string    | An id to unsubscribe from on the channel |
 
 ### Balance updates
 
@@ -904,11 +904,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "balance_updates"|
-|id|string|The wallet address to subscribe to|
+| Field Name | JSON type | Description                        |
+|------------|-----------|------------------------------------|
+| type       | string    | Must be set to "subscribe"         |
+| channel    | string    | Must be set to "balance_updates"   |
+| id         | string    | The wallet address to subscribe to |
 
 #### Initial Response
 
@@ -1008,11 +1008,11 @@ New actions performed by the user are posted on the channel.
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                              |
+|------------|-----------|------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"             |
+| channel    | string    | The channel to unsubscribe from          |
+| id         | string    | An id to unsubscribe from on the channel |
 
 ### Trades
 
@@ -1030,11 +1030,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "trades"|
-|id|string|The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC|
+| Field Name | JSON type | Description                                                    |
+|------------|-----------|----------------------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                                     |
+| channel    | string    | Must be set to "trades"                                        |
+| id         | string    | The market to subscribe to. e.g. WETH-DAI, WETH-USDC, DAI-USDC |
 
 #### Initial Response
 
@@ -1147,11 +1147,11 @@ A trade executed for the market:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|A market to unsubscribe from on the channel|
+| Field Name | JSON type | Description                                 |
+|------------|-----------|---------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"                |
+| channel    | string    | The channel to unsubscribe from             |
+| id         | string    | A market to unsubscribe from on the channel |
 
 #### Response
 
@@ -1182,11 +1182,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "perpetual_balance_updates"|
-|id|string|The account address to receive perpetual balance updates for|
+| Field Name | JSON type | Description                                                  |
+|------------|-----------|--------------------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                                   |
+| channel    | string    | Must be set to "perpetual_balance_updates"                   |
+| id         | string    | The account address to receive perpetual balance updates for |
 
 #### Initial Response
 
@@ -1281,11 +1281,11 @@ Example:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|A market to unsubscribe from on the channel|
+| Field Name | JSON type | Description                                 |
+|------------|-----------|---------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"                |
+| channel    | string    | The channel to unsubscribe from             |
+| id         | string    | A market to unsubscribe from on the channel |
 
 #### Response
 
@@ -1317,11 +1317,11 @@ To subscribe send:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "subscribe"|
-|channel|string|Must be set to "perpetual_markets"|
-|id|string|The market to receive updates for eg: "PBTC-USDC"|
+| Field Name | JSON type | Description                                       |
+|------------|-----------|---------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                        |
+| channel    | string    | Must be set to "perpetual_markets"                |
+| id         | string    | The market to receive updates for eg: "PBTC-USDC" |
 
 #### Initial Response
 
@@ -1404,11 +1404,11 @@ Example:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from|
-|id|string|A market to unsubscribe from on the channel|
+| Field Name | JSON type | Description                                 |
+|------------|-----------|---------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"                |
+| channel    | string    | The channel to unsubscribe from             |
+| id         | string    | A market to unsubscribe from on the channel |
 
 #### Response
 
