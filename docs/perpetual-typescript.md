@@ -67,7 +67,7 @@ const { order } = await perpetual.api.placePerpetualOrder({
     // 0 indicates no expiry. Defaults to 28 days
     expiration: new BigNumber('1000'),
     // OPTIONAL: Maximum fee you are willing to accept. Note, if limitFee is below calculated restriction and no exemption was given, the request will 400
-    // Makers with greater than or equal to 0.01Sats in the transaction will will be paid 0.025% fees, otherwise they will pay no fee. Takers with greater than or equal to 0.01Sats in the transaction will pay 0.075% for PBTC-USDC transactions. For transactions below 0.01Sats they will pay 0.50% fees.
+    // Makers will be paid 0.025% fees. Takers with greater than or equal to 0.1 BTC in the transaction will pay 0.075% for PBTC-USDC transactions. For transactions below 0.1 BTC they will pay 0.50% fees.
     limitFee: '0.0075'
   }
   // OPTIONAL: defaults to false

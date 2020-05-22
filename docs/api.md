@@ -48,7 +48,7 @@ After this is done, the order is ready to be submitted to the API.
 | amount             | string    | The amount of token being offered, in base units.                                                                                                        |
 | limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                             |
 | triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                          |
-| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 0.5 ETH. |
+| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 5 ETH.   |
 | makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                             |
 | makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                       |
 | expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.               |
@@ -90,7 +90,7 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 | amount         | string    | The amount of token being offered, in base units.                                                                                            |
 | limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                        |
 | triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                              |
-| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.01 BTC. |
+| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.1 BTC.  |
 | maker          | string    | The Ethereum address of the Maker.                                                                                                           |
 | taker          | string    | The Ethereum address of the Taker.                                                                                                           |
 | expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.   |
