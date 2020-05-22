@@ -686,9 +686,6 @@ Example Response Body:
 Description:
 Gets the perpetual and solo standard actions for a particular user.
 
-Description:
-Gets the perpetual and solo standard actions for a particular user.
-
 Query Params:
 
 | Field Name | Description                                                     |
@@ -740,7 +737,8 @@ Standard action assets
 | USDC  |
 | SAI   |
 
-Example Response Body for solo:
+#### Example Response Body for solo:
+
 Query: `https://api.dydx.exchange/v1/standard-actions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=2&product=solo`
 ```json
 {
@@ -803,7 +801,8 @@ Query: `https://api.dydx.exchange/v1/standard-actions?owner=0x77A035b677D5A0900E
 }
 ```
 
-Example Response Body for perpetual:
+#### Example Response Body for perpetual:
+
 Query: `https://api.dydx.exchange/v1/standard-actions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1&product=perpetual`
 ```json
 {
@@ -989,8 +988,10 @@ Query Params:
 |------------|---------------------------------------------------------------------------|
 | number     | (Optional) The Solo Acount number of the account to request balances for. |
 
-Example Response Body:
+#### Example Response Body:
+
 Query: `https://api.dydx.exchange/v1/accounts/0x0913017c740260fea4b2c62828a4008ca8b0d6e4`
+
 ```json
 {
   "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
@@ -1045,7 +1046,8 @@ Query Params:
 | isExpired      | (optional) returns all accounts that have at least one balance that has expired and is negative |
 | isMigratable   | (optional) returns all accounts that have SAI balance (positive or negative)                    |
 
-Example Response Body:
+#### Example Response Body:
+
 Query: `https://api.dydx.exchange/v1/accounts`
 ```json
 {
@@ -1118,7 +1120,8 @@ Note: This is different from the v2/markets endpoint mentioned above.
 Query Params:
 None
 
-Example response body:
+#### Example response body:
+
 Query: `https://api.dydx.exchange/v1/markets`
 ```json
 {
@@ -1301,7 +1304,8 @@ Query Params:
 | id         | The asset id |
 
 
-Example Response Body:
+#### Example Response Body:
+
 Query: `https://api.dydx.exchange/v1/markets/0`
 ```json
 {
@@ -1379,7 +1383,8 @@ Query Parameters
 | orderNumberBefore | (optional) used for querying balance updates before a certain time. (`orderNumber` is used for ordering updates) |
 | limit             | (optional) the number of balance updates to return (max 100)                                                     |
 
-Example response:
+#### Example response:
+
 Query: `https://api.dydx.exchange/v1/balance-updates?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=2`
 ```json
 {
@@ -1483,7 +1488,7 @@ Position markets:
 | SAI_USDC  |
 | SAI_DAI   |
 
-Example response object:
+#### Example response object:
 
 Query: `https://api.dydx.exchange/v1/positions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1`
 ```json
@@ -1591,7 +1596,7 @@ Get high-level information on all Perpetual markets.
 Query Params
 None
 
-Example Response Body:
+#### Example Response Body:
 
 Query `https://api.dydx.exchange/v1/perpetual-markets`
 ```json
@@ -1645,7 +1650,7 @@ Query `https://api.dydx.exchange/v1/perpetual-markets`
 Description:
 This returns the market information for a specific perpetual market.
 
-Example response body:
+#### Example response body:
 Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 
 ```json
@@ -1700,7 +1705,7 @@ Query Params:
 | orderNumberBefore | (optional) Used to return balance updates before an `orderNumber`          |
 | limit             | (optional) The maximum number of balance updates to retrieve. (max is 100) |
 
-Example Response Body:
+#### Example Response Body:
 Query: `https://api.dydx.exchange/v1/perpetual-balance-updates?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1`
 ```json
 {
@@ -1750,7 +1755,7 @@ for the account.
 Query Params:
 None
 
-Example Response Body:
+#### Example Response Body:
 
 Query: `https://api.dydx.exchange/v1/perpetual-accounts/0x77A035b677D5A0900E4848Ae885103cD49af9633`
 ```json
@@ -1794,7 +1799,7 @@ Query Params:
 |----------------|-----------------------------------------------------------------------------------|
 | isLiquidatable | (optional) If set to true, returns accounts that are below the margin requirement |
 
-Example Response Body:
+#### Example Response Body:
 
 Query: `https://api.dydx.exchange/v1/perpetual-accounts`
 ```json
