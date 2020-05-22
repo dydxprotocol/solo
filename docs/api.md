@@ -695,34 +695,53 @@ Query Params:
 |------------|-----------------------------------------------------------------|
 | owner      | The wallet address of the user.                                 |
 | type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| asset      | The asset for the standard action eg: `WETH`, `DAI`             |
 | market     | The market of the action e.g. `PBTC-USDC`.                      |
 | limit      | The maximum number of standard actions to retrieve.             |
 | product    | The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
 
 Standard Action types:
-
 | Type                   | Product         |
 |------------------------|-----------------|
-| DEPOSIT                | solo, perpetual |
-| REPAY                  | solo            |
-| WITHDRAW               | solo, perpetual |
-| BORROW                 | solo            |
-| LIQUIDATE              | solo, perpetual |
-| LIQUIDATED             | solo, perpetual |
-| EXPIRE                 | solo            |
-| EXPIRED                | solo            |
-| TRADE                  | solo            |
-| ISOLATED_OPEN          | solo            |
-| ISOLATED_PARTIAL_CLOSE | solo            |
-| ISOLATED_FULL_CLOSE    | solo            |
-| ACCOUNT_SETTLE         | perpetual       |
-| OPEN                   | perpetual       |
-| CLOSE                  | perpetual       |
-| INCREASE               | perpetual       |
-| DECREASE               | perpetual       |
+| DEPOSIT                | SOLO, PERPETUAL |
+| REPAY                  | SOLO            |
+| WITHDRAW               | SOLO, PERPETUAL |
+| BORROW                 | SOLO            |
+| LIQUIDATE              | SOLO, PERPETUAL |
+| LIQUIDATED             | SOLO, PERPETUAL |
+| EXPIRE                 | SOLO            |
+| EXPIRED                | SOLO            |
+| TRADE                  | SOLO            |
+| ISOLATED_OPEN          | SOLO            |
+| ISOLATED_PARTIAL_CLOSE | SOLO            |
+| ISOLATED_FULL_CLOSE    | SOLO            |
+| ACCOUNT_SETTLE         | PERPETUAL       |
+| OPEN                   | PERPETUAL       |
+| CLOSE                  | PERPETUAL       |
+| INCREASE               | PERPETUAL       |
+| DECREASE               | PERPETUAL       |
+
+Standard action markets
+| market    |
+|-----------|
+| WETH_DAI  |
+| WETH_SAI  |
+| WETH_USDC |
+| DAI_USDC  |
+| SAI_USDC  |
+| SAI_DAI   |
+| PBTC-USDC |
+
+Standard action assets
+| asset |
+|-------|
+| WETH  |
+| DAI   |
+| USDC  |
+| SAI   |
 
 Example Response Body for solo:
-
+Query: `https://api.dydx.exchange/v1/standard-actions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=2&product=solo`
 ```json
 {
   "standardActions": [
@@ -785,7 +804,7 @@ Example Response Body for solo:
 ```
 
 Example Response Body for perpetual:
-
+Query: `https://api.dydx.exchange/v1/standard-actions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1&product=perpetual`
 ```json
 {
   "standardActions": [
@@ -971,6 +990,7 @@ Query Params:
 | number     | (Optional) The Solo Acount number of the account to request balances for. |
 
 Example Response Body:
+Query: `https://api.dydx.exchange/v1/accounts/0x0913017c740260fea4b2c62828a4008ca8b0d6e4`
 ```json
 {
   "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
@@ -1019,13 +1039,14 @@ This endpoint returns balances for all the solo accounts.
 
 Query Params:
 
-| parameter name | description                                                                          |
-|----------------|--------------------------------------------------------------------------------------|
-| isLiquidatable | returns all accounts that are at risk of under-collateralization                     |
-| isExpired      | returns all accounts that have at least one balance that has expired and is negative |
-| isMigratable   | returns all accounts that have SAI balance (positive or negative)                    |
+| parameter name | description                                                                                     |
+|----------------|-------------------------------------------------------------------------------------------------|
+| isLiquidatable | (optional) returns all accounts that are at risk of under-collateralization                     |
+| isExpired      | (optional) returns all accounts that have at least one balance that has expired and is negative |
+| isMigratable   | (optional) returns all accounts that have SAI balance (positive or negative)                    |
 
 Example Response Body:
+Query: `https://api.dydx.exchange/v1/accounts`
 ```json
 {
   "accounts": [
@@ -1089,23 +1110,164 @@ Example Response Body:
 | wei        | The wei for the account                                               |
 | pendingWei | The (pending) wei due to a fill that is still waiting to be confirmed |
 
-### GET `/v1/markets/:id`
-
-Description:
-This endpoint returns information for a particular Solo asset.
+### GET `/v1/markets`
+Description: Gets high level information for all solo assets.
 
 Note: This is different from the v2/markets endpoint mentioned above.
 
 Query Params:
+None
 
-| Field Name | Description  |
-|------------|--------------|
-| id         | The asset id |
+Example response body:
+Query: `https://api.dydx.exchange/v1/markets`
+```json
+{
+  "markets": [
+    {
+      "id": 0,
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "supplyIndex": "1.001398660619165827",
+      "borrowIndex": "1.010368590898359639",
+      "supplyInterestRateSeconds": "0.00000000008945112223964823567690892185119535814786489929645384878315331493235128",
+      "borrowInterestRateSeconds": "0.000000000546421514",
+      "totalSupplyPar": "98916437591968893681399",
+      "totalBorrowPar": "16893907569901507548059",
+      "lastIndexUpdateSeconds": "1590172676",
+      "oraclePrice": "207420000000000000000",
+      "collateralRatio": "1.15",
+      "marginPremium": "0",
+      "spreadPremium": "0",
+      "currencyUuid": "9debe831-5ccd-448b-91f7-cd247ecddc22",
+      "createdAt": "2019-04-03T01:11:55.990Z",
+      "updatedAt": "2020-05-22T18:38:45.600Z",
+      "deletedAt": null,
+      "currency": {
+        "uuid": "9debe831-5ccd-448b-91f7-cd247ecddc22",
+        "symbol": "WETH",
+        "contractAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "decimals": 18,
+        "createdAt": "2018-07-10T04:08:53.352Z",
+        "updatedAt": "2018-07-10T04:08:53.352Z"
+      },
+      "totalSupplyAPR": "0.00282093059094954676030699975949929681455106746421296857522552293970662996608",
+      "totalBorrowAPR": "0.017231948865504",
+      "totalSupplyAPY": "0.002824913159618525",
+      "totalBorrowAPY": "0.017381275392271966",
+      "totalSupplyWei": "99054788117816954779760.734139858486351973",
+      "totalBorrowWei": "17069073586168517326002.814653240058390701"
+    },
+    {
+      "id": 1,
+      "name": "SAI",
+      "symbol": "SAI",
+      "supplyIndex": "1.060104599441753982",
+      "borrowIndex": "1.094636157956433672",
+      "supplyInterestRateSeconds": "0",
+      "borrowInterestRateSeconds": "0",
+      "totalSupplyPar": "8489728282227392446",
+      "totalBorrowPar": "0",
+      "lastIndexUpdateSeconds": "1590172676",
+      "oraclePrice": "1",
+      "collateralRatio": "1.15",
+      "marginPremium": "0",
+      "spreadPremium": "0",
+      "currencyUuid": "3022f2e4-5ce8-4576-882b-cdae6e198e3b",
+      "createdAt": "2019-04-03T01:11:55.990Z",
+      "updatedAt": "2020-05-22T18:38:45.601Z",
+      "deletedAt": null,
+      "currency": {
+        "uuid": "3022f2e4-5ce8-4576-882b-cdae6e198e3b",
+        "symbol": "SAI",
+        "contractAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+        "decimals": 18,
+        "createdAt": "2018-07-10T04:08:53.352Z",
+        "updatedAt": "2018-07-10T04:08:53.352Z"
+      },
+      "totalSupplyAPR": "0",
+      "totalBorrowAPR": "0",
+      "totalSupplyAPY": "0",
+      "totalBorrowAPY": "0",
+      "totalSupplyWei": "8999999999999999970.554429596497219972",
+      "totalBorrowWei": "0"
+    },
+    {
+      "id": 2,
+      "name": "USDC",
+      "symbol": "USDC",
+      "supplyIndex": "1.04187613625421444",
+      "borrowIndex": "1.072147697097366983",
+      "supplyInterestRateSeconds": "0.00000000043237131807605842113005907414001250332155197748006575168539387950003242",
+      "borrowInterestRateSeconds": "0.000000001201332793",
+      "totalSupplyPar": "9508292364989",
+      "totalBorrowPar": "3500532173579",
+      "lastIndexUpdateSeconds": "1590172676",
+      "oraclePrice": "1000000000000000000000000000000",
+      "collateralRatio": "1.15",
+      "marginPremium": "0",
+      "spreadPremium": "0",
+      "currencyUuid": "e714906e-d2ca-43d6-9d5e-d31b2d216157",
+      "createdAt": "2019-05-07T23:33:55.642Z",
+      "updatedAt": "2020-05-22T18:38:45.601Z",
+      "deletedAt": null,
+      "currency": {
+        "uuid": "e714906e-d2ca-43d6-9d5e-d31b2d216157",
+        "symbol": "USDC",
+        "contractAddress": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "decimals": 6,
+        "createdAt": "2019-05-07T23:33:55.642Z",
+        "updatedAt": "2019-05-07T23:33:55.642Z"
+      },
+      "totalSupplyAPR": "0.01363526188684657836875754296207943430474846316181135354515058138391302239712",
+      "totalBorrowAPR": "0.037885230960048",
+      "totalSupplyAPY": "0.0137286460265591",
+      "totalBorrowAPY": "0.0386120255329192",
+      "totalSupplyWei": "9906462911610.18622142595424116",
+      "totalBorrowWei": "3753087508517.965354198819542157"
+    },
+    {
+      "id": 3,
+      "name": "DAI",
+      "symbol": "DAI",
+      "supplyIndex": "1.02352463593826795",
+      "borrowIndex": "1.03145143300767834",
+      "supplyInterestRateSeconds": "0.00000000071328015292052294081913899831940846447245786755728669312100503006956483",
+      "borrowInterestRateSeconds": "0.000000001542996581",
+      "totalSupplyPar": "9045574058734731599497129",
+      "totalBorrowPar": "4367745908691120032726721",
+      "lastIndexUpdateSeconds": "1590172676",
+      "oraclePrice": "1000436176029173829",
+      "collateralRatio": "1.15",
+      "marginPremium": "0",
+      "spreadPremium": "0",
+      "currencyUuid": "3eb5c94b-1727-42bd-b5c8-2dd701e342b7",
+      "createdAt": "2019-11-25T01:47:53.051Z",
+      "updatedAt": "2020-05-22T18:38:45.601Z",
+      "deletedAt": null,
+      "currency": {
+        "uuid": "3eb5c94b-1727-42bd-b5c8-2dd701e342b7",
+        "symbol": "DAI",
+        "contractAddress": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "decimals": 18,
+        "createdAt": "2019-11-25T00:47:45.213Z",
+        "updatedAt": "2019-11-25T00:47:45.213Z"
+      },
+      "totalSupplyAPR": "0.02249400290250161146167236745100086533560343131128659315426401462827379647888",
+      "totalBorrowAPR": "0.048659940178416",
+      "totalSupplyAPY": "0.022748900621180734",
+      "totalBorrowAPY": "0.049863273712147826",
+      "totalSupplyWei": "9258367895319106950860481.35493330725771555",
+      "totalBorrowWei": "4505117776532879950251522.64743327989092314"
+    }
+  ]
+}
+```
 
-Response body:
+#### Markets Response body:
 
 | Field name                | Description                                                                                  |
 |---------------------------|----------------------------------------------------------------------------------------------|
+| markets                   | An array of different asset objects                                                          |
 | id                        | Id of asset determined by protocol                                                           |
 | name                      | Name of asset                                                                                |
 | supplyIndex               | Current index of the supply                                                                  |
@@ -1125,8 +1287,22 @@ Response body:
 | marginPremium             | Current `marginPremium` of the particular asset                                              |
 | spreadPremium             | Current `spreadPremium` of the particular asset                                              |
 
-Example Response Body:
+### GET `/v1/markets/:id`
 
+Description:
+This endpoint returns information for a particular Solo asset.
+
+Note: This is different from the v2/markets endpoint mentioned above.
+
+Query Params:
+
+| Field Name | Description  |
+|------------|--------------|
+| id         | The asset id |
+
+
+Example Response Body:
+Query: `https://api.dydx.exchange/v1/markets/0`
 ```json
 {
   "market": {
@@ -1166,6 +1342,245 @@ Example Response Body:
 }
 ```
 
+#### Market Response body:
+
+| Field name                | Description                                                                                  |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| id                        | Id of asset determined by protocol                                                           |
+| name                      | Name of asset                                                                                |
+| supplyIndex               | Current index of the supply                                                                  |
+| borrowIndex               | Current index of the borrow                                                                  |
+| totalSupplyPar            | Summation of total available asset par in asset                                              |
+| totalBorrowPar            | Summation of total asset borrowed par from asset                                             |
+| totalSupplyWei            | `totalSupplyPar` multiplied by `supplyIndex`                                                 |
+| totalBorrowWei            | `totalBorrowPar` multiplied by `borrowIndex`                                                 |
+| supplyInterestRateSeconds | Current interest rate per second earned from lending assets                                  |
+| borrowInterestRateSeconds | Current interest rate per second paid to borrowed assets                                     |
+| supplyInterestAPY         | Current interest rate per second earned from lending assets including compound interest      |
+| borrowInterestAPY         | Current interest rate per second paid to borrowed assets including compound interest         |
+| supplyInterestAPR         | Current interest rate per second earned from lending assets, multiplied by 1 year in seconds |
+| borrowInterestAPR         | Current interest rate per second paid to borrowed assets, multiplied by 1 year in seconds    |
+| oraclePrice               | Price determined by oracle                                                                   |
+| lastIndexUpdateSeconds    | Timestamp of last `indexUpdate` associated with the current asset values                     |
+| marginPremium             | Current `marginPremium` of the particular asset                                              |
+| spreadPremium             | Current `spreadPremium` of the particular asset                                              |
+
+
+### GET `v1/balance-updates`
+Description:
+This endpoint returns the last 100 balance updates for an address.
+
+Query Parameters
+
+| Field             | Description                                                                                                      |
+|-------------------|------------------------------------------------------------------------------------------------------------------|
+| owner             | the account address                                                                                              |
+| number            | (optional) the account number                                                                                    |
+| orderNumberBefore | (optional) used for querying balance updates before a certain time. (`orderNumber` is used for ordering updates) |
+| limit             | (optional) the number of balance updates to return (max 100)                                                     |
+
+Example response:
+Query: `https://api.dydx.exchange/v1/balance-updates?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=2`
+```json
+{
+  "balanceUpdates": [
+    {
+      "uuid": "3920e9df-6260-4196-8d5d-ea3a65e05e16",
+      "deltaWei": "139940891786496509",
+      "newPar": "320499592695509982",
+      "isLiquidate": false,
+      "accountUuid": "fb8cb2a7-0910-406f-9ebd-41cb9b267a63",
+      "actionUuid": null,
+      "marketId": 0,
+      "expiresAt": null,
+      "orderNumber": "1011061200670003",
+      "newWei": "320945032193181973.270328870120749488",
+      "confirmedAt": "2020-05-21T17:34:22.000Z",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "0",
+      "isPendingBlock": false,
+      "createdAt": "2020-05-21T17:35:57.244Z",
+      "updatedAt": "2020-05-21T17:35:57.244Z"
+    },
+    {
+      "uuid": "9312921e-a53e-417f-b672-75a0d1943de8",
+      "deltaWei": "-139940891786496509",
+      "newPar": "0",
+      "isLiquidate": false,
+      "accountUuid": "836a4fdc-c994-450e-a07b-830ed37716ce",
+      "actionUuid": null,
+      "marketId": 0,
+      "expiresAt": null,
+      "orderNumber": "1011061200670003",
+      "newWei": "0",
+      "confirmedAt": "2020-05-21T17:34:22.000Z",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "isPendingBlock": false,
+      "createdAt": "2020-05-21T17:35:57.243Z",
+      "updatedAt": "2020-05-21T17:35:57.243Z"
+    }
+  ]
+}
+```
+
+#### Balance Updates Response object
+
+| Field          | Description                                                  |
+|----------------|--------------------------------------------------------------|
+| balanceUpdates | An array of the balance update objects                       |
+| uuid           | Unique identifier for a balance update                       |
+| deltaWei       | The change in wei in a balance update                        |
+| newPar         | The new par value due to the balance update                  |
+| newWei         | The new wei value due to the balance update                  |
+| orderNumber    | Used for ordering a balance update                           |
+| isPendingBlock | Whether the balance update is still pending                  |
+| owner          | The account address                                          |
+| number         | The account number                                           |
+| marketId       | The id of the market for this balance update                 |
+| confirmedAt    | The ISO 8601 date and time this balance update was confirmed |
+| createdAt      | The ISO 8601 date and time this balance update was created   |
+| updatedAt      | The ISO 8601 date and time this balance update was updated   |
+
+
+### GET `v1/positions`
+Description: 
+This endpoint retrieves the positions for an address.
+
+Query Params
+| Field  | Description                                                          |
+|--------|----------------------------------------------------------------------|
+| owner  | (optional) The account address                                       |
+| number | (optional) The account number                                        |
+| status | (optional)The position status eg: `OPEN`, `CLOSED` etc               |
+| type   | (optional) The position type eg: `ISOLATED_SHORT` or `ISOLATED_LONG` |
+| market | (optional) The position market eg: `WETH-DAI`                        |
+| limit  | (optional) The number of positions to return ( max 100)              |
+
+Position statuses:
+| status        |
+|---------------|
+| STOP_EXECUTED |
+| OPEN          |
+| LIQUIDATED    |
+| INVALID       |
+| EXPIRED       |
+| CLOSED        |
+
+Position types:
+| type           |
+|----------------|
+| ISOLATED_SHORT |
+| ISOLATED_LONG  |
+
+Position markets:
+| market    |
+|-----------|
+| WETH_DAI  |
+| WETH_SAI  |
+| WETH_USDC |
+| DAI_USDC  |
+| SAI_USDC  |
+| SAI_DAI   |
+
+Example response object:
+
+Query: `https://api.dydx.exchange/v1/positions?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1`
+```json
+{
+  "positions": [
+    {
+      "uuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "market": "WETH-DAI",
+      "type": "ISOLATED_LONG",
+      "status": "CLOSED",
+      "accountUuid": "836a4fdc-c994-450e-a07b-830ed37716ce",
+      "expiresAt": "2020-05-29T22:13:39.000Z",
+      "createdAt": "2020-05-01T22:13:52.847Z",
+      "updatedAt": "2020-05-21T17:35:57.278Z",
+      "account": {
+        "uuid": "836a4fdc-c994-450e-a07b-830ed37716ce",
+        "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+        "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+        "createdAt": "2020-05-01T22:13:44.755Z",
+        "updatedAt": "2020-05-01T22:13:44.755Z"
+      },
+      "standardActions": [
+        {
+          "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
+          "type": "ISOLATED_FULL_CLOSE",
+          "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+          "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+          "transferAmount": "139940891786496509",
+          "tradeAmount": "160307343231895490",
+          "price": "197.76",
+          "market": "WETH-DAI",
+          "asset": "WETH",
+          "side": "LONG",
+          "operationUuid": null,
+          "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
+          "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+          "borrowAmount": null,
+          "orderNumber": "1011061200670000",
+          "confirmedAt": "2020-05-21T17:34:22.000Z",
+          "feeAmount": "158511900987698260.512",
+          "feeAsset": "DAI",
+          "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
+          "payoutAmount": "139940891786496509",
+          "isPendingBlock": false,
+          "refundAmount": "0",
+          "product": "SOLO",
+          "createdAt": "2020-05-21T17:35:57.265Z",
+          "updatedAt": "2020-05-21T17:35:57.280Z"
+        },
+        {
+          "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
+          "type": "ISOLATED_OPEN",
+          "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+          "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+          "transferAmount": "150200220768708569",
+          "tradeAmount": "150000000000000000",
+          "price": "208.62",
+          "market": "WETH-DAI",
+          "asset": "WETH",
+          "side": "LONG",
+          "operationUuid": null,
+          "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
+          "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+          "borrowAmount": null,
+          "orderNumber": "998298000710000",
+          "confirmedAt": "2020-05-01T22:13:39.000Z",
+          "feeAmount": "156465000000000000",
+          "feeAsset": "DAI",
+          "pnl": null,
+          "payoutAmount": null,
+          "isPendingBlock": false,
+          "refundAmount": "0",
+          "product": "SOLO",
+          "createdAt": "2020-05-03T04:06:48.813Z",
+          "updatedAt": "2020-05-03T04:06:48.834Z"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Position response object
+
+| Field           | Description                                                                                                   |
+|-----------------|---------------------------------------------------------------------------------------------------------------|
+| uuid            | The unique identifier for the position                                                                        |
+| owner           | The account address                                                                                           |
+| number          | The account number                                                                                            |
+| market          | The market for this position eg `WETH-DAI`                                                                    |
+| type            | The position type er: `ISOLATED_LONG` or `ISOLATED_SHORT`                                                     |
+| status          | The position status eg: `OPEN`,  `CLOSED`                                                                     |
+| account         | An object containing the account information                                                                  |
+| standardActions | An array of the associated standard actions for this position eg: the associated `ISOLATED_FULL_CLOSE` action |
+
 ## Perpetual Endpoints
 
 ### GET `/v1/perpetual-markets`
@@ -1173,11 +1588,12 @@ Example Response Body:
 Description:
 Get high-level information on all Perpetual markets.
 
-Query Params:
+Query Params
 None
 
 Example Response Body:
 
+Query `https://api.dydx.exchange/v1/perpetual-markets`
 ```json
 {
   "markets": [
@@ -1204,7 +1620,59 @@ Example Response Body:
 }
 ```
 
-Market Response Object:
+#### Markets Response Object:
+
+| Field Name           | Description                                                                                        |
+|----------------------|----------------------------------------------------------------------------------------------------|
+| markets              | An array of the perpetual market objects                                                           |
+| market               | The market string, e.g.: `PBTC-USDC`.                                                              |
+| oraclePrice          | The index price from the oracle.                                                                   |
+| fundingRate          | The funding rate for the market.                                                                   |
+| globalIndexValue     | The global index value for the market.                                                             |
+| globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index.                              |
+| minCollateral        | The minimum collaterization before getting liquidated eg: 1.07                                     |
+| decimals             | Corresponds to the precision for the position units eg: if decimals = 8, then 100000000 = 1 BTC    |
+| minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)                                                    |
+| minimumOrderSize     | The minimum size, in position units, required for an order                                         |
+| smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers                     |
+| makerFee             | The percentage fee charged for the maker of an order eg -0.00025 (equal to -0.025%)                |
+| largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
+| smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
+| openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
+
+### GET `v1/perpetual-markets/:market`
+
+Description:
+This returns the market information for a specific perpetual market.
+
+Example response body:
+Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
+
+```json
+{
+  "market": {
+    "uuid": "f6d20698-32ac-4f3a-a9c4-b6b7528b7b94",
+    "market": "PBTC-USDC",
+    "oraclePrice": "92.052",
+    "fundingRate": "0.000000017178342607",
+    "minCollateral": "1.075",
+    "globalIndexValue": "1.258933718003697999",
+    "globalIndexTimestamp": "1590170610",
+    "decimals": "8",
+    "minimumTickSize": "0.01",
+    "minimumOrderSize": "10000",
+    "smallOrderThreshold": "1000000",
+    "makerFee": "-0.00025",
+    "largeTakerFee": "0.005",
+    "smallTakerFee": "0.00075",
+    "openInterest": "3917905240",
+    "createdAt": "2020-04-09T22:42:35.696Z",
+    "updatedAt": "2020-05-22T18:30:55.429Z"
+  }
+}
+```
+
+#### Market Response Object:
 
 | Field Name           | Description                                                                                        |
 |----------------------|----------------------------------------------------------------------------------------------------|
@@ -1214,7 +1682,7 @@ Market Response Object:
 | globalIndexValue     | The global index value for the market.                                                             |
 | globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index.                              |
 | minCollateral        | The minimum collaterization before getting liquidated eg: 1.07                                     |
-| decimals             | Corresponds to the position units eg: if decimals = 8, then 100000000 = 1 BTC                      |
+| decimals             | Corresponds to the precision for the position units eg: if decimals = 8, then 100000000 = 1 BTC    |
 | minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)                                                    |
 | minimumOrderSize     | The minimum size, in position units, required for an order                                         |
 | smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers                     |
@@ -1226,13 +1694,14 @@ Market Response Object:
 ### GET `/v1/perpetual-balance-updates`
 
 Query Params:
-| Field Name | Description                                        |
-|------------|----------------------------------------------------|
-| owner      | The wallet address of the user.                    |
-| limit      | The maximum number of balance updates to retrieve. |
+| Field Name        | Description                                                                |
+|-------------------|----------------------------------------------------------------------------|
+| owner             | The wallet address of the user.                                            |
+| orderNumberBefore | (optional) Used to return balance updates before an `orderNumber`          |
+| limit             | (optional) The maximum number of balance updates to retrieve. (max is 100) |
 
 Example Response Body:
-
+Query: `https://api.dydx.exchange/v1/perpetual-balance-updates?owner=0x77A035b677D5A0900E4848Ae885103cD49af9633&limit=1`
 ```json
 {
   "balanceUpdates": [
@@ -1255,10 +1724,11 @@ Example Response Body:
 }
 ```
 
-Balance Update Response Object:
+#### Perpetual Balance Update Response Object:
 
 | Field Name     | Description                                           |
 |----------------|-------------------------------------------------------|
+| balanceUpdates | An array of the balance update objects                |
 | uuid           | The unique ID for the balance update.                 |
 | owner          | The wallet address of the user.                       |
 | market         | The perpetual market, e.g. `PBTC-USDC`.               |
@@ -1271,9 +1741,6 @@ Balance Update Response Object:
 | orderNumber    | Number used for ordering the balance updates.         |
 | isPendingBlock | Whether the specific balance update is pending or not |
 
-
-
-
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
 Description:
@@ -1285,6 +1752,7 @@ None
 
 Example Response Body:
 
+Query: `https://api.dydx.exchange/v1/perpetual-accounts/0x77A035b677D5A0900E4848Ae885103cD49af9633`
 ```json
 {
   "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
@@ -1316,19 +1784,19 @@ Example Response Body:
 | indexValue      | The value of the global index from the last interaction with the account          |
 | indexTimestamp  | The timestamp when the index value was set                                        |
 
-
 ### GET `/v1/perpetual-accounts`
 
 Description:
 This endpoint returns balances for all perpetual accounts.
 
 Query Params:
-| Field Name     | Description                                                            |
-|----------------|------------------------------------------------------------------------|
-| isLiquidatable | If set to true, returns accounts that are below the margin requirement |
+| Field Name     | Description                                                                       |
+|----------------|-----------------------------------------------------------------------------------|
+| isLiquidatable | (optional) If set to true, returns accounts that are below the margin requirement |
 
 Example Response Body:
 
+Query: `https://api.dydx.exchange/v1/perpetual-accounts`
 ```json
 {
   "accounts": [
