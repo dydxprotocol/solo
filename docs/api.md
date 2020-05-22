@@ -688,14 +688,15 @@ Gets the perpetual and solo standard actions for a particular user.
 
 Query Params:
 
-| Field Name | Description                                                     |
-|------------|-----------------------------------------------------------------|
-| owner      | The wallet address of the user.                                 |
-| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
-| asset      | The asset for the standard action eg: `WETH`, `DAI`             |
-| market     | The market of the action e.g. `PBTC-USDC`.                      |
-| limit      | The maximum number of standard actions to retrieve.             |
-| product    | The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
+| Field Name | Description                                                                |
+|------------|----------------------------------------------------------------------------|
+| owner      | (optional) The wallet address of the user.                                 |
+| number     | (optional) The account number for the specified wallet address             |
+| type       | (optional) The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| asset      | (optional) The asset for the standard action eg: `WETH`, `DAI`             |
+| market     | (optional) The market of the action e.g. `PBTC-USDC`.                      |
+| limit      | (optional) The maximum number of standard actions to retrieve.             |
+| product    | (optional) The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
 
 Standard Action types:
 | Type                   | Product         |
