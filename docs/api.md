@@ -1464,7 +1464,7 @@ Query: `https://api.dydx.exchange/v1/balance-updates?owner=0x77A035b677D5A0900E4
 
 ### GET `v1/positions`
 
-Description: 
+Description:
 
 This endpoint retrieves the positions for an address.
 
@@ -1882,6 +1882,149 @@ Query: `https://api.dydx.exchange/v1/perpetual-accounts`
 | pendingPosition | This is the (pending) component of the position when a fill is still pending      |
 | indexValue      | The value of the global index from the last interaction with the account          |
 | indexTimestamp  | The timestamp when the index value was set                                        |
+
+## Funding Endpoints
+
+The funding endpoints can be used to get information related to the funding rates
+for Perpetual markets.
+
+### Funding Rate Object
+
+| Field Name                 | Description                                                                                              |
+|----------------------------|----------------------------------------------------------------------------------------------------------|
+| market                     | The market string, e.g. `PBTC-USDC`.                                                                     |
+| effectiveAt                | ISO 8601 date and time representing the start of the hour for which the rate is expected to take effect. |
+| fundingRate                | The funding rate for the market, as a per-second rate. Equal to the smart contract representation.       |
+| fundingRate8Hr             | The funding rate for the market, as an eight-hour rate. Equal to `fundingRate * 28800`.                  |
+| averagePremiumComponent    | The average premium component which went into the calculation of the funding rate.                       |
+| averagePremiumComponent8Hr | The average premium component, as an eight-hour rate.                                                    |
+
+### GET `/v1/funding-rates`
+
+Description:
+Get the current and predicted funding rates.
+
+The current rate is updated each hour, on the hour. The predicted
+rate is updated each minute, on the minute, and may be null if no
+premiums have been calculated since the last funding rate update.
+
+**IMPORTANT**: The “current” funding rate returned by this function is not active
+until it has been mined on-chain, which may not happen for some period
+of time after the start of the hour. To get the funding rate that is
+currently active on-chain, use the `/v1/perpetual-markets` endpoint.
+
+Query Params:
+
+| Field Name | Description                                                             |
+|------------|-------------------------------------------------------------------------|
+| markets    | (Optional) Markets to get rates for. Defaults to all Perpetual markets. |
+
+Response (Per Market):
+
+| Field name | Description                                                                                                                                                                            |
+|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| current    | The funding rate expected to take effect in this hour. It will only actually take effect once the relevant transaction is mined.                                                       |
+| predicted  | The predicted funding rate for the next hour. Calculated using premiums since the start of the hour. If no premiums are available (e.g. first minute of the hour) this will be `null`. |
+
+Example Response Body:
+
+```json
+{
+  "PBTC-USDC": {
+    "current": {
+      "market": "PBTC-USDC",
+      "effectiveAt": "2020-05-22T08:00:00.000Z",
+      "fundingRate": "0.000000003192901192",
+      "fundingRate8Hr": "0.0000919555543296",
+      "averagePremiumComponent": "-0.000000000279321029",
+      "averagePremiumComponent8Hr": "-0.000008044445661252"
+    },
+    "predicted": {
+      "market": "PBTC-USDC",
+      "effectiveAt": "2020-05-22T09:00:00.000Z",
+      "fundingRate": "0.000000003726094076",
+      "fundingRate8Hr": "0.0001073115093888",
+      "averagePremiumComponent": "0.000000000253871854",
+      "averagePremiumComponent8Hr": "0.000007311509403474"
+    }
+  }
+}
+```
+
+### GET `/v1/historical-funding-rates`
+
+Description:
+Get historical funding rates. The most recent funding rates are returned first.
+
+Query Params:
+
+| Field Name | Description                                                                         |
+|------------|-------------------------------------------------------------------------------------|
+| markets    | (Optional) Markets to get rates for. Defaults to all Perpetual markets.             |
+| limit      | (Optional) The maximum number of funding rates. The default, and maximum, is 100.   |
+| offset     | (Optional) The number of entries to skip, in order to retrieve older funding rates. |
+
+Response (Per Market):
+
+| Field name | Description                  |
+|------------|------------------------------|
+| history    | Array of past funding rates. |
+
+Example Response Body:
+
+```json
+{
+  "PBTC-USDC": {
+    "history": [
+      {
+        "market": "PBTC-USDC",
+        "effectiveAt": "2020-05-22T18:00:00.000Z",
+        "fundingRate": "0.000000017178342607",
+        "fundingRate8Hr": "0.0004947362670816",
+        "averagePremiumComponent": "0.00000001370612038495",
+        "averagePremiumComponent8Hr": "0.000394736267086484"
+      },
+      {
+        "market": "PBTC-USDC",
+        "effectiveAt": "2020-05-22T17:00:00.000Z",
+        "fundingRate": "0.00000000115030126",
+        "fundingRate8Hr": "0.000033128676288",
+        "averagePremiumComponent": "-0.00000000232192096206",
+        "averagePremiumComponent8Hr": "-0.0000668713237074407"
+      }
+    ]
+  }
+}
+```
+
+### GET `/v1/index-price`
+
+Description:
+Get the index price used in the funding rate calculation.
+The index price is determined by taking the midpoint of the prices from major centralized exchanges.
+Details on the index price calculation can be found in the [Perpetual Guide](perpetual-guide.md).
+
+Query Params:
+
+| Field Name | Description                                                                    |
+|------------|--------------------------------------------------------------------------------|
+| markets    | (Optional) Markets to get index prices for. Defaults to all Perpetual markets. |
+
+Response (Per Market):
+
+| Field name | Description                                 |
+|------------|---------------------------------------------|
+| price      | The index price, denominated in base units. |
+
+Example Response Body:
+
+```json
+{
+  "PBTC-USDC": {
+    "price": "86.11512"
+  }
+}
+```
 
 ## Deprecated APIs
 
