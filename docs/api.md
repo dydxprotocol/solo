@@ -120,7 +120,7 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 }
 ```
 
-## Trading Endpoints (Solo and Perpetual)
+## Solo and Perpetual endpoints
 
 ### POST `/v2/orders`
 
@@ -680,6 +680,170 @@ Example Response Body:
 }
 ```
 
+
+### GET `/v1/standard-actions`
+
+Description:
+Gets the perpetual and solo standard actions for a particular user.
+
+Description:
+Gets the perpetual and solo standard actions for a particular user.
+
+Query Params:
+
+| Field Name | Description                                                     |
+|------------|-----------------------------------------------------------------|
+| owner      | The wallet address of the user.                                 |
+| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| market     | The market of the action e.g. `PBTC-USDC`.                      |
+| limit      | The maximum number of standard actions to retrieve.             |
+| product    | The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
+
+Standard Action types:
+
+| Type                   | Product         |
+|------------------------|-----------------|
+| DEPOSIT                | solo, perpetual |
+| REPAY                  | solo            |
+| WITHDRAW               | solo, perpetual |
+| BORROW                 | solo            |
+| LIQUIDATE              | solo, perpetual |
+| LIQUIDATED             | solo, perpetual |
+| EXPIRE                 | solo            |
+| EXPIRED                | solo            |
+| TRADE                  | solo            |
+| ISOLATED_OPEN          | solo            |
+| ISOLATED_PARTIAL_CLOSE | solo            |
+| ISOLATED_FULL_CLOSE    | solo            |
+| ACCOUNT_SETTLE         | perpetual       |
+| OPEN                   | perpetual       |
+| CLOSE                  | perpetual       |
+| INCREASE               | perpetual       |
+| DECREASE               | perpetual       |
+
+Example Response Body for solo:
+
+```json
+{
+  "standardActions": [
+    {
+      "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
+      "type": "ISOLATED_FULL_CLOSE",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "139940891786496509",
+      "tradeAmount": "160307343231895490",
+      "price": "197.76",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "1011061200670000",
+      "confirmedAt": "2020-05-21T17:34:22.000Z",
+      "feeAmount": "158511900987698260.512",
+      "feeAsset": "DAI",
+      "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
+      "payoutAmount": "139940891786496509",
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-21T17:35:57.265Z",
+      "updatedAt": "2020-05-21T17:35:57.280Z"
+    },
+    {
+      "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
+      "type": "ISOLATED_OPEN",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "150200220768708569",
+      "tradeAmount": "150000000000000000",
+      "price": "208.62",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "998298000710000",
+      "confirmedAt": "2020-05-01T22:13:39.000Z",
+      "feeAmount": "156465000000000000",
+      "feeAsset": "DAI",
+      "pnl": null,
+      "payoutAmount": null,
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-03T04:06:48.813Z",
+      "updatedAt": "2020-05-03T04:06:48.834Z"
+    }
+  ]
+}
+```
+
+Example Response Body for perpetual:
+
+```json
+{
+  "standardActions": [
+    {
+      "uuid": "f2f0ac19-373f-4a80-bd34-a8d973ee0235",
+      "type": "OPEN",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": null,
+      "transferAmount": null,
+      "tradeAmount": "990000",
+      "price": "90.85",
+      "market": "PBTC-USDC",
+      "asset": null,
+      "side": "SHORT",
+      "operationUuid": null,
+      "transactionHash": "0x7c6367c2058e8c121437181a3e535a1ea06271ecf47be449c0217bdd0c785ad9",
+      "positionUuid": null,
+      "borrowAmount": null,
+      "orderNumber": "1011122300520002",
+      "confirmedAt": "2020-05-21T19:49:10.000Z",
+      "feeAmount": "454250",
+      "feeAsset": "USDC",
+      "pnl": null,
+      "payoutAmount": null,
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "PERPETUAL",
+      "createdAt": "2020-05-21T19:49:48.039Z",
+      "updatedAt": "2020-05-21T19:49:48.039Z"
+    }
+  ]
+}
+```
+
+#### Standard Action Response Object
+
+| Field Name      | Description                                                                                                      |
+|-----------------|------------------------------------------------------------------------------------------------------------------|
+| uuid            | The unique id for the action.                                                                                    |
+| owner           | The wallet address of the user.                                                                                  |
+| type            | The type of standard action e.g. `DEPOSIT`, `ISOLATED_OPEN` (for solo), `OPEN`, `ACCOUNT_SETTLE` (for perpetual) |
+| market          | The market, e.g. `WETH-USDC` or `PBTC-USDC`.                                                                     |
+| side            | The side for the standard action e.g. `LONG`, `SHORT`.                                                           |
+| transferAmount  | The amount in settlement token that is transferred.                                                              |
+| tradeAmount     | The amount traded. i.e. the base token amount in a trade                                                         |
+| price           | The price in settlement token.                                                                                   |
+| orderNumber     | Number used for ordering the standard actions.                                                                   |
+| updatedAt       | The ISO 8601 date and time the standard action was updated.                                                      |
+| createdAt       | The ISO 8601 date and time the standard action was created.                                                      |
+| confirmedAt     | The ISO 8601 date and time the standard action was confirmed.                                                    |
+| product         | The product type, e.g. `perpetual` or `solo`.                                                                    |
+| transactionHash | The transaction corresponding to this standard action                                                            |
+| pnl             | The PnL for the corresponding position. Currently not set in the standard action for perpetual.                  |
+| feeAmount       | The fee amount charged                                                                                           |
+| feeAsset        | The asset of the `feeAmount` eg `DAI`, `USDC`                                                                    |
+| asset           | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                                                       |
+| payoutAmount    | The amount refunded to the user when maker fee is negative                                                       |
+
 ## Solo Endpoints
 
 ### GET `/v2/markets/:market`
@@ -839,14 +1003,14 @@ Example Response Body:
 
 #### Account Response Object
 
-| Field Name      | Description                                                                    |
-|-----------------|--------------------------------------------------------------------------------|
-| owner           | The user's wallet address.                                                     |
-| number          | The account number                                                             |
-| balances        | A map from marketIds to the balances for each market.                          |
-| par             | The par for the account                                                        |
-| wei             | The wei for the account                                                        |
-| pendingWei      | The (pending) wei due to a fill that is still waiting to be confirmed          |
+| Field Name | Description                                                           |
+|------------|-----------------------------------------------------------------------|
+| owner      | The user's wallet address.                                            |
+| number     | The account number                                                    |
+| balances   | A map from marketIds to the balances for each market.                 |
+| par        | The par for the account                                               |
+| wei        | The wei for the account                                               |
+| pendingWei | The (pending) wei due to a fill that is still waiting to be confirmed |
 
 ### GET `/v1/accounts`
 
@@ -855,11 +1019,11 @@ This endpoint returns balances for all the solo accounts.
 
 Query Params:
 
-| parameter name | description |
-| ---------------| ----------- |
-| isLiquidatable | returns all accounts that are at risk of under-collateralization
-| isExpired      | returns all accounts that have at least one balance that has expired and is negative
-| isMigratable   | returns all accounts that have SAI balance (positive or negative)
+| parameter name | description                                                                          |
+|----------------|--------------------------------------------------------------------------------------|
+| isLiquidatable | returns all accounts that are at risk of under-collateralization                     |
+| isExpired      | returns all accounts that have at least one balance that has expired and is negative |
+| isMigratable   | returns all accounts that have SAI balance (positive or negative)                    |
 
 Example Response Body:
 ```json
@@ -915,15 +1079,15 @@ Example Response Body:
 
 #### Accounts Response Object
 
-| Field Name      | Description                                                                    |
-|-----------------|--------------------------------------------------------------------------------|
-| accounts        | An array of balances for each owner and account number                         |
-| owner           | The user's wallet address.                                                     |
-| number          | The account number                                                             |
-| balances        | A map from marketIds to the balances for each market.                          |
-| par             | The par for the account                                                        |
-| wei             | The wei for the account                                                        |
-| pendingWei      | The (pending) wei due to a fill that is still waiting to be confirmed          |
+| Field Name | Description                                                           |
+|------------|-----------------------------------------------------------------------|
+| accounts   | An array of balances for each owner and account number                |
+| owner      | The user's wallet address.                                            |
+| number     | The account number                                                    |
+| balances   | A map from marketIds to the balances for each market.                 |
+| par        | The par for the account                                               |
+| wei        | The wei for the account                                               |
+| pendingWei | The (pending) wei due to a fill that is still waiting to be confirmed |
 
 ### GET `/v1/markets/:id`
 
@@ -940,26 +1104,26 @@ Query Params:
 
 Response body:
 
-| Field name | Description |
-|------------|-------------|
-| id | Id of asset determined by protocol |
-| name | Name of asset |
-| supplyIndex | Current index of the supply |
-| borrowIndex | Current index of the borrow |
-| totalSupplyPar | Summation of total available asset par in asset |
-| totalBorrowPar | Summation of total asset borrowed par from asset |
-| totalSupplyWei | `totalSupplyPar` multiplied by `supplyIndex` |
-| totalBorrowWei | `totalBorrowPar` multiplied by `borrowIndex` |
-| supplyInterestRateSeconds | Current interest rate per second earned from lending assets |
-| borrowInterestRateSeconds | Current interest rate per second paid to borrowed assets |
-| supplyInterestAPY | Current interest rate per second earned from lending assets including compound interest |
-| borrowInterestAPY | Current interest rate per second paid to borrowed assets including compound interest |
-| supplyInterestAPR | Current interest rate per second earned from lending assets, multiplied by 1 year in seconds |
-| borrowInterestAPR | Current interest rate per second paid to borrowed assets, multiplied by 1 year in seconds |
-| oraclePrice | Price determined by oracle |
-| lastIndexUpdateSeconds | Timestamp of last `indexUpdate` associated with the current asset values |
-| marginPremium | Current `marginPremium` of the particular asset |
-| spreadPremium | Current `spreadPremium` of the particular asset |
+| Field name                | Description                                                                                  |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| id                        | Id of asset determined by protocol                                                           |
+| name                      | Name of asset                                                                                |
+| supplyIndex               | Current index of the supply                                                                  |
+| borrowIndex               | Current index of the borrow                                                                  |
+| totalSupplyPar            | Summation of total available asset par in asset                                              |
+| totalBorrowPar            | Summation of total asset borrowed par from asset                                             |
+| totalSupplyWei            | `totalSupplyPar` multiplied by `supplyIndex`                                                 |
+| totalBorrowWei            | `totalBorrowPar` multiplied by `borrowIndex`                                                 |
+| supplyInterestRateSeconds | Current interest rate per second earned from lending assets                                  |
+| borrowInterestRateSeconds | Current interest rate per second paid to borrowed assets                                     |
+| supplyInterestAPY         | Current interest rate per second earned from lending assets including compound interest      |
+| borrowInterestAPY         | Current interest rate per second paid to borrowed assets including compound interest         |
+| supplyInterestAPR         | Current interest rate per second earned from lending assets, multiplied by 1 year in seconds |
+| borrowInterestAPR         | Current interest rate per second paid to borrowed assets, multiplied by 1 year in seconds    |
+| oraclePrice               | Price determined by oracle                                                                   |
+| lastIndexUpdateSeconds    | Timestamp of last `indexUpdate` associated with the current asset values                     |
+| marginPremium             | Current `marginPremium` of the particular asset                                              |
+| spreadPremium             | Current `spreadPremium` of the particular asset                                              |
 
 Example Response Body:
 
@@ -1002,7 +1166,7 @@ Example Response Body:
 }
 ```
 
-### GET `/v1/standard-actions`
+
 
 ## Perpetual Endpoints
 
@@ -1044,22 +1208,22 @@ Example Response Body:
 
 Market Response Object:
 
-| Field Name           | Description                                                           |
-|----------------------|-----------------------------------------------------------------------|
-| market               | The market string, e.g.: `PBTC-USDC`.                                 |
-| oraclePrice          | The index price from the oracle.                                      |
-| fundingRate          | The funding rate for the market.                                      |
-| globalIndexValue     | The global index value for the market.                                |
-| globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index. |
-| minCollateral        | The minimum collaterization before getting liquidated eg: 1.07 |
-| decimals             | Corresponds to the position units eg: if decimals = 8, then 100000000 = 1 BTC |
-| minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)|
-| minimumOrderSize     | The minimum size, in position units, required for an order |
-| smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers |
-| makerFee             | The percentage fee charged for the maker of an order eg -0.00025 (equal to -0.025%) |
-| largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%) |
-| smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%) |
-| openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts)|
+| Field Name           | Description                                                                                        |
+|----------------------|----------------------------------------------------------------------------------------------------|
+| market               | The market string, e.g.: `PBTC-USDC`.                                                              |
+| oraclePrice          | The index price from the oracle.                                                                   |
+| fundingRate          | The funding rate for the market.                                                                   |
+| globalIndexValue     | The global index value for the market.                                                             |
+| globalIndexTimestamp | The Unix timestamp (seconds) for the last update to the global index.                              |
+| minCollateral        | The minimum collaterization before getting liquidated eg: 1.07                                     |
+| decimals             | Corresponds to the position units eg: if decimals = 8, then 100000000 = 1 BTC                      |
+| minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)                                                    |
+| minimumOrderSize     | The minimum size, in position units, required for an order                                         |
+| smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers                     |
+| makerFee             | The percentage fee charged for the maker of an order eg -0.00025 (equal to -0.025%)                |
+| largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
+| smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
+| openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
 
 ### GET `/v1/perpetual-balance-updates`
 
@@ -1110,35 +1274,7 @@ Balance Update Response Object:
 | isPendingBlock | Whether the specific balance update is pending or not |
 
 
-### GET `/v1/standard-actions`
 
-Description:
-Gets the perpetual and solo standard actions for a particular user.
-
-
-#### Standard Action Response Object
-
-| Field Name     | Description                                                   |
-|----------------|---------------------------------------------------------------|
-| uuid           | The unique id for the action.                                 |
-| owner          | The wallet address of the user.                               |
-| type           | The type of standard action e.g. `OPEN` or `ACCOUNT_SETTLE`.  |
-| asset          | The asset eg `USDC` for deposit or withdraw                   |
-| market         | The perpetual market, e.g. `PBTC-USDC`.                       |
-| side           | The side for the standard action e.g. `LONG`, `SHORT`.        |
-| transferAmount | The amount transferred in settlement token                    |
-| tradeAmount    | The amount traded. i.e. the base token amount in a trade      |
-| price          | The price in settlement token.                                |
-| orderNumber    | Number used for ordering the standard actions.                |
-| product        | The product type, e.g. `perpetual`                            |
-| updatedAt      | The ISO 8601 date and time the standard action was updated.   |
-| createdAt      | The ISO 8601 date and time the standard action was created.   |
-| confirmedAt    | The ISO 8601 date and time the standard action was confirmed. |
-| transactionHash| The transaction corresponding to this standard action         |
-| feeAmount      | The fee amount charged                                        |
-| feeAsset       | The asset of the `feeAmount` eg `USDC`                        |
-| payoutAmount   | The amount refunded to the user when maker fee is negative    |
-| pnl            | Currently not set in the standard action for perpetual        |                                               
 
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
@@ -1170,17 +1306,17 @@ Example Response Body:
 
 #### Account Response Object
 
-| Field Name      | Description                                                                    |
-|-----------------|--------------------------------------------------------------------------------|
-| owner           | The user's wallet address.                                                     |
-| balances        | A mapping of the market to the balances for that market                        |
-| margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
-| position        | The balance in position token (e.g. PBTC).                                     |
-| cachedMargin    | This is the last stored margin value                                           |
-| pendingMargin   | This is the (pending) component of the margin when a fill is still pending     |
-| pendingPosition | This is the (pending) component of the position when a fill is still pending   |
-| indexValue      | The value of the global index from the last interaction with the account       |
-| indexTimestamp  | The timestamp when the index value was set                                     |
+| Field Name      | Description                                                                       |
+|-----------------|-----------------------------------------------------------------------------------|
+| owner           | The user's wallet address.                                                        |
+| balances        | A mapping of the market to the balances for that market                           |
+| margin          | This is calculated as `cachedMargin - (indexValue - globalIndexValue) * position` |
+| position        | The balance in position token (e.g. PBTC).                                        |
+| cachedMargin    | This is the last stored margin value                                              |
+| pendingMargin   | This is the (pending) component of the margin when a fill is still pending        |
+| pendingPosition | This is the (pending) component of the position when a fill is still pending      |
+| indexValue      | The value of the global index from the last interaction with the account          |
+| indexTimestamp  | The timestamp when the index value was set                                        |
 
 
 ### GET `/v1/perpetual-accounts`
@@ -1189,9 +1325,9 @@ Description:
 This endpoint returns balances for all perpetual accounts.
 
 Query Params:
-| Field Name     | Description                                                     |
-|----------------|-----------------------------------------------------------------|
-| isLiquidatable | If set to true, returns accounts that are yet to be liquidated  |
+| Field Name     | Description                                                            |
+|----------------|------------------------------------------------------------------------|
+| isLiquidatable | If set to true, returns accounts that are below the margin requirement |
 
 Example Response Body:
 
@@ -1224,178 +1360,17 @@ Example Response Body:
 
 #### Account Response Object
 
-| Field Name      | Description                                                                    |
-|-----------------|--------------------------------------------------------------------------------|
-| owner           | The user's wallet address.                                                     |
-| balances        | An object with the user's balances for each market.                            |
-| margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
-| position        | The balance in position token (e.g. PBTC).                                     |
-| cachedMargin    | This is the last stored margin value                                           |
-| pendingMargin   | This is the (pending) component of the margin when a fill is still pending     |
-| pendingPosition | This is the (pending) component of the position when a fill is still pending   |
-| indexValue      | The value of the global index from the last interaction with the account       |
-| indexTimestamp  | The timestamp when the index value was set                                     |
-
-
-# Solo and Perpetual endpoints
-
-Description:
-Gets the perpetual and solo standard actions for a particular user.
-
-Query Params:
-
-| Field Name | Description                                                     |
-|------------|-----------------------------------------------------------------|
-| owner      | The wallet address of the user.                                 |
-| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
-| market     | The market of the action e.g. `PBTC-USDC`.                      |
-| limit      | The maximum number of standard actions to retrieve.             |
-| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
-
-Standard Action types:
-
-| Type | Product |
-|------|---------|
-|DEPOSIT | solo, perpetual |
-|REPAY | solo |
-|WITHDRAW | solo, perpetual |
-|BORROW | solo |
-|LIQUIDATE | solo, perpetual |
-|LIQUIDATED | solo, perpetual |
-|EXPIRE | solo |
-|EXPIRED| solo |
-|TRADE | solo |
-|ISOLATED_OPEN | solo |
-|ISOLATED_PARTIAL_CLOSE | solo |
-|ISOLATED_FULL_CLOSE | solo |
-|ACCOUNT_SETTLE | perpetual |
-|OPEN | perpetual |
-|CLOSE | perpetual |
-|INCREASE | perpetual |
-|DECREASE | perpetual |
-
-Example Response Body for solo:
-
-```json
-{
-  "standardActions": [
-    {
-      "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
-      "type": "ISOLATED_FULL_CLOSE",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
-      "transferAmount": "139940891786496509",
-      "tradeAmount": "160307343231895490",
-      "price": "197.76",
-      "market": "WETH-DAI",
-      "asset": "WETH",
-      "side": "LONG",
-      "operationUuid": null,
-      "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
-      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
-      "borrowAmount": null,
-      "orderNumber": "1011061200670000",
-      "confirmedAt": "2020-05-21T17:34:22.000Z",
-      "feeAmount": "158511900987698260.512",
-      "feeAsset": "DAI",
-      "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
-      "payoutAmount": "139940891786496509",
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "SOLO",
-      "createdAt": "2020-05-21T17:35:57.265Z",
-      "updatedAt": "2020-05-21T17:35:57.280Z"
-    },
-    {
-      "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
-      "type": "ISOLATED_OPEN",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
-      "transferAmount": "150200220768708569",
-      "tradeAmount": "150000000000000000",
-      "price": "208.62",
-      "market": "WETH-DAI",
-      "asset": "WETH",
-      "side": "LONG",
-      "operationUuid": null,
-      "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
-      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
-      "borrowAmount": null,
-      "orderNumber": "998298000710000",
-      "confirmedAt": "2020-05-01T22:13:39.000Z",
-      "feeAmount": "156465000000000000",
-      "feeAsset": "DAI",
-      "pnl": null,
-      "payoutAmount": null,
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "SOLO",
-      "createdAt": "2020-05-03T04:06:48.813Z",
-      "updatedAt": "2020-05-03T04:06:48.834Z"
-    }
-  ]
-}
-```
-
-Example Response Body for perpetual:
-
-```json
-{
-  "standardActions": [
-    {
-      "uuid": "f2f0ac19-373f-4a80-bd34-a8d973ee0235",
-      "type": "OPEN",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": null,
-      "transferAmount": null,
-      "tradeAmount": "990000",
-      "price": "90.85",
-      "market": "PBTC-USDC",
-      "asset": null,
-      "side": "SHORT",
-      "operationUuid": null,
-      "transactionHash": "0x7c6367c2058e8c121437181a3e535a1ea06271ecf47be449c0217bdd0c785ad9",
-      "positionUuid": null,
-      "borrowAmount": null,
-      "orderNumber": "1011122300520002",
-      "confirmedAt": "2020-05-21T19:49:10.000Z",
-      "feeAmount": "454250",
-      "feeAsset": "USDC",
-      "pnl": null,
-      "payoutAmount": null,
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "PERPETUAL",
-      "createdAt": "2020-05-21T19:49:48.039Z",
-      "updatedAt": "2020-05-21T19:49:48.039Z"
-    }
-  ]
-}
-```
-
-#### Standard Action Response Object
-
-| Field Name     | Description                                                                     |
-|----------------|---------------------------------------------------------------------------------|
-| uuid           | The unique id for the action.                                                   |
-| owner          | The wallet address of the user.                                                 |
-| type           | The type of standard action e.g. `DEPOSIT`, `ISOLATED_OPEN` (for solo), `OPEN`, `ACCOUNT_SETTLE` (for perpetual)|
-| market         | The market, e.g. `WETH-USDC` or `PBTC-USDC`. |
-| side           | The side for the standard action e.g. `LONG`, `SHORT`.                          |
-| transferAmount | The amount in settlement token that is transferred.                             |
-| tradeAmount    | The amount traded. i.e. the base token amount in a trade                        |
-| price          | The price in settlement token.                                                  |
-| orderNumber    | Number used for ordering the standard actions.                                  |
-| updatedAt      | The ISO 8601 date and time the standard action was updated.                     |
-| createdAt      | The ISO 8601 date and time the standard action was created.                     |
-| confirmedAt    | The ISO 8601 date and time the standard action was confirmed.                   |
-| product        | The product type, e.g. `perpetual` or `solo`.                                   |
-| transactionHash| The transaction corresponding to this standard action                           |
-| pnl            | The pnl for the corresponding position. This is set for full and partial closes. Currently not set for perpetual standard actions |
-| feeAmount      | The fee amount charged                                                          |
-| feeAsset       | The asset of the `feeAmount` eg `DAI`, `USDC`                                   |
-| asset          | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                      |
-| payoutAmount   | The amount refunded to the user when maker fee is negative                      |
+| Field Name      | Description                                                                       |
+|-----------------|-----------------------------------------------------------------------------------|
+| owner           | The user's wallet address.                                                        |
+| balances        | An object with the user's balances for each market.                               |
+| margin          | This is calculated as `cachedMargin - (indexValue - globalIndexValue) * position` |
+| position        | The balance in position token (e.g. PBTC).                                        |
+| cachedMargin    | This is the last stored margin value                                              |
+| pendingMargin   | This is the (pending) component of the margin when a fill is still pending        |
+| pendingPosition | This is the (pending) component of the position when a fill is still pending      |
+| indexValue      | The value of the global index from the last interaction with the account          |
+| indexTimestamp  | The timestamp when the index value was set                                        |
 
 ## Deprecated APIs
 
