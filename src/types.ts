@@ -18,7 +18,6 @@
 
 import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
-import { Tx } from 'web3/eth/types';
 import { TransactionReceipt, Log, EventLog } from 'web3/types';
 
 export type address = string;
@@ -88,13 +87,24 @@ export interface EthereumAccount {
   privateKey: string;
 }
 
-export interface SendOptions extends Tx {
+export interface TxOptions {
+  from?: address;
+  value?: number | string;
+}
+
+export interface NativeSendOptions extends TxOptions {
+  gasPrice?: number | string;
+  gas?: number | string;
+  nonce?: string | number;
+}
+
+export interface SendOptions extends NativeSendOptions {
   confirmations?: number;
   confirmationType?: ConfirmationType;
   autoGasMultiplier?: number;
 }
 
-export interface CallOptions extends Tx {
+export interface CallOptions extends TxOptions {
   blockNumber?: number;
 }
 
