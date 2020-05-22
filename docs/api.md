@@ -1255,6 +1255,7 @@ Query Params:
 Standard Action types:
 
 | Type | Product |
+|------|---------|
 |DEPOSIT | solo, perpetual |
 |REPAY | solo |
 |WITHDRAW | solo, perpetual |
@@ -1262,7 +1263,7 @@ Standard Action types:
 |LIQUIDATE | solo, perpetual |
 |LIQUIDATED | solo, perpetual |
 |EXPIRE | solo |
-|EXPIRED | solo |
+|EXPIRED| solo |
 |TRADE | solo |
 |ISOLATED_OPEN | solo |
 |ISOLATED_PARTIAL_CLOSE | solo |
