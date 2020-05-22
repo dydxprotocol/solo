@@ -1004,106 +1004,6 @@ Example Response Body:
 
 ### GET `/v1/standard-actions`
 
-Description:
-Gets the perpetual and solo standard actions for a particular user.
-
-Query Params:
-
-| Field Name | Description                                                     |
-|------------|-----------------------------------------------------------------|
-| owner      | The wallet address of the user.                                 |
-| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
-| market     | The market of the action e.g. `PBTC-USDC`.                      |
-| limit      | The maximum number of standard actions to retrieve.             |
-| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
-
-Example Response Body:
-
-```json
-{
-  "standardActions": [
-    {
-      "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
-      "type": "ISOLATED_FULL_CLOSE",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
-      "transferAmount": "139940891786496509",
-      "tradeAmount": "160307343231895490",
-      "price": "197.76",
-      "market": "WETH-DAI",
-      "asset": "WETH",
-      "side": "LONG",
-      "operationUuid": null,
-      "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
-      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
-      "borrowAmount": null,
-      "orderNumber": "1011061200670000",
-      "confirmedAt": "2020-05-21T17:34:22.000Z",
-      "feeAmount": "158511900987698260.512",
-      "feeAsset": "DAI",
-      "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
-      "payoutAmount": "139940891786496509",
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "SOLO",
-      "createdAt": "2020-05-21T17:35:57.265Z",
-      "updatedAt": "2020-05-21T17:35:57.280Z"
-    },
-    {
-      "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
-      "type": "ISOLATED_OPEN",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
-      "transferAmount": "150200220768708569",
-      "tradeAmount": "150000000000000000",
-      "price": "208.62",
-      "market": "WETH-DAI",
-      "asset": "WETH",
-      "side": "LONG",
-      "operationUuid": null,
-      "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
-      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
-      "borrowAmount": null,
-      "orderNumber": "998298000710000",
-      "confirmedAt": "2020-05-01T22:13:39.000Z",
-      "feeAmount": "156465000000000000",
-      "feeAsset": "DAI",
-      "pnl": null,
-      "payoutAmount": null,
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "SOLO",
-      "createdAt": "2020-05-03T04:06:48.813Z",
-      "updatedAt": "2020-05-03T04:06:48.834Z"
-    }
-  ]
-}
-```
-
-#### Standard Action Response Object
-
-| Field Name     | Description                                                                     |
-|----------------|---------------------------------------------------------------------------------|
-| uuid           | The unique id for the action.                                                   |
-| owner          | The wallet address of the user.                                                 |
-| type           | The type of standard action e.g. `DEPOSIT`, `ISOLATED_OPEN`.                    |
-| market         | The market, e.g. `WETH-USDC`.                                                   |
-| side           | The side for the standard action e.g. `LONG`, `SHORT`.                          |
-| transferAmount | The amount in settlement token that is transferred.                             |
-| tradeAmount    | The amount traded. i.e. the base token amount in a trade                        |
-| price          | The price in settlement token.                                                  |
-| orderNumber    | Number used for ordering the standard actions.                                  |
-| updatedAt      | The ISO 8601 date and time the standard action was updated.                     |
-| createdAt      | The ISO 8601 date and time the standard action was created.                     |
-| confirmedAt    | The ISO 8601 date and time the standard action was confirmed.                   |
-| product        | The product type, e.g. `perpetual` or `solo`.                                   |
-| transactionHash| The transaction corresponding to this standard action                           |
-| pnl            | The pnl for the corresponding position. This is set for full and partial closes |
-| feeAmount      | The fee amount charged                                                          |
-| feeAsset       | The asset of the `feeAmount` eg `DAI`                                           | 
-| asset          | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                      |
-| payoutAmount   | The amount refunded to the user when maker fee is negative                      |
-
 ## Perpetual Endpoints
 
 ### GET `/v1/perpetual-markets`
@@ -1215,51 +1115,6 @@ Balance Update Response Object:
 Description:
 Gets the perpetual and solo standard actions for a particular user.
 
-Query Params:
-
-| Field Name | Description                                                     |
-|------------|-----------------------------------------------------------------|
-| owner      | The wallet address of the user.                                 |
-| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
-| market     | The market of the action e.g. `PBTC-USDC`.                      |
-| limit      | The maximum number of standard actions to retrieve.             |
-| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
-
-Example Response Body:
-
-```json
-{
-  "standardActions": [
-    {
-      "uuid": "f2f0ac19-373f-4a80-bd34-a8d973ee0235",
-      "type": "OPEN",
-      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
-      "number": null,
-      "transferAmount": null,
-      "tradeAmount": "990000",
-      "price": "90.85",
-      "market": "PBTC-USDC",
-      "asset": null,
-      "side": "SHORT",
-      "operationUuid": null,
-      "transactionHash": "0x7c6367c2058e8c121437181a3e535a1ea06271ecf47be449c0217bdd0c785ad9",
-      "positionUuid": null,
-      "borrowAmount": null,
-      "orderNumber": "1011122300520002",
-      "confirmedAt": "2020-05-21T19:49:10.000Z",
-      "feeAmount": "454250",
-      "feeAsset": "USDC",
-      "pnl": null,
-      "payoutAmount": null,
-      "isPendingBlock": false,
-      "refundAmount": "0",
-      "product": "PERPETUAL",
-      "createdAt": "2020-05-21T19:49:48.039Z",
-      "updatedAt": "2020-05-21T19:49:48.039Z"
-    }
-  ]
-}
-```
 
 #### Standard Action Response Object
 
@@ -1380,6 +1235,166 @@ Example Response Body:
 | pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
 | indexValue      | The value of the global index from the last interaction with the account       |
 | indexTimestamp  | The timestamp when the index value was set                                     |
+
+
+# Solo and Perpetual endpoints
+
+Description:
+Gets the perpetual and solo standard actions for a particular user.
+
+Query Params:
+
+| Field Name | Description                                                     |
+|------------|-----------------------------------------------------------------|
+| owner      | The wallet address of the user.                                 |
+| type       | The type of standard action e.g. `OPEN`, `CLOSE`, `DEPOSIT`.    |
+| market     | The market of the action e.g. `PBTC-USDC`.                      |
+| limit      | The maximum number of standard actions to retrieve.             |
+| product    | The product of the standard action, e.g. `perpetual` or `solo`. |
+
+Standard Action types:
+
+| Type | Product |
+|DEPOSIT | solo, perpetual |
+|REPAY | solo |
+|WITHDRAW | solo, perpetual |
+|BORROW | solo |
+|LIQUIDATE | solo, perpetual |
+|LIQUIDATED | solo, perpetual |
+|EXPIRE | solo |
+|EXPIRED | solo |
+|TRADE | solo |
+|ISOLATED_OPEN | solo |
+|ISOLATED_PARTIAL_CLOSE | solo |
+|ISOLATED_FULL_CLOSE | solo |
+|ACCOUNT_SETTLE | perpetual |
+|OPEN | perpetual |
+|CLOSE | perpetual |
+|INCREASE | perpetual |
+|DECREASE | perpetual |
+
+Example Response Body for solo:
+
+```json
+{
+  "standardActions": [
+    {
+      "uuid": "878c0f3e-ced0-478c-a9c5-76237107050b",
+      "type": "ISOLATED_FULL_CLOSE",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "139940891786496509",
+      "tradeAmount": "160307343231895490",
+      "price": "197.76",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0xa5c242650815711b45784b57b8132e2523cd5044f0c6c53482c706713de29795",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "1011061200670000",
+      "confirmedAt": "2020-05-21T17:34:22.000Z",
+      "feeAmount": "158511900987698260.512",
+      "feeAsset": "DAI",
+      "pnl": "-0.11680504725069452446144687474175947711343548096340565373461771439994077049174357",
+      "payoutAmount": "139940891786496509",
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-21T17:35:57.265Z",
+      "updatedAt": "2020-05-21T17:35:57.280Z"
+    },
+    {
+      "uuid": "d9ee4386-8810-4cf0-ab73-e5eaa7b6d7c8",
+      "type": "ISOLATED_OPEN",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": "72726098636314491067235956043692261150608981229613064856905296785781912974936",
+      "transferAmount": "150200220768708569",
+      "tradeAmount": "150000000000000000",
+      "price": "208.62",
+      "market": "WETH-DAI",
+      "asset": "WETH",
+      "side": "LONG",
+      "operationUuid": null,
+      "transactionHash": "0x2d39ca14ba40c5049d6983091fe430da8469619aae7657e872f531466fdf7d7a",
+      "positionUuid": "5f3f0dc0-d84f-4bf8-a0ce-61d4c98ae88c",
+      "borrowAmount": null,
+      "orderNumber": "998298000710000",
+      "confirmedAt": "2020-05-01T22:13:39.000Z",
+      "feeAmount": "156465000000000000",
+      "feeAsset": "DAI",
+      "pnl": null,
+      "payoutAmount": null,
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "SOLO",
+      "createdAt": "2020-05-03T04:06:48.813Z",
+      "updatedAt": "2020-05-03T04:06:48.834Z"
+    }
+  ]
+}
+```
+
+Example Response Body for perpetual:
+
+```json
+{
+  "standardActions": [
+    {
+      "uuid": "f2f0ac19-373f-4a80-bd34-a8d973ee0235",
+      "type": "OPEN",
+      "owner": "0x77a035b677d5a0900e4848ae885103cd49af9633",
+      "number": null,
+      "transferAmount": null,
+      "tradeAmount": "990000",
+      "price": "90.85",
+      "market": "PBTC-USDC",
+      "asset": null,
+      "side": "SHORT",
+      "operationUuid": null,
+      "transactionHash": "0x7c6367c2058e8c121437181a3e535a1ea06271ecf47be449c0217bdd0c785ad9",
+      "positionUuid": null,
+      "borrowAmount": null,
+      "orderNumber": "1011122300520002",
+      "confirmedAt": "2020-05-21T19:49:10.000Z",
+      "feeAmount": "454250",
+      "feeAsset": "USDC",
+      "pnl": null,
+      "payoutAmount": null,
+      "isPendingBlock": false,
+      "refundAmount": "0",
+      "product": "PERPETUAL",
+      "createdAt": "2020-05-21T19:49:48.039Z",
+      "updatedAt": "2020-05-21T19:49:48.039Z"
+    }
+  ]
+}
+```
+
+#### Standard Action Response Object
+
+| Field Name     | Description                                                                     |
+|----------------|---------------------------------------------------------------------------------|
+| uuid           | The unique id for the action.                                                   |
+| owner          | The wallet address of the user.                                                 |
+| type           | The type of standard action e.g. `DEPOSIT`, `ISOLATED_OPEN` (for solo), `OPEN`, `ACCOUNT_SETTLE` (for perpetual)|
+| market         | The market, e.g. `WETH-USDC` or `PBTC-USDC`. |
+| side           | The side for the standard action e.g. `LONG`, `SHORT`.                          |
+| transferAmount | The amount in settlement token that is transferred.                             |
+| tradeAmount    | The amount traded. i.e. the base token amount in a trade                        |
+| price          | The price in settlement token.                                                  |
+| orderNumber    | Number used for ordering the standard actions.                                  |
+| updatedAt      | The ISO 8601 date and time the standard action was updated.                     |
+| createdAt      | The ISO 8601 date and time the standard action was created.                     |
+| confirmedAt    | The ISO 8601 date and time the standard action was confirmed.                   |
+| product        | The product type, e.g. `perpetual` or `solo`.                                   |
+| transactionHash| The transaction corresponding to this standard action                           |
+| pnl            | The pnl for the corresponding position. This is set for full and partial closes. Currently not set for perpetual standard actions |
+| feeAmount      | The fee amount charged                                                          |
+| feeAsset       | The asset of the `feeAmount` eg `DAI`, `USDC`                                   |
+| asset          | The asset eg `WETH`, `DAI`, `USDC` for deposit or withdraw                      |
+| payoutAmount   | The amount refunded to the user when maker fee is negative                      |
 
 ## Deprecated APIs
 
