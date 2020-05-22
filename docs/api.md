@@ -1228,9 +1228,9 @@ Example Response Body:
 |-----------------|--------------------------------------------------------------------------------|
 | owner           | The user's wallet address.                                                     |
 | balances        | An object with the user's balances for each market.                            |
-| margin          | The balance in settlement token (e.g. USDC).                                   |
+| margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
 | position        | The balance in position token (e.g. PBTC).                                     |
-| cachedMargin    | This is calculated as (index value - global index value)*position              |
+| cachedMargin    | This is the last stored margin value                                           |
 | pendingMargin   | This is the new (pending) value of the margin when a fill is still pending     |
 | pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
 | indexValue      | The value of the global index from the last interaction with the account       |
