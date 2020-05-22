@@ -1177,8 +1177,8 @@ Example Response Body:
 | margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
 | position        | The balance in position token (e.g. PBTC).                                     |
 | cachedMargin    | This is the last stored margin value                                           |
-| pendingMargin   | This is the new (pending) value of the margin when a fill is still pending     |
-| pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
+| pendingMargin   | This is the (pending) component of the margin when a fill is still pending     |
+| pendingPosition | This is the (pending) component of the position when a fill is still pending   |
 | indexValue      | The value of the global index from the last interaction with the account       |
 | indexTimestamp  | The timestamp when the index value was set                                     |
 
@@ -1231,8 +1231,8 @@ Example Response Body:
 | margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
 | position        | The balance in position token (e.g. PBTC).                                     |
 | cachedMargin    | This is the last stored margin value                                           |
-| pendingMargin   | This is the new (pending) value of the margin when a fill is still pending     |
-| pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
+| pendingMargin   | This is the (pending) component of the margin when a fill is still pending     |
+| pendingPosition | This is the (pending) component of the position when a fill is still pending   |
 | indexValue      | The value of the global index from the last interaction with the account       |
 | indexTimestamp  | The timestamp when the index value was set                                     |
 
