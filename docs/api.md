@@ -1005,7 +1005,7 @@ Example Response Body:
 ### GET `/v1/standard-actions`
 
 Description:
-Get the standard actions for a particular user. This endpoint can be used for both solo & perpetual.
+Gets the perpetual and solo standard actions for a particular user.
 
 Query Params:
 
@@ -1156,7 +1156,7 @@ Market Response Object:
 | minimumTickSize      | The minimum price amount eg: 0.01 (equal to $1)|
 | minimumOrderSize     | The minimum size, in position units, required for an order |
 | smallOrderThreshold  | The threshold, in position units, at which we charge different fees for takers |
-| makerFee             | The fee charged for the maker of an order eg -0.00025 (equal to -0.025%) |
+| makerFee             | The percentage fee charged for the maker of an order eg -0.00025 (equal to -0.025%) |
 | largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%) |
 | smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%) |
 | openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts)|
@@ -1213,7 +1213,7 @@ Balance Update Response Object:
 ### GET `/v1/standard-actions`
 
 Description:
-Get the standard actions for a particular user. This applies to both solo and perpetual actions.
+Gets the perpetual and solo standard actions for a particular user.
 
 Query Params:
 
@@ -1318,10 +1318,10 @@ Example Response Body:
 | Field Name      | Description                                                                    |
 |-----------------|--------------------------------------------------------------------------------|
 | owner           | The user's wallet address.                                                     |
-| balances        | An object with the user's balances for each market.                            |
-| margin          | The balance in settlement token (e.g. USDC).                                   |
+| balances        | A mapping of the market to the balances for that market                        |
+| margin          | This is calculated as `cachedMargin- (indexValue - globalIndexValue)*position` |
 | position        | The balance in position token (e.g. PBTC).                                     |
-| cachedMargin    | This is calculated as (index value - global index value)*position              |
+| cachedMargin    | This is the last stored margin value                                           |
 | pendingMargin   | This is the new (pending) value of the margin when a fill is still pending     |
 | pendingPosition | This is the new (pending) value of the position when a fill is still pending   |
 | indexValue      | The value of the global index from the last interaction with the account       |
