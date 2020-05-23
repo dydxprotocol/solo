@@ -670,11 +670,11 @@ eg:- A position is closed:
 }
 ```
 
-|Field Name|JSON type|Description|
-|----------|---------|-----------|
-|type|string|Must be set to "unsubscribe"|
-|channel|string|The channel to unsubscribe from i.e. "positions" |
-|id|string|An id to unsubscribe from on the channel|
+| Field Name | JSON type | Description                                      |
+|------------|-----------|--------------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"                     |
+| channel    | string    | The channel to unsubscribe from i.e. "positions" |
+| id         | string    | An id to unsubscribe from on the channel         |
 
 #### Response
 
