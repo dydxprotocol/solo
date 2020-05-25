@@ -75,22 +75,14 @@ import wethJson from '../../build/published_contracts/Weth.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
-<<<<<<< HEAD
-  SendOptions,
-=======
->>>>>>> fix send/call/estmate
   TxResult,
   address,
   SoloOptions,
   ConfirmationType,
-<<<<<<< HEAD
-  CallOptions,
-=======
   TxOptions,
   CallOptions,
   NativeSendOptions,
   SendOptions,
->>>>>>> fix send/call/estmate
 } from '../types';
 
 interface CallableTransactionObject<T> {
