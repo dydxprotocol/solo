@@ -442,13 +442,12 @@ describe('LimitOrders', () => {
 
   describe('constructor', () => {
     it('Sets constants correctly', async () => {
-      const cccf = solo.contracts.call;
       const [
         domainHash,
         soloMarginAddress,
       ] = await Promise.all([
-        cccf(solo.contracts.limitOrders.methods.EIP712_DOMAIN_HASH()),
-        cccf(solo.contracts.limitOrders.methods.SOLO_MARGIN()),
+        solo.contracts.call(solo.contracts.limitOrders.methods.EIP712_DOMAIN_HASH()),
+        solo.contracts.call(solo.contracts.limitOrders.methods.SOLO_MARGIN()),
       ]);
       const expectedDomainHash = solo.limitOrders.getDomainHash();
       expect(domainHash).toEqual(expectedDomainHash);
