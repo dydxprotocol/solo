@@ -2,8 +2,8 @@ import { Contracts } from '../lib/Contracts';
 import { Token } from './Token';
 import { Weth as WethContract } from '../../build/wrappers/Weth';
 import {
-  ContractCallOptions,
-  ContractConstantCallOptions,
+  SendOptions,
+  CallOptions,
   TxResult,
   address,
   Integer,
@@ -30,9 +30,9 @@ export class Weth {
   public async wrap(
     ownerAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.weth.methods.deposit(),
       {
         ...options,
@@ -45,9 +45,9 @@ export class Weth {
   public async unwrap(
     ownerAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.weth.methods.withdraw(
         amount.toFixed(0),
       ),
@@ -61,7 +61,7 @@ export class Weth {
   public async getAllowance(
     ownerAddress: address,
     spenderAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.token.getAllowance(
       this.weth.options.address,
@@ -73,7 +73,7 @@ export class Weth {
 
   public async getBalance(
     ownerAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.token.getBalance(
       this.weth.options.address,
@@ -83,7 +83,7 @@ export class Weth {
   }
 
   public async getTotalSupply(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.token.getTotalSupply(
       this.weth.options.address,
@@ -92,7 +92,7 @@ export class Weth {
   }
 
   public async getName(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<string> {
     return this.token.getName(
       this.weth.options.address,
@@ -101,7 +101,7 @@ export class Weth {
   }
 
   public async getSymbol(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<string> {
     return this.token.getSymbol(
       this.weth.options.address,
@@ -110,7 +110,7 @@ export class Weth {
   }
 
   public async getDecimals(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.token.getDecimals(
       this.weth.options.address,
@@ -120,7 +120,7 @@ export class Weth {
 
   public async getSoloAllowance(
     ownerAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.token.getSoloAllowance(
       this.weth.options.address,
@@ -133,7 +133,7 @@ export class Weth {
     ownerAddress: address,
     spenderAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.setAllowance(
       this.weth.options.address,
@@ -147,7 +147,7 @@ export class Weth {
   public async setSolollowance(
     ownerAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.setSolollowance(
       this.weth.options.address,
@@ -160,7 +160,7 @@ export class Weth {
   public async setMaximumAllowance(
     ownerAddress: address,
     spenderAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumAllowance(
       this.weth.options.address,
@@ -172,7 +172,7 @@ export class Weth {
 
   public async setMaximumSoloAllowance(
     ownerAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.setMaximumSoloAllowance(
       this.weth.options.address,
@@ -183,7 +183,7 @@ export class Weth {
 
   public async unsetSoloAllowance(
     ownerAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.unsetSoloAllowance(
       this.weth.options.address,
@@ -196,7 +196,7 @@ export class Weth {
     fromAddress: address,
     toAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.transfer(
       this.weth.options.address,
@@ -212,7 +212,7 @@ export class Weth {
     toAddress: address,
     senderAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.token.transferFrom(
       this.weth.options.address,

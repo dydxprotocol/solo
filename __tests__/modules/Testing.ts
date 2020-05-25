@@ -15,7 +15,7 @@ import { TestInterestSetter } from './TestInterestSetter';
 import { decimalToString } from '../../src/lib/Helpers';
 import {
   AccountStatus,
-  ContractCallOptions,
+  SendOptions,
   Index,
   Integer,
   TxResult,
@@ -72,9 +72,9 @@ export class Testing {
     accountNumber: Integer,
     marketId: Integer,
     par: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testSoloMargin.methods.setAccountBalance(
         {
           owner: accountOwner,
@@ -94,9 +94,9 @@ export class Testing {
     accountOwner: address,
     accountNumber: Integer,
     status: AccountStatus,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testSoloMargin.methods.setAccountStatus(
         {
           owner: accountOwner,
@@ -111,7 +111,7 @@ export class Testing {
   public async setMarketIndex(
     marketId: Integer,
     index: Index,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
     if (index.lastUpdate.isZero()) {
       const currentIndex = await this.contracts.testSoloMargin.methods.getMarketCachedIndex(
@@ -120,7 +120,7 @@ export class Testing {
       index.lastUpdate = new BigNumber(currentIndex.lastUpdate);
     }
 
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testSoloMargin.methods.setMarketIndex(
         marketId.toFixed(0),
         {

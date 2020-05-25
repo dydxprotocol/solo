@@ -1,7 +1,7 @@
 import { Contracts } from '../lib/Contracts';
 import {
   address,
-  ContractCallOptions,
+  SendOptions,
   Decimal,
   Integer,
   TxResult,
@@ -28,9 +28,9 @@ export class LiquidatorProxy {
     minValueLiquidated: Integer,
     owedPreferences: Integer[],
     heldPreferences: Integer[],
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.liquidatorProxyV1.methods.liquidate(
         {
           owner: accountOwner,

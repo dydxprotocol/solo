@@ -29,7 +29,7 @@ describe('WethPriceOracle', () => {
 
   it('Returns the correct value', async () => {
     await setPrice(defaultPrice, true);
-    const price = await solo.contracts.callConstantContractFunction(
+    const price = await solo.contracts.call(
       solo.contracts.wethPriceOracle.methods.getPrice(ADDRESSES.ZERO),
     );
     expect(new BigNumber(price.value)).toEqual(defaultPrice);
@@ -37,7 +37,7 @@ describe('WethPriceOracle', () => {
 
   it('Returns the correct value even when stale', async () => {
     await setPrice(defaultPrice, false);
-    const price = await solo.contracts.callConstantContractFunction(
+    const price = await solo.contracts.call(
       solo.contracts.wethPriceOracle.methods.getPrice(ADDRESSES.ZERO),
     );
     expect(new BigNumber(price.value)).toEqual(defaultPrice);
@@ -64,7 +64,7 @@ async function setPrice(
   price: BigNumber,
   valid: boolean,
 ) {
-  await solo.contracts.callContractFunction(
+  await solo.contracts.send(
     solo.contracts.testMakerOracle.methods.setValues(
       price.toFixed(0),
       valid,

@@ -170,7 +170,7 @@ describe('PolynomialInterestSetter', () => {
     const newAPR = new BigNumber('1.5e18').toFixed(0);
     expect(newAPR).not.toEqual(maxAPR1);
 
-    await solo.contracts.callContractFunction(
+    await solo.contracts.send(
       solo.contracts.testPolynomialInterestSetter.methods.setParameters({
         maxAPR: newAPR,
         coefficients: '100',
@@ -208,7 +208,7 @@ async function setCoefficients(
   coefficients: number[],
 ) {
   const coefficientsString = coefficientsToString(coefficients);
-  await solo.contracts.callContractFunction(
+  await solo.contracts.send(
     solo.contracts.testPolynomialInterestSetter.methods.setParameters({
       maxAPR: maximumRate.toFixed(0),
       coefficients: coefficientsString,

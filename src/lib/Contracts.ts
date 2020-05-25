@@ -75,16 +75,16 @@ import wethJson from '../../build/published_contracts/Weth.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
-  ContractCallOptions,
+  SendOptions,
   TxResult,
   address,
   SoloOptions,
   ConfirmationType,
-  ContractConstantCallOptions,
+  CallOptions,
 } from '../types';
 
 interface CallableTransactionObject<T> {
-  call(tx?: Tx, blockNumber?: number): Promise<T>;
+  call(tx?: Tx, blockNumber?: number | string): Promise<T>;
 }
 
 export class Contracts {
@@ -237,9 +237,9 @@ export class Contracts {
     this.weth.options.from = account;
   }
 
-  public async callContractFunction<T>(
+  public async send<T>(
     method: TransactionObject<T>,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     const { confirmations, confirmationType, autoGasMultiplier, ...txOptions } = options;
 
@@ -385,9 +385,9 @@ export class Contracts {
     };
   }
 
-  public async callConstantContractFunction<T>(
+  public async call<T>(
     method: TransactionObject<T>,
-    options: ContractConstantCallOptions = {},
+    options: CallOptions = {},
   ): Promise<T> {
     const m2 = method as CallableTransactionObject<T>;
     const {

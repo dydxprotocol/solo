@@ -88,13 +88,13 @@ export interface EthereumAccount {
   privateKey: string;
 }
 
-export interface ContractCallOptions extends Tx {
+export interface SendOptions extends Tx {
   confirmations?: number;
   confirmationType?: ConfirmationType;
   autoGasMultiplier?: number;
 }
 
-export interface ContractConstantCallOptions extends Tx {
+export interface CallOptions extends Tx {
   blockNumber?: number;
 }
 

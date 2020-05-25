@@ -147,7 +147,7 @@ describe('CanonicalOrders', () => {
   describe('shutDown', () => {
     it('Succeeds', async () => {
       expect(await solo.canonicalOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.shutDown(),
         { from: admin },
       );
@@ -155,12 +155,12 @@ describe('CanonicalOrders', () => {
     });
 
     it('Succeeds when it is already shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.canonicalOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.shutDown(),
         { from: admin },
       );
@@ -169,7 +169,7 @@ describe('CanonicalOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.canonicalOrders.methods.shutDown(),
           { from: rando },
         ),
@@ -179,12 +179,12 @@ describe('CanonicalOrders', () => {
 
   describe('startUp', () => {
     it('Succeeds after being shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.canonicalOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.startUp(),
         { from: admin },
       );
@@ -193,7 +193,7 @@ describe('CanonicalOrders', () => {
 
     it('Succeeds when it is already operational', async () => {
       expect(await solo.canonicalOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.startUp(),
         { from: admin },
       );
@@ -202,7 +202,7 @@ describe('CanonicalOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.canonicalOrders.methods.startUp(),
           { from: rando },
         ),
@@ -275,7 +275,7 @@ describe('CanonicalOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.canonicalOrders.methods.getTradeCost(
             baseMarket.toFixed(0),
             quoteMarket.toFixed(0),
@@ -293,7 +293,7 @@ describe('CanonicalOrders', () => {
     });
 
     it('Fails if shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.canonicalOrders.methods.shutDown(),
         { from: admin },
       );
@@ -456,7 +456,7 @@ describe('CanonicalOrders', () => {
 
   describe('constructor', () => {
     it('Sets constants correctly', async () => {
-      const cccf = solo.contracts.callConstantContractFunction;
+      const cccf = solo.contracts.call;
       const [
         domainHash,
         soloMarginAddress,
@@ -593,7 +593,7 @@ describe('CanonicalOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.canonicalOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {
@@ -668,7 +668,7 @@ describe('CanonicalOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.canonicalOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {

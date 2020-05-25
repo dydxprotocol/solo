@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { ContractCallOptions, TxResult, Integer } from '../../src/types';
+import { SendOptions, TxResult, Integer } from '../../src/types';
 
 export class TestPolynomialInterestSetter {
   private contracts: TestContracts;
@@ -17,9 +17,9 @@ export class TestPolynomialInterestSetter {
   public async setParameters(
     maxAPR: Integer,
     coefficients: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testPolynomialInterestSetter.methods.setParameters({
         maxAPR: maxAPR.toFixed(0),
         coefficients: coefficients.toFixed(0),

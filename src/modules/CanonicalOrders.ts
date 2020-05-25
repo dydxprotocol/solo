@@ -17,8 +17,8 @@ import {
 } from '../lib/SignatureHelper';
 import {
   address,
-  ContractCallOptions,
-  ContractConstantCallOptions,
+  SendOptions,
+  CallOptions,
   CanonicalOrder,
   SignedCanonicalOrder,
   CanonicalOrderState,
@@ -106,10 +106,10 @@ export class CanonicalOrders extends OrderSigner {
    */
   public async getOrderStates(
     orders: CanonicalOrder[],
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<CanonicalOrderState[]> {
     const orderHashes = orders.map(order => this.getOrderHash(order));
-    const states: any[] = await this.contracts.callConstantContractFunction(
+    const states: any[] = await this.contracts.call(
       this.contracts.canonicalOrders.methods.getOrderStates(orderHashes),
       options,
     );
@@ -123,9 +123,9 @@ export class CanonicalOrders extends OrderSigner {
   }
 
   public async getTakerAddress(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<address> {
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       this.contracts.canonicalOrders.methods.g_taker(),
       options,
     );
@@ -135,9 +135,9 @@ export class CanonicalOrders extends OrderSigner {
 
   public async setTakerAddress(
     taker: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<any> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.canonicalOrders.methods.setTakerAddress(taker),
       options,
     );

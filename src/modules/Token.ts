@@ -4,11 +4,11 @@ import { Contracts } from '../lib/Contracts';
 import { INTEGERS } from '../lib/Constants';
 import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import {
-  ContractCallOptions,
+  SendOptions,
   TxResult,
   address,
   Integer,
-  ContractConstantCallOptions,
+  CallOptions,
 } from '../types';
 
 export class Token {
@@ -26,10 +26,10 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const allowStr: string = await this.contracts.callConstantContractFunction(
+    const allowStr: string = await this.contracts.call(
       token.methods.allowance(ownerAddress, spenderAddress),
       options,
     );
@@ -39,10 +39,10 @@ export class Token {
   public async getBalance(
     tokenAddress: address,
     ownerAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const balStr: string = await this.contracts.callConstantContractFunction(
+    const balStr: string = await this.contracts.call(
       token.methods.balanceOf(ownerAddress),
       options,
     );
@@ -51,10 +51,10 @@ export class Token {
 
   public async getTotalSupply(
     tokenAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const supplyStr: string = await this.contracts.callConstantContractFunction(
+    const supplyStr: string = await this.contracts.call(
       token.methods.totalSupply(),
       options,
     );
@@ -63,10 +63,10 @@ export class Token {
 
   public async getName(
     tokenAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<string> {
     const token = this.getToken(tokenAddress);
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       token.methods.name(),
       options,
     );
@@ -74,10 +74,10 @@ export class Token {
 
   public async getSymbol(
     tokenAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<string> {
     const token = this.getToken(tokenAddress);
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       token.methods.symbol(),
       options,
     );
@@ -85,10 +85,10 @@ export class Token {
 
   public async getDecimals(
     tokenAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
-    const decStr: string = await this.contracts.callConstantContractFunction(
+    const decStr: string = await this.contracts.call(
       token.methods.decimals(),
       options,
     );
@@ -98,7 +98,7 @@ export class Token {
   public async getSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
     return this.getAllowance(
       tokenAddress,
@@ -113,11 +113,11 @@ export class Token {
     ownerAddress: address,
     spenderAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       token.methods.approve(
         spenderAddress,
         amount.toFixed(0),
@@ -130,7 +130,7 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -145,7 +145,7 @@ export class Token {
     tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -159,7 +159,7 @@ export class Token {
   public async setMaximumSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -173,7 +173,7 @@ export class Token {
   public async unsetSoloAllowance(
     tokenAddress: address,
     ownerAddress: address,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
       tokenAddress,
@@ -189,11 +189,11 @@ export class Token {
     fromAddress: address,
     toAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       token.methods.transfer(
         toAddress,
         amount.toFixed(0),
@@ -208,11 +208,11 @@ export class Token {
     toAddress: address,
     senderAddress: address,
     amount: Integer,
-    options: ContractCallOptions = {},
+    options: SendOptions = {},
   ): Promise<TxResult> {
     const token = this.getToken(tokenAddress);
 
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       token.methods.transferFrom(
         fromAddress,
         toAddress,

@@ -48,7 +48,7 @@ describe('Refunder', () => {
     await resetEVM();
     await Promise.all([
       setupMarkets(solo, accounts),
-      solo.contracts.callContractFunction(
+      solo.contracts.send(
         solo.contracts.refunder.methods.addGiver(giver),
         { from: admin },
       ),
@@ -77,16 +77,16 @@ describe('Refunder', () => {
         receiverIsGiver,
         gottenSolo,
       ] = await Promise.all([
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_givers(giver),
         ),
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_givers(rando),
         ),
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_givers(receiver),
         ),
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.SOLO_MARGIN(),
         ),
       ]);
@@ -99,11 +99,11 @@ describe('Refunder', () => {
 
   describe('addGiver', () => {
     it('Succeeds', async () => {
-      const txResult = await solo.contracts.callContractFunction(
+      const txResult = await solo.contracts.send(
         solo.contracts.refunder.methods.addGiver(rando),
         { from: admin },
       );
-      const isGiver = await solo.contracts.callConstantContractFunction(
+      const isGiver = await solo.contracts.call(
         solo.contracts.refunder.methods.g_givers(rando),
       );
       expect(isGiver).toEqual(true);
@@ -116,7 +116,7 @@ describe('Refunder', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.refunder.methods.addGiver(rando),
           { from: rando },
         ),
@@ -126,11 +126,11 @@ describe('Refunder', () => {
 
   describe('removeGiver', () => {
     it('Succeeds', async () => {
-      const txResult = await solo.contracts.callContractFunction(
+      const txResult = await solo.contracts.send(
         solo.contracts.refunder.methods.removeGiver(giver),
         { from: admin },
       );
-      const isGiver = await solo.contracts.callConstantContractFunction(
+      const isGiver = await solo.contracts.call(
         solo.contracts.refunder.methods.g_givers(giver),
       );
       expect(isGiver).toEqual(false);
@@ -143,7 +143,7 @@ describe('Refunder', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.refunder.methods.removeGiver(giver),
           { from: rando },
         ),
@@ -218,7 +218,7 @@ describe('Refunder', () => {
 
     it('Fails for non-solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.refunder.methods.getTradeCost(
             '0',
             '1',

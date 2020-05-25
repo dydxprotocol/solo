@@ -7,7 +7,7 @@ import {
   address,
   AmountReference,
   AmountDenomination,
-  ContractCallOptions,
+  SendOptions,
   ProxyType,
 } from '../types';
 
@@ -34,7 +34,7 @@ export class StandardActions {
     marketId: BigNumber | string,
     amount: BigNumber | string,
     accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
@@ -78,7 +78,7 @@ export class StandardActions {
     marketId: BigNumber | string,
     amount: BigNumber | string,
     accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
@@ -117,7 +117,7 @@ export class StandardActions {
     accountOwner: address,
     marketId: BigNumber | string,
     accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({

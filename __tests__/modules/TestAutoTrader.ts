@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { Amount, ContractCallOptions, TxResult, Integer } from '../../src/types';
+import { Amount, SendOptions, TxResult, Integer } from '../../src/types';
 
 export class TestAutoTrader {
   private contracts: TestContracts;
@@ -17,7 +17,7 @@ export class TestAutoTrader {
   public async setData(
     tradeId: Integer,
     amount: Amount,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
     const parsedAmount = {
       sign: !amount.value.isNegative(),
@@ -25,7 +25,7 @@ export class TestAutoTrader {
       ref: amount.reference,
       value: amount.value.abs().toFixed(0),
     };
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setData(
         tradeId.toFixed(0),
         parsedAmount,
@@ -37,7 +37,7 @@ export class TestAutoTrader {
   public async setRequireInputMarketId(
     market: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireInputMarketId(
         market.toFixed(0),
       ),
@@ -47,7 +47,7 @@ export class TestAutoTrader {
   public async setRequireOutputMarketId(
     market: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireOutputMarketId(
         market.toFixed(0),
       ),
@@ -58,7 +58,7 @@ export class TestAutoTrader {
     accountOwner: string,
     accountNumber: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireMakerAccount({
         owner: accountOwner,
         number: accountNumber.toFixed(0),
@@ -70,7 +70,7 @@ export class TestAutoTrader {
     accountOwner: string,
     accountNumber: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireTakerAccount({
         owner: accountOwner,
         number: accountNumber.toFixed(0),
@@ -81,7 +81,7 @@ export class TestAutoTrader {
   public async setRequireOldInputPar(
     par: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireOldInputPar({
         sign: par.gt(0),
         value: par.abs().toFixed(0),
@@ -92,7 +92,7 @@ export class TestAutoTrader {
   public async setRequireNewInputPar(
     par: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireNewInputPar({
         sign: par.gt(0),
         value: par.abs().toFixed(0),
@@ -103,7 +103,7 @@ export class TestAutoTrader {
   public async setRequireInputWei(
     wei: Integer,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testAutoTrader.methods.setRequireInputWei({
         sign: wei.gt(0),
         value: wei.abs().toFixed(0),

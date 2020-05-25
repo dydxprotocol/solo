@@ -130,7 +130,7 @@ describe('LimitOrders', () => {
   describe('shutDown', () => {
     it('Succeeds', async () => {
       expect(await solo.limitOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -138,12 +138,12 @@ describe('LimitOrders', () => {
     });
 
     it('Succeeds when it is already shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.limitOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -152,7 +152,7 @@ describe('LimitOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.limitOrders.methods.shutDown(),
           { from: rando },
         ),
@@ -162,12 +162,12 @@ describe('LimitOrders', () => {
 
   describe('startUp', () => {
     it('Succeeds after being shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.limitOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.startUp(),
         { from: admin },
       );
@@ -176,7 +176,7 @@ describe('LimitOrders', () => {
 
     it('Succeeds when it is already operational', async () => {
       expect(await solo.limitOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.startUp(),
         { from: admin },
       );
@@ -185,7 +185,7 @@ describe('LimitOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.limitOrders.methods.startUp(),
           { from: rando },
         ),
@@ -260,7 +260,7 @@ describe('LimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.limitOrders.methods.getTradeCost(
             defaultMakerMarket.toFixed(0),
             defaultTakerMarket.toFixed(0),
@@ -278,7 +278,7 @@ describe('LimitOrders', () => {
     });
 
     it('Fails if shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.limitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -442,7 +442,7 @@ describe('LimitOrders', () => {
 
   describe('constructor', () => {
     it('Sets constants correctly', async () => {
-      const cccf = solo.contracts.callConstantContractFunction;
+      const cccf = solo.contracts.call;
       const [
         domainHash,
         soloMarginAddress,
@@ -580,7 +580,7 @@ describe('LimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.limitOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {
@@ -655,7 +655,7 @@ describe('LimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.limitOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {

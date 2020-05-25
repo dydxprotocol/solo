@@ -251,7 +251,7 @@ describe('Invalid', () => {
 // ============ Helper Functions ============
 
 async function operate(accounts: any[], actions: any[]) {
-  return solo.contracts.callContractFunction(
+  return solo.contracts.send(
     solo.contracts.soloMargin.methods.operate(accounts, actions),
   );
 }

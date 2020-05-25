@@ -14,8 +14,8 @@ import {
   SigningMethod,
   SignableOrder,
   SignedOrder,
-  ContractCallOptions,
-  ContractConstantCallOptions,
+  SendOptions,
+  CallOptions,
 } from '../../src/types';
 
 export abstract class OrderSigner extends Signer {
@@ -38,9 +38,9 @@ export abstract class OrderSigner extends Signer {
    * Returns true if the contract can process orders.
    */
   public async isOperational(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<boolean> {
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       this.getContract().methods.g_isOperational(),
       options,
     );
@@ -54,10 +54,10 @@ export abstract class OrderSigner extends Signer {
    */
   public async approveOrder(
     order: SignableOrder,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<any> {
     const stringifiedOrder = this.stringifyOrder(order);
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.getContract().methods.approveOrder(stringifiedOrder),
       options,
     );
@@ -68,10 +68,10 @@ export abstract class OrderSigner extends Signer {
    */
   public async cancelOrder(
     order: SignableOrder,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<any> {
     const stringifiedOrder = this.stringifyOrder(order);
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.getContract().methods.cancelOrder(stringifiedOrder),
       options,
     );

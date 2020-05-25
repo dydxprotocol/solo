@@ -13,7 +13,7 @@ import {
   Withdraw,
   ActionType,
   ActionArgs,
-  ContractCallOptions,
+  SendOptions,
   TxResult,
   Buy,
   Sell,
@@ -893,7 +893,7 @@ export class AccountOperation {
    * Commits the operation to the chain by sending a transaction.
    */
   public async commit(
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
     if (this.committed) {
       throw new Error('Operation already committed');
@@ -934,7 +934,7 @@ export class AccountOperation {
           throw new Error(`Invalid proxy type: ${this.proxy}`);
       }
 
-      return this.contracts.callContractFunction(
+      return this.contracts.send(
         method,
         options,
       );

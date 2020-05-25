@@ -37,7 +37,7 @@ describe('Library', () => {
     const signature = `${r}${stripHexPrefix(s)}${stripHexPrefix(v)}`;
 
     async function recover(hash: string, typedSignature: string) {
-      return solo.contracts.callConstantContractFunction(
+      return solo.contracts.call(
         solo.contracts.testLib.methods.TypedSignatureRecover(
           Web3.utils.hexToBytes(hash),
           Web3.utils.hexToBytes(typedSignature).map(x => [x]),
@@ -346,7 +346,7 @@ describe('Library', () => {
     it('balanceOf (normal)', async () => {
       result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.tokenA.methods.issueTo(addr, amount),
       );
       result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
@@ -356,7 +356,7 @@ describe('Library', () => {
     it('balanceOf (omise)', async () => {
       result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.omiseToken.methods.issueTo(addr, amount),
       );
       result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
@@ -366,7 +366,7 @@ describe('Library', () => {
     it('allowance (normal)', async () => {
       result = await solo.contracts.testLib.methods.TokenAllowance(token, owner, addr).call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.tokenA.methods.approve(addr, amount),
         { from: owner },
       );
@@ -377,7 +377,7 @@ describe('Library', () => {
     it('allowance (omise)', async () => {
       result = await solo.contracts.testLib.methods.TokenAllowance(omise, owner, addr).call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.omiseToken.methods.approve(addr, amount),
         { from: owner },
       );
@@ -386,7 +386,7 @@ describe('Library', () => {
     });
 
     it('approve (normal)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testLib.methods.TokenApprove(token, addr, amount),
       );
       result = await solo.contracts.testLib.methods.TokenAllowance(token, libAddr, addr).call();
@@ -395,7 +395,7 @@ describe('Library', () => {
 
     it('approve (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.testLib.methods.TokenApprove(errorToken, addr, amount),
         ),
         'Token: Approve failed',
@@ -403,7 +403,7 @@ describe('Library', () => {
     });
 
     it('approve (omise)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testLib.methods.TokenApprove(omise, addr, amount),
       );
       result = await solo.contracts.testLib.methods.TokenAllowance(omise, libAddr, addr).call();
@@ -411,7 +411,7 @@ describe('Library', () => {
     });
 
     it('approveMax (normal)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testLib.methods.TokenApproveMax(token, addr),
       );
       result = await solo.contracts.testLib.methods.TokenAllowance(token, libAddr, addr).call();
@@ -420,7 +420,7 @@ describe('Library', () => {
 
     it('approveMax (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.testLib.methods.TokenApproveMax(errorToken, addr),
         ),
         'Token: Approve failed',
@@ -428,7 +428,7 @@ describe('Library', () => {
     });
 
     it('approveMax (omise)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testLib.methods.TokenApproveMax(omise, addr),
       );
       result = await solo.contracts.testLib.methods.TokenAllowance(omise, libAddr, addr).call();
@@ -436,7 +436,7 @@ describe('Library', () => {
     });
 
     it('transfer (normal)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.tokenA.methods.issueTo(libAddr, amount),
       );
       await solo.contracts.testLib.methods.TokenTransfer(token, addr, amount);
@@ -445,7 +445,7 @@ describe('Library', () => {
     });
 
     it('transfer (omise)', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.omiseToken.methods.issueTo(libAddr, amount),
       );
       await solo.contracts.testLib.methods.TokenTransfer(omise, addr, amount);
@@ -455,7 +455,7 @@ describe('Library', () => {
 
     it('transfer (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.testLib.methods.TokenTransfer(errorToken, addr, amount),
         ),
         'Token: Transfer failed',
@@ -464,10 +464,10 @@ describe('Library', () => {
 
     it('transferFrom (normal)', async () => {
       await Promise.all([
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.tokenA.methods.issueTo(owner, amount),
         ),
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.tokenA.methods.approve(libAddr, amount),
           { from: owner },
         ),
@@ -479,7 +479,7 @@ describe('Library', () => {
 
     it('transferFrom (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.testLib.methods.TokenTransferFrom(errorToken, owner, addr, amount),
         ),
         'Token: TransferFrom failed',
@@ -488,10 +488,10 @@ describe('Library', () => {
 
     it('transferFrom (omise)', async () => {
       await Promise.all([
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.omiseToken.methods.issueTo(owner, amount),
         ),
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.omiseToken.methods.approve(libAddr, amount),
           { from: owner },
         ),

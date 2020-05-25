@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { ContractCallOptions, TxResult, address, Decimal } from '../../src/types';
+import { SendOptions, TxResult, address, Decimal } from '../../src/types';
 import { decimalToString } from '../../src/lib/Helpers';
 
 export class TestInterestSetter {
@@ -18,9 +18,9 @@ export class TestInterestSetter {
   public async setInterestRate(
     token: address,
     interestRate: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testInterestSetter.methods.setInterestRate(
         token,
         { value: decimalToString(interestRate) },
