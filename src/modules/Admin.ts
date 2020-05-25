@@ -1,7 +1,7 @@
 import { Contracts } from '../lib/Contracts';
 import {
   address,
-  ContractCallOptions,
+  SendOptions,
   Decimal,
   Integer,
   TxResult,
@@ -22,9 +22,9 @@ export class Admin {
   public async withdrawExcessTokens(
     marketId: Integer,
     recipient: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerWithdrawExcessTokens(
         marketId.toFixed(0),
         recipient,
@@ -36,9 +36,9 @@ export class Admin {
   public async withdrawUnsupportedTokens(
     token: address,
     recipient: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerWithdrawUnsupportedTokens(
         token,
         recipient,
@@ -55,9 +55,9 @@ export class Admin {
     interestSetter: address,
     marginPremium: Decimal,
     spreadPremium: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerAddMarket(
         token,
         priceOracle,
@@ -72,9 +72,9 @@ export class Admin {
   public async setIsClosing(
     marketId: Integer,
     isClosing: boolean,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetIsClosing(
         marketId.toFixed(0),
         isClosing,
@@ -86,9 +86,9 @@ export class Admin {
   public async setMarginPremium(
     marketId: Integer,
     marginPremium: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetMarginPremium(
         marketId.toFixed(0),
         { value: decimalToString(marginPremium) },
@@ -100,9 +100,9 @@ export class Admin {
   public async setSpreadPremium(
     marketId: Integer,
     spreadPremium: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetSpreadPremium(
         marketId.toFixed(0),
         { value: decimalToString(spreadPremium) },
@@ -114,9 +114,9 @@ export class Admin {
   public async setPriceOracle(
     marketId: Integer,
     oracle: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetPriceOracle(
         marketId.toFixed(0),
         oracle,
@@ -128,9 +128,9 @@ export class Admin {
   public async setInterestSetter(
     marketId: Integer,
     interestSetter: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetInterestSetter(
         marketId.toFixed(0),
         interestSetter,
@@ -143,9 +143,9 @@ export class Admin {
 
   public async setMarginRatio(
     ratio: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetMarginRatio(
         { value: decimalToString(ratio) },
       ),
@@ -155,9 +155,9 @@ export class Admin {
 
   public async setLiquidationSpread(
     spread: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetLiquidationSpread(
         { value: decimalToString(spread) },
       ),
@@ -167,9 +167,9 @@ export class Admin {
 
   public async setEarningsRate(
     rate: Decimal,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetEarningsRate(
         { value: decimalToString(rate) },
       ),
@@ -179,9 +179,9 @@ export class Admin {
 
   public async setMinBorrowedValue(
     minBorrowedValue: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetMinBorrowedValue(
         { value: minBorrowedValue.toFixed(0) },
       ),
@@ -194,9 +194,9 @@ export class Admin {
   public async setGlobalOperator(
     operator: address,
     approved: boolean,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.ownerSetGlobalOperator(
         operator,
         approved,
@@ -209,9 +209,9 @@ export class Admin {
 
   public async setExpiryRampTime(
     newExpiryRampTime: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.expiry.methods.ownerSetExpiryRampTime(newExpiryRampTime.toFixed(0)),
       options,
     );

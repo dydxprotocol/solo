@@ -1,5 +1,5 @@
 import { Contracts } from '../lib/Contracts';
-import { ContractCallOptions, TxResult, address } from '../types';
+import { SendOptions, TxResult, address } from '../types';
 
 export class Permissions {
   private contracts: Contracts;
@@ -12,9 +12,9 @@ export class Permissions {
 
   public async setOperators(
     operatorArgs: ({ operator: address, trusted: boolean })[],
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.setOperators(
         operatorArgs,
       ),
@@ -24,9 +24,9 @@ export class Permissions {
 
   public async approveOperator(
     operator: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.setOperators(
         [
           {
@@ -41,9 +41,9 @@ export class Permissions {
 
   public async disapproveOperator(
     operator: address,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.soloMargin.methods.setOperators(
         [
           {

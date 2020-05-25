@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
   address,
-  ContractCallOptions,
-  ContractConstantCallOptions,
+  SendOptions,
+  CallOptions,
   Integer,
   TxResult,
 } from '../../src/types';
@@ -22,9 +22,9 @@ export class ExpiryV2 {
   // ============ Getters ============
 
   public async getAdmin(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<address> {
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       this.contracts.expiryV2.methods.owner(),
       options,
     );
@@ -34,9 +34,9 @@ export class ExpiryV2 {
     accountOwner: address,
     accountNumber: Integer,
     marketId: Integer,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result = await this.contracts.call(
       this.contracts.expiryV2.methods.getExpiry(
         {
           owner: accountOwner,
@@ -52,9 +52,9 @@ export class ExpiryV2 {
   public async getApproval(
     approver: address,
     sender: address,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result = await this.contracts.call(
       this.contracts.expiryV2.methods.g_approvedSender(approver, sender),
       options,
     );
@@ -65,9 +65,9 @@ export class ExpiryV2 {
     heldMarketId: Integer,
     owedMarketId: Integer,
     expiryTimestamp: Integer,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result = await this.contracts.call(
       this.contracts.expiryV2.methods.getSpreadAdjustedPrices(
         heldMarketId.toFixed(0),
         owedMarketId.toFixed(0),
@@ -83,9 +83,9 @@ export class ExpiryV2 {
   }
 
   public async getRampTime(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result = await this.contracts.call(
       this.contracts.expiryV2.methods.g_expiryRampTime(),
       options,
     );
@@ -97,9 +97,9 @@ export class ExpiryV2 {
   public async setApproval(
     sender: address,
     minTimeDelta: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.expiryV2.methods.approveSender(sender, minTimeDelta.toFixed(0)),
       options,
     );
@@ -109,9 +109,9 @@ export class ExpiryV2 {
 
   public async setRampTime(
     newExpiryRampTime: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.expiryV2.methods.ownerSetExpiryRampTime(newExpiryRampTime.toFixed(0)),
       options,
     );

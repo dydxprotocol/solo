@@ -28,7 +28,7 @@ describe('UsdcPriceOracle', () => {
   });
 
   it('Returns the correct value', async () => {
-    const price = await solo.contracts.callConstantContractFunction(
+    const price = await solo.contracts.call(
       solo.contracts.usdcPriceOracle.methods.getPrice(ADDRESSES.ZERO),
     );
     expect(new BigNumber(price.value)).toEqual(USDC_PRICE);

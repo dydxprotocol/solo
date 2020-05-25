@@ -91,17 +91,17 @@ describe('PartiallyDelayedMultiSig', () => {
 
   describe('#constructor', () => {
     it('Succeeds', async () => {
-      const owners = await solo.contracts.callConstantContractFunction(
+      const owners = await solo.contracts.call(
         multiSig.methods.getOwners(),
       );
       expect(owners).toEqual([owner1, owner2, owner3]);
 
-      const required = await solo.contracts.callConstantContractFunction(
+      const required = await solo.contracts.call(
         multiSig.methods.required(),
       );
       expect(required).toEqual('2');
 
-      const secondsTimeLocked = await solo.contracts.callConstantContractFunction(
+      const secondsTimeLocked = await solo.contracts.call(
         multiSig.methods.secondsTimeLocked(),
       );
       expect(secondsTimeLocked).toEqual('120');
@@ -167,7 +167,7 @@ describe('PartiallyDelayedMultiSig', () => {
 
     it('Fails for external sender', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           multiSig.methods.setSelector(
             ADDRESSES.ZERO,
             '0x00000000',
@@ -243,7 +243,7 @@ describe('PartiallyDelayedMultiSig', () => {
 // ============ Helper Functions ============
 
 async function submitTransaction(destination: address, data: number[][]) {
-  return solo.contracts.callContractFunction(
+  return solo.contracts.send(
     multiSig.methods.submitTransaction(
       destination,
       '0', // value
@@ -254,7 +254,7 @@ async function submitTransaction(destination: address, data: number[][]) {
 }
 
 async function confirmTransaction(n: number) {
-  return solo.contracts.callContractFunction(
+  return solo.contracts.send(
     multiSig.methods.confirmTransaction(n.toString()),
     { from: owner2 },
   );
@@ -287,7 +287,7 @@ function hexToBytes(hex: string) {
 }
 
 async function executeTransaction(n: number, from?: address) {
-  const txResult = await solo.contracts.callContractFunction(
+  const txResult = await solo.contracts.send(
     multiSig.methods.executeTransaction(
       n.toString(),
     ),
@@ -297,7 +297,7 @@ async function executeTransaction(n: number, from?: address) {
     },
   );
 
-  const transaction: any = await solo.contracts.callConstantContractFunction(
+  const transaction: any = await solo.contracts.call(
     multiSig.methods.transactions(n.toString()),
   );
   expect(transaction.executed).toEqual(true);
@@ -306,7 +306,7 @@ async function executeTransaction(n: number, from?: address) {
 }
 
 async function expectInstantData(dest: address, selector: string, expected: boolean) {
-  const result = await solo.contracts.callConstantContractFunction(
+  const result = await solo.contracts.call(
     multiSig.methods.instantData(dest, selector),
   );
   expect(result).toEqual(expected);

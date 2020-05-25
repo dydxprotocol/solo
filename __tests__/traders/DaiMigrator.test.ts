@@ -56,7 +56,7 @@ describe('DaiMigrator', () => {
     const numMarkets = 4;
     await Promise.all([
       setupMarkets(solo, accounts, numMarkets),
-      solo.contracts.callContractFunction(
+      solo.contracts.send(
         solo.contracts.daiMigrator.methods.addMigrator(migrator),
         { from: admin },
       ),
@@ -81,13 +81,13 @@ describe('DaiMigrator', () => {
         randoIsMigrator,
         userIsMigrator,
       ] = await Promise.all([
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_migrators(migrator),
         ),
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_migrators(rando),
         ),
-        solo.contracts.callConstantContractFunction(
+        solo.contracts.call(
           createdContract.methods.g_migrators(user),
         ),
       ]);
@@ -99,11 +99,11 @@ describe('DaiMigrator', () => {
 
   describe('addMigrator', () => {
     it('Succeeds', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.daiMigrator.methods.addMigrator(rando),
         { from: admin },
       );
-      const isMigrator = await solo.contracts.callConstantContractFunction(
+      const isMigrator = await solo.contracts.call(
         solo.contracts.daiMigrator.methods.g_migrators(rando),
       );
       expect(isMigrator).toEqual(true);
@@ -111,7 +111,7 @@ describe('DaiMigrator', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.daiMigrator.methods.addMigrator(rando),
           { from: rando },
         ),
@@ -121,11 +121,11 @@ describe('DaiMigrator', () => {
 
   describe('removeMigrator', () => {
     it('Succeeds', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.daiMigrator.methods.removeMigrator(migrator),
         { from: admin },
       );
-      const isMigrator = await solo.contracts.callConstantContractFunction(
+      const isMigrator = await solo.contracts.call(
         solo.contracts.daiMigrator.methods.g_migrators(migrator),
       );
       expect(isMigrator).toEqual(false);
@@ -133,7 +133,7 @@ describe('DaiMigrator', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.daiMigrator.methods.removeMigrator(migrator),
           { from: rando },
         ),

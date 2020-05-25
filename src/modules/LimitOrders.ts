@@ -13,7 +13,7 @@ import {
   EIP712_DOMAIN_STRUCT,
 } from '../lib/SignatureHelper';
 import {
-  ContractConstantCallOptions,
+  CallOptions,
   Decimal,
   Integer,
   LimitOrder,
@@ -81,10 +81,10 @@ export class LimitOrders extends OrderSigner {
    */
   public async getOrderStates(
     orders: LimitOrder[],
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<LimitOrderState[]> {
     const orderHashes = orders.map(order => this.getOrderHash(order));
-    const states: any[] = await this.contracts.callConstantContractFunction(
+    const states: any[] = await this.contracts.call(
       this.contracts.limitOrders.methods.getOrderStates(orderHashes),
       options,
     );

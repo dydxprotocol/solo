@@ -144,7 +144,7 @@ describe('StopLimitOrders', () => {
   describe('shutDown', () => {
     it('Succeeds', async () => {
       expect(await solo.stopLimitOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -152,12 +152,12 @@ describe('StopLimitOrders', () => {
     });
 
     it('Succeeds when it is already shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.stopLimitOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -166,7 +166,7 @@ describe('StopLimitOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.stopLimitOrders.methods.shutDown(),
           { from: rando },
         ),
@@ -176,12 +176,12 @@ describe('StopLimitOrders', () => {
 
   describe('startUp', () => {
     it('Succeeds after being shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.stopLimitOrders.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.startUp(),
         { from: admin },
       );
@@ -190,7 +190,7 @@ describe('StopLimitOrders', () => {
 
     it('Succeeds when it is already operational', async () => {
       expect(await solo.stopLimitOrders.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.startUp(),
         { from: admin },
       );
@@ -199,7 +199,7 @@ describe('StopLimitOrders', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.stopLimitOrders.methods.startUp(),
           { from: rando },
         ),
@@ -268,7 +268,7 @@ describe('StopLimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.stopLimitOrders.methods.getTradeCost(
             defaultMakerMarket.toFixed(0),
             defaultTakerMarket.toFixed(0),
@@ -286,7 +286,7 @@ describe('StopLimitOrders', () => {
     });
 
     it('Fails if shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.stopLimitOrders.methods.shutDown(),
         { from: admin },
       );
@@ -447,7 +447,7 @@ describe('StopLimitOrders', () => {
 
   describe('constructor', () => {
     it('Sets constants correctly', async () => {
-      const cccf = solo.contracts.callConstantContractFunction;
+      const cccf = solo.contracts.call;
       const [
         domainHash,
         soloMarginAddress,
@@ -585,7 +585,7 @@ describe('StopLimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.stopLimitOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {
@@ -660,7 +660,7 @@ describe('StopLimitOrders', () => {
 
     it('Fails for non-Solo caller', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.stopLimitOrders.methods.callFunction(
             ADDRESSES.ZERO,
             {

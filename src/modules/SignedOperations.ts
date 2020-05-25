@@ -24,8 +24,8 @@ import {
   AssetAmount,
   Operation,
   SignedOperation,
-  ContractCallOptions,
-  ContractConstantCallOptions,
+  SendOptions,
+  CallOptions,
   SigningMethod,
   AccountInfo,
   Integer,
@@ -126,7 +126,7 @@ export class SignedOperations extends Signer {
    */
   public async cancelOperation(
     operation: Operation,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<any> {
     const accounts = [];
     const actions = [];
@@ -169,7 +169,7 @@ export class SignedOperations extends Signer {
       });
     }
 
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.signedOperationProxy.methods.cancel(
         accounts,
         actions,
@@ -194,9 +194,9 @@ export class SignedOperations extends Signer {
    * Returns true if the contract can process operations.
    */
   public async isOperational(
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<boolean> {
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       this.contracts.signedOperationProxy.methods.g_isOperational(),
       options,
     );
@@ -207,10 +207,10 @@ export class SignedOperations extends Signer {
    */
   public async getOperationsAreInvalid(
     operations: Operation[],
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<boolean[]> {
     const hashes = operations.map(operation => this.getOperationHash(operation));
-    return this.contracts.callConstantContractFunction(
+    return this.contracts.call(
       this.contracts.signedOperationProxy.methods.getOperationsAreInvalid(hashes),
       options,
     );

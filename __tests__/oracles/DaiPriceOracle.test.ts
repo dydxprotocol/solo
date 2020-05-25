@@ -3,7 +3,7 @@ import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
 import { snapshot, resetEVM, fastForward, mineAvgBlock } from '../helpers/EVM';
 import { INTEGERS, ADDRESSES } from '../../src/lib/Constants';
-import { address, ContractCallOptions } from '../../src/types';
+import { address, SendOptions } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
 
 let solo: TestSolo;
@@ -392,7 +392,7 @@ describe('DaiPriceOracle', () => {
       await mineAvgBlock();
       await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testOasisDex.methods.stop(),
       );
       const price = await solo.oracle.daiPriceOracle.getOasisPrice();
@@ -408,7 +408,7 @@ describe('DaiPriceOracle', () => {
       await mineAvgBlock();
       await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testOasisDex.methods.setBuyEnabled(false),
       );
       const price = await solo.oracle.daiPriceOracle.getOasisPrice();
@@ -424,7 +424,7 @@ describe('DaiPriceOracle', () => {
       await mineAvgBlock();
       await updatePrice();
       const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.testOasisDex.methods.setMatchingEnabled(false),
       );
       const price = await solo.oracle.daiPriceOracle.getOasisPrice();
@@ -486,7 +486,7 @@ async function setEthPrice(
   price: BigNumber,
   valid: boolean,
 ) {
-  await solo.contracts.callContractFunction(
+  await solo.contracts.send(
     solo.contracts.testMakerOracle.methods.setValues(
       price.toFixed(0),
       valid,
@@ -560,7 +560,7 @@ async function createOasisOrder(
   buyAmt: BigNumber,
   buyGem: address,
 ) {
-  await solo.contracts.callContractFunction(
+  await solo.contracts.send(
     solo.contracts.testOasisDex.methods.offer(
       payAmt.toFixed(0),
       payGem,
@@ -575,7 +575,7 @@ async function createOasisOrder(
 async function updatePrice(
   minimum?: BigNumber,
   maximum?: BigNumber,
-  options?: ContractCallOptions,
+  options?: SendOptions,
 ) {
   return solo.oracle.daiPriceOracle.updatePrice(minimum, maximum, options || { from: poker });
 }

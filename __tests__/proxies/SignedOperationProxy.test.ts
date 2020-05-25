@@ -276,7 +276,7 @@ describe('SignedOperationProxy', () => {
   describe('shutDown', () => {
     it('Succeeds', async () => {
       expect(await solo.signedOperations.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
@@ -284,12 +284,12 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds when it is already shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.signedOperations.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
@@ -298,7 +298,7 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.signedOperationProxy.methods.shutDown(),
           { from: rando },
         ),
@@ -308,12 +308,12 @@ describe('SignedOperationProxy', () => {
 
   describe('startUp', () => {
     it('Succeeds after being shutDown', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
       expect(await solo.signedOperations.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.startUp(),
         { from: admin },
       );
@@ -322,7 +322,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds when it is already operational', async () => {
       expect(await solo.signedOperations.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.startUp(),
         { from: admin },
       );
@@ -331,7 +331,7 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.signedOperationProxy.methods.startUp(),
           { from: rando },
         ),
@@ -714,7 +714,7 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for authorization that overflows', async () => {
       await expectAssertFailure(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.signedOperationProxy.methods.operate(
             [{
               owner: defaultSigner,
@@ -754,7 +754,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for authorization past end-of-actions', async () => {
       const depositAction = signedDepositOperation.actions[0];
       await expectAssertFailure(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.signedOperationProxy.methods.operate(
             [{
               owner: defaultSigner,
@@ -802,7 +802,7 @@ describe('SignedOperationProxy', () => {
 
     it('Fails if not all actions are signed', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.signedOperationProxy.methods.operate(
             [{
               owner: defaultSigner,
@@ -846,7 +846,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Fails if non-operational', async () => {
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
@@ -1048,7 +1048,7 @@ describe('SignedOperationProxy', () => {
         sender: ADDRESSES.ZERO,
         signer: defaultSender,
       };
-      await solo.contracts.callContractFunction(
+      await solo.contracts.send(
         solo.contracts.signedOperationProxy.methods.operate(
           [{
             owner: defaultSender,

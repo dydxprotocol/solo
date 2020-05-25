@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 import { TestContracts } from './TestContracts';
 import { ADDRESSES } from '../../src/lib/Constants';
 import {
-  ContractConstantCallOptions,
-  ContractCallOptions,
+  CallOptions,
+  SendOptions,
   TxResult,
   Integer,
 } from '../../src/types';
@@ -24,9 +24,9 @@ export class TestDoubleExponentInterestSetter {
   public async getInterestRate(
     borrowWei: Integer,
     supplyWei: Integer,
-    options?: ContractConstantCallOptions,
+    options?: CallOptions,
   ): Promise<Integer> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result = await this.contracts.call(
       this.contracts.testDoubleExponentInterestSetter.methods.getInterestRate(
         ADDRESSES.ZERO,
         borrowWei.toFixed(0),
@@ -40,9 +40,9 @@ export class TestDoubleExponentInterestSetter {
   public async setParameters(
     maxAPR: Integer,
     coefficients: Integer,
-    options?: ContractCallOptions,
+    options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
+    return this.contracts.send(
       this.contracts.testDoubleExponentInterestSetter.methods.setParameters({
         maxAPR: maxAPR.toFixed(0),
         coefficients: coefficients.toFixed(0),

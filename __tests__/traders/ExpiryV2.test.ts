@@ -778,7 +778,7 @@ describe('ExpiryV2', () => {
 
     it('Fails for non-solo calls', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        solo.contracts.send(
           solo.contracts.expiryV2.methods.callFunction(
             owner1,
             {
