@@ -1721,6 +1721,10 @@ Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 
 ### GET `/v1/perpetual-balance-updates`
 
+Description:
+
+Obtains the latest 100 perpetual balance updates.
+
 Query Params:
 
 | Field Name        | Description                                                                |
