@@ -39,21 +39,21 @@ After this is done, the order is ready to be submitted to the API.
 
 ### Solo V2 order fields
 
-| Field Name         | JSON type | Description                                                                                                                                              |
-|--------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| isBuy              | boolean   | Whether the order is a buy order.                                                                                                                        |
-| isDecreaseOnly     | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                                        |
-| baseMarket         | string    | The Solo base [market](protocol.md#markets).                                                                                                             |
-| quoteMarket        | string    | The Solo quote [market](protocol.md#markets).                                                                                                            |
-| amount             | string    | The amount of token being offered, in base units.                                                                                                        |
-| limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                             |
-| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                          |
-| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 5 ETH.   |
-| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                             |
-| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                       |
-| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.               |
-| salt               | string    | A random number to make the order hash unique.                                                                                                           |
-| typedSignature     | string    | The signature of the order.                                                                                                                              |
+| Field Name         | JSON type | Description                                                                                                                                            |
+|--------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy              | boolean   | Whether the order is a buy order.                                                                                                                      |
+| isDecreaseOnly     | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                                      |
+| baseMarket         | string    | The Solo base [market](protocol.md#markets).                                                                                                           |
+| quoteMarket        | string    | The Solo quote [market](protocol.md#markets).                                                                                                          |
+| amount             | string    | The amount of token being offered, in base units.                                                                                                      |
+| limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                           |
+| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                        |
+| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 5 ETH. |
+| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                           |
+| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                     |
+| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.             |
+| salt               | string    | A random number to make the order hash unique.                                                                                                         |
+| typedSignature     | string    | The signature of the order.                                                                                                                            |
 
 **Tick size:**
 
@@ -83,19 +83,19 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 
 ### Perpetual V2 order fields
 
-| Field Name     | JSON type | Description                                                                                                                                  |
-|----------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| isBuy          | boolean   | Whether the order is a buy order.                                                                                                            |
-| isDecreaseOnly | boolean   | (Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*                                      |
-| amount         | string    | The amount of token being offered, in base units.                                                                                            |
-| limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                        |
-| triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                              |
-| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.1 BTC.  |
-| maker          | string    | The Ethereum address of the Maker.                                                                                                           |
-| taker          | string    | The Ethereum address of the Taker.                                                                                                           |
-| expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.   |
-| salt           | string    | A random number to make the orderHash unique.                                                                                                |
-| typedSignature | string    | The signature of the order.                                                                                                                  |
+| Field Name     | JSON type | Description                                                                                                                                 |
+|----------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy          | boolean   | Whether the order is a buy order.                                                                                                           |
+| isDecreaseOnly | boolean   | (Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*                                     |
+| amount         | string    | The amount of token being offered, in base units.                                                                                           |
+| limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                       |
+| triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                             |
+| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.1 BTC. |
+| maker          | string    | The Ethereum address of the Maker.                                                                                                          |
+| taker          | string    | The Ethereum address of the Taker.                                                                                                          |
+| expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.  |
+| salt           | string    | A random number to make the orderHash unique.                                                                                               |
+| typedSignature | string    | The signature of the order.                                                                                                                 |
 
 **Tick size:**
 
@@ -1673,6 +1673,12 @@ Description:
 
 This returns the market information for a specific perpetual market.
 
+Query Params:
+
+| Field Name | Description               |
+|------------|---------------------------|
+| id         | The perpetual market name |
+
 #### Example response body:
 Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 
@@ -1783,7 +1789,9 @@ for the account.
 
 Query Params:
 
-None
+| Field Name    | Description                                   |
+|---------------|-----------------------------------------------|
+| walletAddress | The perpetual account to look up balances for |
 
 #### Example Response Body:
 
