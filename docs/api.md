@@ -39,21 +39,21 @@ After this is done, the order is ready to be submitted to the API.
 
 ### Solo V2 order fields
 
-| Field Name         | JSON type | Description                                                                                                                                              |
-|--------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| isBuy              | boolean   | Whether the order is a buy order.                                                                                                                        |
-| isDecreaseOnly     | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                                        |
-| baseMarket         | string    | The Solo base [market](protocol.md#markets).                                                                                                             |
-| quoteMarket        | string    | The Solo quote [market](protocol.md#markets).                                                                                                            |
-| amount             | string    | The amount of token being offered, in base units.                                                                                                        |
-| limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                             |
-| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                          |
-| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 5 ETH.   |
-| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                             |
-| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                       |
-| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.               |
-| salt               | string    | A random number to make the order hash unique.                                                                                                           |
-| typedSignature     | string    | The signature of the order.                                                                                                                              |
+| Field Name         | JSON type | Description                                                                                                                                            |
+|--------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy              | boolean   | Whether the order is a buy order.                                                                                                                      |
+| isDecreaseOnly     | boolean   | (Optional) Whether the Stop-Limit order is tied to an existing Isolated Position.                                                                      |
+| baseMarket         | string    | The Solo base [market](protocol.md#markets).                                                                                                           |
+| quoteMarket        | string    | The Solo quote [market](protocol.md#markets).                                                                                                          |
+| amount             | string    | The amount of token being offered, in base units.                                                                                                      |
+| limitPrice         | string    | The worst base/quote price at which a fill will be accepted.                                                                                           |
+| triggerPrice       | string    | (Optional) The stop price at which the order will go to market.                                                                                        |
+| limitFee           | string    | Makers pay 0% fees. Takers pay 0.15% for ETH-DAI and ETH-USDC and 0.05% for DAI-USDC. The taker fee is increased to 0.50% for amounts less than 5 ETH. |
+| makerAccountNumber | string    | The Solo [account number](protocol.md#accounts) of the Maker                                                                                           |
+| makerAccountOwner  | string    | The Ethereum address of the Maker.                                                                                                                     |
+| expiration         | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.             |
+| salt               | string    | A random number to make the order hash unique.                                                                                                         |
+| typedSignature     | string    | The signature of the order.                                                                                                                            |
 
 **Tick size:**
 
@@ -83,19 +83,19 @@ If `triggerPrice` is set, it must be a multiple of the tick size.
 
 ### Perpetual V2 order fields
 
-| Field Name     | JSON type | Description                                                                                                                                  |
-|----------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| isBuy          | boolean   | Whether the order is a buy order.                                                                                                            |
-| isDecreaseOnly | boolean   | (Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*                                      |
-| amount         | string    | The amount of token being offered, in base units.                                                                                            |
-| limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                        |
-| triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                              |
-| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.1 BTC.  |
-| maker          | string    | The Ethereum address of the Maker.                                                                                                           |
-| taker          | string    | The Ethereum address of the Taker.                                                                                                           |
-| expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.   |
-| salt           | string    | A random number to make the orderHash unique.                                                                                                |
-| typedSignature | string    | The signature of the order.                                                                                                                  |
+| Field Name     | JSON type | Description                                                                                                                                 |
+|----------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| isBuy          | boolean   | Whether the order is a buy order.                                                                                                           |
+| isDecreaseOnly | boolean   | (Optional) Positions can only decrease in magnitude when trading this order. *Must be false currently.*                                     |
+| amount         | string    | The amount of token being offered, in base units.                                                                                           |
+| limitPrice     | string    | The worst base/quote price at which the transaction will be accepted.                                                                       |
+| triggerPrice   | string    | (Optional) The stop price at which the order will go to market.                                                                             |
+| limitFee       | string    | Makers pay -0.025% fees (i.e. they receive a rebate). Takers pay 0.075%. The taker fee is increased to 0.50% for amounts less than 0.1 BTC. |
+| maker          | string    | The Ethereum address of the Maker.                                                                                                          |
+| taker          | string    | The Ethereum address of the Taker.                                                                                                          |
+| expiration     | string    | The Unix time in seconds at which this order will expire and can no longer be filled. Use `"0"` to specify that the order does not expire.  |
+| salt           | string    | A random number to make the orderHash unique.                                                                                               |
+| typedSignature | string    | The signature of the order.                                                                                                                 |
 
 **Tick size:**
 
@@ -684,6 +684,7 @@ Example Response Body:
 ### GET `/v1/standard-actions`
 
 Description:
+
 Gets the perpetual and solo standard actions for a particular user.
 
 Query Params:
@@ -699,6 +700,7 @@ Query Params:
 | product    | (optional) The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
 
 Standard Action types:
+
 | Type                   | Product         |
 |------------------------|-----------------|
 | DEPOSIT                | SOLO, PERPETUAL |
@@ -720,6 +722,7 @@ Standard Action types:
 | DECREASE               | PERPETUAL       |
 
 Standard action markets
+
 | market    |
 |-----------|
 | WETH_DAI  |
@@ -731,6 +734,7 @@ Standard action markets
 | PBTC-USDC |
 
 Standard action assets
+
 | asset |
 |-------|
 | WETH  |
@@ -978,6 +982,7 @@ Example Response Body:
 ### GET `/v1/accounts/:address`
 
 Description:
+
 Get Solo account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
 
 Note: To get any account's collateralization, simply take `sumSupplyUsdValue / sumBorrowUsdValue`.
@@ -1037,6 +1042,7 @@ Query: `https://api.dydx.exchange/v1/accounts/0x0913017c740260fea4b2c62828a4008c
 ### GET `/v1/accounts`
 
 Description:
+
 This endpoint returns balances for all the solo accounts.
 
 Query Params:
@@ -1114,11 +1120,15 @@ Query: `https://api.dydx.exchange/v1/accounts`
 | pendingWei | The (pending) wei due to a fill that is still waiting to be confirmed |
 
 ### GET `/v1/markets`
-Description: Gets high level information for all solo assets.
+
+Description:
+
+Gets high level information for all solo assets.
 
 Note: This is different from the v2/markets endpoint mentioned above.
 
 Query Params:
+
 None
 
 #### Example response body:
@@ -1294,6 +1304,7 @@ Query: `https://api.dydx.exchange/v1/markets`
 ### GET `/v1/markets/:id`
 
 Description:
+
 This endpoint returns information for a particular Solo asset.
 
 Note: This is different from the v2/markets endpoint mentioned above.
@@ -1372,7 +1383,9 @@ Query: `https://api.dydx.exchange/v1/markets/0`
 
 
 ### GET `v1/balance-updates`
+
 Description:
+
 This endpoint returns the last 100 balance updates for an address.
 
 Query Parameters
@@ -1450,10 +1463,13 @@ Query: `https://api.dydx.exchange/v1/balance-updates?owner=0x77A035b677D5A0900E4
 
 
 ### GET `v1/positions`
+
 Description: 
+
 This endpoint retrieves the positions for an address.
 
 Query Params
+
 | Field  | Description                                                          |
 |--------|----------------------------------------------------------------------|
 | owner  | (optional) The account address                                       |
@@ -1464,6 +1480,7 @@ Query Params
 | limit  | (optional) The number of positions to return ( max 100)              |
 
 Position statuses:
+
 | status        |
 |---------------|
 | STOP_EXECUTED |
@@ -1474,12 +1491,14 @@ Position statuses:
 | CLOSED        |
 
 Position types:
+
 | type           |
 |----------------|
 | ISOLATED_SHORT |
 | ISOLATED_LONG  |
 
 Position markets:
+
 | market    |
 |-----------|
 | WETH_DAI  |
@@ -1592,9 +1611,11 @@ Query: `https://api.dydx.exchange/v1/positions?owner=0x77A035b677D5A0900E4848Ae8
 ### GET `/v1/perpetual-markets`
 
 Description:
+
 Get high-level information on all Perpetual markets.
 
 Query Params
+
 None
 
 #### Example Response Body:
@@ -1649,7 +1670,14 @@ Query `https://api.dydx.exchange/v1/perpetual-markets`
 ### GET `v1/perpetual-markets/:market`
 
 Description:
+
 This returns the market information for a specific perpetual market.
+
+Query Params:
+
+| Field Name | Description               |
+|------------|---------------------------|
+| market     | The perpetual market name |
 
 #### Example response body:
 Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
@@ -1699,7 +1727,12 @@ Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 
 ### GET `/v1/perpetual-balance-updates`
 
+Description:
+
+Obtains the latest 100 perpetual balance updates.
+
 Query Params:
+
 | Field Name        | Description                                                                |
 |-------------------|----------------------------------------------------------------------------|
 | owner             | The wallet address of the user.                                            |
@@ -1750,11 +1783,15 @@ Query: `https://api.dydx.exchange/v1/perpetual-balance-updates?owner=0x77A035b67
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
 Description:
+
 This endpoint takes in the user's walletAddress, and returns balances
 for the account.
 
 Query Params:
-None
+
+| Field Name    | Description                                   |
+|---------------|-----------------------------------------------|
+| walletAddress | The perpetual account to look up balances for |
 
 #### Example Response Body:
 
@@ -1793,9 +1830,11 @@ Query: `https://api.dydx.exchange/v1/perpetual-accounts/0x77A035b677D5A0900E4848
 ### GET `/v1/perpetual-accounts`
 
 Description:
+
 This endpoint returns balances for all perpetual accounts.
 
 Query Params:
+
 | Field Name     | Description                                                                       |
 |----------------|-----------------------------------------------------------------------------------|
 | isLiquidatable | (optional) If set to true, returns accounts that are below the margin requirement |
