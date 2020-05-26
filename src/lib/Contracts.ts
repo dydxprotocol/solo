@@ -75,12 +75,14 @@ import wethJson from '../../build/published_contracts/Weth.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
-  SendOptions,
   TxResult,
   address,
   SoloOptions,
   ConfirmationType,
+  TxOptions,
   CallOptions,
+  NativeSendOptions,
+  SendOptions,
 } from '../types';
 
 interface CallableTransactionObject<T> {
@@ -241,7 +243,12 @@ export class Contracts {
     method: TransactionObject<T>,
     options: SendOptions = {},
   ): Promise<TxResult> {
-    const { confirmations, confirmationType, autoGasMultiplier, ...txOptions } = options;
+    const {
+      confirmations,
+      confirmationType,
+      autoGasMultiplier,
+      ...txOptions
+    } = options;
 
     if (!this.blockGasLimit) {
       await this.setGasLimit();
@@ -258,7 +265,7 @@ export class Contracts {
         txOptions.gas = this.defaultGas;
       } else {
         try {
-          gasEstimate = await method.estimateGas(txOptions);
+          gasEstimate = await method.estimateGas(this.toEstimateOptions(txOptions));
         } catch (error) {
           const data = method.encodeABI();
           const { from, value } = options;
@@ -283,7 +290,7 @@ export class Contracts {
       txOptions.value = '0';
     }
 
-    const promi: PromiEvent<T> = method.send(txOptions);
+    const promi: PromiEvent<T> = method.send(this.toNativeSendOptions(txOptions));
 
     const OUTCOMES = {
       INITIAL: 0,
@@ -370,7 +377,7 @@ export class Contracts {
 
     if (t === ConfirmationType.Hash) {
       const transactionHash = await hashPromise;
-      return { transactionHash };
+      return this.normalizeResponse({ transactionHash });
     }
 
     if (t === ConfirmationType.Confirmed) {
@@ -379,24 +386,22 @@ export class Contracts {
 
     const transactionHash = await hashPromise;
 
-    return {
+    return this.normalizeResponse({
       transactionHash,
       confirmation: confirmationPromise,
-    };
+    });
   }
 
   public async call<T>(
     method: TransactionObject<T>,
     options: CallOptions = {},
   ): Promise<T> {
-    const m2 = method as CallableTransactionObject<T>;
     const {
       blockNumber,
-      gas, // don't send gas
-      gasPrice, // don't send gasPrice
       ...txOptions
-    } = options;
-    return m2.call(txOptions, blockNumber);
+    } = this.toCallOptions(options);
+    const m2 = method as CallableTransactionObject<T>;
+    return m2.call(txOptions, blockNumber || 'latest');
   }
 
   private async setGasLimit(): Promise<void> {
@@ -418,5 +423,57 @@ export class Contracts {
     const overrideAddress = overrides && overrides[networkId];
 
     contract.options.address = overrideAddress || contractAddress;
+  }
+
+  // ============ Parse Options ============
+
+  private toEstimateOptions(
+    txOptions: SendOptions,
+  ): TxOptions {
+    return {
+      from: txOptions.from,
+      value: txOptions.value,
+    };
+  }
+
+  private toCallOptions(
+    options: any,
+  ): CallOptions {
+    return {
+      from: options.from,
+      value: options.value,
+      blockNumber: options.blockNumber,
+    };
+  }
+
+  private toNativeSendOptions(
+    options: any,
+  ): NativeSendOptions {
+    return {
+      from: options.from,
+      value: options.value,
+      gasPrice: options.gasPrice,
+      gas: options.gas,
+      nonce: options.nonce,
+    };
+  }
+
+  private normalizeResponse(
+    txResult: any,
+  ): any {
+    const txHash = txResult.transactionHash;
+    if (txHash) {
+      const {
+        transactionHash: internalHash,
+        nonce: internalNonce,
+      } = txHash;
+      if (internalHash) {
+        txResult.transactionHash = internalHash;
+      }
+      if (internalNonce) {
+        txResult.nonce = internalNonce;
+      }
+    }
+    return txResult;
   }
 }
