@@ -684,6 +684,7 @@ Example Response Body:
 ### GET `/v1/standard-actions`
 
 Description:
+
 Gets the perpetual and solo standard actions for a particular user.
 
 Query Params:
@@ -699,6 +700,7 @@ Query Params:
 | product    | (optional) The product of the standard action, e.g. `PERPETUAL` or `SOLO`. |
 
 Standard Action types:
+
 | Type                   | Product         |
 |------------------------|-----------------|
 | DEPOSIT                | SOLO, PERPETUAL |
@@ -720,6 +722,7 @@ Standard Action types:
 | DECREASE               | PERPETUAL       |
 
 Standard action markets
+
 | market    |
 |-----------|
 | WETH_DAI  |
@@ -731,6 +734,7 @@ Standard action markets
 | PBTC-USDC |
 
 Standard action assets
+
 | asset |
 |-------|
 | WETH  |
@@ -978,6 +982,7 @@ Example Response Body:
 ### GET `/v1/accounts/:address`
 
 Description:
+
 Get Solo account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
 
 Note: To get any account's collateralization, simply take `sumSupplyUsdValue / sumBorrowUsdValue`.
@@ -1037,6 +1042,7 @@ Query: `https://api.dydx.exchange/v1/accounts/0x0913017c740260fea4b2c62828a4008c
 ### GET `/v1/accounts`
 
 Description:
+
 This endpoint returns balances for all the solo accounts.
 
 Query Params:
@@ -1114,11 +1120,15 @@ Query: `https://api.dydx.exchange/v1/accounts`
 | pendingWei | The (pending) wei due to a fill that is still waiting to be confirmed |
 
 ### GET `/v1/markets`
-Description: Gets high level information for all solo assets.
+
+Description:
+
+Gets high level information for all solo assets.
 
 Note: This is different from the v2/markets endpoint mentioned above.
 
 Query Params:
+
 None
 
 #### Example response body:
@@ -1294,6 +1304,7 @@ Query: `https://api.dydx.exchange/v1/markets`
 ### GET `/v1/markets/:id`
 
 Description:
+
 This endpoint returns information for a particular Solo asset.
 
 Note: This is different from the v2/markets endpoint mentioned above.
@@ -1372,7 +1383,9 @@ Query: `https://api.dydx.exchange/v1/markets/0`
 
 
 ### GET `v1/balance-updates`
+
 Description:
+
 This endpoint returns the last 100 balance updates for an address.
 
 Query Parameters
@@ -1450,10 +1463,13 @@ Query: `https://api.dydx.exchange/v1/balance-updates?owner=0x77A035b677D5A0900E4
 
 
 ### GET `v1/positions`
+
 Description: 
+
 This endpoint retrieves the positions for an address.
 
 Query Params
+
 | Field  | Description                                                          |
 |--------|----------------------------------------------------------------------|
 | owner  | (optional) The account address                                       |
@@ -1464,6 +1480,7 @@ Query Params
 | limit  | (optional) The number of positions to return ( max 100)              |
 
 Position statuses:
+
 | status        |
 |---------------|
 | STOP_EXECUTED |
@@ -1474,12 +1491,14 @@ Position statuses:
 | CLOSED        |
 
 Position types:
+
 | type           |
 |----------------|
 | ISOLATED_SHORT |
 | ISOLATED_LONG  |
 
 Position markets:
+
 | market    |
 |-----------|
 | WETH_DAI  |
@@ -1592,9 +1611,11 @@ Query: `https://api.dydx.exchange/v1/positions?owner=0x77A035b677D5A0900E4848Ae8
 ### GET `/v1/perpetual-markets`
 
 Description:
+
 Get high-level information on all Perpetual markets.
 
 Query Params
+
 None
 
 #### Example Response Body:
@@ -1649,6 +1670,7 @@ Query `https://api.dydx.exchange/v1/perpetual-markets`
 ### GET `v1/perpetual-markets/:market`
 
 Description:
+
 This returns the market information for a specific perpetual market.
 
 #### Example response body:
@@ -1700,6 +1722,7 @@ Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 ### GET `/v1/perpetual-balance-updates`
 
 Query Params:
+
 | Field Name        | Description                                                                |
 |-------------------|----------------------------------------------------------------------------|
 | owner             | The wallet address of the user.                                            |
@@ -1750,10 +1773,12 @@ Query: `https://api.dydx.exchange/v1/perpetual-balance-updates?owner=0x77A035b67
 ### GET `/v1/perpetual-accounts/:walletAddress`
 
 Description:
+
 This endpoint takes in the user's walletAddress, and returns balances
 for the account.
 
 Query Params:
+
 None
 
 #### Example Response Body:
@@ -1793,9 +1818,11 @@ Query: `https://api.dydx.exchange/v1/perpetual-accounts/0x77A035b677D5A0900E4848
 ### GET `/v1/perpetual-accounts`
 
 Description:
+
 This endpoint returns balances for all perpetual accounts.
 
 Query Params:
+
 | Field Name     | Description                                                                       |
 |----------------|-----------------------------------------------------------------------------------|
 | isLiquidatable | (optional) If set to true, returns accounts that are below the margin requirement |
