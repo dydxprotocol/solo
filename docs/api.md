@@ -1677,7 +1677,7 @@ Query Params:
 
 | Field Name | Description               |
 |------------|---------------------------|
-| id         | The perpetual market name |
+| market     | The perpetual market name |
 
 #### Example response body:
 Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
