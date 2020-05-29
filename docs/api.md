@@ -1962,7 +1962,7 @@ Query Params:
 |----------------|-----------------------------------------------------------------------------------|
 | markets        | (Optional) Markets to get rates for. Defaults to all Perpetual markets.           |
 | limit          | (Optional) The maximum number of funding rates. The default, and maximum, is 100. |
-| startingBefore | (Optional) ISO 8601 string. Returng funding rates effective before this date.     |
+| startingBefore | (Optional) ISO 8601 string. Return funding rates effective before this date.      |
 
 Response (Per Market):
 
