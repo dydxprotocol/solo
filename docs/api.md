@@ -1958,11 +1958,11 @@ Get historical funding rates. The most recent funding rates are returned first.
 
 Query Params:
 
-| Field Name | Description                                                                         |
-|------------|-------------------------------------------------------------------------------------|
-| markets    | (Optional) Markets to get rates for. Defaults to all Perpetual markets.             |
-| limit      | (Optional) The maximum number of funding rates. The default, and maximum, is 100.   |
-| offset     | (Optional) The number of entries to skip, in order to retrieve older funding rates. |
+| Field Name     | Description                                                                       |
+|----------------|-----------------------------------------------------------------------------------|
+| markets        | (Optional) Markets to get rates for. Defaults to all Perpetual markets.           |
+| limit          | (Optional) The maximum number of funding rates. The default, and maximum, is 100. |
+| startingBefore | (Optional) ISO 8601 string. Returng funding rates effective before this date.     |
 
 Response (Per Market):
 
