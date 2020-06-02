@@ -152,7 +152,7 @@ Request Body (SOLO):
 | cancelId             | string    | (Optional) ID of an order to cancel and replace.                                                                                                |
 | clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
 | setExpirationOnFill  | boolean   | (Optional) Expiration field for order will be applied upon the order filling.                                                                   |
-| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
+| cancelAmountOnRevert | boolean   | (Optional) Whether to try the order again if it is involved in a reverted fill.                                                                 |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -197,7 +197,7 @@ Request Body (PERPETUAL):
 | cancelId             | string    | (Optional) ID of an order to cancel and replace.                                                                                                |
 | clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
 | market               | string    | The perpetual [market](protocol.md#markets).                                                                                                    |
-| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
+| cancelAmountOnRevert | boolean   | (Optional) Whether to try the order again if it is involved in a reverted fill.                                                                 |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -2093,7 +2093,7 @@ Request Body:
 | postOnly             | boolean   | Whether the order should be canceled if it would be immediately filled.                                                                         |
 | triggerPrice         | string    | (Optional) The stop price at which the order will go to market. Must be greater than triggerPrice in the order.                                 |
 | clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
-| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
+| cancelAmountOnRevert | boolean   | (Optional) Whether to try the order again if it is involved in a reverted fill.                                                                 |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
@@ -2155,7 +2155,7 @@ Request Body:
 | triggerPrice         | string    | (Optional) The price at which the order will go to market. Must be greater than triggerPrice in the order.                                      |
 | cancelId             | string    | Order id for the order that is being canceled and replaced.                                                                                     |
 | clientId             | string    | (Optional) An arbitrary string guaranteed to be unique for each makerAccountOwner. Will be returned alongside the order in subsequent requests. |
-| cancelAmountOnRevert | boolean   | Whether to try the order again if it is involved in a reverted fill.                                                                            |
+| cancelAmountOnRevert | boolean   | (Optional) Whether to try the order again if it is involved in a reverted fill.                                                                 |
 
 Note: `fillOrKill` orders execute immediately and no part of the order will go on the open order
 book. `fillOrKill` orders will either be completely filled, or not filled. Partial fills are not possible.
