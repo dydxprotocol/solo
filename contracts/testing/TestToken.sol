@@ -19,16 +19,16 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import {IERC20} from "../protocol/interfaces/IERC20.sol";
 
 
 contract TestToken is IERC20 {
     using SafeMath for uint256;
 
     uint256 supply;
-    mapping (address => uint256) balances;
-    mapping (address => mapping (address => uint256)) allowed;
+    mapping(address => uint256) balances;
+    mapping(address => mapping(address => uint256)) allowed;
 
     event Issue(address indexed token, address indexed owner, uint256 value);
 
@@ -72,47 +72,44 @@ contract TestToken is IERC20 {
         return allowed[owner][spender];
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() public view returns (string memory) {
         return "TEST";
     }
 
-    function name() public pure returns (string memory) {
+    function name() public view returns (string memory) {
         return "Test Token";
     }
 
-    function decimals() public pure returns (uint8) {
+    function decimals() public view returns (uint8) {
         return 18;
     }
 
     function transfer(address to, uint256 value) public returns (bool) {
-        if (balances[msg.sender] >= value) {
-            balances[msg.sender] = balances[msg.sender].sub(value);
-            balances[to] = balances[to].add(value);
-            emit Transfer(
-                msg.sender,
-                to,
-                value
-            );
-            return true;
-        } else {
-            return false;
-        }
+        require(balances[msg.sender] >= value, "#transfer: INSUFFICIENT_BALANCE");
+
+        balances[msg.sender] = balances[msg.sender].sub(value);
+        balances[to] = balances[to].add(value);
+        emit Transfer(
+            msg.sender,
+            to,
+            value
+        );
+        return true;
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        if (balances[from] >= value && allowed[from][msg.sender] >= value) {
-            balances[to] = balances[to].add(value);
-            balances[from] = balances[from].sub(value);
-            allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
-            emit Transfer(
-                from,
-                to,
-                value
-            );
-            return true;
-        } else {
-            return false;
-        }
+        require(balances[from] >= value, "#transferFrom: INSUFFICIENT_BALANCE");
+        require(allowed[from][msg.sender] >= value, "#transferFrom: INSUFFICIENT_ALLOWANCE");
+
+        balances[to] = balances[to].add(value);
+        balances[from] = balances[from].sub(value);
+        allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
+        emit Transfer(
+            from,
+            to,
+            value
+        );
+        return true;
     }
 
     function approve(address spender, uint256 value) public returns (bool) {

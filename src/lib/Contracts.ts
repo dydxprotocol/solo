@@ -25,7 +25,7 @@ import { TransactionObject, Block, Tx } from 'web3/eth/types';
 
 // Contracts
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
-import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
+import { IERC20 as ERC20 } from '../../build/wrappers/IERC20';
 import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { Expiry } from '../../build/wrappers/Expiry';
@@ -52,7 +52,7 @@ import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
 import soloMarginJson from '../../build/published_contracts/SoloMargin.json';
-import erc20Json from '../../build/published_contracts/IErc20.json';
+import erc20Json from '../../build/published_contracts/IERC20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';

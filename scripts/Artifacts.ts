@@ -3,7 +3,7 @@
  */
 
 import { default as SoloMargin } from '../build/contracts/SoloMargin.json';
-import { default as IErc20 } from '../build/contracts/IErc20.json';
+import { default as IERC20 } from '../build/contracts/IERC20.json';
 import { default as IInterestSetter } from '../build/contracts/IInterestSetter.json';
 import { default as IPriceOracle } from '../build/contracts/IPriceOracle.json';
 import { default as Expiry } from '../build/contracts/Expiry.json';
@@ -37,7 +37,7 @@ import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkP
 
 export default {
   SoloMargin,
-  IErc20,
+  IERC20,
   IInterestSetter,
   IPriceOracle,
   Expiry,

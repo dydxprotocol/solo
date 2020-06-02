@@ -20,14 +20,14 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 /**
- * @title IErc20
+ * @title IERC20
  * @author dYdX
  *
  * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
  * that we don't automatically revert when calling non-compliant tokens that have no return value for
  * transfer(), transferFrom(), or approve().
  */
-interface IErc20 {
+interface IERC20 {
     event Transfer(
         address indexed from,
         address indexed to,
@@ -42,56 +42,59 @@ interface IErc20 {
 
     function totalSupply(
     )
-        external
-        view
-        returns (uint256);
+    external
+    view
+    returns (uint256);
 
     function balanceOf(
         address who
     )
-        external
-        view
-        returns (uint256);
+    external
+    view
+    returns (uint256);
 
     function allowance(
         address owner,
         address spender
     )
-        external
-        view
-        returns (uint256);
+    external
+    view
+    returns (uint256);
 
     function transfer(
         address to,
         uint256 value
     )
-        external;
+    external
+    returns (bool);
 
     function transferFrom(
         address from,
         address to,
         uint256 value
     )
-        external;
+    external
+    returns (bool);
 
     function approve(
         address spender,
         uint256 value
     )
-        external;
+    external
+    returns (bool);
 
     function name()
-        external
-        view
-        returns (string memory);
+    external
+    view
+    returns (string memory);
 
     function symbol()
-        external
-        view
-        returns (string memory);
+    external
+    view
+    returns (string memory);
 
     function decimals()
-        external
-        view
-        returns (uint8);
+    external
+    view
+    returns (uint8);
 }

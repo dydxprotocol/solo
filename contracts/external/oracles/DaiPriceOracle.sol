@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { IErc20 } from "../../protocol/interfaces/IErc20.sol";
+import { IERC20 } from "../../protocol/interfaces/IERC20.sol";
 import { IPriceOracle } from "../../protocol/interfaces/IPriceOracle.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
@@ -80,9 +80,9 @@ contract DaiPriceOracle is
 
     uint256 public OASIS_ETH_AMOUNT;
 
-    IErc20 public WETH;
+    IERC20 public WETH;
 
-    IErc20 public DAI;
+    IERC20 public DAI;
 
     IMakerOracle public MEDIANIZER;
 
@@ -106,8 +106,8 @@ contract DaiPriceOracle is
     {
         g_poker = poker;
         MEDIANIZER = IMakerOracle(medianizer);
-        WETH = IErc20(weth);
-        DAI = IErc20(dai);
+        WETH = IERC20(weth);
+        DAI = IERC20(dai);
         OASIS = IOasisDex(oasis);
         UNISWAP = uniswap;
         DEVIATION_PARAMS = deviationParams;

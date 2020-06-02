@@ -20,7 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Require } from "./Require.sol";
-import { IErc20 } from "../interfaces/IErc20.sol";
+import { IERC20 } from "../interfaces/IERC20.sol";
 
 
 /**
@@ -47,7 +47,7 @@ library Token {
         view
         returns (uint256)
     {
-        return IErc20(token).balanceOf(owner);
+        return IERC20(token).balanceOf(owner);
     }
 
     function allowance(
@@ -59,7 +59,7 @@ library Token {
         view
         returns (uint256)
     {
-        return IErc20(token).allowance(owner, spender);
+        return IERC20(token).allowance(owner, spender);
     }
 
     function approve(
@@ -69,7 +69,7 @@ library Token {
     )
         internal
     {
-        IErc20(token).approve(spender, amount);
+        IERC20(token).approve(spender, amount);
 
         Require.that(
             checkSuccess(),
@@ -102,7 +102,7 @@ library Token {
             return;
         }
 
-        IErc20(token).transfer(to, amount);
+        IERC20(token).transfer(to, amount);
 
         Require.that(
             checkSuccess(),
@@ -123,7 +123,7 @@ library Token {
             return;
         }
 
-        IErc20(token).transferFrom(from, to, amount);
+        IERC20(token).transferFrom(from, to, amount);
 
         Require.that(
             checkSuccess(),

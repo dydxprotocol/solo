@@ -24,13 +24,13 @@ import { TestToken } from "./TestToken.sol";
 
 /* solium-disable-next-line */
 contract TokenB is TestToken {
-    function decimals() public pure returns (uint8) {
+    function decimals() public view returns (uint8) {
         return 18;
     }
-    function symbol() public pure returns (string memory) {
+    function symbol() public view returns (string memory) {
         return "DAI";
     }
-    function name() public pure returns (string memory) {
+    function name() public view returns (string memory) {
         return "Dai Stablecoin";
     }
 }

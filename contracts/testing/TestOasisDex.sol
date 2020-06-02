@@ -20,7 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IErc20 } from "../protocol/interfaces/IErc20.sol";
+import { IERC20 } from "../protocol/interfaces/IERC20.sol";
 import { Math } from "../protocol/lib/Math.sol";
 
 
@@ -299,7 +299,7 @@ contract TestOasisDex {
         OfferInfo memory _offer = offers[id];
         delete offers[id];
 
-        IErc20(_offer.pay_gem).transfer(_offer.owner, _offer.pay_amt);
+        IERC20(_offer.pay_gem).transfer(_offer.owner, _offer.pay_amt);
 
         emit LogItemUpdate(id);
         emit LogKill(
@@ -827,8 +827,8 @@ contract TestOasisDex {
 
         offers[id].pay_amt = SafeMath.sub(_offer.pay_amt, quantity);
         offers[id].buy_amt = SafeMath.sub(_offer.buy_amt, spend);
-        IErc20(_offer.buy_gem).transferFrom(msg.sender, _offer.owner, spend);
-        IErc20(_offer.pay_gem).transfer(msg.sender, quantity);
+        IERC20(_offer.buy_gem).transferFrom(msg.sender, _offer.owner, spend);
+        IERC20(_offer.pay_gem).transfer(msg.sender, quantity);
 
         emit LogItemUpdate(id);
         emit LogTake(
@@ -874,7 +874,7 @@ contract TestOasisDex {
         id = _next_id();
         offers[id] = info;
 
-        IErc20(pay_gem).transferFrom(msg.sender, address(this), pay_amt);
+        IERC20(pay_gem).transferFrom(msg.sender, address(this), pay_amt);
 
         emit LogItemUpdate(id);
         emit LogMake(
