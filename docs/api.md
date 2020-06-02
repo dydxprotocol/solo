@@ -725,12 +725,12 @@ Standard action markets
 
 | market    |
 |-----------|
-| WETH_DAI  |
-| WETH_SAI  |
-| WETH_USDC |
-| DAI_USDC  |
-| SAI_USDC  |
-| SAI_DAI   |
+| WETH-DAI  |
+| WETH-SAI  |
+| WETH-USDC |
+| DAI-USDC  |
+| SAI-USDC  |
+| SAI-DAI   |
 | PBTC-USDC |
 
 Standard action assets
@@ -1501,12 +1501,12 @@ Position markets:
 
 | market    |
 |-----------|
-| WETH_DAI  |
-| WETH_SAI  |
-| WETH_USDC |
-| DAI_USDC  |
-| SAI_USDC  |
-| SAI_DAI   |
+| WETH-DAI  |
+| WETH-SAI  |
+| WETH-USDC |
+| DAI-USDC  |
+| SAI-USDC  |
+| SAI-DAI   |
 
 #### Example response object:
 
@@ -2001,20 +2001,31 @@ Example Response Body:
 
 Description:
 Get the index price used in the funding rate calculation.
-The index price is determined by taking the midpoint of the prices from major centralized exchanges.
-Details on the index price calculation can be found in the [Perpetual Guide](perpetual-guide.md).
+The index price is calculated as the median spot market price from major centralized exchanges.
+More info on the index price calculation can be found in the [Perpetual Guide](perpetual-guide.md).
+
+Index prices are available for the markets listed below, which include all Perpetual markets and
+some non-Perpetual markets. If price information can't be retrieved from all exchanges, then the
+median of the available exchanges will be returned. Prices from a minimum number of exchanges
+are required, otherwise a cached price will be returned, and the `live` flag will be set to `false`.
+
+| market    | number of exchanges used | minimum exchanges for live price |
+|-----------|--------------------------|----------------------------------|
+| PBTC-USDC | 5                        | 3                                |
+| WETH-USDC | 5                        | 2                                |
 
 Query Params:
 
 | Field Name | Description                                                                    |
 |------------|--------------------------------------------------------------------------------|
-| markets    | (Optional) Markets to get index prices for. Defaults to all Perpetual markets. |
+| markets    | (Optional) Markets to get index prices for. Defaults to all available markets. |
 
 Response (Per Market):
 
-| Field name | Description                                 |
-|------------|---------------------------------------------|
-| price      | The index price, denominated in base units. |
+| Field name | Description                                                                          |
+|------------|--------------------------------------------------------------------------------------|
+| price      | The index price, denominated in base units.                                          |
+| live       | `true` if at least the minimum number of exchanges were available, otherwise `false` |
 
 Example Response Body:
 
