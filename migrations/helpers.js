@@ -1,4 +1,4 @@
-const { coefficientsToString, decimalToString } = require('../src/lib/Helpers.ts');
+const { coefficientsToString, decimalToString } = require('../src/lib/Helpers');
 
 // ============ Network Helper Functions ============
 
