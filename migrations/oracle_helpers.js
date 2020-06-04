@@ -4,7 +4,7 @@ const {
 } = require('./token_helpers');
 const {
   ADDRESSES,
-} = require('../src/lib/Constants');
+} = require('../dist/src/lib/Constants');
 
 function getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator) {
   if (isDevNetwork(network)) {
