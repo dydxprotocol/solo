@@ -438,12 +438,12 @@ Cancel Reasons:
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------|
 | EXPIRED               | The order reached the expiration date specified by the field `expiresAt`.                                               |
 | UNDERCOLLATERALIZED   | Either this order would put the position under collateralization or the position is currently undercollateralized.      |
-| CANCELED_ON_CHAIN     | During the on-chain operation the order was canceled.                                                                   |
+| CANCELED_ON_CHAIN     | The order was canceled on-chain.                                                                                        |
 | USER_CANCELED         | The user cancled the order either through an API client or on https://trade.dydx.exchange/.                             |
 | SELF_TRADE            | Execution of the order would have led the user to be both the maker and the taker.                                      |
 | FAILED                | Either before filling or on-chain, a failure occurred that prevented the order from being placed or filled.             |
-| COULD_NOT_FILL        | An order with `fillOrKill: true` was placed and would not fill as the taker.                                            |
-| POST_ONLY_WOULD_CROSS | An order with `postOnly: true` was placed and would fill on placing, making the order the taker.                        |
+| COULD_NOT_FILL        | An order with `fillOrKill: true` could not be filled.                                                                   |
+| POST_ONLY_WOULD_CROSS | An order with `postOnly: true` would cross the book.                                                                    |
 
 ### GET `/v2/trades`
 
