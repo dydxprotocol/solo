@@ -375,7 +375,7 @@ Query Params:
 | accountNumber  | (Optional) The Solo account number of the account to request orders for.                                                     |
 | side           | (Optional) Side of the order in (`BUY`, `SELL`)                                                                              |
 | status         | (Optional) Status(es) of the orders to query in (`PENDING`, `OPEN`, `FILLED`, `PARTIALLY_FILLED`, `CANCELED`, `UNTRIGGERED`) |
-| orderType      | (Optional) Type(s) of orders to query in (`LIMIT`, `ISOLATED_MARKET`, `STOP_LIMIT`)                                          |
+| orderType      | (Optional) Type(s) of orders to query in (`CANONICAL_CROSS`, `CANONICAL_ISOLATED_OPEN`, `CANONICAL_STOP_LIMIT`)              |
 | market         | (Optional) Market(s) to query in (`WETH-DAI`, `WETH-USDC`, `DAI-USDC`, `PBTC-USDC`)                                          |
 | limit          | (Optional) The maximum number of orders to return. The default, and maximum, is 100.                                         |
 | startingBefore | (Optional) ISO 8601 date and time. Starts returning orders created before this date.                                         |
@@ -387,42 +387,63 @@ Example Response Body:
     {
       "uuid": "ffb8f5e3-68aa-4dc9-89d2-1de6738b8c3f",
       "id": "0xd17ae8439b99c6c7637808be36d856c6f6f497ab132a7f394f611396b5594844",
-      "createdAt": "2020-01-15T22:30:55.533Z",
       "status": "OPEN",
+      "clientId": null,
       "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
       "accountNumber": "0",
-      "orderType": "LIMIT",
+      "orderType": "CANONICAL_CROSS",
       "fillOrKill": false,
-      "postOnly": null,
+      "postOnly": false,
+      "triggerPrice": null,
       "market": "WETH-DAI",
       "side": "BUY",
       "baseAmount": "50900000000000000000",
       "quoteAmount": "8386480372200000000000",
       "filledAmount": "0",
       "price": "164.763858",
-      "cancelReason": null
+      "cancelReason": null,
+      "createdAt": "2020-06-15T22:30:55.533Z",
+      "updatedAt": "2020-06-15T22:30:56.587Z",
+      "expiresAt": "2020-06-15T23:30:57.000Z"
     },
     {
       "uuid": "da43af50-56dd-4884-a540-a7314a628b06",
       "id": "0xfb65cfa2ff31e5fbc6629da82cb0a2d7eefcf92ac8b00d94da4c541b60293e8f",
-      "createdAt": "2020-01-15T22:30:55.498Z",
       "status": "OPEN",
+      "clientId": null,
       "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
       "accountNumber": "0",
-      "orderType": "LIMIT",
+      "orderType": "CANONICAL_CROSS",
       "fillOrKill": false,
-      "postOnly": null,
+      "postOnly": false,
       "market": "WETH-DAI",
       "side": "BUY",
       "baseAmount": "50500000000000000000",
       "quoteAmount": "8323093314500000000000",
       "filledAmount": "0",
       "price": "164.813729",
-      "cancelReason": null
+      "cancelReason": null,
+      "createdAt": "2020-06-17T22:30:55.498Z",
+      "updatedAt": "2020-06-17T22:30:56.587Z",
+      "expiresAt": "2020-06-17T23:30:57.000Z"
+
     }
   ]
 }
 ```
+
+Cancel Reasons:
+
+| Reason                | Explanation                                                                                                             |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| EXPIRED               | The order reached the expiration date specified by the field `expiresAt`.                                               |
+| UNDERCOLLATERALIZED   | Either this order would put the position under collateralization or the position is currently undercollateralized.      |
+| CANCELED_ON_CHAIN     | The order was canceled on-chain.                                                                                        |
+| USER_CANCELED         | The user cancled the order either through an API client or on https://trade.dydx.exchange/.                             |
+| SELF_TRADE            | Execution of the order would have led the user to be both the maker and the taker.                                      |
+| FAILED                | Either before filling or on-chain, a failure occurred that prevented the order from being placed or filled.             |
+| COULD_NOT_FILL        | An order with `fillOrKill: true` could not be filled.                                                                   |
+| POST_ONLY_WOULD_CROSS | An order with `postOnly: true` would cross the book.                                                                    |
 
 ### GET `/v2/trades`
 
