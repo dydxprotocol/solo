@@ -10,7 +10,7 @@ function getDaiAddress(network, TokenB) {
   if (isKovan(network)) {
     return '0x4448d5F172FC3073C458d72C8Ee97A81cd824962';
   }
-  throw new Error('Cannot find Dai');
+  throw new Error('Cannot find DAI');
 }
 
 function getLinkAddress(network, TokenE) {
@@ -23,7 +23,7 @@ function getLinkAddress(network, TokenE) {
   if (isKovan(network)) {
     return '0xBd86728Ce5b0da9760c18E871Fe9AaA3F8AC6E10';
   }
-  throw new Error('Cannot find Dai');
+  throw new Error('Cannot find LINK');
 }
 
 function getLrcAddress(network, TokenF) {
@@ -36,7 +36,7 @@ function getLrcAddress(network, TokenF) {
   if (isKovan(network)) {
     return '0x9372c3ecf9487418739be231b2d3bcb69f19cdfc';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find LRC');
 }
 
 function getUsdcAddress(network, TokenA) {
@@ -49,7 +49,7 @@ function getUsdcAddress(network, TokenA) {
   if (isKovan(network)) {
     return '0xfb5755567e071663F2DA276aC1D6167B093f00f4';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find USDC');
 }
 
 function getWbtcAddress(network, TokenD) {
@@ -62,7 +62,7 @@ function getWbtcAddress(network, TokenD) {
   if (isKovan(network)) {
     return '0xB889322114475137815678748419b67818fBa92c';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find WBTC');
 }
 
 function getWethAddress(network, WETH9) {
@@ -75,7 +75,7 @@ function getWethAddress(network, WETH9) {
   if (isKovan(network)) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find WETH');
 }
 
 module.exports = {

@@ -1,6 +1,7 @@
 require('ts-node/register'); // eslint-disable-line
 require('dotenv-flow').config(); // eslint-disable-line
-const HDWalletProvider = require('truffle-hdwallet-provider'); // eslint-disable-line
+// const HDWalletProvider = require('truffle-hdwallet-provider'); // eslint-disable-line
+const HDWalletProvider = require('@truffle/hdwallet-provider'); // eslint-disable-line
 const path = require('path');
 
 const covContractsDir = path.join(process.cwd(), '.coverage_contracts');
@@ -38,15 +39,9 @@ module.exports = {
     },
     mainnet: {
       network_id: '1',
-      provider: () => new HDWalletProvider(
-        [process.env.DEPLOYER_PRIVATE_KEY],
-        'https://parity.expotrading.com',
-        0,
-        1,
-      ),
+      provider: () => new HDWalletProvider(process.env.DEPLOYER_PRIVATE_KEY, process.env.NODE_URL),
       gasPrice: Number(process.env.GAS_PRICE),
       gas: 6900000,
-      from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,
     },
     kovan: {
@@ -57,7 +52,7 @@ module.exports = {
         0,
         1,
       ),
-      gasPrice: 10000000000, // 10 gwei
+      gasPrice: 37000000000, // 37 gwei
       gas: 6900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 500,

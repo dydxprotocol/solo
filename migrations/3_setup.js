@@ -150,13 +150,13 @@ async function getSoloMargin(network) {
   return SoloMargin.deployed();
 }
 
-async function getTokens(network) {
+function getTokens(network) {
   return [
+    { address: getWethAddress(network, WETH9) },
     { address: getDaiAddress(network, TokenB) },
+    { address: getUsdcAddress(network, TokenA) },
     { address: getLinkAddress(network, TokenE) },
     { address: getLrcAddress(network, TokenF) },
-    { address: getUsdcAddress(network, TokenA) },
-    { address: getWethAddress(network, WETH9) },
     { address: getWbtcAddress(network, TokenD) },
   ];
 }

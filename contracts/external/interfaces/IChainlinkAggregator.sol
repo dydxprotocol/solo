@@ -28,9 +28,6 @@ pragma experimental ABIEncoderV2;
  */
 contract IChainlinkAggregator {
 
-    uint8 public constant USD_DECIMALS = 8;
-    uint8 public constant ETH_DECIMALS = 18;
-
-    function latestAnswer() external view returns (uint);
+    function latestAnswer() public view returns (int256);
 
 }

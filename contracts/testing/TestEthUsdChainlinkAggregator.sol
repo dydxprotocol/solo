@@ -25,7 +25,7 @@ import "../external/interfaces/IChainlinkAggregator.sol";
  */
 contract TestEthUsdChainlinkAggregator is IChainlinkAggregator {
 
-    function latestAnswer() external view returns (uint) {
+    function latestAnswer() public view returns (int256) {
         // $211.40
         return 21140000000;
     }

@@ -384,6 +384,7 @@ contract MultiSig {
                 return true;
             }
         }
+        return false;
     }
 
     /**

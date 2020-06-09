@@ -153,9 +153,9 @@ function getOraclePokerAddress(network, accounts) {
   throw new Error('Cannot find Oracle Poker');
 }
 
-function getPartiallyDelayedMultisigAddress(network) {
+function getMultisigAddress(network) {
   if (isMainNet(network)) {
-    return '0xba2906b18B069b40C6D2CAFd392E76ad479B1B53';
+    return '0xb85f60781A4F7AF615b143f6d4037F8F89A37429';
   }
   if (isKovan(network)) {
     return '0x3d62d8b3ef034e0fde7de8fec4f557a3e6e4efa1';
@@ -187,6 +187,5 @@ module.exports = {
   getExpiryRampTime,
   getOraclePokerAddress,
   getSenderAddress,
-  getPartiallyDelayedMultisigAddress,
-  getNonDelayedMultisigAddress,
+  getMultisigAddress,
 };

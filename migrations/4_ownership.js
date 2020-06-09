@@ -18,7 +18,7 @@
 
 const {
   isDevNetwork,
-  getPartiallyDelayedMultisigAddress,
+  getMultisigAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -38,7 +38,7 @@ const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 
 const migration = async (deployer, network) => {
   if (!isDevNetwork(network)) {
-    const partiallyDelayedMultisig = getPartiallyDelayedMultisigAddress(network);
+    const multisig = getMultisigAddress(network);
 
     const [
       deployedSoloMargin,
@@ -65,16 +65,16 @@ const migration = async (deployer, network) => {
     ]);
 
     await Promise.all([
-      deployedSoloMargin.transferOwnership(partiallyDelayedMultisig),
-      deployedDaiPriceOracle.transferOwnership(partiallyDelayedMultisig),
-      deployedExpiry.transferOwnership(partiallyDelayedMultisig),
-      deployedExpiryV2.transferOwnership(partiallyDelayedMultisig),
-      deployedRefunder.transferOwnership(partiallyDelayedMultisig),
-      deployedDaiMigrator.transferOwnership(partiallyDelayedMultisig),
-      deployedLimitOrders.transferOwnership(partiallyDelayedMultisig),
-      deployedStopLimitOrders.transferOwnership(partiallyDelayedMultisig),
-      deployedCanonicalOrders.transferOwnership(partiallyDelayedMultisig),
-      deployedSignedOperationProxy.transferOwnership(partiallyDelayedMultisig),
+      deployedSoloMargin.transferOwnership(multisig),
+      deployedDaiPriceOracle.transferOwnership(multisig),
+      deployedExpiry.transferOwnership(multisig),
+      deployedExpiryV2.transferOwnership(multisig),
+      deployedRefunder.transferOwnership(multisig),
+      deployedDaiMigrator.transferOwnership(multisig),
+      deployedLimitOrders.transferOwnership(multisig),
+      deployedStopLimitOrders.transferOwnership(multisig),
+      deployedCanonicalOrders.transferOwnership(multisig),
+      deployedSignedOperationProxy.transferOwnership(multisig),
     ]);
   }
 };

@@ -34,21 +34,24 @@ import {IChainlinkAggregator} from "../interfaces/IChainlinkAggregator.sol";
  */
 contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
 
+    using SafeMath for uint;
+
     event TokenInsertedOrUpdated(
         address indexed token,
         address indexed aggregator,
         address indexed tokenPair
     );
 
-    using SafeMath for uint;
-
     mapping(address => IChainlinkAggregator) public tokenToAggregatorMap;
     mapping(address => uint8) public tokenToDecimalsMap;
 
     // Defaults to USD if the value is the ZERO address
     mapping(address => address) public tokenToPairingMap;
-    // Should defaults to IChainlinkAggregator.USD_AGGREGATOR_DECIMALS when value is empty
+    // Should defaults to CHAINLINK_USD_DECIMALS when value is empty
     mapping(address => uint8) public tokenToAggregatorDecimalsMap;
+
+    uint8 public CHAINLINK_USD_DECIMALS = 8;
+    uint8 public CHAINLINK_ETH_DECIMALS = 18;
 
     /**
      * Note, these arrays are set up, such that each index corresponds with one-another.
@@ -126,14 +129,14 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     returns (Monetary.Price memory) {
         require(address(tokenToAggregatorMap[token]) != address(0), "INVALID_TOKEN");
 
-        uint rawChainlinkPrice = tokenToAggregatorMap[token].latestAnswer();
+        uint rawChainlinkPrice = uint(tokenToAggregatorMap[token].latestAnswer());
         address tokenPair = tokenToPairingMap[token];
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
         uint standardizedPrice = standardizeNumberOfDecimals(
             tokenToDecimalsMap[token],
             rawChainlinkPrice,
-            tokenPair == address(0) ? tokenToAggregatorMap[token].USD_DECIMALS() : tokenToAggregatorDecimalsMap[token]
+            tokenPair == address(0) ? CHAINLINK_USD_DECIMALS : tokenToAggregatorDecimalsMap[token]
         );
 
         if (tokenPair == address(0)) {
@@ -150,19 +153,18 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         }
     }
 
+    /**
+     * Standardizes `value` to have `ONE_DOLLAR` - `tokenDecimals` number of decimals.
+     */
     function standardizeNumberOfDecimals(
         uint8 tokenDecimals,
         uint value,
         uint8 valueDecimals
-    ) internal pure returns (uint) {
+    ) public pure returns (uint) {
         uint tokenDecimalsFactor = 10 ** uint(tokenDecimals);
         uint priceFactor = IPriceOracle.ONE_DOLLAR.div(tokenDecimalsFactor);
         uint valueFactor = 10 ** uint(valueDecimals);
-        if (priceFactor > valueFactor) {
-            return value.mul(priceFactor.div(valueFactor));
-        } else /* priceFactor <= valueFactor */ {
-            return value.div(valueFactor.div(priceFactor));
-        }
+        return value.mul(priceFactor).div(valueFactor);
     }
 
 }

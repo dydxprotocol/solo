@@ -2,244 +2,67 @@
     "SoloMargin": {
         "1": {
             "links": {
-                "AdminImpl": "0x8a6629fEba4196E0A61B8E8C94D4905e525bc055",
-                "OperationImpl": "0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1"
+                "AdminImpl": "0x62790B8328C3b32214f35578CC48f1221663D227",
+                "OperationImpl": "0xC1b2634D8Ce928976e45B183ca486F0B0eFA4781"
             },
-            "address": "0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e",
-            "transactionHash": "0x5d824b179e39313f45da503b1d75c1c7ce5287646a45ebe42431d50141fd451a"
-        },
-        "42": {
-            "links": {
-                "AdminImpl": "0x078D400C1a723b792de8afE240bf039b7069ac39",
-                "OperationImpl": "0xcfa0451D8D1F08504Fa44a6f72D00F455b858a1d"
-            },
-            "address": "0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE",
-            "transactionHash": "0xb949f10eabe6b7e66c7304a3e9d300375638e82932c5c1e723da3530ace277e3"
-        }
-    },
-    "PayableProxyForSoloMargin": {
-        "1": {
-            "links": {},
-            "address": "0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76",
-            "transactionHash": "0x5463436a4480bf13d75a7fea9055b7c616bd15cc5873a068ec489e738fb4cd0f"
-        },
-        "42": {
-            "links": {},
-            "address": "0x2b005Af087bb14e3887a8572807095404796105A",
-            "transactionHash": "0x02038a963724d897729f3f2962cbaf0302f64311b4ce342d1598998befc0d717"
-        }
-    },
-    "PolynomialInterestSetter": {
-        "1": {
-            "links": {},
-            "address": "0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49",
-            "transactionHash": "0xe0c600cc812dab2782971a897b3971fdd59129e84daa5cf30ac9b8c512fd768c"
-        },
-        "42": {
-            "links": {},
-            "address": "0xe3E777529824F0394a4f9e9dC7f6970d38850d0E",
-            "transactionHash": "0x0558d1b12c6b9c301a2f0e1ee00a137809c660f60c11b7035edd87c09c4fe546"
-        }
-    },
-    "TestPriceOracle": {
-        "42": {
-            "links": {},
-            "address": "0xab33E884eC8FeD4F5867246E4300228f3d666561",
-            "transactionHash": "0xaad6c5461028d3a0adeefa97059c1cc1bbdbd72e2a175719b45dcc5b1104f831"
-        }
-    },
-    "TestInterestSetter": {
-        "42": {
-            "links": {},
-            "address": "0x1e5b6e89B4d10ee850e1893Efc587353149790C4",
-            "transactionHash": "0x55de1ad13b892812389490e7f75a34081736405340ca286d2f7812028f7a0046"
+            "address": "0x02C57952e2E406A9a9af2dFF2C280c59DF9A8b8B",
+            "transactionHash": "0x863fc1a6b53746fd3044bbe8754e327bddbeaf8134165f53dd120bba8fe4e8df"
         }
     },
     "Expiry": {
         "1": {
             "links": {},
-            "address": "0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d",
-            "transactionHash": "0x425870a7d9265bdc30eb0d3a5a565f34fe44e43331a5858b0b989d376cf55cd3"
-        },
-        "42": {
-            "links": {},
-            "address": "0xa73245cADcacA4D96498f7D88eCF9709d84cf002",
-            "transactionHash": "0x4936074d88f382f928b0ac05b2633ec97f4f7576e6f68c6ae3054ee3c0cc6b91"
-        }
-    },
-    "DaiPriceOracle": {
-        "1": {
-            "links": {},
-            "address": "0x0fBd14718d8FAB8f9f40Ee5c5612b1F0717100A2",
-            "transactionHash": "0x13fa7e3d0cfe80778cbc058237176932f46b4c21bf2eaffe9d4b1e5b8b4f0299"
-        },
-        "42": {
-            "links": {},
-            "address": "0x6ee01435d5590992F037335a053b4B617947dB42",
-            "transactionHash": "0x170c21a2f646921466064584bd8ed1affac2f40d3c651e7b7a63b7528ba3061f"
-        }
-    },
-    "SaiPriceOracle": {
-        "1": {
-            "links": {},
-            "address": "0x787F552BDC17332c98aA360748884513e3cB401a",
-            "transactionHash": "0x450fe49f0617baf860316aa47a2e0d8fd85eb81f5b8c3c8006e9e46c260f6684"
-        },
-        "42": {
-            "links": {},
-            "address": "0x8a6629fEba4196E0A61B8E8C94D4905e525bc055",
-            "transactionHash": "0xb1b97188429deaeb7a127874b22874eee258d716f9c6286d7a3ec22b93d5bfe2"
-        }
-    },
-    "WethPriceOracle": {
-        "1": {
-            "links": {},
-            "address": "0xf61AE328463CD997C7b58e7045CdC613e1cFdb69",
-            "transactionHash": "0xc6f87486ef1a04467cd34f2b6b3e3dd3e8661a6b142fdcc66f9d0a64e8b05134"
-        },
-        "42": {
-            "links": {},
-            "address": "0x9018629372E73c727495ae23Af6ECdBd622FC855",
-            "transactionHash": "0xcba29ddc77250a3acde8c33517ad009626b42716cd459914fece9263c1300b21"
-        }
-    },
-    "UsdcPriceOracle": {
-        "1": {
-            "links": {},
-            "address": "0x52f1c952A48a4588f9ae615d38cfdbf8dF036e60",
-            "transactionHash": "0x2561070da4d1e92d8b6b480293150c2d82bcb831ec82656423fd070c644af246"
-        },
-        "42": {
-            "links": {},
-            "address": "0xc53B68ba1c717dF9a077D2A67Cc87563d95b181C",
-            "transactionHash": "0x5ab0ceeb641f97ac81674989e7e3e9445d78099a6494aa06697070e6675123c7"
-        }
-    },
-    "AdminImpl": {
-        "1": {
-            "links": {},
-            "address": "0x8a6629fEba4196E0A61B8E8C94D4905e525bc055",
-            "transactionHash": "0x8d4f6bd711b52cc1dad8d636d2462af330e12b2539bd9bc0f774bfa999748b82"
-        },
-        "42": {
-            "links": {},
-            "address": "0x078D400C1a723b792de8afE240bf039b7069ac39",
-            "transactionHash": "0x75c9334f5dca832e2dfff3ff0754eff1ecdd95f7330d375bc8d4430e742f8348"
-        }
-    },
-    "OperationImpl": {
-        "1": {
-            "links": {},
-            "address": "0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1",
-            "transactionHash": "0x77592870712b99e7cb47a2e0fc906288d75ac47fc4fd7858b24e7f615026eae5"
-        },
-        "42": {
-            "links": {},
-            "address": "0xcfa0451D8D1F08504Fa44a6f72D00F455b858a1d",
-            "transactionHash": "0xa3cc992952235b09917836419b0c6495e004412f1be3f8f8f8c39d8185ace9cc"
-        }
-    },
-    "LiquidatorProxyV1ForSoloMargin": {
-        "1": {
-            "links": {},
-            "address": "0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686",
-            "transactionHash": "0x98febd81e3735eb3f628906fc13c3d986d36e4dab86cca2c40ae6653c2d7371e"
-        },
-        "42": {
-            "links": {},
-            "address": "0x3074Eb0091EFAdbBe4722a591C054BF6D83afE05",
-            "transactionHash": "0xa693f29e93173d52f774c883efc5adaae651a6ba944287e4b05e7fa9c3327ec5"
-        }
-    },
-    "LimitOrders": {
-        "1": {
-            "links": {},
-            "address": "0xDEf136D9884528e1EB302f39457af0E4d3AD24EB",
-            "transactionHash": "0xe221cf6c2c000f584def4b78b6bbdae38ce433f2c7309e6556ed2aa65f077a75"
-        },
-        "42": {
-            "links": {},
-            "address": "0x0AAb13E14f221415EfdA4e4faBFb04b5c2f9f529",
-            "transactionHash": "0x7ca8a116e9e4ea01d9a8e0c96138a5cf0e96b77c8d64165cc07daa2008011933"
-        }
-    },
-    "StopLimitOrders": {
-        "1": {
-            "links": {},
-            "address": "0xbFb635e8c6689ac3874aD9A60FaB1c29270f1710",
-            "transactionHash": "0xa4be7ef7de3a3d9317382a3abdfa087f0a73527a899c397f59518698035040d9"
-        },
-        "42": {
-            "links": {},
-            "address": "0x6600D9321f760e63434c63De0657121301b57276",
-            "transactionHash": "0xac40b38e47dd8f45e86685dcbdde8950401193ba3b4a67071d213d9c29ad7b4a"
-        }
-    },
-    "CanonicalOrders": {
-        "1": {
-            "links": {},
-            "address": "0xCd81398895bEa7AD9EFF273aeFFc41A9d83B4dAD",
-            "transactionHash": "0x310881389e800deb976fd4f8c31a211eadd94d4ee87f089f604c49d46391b842"
-        },
-        "42": {
-            "links": {},
-            "address": "0x103993ff75159f2BF40566DBF92A686df3F7a5e8",
-            "transactionHash": "0x0c00364ff8ce9d42160826f422284e37a8b830b6a1fca4962778fab098382bc1"
-        }
-    },
-    "SignedOperationProxy": {
-        "1": {
-            "links": {},
-            "address": "0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55",
-            "transactionHash": "0xda6e855b5ffd728d99a82a030b165ed8965713506f04a3cb039678dfa983f69a"
-        },
-        "42": {
-            "links": {},
-            "address": "0x321b86ed5Df4Eb8614721800413b5740357B1103",
-            "transactionHash": "0xc10772ad7684db4bf86493e18fb345c94a2f3969da7d98be525d6e653caae9b9"
-        }
-    },
-    "Refunder": {
-        "1": {
-            "links": {},
-            "address": "0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74",
-            "transactionHash": "0x54f1c80e3bded4e8e8c695a46f59fb10c5cb0957803ea1ba019846f892006c68"
-        },
-        "42": {
-            "links": {},
-            "address": "0x6d23ef7EAC5d4aD14597D2EBb1D28Ef5E2dF68c6",
-            "transactionHash": "0x809b9263f66b557004ff6e7faf33aad0cf514400ef0505a5fa99d26f5d9ac14b"
-        }
-    },
-    "ExpiryV2": {
-        "1": {
-            "links": {},
-            "address": "0x739A1DF6725657f6a16dC2d5519DC36FD7911A12",
-            "transactionHash": "0xcea0c6a3cea5211512cb4d63b5a82b1573da8521d8e823133eebeaec3bf0c58f"
-        },
-        "42": {
-            "links": {},
-            "address": "0x4f1d5F59fbab20750266EA173267F3380E449F05",
-            "transactionHash": "0xac3aafe0ce3e012d8624b4896d92a55b145d568e69dac7a5af4f0d4d131effc5"
-        }
-    },
-    "DoubleExponentInterestSetter": {
-        "1": {
-            "links": {},
-            "address": "0x7538651D874b7578CF52152c9ABD8f6617a38403",
-            "transactionHash": "0x224a1ac089eeeded8669a4d067025b0c76ad07d99f5a63605b0c13cb7f82a4bd"
-        },
-        "42": {
-            "links": {},
-            "address": "0x05e63c09CB4449a8f3d3e1642b3Bdf193D1373e0",
-            "transactionHash": "0x8a843feec3b8e391c654837332ebd2b24d75f7190d8bf44d00728ef7448726da"
+            "address": "0x736AEd44debEd3C273af836409deAaF6722671b2",
+            "transactionHash": "0xdc45b8f93e9e5ad7c7e1c0ad2a029265043f46bb607127fd53e32985a8d3512f"
         }
     },
     "DaiMigrator": {
         "1": {
             "links": {},
-            "address": "0xAbe234e0D2D518bdB1d5a655014de18B1CfFFBEa",
-            "transactionHash": "0xc5151d218ac983a9cfc6ad754564e53478923506b7e8f3511ae0d55d47adb6e8"
+            "address": "0x7A8A9D7752a178ED1E5722EBfC746155b7cfE3CD",
+            "transactionHash": "0x3744ed3ad3ad0474470204b83c46343b6adcb3fa8f7e306b43f6dfb542dd90fd"
+        }
+    },
+    "PayableProxyForSoloMargin": {
+        "1": {
+            "links": {},
+            "address": "0x7AE2BD4895318EEa7737e97421CC351811732341",
+            "transactionHash": "0x949c85f8b504c95460a982c2947683c7c021b95f83e60a358321a5374d6c6316"
+        }
+    },
+    "LiquidatorProxyV1ForSoloMargin": {
+        "1": {
+            "links": {},
+            "address": "0x1858a32Bc99E9C91AB7641D3FC3bB7e08615114D",
+            "transactionHash": "0x0238218e5eba58cf79b780c4c9a6870af2276529c7ee72b529d02ee05126a91c"
+        }
+    },
+    "DoubleExponentInterestSetter": {
+        "1": {
+            "links": {},
+            "address": "0xC038b84D8A5Db8aA503748d2E144b3578211e2aC",
+            "transactionHash": "0x42cc7474a5d4ee08bf112f1cf44a1508a401d01837a352fc85495ab37f7ac42b"
+        }
+    },
+    "AdminImpl": {
+        "1": {
+            "links": {},
+            "address": "0x62790B8328C3b32214f35578CC48f1221663D227",
+            "transactionHash": "0x9c87b6553f06c519dfea1a235dbd5f52b066b88bd24da8d1d408943016ecf3a3"
+        }
+    },
+    "OperationImpl": {
+        "1": {
+            "links": {},
+            "address": "0xC1b2634D8Ce928976e45B183ca486F0B0eFA4781",
+            "transactionHash": "0x9bb5ebe642caa064456934b9f4d51539e9c9d1ac062dabecb368a200a1f2bfda"
+        }
+    },
+    "ChainlinkPriceOracleV1": {
+        "1": {
+            "links": {},
+            "address": "0xfA0E3cDe80Db92F947fcf2D4ddD1A71C63Fc9537",
+            "transactionHash": "0x041974c3db26ccf9190c5506301881b687731840d05bb22a97e18b6bb742ea9e"
         }
     }
 }
