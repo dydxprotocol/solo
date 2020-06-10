@@ -33,7 +33,7 @@ On the WebSocket you can subscribe to various channels to receive updates. Subsc
   "type": "subscribe",
   "channel": "orderbook",
   "id": "WETH-DAI",
-  // optional parameter
+  ...optional parameter...
   "batched": "true"
 }
 ```
@@ -79,13 +79,13 @@ Where initial state is the initial state of what you have subscribed to. After t
 
 ### Batching messages
 
-When `batched` = `true` , the updates will be batched and sent together at regular intervals of 250ms.
+When `batched = true` , the updates will be batched and sent together at regular intervals of 250ms.
 
 ```json
 {
-  "type": "channel_data",
-  "connection_id": "1de645c9-9ed2-49d0-9192-1522cf5c45f7",
-  "message_id": 290,
+  "type": "channel_batch_data",
+  "connection_id": "6bc52ffd-258a-4554-a3c6-2ebf80fa0fe3",
+  "message_id": 317,
   "channel": "orderbook",
   "id": "WETH-DAI",
   "contents": [{
