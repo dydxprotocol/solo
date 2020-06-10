@@ -32,15 +32,18 @@ On the WebSocket you can subscribe to various channels to receive updates. Subsc
 {
   "type": "subscribe",
   "channel": "orderbook",
-  "id": "WETH-DAI"
+  "id": "WETH-DAI",
+  // optional parameter
+  "batched": "true"
 }
 ```
 
-| Field Name | JSON type | Description                          |
-|------------|-----------|--------------------------------------|
-| type       | string    | Must be set to "subscribe"           |
-| channel    | string    | The channel to subscribe to          |
-| id         | string    | An id to subscribe to on the channel |
+| Field Name | JSON type | Description                                       |
+|------------|-----------|---------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                        |
+| channel    | string    | The channel to subscribe to                       |
+| id         | string    | An id to subscribe to on the channel              |
+| batched    | boolean   | (optional) Whether to batch messages when sending |
 
 #### Initial Response
 
@@ -71,6 +74,75 @@ Where initial state is the initial state of what you have subscribed to. After t
   "contents": {
     ...update...
   }
+}
+```
+
+### Batching messages
+
+When `batched` = `true` , the updates will be batched and sent together at regular intervals of 250ms.
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "1de645c9-9ed2-49d0-9192-1522cf5c45f7",
+  "message_id": 290,
+  "channel": "orderbook",
+  "id": "WETH-DAI",
+  "contents": [{
+    ...array of updates...
+  }]
+}
+```
+
+eg:
+
+Command:
+```json
+{
+  "type": "subscribe",
+  "channel": "orderbook",
+  "id": "WETH-DAI",
+  "batched": true
+}
+```
+
+Example message structure:
+```json
+{
+  "type": "channel_batch_data",
+  "connection_id": "6bc52ffd-258a-4554-a3c6-2ebf80fa0fe3",
+  "message_id": 317,
+  "channel": "orderbook",
+  "id": "WETH-DAI",
+  "contents": [
+    {
+      "updates": [
+        {
+          "type": "NEW",
+          "id": "0x03ed69375550ab371ecf31c96d7479de6024baa5c1146b8c0bf225c140deeee3",
+          "amount": "13000000000000000000",
+          "price": "241.86",
+          "side": "BUY"
+        }
+      ]
+    },
+    {
+      "updates": [
+        {
+          "type": "REMOVED",
+          "id": "0xa7c66256f295aa75524996a190175dc002720d6a3d65ce4af667560add7f27bd",
+          "side": "BUY"
+        },
+        {
+          "type": "NEW",
+          "id": "0x7e41c2eca4325ff350adb54ef46c5f6f51406fb674efc105f2d23e13aa99ee25",
+          "amount": "700000000000000000000",
+          "price": "241.65",
+          "side": "BUY"
+        }
+      ]
+    }
+  ]
 }
 ```
 
