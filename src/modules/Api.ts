@@ -22,6 +22,7 @@ import {
   BigNumberable,
   SignedCanonicalOrder,
   ApiMarketMessageV2,
+  RequestMethod,
 } from '../types';
 import { CanonicalOrders } from './CanonicalOrders';
 
@@ -189,24 +190,11 @@ export class Api {
       order: jsonOrder,
     };
 
-    try {
-      const response = await axios({
-        data,
-        method: 'post',
-        url: `${this.endpoint}/v2/orders`,
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      data,
+      url: `${this.endpoint}/v2/orders`,
+      method: RequestMethod.POST,
+    });
   }
 
   public async cancelOrderV2({
@@ -222,26 +210,13 @@ export class Api {
       SigningMethod.Hash,
     );
 
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/orders/${orderId}`,
-        method: 'delete',
-        headers: {
-          authorization: `Bearer ${signature}`,
-        },
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/orders/${orderId}`,
+      method: RequestMethod.DELETE,
+      headers: {
+        authorization: `Bearer ${signature}`,
+      },
+    });
   }
 
   public async getOrdersV2({
@@ -267,23 +242,10 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/orders?${query}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/orders?${query}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getOrderV2({
@@ -291,23 +253,10 @@ export class Api {
   }: {
     id: string,
   }): Promise<{ order: ApiOrderV2 }> {
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/orders/${id}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/orders/${id}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getMarketV2({
@@ -315,44 +264,18 @@ export class Api {
   }: {
     market: string,
   }): Promise<{ market: ApiMarketMessageV2 }> {
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/markets/${market}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/markets/${market}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getMarketsV2():
     Promise<{ markets: { [market: string]: ApiMarketMessageV2 } }> {
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/markets`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/markets`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getFillsV2({
@@ -378,23 +301,10 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/fills?${query}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/fills?${query}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getTradesV2({
@@ -420,23 +330,10 @@ export class Api {
 
     const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
 
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v2/trades?${query}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v2/trades?${query}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getAccountBalances({
@@ -448,23 +345,10 @@ export class Api {
   }): Promise<ApiAccount> {
     const numberStr = new BigNumber(accountNumber).toFixed(0);
 
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/accounts/${accountOwner}?number=${numberStr}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getOrderbookV2({
@@ -472,30 +356,37 @@ export class Api {
   }: {
     market: ApiMarketName,
   }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
-    try {
-      const response = await axios({
-        url: `${this.endpoint}/v1/orderbook/${market}`,
-        method: 'get',
-        timeout: this.timeout,
-      });
-
-      return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
-      } else {
-        throw new Error(error.message);
-      }
-    }
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/orderbook/${market}`,
+      method: RequestMethod.GET,
+    });
   }
 
   public async getMarkets(): Promise<{ markets: ApiMarket[] }> {
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/markets`,
+      method: RequestMethod.GET,
+    });
+  }
+
+  private async axiosRequest(
+    {
+      url,
+      method,
+      headers,
+      data,
+    }: {
+      url: string,
+      method: RequestMethod,
+      headers?: any,
+      data?: any,
+    }): Promise<any> {
     try {
       const response = await axios({
-        url: `${this.endpoint}/v1/markets`,
-        method: 'get',
+        url,
+        method,
+        headers,
+        data,
         timeout: this.timeout,
       });
 
