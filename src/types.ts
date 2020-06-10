@@ -768,3 +768,9 @@ export interface ApiMarketMessageV2 {
   largeTakerFee: BigNumber;
   smallTakerFee: BigNumber;
 }
+
+export enum RequestMethod {
+  GET = 'get',
+  POST = 'post',
+  DELETE = 'delete',
+}
