@@ -763,7 +763,7 @@ Once unsubscribed, clients will receive a message:
 
 ### Standard Actions
 
-The standard actions channel allows clients to receive updates about actions such as DEPOSIT, 
+The standard actions channel allows clients to receive updates about actions such as DEPOSIT,
 ISOLATED_OPEN, etc.
 
 #### Subscribing
@@ -1453,7 +1453,7 @@ Once unsubscribed, clients will receive a message:
 
 ### Perpetual Markets
 
-The perpetual markets channel allows clients to updates about a particular market.
+The perpetual markets channel allows clients to receive updates about a particular market.
 
 #### Subscribing
 
@@ -1588,6 +1588,108 @@ Once unsubscribed, clients will receive a message:
   "connection_id": "e0107276-e4dd-4b33-9cbf-7746f87b7799",
   "message_id": 27,
   "channel": "perpetual_markets",
+  "id": "PBTC-USDC"
+}
+```
+
+### Index Price
+
+The index price channel allows clients to receive updates about a particular market.
+
+#### Subscribing
+
+To subscribe send:
+
+```json
+{
+  "type": "subscribe",
+  "channel": "index_price",
+  "id": "<market name>"
+}
+```
+
+| Field Name | JSON type | Description                                       |
+|------------|-----------|---------------------------------------------------|
+| type       | string    | Must be set to "subscribe"                        |
+| channel    | string    | Must be set to "index_price"                      |
+| id         | string    | The market to receive updates for eg: "PBTC-USDC" |
+
+#### Initial Response
+
+The initial response will contain the information for the specified index-price:
+
+```json
+{
+  "type": "subscribed",
+  "connection_id": "ab262c58-985f-4bd5-84f6-d49f6cf154cc",
+  "message_id": 1,
+  "channel": "index_price",
+  "id": "PBTC-USDC",
+  "contents": {
+    "PBTC-USDC": {
+      "price": "94.38959",
+      "live": true
+    }
+  }
+}
+```
+#### Updates
+
+New index-price updates are sent to the channel:
+
+Example:
+
+```json
+{
+  "type": "channel_data",
+  "connection_id": "ab262c58-985f-4bd5-84f6-d49f6cf154cc",
+  "message_id": 2,
+  "channel": "index_price",
+  "id": "PBTC-USDC",
+  "contents": {
+    "type": "INDEX_PRICE",
+    "indexPrice": {
+      "market": "PBTC-USDC",
+      "price": "94.38959"
+    }
+  }
+}
+```
+
+#### Websocket update message content structure
+
+| Field                | Description                                                                                        |
+|----------------------|----------------------------------------------------------------------------------------------------|
+| type                 | Type of the message.                                                                               |
+| indexPrice           | The IndexPrice object                                                                              |
+| market               | The market string, e.g.: `PBTC-USDC`.                                                              |
+| price                | The index price from the off-chain oracle.                                                         |
+
+#### Unsubscribing
+
+```json
+{
+  "type": "unsubscribe",
+  "channel": "index_price",
+  "id": "<the market name>"
+}
+```
+
+| Field Name | JSON type | Description                                 |
+|------------|-----------|---------------------------------------------|
+| type       | string    | Must be set to "unsubscribe"                |
+| channel    | string    | The channel to unsubscribe from             |
+| id         | string    | A market to unsubscribe from on the channel |
+
+#### Response
+
+Once unsubscribed, clients will receive a message:
+```json
+{
+  "type": "unsubscribed",
+  "connection_id": "ab262c58-985f-4bd5-84f6-d49f6cf154cc",
+  "message_id": 27,
+  "channel": "index_price",
   "id": "PBTC-USDC"
 }
 ```
