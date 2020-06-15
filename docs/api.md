@@ -432,6 +432,17 @@ Example Response Body:
 }
 ```
 
+Order Statuses:
+
+| Status                | Explanation                                                                                                             |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| PENDING               | The order has not yet been fully processed by the Matching-Engine.                                                      |
+| OPEN                  | The order is in an open position in the Matching-Engine and has not yet been filled at all.                             |
+| FILLED                | The order has been fully filled.                                                                                        |
+| PARTIALLY_FILLED      | The order has been partially filled.                                                                                    |
+| CANCELED              | The order has been canceled. See `Cancel Reasons` below for explanations.                                               |
+| UNTRIGGERED           | Stop-Limit order has not been triggered yet.                                                                            |
+
 Cancel Reasons:
 
 | Reason                | Explanation                                                                                                             |
