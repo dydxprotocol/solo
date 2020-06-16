@@ -204,14 +204,16 @@ Funding payments occur on-chain, so the calculation of funding payments from the
 
 ### Funding Rate Updates
 
-After the funding rate is calculated by dYdX, it is immediately sent to the funding rate smart contract. Once the Ethereum transaction is mined, the new funding rate takes effect and is used to update account balances every second.
+After the funding rate is calculated by dYdX, it is immediately sent to the funding rate smart
+contract. The smart contract will apply bounding as described below, and the rate will be rounded,
+toward zero, to the nearest value representable on the smart contract. Once the Ethereum transaction
+is mined, the new funding rate takes effect and is used to update account balances every second.
 
-### Funding Rate Limits
+### Funding Rate Bounding
 
-The funding rate is limited in three ways. These limitations are enforced by the smart contract.
-1. The max absolute funding rate is 0.75%.
-1. The max change in a single smart contract update is 0.75%.
-1. The max change over a 55-minute period is 0.75%.
+The minimum funding rate is -0.75% and the maximum funding rate is 0.75%.
+For decentralization purposes, there is a limit to how quickly the admin can change the funding
+rate, but this does not take effect during normal operation.
 
 ### Funding Examples
 
