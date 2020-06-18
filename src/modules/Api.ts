@@ -394,10 +394,10 @@ export class Api {
     } catch (error) {
       if (error.response) {
         throw new Error(error.response.data.errors[0].msg);
-      } else if (error.request) {
-        throw new Error(error.request);
       } else {
-        throw new Error(error.message);
+        const newError = new Error(error.message);
+        newError.stack = error.stack;
+        throw new Error;
       }
     }
   }
