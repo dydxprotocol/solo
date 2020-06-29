@@ -70,8 +70,8 @@
     "DaiPriceOracle": {
         "1": {
             "links": {},
-            "address": "0x0fBd14718d8FAB8f9f40Ee5c5612b1F0717100A2",
-            "transactionHash": "0x13fa7e3d0cfe80778cbc058237176932f46b4c21bf2eaffe9d4b1e5b8b4f0299"
+            "address": "0x63fC13F0F17c1bb2964a9c45c4Dc820b1ffeA90A",
+            "transactionHash": "0xffae4da20c7ada7955b3a7d3f17e92e759ebb14c098966caaca3da2444dd68c4"
         },
         "42": {
             "links": {},

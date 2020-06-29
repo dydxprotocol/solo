@@ -319,7 +319,7 @@ function getOasisAddress(network) {
     return TestOasisDex.address;
   }
   if (isMainNet(network)) {
-    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
+    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D'; // Expires Feb 4, 2021, 12:00PM GMT
   }
   if (isKovan(network)) {
     return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
@@ -332,7 +332,7 @@ function getDaiUniswapAddress(network) {
     return ADDRESSES.TEST_UNISWAP;
   }
   if (isMainNet(network)) {
-    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
+    return '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11';
   }
   if (isKovan(network)) {
     return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
