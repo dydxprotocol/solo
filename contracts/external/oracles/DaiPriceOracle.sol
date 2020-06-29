@@ -297,7 +297,7 @@ contract DaiPriceOracle is
         returns (Monetary.Price memory)
     {
         address uniswap = address(UNISWAP);
-        uint256 ethAmt = uniswap.balance;
+        uint256 ethAmt = WETH.balanceOf(uniswap);
         uint256 daiAmt = DAI.balanceOf(uniswap);
         uint256 uniswapPrice = Math.getPartial(ethUsd.value, ethAmt, daiAmt);
 
