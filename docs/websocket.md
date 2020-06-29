@@ -1501,6 +1501,8 @@ The initial response will contain the information for the specified market:
       "largeTakerFee": "0.005",
       "smallTakerFee": "0.00075",
       "openInterest": "2835957144",
+      "predictedFundingRate": "0.000000017611403011",
+      "fundingRateUpdatedAt": "2020-06-29T21:00:33.000Z",
       "createdAt": "2020-04-09T22:42:35.696Z",
       "updatedAt": "2020-05-21T20:46:35.941Z"
     }
@@ -1537,6 +1539,8 @@ Example:
       "largeTakerFee": "0.005",
       "smallTakerFee": "0.00075",
       "openInterest": "2835957144",
+      "predictedFundingRate": "0.000000017611403011",
+      "fundingRateUpdatedAt": "2020-06-29T21:00:33.000Z",
       "createdAt": "2020-04-09T22:42:35.696Z",
       "updatedAt": "2020-05-21T20:49:05.482Z"
     }
@@ -1562,6 +1566,8 @@ Example:
 | largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
 | smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
 | openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
+| predictedFundingRate | The predicted next funding rate                                                                    |
+| fundingRateUpdatedAt | When the funding rate was last updated                                                             |
 
 #### Unsubscribing
 

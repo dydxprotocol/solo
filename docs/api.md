@@ -1672,6 +1672,8 @@ Query `https://api.dydx.exchange/v1/perpetual-markets`
       "largeTakerFee": "0.005",
       "smallTakerFee": "0.00075",
       "openInterest": "2835957144",
+      "predictedFundingRate": "0.000000017611403011",
+      "fundingRateUpdatedAt": "2020-06-29T21:00:33.000Z",
       "createdAt": "2020-04-09T22:42:35.696Z",
       "updatedAt": "2020-05-21T20:50:55.334Z"
     }
@@ -1698,6 +1700,8 @@ Query `https://api.dydx.exchange/v1/perpetual-markets`
 | largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
 | smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
 | openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
+| predictedFundingRate | The predicted next funding rate                                                                    |
+| fundingRateUpdatedAt | When the funding rate was last updated                                                             |
 
 ### GET `v1/perpetual-markets/:market`
 
@@ -1732,6 +1736,8 @@ Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
     "largeTakerFee": "0.005",
     "smallTakerFee": "0.00075",
     "openInterest": "3917905240",
+    "predictedFundingRate": "0.000000017611403011",
+    "fundingRateUpdatedAt": "2020-06-29T21:00:33.000Z",
     "createdAt": "2020-04-09T22:42:35.696Z",
     "updatedAt": "2020-05-22T18:30:55.429Z"
   }
@@ -1756,6 +1762,8 @@ Query `https://api.dydx.exchange/v1/perpetual-markets/PBTC-USDC`
 | largeTakerFee        | Applies to orders >= smallOrderThreshold. eg 0.005 (equal to 0.5%)                                 |
 | smallTakerFee        | Applies to orders < smallOrderThreshold. eg 0.00075 (equal to 0.075%)                              |
 | openInterest         | openInterest is the sum of the position amount of all longs (equal to sum of amount of all shorts) |
+| predictedFundingRate | The predicted next funding rate                                                                    |
+| fundingRateUpdatedAt | When the funding rate was last updated                                                             |
 
 ### GET `/v1/perpetual-balance-updates`
 
