@@ -18,6 +18,10 @@ wish to be able to quickly cancel their orders without waiting for a transaction
 
 The HTTP API is documented below. For easier implementation we recommend using the official [Python Client](python.md) or [TypeScript Client](typescript.md#api). We may build clients for other languages in the future, so if you have other language/framework needs, please let us know.
 
+### Rate Limits
+
+If greater than 100 requests are made in 10 seconds, requests will be blocked for one minute.
+
 ### Creating and Signing Orders
 
 In order to submit an order, you (the maker) must first create a JSON object specifying the
