@@ -507,14 +507,12 @@ async function setUniswapBalances(
   ethAmt: BigNumber,
   daiAmt: BigNumber,
 ) {
+  const wethMinter = accounts[9];
   await Promise.all([
     solo.testing.tokenB.issueTo(daiAmt, uniswapAddress),
-    solo.web3.eth.sendTransaction({
-      from: accounts[9],
-      to: uniswapAddress,
-      value: ethAmt.toFixed(0),
-    }),
+    solo.weth.wrap(wethMinter, ethAmt),
   ]);
+  await solo.weth.transfer(wethMinter, uniswapAddress, ethAmt, { from: wethMinter });
 }
 
 async function setOasisLowPrice(
