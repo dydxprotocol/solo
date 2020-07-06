@@ -785,3 +785,8 @@ export enum RequestMethod {
   POST = 'post',
   DELETE = 'delete',
 }
+
+export enum AccountNumbers {
+  SPOT = '78249916358380492593314239409032173911741268194868200833150293576330928686520',
+  MARGIN  = '0',
+}
