@@ -293,7 +293,7 @@ function getMedianizerAddress(network) {
     return TestMakerOracle.address;
   }
   if (isMainNet(network)) {
-    return '0x729D19f657BD0614b4985Cf1D82531c67569197B';
+    return '0x29a199a49af8d657c110418c2b0d2f932b025de7';
   }
   if (isKovan(network)) {
     return '0xa5aA4e07F5255E14F02B385b1f04b35cC50bdb66';
