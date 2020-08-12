@@ -49,6 +49,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 |---|---|---|
 |[`SoloMargin`](./contracts/protocol/SoloMargin.sol)|Main dYdX contract|[0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e](https://etherscan.io/address/0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e)|
 |[`PayableProxyForSoloMargin`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76](https://etherscan.io/address/0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76)|
+|[`DoubleExponentInterestSetter`](./contracts/external/interestsetters/DoubleExponentInterestSetter.sol)|Sets interest rates|[0x7538651D874b7578CF52152c9ABD8f6617a38403](https://etherscan.io/address/0x7538651D874b7578CF52152c9ABD8f6617a38403)|
 |[`PolynomialInterestSetter`](./contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49](https://etherscan.io/address/0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49)|
 |[`Expiry`](./contracts/external/traders/Expiry.sol)|Handles account expiries|[0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d](https://etherscan.io/address/0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d)|
 |[`ExpiryV2`](./contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|[0x739A1DF6725657f6a16dC2d5519DC36FD7911A12](https://etherscan.io/address/0x739A1DF6725657f6a16dC2d5519DC36FD7911A12)|
@@ -64,6 +65,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 |[`CanonicalOrders`](./contracts/external/traders/CanonicalOrders.sol)|Contract for making canonical limit and canonical stop-limit orders using dYdX funds|[0xCd81398895bEa7AD9EFF273aeFFc41A9d83B4dAD](https://etherscan.io/address/0xcd81398895bea7ad9eff273aeffc41a9d83b4dad)|
 |[`SignedOperationProxy`](./contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55](https://etherscan.io/address/0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55)|
 |[`Refunder`](./contracts/external/traders/Refunder.sol)|Allows sending of funds to other accounts|[0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d](https://etherscan.io/address/0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74)|
+|[`DaiMigrator`](./contracts/external/traders/DaiMigrator.sol)|Converts SAI positions to DAI positions|[0xAbe234e0D2D518bdB1d5a655014de18B1CfFFBEa](https://etherscan.io/address/0xAbe234e0D2D518bdB1d5a655014de18B1CfFFBEa)|
 
 ## Security
 
