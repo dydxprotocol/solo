@@ -161,11 +161,11 @@ export class CanonicalOrders extends OrderSigner {
       case MarketId.WETH.toNumber():
         return amount.lt(ETH_SMALL_ORDER_THRESHOLD)
           ? (isTaker ? BIPS.times(100) : ZERO)
-          : (isTaker ? BIPS.times(15) : ZERO);
+          : (isTaker ? BIPS.times(30) : ZERO);
       case MarketId.DAI.toNumber():
         return amount.lt(DAI_SMALL_ORDER_THRESHOLD)
           ? (isTaker ? BIPS.times(100) : ZERO)
-          : (isTaker ? BIPS.times(5) : ZERO);
+          : (isTaker ? BIPS.times(20) : ZERO);
       default:
         throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
     }
