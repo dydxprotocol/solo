@@ -47,7 +47,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 
 |Contract Name|Description|Address|
 |---|---|---|
-|[`SoloMargin`](./contracts/protocol/SoloMargin.sol)|Main dYdX contract|[0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e](https://etherscan.io/address/0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e)|
+|[`SoloMargin`](./contracts/protocol/SoloMargin.sol)|Main dYdX contract|[0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e](https://etherscan.io/address/0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e)|
 |[`PayableProxyForSoloMargin`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76](https://etherscan.io/address/0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76)|
 |[`DoubleExponentInterestSetter`](./contracts/external/interestsetters/DoubleExponentInterestSetter.sol)|Sets interest rates|[0x7538651D874b7578CF52152c9ABD8f6617a38403](https://etherscan.io/address/0x7538651D874b7578CF52152c9ABD8f6617a38403)|
 |[`PolynomialInterestSetter`](./contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49](https://etherscan.io/address/0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49)|
