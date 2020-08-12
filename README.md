@@ -53,8 +53,7 @@ The current contract addresses can be found in [deployed.json](./migrations/depl
 |[`PolynomialInterestSetter`](./contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|
 |[`Expiry`](./contracts/external/traders/Expiry.sol)|Handles account expiries|
 |[`ExpiryV2`](./contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|
-|[`DaiPriceOracle`](./contracts/external/oracles/DaiPriceOracle.sol)|Price oracle for DAI|
-|[`SaiPriceOracle`](./contracts/external/oracles/DaiPriceOracle.sol)|Price oracle for SAI|
+|[`DaiPriceOracle`](./contracts/external/oracles/DaiPriceOracle.sol)|Price oracle for DAI or SAI|
 |[`WethPriceOracle`](./contracts/external/oracles/WethPriceOracle.sol)|Price oracle for WETH|
 |[`UsdcPriceOracle`](./contracts/external/oracles/UsdcPriceOracle.sol)|Price oracle for USDC|
 |[`AdminImpl`](./contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|
