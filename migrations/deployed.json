@@ -94,8 +94,8 @@
     "WethPriceOracle": {
         "1": {
             "links": {},
-            "address": "0xf61AE328463CD997C7b58e7045CdC613e1cFdb69",
-            "transactionHash": "0xc6f87486ef1a04467cd34f2b6b3e3dd3e8661a6b142fdcc66f9d0a64e8b05134"
+            "address": "0xE852877D3cDBc8FB469208CB318c346bACC51C5C",
+            "transactionHash": "0x0e90271ee3837ae49459e205d9ba7f46883e999ba0ca12637b8c40ff28b4d976"
         },
         "42": {
             "links": {},
