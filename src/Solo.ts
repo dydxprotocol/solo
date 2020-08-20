@@ -37,6 +37,7 @@ import { Permissions } from './modules/Permissions';
 import { Api } from './modules/Api';
 import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
+import { WalletLogin } from './modules/WalletLogin';
 import { SignOffChainAction } from './modules/SignOffChainAction';
 import { SoloOptions, EthereumAccount, address, Networks } from './types';
 
@@ -61,6 +62,7 @@ export class Solo {
   public api: Api;
   public websocket: Websocket;
   public standardActions: StandardActions;
+  public walletLogin: WalletLogin;
   public signOffChainAction: SignOffChainAction;
 
   constructor(
@@ -116,6 +118,7 @@ export class Solo {
       options.wsOrigin,
     );
     this.standardActions = new StandardActions(this.operation, this.contracts);
+    this.walletLogin = new WalletLogin(this.web3, networkId);
     this.signOffChainAction = new SignOffChainAction(this.web3, networkId);
 
     if (options.accounts) {
