@@ -791,3 +791,8 @@ export const AccountNumbers: { [accountNumber: string]: BigNumber } = {
     new BigNumber('78249916358380492593314239409032173911741268194868200833150293576330928686520'),
   MARGIN: new BigNumber('0'),
 };
+
+export enum OffChainAction {
+  LOGIN = 'Login',
+  CANCEL_ALL = 'CancelAll',
+}
