@@ -88,7 +88,7 @@ export class SignOffChainAction extends Signer {
           domain: this.getDomainData(),
           primaryType: this.domain,
           message: {
-            action: 'OffChainActionAll',
+            action,
             expiration: expiration.toUTCString(),
           },
         };

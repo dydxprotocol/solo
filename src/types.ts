@@ -793,6 +793,6 @@ export const AccountNumbers: { [accountNumber: string]: BigNumber } = {
 };
 
 export enum OffChainAction {
-  LOGIN = 'login',
-  CANCEL_ALL = 'cancelAll',
+  LOGIN = 'Login',
+  CANCEL_ALL = 'CancelAll',
 }
