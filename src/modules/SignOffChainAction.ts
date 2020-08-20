@@ -3,7 +3,8 @@ import { Signer } from './Signer';
 import {
   SigningMethod,
   address,
-} from '../../src/types';
+  OffChainAction,
+} from '../types';
 import { toString } from '../lib/Helpers';
 import {
   hashString,
@@ -17,16 +18,16 @@ import {
   ecRecoverTypedSignature,
 } from '../lib/SignatureHelper';
 
-const EIP712_WALLET_LOGIN_STRUCT = [
+const EIP712_WALLET_OFF_CHAIN_ACTION_ALL_STRUCT = [
   { type: 'string', name: 'action' },
   { type: 'string', name: 'expiration' },
 ];
 
-export class WalletLogin extends Signer {
+export class SignOffChainAction extends Signer {
   private domain: string;
   private version: string;
   private networkId: number;
-  private EIP712_WALLET_LOGIN_STRUCT_STRING: string;
+  private EIP712_OFF_CHAIN_ACTION_ALL_STRUCT_STRING: string;
 
   constructor(
     web3: Web3,
@@ -43,22 +44,23 @@ export class WalletLogin extends Signer {
     this.domain = domain;
     this.networkId = networkId;
     this.version = version;
-    this.EIP712_WALLET_LOGIN_STRUCT_STRING = 'dYdX(' +
+    this.EIP712_OFF_CHAIN_ACTION_ALL_STRUCT_STRING = 'dYdX(' +
       'string action,' +
       'string expiration' +
       ')';
   }
 
-  public async signLogin(
+  public async signOffChainAction(
     expiration: Date,
     signer: string,
     signingMethod: SigningMethod,
+    action: OffChainAction,
   ): Promise<string> {
     switch (signingMethod) {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
       case SigningMethod.Compatibility: {
-        const hash = this.getWalletLoginHash(expiration);
+        const hash = this.getOffChainActionHash(expiration, action);
         const rawSignature = await this.web3.eth.sign(hash, signer);
         const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
         if (signingMethod === SigningMethod.Hash) {
@@ -68,7 +70,7 @@ export class WalletLogin extends Signer {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.walletLoginIsValid(expiration, unsafeHashSig, signer)) {
+        if (this.signOffChainActionIsValid(expiration, unsafeHashSig, signer, action)) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -81,12 +83,12 @@ export class WalletLogin extends Signer {
         const data = {
           types: {
             EIP712Domain: EIP712_DOMAIN_STRUCT_NO_CONTRACT,
-            [this.domain]: EIP712_WALLET_LOGIN_STRUCT,
+            [this.domain]: EIP712_WALLET_OFF_CHAIN_ACTION_ALL_STRUCT,
           },
           domain: this.getDomainData(),
           primaryType: this.domain,
           message: {
-            action: 'Login',
+            action: 'OffChainActionAll',
             expiration: expiration.toUTCString(),
           },
         };
@@ -102,12 +104,13 @@ export class WalletLogin extends Signer {
     }
   }
 
-  public walletLoginIsValid(
+  public signOffChainActionIsValid(
     expiration: Date,
     typedSignature: string,
     expectedSigner: address,
+    action: OffChainAction,
   ): boolean {
-    const hash = this.getWalletLoginHash(expiration);
+    const hash = this.getOffChainActionHash(expiration, action);
     const signer = ecRecoverTypedSignature(hash, typedSignature);
     return (addressesAreEqual(signer, expectedSigner) && expiration > new Date());
   }
@@ -121,12 +124,13 @@ export class WalletLogin extends Signer {
     );
   }
 
-  public getWalletLoginHash(
+  public getOffChainActionHash(
     expiration: Date,
+    action: OffChainAction,
   ): string {
     const structHash = Web3.utils.soliditySha3(
-      { t: 'bytes32', v: hashString(this.EIP712_WALLET_LOGIN_STRUCT_STRING) },
-      { t: 'bytes32', v: hashString('Login') },
+      { t: 'bytes32', v: hashString(this.EIP712_OFF_CHAIN_ACTION_ALL_STRUCT_STRING) },
+      { t: 'bytes32', v: hashString(action) },
       { t: 'bytes32', v: hashString(expiration.toUTCString()) },
     );
     return this.getEIP712Hash(structHash);
