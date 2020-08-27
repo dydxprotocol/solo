@@ -245,9 +245,9 @@ describe('DaiPriceOracle', () => {
       expect(price).toEqual(defaultPrice.times('0.98'));
 
       await setUniswapPrice('0.50');
-      const oasisPrice = await solo.oracle.daiPriceOracle.getCurvePrice();
+      const curvePrice = await solo.oracle.daiPriceOracle.getCurvePrice();
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
-      expect(price).toEqual(oasisPrice);
+      expect(price).toEqual(curvePrice);
     });
 
     it('Succeeds for price > dollar', async () => {
@@ -261,9 +261,9 @@ describe('DaiPriceOracle', () => {
       expect(price).toEqual(defaultPrice.times('1.02'));
 
       await setUniswapPrice('2.00');
-      const oasisPrice = await solo.oracle.daiPriceOracle.getCurvePrice();
+      const curvePrice = await solo.oracle.daiPriceOracle.getCurvePrice();
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
-      expect(price).toEqual(oasisPrice);
+      expect(price).toEqual(curvePrice);
     });
   });
 
