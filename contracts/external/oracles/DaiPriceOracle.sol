@@ -29,6 +29,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
 import { IOasisDex } from "../interfaces/IOasisDex.sol";
+import { IUniswapV2Pair } from "../interfaces/IUniswapV2Pair.sol";
 
 
 /**
@@ -296,9 +297,8 @@ contract DaiPriceOracle is
         view
         returns (Monetary.Price memory)
     {
-        address uniswap = address(UNISWAP);
-        uint256 ethAmt = uniswap.balance;
-        uint256 daiAmt = DAI.balanceOf(uniswap);
+        IUniswapV2Pair uniswap = IUniswapV2Pair(UNISWAP);
+        (uint256 daiAmt, uint256 ethAmt, ) = uniswap.getReserves();
         uint256 uniswapPrice = Math.getPartial(ethUsd.value, ethAmt, daiAmt);
 
         return Monetary.Price({

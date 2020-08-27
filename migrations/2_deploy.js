@@ -53,6 +53,7 @@ const TestSimpleCallee = artifacts.require('TestSimpleCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
 const TestOasisDex = artifacts.require('TestOasisDex');
+const TestUniswapV2Pair = artifacts.require('TestUniswapV2Pair');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestDoubleExponentInterestSetter = artifacts.require('TestDoubleExponentInterestSetter');
@@ -114,6 +115,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestDoubleExponentInterestSetter, getDoubleExponentParams(network)),
       deployer.deploy(TestMakerOracle),
       deployer.deploy(TestOasisDex),
+      deployer.deploy(TestUniswapV2Pair),
     ]);
   }
 }
@@ -329,10 +331,10 @@ function getOasisAddress(network) {
 
 function getDaiUniswapAddress(network) {
   if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP;
+    return TestUniswapV2Pair.address;
   }
   if (isMainNet(network)) {
-    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
+    return '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11';
   }
   if (isKovan(network)) {
     return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';

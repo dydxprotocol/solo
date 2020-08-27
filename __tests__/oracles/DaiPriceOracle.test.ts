@@ -14,7 +14,6 @@ let rando: address;
 let marketMaker: address;
 const defaultPrice = new BigNumber('1e18');
 const defaultEthPrice = new BigNumber('1e20');
-const uniswapAddress = ADDRESSES.TEST_UNISWAP;
 
 describe('DaiPriceOracle', () => {
   let snapshotId: string;
@@ -507,14 +506,12 @@ async function setUniswapBalances(
   ethAmt: BigNumber,
   daiAmt: BigNumber,
 ) {
-  await Promise.all([
-    solo.testing.tokenB.issueTo(daiAmt, uniswapAddress),
-    solo.web3.eth.sendTransaction({
-      from: accounts[9],
-      to: uniswapAddress,
-      value: ethAmt.toFixed(0),
-    }),
-  ]);
+  await solo.contracts.send(
+    solo.contracts.testUniswapV2Pair.methods.setReserves(
+      daiAmt.toFixed(),
+      ethAmt.toFixed(),
+    ),
+  );
 }
 
 async function setOasisLowPrice(
