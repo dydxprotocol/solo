@@ -27,8 +27,8 @@ import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
+import { ICurve } from "../interfaces/ICurve.sol";
 import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
-import { IOasisDex } from "../interfaces/IOasisDex.sol";
 import { IUniswapV2Pair } from "../interfaces/IUniswapV2Pair.sol";
 
 
@@ -48,9 +48,14 @@ contract DaiPriceOracle is
 
     bytes32 constant FILE = "DaiPriceOracle";
 
+    // DAI decimals and expected price.
     uint256 constant DECIMALS = 18;
-
     uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
+
+    // Parameters used when getting the DAI-USD price from Curve.
+    uint128 constant CURVE_DAI_ID = 0;
+    uint128 constant CURVE_USDC_ID = 1;
+    uint256 constant CURVE_FEE_DENOMINATOR = 10000000000;
 
     // ============ Structs ============
 
@@ -79,17 +84,15 @@ contract DaiPriceOracle is
 
     DeviationParams public DEVIATION_PARAMS;
 
-    uint256 public OASIS_ETH_AMOUNT;
-
     IErc20 public WETH;
 
     IErc20 public DAI;
 
     IMakerOracle public MEDIANIZER;
 
-    IOasisDex public OASIS;
+    ICurve public CURVE;
 
-    address public UNISWAP;
+    IUniswapV2Pair public UNISWAP;
 
     // ============ Constructor =============
 
@@ -98,9 +101,8 @@ contract DaiPriceOracle is
         address weth,
         address dai,
         address medianizer,
-        address oasis,
+        address curve,
         address uniswap,
-        uint256 oasisEthAmount,
         DeviationParams memory deviationParams
     )
         public
@@ -109,10 +111,9 @@ contract DaiPriceOracle is
         MEDIANIZER = IMakerOracle(medianizer);
         WETH = IErc20(weth);
         DAI = IErc20(dai);
-        OASIS = IOasisDex(oasis);
-        UNISWAP = uniswap;
+        CURVE = ICurve(curve);
+        UNISWAP = IUniswapV2Pair(uniswap);
         DEVIATION_PARAMS = deviationParams;
-        OASIS_ETH_AMOUNT = oasisEthAmount;
         g_priceInfo = PriceInfo({
             lastUpdate: uint32(block.timestamp),
             price: uint128(EXPECTED_PRICE)
@@ -222,7 +223,7 @@ contract DaiPriceOracle is
 
         uint256 targetPrice = getMidValue(
             EXPECTED_PRICE,
-            getOasisPrice(ethUsd).value,
+            getCurvePrice().value,
             getUniswapPrice(ethUsd).value
         );
 
@@ -246,44 +247,26 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Get the USD price of DAI according to OasisDEX given the USD price of ETH.
+     * Get the USD price of DAI according to Curve.
      */
-    function getOasisPrice(
-        Monetary.Price memory ethUsd
-    )
+    function getCurvePrice()
         public
         view
         returns (Monetary.Price memory)
     {
-        IOasisDex oasis = OASIS;
+        ICurve curve = CURVE;
 
-        // If exchange is not operational, return old value.
-        // This allows the price to move only towards 1 USD
-        if (
-            oasis.isClosed()
-            || !oasis.buyEnabled()
-            || !oasis.matchingEnabled()
-        ) {
-            return Monetary.Price({
-                value: g_priceInfo.price
-            });
-        }
-
-        uint256 numWei = OASIS_ETH_AMOUNT;
-        address dai = address(DAI);
-        address weth = address(WETH);
-
-        // Assumes at least `numWei` of depth on both sides of the book if the exchange is active.
-        // Will revert if not enough depth.
-        uint256 daiAmt1 = oasis.getBuyAmount(dai, weth, numWei);
-        uint256 daiAmt2 = oasis.getPayAmount(dai, weth, numWei);
-
-        uint256 num = numWei.mul(daiAmt2).add(numWei.mul(daiAmt1));
-        uint256 den = daiAmt1.mul(daiAmt2).mul(2);
-        uint256 oasisPrice = Math.getPartial(ethUsd.value, num, den);
+        // Get dy when dx = 1, i.e. the amount of DAI we can buy for 1 USDC.
+        //
+        // After accounting for the fee, this is a very good estimate of the spot price.
+        uint256 dyWithFee = curve.get_dy_underlying(CURVE_USDC_ID, CURVE_DAI_ID, 1);
+        uint256 fee = curve.fee();
+        uint256 dyWithoutFee = dyWithFee.mul(CURVE_FEE_DENOMINATOR).div(
+            CURVE_FEE_DENOMINATOR.sub(fee)
+        );
 
         return Monetary.Price({
-            value: oasisPrice
+            value: dyWithoutFee
         });
     }
 
@@ -297,8 +280,7 @@ contract DaiPriceOracle is
         view
         returns (Monetary.Price memory)
     {
-        IUniswapV2Pair uniswap = IUniswapV2Pair(UNISWAP);
-        (uint256 daiAmt, uint256 ethAmt, ) = uniswap.getReserves();
+        (uint256 daiAmt, uint256 ethAmt, ) = UNISWAP.getReserves();
         uint256 uniswapPrice = Math.getPartial(ethUsd.value, ethAmt, daiAmt);
 
         return Monetary.Price({

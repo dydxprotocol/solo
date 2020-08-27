@@ -127,15 +127,11 @@ export class MakerStablecoinPriceOracle {
     return new BigNumber(price.value);
   }
 
-  public async getOasisPrice(
-    ethUsdPrice?: Integer,
+  public async getCurvePrice(
     options?: CallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.call(
-      this.oracleContract.methods.getOasisPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getCurvePrice(),
       options,
     );
     return new BigNumber(price.value);

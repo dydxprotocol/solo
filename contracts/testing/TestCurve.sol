@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2020 dYdX Trading Inc.
+    Copyright 2019 dYdX Trading Inc.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,40 +19,50 @@
 pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { IUniswapV2Pair } from "../external/interfaces/IUniswapV2Pair.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { IErc20 } from "../protocol/interfaces/IErc20.sol";
+import { Math } from "../protocol/lib/Math.sol";
 
 
 /**
- * @title TestUniswapV2Pair
+ * @title TestCurve
  * @author dYdX
  *
- * Mock Uniswap V2 pair.
+ * Mock of the Curve contract.
  */
-contract TestUniswapV2Pair is
-    IUniswapV2Pair
-{
-    uint112 public RESERVE0 = 0;
-    uint112 public RESERVE1 = 0;
+contract TestCurve {
+    uint256 public fee = 4000000;
+    uint256 public dy = 0;
 
     // ============ Getter Functions ============
 
-    function getReserves()
+    function get_dy_underlying(
+        uint128 /* i */,
+        uint128 /* j */,
+        uint256 /* dx */
+    )
         external
         view
-        returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)
+        returns (uint256)
     {
-        return (RESERVE0, RESERVE1, 0);
+        return dy;
     }
 
     // ============ Test Data Setter Functions ============
 
-    function setReserves(
-        uint112 reserve0,
-        uint112 reserve1
+    function setFee(
+        uint112 newFee
     )
         external
     {
-        RESERVE0 = reserve0;
-        RESERVE1 = reserve1;
+        fee = newFee;
+    }
+
+    function setDy(
+        uint112 newDy
+    )
+        external
+    {
+        dy = newDy;
     }
 }

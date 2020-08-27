@@ -3,8 +3,10 @@ import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
 import { snapshot, resetEVM, fastForward, mineAvgBlock } from '../helpers/EVM';
 import { INTEGERS, ADDRESSES } from '../../src/lib/Constants';
-import { address, SendOptions } from '../../src/types';
+import { address, BigNumberable, SendOptions } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
+
+const CURVE_FEE_DENOMINATOR = 10000000000;
 
 let solo: TestSolo;
 let accounts: address[];
@@ -28,14 +30,11 @@ describe('DaiPriceOracle', () => {
     rando = accounts[8];
     await resetEVM();
     const tokenAmount = new BigNumber('1e19');
-    const oasisDexAddress = solo.contracts.testOasisDex.options.address;
     await Promise.all([
       solo.oracle.daiPriceOracle.setPokerAddress(poker, { from: admin }),
       setEthPrice(defaultEthPrice, true),
       solo.testing.tokenB.issueTo(tokenAmount, marketMaker),
       solo.weth.wrap(marketMaker, tokenAmount),
-      solo.weth.setMaximumAllowance(marketMaker, oasisDexAddress),
-      solo.testing.tokenB.setMaximumAllowance(marketMaker, oasisDexAddress),
     ]);
     snapshotId = await snapshot();
   });
@@ -73,8 +72,7 @@ describe('DaiPriceOracle', () => {
 
     it('Matches priceInfo', async () => {
       await Promise.all([
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
+        setCurvePrice('0.98'),
         setUniswapPrice('0.97'),
       ]);
       await updatePrice();
@@ -103,8 +101,7 @@ describe('DaiPriceOracle', () => {
   describe('updatePrice', () => {
     it('Does not update for non-poker', async () => {
       await Promise.all([
-        setOasisLowPrice('0.99'),
-        setOasisHighPrice('1.01'),
+        setCurvePrice('0.99'),
         setUniswapPrice('1.00'),
       ]);
       await expectThrow(
@@ -120,8 +117,7 @@ describe('DaiPriceOracle', () => {
     it('Does not update price when stale ETH price', async () => {
       await Promise.all([
         setEthPrice(defaultEthPrice, false),
-        setOasisLowPrice('0.99'),
-        setOasisHighPrice('1.01'),
+        setCurvePrice('0.99'),
         setUniswapPrice('1.00'),
       ]);
       await expectThrow(
@@ -131,8 +127,7 @@ describe('DaiPriceOracle', () => {
 
     it('Updates timestamp correctly', async () => {
       await Promise.all([
-        setOasisLowPrice('0.99'),
-        setOasisHighPrice('1.01'),
+        setCurvePrice('0.99'),
         setUniswapPrice('1.00'),
       ]);
       const txResult = await updatePrice();
@@ -144,8 +139,7 @@ describe('DaiPriceOracle', () => {
 
     it('Emits an event', async () => {
       await Promise.all([
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
+        setCurvePrice('0.98'),
         setUniswapPrice('0.97'),
       ]);
       const txResult = await updatePrice();
@@ -158,8 +152,7 @@ describe('DaiPriceOracle', () => {
 
     it('Matches getBoundedTargetPrice', async () => {
       await Promise.all([
-        setOasisLowPrice('1.05'),
-        setOasisHighPrice('1.06'),
+        setCurvePrice('1.05'),
         setUniswapPrice('1.07'),
       ]);
       await fastForward(1000);
@@ -171,8 +164,7 @@ describe('DaiPriceOracle', () => {
 
     it('Will migrate to the right price over many updates', async () => {
       await Promise.all([
-        setOasisLowPrice('1.02'),
-        setOasisHighPrice('1.03'),
+        setCurvePrice('1.025'),
         setUniswapPrice('1.04'),
       ]);
       let price: any;
@@ -196,8 +188,7 @@ describe('DaiPriceOracle', () => {
 
     it('Fails below minimum', async () => {
       await Promise.all([
-        setOasisLowPrice('0.97'),
-        setOasisHighPrice('0.98'),
+        setCurvePrice('0.97'),
         setUniswapPrice('0.96'),
       ]);
       await expectThrow(
@@ -211,8 +202,7 @@ describe('DaiPriceOracle', () => {
 
     it('Fails above maximum', async () => {
       await Promise.all([
-        setOasisLowPrice('1.02'),
-        setOasisHighPrice('1.03'),
+        setCurvePrice('1.02'),
         setUniswapPrice('1.04'),
       ]);
       await expectThrow(
@@ -230,16 +220,14 @@ describe('DaiPriceOracle', () => {
       let price: BigNumber;
 
       await Promise.all([
-        setOasisLowPrice('1.01'),
-        setOasisHighPrice('1.02'),
+        setCurvePrice('1.01'),
         setUniswapPrice('0.99'),
       ]);
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice);
 
       await Promise.all([
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
+        setCurvePrice('0.99'),
         setUniswapPrice('1.01'),
       ]);
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
@@ -250,15 +238,14 @@ describe('DaiPriceOracle', () => {
       let price: BigNumber;
 
       await Promise.all([
-        setOasisLowPrice('0.95'),
-        setOasisHighPrice('0.97'),
+        setCurvePrice('0.95'),
         setUniswapPrice('0.98'),
       ]);
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice.times('0.98'));
 
       await setUniswapPrice('0.50');
-      const oasisPrice = await solo.oracle.daiPriceOracle.getOasisPrice();
+      const oasisPrice = await solo.oracle.daiPriceOracle.getCurvePrice();
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(oasisPrice);
     });
@@ -267,15 +254,14 @@ describe('DaiPriceOracle', () => {
       let price: BigNumber;
 
       await Promise.all([
-        setOasisLowPrice('1.04'),
-        setOasisHighPrice('1.06'),
+        setCurvePrice('1.04'),
         setUniswapPrice('1.02'),
       ]);
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(defaultPrice.times('1.02'));
 
       await setUniswapPrice('2.00');
-      const oasisPrice = await solo.oracle.daiPriceOracle.getOasisPrice();
+      const oasisPrice = await solo.oracle.daiPriceOracle.getCurvePrice();
       price = await solo.oracle.daiPriceOracle.getTargetPrice();
       expect(price).toEqual(oasisPrice);
     });
@@ -286,8 +272,7 @@ describe('DaiPriceOracle', () => {
       await fastForward(1000);
 
       await Promise.all([
-        setOasisLowPrice('1.10'),
-        setOasisHighPrice('1.11'),
+        setCurvePrice('1.10'),
         setUniswapPrice('1.10'),
       ]);
       const price = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
@@ -298,8 +283,7 @@ describe('DaiPriceOracle', () => {
       await fastForward(1000);
 
       await Promise.all([
-        setOasisLowPrice('0.90'),
-        setOasisHighPrice('0.91'),
+        setCurvePrice('0.90'),
         setUniswapPrice('0.90'),
       ]);
       const price = await solo.oracle.daiPriceOracle.getBoundedTargetPrice();
@@ -308,8 +292,7 @@ describe('DaiPriceOracle', () => {
 
     it('Upper-bounded by maximum deviation per second', async () => {
       await Promise.all([
-        setOasisLowPrice('1.10'),
-        setOasisHighPrice('1.11'),
+        setCurvePrice('1.10'),
         setUniswapPrice('1.10'),
       ]);
       await updatePrice();
@@ -322,8 +305,7 @@ describe('DaiPriceOracle', () => {
 
     it('Lower-bounded by maximum deviation per second', async () => {
       await Promise.all([
-        setOasisLowPrice('0.90'),
-        setOasisHighPrice('0.91'),
+        setCurvePrice('0.90'),
         setUniswapPrice('0.90'),
       ]);
       await updatePrice();
@@ -349,85 +331,11 @@ describe('DaiPriceOracle', () => {
     });
   });
 
-  describe('getOasisPrice', () => {
-    it('Throws for no liquidity', async () => {
-      await expectThrow(
-        solo.oracle.daiPriceOracle.getOasisPrice(),
-      );
-    });
-
-    it('Throws for no liquidity on WETH/DAI side', async () => {
-      await Promise.all([setOasisHighPrice('1.01')]);
-      await expectThrow(
-        solo.oracle.daiPriceOracle.getOasisPrice(),
-      );
-    });
-
-    it('Throws for no liquidity on DAI/WETH side', async () => {
-      await Promise.all([setOasisLowPrice('0.99')]);
-      await expectThrow(
-        solo.oracle.daiPriceOracle.getOasisPrice(),
-      );
-    });
-
-    it('Succeeds when there is a best order', async () => {
-      const lowPrice = '0.984';
-      const highPrice = '0.985';
-      await Promise.all([
-        setOasisLowPrice(lowPrice),
-        setOasisHighPrice(highPrice),
-      ]);
-      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
-      expect(price.gt(defaultPrice.times(lowPrice))).toEqual(true);
-      expect(price.lt(defaultPrice.times(highPrice))).toEqual(true);
-    });
-
-    it('Returns current price for closed', async () => {
-      await Promise.all([
-        setUniswapPrice('0.97'),
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
-      ]);
-      await mineAvgBlock();
-      await updatePrice();
-      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.send(
-        solo.contracts.testOasisDex.methods.stop(),
-      );
-      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
-      expect(price).toEqual(currentPrice);
-    });
-
-    it('Returns current price for buy not enabled', async () => {
-      await Promise.all([
-        setUniswapPrice('0.97'),
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
-      ]);
-      await mineAvgBlock();
-      await updatePrice();
-      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.send(
-        solo.contracts.testOasisDex.methods.setBuyEnabled(false),
-      );
-      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
-      expect(price).toEqual(currentPrice);
-    });
-
-    it('Returns current price for matching not enabled', async () => {
-      await Promise.all([
-        setUniswapPrice('0.97'),
-        setOasisLowPrice('0.98'),
-        setOasisHighPrice('0.99'),
-      ]);
-      await mineAvgBlock();
-      await updatePrice();
-      const currentPrice = await solo.oracle.daiPriceOracle.getPrice();
-      await solo.contracts.send(
-        solo.contracts.testOasisDex.methods.setMatchingEnabled(false),
-      );
-      const price = await solo.oracle.daiPriceOracle.getOasisPrice();
-      expect(price).toEqual(currentPrice);
+  describe('getCurvePrice', () => {
+    it('Returns the price, adjusting for the fee', async () => {
+      await setCurvePrice('1.05');
+      const price = await solo.oracle.daiPriceOracle.getCurvePrice();
+      expect(price).toEqual(new BigNumber('1.05').shiftedBy(18));
     });
   });
 
@@ -493,8 +401,23 @@ async function setEthPrice(
   );
 }
 
+async function setCurvePrice(
+  price: BigNumberable,
+) {
+  // Add the fee.
+  const fee = await solo.contracts.call(
+    solo.contracts.testCurve.methods.fee(),
+  ) as string;
+  const priceBN = new BigNumber(price);
+  const feeAmount = priceBN.times(fee).div(CURVE_FEE_DENOMINATOR);
+  const dyWithFee = priceBN.minus(feeAmount);
+  await solo.contracts.send(
+    solo.contracts.testCurve.methods.setDy(dyWithFee.shiftedBy(18).toFixed(0)),
+  );
+}
+
 async function setUniswapPrice(
-  price: any,
+  price: BigNumberable,
 ) {
   await setUniswapBalances(
     new BigNumber('1e18'),
@@ -508,37 +431,15 @@ async function setUniswapBalances(
 ) {
   await solo.contracts.send(
     solo.contracts.testUniswapV2Pair.methods.setReserves(
-      daiAmt.toFixed(),
-      ethAmt.toFixed(),
+      daiAmt.toFixed(0),
+      ethAmt.toFixed(0),
     ),
   );
 }
 
-async function setOasisLowPrice(
-  price: any,
-) {
-  await createOasisOrder(
-    new BigNumber('1e18'),
-    solo.weth.getAddress(),
-    getNumberFromPrice('1e18', price),
-    solo.testing.tokenB.getAddress(),
-  );
-}
-
-async function setOasisHighPrice(
-  price: any,
-) {
-  await createOasisOrder(
-    getNumberFromPrice('1e18', price),
-    solo.testing.tokenB.getAddress(),
-    new BigNumber('1e18'),
-    solo.weth.getAddress(),
-  );
-}
-
 function getNumberFromPrice(
-  multiplier: any,
-  price: any,
+  multiplier: BigNumberable,
+  price: BigNumberable,
 ) {
   return new BigNumber(multiplier).times(
     defaultEthPrice,
@@ -548,24 +449,6 @@ function getNumberFromPrice(
     price,
   ).integerValue(
     BigNumber.ROUND_DOWN,
-  );
-}
-
-async function createOasisOrder(
-  payAmt: BigNumber,
-  payGem: address,
-  buyAmt: BigNumber,
-  buyGem: address,
-) {
-  await solo.contracts.send(
-    solo.contracts.testOasisDex.methods.offer(
-      payAmt.toFixed(0),
-      payGem,
-      buyAmt.toFixed(0),
-      buyGem,
-      0,
-    ),
-    { from: marketMaker },
   );
 }
 

@@ -19,40 +19,26 @@
 pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { IUniswapV2Pair } from "../external/interfaces/IUniswapV2Pair.sol";
-
 
 /**
- * @title TestUniswapV2Pair
+ * @title ICurve
  * @author dYdX
  *
- * Mock Uniswap V2 pair.
+ * Partial interface for a Curve contract.
  */
-contract TestUniswapV2Pair is
-    IUniswapV2Pair
-{
-    uint112 public RESERVE0 = 0;
-    uint112 public RESERVE1 = 0;
+interface ICurve {
 
-    // ============ Getter Functions ============
-
-    function getReserves()
+    function fee()
         external
         view
-        returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)
-    {
-        return (RESERVE0, RESERVE1, 0);
-    }
+        returns (uint256);
 
-    // ============ Test Data Setter Functions ============
-
-    function setReserves(
-        uint112 reserve0,
-        uint112 reserve1
+    function get_dy_underlying(
+        uint128 i,
+        uint128 j,
+        uint256 dx
     )
         external
-    {
-        RESERVE0 = reserve0;
-        RESERVE1 = reserve1;
-    }
+        view
+        returns (uint256);
 }

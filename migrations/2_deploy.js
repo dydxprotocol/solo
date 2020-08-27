@@ -24,7 +24,7 @@ const {
   getDoubleExponentParams,
   getRiskLimits,
   getRiskParams,
-  getDaiPriceOracleParams,
+  getDaiPriceOracleDeviationParams,
   getExpiryRampTime,
   getOraclePokerAddress,
   getSenderAddress,
@@ -52,7 +52,7 @@ const TestCallee = artifacts.require('TestCallee');
 const TestSimpleCallee = artifacts.require('TestSimpleCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
-const TestOasisDex = artifacts.require('TestOasisDex');
+const TestCurve = artifacts.require('TestCurve');
 const TestUniswapV2Pair = artifacts.require('TestUniswapV2Pair');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
@@ -114,7 +114,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams(network)),
       deployer.deploy(TestDoubleExponentInterestSetter, getDoubleExponentParams(network)),
       deployer.deploy(TestMakerOracle),
-      deployer.deploy(TestOasisDex),
+      deployer.deploy(TestCurve),
       deployer.deploy(TestUniswapV2Pair),
     ]);
   }
@@ -160,7 +160,7 @@ async function deployPriceOracles(deployer, network, accounts) {
     await deployer.deploy(TestPriceOracle);
   }
 
-  const daiPriceOracleParams = getDaiPriceOracleParams(network);
+  const daiPriceOracleDeviationParams = getDaiPriceOracleDeviationParams(network);
 
   await Promise.all([
     deployer.deploy(
@@ -169,10 +169,9 @@ async function deployPriceOracles(deployer, network, accounts) {
       getWethAddress(network),
       getDaiAddress(network),
       getMedianizerAddress(network),
-      getOasisAddress(network),
+      getCurveAddress(network),
       getDaiUniswapAddress(network),
-      daiPriceOracleParams.oasisEthAmount,
-      daiPriceOracleParams.deviationParams,
+      daiPriceOracleDeviationParams,
     ),
     deployer.deploy(UsdcPriceOracle),
     deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
@@ -316,17 +315,14 @@ function getDaiAddress(network) {
   throw new Error('Cannot find Dai');
 }
 
-function getOasisAddress(network) {
+function getCurveAddress(network) {
   if (isDevNetwork(network)) {
-    return TestOasisDex.address;
+    return TestCurve.address;
   }
   if (isMainNet(network)) {
-    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
+    return '0xA5407eAE9Ba41422680e2e00537571bcC53efBfD';
   }
-  if (isKovan(network)) {
-    return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
-  }
-  throw new Error('Cannot find OasisDex');
+  throw new Error('Cannot find Curve');
 }
 
 function getDaiUniswapAddress(network) {
