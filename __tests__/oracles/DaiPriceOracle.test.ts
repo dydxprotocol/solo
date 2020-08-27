@@ -7,6 +7,8 @@ import { address, BigNumberable, SendOptions } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
 
 const CURVE_FEE_DENOMINATOR = 10000000000;
+const DAI_DECIMALS = 18;
+const USDC_DECIMALS = 6;
 
 let solo: TestSolo;
 let accounts: address[];
@@ -335,7 +337,10 @@ describe('DaiPriceOracle', () => {
     it('Returns the price, adjusting for the fee', async () => {
       await setCurvePrice('1.05');
       const price = await solo.oracle.daiPriceOracle.getCurvePrice();
-      expect(price).toEqual(new BigNumber('1.05').shiftedBy(18));
+
+      // Allow rounding error.
+      const expectedPrice = new BigNumber('1.05').shiftedBy(18);
+      expect(price.div(expectedPrice).minus(1).abs().toNumber()).toBeLessThan(1e-10);
     });
   });
 
@@ -408,11 +413,19 @@ async function setCurvePrice(
   const fee = await solo.contracts.call(
     solo.contracts.testCurve.methods.fee(),
   ) as string;
-  const priceBN = new BigNumber(price);
-  const feeAmount = priceBN.times(fee).div(CURVE_FEE_DENOMINATOR);
-  const dyWithFee = priceBN.minus(feeAmount);
+  // dy is the amount of DAI received for 1 USDC, i.e. the reciprocal of the DAI-USDC price.
+  const dy = new BigNumber(1).div(price);
+
+  // Apply the fee which would be applied by the Curve contract.
+  const feeAmount = dy.times(fee).div(CURVE_FEE_DENOMINATOR);
+  const dyWithFee = dy.minus(feeAmount);
+
   await solo.contracts.send(
-    solo.contracts.testCurve.methods.setDy(dyWithFee.shiftedBy(18).toFixed(0)),
+    solo.contracts.testCurve.methods.setDy(
+      // Curve will treat dx and dy in terms of the base units of the currencies, so shift the value
+      // to be returned by the difference between the decimals of DAI and USDC.
+      dyWithFee.shiftedBy(DAI_DECIMALS - USDC_DECIMALS).toFixed(0),
+    ),
   );
 }
 

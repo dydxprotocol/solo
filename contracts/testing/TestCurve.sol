@@ -19,9 +19,7 @@
 pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IErc20 } from "../protocol/interfaces/IErc20.sol";
-import { Math } from "../protocol/lib/Math.sol";
+import { ICurve } from "../external/interfaces/ICurve.sol";
 
 
 /**
@@ -30,15 +28,17 @@ import { Math } from "../protocol/lib/Math.sol";
  *
  * Mock of the Curve contract.
  */
-contract TestCurve {
+contract TestCurve is
+    ICurve
+{
     uint256 public fee = 4000000;
     uint256 public dy = 0;
 
     // ============ Getter Functions ============
 
     function get_dy_underlying(
-        uint128 /* i */,
-        uint128 /* j */,
+        int128 /* i */,
+        int128 /* j */,
         uint256 /* dx */
     )
         external

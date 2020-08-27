@@ -56,6 +56,7 @@ contract DaiPriceOracle is
     int128 constant CURVE_DAI_ID = 0;
     int128 constant CURVE_USDC_ID = 1;
     uint256 constant CURVE_FEE_DENOMINATOR = 10000000000;
+    uint256 constant CURVE_DECIMALS_BASE = 10 ** 30;
 
     // ============ Structs ============
 
@@ -234,6 +235,8 @@ contract DaiPriceOracle is
 
     /**
      * Get the USD price of ETH according the Maker Medianizer contract.
+     *
+     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
      */
     function getMedianizerPrice()
         public
@@ -248,6 +251,8 @@ contract DaiPriceOracle is
 
     /**
      * Get the USD price of DAI according to Curve.
+     *
+     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
      */
     function getCurvePrice()
         public
@@ -256,7 +261,7 @@ contract DaiPriceOracle is
     {
         ICurve curve = CURVE;
 
-        // Get dy when dx = 1, i.e. the amount of DAI we can buy for 1 USDC.
+        // Get dy when dx = 1, i.e. the number of DAI base units we can buy for 1 USDC base unit.
         //
         // After accounting for the fee, this is a very good estimate of the spot price.
         uint256 dyWithFee = curve.get_dy_underlying(CURVE_USDC_ID, CURVE_DAI_ID, 1);
@@ -265,13 +270,20 @@ contract DaiPriceOracle is
             CURVE_FEE_DENOMINATOR.sub(fee)
         );
 
+        // Note that dy is on the order of 1e12 due to the difference in DAI and USDC base units.
+        // We divide 1e30 by dy to get the price of DAI in USDC with 18 decimals of precision.
+        uint256 daiPrice = CURVE_DECIMALS_BASE.div(dyWithoutFee);
+
         return Monetary.Price({
-            value: dyWithoutFee
+            value: daiPrice
         });
     }
 
     /**
      * Get the USD price of DAI according to Uniswap given the USD price of ETH.
+     *
+     * @param  ethUsd  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
+     * @return         Monetary.Price struct with a fixed-point value with 18 decimals of precision.
      */
     function getUniswapPrice(
         Monetary.Price memory ethUsd
