@@ -30,7 +30,6 @@ const {
   getSenderAddress,
   getChainId,
 } = require('./helpers');
-const { ADDRESSES } = require('../src/lib/Constants.ts');
 
 // ============ Contracts ============
 
