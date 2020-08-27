@@ -53,8 +53,8 @@ contract DaiPriceOracle is
     uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
 
     // Parameters used when getting the DAI-USD price from Curve.
-    uint128 constant CURVE_DAI_ID = 0;
-    uint128 constant CURVE_USDC_ID = 1;
+    int128 constant CURVE_DAI_ID = 0;
+    int128 constant CURVE_USDC_ID = 1;
     uint256 constant CURVE_FEE_DENOMINATOR = 10000000000;
 
     // ============ Structs ============

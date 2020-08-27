@@ -34,8 +34,8 @@ interface ICurve {
         returns (uint256);
 
     function get_dy_underlying(
-        uint128 i,
-        uint128 j,
+        int128 i,
+        int128 j,
         uint256 dx
     )
         external
