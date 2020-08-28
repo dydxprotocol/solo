@@ -269,11 +269,14 @@ contract DaiPriceOracle is
         view
         returns (uint256)
     {
+        // Note: Depending on the pool used, ETH may be the first asset or the second asset.
         (uint256 daiAmt, uint256 poolOneEthAmt, ) = UNISWAP_DAI_ETH.getReserves();
         (uint256 usdcAmt, uint256 poolTwoEthAmt, ) = UNISWAP_USDC_ETH.getReserves();
 
         // Get the price of DAI in USDC. Multiply by 10^30 to account for the difference in decimals
         // between DAI and USDC, and get a result with 18 decimals of precision.
+        //
+        // Note: There is a risk for overflow depending on the assets used and size of the pools.
         return UNISWAP_DECIMALS_BASE
             .mul(usdcAmt)
             .mul(poolOneEthAmt)
