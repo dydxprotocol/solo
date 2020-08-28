@@ -127,32 +127,24 @@ export class MakerStablecoinPriceOracle {
     return new BigNumber(price.value);
   }
 
-  public async getOasisPrice(
-    ethUsdPrice?: Integer,
+  public async getCurvePrice(
     options?: CallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.call(
-      this.oracleContract.methods.getOasisPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getCurvePrice(),
       options,
     );
-    return new BigNumber(price.value);
+    return new BigNumber(price);
   }
 
   public async getUniswapPrice(
-    ethUsdPrice?: Integer,
     options?: CallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.call(
-      this.oracleContract.methods.getUniswapPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getUniswapPrice(),
       options,
     );
-    return new BigNumber(price.value);
+    return new BigNumber(price);
   }
 
   public async getDeviationParams(

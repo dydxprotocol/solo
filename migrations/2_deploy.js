@@ -24,13 +24,12 @@ const {
   getDoubleExponentParams,
   getRiskLimits,
   getRiskParams,
-  getDaiPriceOracleParams,
+  getDaiPriceOracleDeviationParams,
   getExpiryRampTime,
   getOraclePokerAddress,
   getSenderAddress,
   getChainId,
 } = require('./helpers');
-const { ADDRESSES } = require('../src/lib/Constants.ts');
 
 // ============ Contracts ============
 
@@ -52,7 +51,9 @@ const TestCallee = artifacts.require('TestCallee');
 const TestSimpleCallee = artifacts.require('TestSimpleCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
-const TestOasisDex = artifacts.require('TestOasisDex');
+const TestCurve = artifacts.require('TestCurve');
+const TestUniswapV2Pair = artifacts.require('TestUniswapV2Pair');
+const TestUniswapV2Pair2 = artifacts.require('TestUniswapV2Pair2');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestDoubleExponentInterestSetter = artifacts.require('TestDoubleExponentInterestSetter');
@@ -113,7 +114,9 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestPolynomialInterestSetter, getPolynomialParams(network)),
       deployer.deploy(TestDoubleExponentInterestSetter, getDoubleExponentParams(network)),
       deployer.deploy(TestMakerOracle),
-      deployer.deploy(TestOasisDex),
+      deployer.deploy(TestCurve),
+      deployer.deploy(TestUniswapV2Pair),
+      deployer.deploy(TestUniswapV2Pair2),
     ]);
   }
 }
@@ -158,7 +161,7 @@ async function deployPriceOracles(deployer, network, accounts) {
     await deployer.deploy(TestPriceOracle);
   }
 
-  const daiPriceOracleParams = getDaiPriceOracleParams(network);
+  const daiPriceOracleDeviationParams = getDaiPriceOracleDeviationParams(network);
 
   await Promise.all([
     deployer.deploy(
@@ -166,11 +169,10 @@ async function deployPriceOracles(deployer, network, accounts) {
       getOraclePokerAddress(network, accounts),
       getWethAddress(network),
       getDaiAddress(network),
-      getMedianizerAddress(network),
-      getOasisAddress(network),
-      getDaiUniswapAddress(network),
-      daiPriceOracleParams.oasisEthAmount,
-      daiPriceOracleParams.deviationParams,
+      getCurveAddress(network),
+      getUniswapDaiEthAddress(network),
+      getUniswapUsdcEthAddress(network),
+      daiPriceOracleDeviationParams,
     ),
     deployer.deploy(UsdcPriceOracle),
     deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
@@ -314,30 +316,34 @@ function getDaiAddress(network) {
   throw new Error('Cannot find Dai');
 }
 
-function getOasisAddress(network) {
+function getCurveAddress(network) {
   if (isDevNetwork(network)) {
-    return TestOasisDex.address;
+    return TestCurve.address;
   }
   if (isMainNet(network)) {
-    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
+    return '0xA5407eAE9Ba41422680e2e00537571bcC53efBfD';
   }
-  if (isKovan(network)) {
-    return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
-  }
-  throw new Error('Cannot find OasisDex');
+  throw new Error('Cannot find Curve');
 }
 
-function getDaiUniswapAddress(network) {
+function getUniswapDaiEthAddress(network) {
   if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP;
+    return TestUniswapV2Pair.address;
   }
   if (isMainNet(network)) {
-    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
+    return '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11';
   }
-  if (isKovan(network)) {
-    return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
+  throw new Error('Cannot find DAI-ETH Uniswap pool');
+}
+
+function getUniswapUsdcEthAddress(network) {
+  if (isDevNetwork(network)) {
+    return TestUniswapV2Pair2.address;
   }
-  throw new Error('Cannot find Uniswap for Dai');
+  if (isMainNet(network)) {
+    return '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc';
+  }
+  throw new Error('Cannot find USDC-ETH Uniswap pool');
 }
 
 function getWethAddress(network) {

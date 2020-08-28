@@ -12,7 +12,9 @@ import { default as TestSimpleCallee } from '../build/contracts/TestSimpleCallee
 import { default as TestExchangeWrapper } from '../build/contracts/TestExchangeWrapper.json';
 import { default as TestPriceOracle } from '../build/contracts/TestPriceOracle.json';
 import { default as TestMakerOracle } from '../build/contracts/TestMakerOracle.json';
-import { default as TestOasisDex } from '../build/contracts/TestOasisDex.json';
+import { default as TestCurve } from '../build/contracts/TestCurve.json';
+import { default as TestUniswapV2Pair } from '../build/contracts/TestUniswapV2Pair.json';
+import { default as TestUniswapV2Pair2 } from '../build/contracts/TestUniswapV2Pair2.json';
 import { default as TestPolynomialInterestSetter }
   from '../build/contracts/TestPolynomialInterestSetter.json';
 import { default as TestDoubleExponentInterestSetter }
@@ -31,7 +33,9 @@ export default {
   TestLib,
   TestPriceOracle,
   TestMakerOracle,
-  TestOasisDex,
+  TestCurve,
+  TestUniswapV2Pair,
+  TestUniswapV2Pair2,
   TestPolynomialInterestSetter,
   TestDoubleExponentInterestSetter,
   TestInterestSetter,
