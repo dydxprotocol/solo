@@ -236,7 +236,7 @@ contract DaiPriceOracle is
     /**
      * Get the DAI-USDC price according to Curve.
      *
-     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
+     * @return  The DAI-USDC price in natural units as a fixed-point number with 18 decimals.
      */
     function getCurvePrice()
         public
@@ -262,7 +262,7 @@ contract DaiPriceOracle is
     /**
      * Get the DAI-USDC price according to Uniswap.
      *
-     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
+     * @return  The DAI-USDC price in natural units as a fixed-point number with 18 decimals.
      */
     function getUniswapPrice()
         public
@@ -272,7 +272,7 @@ contract DaiPriceOracle is
         (uint256 daiAmt, uint256 poolOneEthAmt, ) = UNISWAP_DAI_ETH.getReserves();
         (uint256 usdcAmt, uint256 poolTwoEthAmt, ) = UNISWAP_USDC_ETH.getReserves();
 
-        // Get the price of DAI in USDC. Multiply by 10^30 to account for the difference in deicmals
+        // Get the price of DAI in USDC. Multiply by 10^30 to account for the difference in decimals
         // between DAI and USDC, and get a result with 18 decimals of precision.
         return UNISWAP_DECIMALS_BASE
             .mul(usdcAmt)
