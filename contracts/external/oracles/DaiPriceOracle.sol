@@ -55,7 +55,7 @@ contract DaiPriceOracle is
     // Parameters used when getting the DAI-USDC price from Curve.
     int128 constant CURVE_DAI_ID = 0;
     int128 constant CURVE_USDC_ID = 1;
-    uint256 constant CURVE_FEE_DENOMINATOR = 10000000000;
+    uint256 constant CURVE_FEE_DENOMINATOR = 10 ** 10;
     uint256 constant CURVE_DECIMALS_BASE = 10 ** 30;
 
     // Parameters used when getting the DAI-USDC price from Uniswap.
@@ -225,8 +225,8 @@ contract DaiPriceOracle is
     {
         uint256 targetPrice = getMidValue(
             EXPECTED_PRICE,
-            getCurvePrice().value,
-            getUniswapPrice().value
+            getCurvePrice(),
+            getUniswapPrice()
         );
 
         return Monetary.Price({
@@ -242,7 +242,7 @@ contract DaiPriceOracle is
     function getCurvePrice()
         public
         view
-        returns (Monetary.Price memory)
+        returns (uint256)
     {
         ICurve curve = CURVE;
 
@@ -257,11 +257,7 @@ contract DaiPriceOracle is
 
         // Note that dy is on the order of 10^12 due to the difference in DAI and USDC base units.
         // We divide 10^30 by dy to get the price of DAI in USDC with 18 decimals of precision.
-        uint256 daiPrice = CURVE_DECIMALS_BASE.div(dyWithoutFee);
-
-        return Monetary.Price({
-            value: daiPrice
-        });
+        return CURVE_DECIMALS_BASE.div(dyWithoutFee);
     }
 
     /**
@@ -272,22 +268,18 @@ contract DaiPriceOracle is
     function getUniswapPrice()
         public
         view
-        returns (Monetary.Price memory)
+        returns (uint256)
     {
         (uint256 daiAmt, uint256 poolOneEthAmt, ) = UNISWAP_DAI_ETH.getReserves();
         (uint256 usdcAmt, uint256 poolTwoEthAmt, ) = UNISWAP_USDC_ETH.getReserves();
 
         // Get the price of DAI in USDC. Multiply by 10^30 to account for the difference in deicmals
         // between DAI and USDC, and get a result with 18 decimals of precision.
-        uint256 uniswapPrice = UNISWAP_DECIMALS_BASE
+        return UNISWAP_DECIMALS_BASE
             .mul(usdcAmt)
             .mul(poolOneEthAmt)
             .div(poolTwoEthAmt)
             .div(daiAmt);
-
-        return Monetary.Price({
-            value: uniswapPrice
-        });
     }
 
     // ============ Helper Functions ============

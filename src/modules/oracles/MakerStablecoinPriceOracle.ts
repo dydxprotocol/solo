@@ -134,7 +134,7 @@ export class MakerStablecoinPriceOracle {
       this.oracleContract.methods.getCurvePrice(),
       options,
     );
-    return new BigNumber(price.value);
+    return new BigNumber(price);
   }
 
   public async getUniswapPrice(
@@ -144,7 +144,7 @@ export class MakerStablecoinPriceOracle {
       this.oracleContract.methods.getUniswapPrice(),
       options,
     );
-    return new BigNumber(price.value);
+    return new BigNumber(price);
   }
 
   public async getDeviationParams(
