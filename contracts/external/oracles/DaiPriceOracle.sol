@@ -28,7 +28,6 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { ICurve } from "../interfaces/ICurve.sol";
-import { IMakerOracle } from "../interfaces/IMakerOracle.sol";
 import { IUniswapV2Pair } from "../interfaces/IUniswapV2Pair.sol";
 
 
