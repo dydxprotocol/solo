@@ -19,7 +19,7 @@
 pragma solidity 0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { IUniswapV2Pair } from "../external/interfaces/IUniswapV2Pair.sol";
+import { TestUniswapV2Pair } from "./TestUniswapV2Pair.sol";
 
 
 /**
@@ -29,30 +29,6 @@ import { IUniswapV2Pair } from "../external/interfaces/IUniswapV2Pair.sol";
  * Another mock Uniswap V2 pair.
  */
 contract TestUniswapV2Pair2 is
-    IUniswapV2Pair
+    TestUniswapV2Pair
 {
-    uint112 public RESERVE0 = 0;
-    uint112 public RESERVE1 = 0;
-
-    // ============ Getter Functions ============
-
-    function getReserves()
-        external
-        view
-        returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)
-    {
-        return (RESERVE0, RESERVE1, 0);
-    }
-
-    // ============ Test Data Setter Functions ============
-
-    function setReserves(
-        uint112 reserve0,
-        uint112 reserve1
-    )
-        external
-    {
-        RESERVE0 = reserve0;
-        RESERVE1 = reserve1;
-    }
 }
