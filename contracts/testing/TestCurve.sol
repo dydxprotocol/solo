@@ -36,7 +36,7 @@ contract TestCurve is
 
     // ============ Getter Functions ============
 
-    function get_dy_underlying(
+    function get_dy(
         int128 /* i */,
         int128 /* j */,
         uint256 /* dx */

@@ -249,7 +249,7 @@ contract DaiPriceOracle is
         // Get dy when dx = 1, i.e. the number of DAI base units we can buy for 1 USDC base unit.
         //
         // After accounting for the fee, this is a very good estimate of the spot price.
-        uint256 dyWithFee = curve.get_dy_underlying(CURVE_USDC_ID, CURVE_DAI_ID, 1);
+        uint256 dyWithFee = curve.get_dy(CURVE_USDC_ID, CURVE_DAI_ID, 1);
         uint256 fee = curve.fee();
         uint256 dyWithoutFee = dyWithFee.mul(CURVE_FEE_DENOMINATOR).div(
             CURVE_FEE_DENOMINATOR.sub(fee)
