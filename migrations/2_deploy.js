@@ -53,6 +53,7 @@ const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
 const TestCurve = artifacts.require('TestCurve');
 const TestUniswapV2Pair = artifacts.require('TestUniswapV2Pair');
+const TestUniswapV2Pair2 = artifacts.require('TestUniswapV2Pair2');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
 const TestPolynomialInterestSetter = artifacts.require('TestPolynomialInterestSetter');
 const TestDoubleExponentInterestSetter = artifacts.require('TestDoubleExponentInterestSetter');
@@ -115,6 +116,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestMakerOracle),
       deployer.deploy(TestCurve),
       deployer.deploy(TestUniswapV2Pair),
+      deployer.deploy(TestUniswapV2Pair2),
     ]);
   }
 }
@@ -167,9 +169,9 @@ async function deployPriceOracles(deployer, network, accounts) {
       getOraclePokerAddress(network, accounts),
       getWethAddress(network),
       getDaiAddress(network),
-      getMedianizerAddress(network),
       getCurveAddress(network),
-      getDaiUniswapAddress(network),
+      getUniswapDaiEthAddress(network),
+      getUniswapUsdcEthAddress(network),
       daiPriceOracleDeviationParams,
     ),
     deployer.deploy(UsdcPriceOracle),
@@ -324,17 +326,24 @@ function getCurveAddress(network) {
   throw new Error('Cannot find Curve');
 }
 
-function getDaiUniswapAddress(network) {
+function getUniswapDaiEthAddress(network) {
   if (isDevNetwork(network)) {
     return TestUniswapV2Pair.address;
   }
   if (isMainNet(network)) {
     return '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11';
   }
-  if (isKovan(network)) {
-    return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
+  throw new Error('Cannot find DAI-ETH Uniswap pool');
+}
+
+function getUniswapUsdcEthAddress(network) {
+  if (isDevNetwork(network)) {
+    return TestUniswapV2Pair2.address;
   }
-  throw new Error('Cannot find Uniswap for Dai');
+  if (isMainNet(network)) {
+    return '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc';
+  }
+  throw new Error('Cannot find USDC-ETH Uniswap pool');
 }
 
 function getWethAddress(network) {

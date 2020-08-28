@@ -36,7 +36,7 @@ import { IUniswapV2Pair } from "../interfaces/IUniswapV2Pair.sol";
  * @title DaiPriceOracle
  * @author dYdX
  *
- * PriceOracle that gives the price of Dai in USD
+ * PriceOracle that gives the price of Dai in USDC.
  */
 contract DaiPriceOracle is
     Ownable,
@@ -52,11 +52,14 @@ contract DaiPriceOracle is
     uint256 constant DECIMALS = 18;
     uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
 
-    // Parameters used when getting the DAI-USD price from Curve.
+    // Parameters used when getting the DAI-USDC price from Curve.
     int128 constant CURVE_DAI_ID = 0;
     int128 constant CURVE_USDC_ID = 1;
     uint256 constant CURVE_FEE_DENOMINATOR = 10000000000;
     uint256 constant CURVE_DECIMALS_BASE = 10 ** 30;
+
+    // Parameters used when getting the DAI-USDC price from Uniswap.
+    uint256 constant UNISWAP_DECIMALS_BASE = 10 ** 30;
 
     // ============ Structs ============
 
@@ -89,11 +92,11 @@ contract DaiPriceOracle is
 
     IErc20 public DAI;
 
-    IMakerOracle public MEDIANIZER;
-
     ICurve public CURVE;
 
-    IUniswapV2Pair public UNISWAP;
+    IUniswapV2Pair public UNISWAP_DAI_ETH;
+
+    IUniswapV2Pair public UNISWAP_USDC_ETH;
 
     // ============ Constructor =============
 
@@ -101,19 +104,19 @@ contract DaiPriceOracle is
         address poker,
         address weth,
         address dai,
-        address medianizer,
         address curve,
-        address uniswap,
+        address uniswapDaiEth,
+        address uniswapUsdcEth,
         DeviationParams memory deviationParams
     )
         public
     {
         g_poker = poker;
-        MEDIANIZER = IMakerOracle(medianizer);
         WETH = IErc20(weth);
         DAI = IErc20(dai);
         CURVE = ICurve(curve);
-        UNISWAP = IUniswapV2Pair(uniswap);
+        UNISWAP_DAI_ETH = IUniswapV2Pair(uniswapDaiEth);
+        UNISWAP_USDC_ETH = IUniswapV2Pair(uniswapUsdcEth);
         DEVIATION_PARAMS = deviationParams;
         g_priceInfo = PriceInfo({
             lastUpdate: uint32(block.timestamp),
@@ -212,7 +215,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Get the USD price of DAI that this contract will move towards when updated. This price is
+     * Get the DAI-USDC price that this contract will move towards when updated. This price is
      * not bounded by the variables governing the maximum deviation from the old price.
      */
     function getTargetPrice()
@@ -220,12 +223,10 @@ contract DaiPriceOracle is
         view
         returns (Monetary.Price memory)
     {
-        Monetary.Price memory ethUsd = getMedianizerPrice();
-
         uint256 targetPrice = getMidValue(
             EXPECTED_PRICE,
             getCurvePrice().value,
-            getUniswapPrice(ethUsd).value
+            getUniswapPrice().value
         );
 
         return Monetary.Price({
@@ -234,23 +235,7 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Get the USD price of ETH according the Maker Medianizer contract.
-     *
-     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
-     */
-    function getMedianizerPrice()
-        public
-        view
-        returns (Monetary.Price memory)
-    {
-        // throws if the price is not fresh
-        return Monetary.Price({
-            value: uint256(MEDIANIZER.read())
-        });
-    }
-
-    /**
-     * Get the USD price of DAI according to Curve.
+     * Get the DAI-USDC price according to Curve.
      *
      * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
      */
@@ -270,8 +255,8 @@ contract DaiPriceOracle is
             CURVE_FEE_DENOMINATOR.sub(fee)
         );
 
-        // Note that dy is on the order of 1e12 due to the difference in DAI and USDC base units.
-        // We divide 1e30 by dy to get the price of DAI in USDC with 18 decimals of precision.
+        // Note that dy is on the order of 10^12 due to the difference in DAI and USDC base units.
+        // We divide 10^30 by dy to get the price of DAI in USDC with 18 decimals of precision.
         uint256 daiPrice = CURVE_DECIMALS_BASE.div(dyWithoutFee);
 
         return Monetary.Price({
@@ -280,20 +265,25 @@ contract DaiPriceOracle is
     }
 
     /**
-     * Get the USD price of DAI according to Uniswap given the USD price of ETH.
+     * Get the DAI-USDC price according to Uniswap.
      *
-     * @param  ethUsd  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
-     * @return         Monetary.Price struct with a fixed-point value with 18 decimals of precision.
+     * @return  Monetary.Price struct with a fixed-point value with 18 decimals of precision.
      */
-    function getUniswapPrice(
-        Monetary.Price memory ethUsd
-    )
+    function getUniswapPrice()
         public
         view
         returns (Monetary.Price memory)
     {
-        (uint256 daiAmt, uint256 ethAmt, ) = UNISWAP.getReserves();
-        uint256 uniswapPrice = Math.getPartial(ethUsd.value, ethAmt, daiAmt);
+        (uint256 daiAmt, uint256 poolOneEthAmt, ) = UNISWAP_DAI_ETH.getReserves();
+        (uint256 usdcAmt, uint256 poolTwoEthAmt, ) = UNISWAP_USDC_ETH.getReserves();
+
+        // Get the price of DAI in USDC. Multiply by 10^30 to account for the difference in deicmals
+        // between DAI and USDC, and get a result with 18 decimals of precision.
+        uint256 uniswapPrice = UNISWAP_DECIMALS_BASE
+            .mul(usdcAmt)
+            .mul(poolOneEthAmt)
+            .div(poolTwoEthAmt)
+            .div(daiAmt);
 
         return Monetary.Price({
             value: uniswapPrice

@@ -17,7 +17,6 @@ let poker: address;
 let rando: address;
 let marketMaker: address;
 const defaultPrice = new BigNumber('1e18');
-const defaultEthPrice = new BigNumber('1e20');
 
 describe('DaiPriceOracle', () => {
   let snapshotId: string;
@@ -34,7 +33,6 @@ describe('DaiPriceOracle', () => {
     const tokenAmount = new BigNumber('1e19');
     await Promise.all([
       solo.oracle.daiPriceOracle.setPokerAddress(poker, { from: admin }),
-      setEthPrice(defaultEthPrice, true),
       solo.testing.tokenB.issueTo(tokenAmount, marketMaker),
       solo.weth.wrap(marketMaker, tokenAmount),
     ]);
@@ -113,17 +111,6 @@ describe('DaiPriceOracle', () => {
           { from: rando },
         ),
         'DaiPriceOracle: Only poker can call updatePrice',
-      );
-    });
-
-    it('Does not update price when stale ETH price', async () => {
-      await Promise.all([
-        setEthPrice(defaultEthPrice, false),
-        setCurvePrice('0.99'),
-        setUniswapPrice('1.00'),
-      ]);
-      await expectThrow(
-        updatePrice(),
       );
     });
 
@@ -319,20 +306,6 @@ describe('DaiPriceOracle', () => {
     });
   });
 
-  describe('getMedianizerPrice', () => {
-    it('Fails for stale ETH price', async () => {
-      await setEthPrice(defaultEthPrice, false);
-      await expectThrow(
-        solo.oracle.daiPriceOracle.getMedianizerPrice(),
-      );
-    });
-
-    it('Succeeds for normal eth price', async () => {
-      const price = await solo.oracle.daiPriceOracle.getMedianizerPrice();
-      expect(price).toEqual(defaultEthPrice);
-    });
-  });
-
   describe('getCurvePrice', () => {
     it('Returns the price, adjusting for the fee', async () => {
       await setCurvePrice('1.05');
@@ -351,60 +324,43 @@ describe('DaiPriceOracle', () => {
       );
     });
 
-    it('Gets the right price for DAI = ETH', async () => {
-      const ethAmt = new BigNumber(4444);
-      const daiAmt = new BigNumber(4444);
-      await setUniswapBalances(ethAmt, daiAmt);
+    it('Gets the right price for ETH-DAI = ETH-USDC', async () => {
+      await setUniswapPrice(1);
       const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
-      expect(price).toEqual(defaultEthPrice);
+      expect(price).toEqual(defaultPrice);
     });
 
-    it('Gets the right price for ETH > DAI', async () => {
-      const ethAmt = new BigNumber(4321);
-      const daiAmt = new BigNumber(1234);
-      await setUniswapBalances(ethAmt, daiAmt);
+    it('Gets the right price for ETH-DAI > ETH-USDC', async () => {
+      await setUniswapPrice(0.975);
       const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
-      const expected = defaultEthPrice.times(ethAmt).div(daiAmt).integerValue(BigNumber.ROUND_DOWN);
-      expect(price).toEqual(expected);
+      expect(price).toEqual(new BigNumber(0.975).shiftedBy(18));
     });
 
-    it('Gets the right price for DAI > ETH', async () => {
-      const ethAmt = new BigNumber(1234);
-      const daiAmt = new BigNumber(4321);
-      await setUniswapBalances(ethAmt, daiAmt);
+    it('Gets the right price for ETH-DAI < ETH-USDC', async () => {
+      await setUniswapPrice(1.025);
       const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
-      const expected = defaultEthPrice.times(ethAmt).div(daiAmt).integerValue(BigNumber.ROUND_DOWN);
-      expect(price).toEqual(expected);
+      expect(price).toEqual(new BigNumber(1.025).shiftedBy(18));
     });
 
-    it('Gets the right price for different ETH prices', async () => {
-      const ethAmt = new BigNumber(1500);
-      const daiAmt = new BigNumber(400000);
-      await setUniswapBalances(ethAmt, daiAmt);
-      const price1 = defaultPrice;
-      const price2 = defaultPrice.times(2);
-      const [daiPrice1, daiPrice2] = await Promise.all([
-        solo.oracle.daiPriceOracle.getUniswapPrice(price1),
-        solo.oracle.daiPriceOracle.getUniswapPrice(price2),
+    it('Does not overflow when the pools hold on the order of $100B in value', async () => {
+      await Promise.all([
+        // Suppose ETH has a price of $1.
+        setUniswapEthDaiBalances(
+          new BigNumber(100e9).shiftedBy(18), // ethAmt
+          new BigNumber(100e9).shiftedBy(18), // daiAmt
+        ),
+        setUniswapEthUsdcBalances(
+          new BigNumber(100e9).shiftedBy(18), // ethAmt
+          new BigNumber(100e9).shiftedBy(6),  // usdcAmt
+        ),
       ]);
-      expect(new BigNumber(daiPrice2)).toEqual(new BigNumber(daiPrice1).times(2));
+      const price = await solo.oracle.daiPriceOracle.getUniswapPrice();
+      expect(price).toEqual(defaultPrice);
     });
   });
 });
 
 // ============ Helper Functions ============
-
-async function setEthPrice(
-  price: BigNumber,
-  valid: boolean,
-) {
-  await solo.contracts.send(
-    solo.contracts.testMakerOracle.methods.setValues(
-      price.toFixed(0),
-      valid,
-    ),
-  );
-}
 
 async function setCurvePrice(
   price: BigNumberable,
@@ -432,36 +388,41 @@ async function setCurvePrice(
 async function setUniswapPrice(
   price: BigNumberable,
 ) {
-  await setUniswapBalances(
-    new BigNumber('1e18'),
-    getNumberFromPrice('1e18', price),
-  );
+  const ethPrice = new BigNumber(100);
+  await Promise.all([
+    // Apply an arbitrary constant factor to the balances of each pool.
+    setUniswapEthDaiBalances(
+      new BigNumber(1).times(1.23).shiftedBy(18), // ethAmt
+      ethPrice.times(1.23).shiftedBy(18),         // daiAmt
+    ),
+    setUniswapEthUsdcBalances(
+      new BigNumber(1).times(2.34).shiftedBy(18),     // ethAmt
+      ethPrice.times(price).times(2.34).shiftedBy(6), // usdcAmt
+    ),
+  ]);
 }
 
-async function setUniswapBalances(
-  ethAmt: BigNumber,
-  daiAmt: BigNumber,
+async function setUniswapEthDaiBalances(
+  ethAmt: BigNumberable,
+  daiAmt: BigNumberable,
 ) {
   await solo.contracts.send(
     solo.contracts.testUniswapV2Pair.methods.setReserves(
-      daiAmt.toFixed(0),
-      ethAmt.toFixed(0),
+      new BigNumber(daiAmt).toFixed(0),
+      new BigNumber(ethAmt).toFixed(0),
     ),
   );
 }
 
-function getNumberFromPrice(
-  multiplier: BigNumberable,
-  price: BigNumberable,
+async function setUniswapEthUsdcBalances(
+  ethAmt: BigNumberable,
+  usdcAmt: BigNumberable,
 ) {
-  return new BigNumber(multiplier).times(
-    defaultEthPrice,
-  ).div(
-    defaultPrice,
-  ).div(
-    price,
-  ).integerValue(
-    BigNumber.ROUND_DOWN,
+  await solo.contracts.send(
+    solo.contracts.testUniswapV2Pair2.methods.setReserves(
+      new BigNumber(usdcAmt).toFixed(0),
+      new BigNumber(ethAmt).toFixed(0),
+    ),
   );
 }
 

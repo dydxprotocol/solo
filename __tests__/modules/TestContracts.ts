@@ -31,6 +31,7 @@ import { TestPriceOracle } from '../../build/testing_wrappers/TestPriceOracle';
 import { TestMakerOracle } from '../../build/testing_wrappers/TestMakerOracle';
 import { TestCurve } from '../../build/testing_wrappers/TestCurve';
 import { TestUniswapV2Pair } from '../../build/testing_wrappers/TestUniswapV2Pair';
+import { TestUniswapV2Pair2 } from '../../build/testing_wrappers/TestUniswapV2Pair2';
 import { TestInterestSetter } from '../../build/testing_wrappers/TestInterestSetter';
 import { TestPolynomialInterestSetter }
   from '../../build/testing_wrappers/TestPolynomialInterestSetter';
@@ -53,6 +54,7 @@ import testPriceOracleJson from '../../build/testing_contracts/TestPriceOracle.j
 import testMakerOracleJson from '../../build/testing_contracts/TestMakerOracle.json';
 import testCurveJson from '../../build/testing_contracts/TestCurve.json';
 import testUniswapV2PairJson from '../../build/testing_contracts/TestUniswapV2Pair.json';
+import testUniswapV2Pair2Json from '../../build/testing_contracts/TestUniswapV2Pair2.json';
 import testPolynomialInterestSetterJson
   from '../../build/testing_contracts/TestPolynomialInterestSetter.json';
 import testDoubleExponentInterestSetterJson
@@ -83,6 +85,7 @@ export class TestContracts extends Contracts {
   public testMakerOracle: TestMakerOracle;
   public testCurve: TestCurve;
   public testUniswapV2Pair: TestUniswapV2Pair;
+  public testUniswapV2Pair2: TestUniswapV2Pair2;
   public testPolynomialInterestSetter: TestPolynomialInterestSetter;
   public testDoubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public testInterestSetter: TestInterestSetter;
@@ -115,7 +118,10 @@ export class TestContracts extends Contracts {
     this.testCurve = new this.web3.eth.Contract(testCurveJson.abi) as TestCurve;
     this.testUniswapV2Pair = new this.web3.eth.Contract(
       testUniswapV2PairJson.abi,
-    ) as TestUniswapV2Pair;
+      ) as TestUniswapV2Pair;
+    this.testUniswapV2Pair2 = new this.web3.eth.Contract(
+      testUniswapV2Pair2Json.abi,
+    ) as TestUniswapV2Pair2;
     this.testInterestSetter = new this.web3.eth.Contract(
       testInterestSetterJson.abi) as TestInterestSetter;
     this.testPolynomialInterestSetter = new this.web3.eth.Contract(
@@ -157,6 +163,7 @@ export class TestContracts extends Contracts {
       { contract: this.testMakerOracle, json: testMakerOracleJson },
       { contract: this.testCurve, json: testCurveJson },
       { contract: this.testUniswapV2Pair, json: testUniswapV2PairJson },
+      { contract: this.testUniswapV2Pair2, json: testUniswapV2Pair2Json },
       { contract: this.testPolynomialInterestSetter, json: testPolynomialInterestSetterJson },
       { contract: this.testDoubleExponentInterestSetter,
         json: testDoubleExponentInterestSetterJson },
@@ -198,6 +205,7 @@ export class TestContracts extends Contracts {
     this.testMakerOracle.options.from = account;
     this.testCurve.options.from = account;
     this.testUniswapV2Pair.options.from = account;
+    this.testUniswapV2Pair2.options.from = account;
     this.testPolynomialInterestSetter.options.from = account;
     this.testDoubleExponentInterestSetter.options.from = account;
     this.testInterestSetter.options.from = account;

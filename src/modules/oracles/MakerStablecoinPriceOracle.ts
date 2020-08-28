@@ -138,14 +138,10 @@ export class MakerStablecoinPriceOracle {
   }
 
   public async getUniswapPrice(
-    ethUsdPrice?: Integer,
     options?: CallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
     const price = await this.contracts.call(
-      this.oracleContract.methods.getUniswapPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getUniswapPrice(),
       options,
     );
     return new BigNumber(price.value);
