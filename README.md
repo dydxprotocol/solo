@@ -45,9 +45,8 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 
 The current contract addresses can be found in [deployed.json](./migrations/deployed.json).
 
-| Contract Name | Description |
-| ------------- | ------------- |
-|[`SoloMargin`](./contracts/protocol/SoloMargin.sol)|Main dYdX contract|
+|Contract Name|Description|
+|-------------|-------------|
 |[`SoloMargin`](./contracts/protocol/SoloMargin.sol)|Main dYdX contract|
 |[`PayableProxyForSoloMargin`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|
 |[`DoubleExponentInterestSetter`](./contracts/external/interestsetters/DoubleExponentInterestSetter.sol)|Sets interest rates|
