@@ -26,6 +26,8 @@ import {
 } from '../types';
 import { CanonicalOrders } from './CanonicalOrders';
 
+import _ from 'lodash';
+
 const FOUR_WEEKS_IN_SECONDS = 60 * 60 * 24 * 28;
 const DEFAULT_API_ENDPOINT = 'https://api.dydx.exchange';
 const DEFAULT_API_TIMEOUT = 10000;
@@ -392,13 +394,15 @@ export class Api {
 
       return response.data;
     } catch (error) {
+      const message = _.get(error, 'response.data.errors[0].msg') || error.message;
+      const newError = new Error(message);
+      newError.stack = error.stack;
       if (error.response) {
-        throw new Error(error.response.data.errors[0].msg);
-      } else {
-        const newError = new Error(error.message);
-        newError.stack = error.stack;
-        throw new Error;
+        // Include selected data from the response. Don't include the whole response, which may
+        // contain circular references.
+        (newError as any).response = _.pick(error.response, ['data', 'status', 'statusText']);
       }
+      throw new Error;
     }
   }
 }
