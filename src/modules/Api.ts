@@ -402,7 +402,7 @@ export class Api {
         // contain circular references.
         (newError as any).response = _.pick(error.response, ['data', 'status', 'statusText']);
       }
-      throw new Error;
+      throw newError;
     }
   }
 }
