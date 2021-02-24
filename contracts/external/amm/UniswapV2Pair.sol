@@ -25,9 +25,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     address public token0;
     address public token1;
 
-    uint112 private reserve0Par;           // uses single storage slot, accessible via getReserves
-    uint112 private reserve1Par;           // uses single storage slot, accessible via getReserves
-    uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
+    uint112 private reserve0Par;            // uses single storage slot, accessible via getReserves
+    uint112 private reserve1Par;            // uses single storage slot, accessible via getReserves
+    uint32  private blockTimestampLast;     // uses single storage slot, accessible via getReserves
+
+    uint128 private marketId0;
+    uint128 private marketId1;
 
     uint public price0CumulativeLast;
     uint public price1CumulativeLast;
@@ -43,11 +46,27 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     struct Cache {
         ISoloMargin soloMargin;
-        address token0;
-        address token1;
+        uint marketId0;
+        uint marketId1;
         uint balance0;
         uint balance1;
         Interest.Index inputIndex;
+        Interest.Index outputIndex;
+    }
+
+    constructor() public {
+        factory = msg.sender;
+    }
+
+    // called once by the factory at time of deployment
+    function initialize(address _token0, address _token1) external {
+        require(msg.sender == factory, "UniswapV2: FORBIDDEN");
+        // sufficient check
+        token0 = _token0;
+        token1 = _token1;
+
+        marketId0 = uint128(ISoloMargin(soloMargin()).getMarketIdByTokenAddress(token0));
+        marketId1 = uint128(ISoloMargin(soloMargin()).getMarketIdByTokenAddress(token1));
     }
 
     function soloMargin() public view returns (address) {
@@ -62,28 +81,15 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
         ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+        uint _marketId0 = marketId0;
+        uint _marketId1 = marketId1;
 
-        uint marketId0 = _soloMargin.getMarketIdByTokenAddress(token0);
-        uint marketId1 = _soloMargin.getMarketIdByTokenAddress(token1);
-
-        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(marketId0).supply;
-        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(marketId1).supply;
+        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(_marketId0).supply;
+        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(_marketId1).supply;
 
         _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(WEI_BASE));
         _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(WEI_BASE));
         _blockTimestampLast = blockTimestampLast;
-    }
-
-    constructor() public {
-        factory = msg.sender;
-    }
-
-    // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1) external {
-        require(msg.sender == factory, "UniswapV2: FORBIDDEN");
-        // sufficient check
-        token0 = _token0;
-        token1 = _token1;
     }
 
     // this low-level function should be called from a contract which performs important safety checks
@@ -91,10 +97,19 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
         ISoloMargin _soloMargin = ISoloMargin(soloMargin());
-        uint balance0 = _getTokenBalancePar(_soloMargin, token0);
-        uint balance1 = _getTokenBalancePar(_soloMargin, token1);
+        uint balance0 = _getTokenBalancePar(_soloMargin, marketId0);
+        uint balance1 = _getTokenBalancePar(_soloMargin, marketId1);
         uint amount0 = balance0.sub(_reserve0);
         uint amount1 = balance1.sub(_reserve1);
+
+        require(
+            amount0 > 0,
+            "UniswapV2: INVALID_MINT_AMOUNT_0"
+        );
+        require(
+            amount1 > 0,
+            "UniswapV2: INVALID_MINT_AMOUNT_1"
+        );
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint _totalSupply = totalSupply;
@@ -106,7 +121,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         } else {
             liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
         }
-        require(liquidity > 0, "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED");
+
+        require(
+            liquidity > 0,
+            "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED"
+        );
+
         _mint(to, liquidity);
 
         _update(balance0, balance1, _reserve0, _reserve1);
@@ -121,12 +141,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // gas savings
         ISoloMargin _soloMargin = ISoloMargin(soloMargin());
         // gas savings
-        address _token0 = token0;
+        uint _marketId0 = marketId0;
         // gas savings
-        address _token1 = token1;
+        uint _marketId1 = marketId1;
         // gas savings
-        uint balance0 = _getTokenBalancePar(_soloMargin, _token0);
-        uint balance1 = _getTokenBalancePar(_soloMargin, _token1);
+        uint balance0 = _getTokenBalancePar(_soloMargin, _marketId0);
+        uint balance1 = _getTokenBalancePar(_soloMargin, _marketId1);
 
         bool feeOn;
         // new scope to prevent stack-too-deep issues
@@ -154,14 +174,14 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             accounts[1] = Account.Info(to, toAccountNumber);
 
             Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
-            actions[0] = _encodeTransferAction(0, 1, _soloMargin.getMarketIdByTokenAddress(token0), amount0);
-            actions[1] = _encodeTransferAction(0, 1, _soloMargin.getMarketIdByTokenAddress(token1), amount1);
+            actions[0] = _encodeTransferAction(0, 1, _marketId0, amount0);
+            actions[1] = _encodeTransferAction(0, 1, _marketId1, amount1);
 
             IUniswapV2Factory(factory).operate(accounts, actions);
         }
 
-        balance0 = _getTokenBalancePar(_soloMargin, _token0);
-        balance1 = _getTokenBalancePar(_soloMargin, _token1);
+        balance0 = _getTokenBalancePar(_soloMargin, _marketId0);
+        balance1 = _getTokenBalancePar(_soloMargin, _marketId1);
 
         _update(balance0, balance1, _reserve0, _reserve1);
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
@@ -200,18 +220,19 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     )
     public
     returns (Types.AssetAmount memory) {
-        Cache memory cache = Cache({
-        soloMargin : ISoloMargin(soloMargin()),
-        token0 : token0,
-        token1 : token1,
-        balance0 : 0,
-        balance1 : 0,
-        inputIndex : Interest.Index(0, 0, 0)
-        });
-
-        cache.balance0 = _getTokenBalancePar(cache.soloMargin, cache.token0);
-        cache.balance1 = _getTokenBalancePar(cache.soloMargin, cache.token1);
-        cache.inputIndex = cache.soloMargin.getMarketCurrentIndex(inputMarketId);
+        Cache memory cache;
+        {
+            ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+            cache = Cache({
+            soloMargin : _soloMargin,
+            marketId0 : marketId0,
+            marketId1 : marketId1,
+            balance0 : _getTokenBalancePar(_soloMargin, cache.marketId0),
+            balance1 : _getTokenBalancePar(_soloMargin, cache.marketId1),
+            inputIndex : _soloMargin.getMarketCurrentIndex(inputMarketId),
+            outputIndex : _soloMargin.getMarketCurrentIndex(outputMarketId)
+            });
+        }
 
         require(
             msg.sender == address(cache.soloMargin),
@@ -227,42 +248,38 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         );
 
         require(
-            cache.token0 != takerAccount.owner && cache.token1 != takerAccount.owner,
+            token0 != takerAccount.owner && token1 != takerAccount.owner,
             "UniswapV2: INVALID_TO"
         );
 
         uint amount0Out;
         uint amount1Out;
         {
-            address inputToken = cache.soloMargin.getMarketTokenAddress(inputMarketId);
-            address outputToken = cache.soloMargin.getMarketTokenAddress(outputMarketId);
             require(
-                inputToken == cache.token0 || inputToken == cache.token1,
+                inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
                 "UniswapV2: INVALID_INPUT_TOKEN"
             );
             require(
-                outputToken == cache.token0 || outputToken == cache.token1,
+                outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
                 "UniswapV2: INVALID_INPUT_TOKEN"
             );
 
-            uint amountOutPar;
-            {
-                (uint amountOutWei) = abi.decode(data, ((uint)));
-                amountOutPar = Interest.weiToPar(Types.Wei(true, amountOutWei), cache.inputIndex).value;
-            }
+            (uint amountOutWei) = abi.decode(data, ((uint)));
+            uint amountOutPar = Interest.weiToPar(Types.Wei(true, amountOutWei), cache.outputIndex).value;
+
             require(
                 amountOutPar > 0,
                 "UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT"
             );
 
-            if (inputToken == cache.token0) {
+            if (inputMarketId == cache.marketId0) {
                 cache.balance0 = cache.balance0.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
                 cache.balance1 = cache.balance1.sub(amountOutPar);
 
                 amount0Out = 0;
                 amount1Out = amountOutPar;
             } else {
-                assert(inputToken == cache.token1);
+                assert(inputMarketId == cache.marketId1);
 
                 cache.balance1 = cache.balance1.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
                 cache.balance0 = cache.balance0.sub(amountOutPar);
@@ -299,7 +316,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             _update(cache.balance0, cache.balance1, _reserve0, _reserve1);
         }
 
-        _emitSwap(takerAccount, amount0In, amount1In, amount0Out, amount1Out);
+        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, takerAccount.owner);
 
         return Types.AssetAmount({
         sign : false,
@@ -313,24 +330,19 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     function skim(address to) external lock {
         // gas savings
         ISoloMargin _soloMargin = ISoloMargin(soloMargin());
-        // gas savings
-        address _token0 = token0;
-        // gas savings
-        address _token1 = token1;
+        uint _marketId0 = marketId0;
+        uint _marketId1 = marketId1;
 
         Account.Info[] memory accounts = new Account.Info[](2);
         accounts[0] = Account.Info(msg.sender, 0);
         accounts[1] = Account.Info(to, 0);
 
-        uint marketId0 = _soloMargin.getMarketIdByTokenAddress(_token0);
-        uint amount0 = _getTokenBalancePar(_soloMargin, marketId0).sub(reserve0Par);
-
-        uint marketId1 = _soloMargin.getMarketIdByTokenAddress(_token1);
-        uint amount1 = _getTokenBalancePar(_soloMargin, marketId1).sub(reserve1Par);
+        uint amount0 = _getTokenBalancePar(_soloMargin, _marketId0).sub(reserve0Par);
+        uint amount1 = _getTokenBalancePar(_soloMargin, _marketId1).sub(reserve1Par);
 
         Actions.ActionArgs[] memory actionArgs = new Actions.ActionArgs[](2);
-        actionArgs[0] = _encodeTransferAction(0, 1, marketId0, amount0);
-        actionArgs[1] = _encodeTransferAction(0, 1, marketId1, amount1);
+        actionArgs[0] = _encodeTransferAction(0, 1, _marketId0, amount0);
+        actionArgs[1] = _encodeTransferAction(0, 1, _marketId1, amount1);
 
         _soloMargin.operate(accounts, actionArgs);
     }
@@ -339,8 +351,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     function sync() external lock {
         ISoloMargin _soloMargin = ISoloMargin(soloMargin());
         _update(
-            _getTokenBalancePar(_soloMargin, token0),
-            _getTokenBalancePar(_soloMargin, token1),
+            _getTokenBalancePar(_soloMargin, marketId0),
+            _getTokenBalancePar(_soloMargin, marketId1),
             reserve0Par,
             reserve1Par
         );
@@ -349,16 +361,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     // *************************
     // ***** Internal Functions
     // *************************
-
-    function _emitSwap(
-        Account.Info memory takerAccount,
-        uint amount0In,
-        uint amount1In,
-        uint amount0Out,
-        uint amount1Out
-    ) internal {
-        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, takerAccount.owner);
-    }
 
     // update reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
     function _update(
@@ -410,14 +412,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         } else if (_kLast != 0) {
             kLast = 0;
         }
-    }
-
-    function _getTokenBalancePar(
-        ISoloMargin _soloMargin,
-        address _token
-    ) internal view returns (uint) {
-        uint marketId = _soloMargin.getMarketIdByTokenAddress(_token);
-        return _getTokenBalancePar(_soloMargin, marketId);
     }
 
     function _getTokenBalancePar(

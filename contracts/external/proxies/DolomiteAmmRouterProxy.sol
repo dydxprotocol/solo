@@ -126,7 +126,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         // pools.length == tokenPath.length - 1
         address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), tokenPath);
 
-        Account.Info[] memory accounts = new Account.Info[](1 + (tokenPath.length - 1));
+        Account.Info[] memory accounts = new Account.Info[](1 + pools.length);
         accounts[0] = Account.Info(msg.sender, accountNumber);
         for (uint i = 0; i < pools.length; i++) {
             accounts[i + 1] = Account.Info(pools[i], 0);

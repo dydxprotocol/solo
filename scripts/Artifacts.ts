@@ -38,6 +38,7 @@ import { default as PartiallyDelayedMultiSig }
 import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkPriceOracleV1.json';
 import { default as SimpleFeeOwner } from '../build/contracts/SimpleFeeOwner.json';
 import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
+import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
 
 export default {
   SoloMargin,
@@ -68,5 +69,6 @@ export default {
   PartiallyDelayedMultiSig,
   ChainlinkPriceOracleV1,
   UniswapV2Factory,
+  UniswapV2Pair,
   SimpleFeeOwner,
 };
