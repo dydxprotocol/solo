@@ -86,6 +86,7 @@ const LimitOrders = artifacts.require('LimitOrders');
 const StopLimitOrders = artifacts.require('StopLimitOrders');
 const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
+const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 
 // Interest Setters
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
@@ -96,6 +97,10 @@ const WethPriceOracle = artifacts.require('WethPriceOracle');
 const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
+// Amm
+const UniswapV2Factory = artifacts.require('UniswapV2Factory');
+const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
+
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
@@ -103,6 +108,17 @@ const migration = async (deployer, network, accounts) => {
     deployTestContracts(deployer, network),
     deployBaseProtocol(deployer, network),
   ]);
+  await deployer.deploy(
+    UniswapV2Factory,
+    getSenderAddress(network, accounts),
+    (await getSoloMargin(network)).address,
+  );
+  await deployer.deploy(
+    SimpleFeeOwner,
+    await getUniswapV2FactoryAddress(network),
+    (await getSoloMargin(network)).address,
+  );
+  await (await UniswapV2Factory.deployed()).contract.methods.setFeeToSetter(SimpleFeeOwner.address);
   await Promise.all([
     deployInterestSetters(deployer, network),
     deployPriceOracles(deployer, network, accounts),
@@ -140,7 +156,7 @@ async function deployTestContracts(deployer, network) {
 async function deployBaseProtocol(deployer, network) {
   await Promise.all([
     deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl, { gas: 7500000 }),
+    deployer.deploy(OperationImpl, { gas: 6600000 }),
   ]);
 
   let soloMargin;
@@ -287,6 +303,12 @@ async function deploySecondLayer(deployer, network, accounts) {
       soloMargin.address,
       getChainId(network),
     ),
+    deployer.deploy(
+      DolomiteAmmRouterProxy,
+      soloMargin.address,
+      getUniswapV2FactoryAddress(network),
+      getWethAddress(network, WETH9),
+    ),
   ]);
 
   await Promise.all([
@@ -362,6 +384,10 @@ function getOasisAddress(network) {
     return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
   }
   throw new Error('Cannot find OasisDex');
+}
+
+function getUniswapV2FactoryAddress(network) {
+  return UniswapV2Factory.address;
 }
 
 function getDaiUniswapAddress(network) {

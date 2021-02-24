@@ -7,6 +7,17 @@
       "allow-pascal-case",
       "ban-keywords"
     ],
-    "no-focused-test": true
+    "no-focused-test": true,
+    "trailing-comma": true,
+    "max-line-length": [
+      true,
+      {
+        "limit": 120
+      }
+    ],
+    "ter-indent": [
+      true,
+      2
+    ]
   }
 }

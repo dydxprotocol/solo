@@ -39,6 +39,7 @@ import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
 import { SoloOptions, EthereumAccount, address, Networks } from './types';
+import {DolomiteAmmRouterProxy} from './modules/DolomiteAmmRouterProxy';
 
 export class Solo {
   public contracts: Contracts;
@@ -55,6 +56,7 @@ export class Solo {
   public canonicalOrders: CanonicalOrders;
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
+  public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -96,6 +98,7 @@ export class Solo {
     this.canonicalOrders = new CanonicalOrders(this.contracts, this.web3, networkId);
     this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
+    this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(

@@ -11,6 +11,7 @@ import {
   ContractConstantCallOptions,
 } from '../types';
 
+// noinspection TypeScriptUnresolvedFunction
 export class Token {
   private contracts: Contracts;
   private tokens: object;
@@ -66,8 +67,9 @@ export class Token {
     options?: ContractConstantCallOptions,
   ): Promise<string> {
     const token = this.getToken(tokenAddress);
+    // @ts-ignore
     return this.contracts.callConstantContractFunction(
-      token.methods.name(),
+      token.methods['name'](),
       options,
     );
   }
@@ -77,8 +79,9 @@ export class Token {
     options?: ContractConstantCallOptions,
   ): Promise<string> {
     const token = this.getToken(tokenAddress);
+    // @ts-ignore
     return this.contracts.callConstantContractFunction(
-      token.methods.symbol(),
+      token.methods['symbol'](),
       options,
     );
   }
@@ -88,8 +91,9 @@ export class Token {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const token = this.getToken(tokenAddress);
+    // @ts-ignore
     const decStr: string = await this.contracts.callConstantContractFunction(
-      token.methods.decimals(),
+      token.methods['decimals'](),
       options,
     );
     return new BigNumber(decStr);

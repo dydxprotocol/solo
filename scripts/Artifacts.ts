@@ -19,6 +19,8 @@ import { default as SignedOperationProxy }
   from '../build/contracts/SignedOperationProxy.json';
 import { default as LiquidatorProxyV1ForSoloMargin }
   from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
+import { default as DolomiteAmmRouterProxy }
+  from '../build/contracts/DolomiteAmmRouterProxy.json';
 import { default as PolynomialInterestSetter }
   from '../build/contracts/PolynomialInterestSetter.json';
 import { default as DoubleExponentInterestSetter }
@@ -34,6 +36,8 @@ import { default as Permission } from '../build/contracts/Permission.json';
 import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
 import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkPriceOracleV1.json';
+import { default as SimpleFeeOwner } from '../build/contracts/SimpleFeeOwner.json';
+import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 
 export default {
   SoloMargin,
@@ -50,6 +54,7 @@ export default {
   PayableProxyForSoloMargin,
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
+  DolomiteAmmRouterProxy,
   PolynomialInterestSetter,
   DoubleExponentInterestSetter,
   WethPriceOracle,
@@ -62,4 +67,6 @@ export default {
   Permission,
   PartiallyDelayedMultiSig,
   ChainlinkPriceOracleV1,
+  UniswapV2Factory,
+  SimpleFeeOwner,
 };

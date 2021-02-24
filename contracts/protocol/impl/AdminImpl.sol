@@ -175,6 +175,7 @@ library AdminImpl {
         state.markets[marketId].token = token;
         state.markets[marketId].index = Interest.newIndex();
         state.markets[marketId].isClosing = isClosing;
+        state.tokenToMarketId[token] = marketId;
 
         emit LogAddMarket(marketId, token);
         if (isClosing) {
@@ -409,16 +410,9 @@ library AdminImpl {
     private
     view
     {
-        uint256 numMarkets = state.numMarkets;
-
-        bool marketExists = false;
-
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (state.markets[m].token == token) {
-                marketExists = true;
-                break;
-            }
-        }
+        // not-found case is marketId of 0. 0 is a valid market ID so we need to check market ID 0's token equality.
+        uint marketId = state.tokenToMarketId[token];
+        bool marketExists = token == state.markets[marketId].token;
 
         Require.that(
             !marketExists,

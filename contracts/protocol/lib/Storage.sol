@@ -114,6 +114,7 @@ library Storage {
 
         // marketId => Market
         mapping (uint256 => Market) markets;
+        mapping (address => uint256) tokenToMarketId;
 
         // owner => account number => Account
         mapping (address => mapping (uint256 => Account.Storage)) accounts;

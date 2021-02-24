@@ -167,6 +167,23 @@ contract Getters is
     }
 
     /**
+     * Get the ERC20 token address for a market.
+     *
+     * @param  token    The token to query
+     * @return          The token's marketId if the token is valid
+     */
+    function getMarketIdByTokenAddress(
+        address token
+    )
+        public
+        view
+        returns (uint256)
+    {
+        _requireValidToken(token);
+        return g_state.tokenToMarketId[token];
+    }
+
+    /**
      * Get the total principal amounts (borrowed and supplied) for a market.
      *
      * @param  marketId  The market to query
@@ -620,6 +637,19 @@ contract Getters is
             marketId < g_state.numMarkets,
             FILE,
             "Market OOB"
+        );
+    }
+
+    function _requireValidToken(
+        address token
+    )
+        private
+        view
+    {
+        Require.that(
+            token == g_state.markets[g_state.tokenToMarketId[token]].token,
+            FILE,
+            "Invalid token"
         );
     }
 

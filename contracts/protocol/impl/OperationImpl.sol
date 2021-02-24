@@ -281,13 +281,13 @@ library OperationImpl {
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
 
-            // validate minBorrowedValue
-            bool collateralized = state.isCollateralized(account, cache, true);
-
             // don't check collateralization for non-primary accounts
             if (!primaryAccounts[a]) {
                 continue;
             }
+
+            // validate minBorrowedValue
+            bool collateralized = state.isCollateralized(account, cache, true);
 
             // check collateralization for primary accounts
             Require.that(

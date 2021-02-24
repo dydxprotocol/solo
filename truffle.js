@@ -10,7 +10,7 @@ const regContractsDir = path.join(process.cwd(), 'contracts');
 module.exports = {
   compilers: {
     solc: {
-      version: '0.5.7',
+      version: '0.5.16',
       docker: process.env.DOCKER_COMPILER !== undefined
         ? process.env.DOCKER_COMPILER === 'true' : true,
       parser: 'solcjs',
@@ -19,7 +19,7 @@ module.exports = {
           enabled: true,
           runs: 10000,
         },
-        evmVersion: 'petersburg',
+        evmVersion: 'istanbul',
       },
     },
   },

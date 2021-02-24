@@ -132,7 +132,7 @@ function verifyNetwork(network) {
 
 function getSenderAddress(network, accounts) {
   if (isMainNet(network) || isKovan(network)) {
-    return '0xf809e07870dca762B9536d61A4fBEF1a17178092';
+    return '';
   }
   if (isDevNetwork(network)) {
     return accounts[0];

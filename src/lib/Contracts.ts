@@ -21,7 +21,7 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 import PromiEvent from 'web3/promiEvent';
 import { TransactionReceipt } from 'web3/types';
-import { TransactionObject, Block, Tx } from 'web3/eth/types';
+import { Block, TransactionObject, Tx } from 'web3/eth/types';
 
 // Contracts
 import { SoloMargin } from '../../build/wrappers/SoloMargin';
@@ -35,19 +35,19 @@ import { DaiMigrator } from '../../build/wrappers/DaiMigrator';
 import { LimitOrders } from '../../build/wrappers/LimitOrders';
 import { StopLimitOrders } from '../../build/wrappers/StopLimitOrders';
 import { CanonicalOrders } from '../../build/wrappers/CanonicalOrders';
-import {
-  PayableProxyForSoloMargin as PayableProxy,
-} from '../../build/wrappers/PayableProxyForSoloMargin';
+import { PayableProxyForSoloMargin as PayableProxy, } from '../../build/wrappers/PayableProxyForSoloMargin';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
-import {
-  LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1,
-} from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
+import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1, } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
+import { DolomiteAmmRouterProxy as DolomiteAmmRouterProxy, } from '../../build/wrappers/DolomiteAmmRouterProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
 import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
 import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
+import { UniswapV2Factory } from '../../build/wrappers/UniswapV2Factory';
+import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
+import { UniswapV2Pair } from '../../build/wrappers/UniswapV2Pair';
 import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
@@ -65,6 +65,8 @@ import canonicalOrdersJson from '../../build/published_contracts/CanonicalOrders
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
+import dolomiteAmmRouterProxyJson
+  from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
 import polynomialInterestSetterJson
   from '../../build/published_contracts/PolynomialInterestSetter.json';
 import doubleExponentInterestSetterJson
@@ -74,16 +76,19 @@ import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.j
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import chainlinkPriceOracleV1Json
   from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
+import uniswapV2FactoryJson from '../../build/published_contracts/UniswapV2Factory.json';
+import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
+import uniswapV2PairJson from '../../build/published_contracts/UniswapV2Pair.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
-  ContractCallOptions,
-  TxResult,
   address,
-  SoloOptions,
   ConfirmationType,
+  ContractCallOptions,
   ContractConstantCallOptions,
+  SoloOptions,
+  TxResult,
 } from '../types';
 
 interface CallableTransactionObject<T> {
@@ -91,14 +96,6 @@ interface CallableTransactionObject<T> {
 }
 
 export class Contracts {
-  private blockGasLimit: number;
-  private autoGasMultiplier: number;
-  private defaultConfirmations: number;
-  private confirmationType: ConfirmationType;
-  private defaultGas: string | number;
-  private defaultGasPrice: string | number;
-  protected web3: Web3;
-
   // Contract instances
   public soloMargin: SoloMargin;
   public erc20: ERC20;
@@ -114,6 +111,7 @@ export class Contracts {
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
+  public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
@@ -121,7 +119,16 @@ export class Contracts {
   public saiPriceOracle: DaiPriceOracle;
   public usdcPriceOracle: UsdcPriceOracle;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
+  public uniswapV2Factory: UniswapV2Factory;
+  public simpleFeeOwner: SimpleFeeOwner;
   public weth: Weth;
+  protected web3: Web3;
+  private blockGasLimit: number;
+  private autoGasMultiplier: number;
+  private defaultConfirmations: number;
+  private confirmationType: ConfirmationType;
+  private defaultGas: string | number;
+  private defaultGasPrice: string | number;
 
   constructor(
     provider: Provider,
@@ -154,6 +161,8 @@ export class Contracts {
       SignedOperationProxy;
     this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
       LiquidatorProxyV1;
+    this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(dolomiteAmmRouterProxyJson.abi) as
+      DolomiteAmmRouterProxy;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
       PolynomialInterestSetter;
     this.doubleExponentInterestSetter = new this.web3.eth.Contract(
@@ -164,10 +173,22 @@ export class Contracts {
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
     this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(chainlinkPriceOracleV1Json.abi) as
       ChainlinkPriceOracleV1;
+    this.uniswapV2Factory = new this.web3.eth.Contract(uniswapV2FactoryJson.abi) as
+      UniswapV2Factory;
+    this.simpleFeeOwner = new this.web3.eth.Contract(simpleFeeOwnerJson.abi) as
+      SimpleFeeOwner;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
+  }
+
+  public getUniswapV2Pair(
+    contractAddress: address
+  ): UniswapV2Pair {
+    const pair = new this.web3.eth.Contract(uniswapV2PairJson.abi, contractAddress) as UniswapV2Pair;
+    pair.options.from = this.uniswapV2Factory.options.from;
+    return pair;
   }
 
   public setProvider(
@@ -192,28 +213,33 @@ export class Contracts {
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
+      { contract: this.dolomiteAmmRouterProxy, json: dolomiteAmmRouterProxyJson },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
-      { contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
-        1: '0x787F552BDC17332c98aA360748884513e3cB401a',
-        42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
-        1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
-        1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
-      } },
+      {
+        contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
+          1: '0x787F552BDC17332c98aA360748884513e3cB401a',
+          42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
+          1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+          1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
+        }
+      },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
+      { contract: this.uniswapV2Factory, json: uniswapV2FactoryJson },
+      { contract: this.simpleFeeOwner, json: simpleFeeOwnerJson },
       { contract: this.chainlinkPriceOracleV1, json: chainlinkPriceOracleV1Json },
       { contract: this.weth, json: wethJson },
     ];
 
     contracts.forEach(contract => this.setContractProvider(
-        contract.contract,
-        contract.json,
-        provider,
-        networkId,
-        contract.overrides,
-      ),
+      contract.contract,
+      contract.json,
+      provider,
+      networkId,
+      contract.overrides,
+                      ),
     );
   }
 
@@ -235,6 +261,7 @@ export class Contracts {
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
+    this.dolomiteAmmRouterProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
@@ -242,6 +269,8 @@ export class Contracts {
     this.saiPriceOracle.options.from = account;
     this.usdcPriceOracle.options.from = account;
     this.chainlinkPriceOracleV1.options.from = account;
+    this.uniswapV2Factory.options.from = account;
+    this.simpleFeeOwner.options.from = account;
     this.weth.options.from = account;
   }
 
@@ -402,11 +431,6 @@ export class Contracts {
     return m2.call(txOptions, blockNumber);
   }
 
-  private async setGasLimit(): Promise<void> {
-    const block: Block = await this.web3.eth.getBlock('latest');
-    this.blockGasLimit = block.gasLimit - SUBTRACT_GAS_LIMIT;
-  }
-
   protected setContractProvider(
     contract: any,
     contractJson: any,
@@ -421,5 +445,10 @@ export class Contracts {
     const overrideAddress = overrides && overrides[networkId];
 
     contract.options.address = overrideAddress || contractAddress;
+  }
+
+  private async setGasLimit(): Promise<void> {
+    const block: Block = await this.web3.eth.getBlock('latest');
+    this.blockGasLimit = block.gasLimit - SUBTRACT_GAS_LIMIT;
   }
 }

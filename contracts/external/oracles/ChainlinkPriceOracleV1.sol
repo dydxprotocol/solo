@@ -73,19 +73,19 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     ) public {
         require(
             tokens.length == chainlinkAggregators.length,
-            "INVALID_LENGTH: chainlinkAggregators"
+            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_AGGREGATORS"
         );
         require(
             chainlinkAggregators.length == tokenDecimals.length,
-            "INVALID_LENGTH: tokenDecimals"
+            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_TOKEN_DECIMALS"
         );
         require(
             tokenDecimals.length == tokenPairs.length,
-            "INVALID_LENGTH: tokenPairs"
+            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_TOKEN_PAIRS"
         );
         require(
             tokenPairs.length == aggregatorDecimals.length,
-            "INVALID_LENGTH: aggregatorDecimals"
+            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_AGGREGATOR_DECIMALS"
         );
 
         for (uint i = 0; i < tokens.length; i++) {
@@ -127,7 +127,10 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     public
     view
     returns (Monetary.Price memory) {
-        require(address(tokenToAggregatorMap[token]) != address(0), "INVALID_TOKEN");
+        require(
+            address(tokenToAggregatorMap[token]) != address(0),
+            "ChainlinkPriceOracleV1::getPrice: INVALID_TOKEN"
+        );
 
         uint rawChainlinkPrice = uint(tokenToAggregatorMap[token].latestAnswer());
         address tokenPair = tokenToPairingMap[token];
