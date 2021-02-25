@@ -116,8 +116,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
             liquidity = AdvancedMath.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
-            _mint(address(0), MINIMUM_LIQUIDITY);
             // permanently lock the first MINIMUM_LIQUIDITY tokens
+            _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
             liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
         }
@@ -227,8 +227,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             soloMargin : _soloMargin,
             marketId0 : marketId0,
             marketId1 : marketId1,
-            balance0 : _getTokenBalancePar(_soloMargin, cache.marketId0),
-            balance1 : _getTokenBalancePar(_soloMargin, cache.marketId1),
+            balance0 : _getTokenBalancePar(_soloMargin, marketId0),
+            balance1 : _getTokenBalancePar(_soloMargin, marketId1),
             inputIndex : _soloMargin.getMarketCurrentIndex(inputMarketId),
             outputIndex : _soloMargin.getMarketCurrentIndex(outputMarketId)
             });

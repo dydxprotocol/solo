@@ -348,6 +348,14 @@ async function deploySecondLayer(deployer, network, accounts) {
       SignedOperationProxy.address,
       true,
     ),
+    soloMargin.ownerSetGlobalOperator(
+      UniswapV2Factory.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      DolomiteAmmRouterProxy.address,
+      true,
+    ),
   ]);
 }
 

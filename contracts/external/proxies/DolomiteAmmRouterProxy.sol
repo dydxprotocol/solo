@@ -132,6 +132,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
             accounts[i + 1] = Account.Info(pools[i], 0);
         }
 
+        // amountsOutWei[0] == amountInWei
         uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), amountInWei, tokenPath);
         require(
             amountsOutWei[amountsOutWei.length - 1] >= amountOutMinWei,

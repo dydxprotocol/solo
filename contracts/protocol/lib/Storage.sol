@@ -71,10 +71,17 @@ library Storage {
         // Contract address of the interest setter for this market
         IInterestSetter interestSetter;
 
-        // Multiplier on the marginRatio for this market
+        // Multiplier on the marginRatio for this market, IE 5%. This number reduces the user's supplied wei by
+        // dividing it by:
+        // `suppliedWei = suppliedWei + (assetValueForThisMarket / (1 + marginPremium))`
+        // This number increases the user's borrowed wei by multiplying it by:
+        // `borrowedWei = borrowedWei + (assetValueForThisMarket * (1 + marginPremium))`
         Decimal.D256 marginPremium;
 
-        // Multiplier on the liquidationSpread for this market
+        // Multiplier on the liquidationSpread for this market, IE 20%. This number increases the liquidationSpread
+        // using the following formula:
+        // `liquidationSpread = liquidationSpread * (1 + spreadPremium)`
+        // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0.
         Decimal.D256 spreadPremium;
 
         // Whether additional borrows are allowed for this market
@@ -99,8 +106,13 @@ library Storage {
 
     // The maximum RiskParam values that can be set
     struct RiskLimits {
+        // The highest that the ratio can be for liquidating under-water accounts
         uint64 marginRatioMax;
+        // The highest that the liquidation rewards can be when a liquidator liquidates an account
         uint64 liquidationSpreadMax;
+        // The highest that the supply APR can be for a market, as a proportion of the borrow rate. Meaning, a rate of
+        // 100% (1e18) would give suppliers all of the interest that borrowers are paying. A rate of 90% would give
+        // suppliers 90% of the interest that borrowers pay.
         uint64 earningsRateMax;
         uint64 marginPremiumMax;
         uint64 spreadPremiumMax;
