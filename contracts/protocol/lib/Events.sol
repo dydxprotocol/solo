@@ -328,7 +328,7 @@ library Events {
             )
         ];
 
-        emit LogTrade(
+        emit          LogTrade(
             args.takerAccount.owner,
             args.takerAccount.number,
             args.makerAccount.owner,

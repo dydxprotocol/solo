@@ -140,7 +140,7 @@ contract PolynomialInterestSetter is
             }
 
             // increase the order of the polynomial term
-            // no safeDiv since supplyWei must be stricly larger than borrowWei
+            // no safeDiv since supplyWei must be strictly larger than borrowWei
             polynomial = polynomial.mul(borrowWei) / supplyWei;
 
             // move to next coefficient
