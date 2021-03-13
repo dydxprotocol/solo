@@ -156,6 +156,53 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         SOLO_MARGIN.operate(accounts, actions);
     }
 
+    function swapTokensForExactTokens(
+        uint accountNumber,
+        uint amountInMaxWei,
+        uint amountOutWei,
+        address[] calldata tokenPath,
+        uint deadline
+    )
+    external
+    ensure(deadline) {
+        uint[] memory marketPath = new uint[](tokenPath.length);
+        for (uint i = 0; i < tokenPath.length; i++) {
+            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(tokenPath[i]);
+        }
+
+        // pools.length == tokenPath.length - 1
+        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), tokenPath);
+
+        Account.Info[] memory accounts = new Account.Info[](1 + pools.length);
+        accounts[0] = Account.Info(msg.sender, accountNumber);
+        for (uint i = 0; i < pools.length; i++) {
+            accounts[i + 1] = Account.Info(pools[i], 0);
+        }
+
+        // amountsOutWei[0] == amountInWei
+        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), amountInWei, tokenPath);
+        require(
+            amountsOutWei[amountsOutWei.length - 1] >= amountOutMinWei,
+            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
+        );
+
+        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](pools.length);
+
+        for (uint i = 0; i < pools.length; i++) {
+            // Putting this variable here prevents the stack too deep issue
+            actions[i] = _encodeTradeAction(
+                0,
+                i + 1,
+                marketPath[i],
+                marketPath[i + 1],
+                pools[i],
+                amountsOutWei[i],
+                amountsOutWei[i + 1]
+            );
+        }
+        SOLO_MARGIN.operate(accounts, actions);
+    }
+
     // *************************
     // ***** Internal Functions
     // *************************

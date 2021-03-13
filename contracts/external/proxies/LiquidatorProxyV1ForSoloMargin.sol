@@ -489,7 +489,7 @@ contract LiquidatorProxyV1ForSoloMargin is
         uint256 heldPrice = constants.markets[heldMarket].price.value;
         uint256 owedPrice = constants.markets[owedMarket].price.value;
         Decimal.D256 memory spread =
-            SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
+            SOLO_MARGIN.getLiquidationForPair(heldMarket, owedMarket);
 
         return Cache({
             heldWei: Interest.parToWei(

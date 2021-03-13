@@ -67,7 +67,7 @@ library UniswapV2Library {
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+    function getAmountInWei(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
         require(amountOut > 0, "UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT");
         require(reserveIn > 0 && reserveOut > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
         uint numerator = reserveIn.mul(amountOut).mul(1000);
@@ -87,13 +87,13 @@ library UniswapV2Library {
     }
 
     // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+    function getAmountsInWei(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
         amounts = new uint[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            amounts[i - 1] = getAmountInWei(amounts[i], reserveIn, reserveOut);
         }
     }
 }
