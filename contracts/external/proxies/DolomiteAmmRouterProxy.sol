@@ -37,9 +37,23 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
 
     using UniswapV2Library for *;
 
+    int256 public constant MAX_INT_256 = int256((2 ** 255) - 1);
+
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'DolomiteAmmRouterProxy: EXPIRED');
         _;
+    }
+
+    struct ModifyPositionParams {
+        uint accountNumber;
+        uint amountInWei;
+        uint amountOutWei;
+        address[] tokenPath;
+        uint deadline;
+        address depositToken;
+        /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
+        /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
+        int256 marginDeposit;
     }
 
     IUniswapV2Factory public UNISWAP_FACTORY;
@@ -109,6 +123,12 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         require(amountB >= amountBMin, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
     }
 
+    function swapExactTokensForTokensAndModifyPosition(
+        ModifyPositionParams memory position
+    ) public ensure(position.deadline) {
+        _swapExactTokensForTokensAndModifyPosition(position);
+    }
+
     function swapExactTokensForTokens(
         uint accountNumber,
         uint amountInWei,
@@ -118,42 +138,23 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     )
     external
     ensure(deadline) {
-        uint[] memory marketPath = new uint[](tokenPath.length);
-        for (uint i = 0; i < tokenPath.length; i++) {
-            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(tokenPath[i]);
-        }
-
-        // pools.length == tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), tokenPath);
-
-        Account.Info[] memory accounts = new Account.Info[](1 + pools.length);
-        accounts[0] = Account.Info(msg.sender, accountNumber);
-        for (uint i = 0; i < pools.length; i++) {
-            accounts[i + 1] = Account.Info(pools[i], 0);
-        }
-
-        // amountsOutWei[0] == amountInWei
-        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), amountInWei, tokenPath);
-        require(
-            amountsOutWei[amountsOutWei.length - 1] >= amountOutMinWei,
-            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
+        _swapExactTokensForTokensAndModifyPosition(
+            ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountInWei : amountInWei,
+        amountOutWei : amountOutMinWei,
+        tokenPath : tokenPath,
+        deadline : deadline,
+        depositToken : address(0),
+        marginDeposit : 0
+        })
         );
+    }
 
-        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](pools.length);
-
-        for (uint i = 0; i < pools.length; i++) {
-            // Putting this variable here prevents the stack too deep issue
-            actions[i] = _encodeTradeAction(
-                0,
-                i + 1,
-                marketPath[i],
-                marketPath[i + 1],
-                pools[i],
-                amountsOutWei[i],
-                amountsOutWei[i + 1]
-            );
-        }
-        SOLO_MARGIN.operate(accounts, actions);
+    function swapTokensForExactTokensAndModifyPosition(
+        ModifyPositionParams memory position
+    ) public ensure(position.deadline) {
+        _swapTokensForExactTokensAndModifyPosition(position);
     }
 
     function swapTokensForExactTokens(
@@ -165,28 +166,48 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     )
     external
     ensure(deadline) {
-        uint[] memory marketPath = new uint[](tokenPath.length);
-        for (uint i = 0; i < tokenPath.length; i++) {
-            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(tokenPath[i]);
+        _swapTokensForExactTokensAndModifyPosition(
+            ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountInWei : amountInMaxWei,
+        amountOutWei : amountOutWei,
+        tokenPath : tokenPath,
+        deadline : deadline,
+        depositToken : address(0),
+        marginDeposit : 0
+        })
+        );
+    }
+
+    // *************************
+    // ***** Internal Functions
+    // *************************
+
+    function _swapExactTokensForTokensAndModifyPosition(
+        ModifyPositionParams memory position
+    ) internal {
+        uint[] memory marketPath = new uint[](position.tokenPath.length);
+        for (uint i = 0; i < position.tokenPath.length; i++) {
+            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(position.tokenPath[i]);
         }
 
         // pools.length == tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), tokenPath);
+        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), position.tokenPath);
 
-        Account.Info[] memory accounts = new Account.Info[](1 + pools.length);
-        accounts[0] = Account.Info(msg.sender, accountNumber);
+        Account.Info[] memory accounts = _getAccountsForModifyPosition(position, pools.length);
+        accounts[0] = Account.Info(msg.sender, position.accountNumber);
         for (uint i = 0; i < pools.length; i++) {
             accounts[i + 1] = Account.Info(pools[i], 0);
         }
 
         // amountsOutWei[0] == amountInWei
-        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), amountInWei, tokenPath);
+        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), position.amountInWei, position.tokenPath);
         require(
-            amountsOutWei[amountsOutWei.length - 1] >= amountOutMinWei,
+            amountsOutWei[amountsOutWei.length - 1] >= position.amountOutWei,
             "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
         );
 
-        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](pools.length);
+        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(position, accounts.length, pools.length);
 
         for (uint i = 0; i < pools.length; i++) {
             // Putting this variable here prevents the stack too deep issue
@@ -203,9 +224,47 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         SOLO_MARGIN.operate(accounts, actions);
     }
 
-    // *************************
-    // ***** Internal Functions
-    // *************************
+    function _swapTokensForExactTokensAndModifyPosition(
+        ModifyPositionParams memory position
+    ) internal {
+        uint[] memory marketPath = new uint[](position.tokenPath.length);
+        for (uint i = 0; i < position.tokenPath.length; i++) {
+            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(position.tokenPath[i]);
+        }
+
+        // pools.length == position.tokenPath.length - 1
+        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), position.tokenPath);
+
+        Account.Info[] memory accounts = _getAccountsForModifyPosition(position, pools.length);
+        accounts[0] = Account.Info(msg.sender, position.accountNumber);
+        for (uint i = 0; i < pools.length; i++) {
+            accounts[i + 1] = Account.Info(pools[i], 0);
+        }
+
+        // amountsOutWei[0] == amountInWei
+        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), position.amountInWei, position.tokenPath);
+        require(
+            amountsOutWei[amountsOutWei.length - 1] >= position.amountOutWei,
+            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
+        );
+
+        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(position, accounts.length, pools.length);
+
+        for (uint i = 0; i < pools.length; i++) {
+            // Putting this variable here prevents the stack too deep issue
+            actions[i] = _encodeTradeAction(
+                0,
+                i + 1,
+                marketPath[i],
+                marketPath[i + 1],
+                pools[i],
+                amountsOutWei[i],
+                amountsOutWei[i + 1]
+            );
+        }
+        SOLO_MARGIN.operate(accounts, actions);
+    }
+
 
     function _encodeTransferAction(
         uint fromAccountIndex,
@@ -213,10 +272,16 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         uint marketId,
         uint amount
     ) internal pure returns (Actions.ActionArgs memory) {
+        Types.AssetAmount memory assetAmount;
+        if (amount == uint(- 1)) {
+            assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
+        } else {
+            assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount);
+        }
         return Actions.ActionArgs({
         actionType : Actions.ActionType.Transfer,
         accountId : fromAccountIndex,
-        amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
+        amount : assetAmount,
         primaryMarketId : marketId,
         secondaryMarketId : uint(- 1),
         otherAddress : address(0),
@@ -289,6 +354,53 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
                 require(amountAOptimal >= amountAMin, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_A_AMOUNT');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
+        }
+    }
+
+    function _getAccountsForModifyPosition(
+        ModifyPositionParams memory position,
+        uint poolsLength
+    ) internal view returns (Account.Info[] memory) {
+        if (position.depositToken == address(0)) {
+            return new Account.Info[](1 + poolsLength);
+        } else {
+            Account.Info[] memory accounts = new Account.Info[](2 + poolsLength);
+            accounts[accounts.length - 1] = Account.Info(msg.sender, 0);
+            return accounts;
+        }
+    }
+
+    function _getActionArgsForModifyPosition(
+        ModifyPositionParams memory position,
+        uint accountsLength,
+        uint poolsLength
+    ) internal view returns (Actions.ActionArgs[] memory) {
+        if (position.depositToken == address(0)) {
+            return new Actions.ActionArgs[](poolsLength);
+        } else {
+            Actions.ActionArgs[] memory actionArgs = new Actions.ActionArgs[](poolsLength + 1);
+
+            // if `position.marginDeposit < 0` then the user is withdrawing from `accountNumber` (index 0).
+            // `accountNumber` zero is at index `accountsLength - 1`
+            uint amount;
+            if (position.marginDeposit == int256(- 1)) {
+                amount = uint(- 1);
+            } else if (position.marginDeposit == MAX_INT_256) {
+                amount = uint(- 1);
+            } else if (position.marginDeposit < 0) {
+                amount = (~uint(position.marginDeposit)) + 1;
+            } else {
+                amount = uint(amount);
+            }
+
+            bool isWithdrawal = position.marginDeposit < 0;
+            actionArgs[actionArgs.length - 1] = _encodeTransferAction(
+                isWithdrawal ? 0 : accountsLength - 1,
+                isWithdrawal ? accountsLength - 1 : 0,
+                SOLO_MARGIN.getMarketIdByTokenAddress(position.depositToken),
+                amount
+            );
+            return actionArgs;
         }
     }
 

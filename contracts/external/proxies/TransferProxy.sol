@@ -19,12 +19,13 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
-import { Account } from "../../protocol/lib/Account.sol";
-import { Actions } from "../../protocol/lib/Actions.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import {SoloMargin} from "../../protocol/SoloMargin.sol";
+import {Account} from "../../protocol/lib/Account.sol";
+import {Actions} from "../../protocol/lib/Actions.sol";
+import {Types} from "../../protocol/lib/Types.sol";
+import {Require} from "../../protocol/lib/Require.sol";
+import {OnlySolo} from "../helpers/OnlySolo.sol";
 
 
 /**
@@ -53,22 +54,22 @@ ReentrancyGuard
     // ============ Public Functions ============
 
     function transfer(
-        uint fromAccountId,
+        uint fromAccountIndex,
         address token,
-        address recipient,
-        uint recipientId,
+        address to,
+        uint toAccountIndex,
         uint amount
     )
     public
     nonReentrant
     {
-       uint marketId = SOLO_MARGIN.getMarketIdByTokenAddress(token);
+        uint marketId = SOLO_MARGIN.getMarketIdByTokenAddress(token);
         Account.Info[] memory accounts = new Account.Info[](2);
-        accounts[0] = Account.Info(msg.sender, fromAccountId);
-        accounts[1] = Account.Info(recipient, recipientId);
+        accounts[0] = Account.Info(msg.sender, fromAccountIndex);
+        accounts[1] = Account.Info(to, toAccountIndex);
 
         Types.AssetAmount memory assetAmount;
-        if(amount == uint(-1)) {
+        if (amount == uint(- 1)) {
             assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
         } else {
             assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount);

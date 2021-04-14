@@ -55,7 +55,7 @@ contract LiquidatorProxyV1ForSoloMargin is
     // ============ Structs ============
 
     struct Constants {
-        Account.Info fromAccount;
+        Account.Info solidAccount;
         Account.Info liquidAccount;
         Decimal.D256 minLiquidatorRatio;
         MarketInfo[] markets;
@@ -95,17 +95,17 @@ contract LiquidatorProxyV1ForSoloMargin is
     // ============ Public Functions ============
 
     /**
-     * Liquidate liquidAccount using fromAccount. This contract and the msg.sender to this contract
-     * must both be operators for the fromAccount.
+     * Liquidate liquidAccount using solidAccount. This contract and the msg.sender to this contract
+     * must both be operators for the solidAccount.
      *
-     * @param  fromAccount         The account that will do the liquidating
+     * @param  solidAccount         The account that will do the liquidating
      * @param  liquidAccount       The account that will be liquidated
-     * @param  minLiquidatorRatio  The minimum collateralization ratio to leave the fromAccount at
+     * @param  minLiquidatorRatio  The minimum collateralization ratio to leave the solidAccount at
      * @param  owedPreferences     Ordered list of markets to repay first
      * @param  heldPreferences     Ordered list of markets to recieve payout for first
      */
     function liquidate(
-        Account.Info memory fromAccount,
+        Account.Info memory solidAccount,
         Account.Info memory liquidAccount,
         Decimal.D256 memory minLiquidatorRatio,
         uint256 minValueLiquidated,
@@ -117,7 +117,7 @@ contract LiquidatorProxyV1ForSoloMargin is
     {
         // put all values that will not change into a single struct
         Constants memory constants = Constants({
-            fromAccount: fromAccount,
+            solidAccount: solidAccount,
             liquidAccount: liquidAccount,
             minLiquidatorRatio: minLiquidatorRatio,
             markets: getMarketsInfo()
@@ -314,11 +314,11 @@ contract LiquidatorProxyV1ForSoloMargin is
     {
         // check credentials for msg.sender
         Require.that(
-            constants.fromAccount.owner == msg.sender
-            || SOLO_MARGIN.getIsLocalOperator(constants.fromAccount.owner, msg.sender),
+            constants.solidAccount.owner == msg.sender
+            || SOLO_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
-            constants.fromAccount.owner
+            constants.solidAccount.owner
         );
 
         // require that the liquidAccount is liquidatable
@@ -484,20 +484,20 @@ contract LiquidatorProxyV1ForSoloMargin is
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = getCurrentAccountValues(constants, constants.fromAccount);
+        ) = getCurrentAccountValues(constants, constants.solidAccount);
 
         uint256 heldPrice = constants.markets[heldMarket].price.value;
         uint256 owedPrice = constants.markets[owedMarket].price.value;
         Decimal.D256 memory spread =
-            SOLO_MARGIN.getLiquidationForPair(heldMarket, owedMarket);
+            SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
 
         return Cache({
             heldWei: Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.fromAccount, heldMarket),
+                SOLO_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
                 constants.markets[heldMarket].index
             ),
             owedWei: Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.fromAccount, owedMarket),
+                SOLO_MARGIN.getAccountPar(constants.solidAccount, owedMarket),
                 constants.markets[owedMarket].index
             ),
             toLiquidate: 0,
@@ -522,7 +522,7 @@ contract LiquidatorProxyV1ForSoloMargin is
         returns (Account.Info[] memory)
     {
         Account.Info[] memory accounts = new Account.Info[](2);
-        accounts[0] = constants.fromAccount;
+        accounts[0] = constants.solidAccount;
         accounts[1] = constants.liquidAccount;
         return accounts;
     }
