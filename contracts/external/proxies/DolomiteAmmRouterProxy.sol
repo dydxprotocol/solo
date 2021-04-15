@@ -25,6 +25,7 @@ import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyG
 
 import {Account} from "../../protocol/lib/Account.sol";
 import {Actions} from "../../protocol/lib/Actions.sol";
+import {SoloMargin} from "../../protocol/SoloMargin.sol";
 import {Types} from "../../protocol/lib/Types.sol";
 import {OnlySolo} from "../helpers/OnlySolo.sol";
 import {TypedSignature} from "../lib/TypedSignature.sol";
@@ -49,11 +50,18 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         uint amountInWei;
         uint amountOutWei;
         address[] tokenPath;
-        uint deadline;
         address depositToken;
         /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
         /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
         int256 marginDeposit;
+    }
+
+    struct ModifyPositionCache {
+        ModifyPositionParams position;
+        SoloMargin soloMargin;
+        IUniswapV2Factory uniswapFactory;
+        uint[] marketPath;
+        uint[] amountsWei;
     }
 
     IUniswapV2Factory public UNISWAP_FACTORY;
@@ -124,9 +132,18 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     }
 
     function swapExactTokensForTokensAndModifyPosition(
-        ModifyPositionParams memory position
-    ) public ensure(position.deadline) {
-        _swapExactTokensForTokensAndModifyPosition(position);
+        ModifyPositionParams memory position,
+        uint deadline
+    ) public ensure(deadline) {
+        _swapExactTokensForTokensAndModifyPosition(
+            ModifyPositionCache({
+        position : position,
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
+        })
+        );
     }
 
     function swapExactTokensForTokens(
@@ -139,22 +156,61 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     external
     ensure(deadline) {
         _swapExactTokensForTokensAndModifyPosition(
-            ModifyPositionParams({
+            ModifyPositionCache({
+        position : ModifyPositionParams({
         accountNumber : accountNumber,
         amountInWei : amountInWei,
         amountOutWei : amountOutMinWei,
         tokenPath : tokenPath,
-        deadline : deadline,
         depositToken : address(0),
         marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
+        })
+        );
+    }
+
+    function getParamsForSwapExactTokensForTokens(
+        uint accountNumber,
+        uint amountInWei,
+        uint amountOutMinWei,
+        address[] calldata tokenPath
+    )
+    external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
+        return _getParamsForSwapExactTokensForTokens(
+            ModifyPositionCache({
+        position : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountInWei : amountInWei,
+        amountOutWei : amountOutMinWei,
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
         })
         );
     }
 
     function swapTokensForExactTokensAndModifyPosition(
-        ModifyPositionParams memory position
-    ) public ensure(position.deadline) {
-        _swapTokensForExactTokensAndModifyPosition(position);
+        ModifyPositionParams memory position,
+        uint deadline
+    ) public ensure(deadline) {
+        _swapTokensForExactTokensAndModifyPosition(
+            ModifyPositionCache({
+        position : position,
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
+        })
+        );
     }
 
     function swapTokensForExactTokens(
@@ -167,14 +223,44 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     external
     ensure(deadline) {
         _swapTokensForExactTokensAndModifyPosition(
-            ModifyPositionParams({
+            ModifyPositionCache({
+        position : ModifyPositionParams({
         accountNumber : accountNumber,
         amountInWei : amountInMaxWei,
         amountOutWei : amountOutWei,
         tokenPath : tokenPath,
-        deadline : deadline,
         depositToken : address(0),
         marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
+        })
+        );
+    }
+
+    function getParamsForSwapTokensForExactTokens(
+        uint accountNumber,
+        uint amountInMaxWei,
+        uint amountOutWei,
+        address[] calldata tokenPath
+    )
+    external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
+        return _getParamsForSwapTokensForExactTokens(
+            ModifyPositionCache({
+        position : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountInWei : amountInMaxWei,
+        amountOutWei : amountOutWei,
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        marketPath: new uint[](0),
+        amountsWei: new uint[](0)
         })
         );
     }
@@ -184,87 +270,87 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     // *************************
 
     function _swapExactTokensForTokensAndModifyPosition(
-        ModifyPositionParams memory position
+        ModifyPositionCache memory cache
     ) internal {
-        uint[] memory marketPath = new uint[](position.tokenPath.length);
-        for (uint i = 0; i < position.tokenPath.length; i++) {
-            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(position.tokenPath[i]);
-        }
+        (
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+        ) = _getParamsForSwapExactTokensForTokens(cache);
 
-        // pools.length == tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), position.tokenPath);
-
-        Account.Info[] memory accounts = _getAccountsForModifyPosition(position, pools.length);
-        accounts[0] = Account.Info(msg.sender, position.accountNumber);
-        for (uint i = 0; i < pools.length; i++) {
-            accounts[i + 1] = Account.Info(pools[i], 0);
-        }
-
-        // amountsOutWei[0] == amountInWei
-        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), position.amountInWei, position.tokenPath);
-        require(
-            amountsOutWei[amountsOutWei.length - 1] >= position.amountOutWei,
-            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
-        );
-
-        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(position, accounts.length, pools.length);
-
-        for (uint i = 0; i < pools.length; i++) {
-            // Putting this variable here prevents the stack too deep issue
-            actions[i] = _encodeTradeAction(
-                0,
-                i + 1,
-                marketPath[i],
-                marketPath[i + 1],
-                pools[i],
-                amountsOutWei[i],
-                amountsOutWei[i + 1]
-            );
-        }
-        SOLO_MARGIN.operate(accounts, actions);
+        cache.soloMargin.operate(accounts, actions);
     }
 
     function _swapTokensForExactTokensAndModifyPosition(
-        ModifyPositionParams memory position
+        ModifyPositionCache memory cache
     ) internal {
-        uint[] memory marketPath = new uint[](position.tokenPath.length);
-        for (uint i = 0; i < position.tokenPath.length; i++) {
-            marketPath[i] = SOLO_MARGIN.getMarketIdByTokenAddress(position.tokenPath[i]);
-        }
+        (
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+        ) = _getParamsForSwapTokensForExactTokens(cache);
 
-        // pools.length == position.tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(UNISWAP_FACTORY), position.tokenPath);
-
-        Account.Info[] memory accounts = _getAccountsForModifyPosition(position, pools.length);
-        accounts[0] = Account.Info(msg.sender, position.accountNumber);
-        for (uint i = 0; i < pools.length; i++) {
-            accounts[i + 1] = Account.Info(pools[i], 0);
-        }
-
-        // amountsOutWei[0] == amountInWei
-        uint[] memory amountsOutWei = UniswapV2Library.getAmountsOutWei(address(UNISWAP_FACTORY), position.amountInWei, position.tokenPath);
-        require(
-            amountsOutWei[amountsOutWei.length - 1] >= position.amountOutWei,
-            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_AMOUNT_OUT"
-        );
-
-        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(position, accounts.length, pools.length);
-
-        for (uint i = 0; i < pools.length; i++) {
-            // Putting this variable here prevents the stack too deep issue
-            actions[i] = _encodeTradeAction(
-                0,
-                i + 1,
-                marketPath[i],
-                marketPath[i + 1],
-                pools[i],
-                amountsOutWei[i],
-                amountsOutWei[i + 1]
-            );
-        }
-        SOLO_MARGIN.operate(accounts, actions);
+        cache.soloMargin.operate(accounts, actions);
     }
 
+    function _getParamsForSwapExactTokensForTokens(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        // amountsWei[0] == amountInWei
+        // amountsWei[amountsWei.length - 1] == amountOutWei
+        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), cache.position.amountInWei, cache.position.tokenPath);
+        require(
+            cache.amountsWei[cache.amountsWei.length - 1] >= cache.position.amountOutWei,
+            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
+        );
+
+        return _getParamsForSwap(cache);
+    }
+
+    function _getParamsForSwapTokensForExactTokens(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        // amountsWei[0] == amountInWei
+        // amountsWei[amountsWei.length - 1] == amountOutWei
+        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), cache.position.amountOutWei, cache.position.tokenPath);
+        require(
+            cache.amountsWei[0] <= cache.position.amountInWei,
+            "DolomiteAmmRouterProxy::swapExactTokensForTokens: EXCESSIVE_INPUT_AMOUNT"
+        );
+
+        return _getParamsForSwap(cache);
+    }
+
+    function _getParamsForSwap(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        cache.marketPath = _getMarketPathFromTokenPath(cache);
+
+        // pools.length == cache.position.tokenPath.length - 1
+        address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.position.tokenPath);
+
+        Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
+        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, pools, accounts.length);
+
+        return (accounts, actions);
+    }
+
+    function _getMarketPathFromTokenPath(
+        ModifyPositionCache memory cache
+    ) internal view returns (uint[] memory) {
+        uint[] memory marketPath = new uint[](cache.position.tokenPath.length);
+        for (uint i = 0; i < cache.position.tokenPath.length; i++) {
+            marketPath[i] = cache.soloMargin.getMarketIdByTokenAddress(cache.position.tokenPath[i]);
+        }
+        return marketPath;
+    }
 
     function _encodeTransferAction(
         uint fromAccountIndex,
@@ -358,50 +444,73 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     }
 
     function _getAccountsForModifyPosition(
-        ModifyPositionParams memory position,
-        uint poolsLength
+        ModifyPositionCache memory cache,
+        address[] memory pools
     ) internal view returns (Account.Info[] memory) {
-        if (position.depositToken == address(0)) {
-            return new Account.Info[](1 + poolsLength);
+        Account.Info[] memory accounts;
+        if (cache.position.depositToken == address(0)) {
+            accounts = new Account.Info[](1 + pools.length);
         } else {
-            Account.Info[] memory accounts = new Account.Info[](2 + poolsLength);
+            accounts = new Account.Info[](2 + pools.length);
             accounts[accounts.length - 1] = Account.Info(msg.sender, 0);
             return accounts;
         }
+
+        accounts[0] = Account.Info(msg.sender, cache.position.accountNumber);
+        for (uint i = 0; i < pools.length; i++) {
+            accounts[i + 1] = Account.Info(pools[i], 0);
+        }
+
+        return accounts;
     }
 
     function _getActionArgsForModifyPosition(
-        ModifyPositionParams memory position,
-        uint accountsLength,
-        uint poolsLength
+        ModifyPositionCache memory cache,
+        address[] memory pools,
+        uint accountsLength
     ) internal view returns (Actions.ActionArgs[] memory) {
-        if (position.depositToken == address(0)) {
-            return new Actions.ActionArgs[](poolsLength);
+        Actions.ActionArgs[] memory actions;
+        if (cache.position.depositToken == address(0)) {
+            actions = new Actions.ActionArgs[](pools.length);
         } else {
-            Actions.ActionArgs[] memory actionArgs = new Actions.ActionArgs[](poolsLength + 1);
+            actions = new Actions.ActionArgs[](pools.length + 1);
 
-            // if `position.marginDeposit < 0` then the user is withdrawing from `accountNumber` (index 0).
+            // if `cache.position.marginDeposit < 0` then the user is withdrawing from `accountNumber` (index 0).
             // `accountNumber` zero is at index `accountsLength - 1`
             uint amount;
-            if (position.marginDeposit == int256(- 1)) {
+            if (cache.position.marginDeposit == int256(- 1)) {
                 amount = uint(- 1);
-            } else if (position.marginDeposit == MAX_INT_256) {
+            } else if (cache.position.marginDeposit == MAX_INT_256) {
                 amount = uint(- 1);
-            } else if (position.marginDeposit < 0) {
-                amount = (~uint(position.marginDeposit)) + 1;
+            } else if (cache.position.marginDeposit < 0) {
+                amount = (~uint(cache.position.marginDeposit)) + 1;
             } else {
                 amount = uint(amount);
             }
 
-            bool isWithdrawal = position.marginDeposit < 0;
-            actionArgs[actionArgs.length - 1] = _encodeTransferAction(
+            bool isWithdrawal = cache.position.marginDeposit < 0;
+            actions[actions.length - 1] = _encodeTransferAction(
                 isWithdrawal ? 0 : accountsLength - 1,
                 isWithdrawal ? accountsLength - 1 : 0,
-                SOLO_MARGIN.getMarketIdByTokenAddress(position.depositToken),
+                cache.soloMargin.getMarketIdByTokenAddress(cache.position.depositToken),
                 amount
             );
-            return actionArgs;
         }
+
+        for (uint i = 0; i < pools.length; i++) {
+            // Putting this variable here prevents the stack too deep issue
+            actions[i] = _encodeTradeAction(
+                0,
+                i + 1,
+                cache.marketPath[i],
+                cache.marketPath[i + 1],
+                pools[i],
+                cache.amountsWei[i],
+                cache.amountsWei[i + 1]
+            );
+        }
+
+        return actions;
     }
 
 }
