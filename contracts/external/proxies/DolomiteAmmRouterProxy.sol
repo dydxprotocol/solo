@@ -60,6 +60,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         ModifyPositionParams position;
         SoloMargin soloMargin;
         IUniswapV2Factory uniswapFactory;
+        address account;
         uint[] marketPath;
         uint[] amountsWei;
     }
@@ -140,8 +141,9 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         position : position,
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
@@ -167,13 +169,15 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
 
     function getParamsForSwapExactTokensForTokens(
+        address account,
         uint accountNumber,
         uint amountInWei,
         uint amountOutMinWei,
@@ -192,8 +196,9 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
@@ -207,8 +212,9 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         position : position,
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
@@ -234,13 +240,15 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
 
     function getParamsForSwapTokensForExactTokens(
+        address account,
         uint accountNumber,
         uint amountInMaxWei,
         uint amountOutWei,
@@ -259,8 +267,9 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
-        marketPath: new uint[](0),
-        amountsWei: new uint[](0)
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
         })
         );
     }
@@ -446,17 +455,18 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     function _getAccountsForModifyPosition(
         ModifyPositionCache memory cache,
         address[] memory pools
-    ) internal view returns (Account.Info[] memory) {
+    ) internal pure returns (Account.Info[] memory) {
         Account.Info[] memory accounts;
         if (cache.position.depositToken == address(0)) {
             accounts = new Account.Info[](1 + pools.length);
         } else {
             accounts = new Account.Info[](2 + pools.length);
-            accounts[accounts.length - 1] = Account.Info(msg.sender, 0);
+            accounts[accounts.length - 1] = Account.Info(cache.account, 0);
             return accounts;
         }
 
-        accounts[0] = Account.Info(msg.sender, cache.position.accountNumber);
+        accounts[0] = Account.Info(cache.account, cache.position.accountNumber);
+
         for (uint i = 0; i < pools.length; i++) {
             accounts[i + 1] = Account.Info(pools[i], 0);
         }

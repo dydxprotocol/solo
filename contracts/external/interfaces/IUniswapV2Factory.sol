@@ -38,8 +38,4 @@ interface IUniswapV2Factory {
     function setFeeTo(address) external;
     function setFeeToSetter(address) external;
 
-    function operate(
-        Account.Info[] calldata accounts,
-        Actions.ActionArgs[] calldata actions
-    ) external;
 }

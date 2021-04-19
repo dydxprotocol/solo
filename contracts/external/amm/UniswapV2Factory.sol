@@ -15,6 +15,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
     address public feeTo;
     address public feeToSetter;
     address public soloMargin;
+    address public transferProxy;
 
     mapping(address => mapping(address => address)) public getPair;
     address[] public allPairs;
@@ -24,10 +25,12 @@ contract UniswapV2Factory is IUniswapV2Factory {
 
     constructor(
         address _feeToSetter,
-        address _soloMargin
+        address _soloMargin,
+        address _transferProxy
     ) public {
         feeToSetter = _feeToSetter;
         soloMargin = _soloMargin;
+        transferProxy = _transferProxy;
     }
 
     function allPairsLength() external view returns (uint) {
@@ -49,7 +52,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        IUniswapV2Pair(pair).initialize(token0, token1);
+        IUniswapV2Pair(pair).initialize(token0, token1, transferProxy);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
         isPairCreated[pair] = true;
@@ -66,17 +69,5 @@ contract UniswapV2Factory is IUniswapV2Factory {
     function setFeeToSetter(address _feeToSetter) external {
         require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
         feeToSetter = _feeToSetter;
-    }
-
-    function operate(
-        Account.Info[] memory accounts,
-        Actions.ActionArgs[] memory actions
-    ) public {
-        require(
-            isPairCreated[msg.sender],
-            "UniswapV2Factory::operate: UNAUTHORIZED"
-        );
-
-        ISoloMargin(soloMargin).operate(accounts, actions);
     }
 }

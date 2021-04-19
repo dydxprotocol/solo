@@ -55,37 +55,111 @@ ReentrancyGuard
 
     function transfer(
         uint fromAccountIndex,
-        address token,
         address to,
         uint toAccountIndex,
+        address token,
         uint amount
     )
     public
     nonReentrant
     {
-        uint marketId = SOLO_MARGIN.getMarketIdByTokenAddress(token);
+        uint[] memory markets = new uint[](1);
+        markets[0] = SOLO_MARGIN.getMarketIdByTokenAddress(token);
+
+        uint[] memory amounts = new uint[](1);
+        amounts[0] = amount;
+
+        _transferMultiple(
+            fromAccountIndex,
+            to,
+            toAccountIndex,
+            markets,
+            amounts
+        );
+    }
+
+    function transferMultiple(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        address[] calldata tokens,
+        uint[] calldata amounts
+    )
+    external
+    nonReentrant
+    {
+        SoloMargin soloMargin = SOLO_MARGIN;
+        uint[] memory markets = new uint[](tokens.length);
+        for (uint i = 0; i < markets.length; i++) {
+            markets[i] = soloMargin.getMarketIdByTokenAddress(tokens[i]);
+        }
+
+        _transferMultiple(
+            fromAccountIndex,
+            to,
+            toAccountIndex,
+            markets,
+            amounts
+        );
+    }
+
+    function transferMultipleWithMarkets(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        uint[] calldata markets,
+        uint[] calldata amounts
+    )
+    external
+    nonReentrant
+    {
+        _transferMultiple(
+            fromAccountIndex,
+            to,
+            toAccountIndex,
+            markets,
+            amounts
+        );
+    }
+
+    function _transferMultiple(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        uint[] memory markets,
+        uint[] memory amounts
+    )
+    internal
+    {
+        require(
+            markets.length == amounts.length,
+            "TransferProxy::_transferMultiple: INVALID_PARAMS_LENGTH"
+        );
+
         Account.Info[] memory accounts = new Account.Info[](2);
         accounts[0] = Account.Info(msg.sender, fromAccountIndex);
         accounts[1] = Account.Info(to, toAccountIndex);
 
-        Types.AssetAmount memory assetAmount;
-        if (amount == uint(- 1)) {
-            assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
-        } else {
-            assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount);
-        }
+        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](markets.length);
+        for (uint i = 0; i < markets.length; i++) {
+            Types.AssetAmount memory assetAmount;
+            if (amounts[i] == uint(- 1)) {
+                assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
+            } else {
+                assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amounts[i]);
+            }
 
-        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
-        actions[0] = Actions.ActionArgs({
-        actionType : Actions.ActionType.Transfer,
-        accountId : 0,
-        amount : assetAmount,
-        primaryMarketId : marketId,
-        secondaryMarketId : uint(- 1),
-        otherAddress : address(0),
-        otherAccountId : 1,
-        data : bytes("")
-        });
+            actions[i] = Actions.ActionArgs({
+            actionType : Actions.ActionType.Transfer,
+            accountId : 0,
+            amount : assetAmount,
+            primaryMarketId : markets[i],
+            secondaryMarketId : uint(- 1),
+            otherAddress : address(0),
+            otherAccountId : 1,
+            data : bytes("")
+            });
+        }
 
         SOLO_MARGIN.operate(accounts, actions);
     }

@@ -10,6 +10,8 @@ import "../interfaces/IUniswapV2Pair.sol";
 import "../lib/AdvancedMath.sol";
 import "../lib/UQ112x112.sol";
 
+import "../proxies/TransferProxy.sol";
+
 import "./UniswapV2ERC20.sol";
 
 contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
@@ -22,6 +24,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public factory;
+    address public soloMargin;
+    address public soloMarginTransferProxy;
     address public token0;
     address public token1;
 
@@ -59,18 +63,16 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     }
 
     // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1) external {
+    function initialize(address _token0, address _token1, address _transferProxy) external {
         require(msg.sender == factory, "UniswapV2: FORBIDDEN");
         // sufficient check
         token0 = _token0;
         token1 = _token1;
+        soloMargin = IUniswapV2Factory(msg.sender).soloMargin();
+        soloMarginTransferProxy = _transferProxy;
 
-        marketId0 = uint128(ISoloMargin(soloMargin()).getMarketIdByTokenAddress(token0));
-        marketId1 = uint128(ISoloMargin(soloMargin()).getMarketIdByTokenAddress(token1));
-    }
-
-    function soloMargin() public view returns (address) {
-        return IUniswapV2Factory(factory).soloMargin();
+        marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
+        marketId1 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token1));
     }
 
     function getReservesPar() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
@@ -80,7 +82,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     }
 
     function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
         uint _marketId0 = marketId0;
         uint _marketId1 = marketId1;
 
@@ -96,7 +98,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     function mint(address to) external lock returns (uint liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
         uint balance0 = _getTokenBalancePar(_soloMargin, marketId0);
         uint balance1 = _getTokenBalancePar(_soloMargin, marketId1);
         uint amount0 = balance0.sub(_reserve0);
@@ -139,14 +141,14 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     function burn(address to, uint toAccountNumber) external lock returns (uint amount0, uint amount1) {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+        uint[] memory markets = new uint[](2);
+        markets[0] = marketId0;
+        markets[1] = marketId1;
+
         // gas savings
-        uint _marketId0 = marketId0;
-        // gas savings
-        uint _marketId1 = marketId1;
-        // gas savings
-        uint balance0 = _getTokenBalancePar(_soloMargin, _marketId0);
-        uint balance1 = _getTokenBalancePar(_soloMargin, _marketId1);
+        uint balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
+        uint balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
 
         bool feeOn;
         // new scope to prevent stack-too-deep issues
@@ -168,20 +170,20 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             _burn(address(this), liquidity);
         }
 
-        {
-            Account.Info[] memory accounts = new Account.Info[](2);
-            accounts[0] = Account.Info(address(this), 0);
-            accounts[1] = Account.Info(to, toAccountNumber);
+        uint[] memory amounts = new uint[](2);
+        amounts[0] = amount0;
+        amounts[1] = amount1;
 
-            Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
-            actions[0] = _encodeTransferAction(0, 1, _marketId0, amount0);
-            actions[1] = _encodeTransferAction(0, 1, _marketId1, amount1);
+        TransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+            0,
+            to,
+            toAccountNumber,
+            markets,
+            amounts
+        );
 
-            IUniswapV2Factory(factory).operate(accounts, actions);
-        }
-
-        balance0 = _getTokenBalancePar(_soloMargin, _marketId0);
-        balance1 = _getTokenBalancePar(_soloMargin, _marketId1);
+        balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
+        balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
 
         _update(balance0, balance1, _reserve0, _reserve1);
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
@@ -222,7 +224,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     returns (Types.AssetAmount memory) {
         Cache memory cache;
         {
-            ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+            ISoloMargin _soloMargin = ISoloMargin(soloMargin);
             cache = Cache({
             soloMargin : _soloMargin,
             marketId0 : marketId0,
@@ -327,29 +329,33 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     }
 
     // force balances to match reserves
-    function skim(address to) external lock {
+    function skim(address to, uint toAccountNumber) external lock {
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin());
-        uint _marketId0 = marketId0;
-        uint _marketId1 = marketId1;
+        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
 
-        Account.Info[] memory accounts = new Account.Info[](2);
-        accounts[0] = Account.Info(msg.sender, 0);
-        accounts[1] = Account.Info(to, 0);
+        uint[] memory markets = new uint[](2);
+        markets[0] = marketId0;
+        markets[1] = marketId1;
 
-        uint amount0 = _getTokenBalancePar(_soloMargin, _marketId0).sub(reserve0Par);
-        uint amount1 = _getTokenBalancePar(_soloMargin, _marketId1).sub(reserve1Par);
+        uint amount0 = _getTokenBalancePar(_soloMargin, markets[0]).sub(reserve0Par);
+        uint amount1 = _getTokenBalancePar(_soloMargin, markets[1]).sub(reserve1Par);
 
-        Actions.ActionArgs[] memory actionArgs = new Actions.ActionArgs[](2);
-        actionArgs[0] = _encodeTransferAction(0, 1, _marketId0, amount0);
-        actionArgs[1] = _encodeTransferAction(0, 1, _marketId1, amount1);
+        uint[] memory amounts = new uint[](2);
+        amounts[0] = amount0;
+        amounts[1] = amount1;
 
-        _soloMargin.operate(accounts, actionArgs);
+        TransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+            0,
+            to,
+            toAccountNumber,
+            markets,
+            amounts
+        );
     }
 
     // force reserves to match balances
     function sync() external lock {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin());
+        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
         _update(
             _getTokenBalancePar(_soloMargin, marketId0),
             _getTokenBalancePar(_soloMargin, marketId1),

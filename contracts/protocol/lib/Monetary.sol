@@ -29,14 +29,14 @@ pragma experimental ABIEncoderV2;
 library Monetary {
 
     /*
-     * The price of a base-unit of an asset.
+     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
      */
     struct Price {
         uint256 value;
     }
 
     /*
-     * Total value of an some amount of an asset. Equal to (price * amount).
+     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
      */
     struct Value {
         uint256 value;

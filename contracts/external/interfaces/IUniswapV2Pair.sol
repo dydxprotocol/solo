@@ -100,9 +100,9 @@ interface IUniswapV2Pair {
     external
     returns (Types.AssetAmount memory);
 
-    function skim(address to) external;
+    function skim(address to, uint toAccountNumber) external;
 
     function sync() external;
 
-    function initialize(address _token0, address _token1) external;
+    function initialize(address _token0, address _token1, address _transferProxy) external;
 }
