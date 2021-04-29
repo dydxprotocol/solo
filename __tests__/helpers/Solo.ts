@@ -1,6 +1,6 @@
 import { TestSolo } from '../modules/TestSolo';
 import { provider } from './Provider';
-import { address, ConfirmationType, SoloOptions } from '../../src/types';
+import { address, ConfirmationType, SoloOptions } from '../../src';
 
 const soloOptions: SoloOptions = {
   confirmationType: ConfirmationType.Confirmed,

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { TestSolo } from '../modules/TestSolo';
-import { address } from '../../src/types';
+import { address } from '../../src';
 import { mineAvgBlock } from './EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 

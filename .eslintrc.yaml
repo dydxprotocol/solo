@@ -12,6 +12,12 @@ rules:
   no-use-before-define: 0
   class-methods-use-this: 0
   no-underscore-dangle: 0
+  no-undef: off
+  import/no-unresolved: off
+  prefer-destructuring: off
+  no-console: off
+  max-line-length: 200
+  camelcase: off
   max-len:
     - error
-    - 100
+    - 150

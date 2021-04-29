@@ -20,7 +20,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     bytes32 private constant FILE = "UniswapV2Pair";
 
-    uint public constant WEI_BASE = 1e18;
+    uint public constant INTEREST_INDEX_BASE = 1e18;
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public factory;
@@ -33,8 +33,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     uint112 private reserve1Par;            // uses single storage slot, accessible via getReserves
     uint32  private blockTimestampLast;     // uses single storage slot, accessible via getReserves
 
-    uint128 private marketId0;
-    uint128 private marketId1;
+    uint128 public marketId0;
+    uint128 public marketId1;
 
     uint public price0CumulativeLast;
     uint public price1CumulativeLast;
@@ -83,14 +83,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
         ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-        uint _marketId0 = marketId0;
-        uint _marketId1 = marketId1;
 
-        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(_marketId0).supply;
-        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(_marketId1).supply;
+        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(marketId0).supply;
+        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(marketId1).supply;
 
-        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(WEI_BASE));
-        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(WEI_BASE));
+        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
+        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
         _blockTimestampLast = blockTimestampLast;
     }
 
@@ -254,8 +252,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             "UniswapV2: INVALID_TO"
         );
 
-        uint amount0Out;
-        uint amount1Out;
+        uint amount0OutPar;
+        uint amount1OutPar;
         {
             require(
                 inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
@@ -264,6 +262,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             require(
                 outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
                 "UniswapV2: INVALID_INPUT_TOKEN"
+            );
+            require(
+                inputWei.sign,
+                "UniswapV2: INPUT_WEI_MUST_BE_POSITIVE"
             );
 
             (uint amountOutWei) = abi.decode(data, ((uint)));
@@ -278,16 +280,16 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
                 cache.balance0 = cache.balance0.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
                 cache.balance1 = cache.balance1.sub(amountOutPar);
 
-                amount0Out = 0;
-                amount1Out = amountOutPar;
+                amount0OutPar = 0;
+                amount1OutPar = amountOutPar;
             } else {
                 assert(inputMarketId == cache.marketId1);
 
                 cache.balance1 = cache.balance1.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
                 cache.balance0 = cache.balance0.sub(amountOutPar);
 
-                amount0Out = amountOutPar;
-                amount1Out = 0;
+                amount0OutPar = amountOutPar;
+                amount1OutPar = 0;
             }
         }
 
@@ -297,12 +299,12 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             // gas savings
             (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
             require(
-                amount0Out < _reserve0 && amount1Out < _reserve1,
+                amount0OutPar < _reserve0 && amount1OutPar < _reserve1,
                 "UniswapV2: INSUFFICIENT_LIQUIDITY"
             );
 
-            amount0In = cache.balance0 > _reserve0 - amount0Out ? cache.balance0 - (_reserve0 - amount0Out) : 0;
-            amount1In = cache.balance1 > _reserve1 - amount1Out ? cache.balance1 - (_reserve1 - amount1Out) : 0;
+            amount0In = cache.balance0 > _reserve0 - amount0OutPar ? cache.balance0 - (_reserve0 - amount0OutPar) : 0;
+            amount1In = cache.balance1 > _reserve1 - amount1OutPar ? cache.balance1 - (_reserve1 - amount1OutPar) : 0;
             require(
                 amount0In > 0 || amount1In > 0,
                 "UniswapV2: INSUFFICIENT_INPUT_AMOUNT"
@@ -318,13 +320,13 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             _update(cache.balance0, cache.balance1, _reserve0, _reserve1);
         }
 
-        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, takerAccount.owner);
+        emit Swap(msg.sender, amount0In, amount1In, amount0OutPar, amount1OutPar, takerAccount.owner);
 
         return Types.AssetAmount({
         sign : false,
-        denomination : Types.AssetDenomination.Wei,
+        denomination : Types.AssetDenomination.Par,
         ref : Types.AssetReference.Delta,
-        value : amount0Out > 0 ? amount0Out : amount1Out
+        value : amount0OutPar > 0 ? amount0OutPar : amount1OutPar
         });
     }
 
@@ -372,8 +374,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     function _update(
         uint balance0,
         uint balance1,
-        uint112 _reserve0,
-        uint112 _reserve1
+        uint112 reserve0,
+        uint112 reserve1
     ) internal {
         require(
             balance0 <= uint112(- 1) && balance1 <= uint112(- 1),
@@ -383,10 +385,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast;
         // overflow is desired
-        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
+        if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
             // * never overflows, and + overflow is desired
-            price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
-            price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
+            price0CumulativeLast += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
+            price1CumulativeLast += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
         }
         reserve0Par = uint112(balance0);
         reserve1Par = uint112(balance1);
@@ -396,8 +398,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     function _mintFee(
-        uint112 _reserve0,
-        uint112 _reserve1
+        uint112 reserve0,
+        uint112 reserve1
     ) private returns (bool feeOn) {
         address feeTo = IUniswapV2Factory(factory).feeTo();
         // gas savings
@@ -406,7 +408,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // gas savings
         if (feeOn) {
             if (_kLast != 0) {
-                uint rootK = AdvancedMath.sqrt(uint(_reserve0).mul(_reserve1));
+                uint rootK = AdvancedMath.sqrt(uint(reserve0).mul(reserve1));
                 uint rootKLast = AdvancedMath.sqrt(_kLast);
                 if (rootK > rootKLast) {
                     uint numerator = totalSupply.mul(rootK.sub(rootKLast));

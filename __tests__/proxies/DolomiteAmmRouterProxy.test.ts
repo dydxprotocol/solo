@@ -40,14 +40,16 @@ describe('DolomiteAmmRouterProxy', () => {
 
     await resetEVM();
     await setupMarkets(solo, accounts);
-    await Promise.all([
-                        solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), prices[0]),
-                        solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), prices[1]),
-                        solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), prices[2]),
-                        solo.testing.priceOracle.setPrice(solo.weth.getAddress(), prices[3]),
-                        setUpBasicBalances(),
-                        deployUniswapLpTokens(),
-                      ]);
+    await Promise.all(
+      [
+        solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), prices[0]),
+        solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), prices[1]),
+        solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), prices[2]),
+        solo.testing.priceOracle.setPrice(solo.weth.getAddress(), prices[3]),
+        setUpBasicBalances(),
+        deployUniswapLpTokens(),
+      ]
+    );
     await solo.admin.addMarket(
       solo.weth.getAddress(),
       solo.testing.priceOracle.getAddress(),
@@ -200,7 +202,11 @@ describe('DolomiteAmmRouterProxy', () => {
         await swapExactTokensForTokens(
           owner1,
           parA.div(100),
-          [solo.testing.tokenA.getAddress(), solo.testing.tokenB.getAddress(), solo.testing.tokenC.getAddress()],
+          [
+            solo.testing.tokenA.getAddress(),
+            solo.testing.tokenB.getAddress(),
+            solo.testing.tokenC.getAddress()
+          ],
         );
 
         let result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdA).call();
@@ -241,7 +247,10 @@ async function addLiquidity(
     INTEGERS.ONE,
     new BigNumber('123456789123'),
     { from: walletAddress },
-  );
+  ).catch((reason) => {
+    console.log('reason ', reason);
+    return { gasUsed: 0 };
+  });
 
   console.log('#addLiquidity gas used  ', result.gasUsed.toString());
 
@@ -296,10 +305,12 @@ async function setUpBasicBalances() {
   const marketA = new BigNumber((await getMarketId(solo.testing.tokenA)));
   const marketB = new BigNumber((await getMarketId(solo.testing.tokenB)));
 
-  return Promise.all([
-                       solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),
-                       solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketB, parB),
-                     ]);
+  return Promise.all(
+    [
+      solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),
+      solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketB, parB),
+    ]
+  );
 }
 
 async function deployUniswapLpTokens() {

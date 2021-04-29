@@ -38,6 +38,10 @@ import { CanonicalOrders } from '../../build/wrappers/CanonicalOrders';
 import { PayableProxyForSoloMargin as PayableProxy, } from '../../build/wrappers/PayableProxyForSoloMargin';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
 import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1, } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
+import {
+  LiquidatorProxyV1WithAmmForSoloMargin,
+  LiquidatorProxyV1WithAmmForSoloMargin as LiquidatorProxyV1WithAmm,
+} from '../../build/wrappers/LiquidatorProxyV1WithAmmForSoloMargin';
 import { DolomiteAmmRouterProxy as DolomiteAmmRouterProxy, } from '../../build/wrappers/DolomiteAmmRouterProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
@@ -65,6 +69,7 @@ import canonicalOrdersJson from '../../build/published_contracts/CanonicalOrders
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
+import liquidatorV1WithAmmJson from '../../build/published_contracts/LiquidatorProxyV1WithAmmForSoloMargin.json';
 import dolomiteAmmRouterProxyJson
   from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
 import polynomialInterestSetterJson
@@ -111,6 +116,7 @@ export class Contracts {
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
+  public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
@@ -161,6 +167,8 @@ export class Contracts {
       SignedOperationProxy;
     this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
       LiquidatorProxyV1;
+    this.liquidatorProxyV1WithAmm = new this.web3.eth.Contract(liquidatorV1WithAmmJson.abi) as
+      LiquidatorProxyV1WithAmmForSoloMargin;
     this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(dolomiteAmmRouterProxyJson.abi) as
       DolomiteAmmRouterProxy;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
@@ -191,6 +199,16 @@ export class Contracts {
     return pair;
   }
 
+  public async getUniswapV2PairByTokens(
+    tokenA: address,
+    tokenB: address,
+  ): Promise<UniswapV2Pair> {
+    const pairAddress = await this.uniswapV2Factory.methods.getPair(tokenA, tokenB).call();
+    const pair = new this.web3.eth.Contract(uniswapV2PairJson.abi, pairAddress) as UniswapV2Pair;
+    pair.options.from = this.uniswapV2Factory.options.from;
+    return pair;
+  }
+
   public setProvider(
     provider: Provider,
     networkId: number,
@@ -213,6 +231,7 @@ export class Contracts {
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
+      { contract: this.liquidatorProxyV1WithAmm, json: liquidatorV1WithAmmJson },
       { contract: this.dolomiteAmmRouterProxy, json: dolomiteAmmRouterProxyJson },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
@@ -239,7 +258,7 @@ export class Contracts {
       provider,
       networkId,
       contract.overrides,
-                      ),
+      ),
     );
   }
 
@@ -261,6 +280,7 @@ export class Contracts {
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
+    this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;

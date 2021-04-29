@@ -5,7 +5,7 @@ import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { address, AccountStatus } from '../../src/types';
+import { AccountStatus, address } from '../../src';
 
 let solo: TestSolo;
 let accounts: address[];
@@ -46,17 +46,19 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
     await resetEVM();
     await setGlobalOperator(solo, accounts, solo.contracts.liquidatorProxyV1._address);
     await setupMarkets(solo, accounts);
-    await Promise.all([
-      solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), prices[0]),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), prices[1]),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), prices[2]),
-      solo.testing.priceOracle.setPrice(solo.weth.getAddress(), prices[3]),
-      solo.permissions.approveOperator(operator, { from: owner1 }),
-      solo.permissions.approveOperator(
-        solo.contracts.liquidatorProxyV1.options.address,
-        { from: owner1 },
-      ),
-    ]);
+    await Promise.all(
+      [
+        solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), prices[0]),
+        solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), prices[1]),
+        solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), prices[2]),
+        solo.testing.priceOracle.setPrice(solo.weth.getAddress(), prices[3]),
+        solo.permissions.approveOperator(operator, { from: owner1 }),
+        solo.permissions.approveOperator(
+          solo.contracts.liquidatorProxyV1.options.address,
+          { from: owner1 },
+        ),
+      ],
+    );
     await solo.admin.addMarket(
       solo.weth.getAddress(),
       solo.testing.priceOracle.getAddress(),
@@ -87,11 +89,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (held first)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, par.times('1.1')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('100')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, par.times('1.1')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('100')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [par.times('1.05'), zero],
@@ -110,12 +114,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, many held', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('60')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('50')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('60')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('50')),
+          ],
+        );
         const txResult = await liquidate();
         await expectBalances(
           [zero, par.times('60'), par.times('44.9925')],
@@ -125,13 +131,15 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for many owed, one held', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('50')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('165')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('50')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('165')),
+          ],
+        );
         const txResult = await liquidate();
         await expectBalances(
           [zero, par.times('50'), par.times('157.5')],
@@ -141,14 +149,16 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for many owed, many held', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('150')),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, par.times('0.525')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('100')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('170')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market4, negPar.times('0.1')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('150')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, par.times('0.525')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, negPar.times('100')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market3, par.times('170')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market4, negPar.times('0.1')),
+          ],
+        );
         const txResult = await liquidate();
         await expectBalances(
           [par.times('0.525'), par.times('50'), par.times('157.5'), par.times('0.9')],
@@ -158,12 +168,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for liquid account collateralized but in liquid status', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('150')),
-          solo.testing.setAccountStatus(owner2, accountNumber2, AccountStatus.Liquidating),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('150')),
+            solo.testing.setAccountStatus(owner2, accountNumber2, AccountStatus.Liquidating),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [zero, par.times('105')],
@@ -174,11 +186,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
     describe('Success cases for various initial liquidator balances', () => {
       it('Succeeds for one owed, one held (liquidator balance is zero)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar, par.times('105')],
@@ -187,12 +201,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (liquidator balance is posHeld/negOwed)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('500')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('500')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.times(2), par.times('605')],
@@ -201,13 +217,15 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (liquidator balance is negatives)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('50')),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('50')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.times('1.5'), par.times('55')],
@@ -216,12 +234,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (liquidator balance is positives)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('50')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('50')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.div(2), par.times('155')],
@@ -230,13 +250,15 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (liquidator balance is !posHeld>!negOwed)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('100')),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('100')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market4, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         const txResult = await liquidate();
         await expectBalances(
           [negPar.div(2), par.times('5')],
@@ -246,12 +268,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for one owed, one held (liquidator balance is !posHeld<!negOwed)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('50')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('50')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [zero, par.times('55')],
@@ -262,12 +286,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
     describe('Limited by minLiquidatorRatio', () => {
       it('Liquidates as much as it can (to 1.25) but no more', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('65')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('65')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.times('0.625'), par.times('78.125')],
@@ -278,12 +304,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Liquidates to negOwed/posHeld and then to 1.25', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('0.2')),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('10')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('0.2')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('10')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.times('0.55'), par.times('68.75')],
@@ -294,12 +322,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Liquidates to zero', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('105')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('105')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [zero, zero],
@@ -308,12 +338,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Liquidates even if it starts below 1.25', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('2.4')),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('200')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('2.4')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('200')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [par.times('1.4'), negPar.times('95')],
@@ -322,12 +354,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Does not liquidate below 1.25', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('60')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar.div(2)),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('60')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar.div(2), par.times('60')],
@@ -336,12 +370,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Does not liquidate at 1.25', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('125')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, negPar),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('125')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await liquidate();
         await expectBalances(
           [negPar, par.times('125')],
@@ -352,11 +388,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
     describe('Follows minValueLiquidated', () => {
       it('Succeeds for less than valueLiquidatable', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await solo.liquidatorProxy.liquidate(
           owner1,
           accountNumber1,
@@ -375,11 +413,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Succeeds for less than valueLiquidatable (even if liquidAccount is small)', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await solo.liquidatorProxy.liquidate(
           owner1,
           accountNumber1,
@@ -398,11 +438,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Reverts if cannot liquidate enough', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('0.2')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.times('0.2')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await expectThrow(
           solo.liquidatorProxy.liquidate(
             owner1,
@@ -420,12 +462,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Reverts if cannot liquidate even 1', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('125')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('125')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await expectThrow(
           solo.liquidatorProxy.liquidate(
             owner1,
@@ -445,13 +489,15 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
     describe('Follows preferences', () => {
       it('Liquidates the most specified markets first', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market4, par.times('0.02')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market3, negPar.times('100')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market4, par.times('0.11')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market4, par.times('0.02')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market3, negPar.times('100')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market4, par.times('0.11')),
+          ],
+        );
         await solo.liquidatorProxy.liquidate(
           owner1,
           accountNumber1,
@@ -470,12 +516,14 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Does not liquidate unspecified markets', async () => {
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, par.times('100')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
         await solo.liquidatorProxy.liquidate(
           owner1,
           accountNumber1,
@@ -496,10 +544,12 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 
     describe('Failure cases', () => {
       it('Fails for msg.sender is non-operator', async () => {
-        await Promise.all([
-          setUpBasicBalances(),
-          solo.permissions.disapproveOperator(operator, { from: owner1 }),
-        ]);
+        await Promise.all(
+          [
+            setUpBasicBalances(),
+            solo.permissions.disapproveOperator(operator, { from: owner1 }),
+          ],
+        );
         await expectThrow(
           liquidate(),
           'LiquidatorProxyV1ForSoloMargin: Sender not operator',
@@ -507,13 +557,15 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       });
 
       it('Fails for proxy is non-operator', async () => {
-        await Promise.all([
-          setUpBasicBalances(),
-          solo.permissions.disapproveGlobalOperator(
-            solo.contracts.liquidatorProxyV1.options.address,
-            { from: accounts[0] },
-          ),
-        ]);
+        await Promise.all(
+          [
+            setUpBasicBalances(),
+            solo.permissions.disapproveGlobalOperator(
+              solo.contracts.liquidatorProxyV1.options.address,
+              { from: accounts[0] },
+            ),
+          ],
+        );
         await expectThrow(
           liquidate(),
           'Storage: Unpermissioned global operator',
@@ -542,28 +594,32 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
     describe('Interest cases', () => {
       it('Liquidates properly even if the indexes have changed', async () => {
         const rate = new BigNumber(1).div(INTEGERS.ONE_YEAR_IN_SECONDS);
-        await Promise.all([
-          solo.testing.interestSetter.setInterestRate(solo.testing.tokenA.getAddress(), rate),
-          solo.testing.interestSetter.setInterestRate(solo.testing.tokenB.getAddress(), rate),
-          solo.testing.setMarketIndex(market1, {
-            borrow: new BigNumber('1.2'),
-            supply: new BigNumber('1.1'),
-            lastUpdate: zero,
-          }),
-          solo.testing.setMarketIndex(market2, {
-            borrow: new BigNumber('1.2'),
-            supply: new BigNumber('1.1'),
-            lastUpdate: zero,
-          }),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.interestSetter.setInterestRate(solo.testing.tokenA.getAddress(), rate),
+            solo.testing.interestSetter.setInterestRate(solo.testing.tokenB.getAddress(), rate),
+            solo.testing.setMarketIndex(market1, {
+              borrow: new BigNumber('1.2'),
+              supply: new BigNumber('1.1'),
+              lastUpdate: zero,
+            }),
+            solo.testing.setMarketIndex(market2, {
+              borrow: new BigNumber('1.2'),
+              supply: new BigNumber('1.1'),
+              lastUpdate: zero,
+            }),
+          ],
+        );
         await fastForward(3600);
 
-        await Promise.all([
-          solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div(2)),
-          solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('30')),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-          solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-        ]);
+        await Promise.all(
+          [
+            solo.testing.setAccountBalance(owner1, accountNumber1, market1, par.div('2')),
+            solo.testing.setAccountBalance(owner1, accountNumber1, market2, negPar.times('30')),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+            solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+          ],
+        );
 
         await liquidate();
       });
@@ -574,11 +630,13 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
 // ============ Helper Functions ============
 
 async function setUpBasicBalances() {
-  await Promise.all([
-    solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
-    solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-    solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
-  ]);
+  await Promise.all(
+    [
+      solo.testing.setAccountBalance(owner1, accountNumber1, market1, par),
+      solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+      solo.testing.setAccountBalance(owner2, accountNumber2, market2, par.times('110')),
+    ],
+  );
 }
 
 async function liquidate() {
@@ -588,7 +646,7 @@ async function liquidate() {
     market3,
     market4,
   ];
-  const txResult = await solo.liquidatorProxy.liquidate(
+  return await solo.liquidatorProxy.liquidate(
     owner1,
     accountNumber1,
     owner2,
@@ -599,25 +657,28 @@ async function liquidate() {
     preferences,
     { from: operator },
   );
-  return txResult;
 }
 
 async function expectBalances(
   liquidatorBalances: (number | BigNumber)[],
   liquidBalances: (number | BigNumber)[],
 ) {
-  const bal1 = await Promise.all([
-    solo.getters.getAccountPar(owner1, accountNumber1, market1),
-    solo.getters.getAccountPar(owner1, accountNumber1, market2),
-    solo.getters.getAccountPar(owner1, accountNumber1, market3),
-    solo.getters.getAccountPar(owner1, accountNumber1, market4),
-  ]);
-  const bal2 = await Promise.all([
-    solo.getters.getAccountPar(owner2, accountNumber2, market1),
-    solo.getters.getAccountPar(owner2, accountNumber2, market2),
-    solo.getters.getAccountPar(owner2, accountNumber2, market3),
-    solo.getters.getAccountPar(owner2, accountNumber2, market4),
-  ]);
+  const bal1 = await Promise.all(
+    [
+      solo.getters.getAccountPar(owner1, accountNumber1, market1),
+      solo.getters.getAccountPar(owner1, accountNumber1, market2),
+      solo.getters.getAccountPar(owner1, accountNumber1, market3),
+      solo.getters.getAccountPar(owner1, accountNumber1, market4),
+    ],
+  );
+  const bal2 = await Promise.all(
+    [
+      solo.getters.getAccountPar(owner2, accountNumber2, market1),
+      solo.getters.getAccountPar(owner2, accountNumber2, market2),
+      solo.getters.getAccountPar(owner2, accountNumber2, market3),
+      solo.getters.getAccountPar(owner2, accountNumber2, market4),
+    ],
+  );
 
   for (let i = 0; i < liquidatorBalances.length; i += 1) {
     expect(bal1[i]).toEqual(liquidatorBalances[i]);

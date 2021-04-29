@@ -19,6 +19,8 @@ import { default as SignedOperationProxy }
   from '../build/contracts/SignedOperationProxy.json';
 import { default as LiquidatorProxyV1ForSoloMargin }
   from '../build/contracts/LiquidatorProxyV1ForSoloMargin.json';
+import { default as LiquidatorProxyV1WithAmmForSoloMargin }
+  from '../build/contracts/LiquidatorProxyV1WithAmmForSoloMargin.json';
 import { default as DolomiteAmmRouterProxy }
   from '../build/contracts/DolomiteAmmRouterProxy.json';
 import { default as PolynomialInterestSetter }
@@ -55,6 +57,7 @@ export default {
   PayableProxyForSoloMargin,
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
+  LiquidatorProxyV1WithAmmForSoloMargin,
   DolomiteAmmRouterProxy,
   PolynomialInterestSetter,
   DoubleExponentInterestSetter,

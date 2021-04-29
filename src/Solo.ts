@@ -38,8 +38,12 @@ import { Api } from './modules/Api';
 import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
-import { SoloOptions, EthereumAccount, address, Networks } from './types';
-import {DolomiteAmmRouterProxy} from './modules/DolomiteAmmRouterProxy';
+import { address, EthereumAccount, Index, Networks, SoloOptions } from './types';
+import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
+import { LiquidatorProxyWithAmm } from './modules/LiquidatorProxyWithAmm';
+import { BigNumber } from './index';
+import { INTEGERS } from './lib/Constants';
+import { valueToInteger } from './lib/Helpers';
 
 export class Solo {
   public contracts: Contracts;
@@ -56,6 +60,7 @@ export class Solo {
   public canonicalOrders: CanonicalOrders;
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
+  public liquidatorProxyWithAmm: LiquidatorProxyWithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public permissions: Permissions;
   public logs: Logs;
@@ -64,6 +69,7 @@ export class Solo {
   public websocket: Websocket;
   public standardActions: StandardActions;
   public walletLogin: WalletLogin;
+  function;
 
   constructor(
     provider: Provider | string,
@@ -98,6 +104,7 @@ export class Solo {
     this.canonicalOrders = new CanonicalOrders(this.contracts, this.web3, networkId);
     this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
+    this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
@@ -147,6 +154,8 @@ export class Solo {
     return this.web3.eth.defaultAccount;
   }
 
+  // ============ Helper Functions ============
+
   public loadAccount(account: EthereumAccount): void {
     const newAccount = this.web3.eth.accounts.wallet.add(
       account.privateKey,
@@ -164,7 +173,145 @@ export class Solo {
     }
   }
 
-  // ============ Helper Functions ============
+  public getMarketTokenAddress(
+    marketId: BigNumber
+  ): Promise<address> {
+    return this.contracts.soloMargin.methods.getMarketTokenAddress(
+      marketId.toFixed(0)
+    ).call();
+  }
+
+  public getMarketIdByTokenAddress(
+    tokenAddress: address
+  ): Promise<BigNumber> {
+    return this.contracts.soloMargin.methods
+      .getMarketIdByTokenAddress(tokenAddress)
+      .call()
+      .then(resultString => new BigNumber(resultString));
+  }
+
+  public async getAmmAmountOut(
+    amountIn: BigNumber,
+    tokenIn: address,
+    tokenOut: address,
+  ): Promise<BigNumber> {
+    return this.getAmmAmountOutWithPath(amountIn, [tokenIn, tokenOut]);
+  }
+
+  public async getAmmAmountOutWithPath(
+    amountIn: BigNumber,
+    path: address[],
+  ): Promise<BigNumber> {
+    const amounts = new Array<BigNumber>(path.length);
+    amounts[0] = amountIn;
+
+    for (let i = 0; i < path.length - 1; i += 1) {
+      const { reserveIn, reserveOut } = await this.getReserves(path[i], path[i + 1]);
+      amounts[i + 1] = this.getAmmAmountOutWithReserves(amounts[i], reserveIn, reserveOut);
+    }
+
+    return amounts[amounts.length - 1];
+  }
+
+  public getAmmAmountOutWithReserves(
+    amountIn: BigNumber,
+    reserveIn: BigNumber,
+    reserveOut: BigNumber,
+  ): BigNumber {
+    const amountInWithFee = amountIn.times('997');
+    const numerator = amountInWithFee.times(reserveOut);
+    const denominator = reserveIn.times('1000').plus(amountInWithFee);
+    return numerator.dividedToIntegerBy(denominator);
+  }
+
+  public async getAmmAmountIn(
+    amountOut: BigNumber,
+    tokenIn: address,
+    tokenOut: address,
+  ): Promise<BigNumber> {
+    return this.getAmmAmountInWithPath(amountOut, [tokenIn, tokenOut]);
+  }
+
+  public async getAmmAmountInWithPath(
+    amountOut: BigNumber,
+    path: address[]
+  ): Promise<BigNumber> {
+    const amounts = new Array<BigNumber>(path.length);
+    amounts[amounts.length - 1] = amountOut;
+
+    for (let i = path.length - 1; i > 0; i -= 1) {
+      const { reserveIn, reserveOut } = await this.getReserves(path[i - 1], path[i]);
+      amounts[i - 1] = this.getAmmAmountInWithReserves(amounts[i], reserveIn, reserveOut);
+    }
+
+    return amounts[0];
+  }
+
+  public getAmmAmountInWithReserves(
+    amountOut: BigNumber,
+    reserveIn: BigNumber,
+    reserveOut: BigNumber,
+  ): BigNumber {
+    const numerator = reserveIn.times(amountOut).times('1000');
+    const denominator = (reserveOut.minus(amountOut)).times('997');
+    return (numerator.dividedToIntegerBy(denominator)).plus('1');
+  }
+
+  public getPartialRoundUp(target: BigNumber, numerator: BigNumber, denominator: BigNumber): BigNumber {
+    const result = target.abs().times(numerator).minus('1').dividedToIntegerBy(denominator).plus('1');
+    if (target.lt(INTEGERS.ZERO)) {
+      return result.negated();
+    }
+
+    return result;
+  }
+
+  public weiToPar(valueWei: BigNumber, index: Index): BigNumber {
+    if (valueWei.lt(INTEGERS.ZERO)) {
+      return this.getPartialRoundUp(
+        valueWei,
+        INTEGERS.INTEREST_RATE_BASE,
+        index.borrow.times(INTEGERS.INTEREST_RATE_BASE),
+      );
+    }
+
+    return valueWei.dividedToIntegerBy(index.supply);
+  }
+
+  public parToWei(valueWei: BigNumber, index: Index): BigNumber {
+    const base = INTEGERS.INTEREST_RATE_BASE;
+    if (valueWei.lt(INTEGERS.ZERO)) {
+      // return this.getPartialRoundUp(
+      //   valueWei,
+      //   INTEGERS.INTEREST_RATE_BASE,
+      //   index.borrow.times(INTEGERS.INTEREST_RATE_BASE),
+      // );
+      return valueWei.times(index.borrow.times(base)).dividedToIntegerBy(base);
+    }
+
+    return valueWei.times(index.supply.times(base)).dividedToIntegerBy(base);
+  }
+
+  public async getMarketIndex(marketId: BigNumber): Promise<any> {
+    const result = await this.contracts.soloMargin.methods.getMarketCurrentIndex(
+      marketId.toString()
+    ).send();
+
+    return { borrow: new BigNumber(result.borrow), supply: new BigNumber(result.supply) };
+  }
+
+  public async getMarketWei(
+    owner: address,
+    accountNumber: BigNumber,
+    marketId: BigNumber,
+  ): Promise<BigNumber> {
+    const result = await this.contracts.soloMargin.methods.getAccountWei(
+      { owner, number: accountNumber.toFixed(), },
+      marketId.toFixed()
+    ).call();
+
+    return valueToInteger(result);
+  }
 
   protected createContractsModule(
     provider: Provider,
@@ -173,5 +320,28 @@ export class Solo {
     options: SoloOptions,
   ): any {
     return new Contracts(provider, networkId, web3, options);
+  }
+
+  private async getReserves(
+    tokenIn: address,
+    tokenOut: address
+  ): Promise<{ reserveIn: BigNumber, reserveOut: BigNumber }> {
+    const pairAddress = await this.contracts.uniswapV2Factory.methods.getPair(tokenIn, tokenOut).call();
+    const pair = this.contracts.getUniswapV2Pair(pairAddress);
+
+    const { _reserve0, _reserve1 } = await pair.methods.getReservesWei().call();
+    const token0 = await pair.methods.token0().call();
+
+    let reserveIn: BigNumber;
+    let reserveOut: BigNumber;
+    if (token0.toLowerCase() === tokenIn.toLowerCase()) {
+      reserveIn = new BigNumber(_reserve0);
+      reserveOut = new BigNumber(_reserve1);
+    } else {
+      reserveIn = new BigNumber(_reserve1);
+      reserveOut = new BigNumber(_reserve0);
+    }
+
+    return { reserveIn, reserveOut };
   }
 }

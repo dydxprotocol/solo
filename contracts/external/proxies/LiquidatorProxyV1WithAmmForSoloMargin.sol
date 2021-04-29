@@ -51,7 +51,7 @@ ReentrancyGuard
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "LiquidatorProxyV1ForSoloMargin";
+    bytes32 constant FILE = "LiquidatorV1WithAmmForSoloMargin";
 
     // ============ Structs ============
 
@@ -70,9 +70,10 @@ ReentrancyGuard
         // mutable
         uint256 toLiquidate;
         // The amount of heldMarket the solidAccount will receive. Includes the liquidation reward.
-        Types.Wei solidHeldUpdateWithReward;
+        uint256 solidHeldUpdateWithReward;
         Types.Wei solidHeldWei;
-        Monetary.Value liquidBorrowValue;
+        Types.Wei liquidHeldWei;
+        Types.Wei liquidOwedWei;
 
         // immutable
         Decimal.D256 spread;
@@ -105,18 +106,23 @@ ReentrancyGuard
      * Liquidate liquidAccount using solidAccount. This contract and the msg.sender to this contract
      * must both be operators for the solidAccount.
      *
-     * @param  solidAccount     The account that will do the liquidating
-     * @param  liquidAccount    The account that will be liquidated
-     * @param  owedMarket       The owed market whose borrowed value will be added to `toLiquidate`
-     * @param  heldMarket       The held market whose collateral will be recovered to take on the debt of `owedMarket`
-     * @param  tokenPath        The path through which the trade will be routed to recover the collateral
+     * @param  solidAccount                 The account that will do the liquidating
+     * @param  liquidAccount                The account that will be liquidated
+     * @param  owedMarket                   The owed market whose borrowed value will be added to `toLiquidate`
+     * @param  heldMarket                   The held market whose collateral will be recovered to take on the debt of
+     *                                      `owedMarket`
+     * @param  tokenPath                    The path through which the trade will be routed to recover the collateral
+     * @param  revertOnFailToSellCollateral True to revert the transaction completely if all collateral from the
+     *                                      liquidation cannot repay the owed debt. False to swallow the error and sell
+     *                                      whatever is possible.
      */
     function liquidate(
         Account.Info memory solidAccount,
         Account.Info memory liquidAccount,
         uint256 owedMarket,
         uint256 heldMarket,
-        address[] memory tokenPath
+        address[] memory tokenPath,
+        bool revertOnFailToSellCollateral
     )
     public
     nonReentrant
@@ -130,9 +136,9 @@ ReentrancyGuard
         );
 
         Require.that(
-            SOLO_MARGIN.getAccountPar(liquidAccount, owedMarket).isNegative(),
+            !SOLO_MARGIN.getAccountPar(liquidAccount, owedMarket).isPositive(),
             FILE,
-            "cannot liquidate positive market",
+            "owed market cannot be positive",
             owedMarket
         );
 
@@ -140,7 +146,7 @@ ReentrancyGuard
             SOLO_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive(),
             FILE,
             "held market cannot be negative",
-            owedMarket
+            heldMarket
         );
 
         Require.that(
@@ -175,7 +181,6 @@ ReentrancyGuard
 
         // get the max liquidation amount
         calculateMaxLiquidationAmount(cache);
-        assert(cache.solidHeldUpdateWithReward.sign);
 
         // if nothing to liquidate, do nothing
         Require.that(
@@ -184,7 +189,7 @@ ReentrancyGuard
             "nothing to liquidate"
         );
 
-        uint totalSolidHeldWei = cache.solidHeldUpdateWithReward.value;
+        uint totalSolidHeldWei = cache.solidHeldUpdateWithReward;
         if (cache.solidHeldWei.sign) {
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
@@ -193,10 +198,27 @@ ReentrancyGuard
         ROUTER_PROXY.getParamsForSwapTokensForExactTokens(
             constants.solidAccount.owner,
             constants.solidAccount.number,
-            totalSolidHeldWei, // maxInputWei
+            uint(- 1), // maxInputWei
             cache.toLiquidate, // the amount of owedMarket that needs to be repaid. Exact output amount
             tokenPath
         );
+        if (revertOnFailToSellCollateral) {
+            Require.that(
+                totalSolidHeldWei >= actions[0].amount.value,
+                FILE,
+                "totalSolidHeldWei is too small",
+                totalSolidHeldWei,
+                actions[0].amount.value
+            );
+        } else if (totalSolidHeldWei < actions[0].amount.value) {
+            (accounts, actions) = ROUTER_PROXY.getParamsForSwapExactTokensForTokens(
+                constants.solidAccount.owner,
+                constants.solidAccount.number,
+                totalSolidHeldWei, // inputWei
+                1, // minOutputAmount; we will sell whatever collateral we can
+                tokenPath
+            );
+        }
 
         accounts = constructAccountsArray(constants, accounts);
 
@@ -220,11 +242,16 @@ ReentrancyGuard
     private
     pure
     {
-        uint256 owedValueToTakeOn = cache.liquidBorrowValue.value;
-        uint256 owedWeiToLiquidate = owedValueToTakeOn.div(cache.owedPrice);
-        cache.toLiquidate = owedWeiToLiquidate;
-
-        cache.solidHeldUpdateWithReward = Types.Wei(true, owedWeiToLiquidate.mul(cache.owedPriceAdj).div(cache.heldPrice));
+        uint liquidHeldValue = cache.heldPrice.mul(cache.liquidHeldWei.value);
+        uint liquidOwedValue = cache.owedPriceAdj.mul(cache.liquidOwedWei.value);
+        if (liquidHeldValue <= liquidOwedValue) {
+            // The user is under-collateralized; there is no reward left to give
+            cache.solidHeldUpdateWithReward = cache.liquidHeldWei.value;
+            cache.toLiquidate = Math.getPartialRoundUp(cache.liquidHeldWei.value, cache.heldPrice, cache.owedPriceAdj);
+        } else {
+            cache.solidHeldUpdateWithReward = Math.getPartial(cache.liquidOwedWei.value, cache.owedPriceAdj, cache.heldPrice);
+            cache.toLiquidate = cache.liquidOwedWei.value;
+        }
     }
 
     // ============ Helper Functions ============
@@ -233,7 +260,6 @@ ReentrancyGuard
      * Make some basic checks before attempting to liquidate an account.
      *  - Require that the msg.sender is permissioned to use the liquidator account
      *  - Require that the liquid account is liquidatable
-     *  - Sets the liquid account's borrow value (in USD)
      */
     function checkRequirements(
         Constants memory constants,
@@ -262,19 +288,11 @@ ReentrancyGuard
             "Liquid account no supply"
         );
         Require.that(
-            SOLO_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
-            || !isCollateralized(
-            liquidSupplyValue.value,
-            liquidBorrowValue.value,
-            SOLO_MARGIN.getMarginRatio()
-        ),
+            SOLO_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+            !isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, SOLO_MARGIN.getMarginRatio()),
             FILE,
-            "Liquid account not liquidatable",
-            liquidSupplyValue.value,
-            liquidBorrowValue.value
+            "Liquid account not liquidatable"
         );
-
-        cache.liquidBorrowValue = liquidBorrowValue;
     }
 
     /**
@@ -361,20 +379,25 @@ ReentrancyGuard
     view
     returns (LiquidatorWithAmmCache memory)
     {
-        (,Monetary.Value memory liquidBorrowValue) = getCurrentAccountValues(constants, constants.liquidAccount);
-
         uint256 heldPrice = constants.markets[heldMarket].price.value;
         uint256 owedPrice = constants.markets[owedMarket].price.value;
         Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
 
         return LiquidatorWithAmmCache({
         toLiquidate : 0,
-        solidHeldUpdateWithReward : Types.zeroWei(),
+        solidHeldUpdateWithReward : 0,
         solidHeldWei : Interest.parToWei(
                 SOLO_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
                 constants.markets[heldMarket].index
             ),
-        liquidBorrowValue : liquidBorrowValue,
+        liquidHeldWei : Interest.parToWei(
+                SOLO_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
+                constants.markets[heldMarket].index
+            ),
+        liquidOwedWei : Interest.parToWei(
+                SOLO_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
+                constants.markets[owedMarket].index
+            ),
         spread : spread,
         heldMarket : heldMarket,
         owedMarket : owedMarket,

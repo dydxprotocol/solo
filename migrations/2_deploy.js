@@ -82,11 +82,13 @@ const ExpiryV2 = artifacts.require('ExpiryV2');
 const Refunder = artifacts.require('Refunder');
 const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
+const LiquidatorProxyV1WithAmmForSoloMargin = artifacts.require('LiquidatorProxyV1WithAmmForSoloMargin');
 const LimitOrders = artifacts.require('LimitOrders');
 const StopLimitOrders = artifacts.require('StopLimitOrders');
 const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
+const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
@@ -108,22 +110,17 @@ const migration = async (deployer, network, accounts) => {
     deployTestContracts(deployer, network),
     deployBaseProtocol(deployer, network),
   ]);
-  await deployer.deploy(
-    UniswapV2Factory,
-    getSenderAddress(network, accounts),
-    (await getSoloMargin(network)).address,
-  );
+  await Promise.all([
+    deployInterestSetters(deployer, network),
+    deployPriceOracles(deployer, network, accounts),
+    deploySecondLayer(deployer, network, accounts),
+  ]);
   await deployer.deploy(
     SimpleFeeOwner,
     await getUniswapV2FactoryAddress(network),
     (await getSoloMargin(network)).address,
   );
   await (await UniswapV2Factory.deployed()).contract.methods.setFeeToSetter(SimpleFeeOwner.address);
-  await Promise.all([
-    deployInterestSetters(deployer, network),
-    deployPriceOracles(deployer, network, accounts),
-    deploySecondLayer(deployer, network, accounts),
-  ]);
 };
 
 module.exports = migration;
@@ -201,7 +198,12 @@ async function deployPriceOracles(deployer, network, accounts) {
   }
 
   const tokens = {
-    TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
+    TokenA,
+    TokenB,
+    TokenD,
+    TokenE,
+    TokenF,
+    WETH9,
   };
 
   const aggregators = {
@@ -253,6 +255,25 @@ async function deploySecondLayer(deployer, network, accounts) {
     ]);
   }
 
+  await deployer.deploy(
+    TransferProxy,
+    soloMargin.address,
+  );
+
+  await deployer.deploy(
+    UniswapV2Factory,
+    getSenderAddress(network, accounts),
+    (await getSoloMargin(network)).address,
+    TransferProxy.address,
+  );
+
+  await deployer.deploy(
+    DolomiteAmmRouterProxy,
+    soloMargin.address,
+    getUniswapV2FactoryAddress(network),
+    getWethAddress(network, WETH9),
+  );
+
   await Promise.all([
     deployer.deploy(
       PayableProxyForSoloMargin,
@@ -283,6 +304,11 @@ async function deploySecondLayer(deployer, network, accounts) {
       soloMargin.address,
     ),
     deployer.deploy(
+      LiquidatorProxyV1WithAmmForSoloMargin,
+      soloMargin.address,
+      DolomiteAmmRouterProxy.address,
+    ),
+    deployer.deploy(
       LimitOrders,
       soloMargin.address,
       getChainId(network),
@@ -302,12 +328,6 @@ async function deploySecondLayer(deployer, network, accounts) {
       SignedOperationProxy,
       soloMargin.address,
       getChainId(network),
-    ),
-    deployer.deploy(
-      DolomiteAmmRouterProxy,
-      soloMargin.address,
-      getUniswapV2FactoryAddress(network),
-      getWethAddress(network, WETH9),
     ),
   ]);
 
@@ -349,11 +369,19 @@ async function deploySecondLayer(deployer, network, accounts) {
       true,
     ),
     soloMargin.ownerSetGlobalOperator(
-      UniswapV2Factory.address,
+      DolomiteAmmRouterProxy.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(
-      DolomiteAmmRouterProxy.address,
+      TransferProxy.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      LiquidatorProxyV1ForSoloMargin.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      LiquidatorProxyV1WithAmmForSoloMargin.address,
       true,
     ),
   ]);

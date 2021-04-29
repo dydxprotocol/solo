@@ -665,7 +665,7 @@ library OperationImpl {
 
         (
             Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPrice
+            Monetary.Price memory owedPriceAdj
         ) = _getLiquidationPrices(
             state,
             cache,
@@ -673,12 +673,12 @@ library OperationImpl {
             args.owedMarket
         );
 
-        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
 
             state.setPar(
                 args.liquidAccount,
@@ -947,16 +947,16 @@ library OperationImpl {
             Monetary.Price memory
         )
     {
-        uint256 originalPrice = cache.getPrice(owedMarketId).value;
+        uint256 owedPrice = cache.getPrice(owedMarketId).value;
         Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
             heldMarketId,
             owedMarketId
         );
 
-        Monetary.Price memory owedPrice = Monetary.Price({
-            value: originalPrice.add(Decimal.mul(originalPrice, spread))
+        Monetary.Price memory owedPriceAdj = Monetary.Price({
+            value: owedPrice.add(Decimal.mul(owedPrice, spread))
         });
 
-        return (cache.getPrice(heldMarketId), owedPrice);
+        return (cache.getPrice(heldMarketId), owedPriceAdj);
     }
 }

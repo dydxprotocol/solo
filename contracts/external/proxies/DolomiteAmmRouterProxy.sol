@@ -311,7 +311,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), cache.position.amountInWei, cache.position.tokenPath);
         require(
             cache.amountsWei[cache.amountsWei.length - 1] >= cache.position.amountOutWei,
-            "DolomiteAmmRouterProxy::swapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
+            "DolomiteAmmRouterProxy::_getParamsForSwapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
         );
 
         return _getParamsForSwap(cache);
@@ -323,12 +323,12 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         Account.Info[] memory,
         Actions.ActionArgs[] memory
     ) {
-        // amountsWei[0] == amountInWei
-        // amountsWei[amountsWei.length - 1] == amountOutWei
+        // cache.amountsWei[0] == amountInWei
+        // cache.amountsWei[amountsWei.length - 1] == amountOutWei
         cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), cache.position.amountOutWei, cache.position.tokenPath);
         require(
             cache.amountsWei[0] <= cache.position.amountInWei,
-            "DolomiteAmmRouterProxy::swapExactTokensForTokens: EXCESSIVE_INPUT_AMOUNT"
+            "DolomiteAmmRouterProxy::_getParamsForSwapTokensForExactTokens: EXCESSIVE_INPUT_AMOUNT"
         );
 
         return _getParamsForSwap(cache);
@@ -508,7 +508,6 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }
 
         for (uint i = 0; i < pools.length; i++) {
-            // Putting this variable here prevents the stack too deep issue
             actions[i] = _encodeTradeAction(
                 0,
                 i + 1,
