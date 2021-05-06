@@ -77,6 +77,28 @@ module.exports = {
       port: 8545,
       gasPrice: 1,
     },
+    matic: {
+      network_id: '137',
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        'https://rpc-mainnet.maticvigil.com',
+        0,
+        1,
+      ),
+      gasPrice: 1,
+      gas: 7900000,
+    },
+    test_matic: {
+      network_id: '80001',
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        'https://rpc-mumbai.maticvigil.com',
+        0,
+        1,
+      ),
+      gasPrice: 1,
+      gas: 7900000,
+    },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations
 };

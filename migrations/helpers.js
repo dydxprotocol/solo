@@ -5,17 +5,27 @@ const { coefficientsToString, decimalToString } = require('../dist/src/lib/Helpe
 function isDevNetwork(network) {
   verifyNetwork(network);
   return network.startsWith('development')
-      || network.startsWith('test')
-      || network.startsWith('test_ci')
-      || network.startsWith('develop')
-      || network.startsWith('dev')
-      || network.startsWith('docker')
-      || network.startsWith('coverage');
+    || network.startsWith('test')
+    || network.startsWith('test_ci')
+    || network.startsWith('develop')
+    || network.startsWith('dev')
+    || network.startsWith('docker')
+    || network.startsWith('coverage');
 }
 
 function isMainNet(network) {
   verifyNetwork(network);
   return network.startsWith('mainnet');
+}
+
+function isMatic(network) {
+  verifyNetwork(network);
+  return network.startsWith('matic');
+}
+
+function isMaticTest(network) {
+  verifyNetwork(network);
+  return network.startsWith('test_matic');
 }
 
 function isKovan(network) {
@@ -31,6 +41,12 @@ function isDocker(network) {
 function getChainId(network) {
   if (isMainNet(network)) {
     return 1;
+  }
+  if (isMatic(network)) {
+    return 137;
+  }
+  if (isMaticTest(network)) {
+    return 80001;
   }
   if (isKovan(network)) {
     return 42;

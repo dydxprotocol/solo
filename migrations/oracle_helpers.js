@@ -86,32 +86,38 @@ function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
 }
 
 function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
-  const {
-    TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
-  } = tokens;
+  if (isDevNetwork(network)) {
+    const {
+      TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
+    } = tokens;
 
-  const {
-    TestBtcUsdChainlinkAggregator,
-    TestDaiEthChainlinkAggregator,
-    TestEthUsdChainlinkAggregator,
-    TestLinkUsdChainlinkAggregator,
-    TestLrcEthChainlinkAggregator,
-    TestUsdcEthChainlinkAggregator,
-  } = aggregators;
+    const {
+      TestBtcUsdChainlinkAggregator,
+      TestDaiEthChainlinkAggregator,
+      TestEthUsdChainlinkAggregator,
+      TestLinkUsdChainlinkAggregator,
+      TestLrcEthChainlinkAggregator,
+      TestUsdcEthChainlinkAggregator,
+    } = aggregators;
+
+    return mapPairsToParams([
+      // eslint-disable-next-line max-len
+      [getDaiAddress(network, TokenB), getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
+      // eslint-disable-next-line max-len
+      [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
+      // eslint-disable-next-line max-len
+      [getLrcAddress(network, TokenF), getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
+      // eslint-disable-next-line max-len
+      [getUsdcAddress(network, TokenA), getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator), 6, getWethAddress(network, WETH9), 18],
+      // eslint-disable-next-line max-len
+      [getWbtcAddress(network, TokenD), getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator), 8, ADDRESSES.ZERO, 8],
+      // eslint-disable-next-line max-len
+      [getWethAddress(network, WETH9), getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
+    ]);
+  }
 
   return mapPairsToParams([
-    // eslint-disable-next-line max-len
-    [getDaiAddress(network, TokenB), getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
-    // eslint-disable-next-line max-len
-    [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
-    // eslint-disable-next-line max-len
-    [getLrcAddress(network, TokenF), getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
-    // eslint-disable-next-line max-len
-    [getUsdcAddress(network, TokenA), getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator), 6, getWethAddress(network, WETH9), 18],
-    // eslint-disable-next-line max-len
-    [getWbtcAddress(network, TokenD), getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator), 8, ADDRESSES.ZERO, 8],
-    // eslint-disable-next-line max-len
-    [getWethAddress(network, WETH9), getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
+    [getDaiAddress(network, TokenB)]
   ]);
 }
 
