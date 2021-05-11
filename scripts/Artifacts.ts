@@ -41,6 +41,7 @@ import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkP
 import { default as SimpleFeeOwner } from '../build/contracts/SimpleFeeOwner.json';
 import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
+import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 
 export default {
   SoloMargin,
@@ -74,4 +75,5 @@ export default {
   UniswapV2Factory,
   UniswapV2Pair,
   SimpleFeeOwner,
+  TransferProxy,
 };
