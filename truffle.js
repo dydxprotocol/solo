@@ -85,19 +85,23 @@ module.exports = {
         0,
         1,
       ),
-      gasPrice: 1,
+      gasPrice: 5000000000,
       gas: 7900000,
+      confirmations: 1,
+      timeoutBlocks: 500,
     },
-    test_matic: {
+    mumbai_matic: {
       network_id: '80001',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'https://rpc-mumbai.maticvigil.com',
+        'https://matic-mumbai.chainstacklabs.com',
         0,
         1,
       ),
-      gasPrice: 1,
+      gasPrice: 5000000000,
       gas: 7900000,
+      confirmations: 1,
+      timeoutBlocks: 500,
     },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations

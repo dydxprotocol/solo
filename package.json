@@ -38,7 +38,7 @@
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_matic": "NETWORK=matic npm run deploy",
-    "deploy_test_matic": "NETWORK=test_matic npm run deploy",
+    "deploy_test_matic": "NETWORK=mumbai_matic npm run deploy",
     "deploy_test": "npm run reset_test_evm && npm run migrate -- --network test --reset && npm run snapshot_test_evm && npm run clean_contract_json",
     "deploy_coverage": "RPC_NODE_URI=http://127.0.0.1:8555 npm run reset_test_evm && COVERAGE=true npm run migrate -- --network coverage && RPC_NODE_URI=http://127.0.0.1:8555 npm run snapshot_test_evm && npm run clean_contract_json",
     "deploy_test_ci": "RPC_NODE_URI=http://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && RPC_NODE_URI=http://0.0.0.0:8545 npm run snapshot_test_evm && npm run clean_contract_json",
@@ -68,6 +68,7 @@
   "homepage": "https://github.com/dydxprotocol/solo#readme",
   "dependencies": {
     "@dydxprotocol/exchange-wrappers": "0.5.3",
+    "@poanet/solidity-flattener": "^3.0.6",
     "@truffle/hdwallet-provider": "^1.0.35",
     "@types/web3": "1.0.18",
     "axios": "^0.19.0",

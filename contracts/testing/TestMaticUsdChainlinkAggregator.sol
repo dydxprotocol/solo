@@ -23,11 +23,11 @@ import "../external/interfaces/IChainlinkAggregator.sol";
 /**
  * @dev Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
  */
-contract TestDaiUsdChainlinkAggregator is IChainlinkAggregator {
+contract TestMaticUsdChainlinkAggregator is IChainlinkAggregator {
 
     function latestAnswer() public view returns (int256) {
-        // $1.001
-        return 100100000;
+        // $0.75
+        return 75000000;
     }
 
 }

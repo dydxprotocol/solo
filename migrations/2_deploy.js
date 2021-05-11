@@ -29,6 +29,8 @@ const {
   getChainId,
   getOraclePokerAddress,
   getDaiPriceOracleParams,
+  isMatic,
+  isMaticTest,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleV1Params,
@@ -62,11 +64,12 @@ const TestCallee = artifacts.require('TestCallee');
 const TestSimpleCallee = artifacts.require('TestSimpleCallee');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
 const TestBtcUsdChainlinkAggregator = artifacts.require('TestBtcUsdChainlinkAggregator');
-const TestDaiEthChainlinkAggregator = artifacts.require('TestDaiEthChainlinkAggregator');
+const TestDaiUsdChainlinkAggregator = artifacts.require('TestDaiUsdChainlinkAggregator');
 const TestEthUsdChainlinkAggregator = artifacts.require('TestEthUsdChainlinkAggregator');
 const TestLinkUsdChainlinkAggregator = artifacts.require('TestLinkUsdChainlinkAggregator');
 const TestLrcEthChainlinkAggregator = artifacts.require('TestLrcEthChainlinkAggregator');
-const TestUsdcEthChainlinkAggregator = artifacts.require('TestUsdcEthChainlinkAggregator');
+const TestMaticUsdChainlinkAggregator = artifacts.require('TestMaticUsdChainlinkAggregator');
+const TestUsdcUsdChainlinkAggregator = artifacts.require('TestUsdcUsdChainlinkAggregator');
 const TestMakerOracle = artifacts.require('TestMakerOracle');
 const TestOasisDex = artifacts.require('TestOasisDex');
 const TestInterestSetter = artifacts.require('TestInterestSetter');
@@ -159,6 +162,8 @@ async function deployBaseProtocol(deployer, network) {
   let soloMargin;
   if (isDevNetwork(network)) {
     soloMargin = TestSoloMargin;
+  } else if (isMatic(network) || isMaticTest(network)) {
+    soloMargin = SoloMargin;
   } else if (isKovan(network) || isMainNet(network)) {
     soloMargin = SoloMargin;
   } else {
@@ -189,11 +194,12 @@ async function deployPriceOracles(deployer, network, accounts) {
   if (isDevNetwork(network)) {
     await Promise.all([
       deployer.deploy(TestBtcUsdChainlinkAggregator),
-      deployer.deploy(TestDaiEthChainlinkAggregator),
+      deployer.deploy(TestDaiUsdChainlinkAggregator),
       deployer.deploy(TestEthUsdChainlinkAggregator),
       deployer.deploy(TestLinkUsdChainlinkAggregator),
       deployer.deploy(TestLrcEthChainlinkAggregator),
-      deployer.deploy(TestUsdcEthChainlinkAggregator),
+      deployer.deploy(TestMaticUsdChainlinkAggregator),
+      deployer.deploy(TestUsdcUsdChainlinkAggregator),
     ]);
   }
 
@@ -207,12 +213,10 @@ async function deployPriceOracles(deployer, network, accounts) {
   };
 
   const aggregators = {
-    TestBtcUsdChainlinkAggregator,
-    TestDaiEthChainlinkAggregator,
-    TestEthUsdChainlinkAggregator,
-    TestLinkUsdChainlinkAggregator,
-    TestLrcEthChainlinkAggregator,
-    TestUsdcEthChainlinkAggregator,
+    daiAggregator: TestDaiUsdChainlinkAggregator,
+    ethAggregator: TestEthUsdChainlinkAggregator,
+    maticAggregator: TestMaticUsdChainlinkAggregator,
+    usdcAggregator: TestUsdcUsdChainlinkAggregator,
   };
 
   const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);
@@ -227,22 +231,24 @@ async function deployPriceOracles(deployer, network, accounts) {
     ),
   ]);
 
-  const daiPriceOracleParams = getDaiPriceOracleParams(network);
-  await Promise.all([
-    deployer.deploy(
-      DaiPriceOracle,
-      getOraclePokerAddress(network, accounts),
-      getWethAddress(network, WETH9),
-      getDaiAddress(network, TokenB),
-      getMedianizerAddress(network),
-      getOasisAddress(network),
-      getDaiUniswapAddress(network),
-      daiPriceOracleParams.oasisEthAmount,
-      daiPriceOracleParams.deviationParams,
-    ),
-    deployer.deploy(UsdcPriceOracle),
-    deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
-  ]);
+  if (!isMaticTest(network) && !isMatic(network)) {
+    const daiPriceOracleParams = getDaiPriceOracleParams(network);
+    await Promise.all([
+      deployer.deploy(
+        DaiPriceOracle,
+        getOraclePokerAddress(network, accounts),
+        getWethAddress(network, WETH9),
+        getDaiAddress(network, TokenB),
+        getMedianizerAddress(network),
+        getOasisAddress(network),
+        getDaiUniswapAddress(network),
+        daiPriceOracleParams.oasisEthAmount,
+        daiPriceOracleParams.deviationParams,
+      ),
+      deployer.deploy(UsdcPriceOracle),
+      deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
+    ]);
+  }
 }
 
 async function deploySecondLayer(deployer, network, accounts) {

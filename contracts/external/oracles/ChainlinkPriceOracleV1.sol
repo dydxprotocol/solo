@@ -19,11 +19,11 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import {IPriceOracle} from "../../protocol/interfaces/IPriceOracle.sol";
-import {Monetary} from "../../protocol/lib/Monetary.sol";
-import {IChainlinkAggregator} from "../interfaces/IChainlinkAggregator.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../../protocol/interfaces/IPriceOracle.sol";
+import "../../protocol/lib/Monetary.sol";
+import "../interfaces/IChainlinkAggregator.sol";
 
 
 /**

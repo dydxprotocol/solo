@@ -1,6 +1,7 @@
 pragma solidity =0.5.16;
 pragma experimental ABIEncoderV2;
 
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 
 import "../../protocol/interfaces/ISoloMargin.sol";
@@ -10,47 +11,28 @@ import "../../protocol/lib/Actions.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 
-contract SimpleFeeOwner {
+contract SimpleFeeOwner is Ownable {
 
     using SafeERC20 for IERC20;
 
     event OwnershipChanged(address indexed newOwner, address indexed oldOwner);
 
-    address public owner;
     IUniswapV2Factory uniswapFactory;
     ISoloMargin soloMargin;
-
-    modifier requireIsOwner {
-        require(
-            msg.sender == owner,
-            "SimpleFeeOwner: UNAUTHORIZED"
-        );
-        _;
-    }
 
     constructor(
         address _uniswapFactory,
         address _soloMargin
     ) public {
-        owner = msg.sender;
         uniswapFactory = IUniswapV2Factory(_uniswapFactory);
         soloMargin = ISoloMargin(_soloMargin);
-    }
-
-    function setOwner(
-        address _owner
-    )
-    external
-    requireIsOwner {
-        owner = _owner;
-        emit OwnershipChanged(_owner, msg.sender);
     }
 
     function uniswapSetFeeTo(
         address feeTo
     )
     external
-    requireIsOwner {
+    onlyOwner {
         uniswapFactory.setFeeTo(feeTo);
     }
 
@@ -58,7 +40,7 @@ contract SimpleFeeOwner {
         address feeToSetter
     )
     external
-    requireIsOwner {
+    onlyOwner {
         uniswapFactory.setFeeToSetter(feeToSetter);
     }
 
@@ -67,7 +49,7 @@ contract SimpleFeeOwner {
         address[] calldata tokens
     )
     external
-    requireIsOwner {
+    onlyOwner {
         for (uint i = 0; i < tokens.length; i++) {
             address token = tokens[i];
             uint amount = IERC20(token).balanceOf(address(this));
@@ -80,7 +62,7 @@ contract SimpleFeeOwner {
         address[] calldata lpTokens
     )
     external
-    requireIsOwner {
+    onlyOwner {
         for (uint i = 0; i < lpTokens.length; i++) {
             IUniswapV2Pair lpToken = IUniswapV2Pair(lpTokens[i]);
             lpToken.transfer(address(lpToken), lpToken.balanceOf(address(this)));

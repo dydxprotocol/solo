@@ -23,13 +23,14 @@ const {
   isKovan,
   isMainNet,
   isDocker,
+  isMatic,
+  isMaticTest,
 } = require('./helpers');
 const {
   getDaiAddress,
   getLinkAddress,
-  getLrcAddress,
+  getMaticAddress,
   getUsdcAddress,
-  getWbtcAddress,
   getWethAddress,
 } = require('./token_helpers');
 
@@ -43,7 +44,6 @@ const TestSoloMargin = artifacts.require('TestSoloMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenD = artifacts.require('TokenD');
-const TokenE = artifacts.require('TokenE');
 const TokenF = artifacts.require('TokenF');
 const WETH9 = artifacts.require('WETH9');
 const TestPriceOracle = artifacts.require('TestPriceOracle');
@@ -88,7 +88,8 @@ async function setupProtocol(deployer, network, accounts) {
 
   if (isKovan(network)) {
     const testPriceOracle = await TestPriceOracle.deployed();
-    await testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)); // ZRX
+    await testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3')
+      .toFixed(0)); // ZRX
   }
 
   if (isDocker(network)) {
@@ -104,9 +105,11 @@ async function setupProtocol(deployer, network, accounts) {
     );
     const testPriceOracle = await TestPriceOracle.deployed();
     await Promise.all([
-      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed(0)), // WETH
+      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100')
+        .toFixed(0)), // WETH
       testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed(0)), // DAI
-      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)), // ZRX
+      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3')
+        .toFixed(0)), // ZRX
     ]);
   }
 
@@ -151,38 +154,55 @@ async function getSoloMargin(network) {
 }
 
 function getTokens(network) {
-  return [
-    { address: getWethAddress(network, WETH9) },
+  const tokens = [
     { address: getDaiAddress(network, TokenB) },
+    { address: getMaticAddress(network, TokenD) },
     { address: getUsdcAddress(network, TokenA) },
-    { address: getLinkAddress(network, TokenE) },
-    { address: getLrcAddress(network, TokenF) },
-    { address: getWbtcAddress(network, TokenD) },
+    { address: getWethAddress(network, WETH9) },
   ];
+  if (isMatic(network)) {
+    tokens.push({ address: getLinkAddress(network, TokenF) });
+  }
+
+  return tokens;
 }
 
 async function getOracles(network) {
+  const tokens = getTokens(network);
   if (isDocker(network)) {
-    return getTokens(network).map(() => ({ address: TestPriceOracle.address }));
+    return tokens.map(() => ({ address: TestPriceOracle.address }));
   }
   if (isKovan(network)) {
-    return getTokens(network).map(() => ({ address: ChainlinkPriceOracleV1.address }));
+    return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
   }
   if (isMainNet(network)) {
-    return getTokens(network).map(() => ({ address: ChainlinkPriceOracleV1.address }));
+    return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
+  }
+  if (isMaticTest(network)) {
+    return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
+  }
+  if (isMatic(network)) {
+    return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
   }
   throw new Error('Cannot find Oracles');
 }
 
 async function getSetters(network) {
+  const tokens = getTokens(network);
   if (isDocker(network)) {
-    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isKovan(network)) {
-    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isMainNet(network)) {
-    return getTokens(network).map(() => ({ address: DoubleExponentInterestSetter.address }));
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
+  }
+  if (isMatic(network)) {
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
+  }
+  if (isMaticTest(network)) {
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   throw new Error('Cannot find Setters');
 }

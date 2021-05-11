@@ -25,7 +25,7 @@ function isMatic(network) {
 
 function isMaticTest(network) {
   verifyNetwork(network);
-  return network.startsWith('test_matic');
+  return network.startsWith('mumbai_matic');
 }
 
 function isKovan(network) {
@@ -148,9 +148,15 @@ function verifyNetwork(network) {
 
 function getSenderAddress(network, accounts) {
   if (isMainNet(network) || isKovan(network)) {
-    return '';
+    return accounts[0];
   }
   if (isDevNetwork(network)) {
+    return accounts[0];
+  }
+  if (isMaticTest(network)) {
+    return accounts[0];
+  }
+  if (isMatic(network)) {
     return accounts[0];
   }
   throw new Error('Cannot find Sender address');
@@ -163,7 +169,7 @@ function getOraclePokerAddress(network, accounts) {
   if (isKovan(network)) {
     return '0xa13cc3ab215bf669764a1a56a831c1bdc95659dd';
   }
-  if (isDevNetwork(network)) {
+  if (isDevNetwork(network) || isMaticTest(network) || isMaticTest(network)) {
     return accounts[0];
   }
   throw new Error('Cannot find Oracle Poker');
@@ -171,20 +177,13 @@ function getOraclePokerAddress(network, accounts) {
 
 function getMultisigAddress(network) {
   if (isMainNet(network)) {
-    return '0xb85f60781A4F7AF615b143f6d4037F8F89A37429';
+    throw new Error('No Mainnet multisig');
   }
   if (isKovan(network)) {
-    return '0x3d62d8b3ef034e0fde7de8fec4f557a3e6e4efa1';
+    throw new Error('No Kovan multisig');
   }
-  throw new Error('Cannot find Admin Multisig');
-}
-
-function getNonDelayedMultisigAddress(network) {
-  if (isMainNet(network)) {
-    return '0x03b24cf9fe32dd719631d52bd6705d014c49f86f';
-  }
-  if (isKovan(network)) {
-    return '0xecc04f59c69e6ddb19d601282eb6dd4ea763ee09';
+  if (isMaticTest(network)) {
+    return '0x874Ad8fb87a67B1A33C5834CC8820DBa80D18Bbb';
   }
   throw new Error('Cannot find Admin Multisig');
 }
@@ -192,6 +191,8 @@ function getNonDelayedMultisigAddress(network) {
 module.exports = {
   isDevNetwork,
   isMainNet,
+  isMatic,
+  isMaticTest,
   isKovan,
   isDocker,
   getChainId,

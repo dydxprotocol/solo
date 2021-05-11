@@ -1,6 +1,8 @@
-const { isDevNetwork, isMainNet, isKovan } = require('./helpers');
 const {
-  getDaiAddress, getLinkAddress, getLrcAddress, getUsdcAddress, getWbtcAddress, getWethAddress,
+  isDevNetwork, isMainNet, isKovan, isMaticTest, isMatic,
+} = require('./helpers');
+const {
+  getDaiAddress, getLinkAddress, getLrcAddress, getMaticAddress, getUsdcAddress, getWbtcAddress, getWethAddress,
 } = require('./token_helpers');
 const {
   ADDRESSES,
@@ -19,6 +21,16 @@ function getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator) {
   throw new Error('Cannot find Weth');
 }
 
+function getDaiUsdAggregatorAddress(network) {
+  if (isMaticTest(network)) {
+    return '0x0FCAa9c899EC5A91eBc3D5Dd869De833b06fB046';
+  }
+  if (isMatic(network)) {
+    return '0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D';
+  }
+  throw new Error('Cannot find Weth');
+}
+
 function getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator) {
   if (isDevNetwork(network)) {
     return TestDaiEthChainlinkAggregator.address;
@@ -33,6 +45,12 @@ function getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator) {
 }
 
 function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
+  if (isMaticTest(network)) {
+    return '0x0715A7794a1dc8e42615F059dD6e406A6594651A';
+  }
+  if (isMatic(network)) {
+    return '0xF9680D99D6C9589e2a93a78A04A279e509205945';
+  }
   if (isDevNetwork(network)) {
     return TestEthUsdChainlinkAggregator.address;
   }
@@ -42,10 +60,13 @@ function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0xD21912D8762078598283B14cbA40Cb4bFCb87581';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find EthUsdAggregatorAddress');
 }
 
 function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
+  if (isMatic(network)) {
+    return '0xd9FFdb71EbE7496cC440152d43986Aae0AB76665';
+  }
   if (isDevNetwork(network)) {
     return TestLinkUsdChainlinkAggregator.address;
   }
@@ -55,7 +76,7 @@ function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find LinkUsdAggregatorAddress');
 }
 
 function getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator) {
@@ -69,7 +90,28 @@ function getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator) {
     // This really is KNC/ETH. Chainlink doesn't support LRC on Kovan so we're spoofing it.
     return '0x0893AaF58f62279909F9F6FF2E5642f53342e77F';
   }
-  throw new Error('Cannot find Weth');
+  throw new Error('Cannot find LrcUsdAggregatorAddress');
+}
+
+function getMaticUsdAggregatorAddress(network) {
+  if (isMatic(network)) {
+    return '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0';
+  }
+  if (isMaticTest(network)) {
+    return '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada';
+  }
+
+  throw new Error('MaticUsdAggregatorAddress');
+}
+
+function getUsdcUsdAggregatorAddress(network) {
+  if (isMatic(network)) {
+    return '0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7';
+  }
+  if (isMaticTest(network)) {
+    return '0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0';
+  }
+  throw new Error('Cannot find UsdcUsdAggregatorAddress');
 }
 
 function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
@@ -86,6 +128,24 @@ function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
 }
 
 function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
+  if (isMaticTest(network)) {
+    return mapPairsToParams([
+      [getDaiAddress(network), getDaiUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getMaticAddress(network), getMaticUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
+      [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+    ]);
+  }
+  if (isMatic(network)) {
+    return mapPairsToParams([
+      [getDaiAddress(network), getDaiUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getLinkAddress(network), getLinkUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getMaticAddress(network), getMaticUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
+      [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+    ]);
+  }
+
   if (isDevNetwork(network)) {
     const {
       TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
@@ -116,9 +176,7 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
     ]);
   }
 
-  return mapPairsToParams([
-    [getDaiAddress(network, TokenB)]
-  ]);
+  throw new Error('Not set up for other networks');
 }
 
 function mapPairsToParams(pairs) {

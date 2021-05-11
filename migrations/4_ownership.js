@@ -19,6 +19,8 @@
 const {
   isDevNetwork,
   getMultisigAddress,
+  isMatic,
+  isMaticTest,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -33,6 +35,8 @@ const LimitOrders = artifacts.require('LimitOrders');
 const StopLimitOrders = artifacts.require('StopLimitOrders');
 const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
+const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
+const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // ============ Main Migration ============
 
@@ -42,7 +46,6 @@ const migration = async (deployer, network) => {
 
     const [
       deployedSoloMargin,
-      deployedDaiPriceOracle,
       deployedExpiry,
       deployedExpiryV2,
       deployedRefunder,
@@ -51,9 +54,10 @@ const migration = async (deployer, network) => {
       deployedStopLimitOrders,
       deployedCanonicalOrders,
       deployedSignedOperationProxy,
+      deployedSimpleFeeOwner,
+      deployedChainlinkPriceOracleV1,
     ] = await Promise.all([
       SoloMargin.deployed(),
-      DaiPriceOracle.deployed(),
       Expiry.deployed(),
       ExpiryV2.deployed(),
       Refunder.deployed(),
@@ -62,11 +66,12 @@ const migration = async (deployer, network) => {
       StopLimitOrders.deployed(),
       CanonicalOrders.deployed(),
       SignedOperationProxy.deployed(),
+      SimpleFeeOwner.deployed(),
+      ChainlinkPriceOracleV1.deployed(),
     ]);
 
     await Promise.all([
       deployedSoloMargin.transferOwnership(multisig),
-      deployedDaiPriceOracle.transferOwnership(multisig),
       deployedExpiry.transferOwnership(multisig),
       deployedExpiryV2.transferOwnership(multisig),
       deployedRefunder.transferOwnership(multisig),
@@ -75,7 +80,14 @@ const migration = async (deployer, network) => {
       deployedStopLimitOrders.transferOwnership(multisig),
       deployedCanonicalOrders.transferOwnership(multisig),
       deployedSignedOperationProxy.transferOwnership(multisig),
+      deployedSimpleFeeOwner.transferOwnership(multisig),
+      deployedChainlinkPriceOracleV1.transferOwnership(multisig),
     ]);
+
+    if (!isMatic(network) && !isMaticTest(network)) {
+      const deployedDaiPriceOracle = await DaiPriceOracle.deployed();
+      deployedDaiPriceOracle.transferOwnership(multisig);
+    }
   }
 };
 

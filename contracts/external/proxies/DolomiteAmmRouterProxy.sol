@@ -19,20 +19,19 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {Ownable} from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
-import {Account} from "../../protocol/lib/Account.sol";
-import {Actions} from "../../protocol/lib/Actions.sol";
-import {SoloMargin} from "../../protocol/SoloMargin.sol";
-import {Types} from "../../protocol/lib/Types.sol";
-import {OnlySolo} from "../helpers/OnlySolo.sol";
-import {TypedSignature} from "../lib/TypedSignature.sol";
-import {UniswapV2Library} from  "../lib/UniswapV2Library.sol";
+import "../../protocol/lib/Account.sol";
+import "../../protocol/lib/Actions.sol";
+import "../../protocol/SoloMargin.sol";
+import "../../protocol/lib/Types.sol";
+import "../helpers/OnlySolo.sol";
+import "../lib/TypedSignature.sol";
+import "../lib/UniswapV2Library.sol";
 
-import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IUniswapV2Factory.sol";
+import "../interfaces/IUniswapV2Pair.sol";
 
 contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
 
