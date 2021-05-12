@@ -1,4 +1,6 @@
-<p align="center"><img src="https://s3.amazonaws.com/dydx-assets/logo_large_white.png" width="256" /></p>
+<p align="center">
+<img src="https://dolomite.io/assets/img/logo.png" width="256" />
+</p>
 
 <div align="center">
   <a href="https://circleci.com/gh/dydxprotocol/workflows/solo/tree/master" style="text-decoration:none;">
@@ -10,7 +12,7 @@
   <a href='https://coveralls.io/github/dydxprotocol/solo' style="text-decoration:none;">
     <img src='https://coveralls.io/repos/github/dydxprotocol/solo/badge.svg?t=toKMwT' alt='Coverage Status' />
   </a>
-  <a href='https://github.com/dydxprotocol/solo/blob/master/LICENSE' style="text-decoration:none;">
+  <a href='https://github.com/dolomite-exchange/solo/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
   </a>
   <a href='https://t.me/joinchat/GBnMlBb9mQblQck2pThTgw' style="text-decoration:none;">
@@ -18,9 +20,9 @@
   </a>
 </div>
 
-> Ethereum Smart Contracts and TypeScript library used for the dYdX Solo Trading Protocol. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange)
+> Ethereum Smart Contracts and TypeScript library used for the Dolomite Trading Protocol. Currently used by [app.dolomite.io](https://app.dolomite.io)
 
-**Full Documentation at [docs.dydx.exchange](https://docs.dydx.exchange)**
+**Full Documentation at [legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange)**
 
 ## Table of Contents
 
@@ -35,7 +37,7 @@
 
 ## Documentation
 
-Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.exchange)
+Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange)
 
 ## Install
 
@@ -47,23 +49,26 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 
 |Contract Name|Description|Address|
 |---|---|---|
-|[`SoloMargin`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main dYdX contract|[0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e](https://etherscan.io/address/0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e)|
-|[`PayableProxyForSoloMargin`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76](https://etherscan.io/address/0xa8b39829cE2246f89B31C013b8Cde15506Fb9A76)|
-|[`PolynomialInterestSetter`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49](https://etherscan.io/address/0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49)|
-|[`Expiry`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Expiry.sol)|Handles account expiries|[0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d](https://etherscan.io/address/0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d)|
-|[`ExpiryV2`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|[0x739A1DF6725657f6a16dC2d5519DC36FD7911A12](https://etherscan.io/address/0x739A1DF6725657f6a16dC2d5519DC36FD7911A12)|
-|[`DaiPriceOracle`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/oracles/DaiPriceOracle.sol)|Price oracle for DAI|[0xccfcF083335633C48e99872899586113A2BD08D8](https://etherscan.io/address/0xccfcF083335633C48e99872899586113A2BD08D8)|
-|[`SaiPriceOracle`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/oracles/DaiPriceOracle.sol)|Price oracle for SAI|[0x787F552BDC17332c98aA360748884513e3cB401a](https://etherscan.io/address/0x787F552BDC17332c98aA360748884513e3cB401a)|
-|[`WethPriceOracle`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/oracles/WethPriceOracle.sol)|Price oracle for WETH|[0xf61AE328463CD997C7b58e7045CdC613e1cFdb69](https://etherscan.io/address/0xf61AE328463CD997C7b58e7045CdC613e1cFdb69)|
-|[`UsdcPriceOracle`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/oracles/UsdcPriceOracle.sol)|Price oracle for USDC|[0x52f1c952A48a4588f9ae615d38cfdbf8dF036e60](https://etherscan.io/address/0x52f1c952A48a4588f9ae615d38cfdbf8dF036e60)|
-|[`AdminImpl`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|[0x8a6629fEba4196E0A61B8E8C94D4905e525bc055](https://etherscan.io/address/0x8a6629fEba4196E0A61B8E8C94D4905e525bc055)|
-|[`OperationImpl`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1](https://etherscan.io/address/0x56E7d4520ABFECf10b38368b00723d9BD3c21ee1)|
-|[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686](https://etherscan.io/address/0xD4B6cd147ad8A0D5376b6FDBa85fE8128C6f0686)|
-|[`LimitOrders`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/LimitOrders.sol)|Contract for making limit orders using dYdX funds|[0xDEf136D9884528e1EB302f39457af0E4d3AD24EB](https://etherscan.io/address/0xDEf136D9884528e1EB302f39457af0E4d3AD24EB)|
-|[`StopLimitOrders`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/StopLimitOrders.sol)|Contract for making stop limit orders using dYdX funds|[0xbFb635e8c6689ac3874aD9A60FaB1c29270f1710](https://etherscan.io/address/0xbfb635e8c6689ac3874ad9a60fab1c29270f1710)|
-|[`CanonicalOrders`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/CanonicalOrders.sol)|Contract for making canonical limit and canonical stop-limit orders using dYdX funds|[0xCd81398895bEa7AD9EFF273aeFFc41A9d83B4dAD](https://etherscan.io/address/0xcd81398895bea7ad9eff273aeffc41a9d83b4dad)|
-|[`SignedOperationProxy`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55](https://etherscan.io/address/0x2a842bC64343FAD4Ec4a8424ba7ff3c0A70b6e55)|
-|[`Refunder`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Refunder.sol)|Allows sending of funds to other accounts|[0x0ECE224FBC24D40B446c6a94a142dc41fAe76f2d](https://etherscan.io/address/0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74)|
+|[`SoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main dYdX contract|[](https://etherscan.io/address/)|
+|[`PayableProxyForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
+|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
+|[`Expiry`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/Expiry.sol)|Handles account expiries|[](https://etherscan.io/address/)|
+|[`ExpiryV2`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|[](https://etherscan.io/address/)|
+|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
+|[`AdminImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|[](https://etherscan.io/address/)|
+|[`OperationImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[](https://etherscan.io/address/)|
+|[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
+|[`LiquidatorProxyV1WithAmmForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmmForSoloMargin.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
+|[`LimitOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/LimitOrders.sol)|Contract for making limit orders using Dolomite funds|[](https://etherscan.io/address/)|
+|[`StopLimitOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/StopLimitOrders.sol)|Contract for making stop limit orders using Dolomite funds|[](https://etherscan.io/address/)|
+|[`CanonicalOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/CanonicalOrders.sol)|Contract for making canonical limit and canonical stop-limit orders using Dolomite funds|[](https://etherscan.io/address/)|
+|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
+|[`SignedOperationProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
+|[`TransferProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
+|[`Refunder`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/Refunder.sol)|Allows sending of funds to other accounts|[](https://etherscan.io/address/)|
+|[`SimpleFeeOwner`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
+|[`UniswapV2Factory`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Factory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
+|[`UniswapV2Pair`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Pair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with Solo, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
 
 ## Security
 
@@ -152,15 +157,20 @@ Requires a running [docker](https://docker.com) engine.
 
 `npm run deploy_test`
 
+## Contributing
+
+You may open a pull request with any added or modified code. The pull request should state the rationale behind any 
+changes or the motivation behind any additions. All pull requests should contain adequate test coverage too. 
+
 ## Maintainers
 
- - **Brendan Chou**
- [@brendanchou](https://github.com/BrendanChou)
- [`brendan@dydx.exchange`](mailto:brendan@dydx.exchange)
+ - **Corey Caplan**
+ [@coreycaplan3](https://github.com/coreycaplan3)
+ [`corey@dolomite.io`](mailto:corey@dolomite.io)
 
- - **Antonio Juliano**
- [@antoniojuliano](https://github.com/AntonioJuliano)
- [`antonio@dydx.exchange`](mailto:antonio@dydx.exchange)
+ - **Adam Knuckey**
+ [@aknuck](https://github.com/aknuck)
+ [`adam@dolomite.io`](mailto:adam@dolomite.io)
 
 ## License
 
