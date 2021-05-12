@@ -6,16 +6,16 @@
   <a href="https://circleci.com/gh/dydxprotocol/workflows/solo/tree/master" style="text-decoration:none;">
     <img src="https://img.shields.io/circleci/project/github/dydxprotocol/solo.svg" alt='CI' />
   </a>
-  <a href='https://www.npmjs.com/package/@dydxprotocol/solo' style="text-decoration:none;">
-    <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM' />
+  <a href='https://www.npmjs.com/package/@dolomite-exchange/solo' style="text-decoration:none;">
+    <img src='https://img.shields.io/npm/v/@dolomite-exchange/solo.svg' alt='NPM' />
   </a>
-  <a href='https://coveralls.io/github/dydxprotocol/solo' style="text-decoration:none;">
-    <img src='https://coveralls.io/repos/github/dydxprotocol/solo/badge.svg?t=toKMwT' alt='Coverage Status' />
+  <a href='https://coveralls.io/github/dolomite-exchange/solo?branch=master'>
+    <img src='https://coveralls.io/repos/github/dolomite-exchange/solo/badge.svg?branch=master' alt='Coverage Status' />
   </a>
   <a href='https://github.com/dolomite-exchange/solo/blob/master/LICENSE' style="text-decoration:none;">
-    <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
+    <img src='https://img.shields.io/badge/Apache--2.0-llicense-red?longCache=true' alt='License' />
   </a>
-  <a href='https://t.me/joinchat/GBnMlBb9mQblQck2pThTgw' style="text-decoration:none;">
+  <a href='https://t.me/dolomite_official' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />
   </a>
 </div>
@@ -41,7 +41,7 @@ Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-d
 
 ## Install
 
-`npm i -s @dydxprotocol/solo`
+`npm i -s @dolomite-exchange/solo`
 
 ## Contracts
 

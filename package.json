@@ -1,6 +1,6 @@
 {
-  "name": "@dydxprotocol/solo",
-  "version": "0.35.1",
+  "name": "@dolomite-exchange/solo",
+  "version": "0.1.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -57,15 +57,16 @@
     "url": "https://github.com/dolomite-exchange/solo"
   },
   "keywords": [
+    "dolomite",
     "dydx",
     "ethereum"
   ],
-  "author": "dYdX Trading Inc.",
+  "author": "Dolomite",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/dydxprotocol/solo/issues"
+    "url": "https://github.com/dolomite-exchange/solo/issues"
   },
-  "homepage": "https://github.com/dydxprotocol/solo#readme",
+  "homepage": "https://github.com/dolomite-exchange/solo#readme",
   "dependencies": {
     "@dydxprotocol/exchange-wrappers": "0.5.3",
     "@poanet/solidity-flattener": "^3.0.6",
