@@ -92,7 +92,7 @@ The disclosure of security vulnerabilities helps us ensure the security of our u
 **How to report a security vulnerability?**
 
 If you believe you’ve found a security vulnerability in one of our contracts or platforms,
-send it to us by emailing [security@dydx.exchange](mailto:security@dydx.exchange).
+send it to us by emailing [security@dolomite.io](mailto:security@dolomite.io).
 Please include the following details with your report:
 
 * A description of the location and potential impact of the vulnerability.
