@@ -177,7 +177,7 @@ ReentrancyGuard
         );
 
         // validate the msg.sender and that the liquidAccount can be liquidated
-        checkRequirements(constants, cache);
+        checkRequirements(constants);
 
         // get the max liquidation amount
         calculateMaxLiquidationAmount(cache);
@@ -262,8 +262,7 @@ ReentrancyGuard
      *  - Require that the liquid account is liquidatable
      */
     function checkRequirements(
-        Constants memory constants,
-        LiquidatorWithAmmCache memory cache
+        Constants memory constants
     )
     private
     view

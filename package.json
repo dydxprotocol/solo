@@ -70,7 +70,7 @@
   "dependencies": {
     "@dydxprotocol/exchange-wrappers": "0.5.3",
     "@poanet/solidity-flattener": "^3.0.6",
-    "@truffle/hdwallet-provider": "^1.0.35",
+    "@truffle/hdwallet-provider": "^1.2.6",
     "@types/web3": "1.0.18",
     "axios": "^0.19.0",
     "bignumber.js": "^8.1.1",

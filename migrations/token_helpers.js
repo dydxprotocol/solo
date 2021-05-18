@@ -1,11 +1,17 @@
-const { isDevNetwork, isMainNet, isKovan, isMatic, isMaticTest } = require('./helpers');
+const {
+  isDevNetwork,
+  isMainNet,
+  isKovan,
+  isMatic,
+  isMaticTest,
+} = require('./helpers');
 
 function getDaiAddress(network, TokenB) {
   if (isMatic(network)) {
     return '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063';
   }
   if (isMaticTest(network)) {
-    return '0x267dc5f342e139b5E407684e3A731aeaE8A71E3e';
+    return '0x8ac8Ae0A208bEf466512Cd26142aC5A3DDb5B99E';
   }
   if (isDevNetwork(network)) {
     return TokenB.address;
@@ -49,7 +55,7 @@ function getLrcAddress(network, TokenF) {
     return '0x9372c3ecf9487418739be231b2d3bcb69f19cdfc';
   }
   if (isMaticTest(network)) {
-    return '0x8E4847ec8f00005bA725837E70Ca56956f931f09';
+    return '0xd64cD7A5Cd54C90be14B601dEe83b87546f975c7';
   }
   throw new Error('Cannot find LRC');
 }
@@ -59,7 +65,7 @@ function getMaticAddress(network, artifact) {
     return '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270';
   }
   if (isMaticTest(network)) {
-    return '0x48c40e8B9F45E199238e3131B232ADf12d88eA2C';
+    return '0xBeE8c17b7449fa0cC54D857D774cE523A7A35d00';
   }
   if (isDevNetwork(network)) {
     return artifact.address;
@@ -78,7 +84,7 @@ function getUsdcAddress(network, TokenA) {
     return '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
   }
   if (isMaticTest(network)) {
-    return '0x362eD516f2E8eEab895043AF976864126BdD9C7b';
+    return '0xaDe692C9B8C36e6b04bCFD01f0E91c7EbeE0A160';
   }
   if (isDevNetwork(network)) {
     return TokenA.address;
@@ -103,7 +109,7 @@ function getWbtcAddress(network, TokenD) {
     return '0xB889322114475137815678748419b67818fBa92c';
   }
   if (isMaticTest(network)) {
-    return '0x2f87Ef9BEa0f4792e95D4279690eF97449B53DAB';
+    return '0x49769b4755ea8B83A340c24eAeD9d887A4b61104';
   }
   if (isMatic(network)) {
     return '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6';
@@ -116,7 +122,7 @@ function getWethAddress(network, WETH9) {
     return '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619';
   }
   if (isMaticTest(network)) {
-    return '0xf5ba7ca17aF300F52112C4CC8A7AB1A0482e84D5';
+    return '0xa38eF095D071ebBAFeA5E7D1Ce02BE79fc376793';
   }
   if (isDevNetwork(network)) {
     return WETH9.address;
