@@ -18,8 +18,6 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
-    bytes32 private constant FILE = "UniswapV2Pair";
-
     uint public constant INTEREST_INDEX_BASE = 1e18;
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
@@ -42,7 +40,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     uint private unlocked = 1;
     modifier lock() {
-        require(unlocked == 1, "UniswapV2: LOCKED");
+        require(unlocked == 1, "DLP: LOCKED");
         unlocked = 0;
         _;
         unlocked = 1;
@@ -64,7 +62,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1, address _transferProxy) external {
-        require(msg.sender == factory, "UniswapV2: FORBIDDEN");
+        require(msg.sender == factory, "DLP: FORBIDDEN");
         // sufficient check
         token0 = _token0;
         token1 = _token1;
@@ -104,11 +102,11 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
         require(
             amount0 > 0,
-            "UniswapV2: INVALID_MINT_AMOUNT_0"
+            "DLP: INVALID_MINT_AMOUNT_0"
         );
         require(
             amount1 > 0,
-            "UniswapV2: INVALID_MINT_AMOUNT_1"
+            "DLP: INVALID_MINT_AMOUNT_1"
         );
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
@@ -124,7 +122,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
         require(
             liquidity > 0,
-            "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED"
+            "DLP: INSUFFICIENT_LIQUIDITY_MINTED"
         );
 
         _mint(to, liquidity);
@@ -162,7 +160,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             // using balances ensures pro-rata distribution
             require(
                 amount0 > 0 && amount1 > 0,
-                "UniswapV2: INSUFFICIENT_LIQUIDITY_BURNED"
+                "DLP: INSUFFICIENT_LIQUIDITY_BURNED"
             );
 
             _burn(address(this), liquidity);
@@ -236,20 +234,20 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
         require(
             msg.sender == address(cache.soloMargin),
-            "UniswapV2: INVALID_SENDER"
+            "DLP: INVALID_SENDER"
         );
         require(
             makerAccount.owner == address(this),
-            "UniswapV2: INVALID_MAKER_ACCOUNT_OWNER"
+            "DLP: INVALID_MAKER_ACCOUNT_OWNER"
         );
         require(
             makerAccount.number == 0,
-            "UniswapV2: INVALID_MAKER_ACCOUNT_NUMBER"
+            "DLP: INVALID_MAKER_ACCOUNT_NUMBER"
         );
 
         require(
             token0 != takerAccount.owner && token1 != takerAccount.owner,
-            "UniswapV2: INVALID_TO"
+            "DLP: INVALID_TO"
         );
 
         uint amount0OutPar;
@@ -257,15 +255,15 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         {
             require(
                 inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
-                "UniswapV2: INVALID_INPUT_TOKEN"
+                "DLP: INVALID_INPUT_TOKEN"
             );
             require(
                 outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
-                "UniswapV2: INVALID_INPUT_TOKEN"
+                "DLP: INVALID_INPUT_TOKEN"
             );
             require(
                 inputWei.sign,
-                "UniswapV2: INPUT_WEI_MUST_BE_POSITIVE"
+                "DLP: INPUT_WEI_MUST_BE_POSITIVE"
             );
 
             (uint amountOutWei) = abi.decode(data, ((uint)));
@@ -273,7 +271,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
             require(
                 amountOutPar > 0,
-                "UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT"
+                "DLP: INSUFFICIENT_OUTPUT_AMOUNT"
             );
 
             if (inputMarketId == cache.marketId0) {
@@ -300,21 +298,21 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
             require(
                 amount0OutPar < _reserve0 && amount1OutPar < _reserve1,
-                "UniswapV2: INSUFFICIENT_LIQUIDITY"
+                "DLP: INSUFFICIENT_LIQUIDITY"
             );
 
             amount0In = cache.balance0 > _reserve0 - amount0OutPar ? cache.balance0 - (_reserve0 - amount0OutPar) : 0;
             amount1In = cache.balance1 > _reserve1 - amount1OutPar ? cache.balance1 - (_reserve1 - amount1OutPar) : 0;
             require(
                 amount0In > 0 || amount1In > 0,
-                "UniswapV2: INSUFFICIENT_INPUT_AMOUNT"
+                "DLP: INSUFFICIENT_INPUT_AMOUNT"
             );
 
             uint balance0Adjusted = cache.balance0.mul(1000).sub(amount0In.mul(3));
             uint balance1Adjusted = cache.balance1.mul(1000).sub(amount1In.mul(3));
             require(
                 balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000 ** 2),
-                "UniswapV2: K"
+                "DLP: K"
             );
 
             _update(cache.balance0, cache.balance1, _reserve0, _reserve1);
@@ -379,7 +377,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     ) internal {
         require(
             balance0 <= uint112(- 1) && balance1 <= uint112(- 1),
-            "UniswapV2: OVERFLOW"
+            "DLP: OVERFLOW"
         );
 
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);

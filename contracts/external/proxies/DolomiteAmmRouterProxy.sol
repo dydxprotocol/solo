@@ -64,6 +64,13 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         uint[] amountsWei;
     }
 
+    struct PermitSignature {
+        bool approveMax;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
     IUniswapV2Factory public UNISWAP_FACTORY;
     address public WETH;
 
@@ -112,7 +119,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
 
     function removeLiquidity(
         address to,
-        uint fromAccountNumber,
+        uint toAccountNumber,
         address tokenA,
         address tokenB,
         uint liquidity,
@@ -124,11 +131,38 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         // send liquidity to pair
         IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
 
-        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to, fromAccountNumber);
+        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
         (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
         require(amountA >= amountAMin, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
         require(amountB >= amountBMin, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
+    }
+
+    function removeLiquidityWithPermit(
+        address to,
+        uint toAccountNumber,
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        uint deadline,
+        PermitSignature memory permit
+    ) public returns (uint amountA, uint amountB) {
+        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        uint value = permit.approveMax ? uint(- 1) : liquidity;
+        IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
+
+        (amountA, amountB) = removeLiquidity(
+            to,
+            toAccountNumber,
+            tokenA,
+            tokenB,
+            liquidity,
+            amountAMin,
+            amountBMin,
+            deadline
+        );
     }
 
     function swapExactTokensForTokensAndModifyPosition(

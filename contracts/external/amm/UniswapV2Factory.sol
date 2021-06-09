@@ -42,10 +42,10 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, "UniswapV2: IDENTICAL_ADDRESSES");
+        require(tokenA != tokenB, "DolomiteAmm: IDENTICAL_ADDRESSES");
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), "UniswapV2: ZERO_ADDRESS");
-        require(getPair[token0][token1] == address(0), "UniswapV2: PAIR_EXISTS");
+        require(token0 != address(0), "DolomiteAmm: ZERO_ADDRESS");
+        require(getPair[token0][token1] == address(0), "DolomiteAmm: PAIR_EXISTS");
         // single check is sufficient
         bytes memory bytecode = getPairInitCode();
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
@@ -62,12 +62,12 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
+        require(msg.sender == feeToSetter, "DolomiteAmm: FORBIDDEN");
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
+        require(msg.sender == feeToSetter, "DolomiteAmm: FORBIDDEN");
         feeToSetter = _feeToSetter;
     }
 }
