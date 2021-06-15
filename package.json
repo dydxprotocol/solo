@@ -1,7 +1,7 @@
 {
-  "name": "@dolomite-exchange/solo",
-  "version": "0.1.0",
-  "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Solo-Margin Trading Protocol",
+  "name": "@dolomite-exchange/v2-protocol",
+  "version": "1.0.0",
+  "description": "Ethereum Smart Contracts and TypeScript library used for the Dolomite Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "files": [
@@ -54,11 +54,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dolomite-exchange/solo"
+    "url": "https://github.com/dolomite-exchange/dolomite-v2-protocol"
   },
   "keywords": [
     "dolomite",
     "dydx",
+    "uniswap",
     "ethereum"
   ],
   "author": "Dolomite",
