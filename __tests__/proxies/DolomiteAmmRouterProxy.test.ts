@@ -18,8 +18,8 @@ let owner1: address;
 let owner2: address;
 let token_ab: address;
 let token_ab_account;
-// @ts-ignore
 let token_bc: address;
+let token_bc_account;
 // @ts-ignore
 let token_ac: address;
 
@@ -70,6 +70,8 @@ describe('DolomiteAmmRouterProxy', () => {
     token_ab_account = { owner: token_ab, number: '0' };
 
     token_bc = await getUniswapLpTokenAddress(solo.testing.tokenB.getAddress(), solo.testing.tokenC.getAddress());
+    token_bc_account = { owner: token_bc, number: '0' };
+
     token_ac = await getUniswapLpTokenAddress(solo.testing.tokenA.getAddress(), solo.testing.tokenC.getAddress());
     await mineAvgBlock();
 
@@ -268,6 +270,34 @@ describe('DolomiteAmmRouterProxy', () => {
 
         result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdC).call();
         console.log('account marketIdC wei after ', result.toString());
+
+        const pair_ab = solo.contracts.getUniswapV2Pair(token_ab);
+        const reserves_ab = await pair_ab.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves_ab);
+
+        const marketId0_ab = await pair_ab.methods.marketId0().call();
+        const balance0_ab = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account , marketId0_ab).call();
+        expect(reserves_ab._reserve0).toEqual(balance0_ab.value);
+        expect(balance0_ab.sign).toEqual(true);
+
+        const marketId1_ab = await pair_ab.methods.marketId1().call();
+        const balance1_ab = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId1_ab).call();
+        expect(reserves_ab._reserve1).toEqual(balance1_ab.value);
+        expect(balance1_ab.sign).toEqual(true);
+
+        const pair_bc = solo.contracts.getUniswapV2Pair(token_bc);
+        const reserves_bc = await pair_bc.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves_bc);
+
+        const marketId0_bc = await pair_bc.methods.marketId0().call();
+        const balance0_bc = await solo.contracts.soloMargin.methods.getAccountWei(token_bc_account , marketId0_bc).call();
+        expect(reserves_bc._reserve0).toEqual(balance0_bc.value);
+        expect(balance0_bc.sign).toEqual(true);
+
+        const marketId1_bc = await pair_bc.methods.marketId1().call();
+        const balance1_bc = await solo.contracts.soloMargin.methods.getAccountWei(token_bc_account, marketId1_bc).call();
+        expect(reserves_bc._reserve1).toEqual(balance1_bc.value);
+        expect(balance1_bc.sign).toEqual(true);
       });
     });
 
