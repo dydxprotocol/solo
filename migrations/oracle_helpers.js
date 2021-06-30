@@ -31,9 +31,9 @@ function getDaiUsdAggregatorAddress(network) {
   throw new Error('Cannot find Weth');
 }
 
-function getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator) {
+function getDaiEthAggregatorAddress(network, TestDaiUsdChainlinkAggregator) {
   if (isDevNetwork(network)) {
-    return TestDaiEthChainlinkAggregator.address;
+    return TestDaiUsdChainlinkAggregator.address;
   }
   if (isMainNet(network)) {
     return '0x037E8F2125bF532F3e228991e051c8A7253B642c';
@@ -152,27 +152,27 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
     } = tokens;
 
     const {
-      TestBtcUsdChainlinkAggregator,
-      TestDaiEthChainlinkAggregator,
-      TestEthUsdChainlinkAggregator,
-      TestLinkUsdChainlinkAggregator,
-      TestLrcEthChainlinkAggregator,
-      TestUsdcEthChainlinkAggregator,
+      btcUsdAggregator,
+      daiUsdAggregator,
+      ethUsdAggregator,
+      linkUsdAggregator,
+      lrcEthAggregator,
+      usdcUsdAggregator,
     } = aggregators;
 
     return mapPairsToParams([
       // eslint-disable-next-line max-len
-      [getDaiAddress(network, TokenB), getDaiEthAggregatorAddress(network, TestDaiEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
+      [getDaiAddress(network, TokenB), getDaiEthAggregatorAddress(network, daiUsdAggregator), 18, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
-      [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
+      [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, linkUsdAggregator), 18, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
-      [getLrcAddress(network, TokenF), getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator), 18, getWethAddress(network, WETH9), 18],
+      [getLrcAddress(network, TokenF), getLrcEthAggregatorAddress(network, lrcEthAggregator), 18, getWethAddress(network, WETH9), 18],
       // eslint-disable-next-line max-len
-      [getUsdcAddress(network, TokenA), getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator), 6, getWethAddress(network, WETH9), 18],
+      [getUsdcAddress(network, TokenA), getUsdcEthAggregatorAddress(network, usdcUsdAggregator), 6, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
-      [getWbtcAddress(network, TokenD), getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator), 8, ADDRESSES.ZERO, 8],
+      [getWbtcAddress(network, TokenD), getBtcUsdAggregatorAddress(network, btcUsdAggregator), 8, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
-      [getWethAddress(network, WETH9), getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator), 18, ADDRESSES.ZERO, 8],
+      [getWethAddress(network, WETH9), getEthUsdAggregatorAddress(network, ethUsdAggregator), 18, ADDRESSES.ZERO, 8],
     ]);
   }
 

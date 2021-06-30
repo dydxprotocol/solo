@@ -16,6 +16,12 @@ let admin: address;
 let owner1: address;
 // @ts-ignore
 let owner2: address;
+let token_ab: address;
+let token_ab_account;
+// @ts-ignore
+let token_bc: address;
+// @ts-ignore
+let token_ac: address;
 
 const zero = new BigNumber(0);
 const parA = new BigNumber('1000000000000000000');
@@ -59,6 +65,12 @@ describe('DolomiteAmmRouterProxy', () => {
       defaultIsClosing,
       { from: admin },
     );
+
+    token_ab = await getUniswapLpTokenAddress(solo.testing.tokenA.getAddress(), solo.testing.tokenB.getAddress());
+    token_ab_account = { owner: token_ab, number: '0' };
+
+    token_bc = await getUniswapLpTokenAddress(solo.testing.tokenB.getAddress(), solo.testing.tokenC.getAddress());
+    token_ac = await getUniswapLpTokenAddress(solo.testing.tokenA.getAddress(), solo.testing.tokenC.getAddress());
     await mineAvgBlock();
 
     snapshotId = await snapshot();
@@ -88,7 +100,19 @@ describe('DolomiteAmmRouterProxy', () => {
         result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdA).call();
         console.log('after account wei ', result.toString());
 
-        console.log('reserves wei after ', (await (await getUniswapLpToken()).methods.getReservesWei().call()));
+        const pair = solo.contracts.getUniswapV2Pair(token_ab);
+        const reserves = await pair.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves);
+
+        const marketId0 = await pair.methods.marketId0().call();
+        const balance0 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account , marketId0).call();
+        expect(reserves._reserve0).toEqual(balance0.value);
+        expect(balance0.sign).toEqual(true);
+
+        const marketId1 = await pair.methods.marketId1().call();
+        const balance1 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId1).call();
+        expect(reserves._reserve1).toEqual(balance1.value);
+        expect(balance1.sign).toEqual(true);
       });
     });
 
@@ -130,7 +154,19 @@ describe('DolomiteAmmRouterProxy', () => {
         result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdA).call();
         console.log('account wei after ', result.toString());
 
-        console.log('reserves wei after ', (await (await getUniswapLpToken()).methods.getReservesWei().call()));
+        const pair = solo.contracts.getUniswapV2Pair(token_ab);
+        const reserves = await pair.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves);
+
+        const marketId0 = await pair.methods.marketId0().call();
+        const balance0 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account , marketId0).call();
+        expect(reserves._reserve0).toEqual(balance0.value);
+        expect(balance0.sign).toEqual(true);
+
+        const marketId1 = await pair.methods.marketId1().call();
+        const balance1 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId1).call();
+        expect(reserves._reserve1).toEqual(balance1.value);
+        expect(balance1.sign).toEqual(true);
       });
     });
 
@@ -171,7 +207,19 @@ describe('DolomiteAmmRouterProxy', () => {
         result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdB).call();
         console.log('account marketIdB wei after ', result.toString());
 
-        console.log('reserves wei after ', (await (await getUniswapLpToken()).methods.getReservesWei().call()));
+        const pair = solo.contracts.getUniswapV2Pair(token_ab);
+        const reserves = await pair.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves);
+
+        const marketId0 = await pair.methods.marketId0().call();
+        const balance0 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account , marketId0).call();
+        expect(reserves._reserve0).toEqual(balance0.value);
+        expect(balance0.sign).toEqual(true);
+
+        const marketId1 = await pair.methods.marketId1().call();
+        const balance1 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId1).call();
+        expect(reserves._reserve1).toEqual(balance1.value);
+        expect(balance1.sign).toEqual(true);
       });
 
       it('should work for normal case with a path of more than 2 tokens', async () => {
@@ -218,6 +266,8 @@ describe('DolomiteAmmRouterProxy', () => {
         result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdC).call();
         console.log('account marketIdC wei after ', result.toString());
 
+        result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdC).call();
+        console.log('account marketIdC wei after ', result.toString());
       });
     });
 
