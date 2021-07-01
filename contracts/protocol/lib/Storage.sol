@@ -71,17 +71,19 @@ library Storage {
         // Contract address of the interest setter for this market
         IInterestSetter interestSetter;
 
-        // Multiplier on the marginRatio for this market, IE 5%. This number reduces the user's supplied wei by
-        // dividing it by:
+        // Multiplier on the marginRatio for this market, IE 5% (0.05 * 1e18). This number increases the market's
+        // required collateralization by: reducing the user's supplied value (in terms of dollars) for this market and
+        // increasing its borrowed value. This is done through the following operation:
         // `suppliedWei = suppliedWei + (assetValueForThisMarket / (1 + marginPremium))`
         // This number increases the user's borrowed wei by multiplying it by:
         // `borrowedWei = borrowedWei + (assetValueForThisMarket * (1 + marginPremium))`
         Decimal.D256 marginPremium;
 
-        // Multiplier on the liquidationSpread for this market, IE 20%. This number increases the liquidationSpread
-        // using the following formula:
+        // Multiplier on the liquidationSpread for this market, IE 20% (0.2 * 1e18). This number increases the
+        // `liquidationSpread` using the following formula:
         // `liquidationSpread = liquidationSpread * (1 + spreadPremium)`
-        // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0.
+        // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
+        // (when performing a liquidation between two markets)
         Decimal.D256 spreadPremium;
 
         // Whether additional borrows are allowed for this market
