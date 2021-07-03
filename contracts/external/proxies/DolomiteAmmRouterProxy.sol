@@ -518,7 +518,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         } else {
             actions = new Actions.ActionArgs[](pools.length + 1);
 
-            // if `cache.position.marginDeposit < 0` then the user is withdrawing from `accountNumber` (index 0).
+            // if `cache.position.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
             // `accountNumber` zero is at index `accountsLength - 1`
             uint amount;
             if (cache.position.marginDeposit == int256(- 1)) {
