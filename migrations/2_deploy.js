@@ -213,10 +213,13 @@ async function deployPriceOracles(deployer, network, accounts) {
   };
 
   const aggregators = {
-    daiAggregator: TestDaiUsdChainlinkAggregator,
-    ethAggregator: TestEthUsdChainlinkAggregator,
-    maticAggregator: TestMaticUsdChainlinkAggregator,
-    usdcAggregator: TestUsdcUsdChainlinkAggregator,
+    btcUsdAggregator: TestBtcUsdChainlinkAggregator,
+    daiUsdAggregator: TestDaiUsdChainlinkAggregator,
+    ethUsdAggregator: TestEthUsdChainlinkAggregator,
+    linkUsdAggregator: TestLinkUsdChainlinkAggregator,
+    lrcEthAggregator: TestLrcEthChainlinkAggregator,
+    maticUsdAggregator: TestMaticUsdChainlinkAggregator,
+    usdcUsdAggregator: TestUsdcUsdChainlinkAggregator,
   };
 
   const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);

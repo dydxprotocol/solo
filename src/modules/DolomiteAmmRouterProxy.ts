@@ -90,4 +90,24 @@ export class DolomiteAmmRouterProxy {
       options,
     );
   }
+
+  public async swapTokensForExactTokens(
+    accountNumber: Integer,
+    amountInMax: Integer,
+    amountOut: Integer,
+    tokenPath: address[],
+    deadline: Integer,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteAmmRouterProxy.methods.swapTokensForExactTokens(
+        accountNumber.toFixed(0),
+        amountInMax.toFixed(0),
+        amountOut.toFixed(0),
+        tokenPath,
+        deadline.toFixed(0),
+      ),
+      options,
+    );
+  }
 }

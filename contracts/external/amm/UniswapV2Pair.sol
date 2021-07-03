@@ -301,8 +301,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
                 "DLP: INSUFFICIENT_LIQUIDITY"
             );
 
-            amount0In = cache.balance0 > _reserve0 - amount0OutPar ? cache.balance0 - (_reserve0 - amount0OutPar) : 0;
-            amount1In = cache.balance1 > _reserve1 - amount1OutPar ? cache.balance1 - (_reserve1 - amount1OutPar) : 0;
+            amount0In = cache.balance0 > (_reserve0 - amount0OutPar) ? cache.balance0 - (_reserve0 - amount0OutPar) : 0;
+            amount1In = cache.balance1 > (_reserve1 - amount1OutPar) ? cache.balance1 - (_reserve1 - amount1OutPar) : 0;
             require(
                 amount0In > 0 || amount1In > 0,
                 "DLP: INSUFFICIENT_INPUT_AMOUNT"
