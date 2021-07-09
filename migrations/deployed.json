@@ -187,7 +187,7 @@
         "80001": {
             "links": {},
             "address": "0x16981bE9fC9219dD2ab94389B2e104c639Ff3Ba9",
-            "transactionHash": "0x6f22b5079608e68257cea2b2c6c1e59f5f5a4f715a755effca09ca8d65cd3463"
+            "transactionHash": "0x6f22b5079608e68257cea2b2c6c1e59f5f5a4f715a755effca09ca8d65cd3463",
         }
     }
 }
