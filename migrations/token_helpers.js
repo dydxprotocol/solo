@@ -39,7 +39,7 @@ function getLinkAddress(network, TokenE) {
     return '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39';
   }
   if (isMaticTest(network)) {
-    return '0xE84D601E5D945031129a83E5602be0CC7f182Cf3';
+    return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
   throw new Error('Cannot find LINK');
 }
