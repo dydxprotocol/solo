@@ -89,13 +89,13 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         );
 
         for (uint i = 0; i < tokens.length; i++) {
-            address token = tokens[i];
-            tokenToAggregatorMap[token] = IChainlinkAggregator(chainlinkAggregators[i]);
-            tokenToDecimalsMap[token] = tokenDecimals[i];
-            if (tokenPairs[i] != address(0)) {
-                tokenToPairingMap[token] = tokenPairs[i];
-                tokenToAggregatorDecimalsMap[token] = aggregatorDecimals[i];
-            }
+            _insertOrUpdateOracleToken(
+                tokens[i],
+                tokenDecimals[i],
+                chainlinkAggregators[i],
+                aggregatorDecimals[i],
+                tokenPairs[i]
+            );
         }
     }
 
@@ -108,6 +108,16 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         uint8 aggregatorDecimals,
         address tokenPair
     ) public onlyOwner {
+        _insertOrUpdateOracleToken(token, tokenDecimals, chainlinkAggregator, aggregatorDecimals, tokenPair);
+    }
+
+    function _insertOrUpdateOracleToken(
+        address token,
+        uint8 tokenDecimals,
+        address chainlinkAggregator,
+        uint8 aggregatorDecimals,
+        address tokenPair
+    ) internal {
         tokenToAggregatorMap[token] = IChainlinkAggregator(chainlinkAggregator);
         tokenToDecimalsMap[token] = tokenDecimals;
         if (tokenPair != address(0)) {
