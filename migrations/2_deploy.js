@@ -37,6 +37,7 @@ const {
 } = require('./oracle_helpers');
 const {
   getDaiAddress,
+  getMaticAddress,
   getWethAddress,
 } = require('./token_helpers');
 const { ADDRESSES } = require('../src/lib/Constants');
@@ -287,7 +288,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     deployer.deploy(
       PayableProxyForSoloMargin,
       soloMargin.address,
-      getWethAddress(network, WETH9),
+      isMatic(network) || isMaticTest(network) ? getMaticAddress(network) : getWethAddress(network, WETH9),
     ),
     deployer.deploy(
       Expiry,
