@@ -193,6 +193,8 @@ ReentrancyGuard
         if (cache.solidHeldWei.sign) {
             // If the solid account has held wei, add the amount the solid account will receive from liquidation to its
             // total held wei
+            // We do this so we can accurately track how much the solid account has, in case we need to input it
+            // exactly to Router#getParamsForSwapExactTokensForTokens
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
 
