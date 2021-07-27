@@ -90,14 +90,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         address tokenB,
         uint amountADesired,
         uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
+        uint amountAMinWei,
+        uint amountBMinWei,
         uint deadline
     )
     external
     ensure(deadline)
     returns (uint amountAWei, uint amountBWei, uint liquidity) {
-        (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
+        (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMinWei, amountBMinWei);
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
 
         {
