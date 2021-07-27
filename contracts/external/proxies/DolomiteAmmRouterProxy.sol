@@ -96,8 +96,8 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     )
     external
     ensure(deadline)
-    returns (uint amountA, uint amountB, uint liquidity) {
-        (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
+    returns (uint amountAWei, uint amountBWei, uint liquidity) {
+        (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
 
         {
@@ -109,8 +109,8 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
             uint marketIdB = SOLO_MARGIN.getMarketIdByTokenAddress(tokenB);
 
             Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
-            actions[0] = _encodeTransferAction(0, 1, marketIdA, amountA);
-            actions[1] = _encodeTransferAction(0, 1, marketIdB, amountB);
+            actions[0] = _encodeTransferAction(0, 1, marketIdA, amountAWei);
+            actions[1] = _encodeTransferAction(0, 1, marketIdB, amountBWei);
             SOLO_MARGIN.operate(accounts, actions);
         }
 
@@ -123,19 +123,19 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         address tokenA,
         address tokenB,
         uint liquidity,
-        uint amountAMin,
-        uint amountBMin,
+        uint amountAMinWei,
+        uint amountBMinWei,
         uint deadline
-    ) public ensure(deadline) returns (uint amountA, uint amountB) {
+    ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         // send liquidity to pair
         IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
 
-        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
+        (uint amount0Wei, uint amount1Wei) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
         (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-        require(amountA >= amountAMin, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
+        (amountAWei, amountBWei) = tokenA == token0 ? (amount0Wei, amount1Wei) : (amount1Wei, amount0Wei);
+        require(amountAWei >= amountAMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
+        require(amountBWei >= amountBMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
     }
 
     function removeLiquidityWithPermit(
@@ -144,23 +144,23 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         address tokenA,
         address tokenB,
         uint liquidity,
-        uint amountAMin,
-        uint amountBMin,
+        uint amountAMinWei,
+        uint amountBMinWei,
         uint deadline,
         PermitSignature memory permit
-    ) public returns (uint amountA, uint amountB) {
+    ) public returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         uint value = permit.approveMax ? uint(- 1) : liquidity;
         IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
 
-        (amountA, amountB) = removeLiquidity(
+        (amountAWei, amountBWei) = removeLiquidity(
             to,
             toAccountNumber,
             tokenA,
             tokenB,
             liquidity,
-            amountAMin,
-            amountBMin,
+            amountAMinWei,
+            amountBMinWei,
             deadline
         );
     }
@@ -439,48 +439,32 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         });
     }
 
-    function _encodeCallAction(
-        uint accountIndex,
-        address callee,
-        bytes memory data
-    ) internal pure returns (Actions.ActionArgs memory) {
-        return Actions.ActionArgs({
-        actionType : Actions.ActionType.Call,
-        accountId : accountIndex,
-        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
-        primaryMarketId : uint(- 1),
-        secondaryMarketId : uint(- 1),
-        otherAddress : callee,
-        otherAccountId : uint(- 1),
-        data : data
-        });
-    }
-
     function _addLiquidity(
         address tokenA,
         address tokenB,
-        uint amountADesired,
-        uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin
-    ) internal returns (uint amountA, uint amountB) {
+        uint amountADesiredWei,
+        uint amountBDesiredWei,
+        uint amountAMinWei,
+        uint amountBMinWei
+    ) internal returns (uint amountAWei, uint amountBWei) {
+        IUniswapV2Factory uniswapFactory = UNISWAP_FACTORY;
         // create the pair if it doesn't exist yet
-        if (UNISWAP_FACTORY.getPair(tokenA, tokenB) == address(0)) {
-            UNISWAP_FACTORY.createPair(tokenA, tokenB);
+        if (uniswapFactory.getPair(tokenA, tokenB) == address(0)) {
+            uniswapFactory.createPair(tokenA, tokenB);
         }
-        (uint reserveA, uint reserveB) = UniswapV2Library.getReservesWei(address(UNISWAP_FACTORY), tokenA, tokenB);
-        if (reserveA == 0 && reserveB == 0) {
-            (amountA, amountB) = (amountADesired, amountBDesired);
+        (uint reserveAWei, uint reserveBWei) = UniswapV2Library.getReservesWei(address(uniswapFactory), tokenA, tokenB);
+        if (reserveAWei == 0 && reserveBWei == 0) {
+            (amountAWei, amountBWei) = (amountADesiredWei, amountBDesiredWei);
         } else {
-            uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
-            if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_B_AMOUNT');
-                (amountA, amountB) = (amountADesired, amountBOptimal);
+            uint amountBOptimal = UniswapV2Library.quote(amountADesiredWei, reserveAWei, reserveBWei);
+            if (amountBOptimal <= amountBDesiredWei) {
+                require(amountBOptimal >= amountBMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_B_AMOUNT');
+                (amountAWei, amountBWei) = (amountADesiredWei, amountBOptimal);
             } else {
-                uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
-                assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_A_AMOUNT');
-                (amountA, amountB) = (amountAOptimal, amountBDesired);
+                uint amountAOptimal = UniswapV2Library.quote(amountBDesiredWei, reserveBWei, reserveAWei);
+                assert(amountAOptimal <= amountADesiredWei);
+                require(amountAOptimal >= amountAMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_A_AMOUNT');
+                (amountAWei, amountBWei) = (amountAOptimal, amountBDesiredWei);
             }
         }
     }
@@ -495,7 +479,6 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         } else {
             accounts = new Account.Info[](2 + pools.length);
             accounts[accounts.length - 1] = Account.Info(cache.account, 0);
-            return accounts;
         }
 
         accounts[0] = Account.Info(cache.account, cache.position.accountNumber);
@@ -516,6 +499,11 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         if (cache.position.depositToken == address(0)) {
             actions = new Actions.ActionArgs[](pools.length);
         } else {
+            require(
+                cache.position.marginDeposit != 0,
+                "DolomiteAmmRouterProxy::_getActionArgsForModifyPosition: INVALID_MARGIN_DEPOSIT"
+            );
+
             actions = new Actions.ActionArgs[](pools.length + 1);
 
             // if `cache.position.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
@@ -528,7 +516,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
             } else if (cache.position.marginDeposit < 0) {
                 amount = (~uint(cache.position.marginDeposit)) + 1;
             } else {
-                amount = uint(amount);
+                amount = uint(cache.position.marginDeposit);
             }
 
             bool isWithdrawal = cache.position.marginDeposit < 0;

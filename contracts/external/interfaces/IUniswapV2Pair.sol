@@ -53,8 +53,8 @@ interface IUniswapV2Pair {
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 
-    event Mint(address indexed sender, uint amount0, uint amount1);
-    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Mint(address indexed sender, uint amount0Wei, uint amount1Wei);
+    event Burn(address indexed sender, uint amount0Wei, uint amount1Wei, address indexed to);
     event Swap(
         address indexed sender,
         uint amount0In,
@@ -85,7 +85,7 @@ interface IUniswapV2Pair {
 
     function mint(address to) external returns (uint liquidity);
 
-    function burn(address to, uint toAccountNumber) external returns (uint amount0, uint amount1);
+    function burn(address to, uint toAccountNumber) external returns (uint amount0Wei, uint amount1Wei);
 
     function getTradeCost(
         uint256 inputMarketId,

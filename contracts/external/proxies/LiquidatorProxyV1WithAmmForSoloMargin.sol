@@ -191,6 +191,8 @@ ReentrancyGuard
 
         uint totalSolidHeldWei = cache.solidHeldUpdateWithReward;
         if (cache.solidHeldWei.sign) {
+            // If the solid account has held wei, add the amount the solid account will receive from liquidation to its
+            // total held wei
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
 
@@ -259,7 +261,8 @@ ReentrancyGuard
     /**
      * Make some basic checks before attempting to liquidate an account.
      *  - Require that the msg.sender is permissioned to use the liquidator account
-     *  - Require that the liquid account is liquidatable
+     *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
+     *    not just what's being liquidated)
      */
     function checkRequirements(
         Constants memory constants

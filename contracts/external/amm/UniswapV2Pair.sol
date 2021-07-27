@@ -134,7 +134,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function burn(address to, uint toAccountNumber) external lock returns (uint amount0, uint amount1) {
+    function burn(address to, uint toAccountNumber) external lock returns (uint amount0Wei, uint amount1Wei) {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
         ISoloMargin _soloMargin = ISoloMargin(soloMargin);
@@ -151,15 +151,17 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         {
             uint liquidity = balanceOf[address(this)];
 
+            uint token0Index = _soloMargin.getMarketCurrentIndex(markets[0]).supply;
+            uint token1Index = _soloMargin.getMarketCurrentIndex(markets[1]).supply;
+
             feeOn = _mintFee(_reserve0, _reserve1);
             uint _totalSupply = totalSupply;
             // gas savings, must be defined here since totalSupply can update in _mintFee
-            amount0 = liquidity.mul(balance0) / _totalSupply;
+            amount0Wei = (liquidity.mul(balance0) / _totalSupply).mul(token0Index).div(INTEREST_INDEX_BASE);
             // using balances ensures pro-rata distribution
-            amount1 = liquidity.mul(balance1) / _totalSupply;
-            // using balances ensures pro-rata distribution
+            amount1Wei = (liquidity.mul(balance1) / _totalSupply).mul(token1Index).div(INTEREST_INDEX_BASE);
             require(
-                amount0 > 0 && amount1 > 0,
+                amount0Wei > 0 && amount1Wei > 0,
                 "DLP: INSUFFICIENT_LIQUIDITY_BURNED"
             );
 
@@ -167,8 +169,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         }
 
         uint[] memory amounts = new uint[](2);
-        amounts[0] = amount0;
-        amounts[1] = amount1;
+        amounts[0] = amount0Wei;
+        amounts[1] = amount1Wei;
 
         TransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
             0,
@@ -185,7 +187,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
 
         // reserve0 and reserve1 are up-to-date
-        emit Burn(msg.sender, amount0, amount1, to);
+        emit Burn(msg.sender, amount0Wei, amount1Wei, to);
     }
 
     function _encodeTransferAction(
