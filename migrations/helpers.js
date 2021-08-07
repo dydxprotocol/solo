@@ -28,6 +28,11 @@ function isMaticTest(network) {
   return network.startsWith('mumbai_matic');
 }
 
+function isArbitrum(network) {
+  verifyNetwork(network);
+  return network.startsWith('arbitrum');
+}
+
 function isKovan(network) {
   verifyNetwork(network);
   return network.startsWith('kovan');
@@ -189,6 +194,7 @@ function getMultisigAddress(network) {
 }
 
 module.exports = {
+  isArbitrum,
   isDevNetwork,
   isMainNet,
   isMatic,

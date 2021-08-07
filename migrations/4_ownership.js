@@ -21,6 +21,7 @@ const {
   getMultisigAddress,
   isMatic,
   isMaticTest,
+  isArbitrum,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -75,7 +76,7 @@ const migration = async (deployer, network) => {
       deployedExpiry.transferOwnership(multisig),
       deployedExpiryV2.transferOwnership(multisig),
       deployedRefunder.transferOwnership(multisig),
-      deployedDaiMigrator.transferOwnership(multisig),
+      deployedDaiMigrator.renounceOwnership(),
       deployedLimitOrders.transferOwnership(multisig),
       deployedStopLimitOrders.transferOwnership(multisig),
       deployedCanonicalOrders.transferOwnership(multisig),
@@ -84,7 +85,7 @@ const migration = async (deployer, network) => {
       deployedChainlinkPriceOracleV1.transferOwnership(multisig),
     ]);
 
-    if (!isMatic(network) && !isMaticTest(network)) {
+    if (!isMatic(network) && !isMaticTest(network) && !isArbitrum(network)) {
       const deployedDaiPriceOracle = await DaiPriceOracle.deployed();
       deployedDaiPriceOracle.transferOwnership(multisig);
     }
