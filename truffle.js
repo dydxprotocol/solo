@@ -1,6 +1,5 @@
 require('ts-node/register'); // eslint-disable-line
 require('dotenv-flow').config(); // eslint-disable-line
-// const HDWalletProvider = require('truffle-hdwallet-provider'); // eslint-disable-line
 const HDWalletProvider = require('@truffle/hdwallet-provider'); // eslint-disable-line
 const path = require('path');
 
@@ -42,7 +41,8 @@ module.exports = {
       provider: () => new HDWalletProvider(process.env.DEPLOYER_PRIVATE_KEY, process.env.NODE_URL),
       gasPrice: Number(process.env.GAS_PRICE),
       gas: 6900000,
-      timeoutBlocks: 500,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
     },
     kovan: {
       network_id: '42',
@@ -55,7 +55,8 @@ module.exports = {
       gasPrice: 37000000000, // 37 gwei
       gas: 6900000,
       from: process.env.DEPLOYER_ACCOUNT,
-      timeoutBlocks: 500,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
     },
     dev: {
       host: 'localhost',
@@ -88,20 +89,22 @@ module.exports = {
       gasPrice: 5000000000,
       gas: 7900000,
       confirmations: 1,
-      timeoutBlocks: 500,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
     },
     mumbai_matic: {
       network_id: '80001',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'https://matic-mumbai.chainstacklabs.com',
+        process.env.NODE_URL,
         0,
         1,
       ),
-      gasPrice: 5000000000,
+      gasPrice: 31e9,
       gas: 7900000,
       confirmations: 1,
-      timeoutBlocks: 500,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
     },
   },
   // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations
