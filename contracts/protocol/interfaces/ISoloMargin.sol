@@ -26,6 +26,11 @@ interface ISoloMargin {
         uint256 marketId
     ) external view returns (Types.Par memory);
 
+    function getAccountWei(
+        Account.Info calldata account,
+        uint256 marketId
+    ) external view returns (Types.Wei memory);
+
     function operate(
         Account.Info[] calldata accounts,
         Actions.ActionArgs[] calldata actions
