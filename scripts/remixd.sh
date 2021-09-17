@@ -1,1 +1,1 @@
-remixd -s /Users/corey/Leavitt-Innovations/dolomite-v2-protocol/ --remix-ide https://remix.ethereum.org
+remixd -s ./ --remix-ide https://remix.ethereum.org

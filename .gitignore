@@ -12,3 +12,5 @@ config
 # VIM
 *.swo
 *.swp
+
+artifacts/
