@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/v2-protocol",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Ethereum Smart Contracts and TypeScript library used for the Dolomite Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
