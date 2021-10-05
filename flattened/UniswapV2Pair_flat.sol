@@ -5997,6 +5997,11 @@ interface ISoloMargin {
         uint256 marketId
     ) external view returns (Types.Par memory);
 
+    function getAccountWei(
+        Account.Info calldata account,
+        uint256 marketId
+    ) external view returns (Types.Wei memory);
+
     function operate(
         Account.Info[] calldata accounts,
         Actions.ActionArgs[] calldata actions
@@ -7167,10 +7172,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         ISoloMargin soloMargin;
         uint marketId0;
         uint marketId1;
-        uint balance0;
-        uint balance1;
-        Interest.Index inputIndex;
-        Interest.Index outputIndex;
+        uint balance0Wei;
+        uint balance1Wei;
+        Interest.Index index0;
+        Interest.Index index1;
     }
 
     constructor() public {
@@ -7344,10 +7349,10 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             soloMargin : _soloMargin,
             marketId0 : marketId0,
             marketId1 : marketId1,
-            balance0 : _getTokenBalancePar(_soloMargin, marketId0),
-            balance1 : _getTokenBalancePar(_soloMargin, marketId1),
-            inputIndex : _soloMargin.getMarketCurrentIndex(inputMarketId),
-            outputIndex : _soloMargin.getMarketCurrentIndex(outputMarketId)
+            balance0Wei : _getTokenBalanceWei(_soloMargin, marketId0),
+            balance1Wei : _getTokenBalanceWei(_soloMargin, marketId1),
+            index0 : _soloMargin.getMarketCurrentIndex(marketId0),
+            index1 : _soloMargin.getMarketCurrentIndex(marketId1)
             });
         }
 
@@ -7369,8 +7374,8 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             "DLP: INVALID_TO"
         );
 
-        uint amount0OutPar;
-        uint amount1OutPar;
+        uint amount0OutWei;
+        uint amount1OutWei;
         {
             require(
                 inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
@@ -7386,64 +7391,69 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
             );
 
             (uint amountOutWei) = abi.decode(data, ((uint)));
-            uint amountOutPar = Interest.weiToPar(Types.Wei(true, amountOutWei), cache.outputIndex).value;
 
             require(
-                amountOutPar > 0,
+                amountOutWei > 0,
                 "DLP: INSUFFICIENT_OUTPUT_AMOUNT"
             );
 
             if (inputMarketId == cache.marketId0) {
-                cache.balance0 = cache.balance0.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
-                cache.balance1 = cache.balance1.sub(amountOutPar);
+                cache.balance0Wei = cache.balance0Wei.add(inputWei.value);
+                cache.balance1Wei = cache.balance1Wei.sub(amountOutWei);
 
-                amount0OutPar = 0;
-                amount1OutPar = amountOutPar;
+                amount0OutWei = 0;
+                amount1OutWei = amountOutWei;
             } else {
                 assert(inputMarketId == cache.marketId1);
 
-                cache.balance1 = cache.balance1.add(Interest.weiToPar(inputWei, cache.inputIndex).value);
-                cache.balance0 = cache.balance0.sub(amountOutPar);
+                cache.balance1Wei = cache.balance1Wei.add(inputWei.value);
+                cache.balance0Wei = cache.balance0Wei.sub(amountOutWei);
 
-                amount0OutPar = amountOutPar;
-                amount1OutPar = 0;
+                amount0OutWei = amountOutWei;
+                amount1OutWei = 0;
             }
         }
 
-        uint amount0In;
-        uint amount1In;
+        uint amount0InWei;
+        uint amount1InWei;
         {
             // gas savings
-            (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
+            (uint112 _reserve0, uint112 _reserve1,) = getReservesWei();
             require(
-                amount0OutPar < _reserve0 && amount1OutPar < _reserve1,
+                amount0OutWei < _reserve0 && amount1OutWei < _reserve1,
                 "DLP: INSUFFICIENT_LIQUIDITY"
             );
 
-            amount0In = cache.balance0 > (_reserve0 - amount0OutPar) ? cache.balance0 - (_reserve0 - amount0OutPar) : 0;
-            amount1In = cache.balance1 > (_reserve1 - amount1OutPar) ? cache.balance1 - (_reserve1 - amount1OutPar) : 0;
+            amount0InWei = cache.balance0Wei > (_reserve0 - amount0OutWei) ? cache.balance0Wei - (_reserve0 - amount0OutWei) : 0;
+            amount1InWei = cache.balance1Wei > (_reserve1 - amount1OutWei) ? cache.balance1Wei - (_reserve1 - amount1OutWei) : 0;
             require(
-                amount0In > 0 || amount1In > 0,
+                amount0InWei > 0 || amount1InWei > 0,
                 "DLP: INSUFFICIENT_INPUT_AMOUNT"
             );
 
-            uint balance0Adjusted = cache.balance0.mul(1000).sub(amount0In.mul(3));
-            uint balance1Adjusted = cache.balance1.mul(1000).sub(amount1In.mul(3));
+            uint balance0Adjusted = cache.balance0Wei.mul(1000).sub(amount0InWei.mul(3));
+            uint balance1Adjusted = cache.balance1Wei.mul(1000).sub(amount1InWei.mul(3));
             require(
                 balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000 ** 2),
                 "DLP: K"
             );
 
-            _update(cache.balance0, cache.balance1, _reserve0, _reserve1);
+            // convert the numbers from wei to par
+            _update(
+                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
+                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
+                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
+                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
+            );
         }
 
-        emit Swap(msg.sender, amount0In, amount1In, amount0OutPar, amount1OutPar, takerAccount.owner);
+        emit Swap(msg.sender, amount0InWei, amount1InWei, amount0OutWei, amount1OutWei, takerAccount.owner);
 
         return Types.AssetAmount({
         sign : false,
-        denomination : Types.AssetDenomination.Par,
+        denomination : Types.AssetDenomination.Wei,
         ref : Types.AssetReference.Delta,
-        value : amount0OutPar > 0 ? amount0OutPar : amount1OutPar
+        value : amount0OutWei > 0 ? amount0OutWei : amount1OutWei
         });
     }
 
@@ -7544,6 +7554,13 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint marketId
     ) internal view returns (uint) {
         return _soloMargin.getAccountPar(Account.Info(address(this), 0), marketId).value;
+    }
+
+    function _getTokenBalanceWei(
+        ISoloMargin _soloMargin,
+        uint marketId
+    ) internal view returns (uint) {
+        return _soloMargin.getAccountWei(Account.Info(address(this), 0), marketId).value;
     }
 
 }
