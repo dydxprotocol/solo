@@ -100,7 +100,7 @@ module.exports = {
         0,
         1,
       ),
-      gasPrice: 31e9,
+      gasPrice: 5e9,
       gas: 7900000,
       confirmations: 1,
       timeoutBlocks: 5000,
