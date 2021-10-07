@@ -542,13 +542,14 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
             actions = new Actions.ActionArgs[](pools.length + 1);
 
-            // if `cache.params.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
-            // `accountNumber` zero is at index `accountsLength - 1`
+            // if `cache.params.marginDeposit < 0` then the user is withdrawing to accountNumber `0` (index length - 1).
+            // else then the user is depositing to `accountNumber` at index (0).
+            // `accountNumber` `0` is at index `accountsLength - 1`
 
             bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
             actions[actions.length - 1] = _encodeTransferAction(
-                isWithdrawal ? 0 : accountsLength - 1,
-                isWithdrawal ? accountsLength - 1 : 0,
+                isWithdrawal ? 0 : accountsLength - 1 /* from */,
+                isWithdrawal ? accountsLength - 1 : 0 /* to */,
                 cache.soloMargin.getMarketIdByTokenAddress(cache.params.depositToken),
                 cache.params.marginDeposit
             );

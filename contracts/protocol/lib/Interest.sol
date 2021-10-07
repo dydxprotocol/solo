@@ -60,7 +60,7 @@ library Interest {
      * Calculate interest for borrowers by using the formula rate * time. Approximates
      * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all suppliers.
+     * then prorated across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
