@@ -22,22 +22,22 @@ pragma experimental ABIEncoderV2;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
+import "../../protocol/interfaces/ISoloMargin.sol";
+
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
-import "../../protocol/SoloMargin.sol";
 import "../../protocol/lib/Types.sol";
-import "../helpers/OnlySolo.sol";
+
 import "../lib/TypedSignature.sol";
 import "../lib/UniswapV2Library.sol";
 
 import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 
-contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
+contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
     using UniswapV2Library for *;
-
-    int256 public constant MAX_INT_256 = int256((2 ** 255) - 1);
+    using SafeMath for uint;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'DolomiteAmmRouterProxy: EXPIRED');
@@ -46,18 +46,22 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
 
     struct ModifyPositionParams {
         uint accountNumber;
-        uint amountInWei;
-        uint amountOutWei;
+        Types.AssetDenomination denomination;
+        uint amountIn;
+        uint amountOut;
         address[] tokenPath;
+        /// the token to be deposited/withdrawn to/from account number. To not perform any margin deposits or
+        /// withdrawals, simply set this to `address(0)`
         address depositToken;
         /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
         /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
-        int256 marginDeposit;
+        bool isPositiveMarginDeposit;
+        uint marginDeposit;
     }
 
     struct ModifyPositionCache {
-        ModifyPositionParams position;
-        SoloMargin soloMargin;
+        ModifyPositionParams params;
+        ISoloMargin soloMargin;
         IUniswapV2Factory uniswapFactory;
         address account;
         uint[] marketPath;
@@ -71,6 +75,7 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         bytes32 s;
     }
 
+    ISoloMargin public SOLO_MARGIN;
     IUniswapV2Factory public UNISWAP_FACTORY;
     address public WETH;
 
@@ -78,7 +83,8 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         address soloMargin,
         address uniswapFactory,
         address weth
-    ) public OnlySolo(soloMargin) {
+    ) public {
+        SOLO_MARGIN = ISoloMargin(soloMargin);
         UNISWAP_FACTORY = IUniswapV2Factory(uniswapFactory);
         WETH = weth;
     }
@@ -166,12 +172,12 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     }
 
     function swapExactTokensForTokensAndModifyPosition(
-        ModifyPositionParams memory position,
+        ModifyPositionParams memory params,
         uint deadline
     ) public ensure(deadline) {
         _swapExactTokensForTokensAndModifyPosition(
             ModifyPositionCache({
-        position : position,
+        params : params,
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
         account : msg.sender,
@@ -192,12 +198,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     ensure(deadline) {
         _swapExactTokensForTokensAndModifyPosition(
             ModifyPositionCache({
-        position : ModifyPositionParams({
+        params : ModifyPositionParams({
         accountNumber : accountNumber,
-        amountInWei : amountInWei,
-        amountOutWei : amountOutMinWei,
+        denomination : Types.AssetDenomination.Wei,
+        amountIn : amountInWei,
+        amountOut : amountOutMinWei,
         tokenPath : tokenPath,
         depositToken : address(0),
+        isPositiveMarginDeposit: false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -219,12 +227,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
         return _getParamsForSwapExactTokensForTokens(
             ModifyPositionCache({
-        position : ModifyPositionParams({
+        params : ModifyPositionParams({
         accountNumber : accountNumber,
-        amountInWei : amountInWei,
-        amountOutWei : amountOutMinWei,
+        denomination : Types.AssetDenomination.Wei,
+        amountIn : amountInWei,
+        amountOut : amountOutMinWei,
         tokenPath : tokenPath,
         depositToken : address(0),
+        isPositiveMarginDeposit: false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -237,12 +247,12 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     }
 
     function swapTokensForExactTokensAndModifyPosition(
-        ModifyPositionParams memory position,
+        ModifyPositionParams memory params,
         uint deadline
     ) public ensure(deadline) {
         _swapTokensForExactTokensAndModifyPosition(
             ModifyPositionCache({
-        position : position,
+        params : params,
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
         account : msg.sender,
@@ -263,12 +273,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     ensure(deadline) {
         _swapTokensForExactTokensAndModifyPosition(
             ModifyPositionCache({
-        position : ModifyPositionParams({
+        params : ModifyPositionParams({
         accountNumber : accountNumber,
-        amountInWei : amountInMaxWei,
-        amountOutWei : amountOutWei,
+        denomination : Types.AssetDenomination.Wei,
+        amountIn : amountInMaxWei,
+        amountOut : amountOutWei,
         tokenPath : tokenPath,
         depositToken : address(0),
+        isPositiveMarginDeposit: false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -290,12 +302,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
         return _getParamsForSwapTokensForExactTokens(
             ModifyPositionCache({
-        position : ModifyPositionParams({
+        params : ModifyPositionParams({
+        denomination : Types.AssetDenomination.Wei,
         accountNumber : accountNumber,
-        amountInWei : amountInMaxWei,
-        amountOutWei : amountOutWei,
+        amountIn : amountInMaxWei,
+        amountOut : amountOutWei,
         tokenPath : tokenPath,
         depositToken : address(0),
+        isPositiveMarginDeposit: false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -339,11 +353,23 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         Account.Info[] memory,
         Actions.ActionArgs[] memory
     ) {
+        cache.marketPath = _getMarketPathFromTokenPath(cache);
+
+        // Convert from par to wei, if necessary
+        uint amountInWei = cache.params.denomination == Types.AssetDenomination.Wei
+        ? cache.params.amountIn
+        : cache.params.amountIn.mul(_getMarketCurrentIndex(cache, cache.marketPath[0])).div(1e18);
+
+        // Convert from par to wei, if necessary
+        uint amountOutMinWei = cache.params.denomination == Types.AssetDenomination.Wei
+        ? cache.params.amountOut
+        : cache.params.amountOut.mul(_getMarketCurrentIndex(cache, cache.marketPath[cache.marketPath.length - 1])).div(1e18);
+
         // amountsWei[0] == amountInWei
         // amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), cache.position.amountInWei, cache.position.tokenPath);
+        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), amountInWei, cache.params.tokenPath);
         require(
-            cache.amountsWei[cache.amountsWei.length - 1] >= cache.position.amountOutWei,
+            cache.amountsWei[cache.amountsWei.length - 1] >= amountOutMinWei,
             "DolomiteAmmRouterProxy::_getParamsForSwapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
         );
 
@@ -356,11 +382,23 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         Account.Info[] memory,
         Actions.ActionArgs[] memory
     ) {
+        cache.marketPath = _getMarketPathFromTokenPath(cache);
+
+        // Convert from par to wei, if necessary
+        uint amountInMaxWei = cache.params.denomination == Types.AssetDenomination.Wei
+        ? cache.params.amountIn
+        : cache.params.amountIn.mul(_getMarketCurrentIndex(cache, cache.marketPath[0])).div(1e18);
+
+        // Convert from par to wei, if necessary
+        uint amountOutWei = cache.params.denomination == Types.AssetDenomination.Wei
+        ? cache.params.amountOut
+        : cache.params.amountOut.mul(_getMarketCurrentIndex(cache, cache.marketPath[cache.marketPath.length - 1])).div(1e18);
+
         // cache.amountsWei[0] == amountInWei
         // cache.amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), cache.position.amountOutWei, cache.position.tokenPath);
+        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), amountOutWei, cache.params.tokenPath);
         require(
-            cache.amountsWei[0] <= cache.position.amountInWei,
+            cache.amountsWei[0] <= amountInMaxWei,
             "DolomiteAmmRouterProxy::_getParamsForSwapTokensForExactTokens: EXCESSIVE_INPUT_AMOUNT"
         );
 
@@ -373,10 +411,8 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         Account.Info[] memory,
         Actions.ActionArgs[] memory
     ) {
-        cache.marketPath = _getMarketPathFromTokenPath(cache);
-
-        // pools.length == cache.position.tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.position.tokenPath);
+        // pools.length == cache.params.tokenPath.length - 1
+        address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.params.tokenPath);
 
         Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
         Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, pools, accounts.length);
@@ -387,9 +423,9 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
     function _getMarketPathFromTokenPath(
         ModifyPositionCache memory cache
     ) internal view returns (uint[] memory) {
-        uint[] memory marketPath = new uint[](cache.position.tokenPath.length);
-        for (uint i = 0; i < cache.position.tokenPath.length; i++) {
-            marketPath[i] = cache.soloMargin.getMarketIdByTokenAddress(cache.position.tokenPath[i]);
+        uint[] memory marketPath = new uint[](cache.params.tokenPath.length);
+        for (uint i = 0; i < cache.params.tokenPath.length; i++) {
+            marketPath[i] = cache.soloMargin.getMarketIdByTokenAddress(cache.params.tokenPath[i]);
         }
         return marketPath;
     }
@@ -474,14 +510,14 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         address[] memory pools
     ) internal pure returns (Account.Info[] memory) {
         Account.Info[] memory accounts;
-        if (cache.position.depositToken == address(0)) {
+        if (cache.params.depositToken == address(0)) {
             accounts = new Account.Info[](1 + pools.length);
         } else {
             accounts = new Account.Info[](2 + pools.length);
             accounts[accounts.length - 1] = Account.Info(cache.account, 0);
         }
 
-        accounts[0] = Account.Info(cache.account, cache.position.accountNumber);
+        accounts[0] = Account.Info(cache.account, cache.params.accountNumber);
 
         for (uint i = 0; i < pools.length; i++) {
             accounts[i + 1] = Account.Info(pools[i], 0);
@@ -496,35 +532,25 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         uint accountsLength
     ) internal view returns (Actions.ActionArgs[] memory) {
         Actions.ActionArgs[] memory actions;
-        if (cache.position.depositToken == address(0)) {
+        if (cache.params.depositToken == address(0)) {
             actions = new Actions.ActionArgs[](pools.length);
         } else {
             require(
-                cache.position.marginDeposit != 0,
+                cache.params.marginDeposit != 0,
                 "DolomiteAmmRouterProxy::_getActionArgsForModifyPosition: INVALID_MARGIN_DEPOSIT"
             );
 
             actions = new Actions.ActionArgs[](pools.length + 1);
 
-            // if `cache.position.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
+            // if `cache.params.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
             // `accountNumber` zero is at index `accountsLength - 1`
-            uint amount;
-            if (cache.position.marginDeposit == int256(- 1)) {
-                amount = uint(- 1);
-            } else if (cache.position.marginDeposit == MAX_INT_256) {
-                amount = uint(- 1);
-            } else if (cache.position.marginDeposit < 0) {
-                amount = (~uint(cache.position.marginDeposit)) + 1;
-            } else {
-                amount = uint(cache.position.marginDeposit);
-            }
 
-            bool isWithdrawal = cache.position.marginDeposit < 0;
+            bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
             actions[actions.length - 1] = _encodeTransferAction(
                 isWithdrawal ? 0 : accountsLength - 1,
                 isWithdrawal ? accountsLength - 1 : 0,
-                cache.soloMargin.getMarketIdByTokenAddress(cache.position.depositToken),
-                amount
+                cache.soloMargin.getMarketIdByTokenAddress(cache.params.depositToken),
+                cache.params.marginDeposit
             );
         }
 
@@ -541,6 +567,13 @@ contract DolomiteAmmRouterProxy is OnlySolo, ReentrancyGuard {
         }
 
         return actions;
+    }
+
+    function _getMarketCurrentIndex(
+        ModifyPositionCache memory cache,
+        uint marketId
+    ) internal view returns (uint) {
+        return cache.soloMargin.getMarketCurrentIndex(marketId).supply;
     }
 
 }
