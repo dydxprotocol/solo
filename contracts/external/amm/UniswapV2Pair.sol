@@ -1,4 +1,4 @@
-pragma solidity ^0.5.13;
+pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
 import "../../protocol/interfaces/IAutoTrader.sol";
@@ -10,7 +10,7 @@ import "../interfaces/IUniswapV2Pair.sol";
 import "../lib/AdvancedMath.sol";
 import "../lib/UQ112x112.sol";
 
-import "../proxies/TransferProxy.sol";
+import "../interface/ITransferProxy.sol";
 
 import "./UniswapV2ERC20.sol";
 
@@ -172,7 +172,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         amounts[0] = amount0Wei;
         amounts[1] = amount1Wei;
 
-        TransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
             0,
             to,
             toAccountNumber,
