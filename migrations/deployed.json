@@ -165,7 +165,7 @@
     "DolomiteAmmRouterProxy": {
         "80001": {
             "links": {},
-            "address": "0xf3F21376468Af317087a1e7092563000E0C64740",
+            "address": "0x0a727d126D8cB4360785Ee69277b24fF025CcAb8",
             "transactionHash": "0xdf390bb5d1c03c81b0da53e1903fcb626b2b0e276b7f58cff3a19a94f6c6009c"
         }
     },

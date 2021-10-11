@@ -2350,7 +2350,7 @@ library Interest {
      * Calculate interest for borrowers by using the formula rate * time. Approximates
      * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all suppliers.
+     * then prorated across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
@@ -3597,9 +3597,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
     struct ModifyPositionParams {
         uint accountNumber;
-        Types.AssetDenomination denomination;
-        uint amountIn;
-        uint amountOut;
+        Types.AssetAmount amountIn;
+        Types.AssetAmount amountOut;
         address[] tokenPath;
         /// the token to be deposited/withdrawn to/from account number. To not perform any margin deposits or
         /// withdrawals, simply set this to `address(0)`
@@ -3607,6 +3606,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
         /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
         bool isPositiveMarginDeposit;
+        /// the amount of the margin deposit/withdrawal, in wei
         uint marginDeposit;
     }
 
@@ -3751,12 +3751,11 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : ModifyPositionParams({
         accountNumber : accountNumber,
-        denomination : Types.AssetDenomination.Wei,
-        amountIn : amountInWei,
-        amountOut : amountOutMinWei,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
         tokenPath : tokenPath,
         depositToken : address(0),
-        isPositiveMarginDeposit: false,
+        isPositiveMarginDeposit : false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -3780,12 +3779,11 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : ModifyPositionParams({
         accountNumber : accountNumber,
-        denomination : Types.AssetDenomination.Wei,
-        amountIn : amountInWei,
-        amountOut : amountOutMinWei,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
         tokenPath : tokenPath,
         depositToken : address(0),
-        isPositiveMarginDeposit: false,
+        isPositiveMarginDeposit : false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -3826,12 +3824,11 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : ModifyPositionParams({
         accountNumber : accountNumber,
-        denomination : Types.AssetDenomination.Wei,
-        amountIn : amountInMaxWei,
-        amountOut : amountOutWei,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
         tokenPath : tokenPath,
         depositToken : address(0),
-        isPositiveMarginDeposit: false,
+        isPositiveMarginDeposit : false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -3854,13 +3851,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         return _getParamsForSwapTokensForExactTokens(
             ModifyPositionCache({
         params : ModifyPositionParams({
-        denomination : Types.AssetDenomination.Wei,
         accountNumber : accountNumber,
-        amountIn : amountInMaxWei,
-        amountOut : amountOutWei,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
         tokenPath : tokenPath,
         depositToken : address(0),
-        isPositiveMarginDeposit: false,
+        isPositiveMarginDeposit : false,
         marginDeposit : 0
         }),
         soloMargin : SOLO_MARGIN,
@@ -3907,14 +3903,10 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         cache.marketPath = _getMarketPathFromTokenPath(cache);
 
         // Convert from par to wei, if necessary
-        uint amountInWei = cache.params.denomination == Types.AssetDenomination.Wei
-        ? cache.params.amountIn
-        : cache.params.amountIn.mul(_getMarketCurrentIndex(cache, cache.marketPath[0])).div(1e18);
+        uint amountInWei = _convertAssetAmountToWei(cache.params.amountIn, cache.marketPath[0], cache);
 
         // Convert from par to wei, if necessary
-        uint amountOutMinWei = cache.params.denomination == Types.AssetDenomination.Wei
-        ? cache.params.amountOut
-        : cache.params.amountOut.mul(_getMarketCurrentIndex(cache, cache.marketPath[cache.marketPath.length - 1])).div(1e18);
+        uint amountOutMinWei = _convertAssetAmountToWei(cache.params.amountOut, cache.marketPath[cache.marketPath.length - 1], cache);
 
         // amountsWei[0] == amountInWei
         // amountsWei[amountsWei.length - 1] == amountOutWei
@@ -3936,14 +3928,10 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         cache.marketPath = _getMarketPathFromTokenPath(cache);
 
         // Convert from par to wei, if necessary
-        uint amountInMaxWei = cache.params.denomination == Types.AssetDenomination.Wei
-        ? cache.params.amountIn
-        : cache.params.amountIn.mul(_getMarketCurrentIndex(cache, cache.marketPath[0])).div(1e18);
+        uint amountInMaxWei = _convertAssetAmountToWei(cache.params.amountIn, cache.marketPath[0], cache);
 
         // Convert from par to wei, if necessary
-        uint amountOutWei = cache.params.denomination == Types.AssetDenomination.Wei
-        ? cache.params.amountOut
-        : cache.params.amountOut.mul(_getMarketCurrentIndex(cache, cache.marketPath[cache.marketPath.length - 1])).div(1e18);
+        uint amountOutWei = _convertAssetAmountToWei(cache.params.amountOut, cache.marketPath[cache.marketPath.length - 1], cache);
 
         // cache.amountsWei[0] == amountInWei
         // cache.amountsWei[amountsWei.length - 1] == amountOutWei
@@ -3962,6 +3950,11 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         Account.Info[] memory,
         Actions.ActionArgs[] memory
     ) {
+        require(
+            cache.params.amountIn.ref == Types.AssetReference.Delta,
+            "DolomiteAmmRouterProxy::_getParamsForSwap: INVALID_ASSET_REFERENCE"
+        );
+
         // pools.length == cache.params.tokenPath.length - 1
         address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.params.tokenPath);
 
@@ -4093,13 +4086,14 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
             actions = new Actions.ActionArgs[](pools.length + 1);
 
-            // if `cache.params.marginDeposit < 0` then the user is withdrawing to `accountNumber` (index 0).
-            // `accountNumber` zero is at index `accountsLength - 1`
+            // if `cache.params.marginDeposit < 0` then the user is withdrawing to accountNumber `0` (index length - 1).
+            // else then the user is depositing to `accountNumber` at index (0).
+            // `accountNumber` `0` is at index `accountsLength - 1`
 
             bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
             actions[actions.length - 1] = _encodeTransferAction(
-                isWithdrawal ? 0 : accountsLength - 1,
-                isWithdrawal ? accountsLength - 1 : 0,
+                isWithdrawal ? 0 : accountsLength - 1 /* from */,
+                isWithdrawal ? accountsLength - 1 : 0 /* to */,
                 cache.soloMargin.getMarketIdByTokenAddress(cache.params.depositToken),
                 cache.params.marginDeposit
             );
@@ -4120,11 +4114,32 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         return actions;
     }
 
-    function _getMarketCurrentIndex(
-        ModifyPositionCache memory cache,
-        uint marketId
+    function _defaultAssetAmount(uint value) internal pure returns (Types.AssetAmount memory) {
+        return Types.AssetAmount({
+        sign : true,
+        denomination : Types.AssetDenomination.Wei,
+        ref : Types.AssetReference.Delta,
+        value : value
+        });
+    }
+
+    function _convertAssetAmountToWei(
+        Types.AssetAmount memory amount,
+        uint marketId,
+        ModifyPositionCache memory cache
     ) internal view returns (uint) {
-        return cache.soloMargin.getMarketCurrentIndex(marketId).supply;
+        if (amount.denomination == Types.AssetDenomination.Wei) {
+            return amount.value;
+        } else {
+            require(
+                uint128(amount.value) == amount.value,
+                "DolomiteAmmRouterProxy::_convertAssetAmountToWei: INVALID_VALUE"
+            );
+            return Interest.parToWei(
+                Types.Par({sign : amount.sign, value : uint128(amount.value)}),
+                cache.soloMargin.getMarketCurrentIndex(marketId)
+            ).value;
+        }
     }
 
 }

@@ -55,6 +55,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
         /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
         bool isPositiveMarginDeposit;
+        /// the amount of the margin deposit/withdrawal, in wei
         uint marginDeposit;
     }
 
