@@ -400,7 +400,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         Actions.ActionArgs[] memory
     ) {
         require(
-            cache.params.amountIn.ref == Types.AssetReference.Delta,
+            cache.params.amountIn.ref == Types.AssetReference.Delta && cache.params.amountOut.ref == Types.AssetReference.Delta,
             "DolomiteAmmRouterProxy::_getParamsForSwap: INVALID_ASSET_REFERENCE"
         );
 
