@@ -10,7 +10,7 @@ import "../interfaces/IUniswapV2Pair.sol";
 import "../lib/AdvancedMath.sol";
 import "../lib/UQ112x112.sol";
 
-import "../interface/ITransferProxy.sol";
+import "../interfaces/ITransferProxy.sol";
 
 import "./UniswapV2ERC20.sol";
 
@@ -71,6 +71,18 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
 
         marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
         marketId1 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token1));
+    }
+
+    function token0Symbol() public view returns (string memory) {
+        return IERC20(token0).symbol();
+    }
+
+    function token1Symbol() public view returns (string memory) {
+        return IERC20(token1).symbol();
+    }
+
+    function pairName() external view returns (string memory) {
+        return string(abi.encodePacked(token0Symbol(), "-", token1Symbol()));
     }
 
     function getReservesPar() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
@@ -351,7 +363,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         amounts[0] = amount0;
         amounts[1] = amount1;
 
-        TransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
             0,
             to,
             toAccountNumber,
