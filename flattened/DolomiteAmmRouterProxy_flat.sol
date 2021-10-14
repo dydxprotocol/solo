@@ -3553,6 +3553,35 @@ library SafeMath {
     }
 }
 
+/**
+ * @title IExpiryV2
+ * @author Dolomite
+ */
+contract IExpiryV2 {
+
+    // ============ Enums ============
+
+    enum CallFunctionType {
+        SetExpiry,
+        SetApproval
+    }
+
+    // ============ Structs ============
+
+    struct SetExpiryArg {
+        Account.Info account;
+        uint256 marketId;
+        uint32 timeDelta;
+        bool forceUpdate;
+    }
+
+    struct SetApprovalArg {
+        address sender;
+        uint32 minTimeDelta;
+    }
+
+}
+
 // File: contracts/external/proxies/DolomiteAmmRouterProxy.sol
 
 /*
@@ -3608,6 +3637,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         bool isPositiveMarginDeposit;
         /// the amount of the margin deposit/withdrawal, in wei
         uint marginDeposit;
+        /// the amount of seconds from the time at which the position is opened to expiry. 0 for no expiration
+        uint expiryTimeDelta;
     }
 
     struct ModifyPositionCache {
@@ -3629,15 +3660,18 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ISoloMargin public SOLO_MARGIN;
     IUniswapV2Factory public UNISWAP_FACTORY;
     address public WETH;
+    address public EXPIRY_V2;
 
     constructor(
         address soloMargin,
         address uniswapFactory,
-        address weth
+        address weth,
+        address expiryV2
     ) public {
         SOLO_MARGIN = ISoloMargin(soloMargin);
         UNISWAP_FACTORY = IUniswapV2Factory(uniswapFactory);
         WETH = weth;
+        EXPIRY_V2 = expiryV2;
     }
 
     function addLiquidity(
@@ -3756,7 +3790,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         tokenPath : tokenPath,
         depositToken : address(0),
         isPositiveMarginDeposit : false,
-        marginDeposit : 0
+        marginDeposit : 0,
+        expiryTimeDelta: 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -3784,7 +3819,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         tokenPath : tokenPath,
         depositToken : address(0),
         isPositiveMarginDeposit : false,
-        marginDeposit : 0
+        marginDeposit : 0,
+        expiryTimeDelta: 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -3829,7 +3865,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         tokenPath : tokenPath,
         depositToken : address(0),
         isPositiveMarginDeposit : false,
-        marginDeposit : 0
+        marginDeposit : 0,
+        expiryTimeDelta: 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -3857,7 +3894,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         tokenPath : tokenPath,
         depositToken : address(0),
         isPositiveMarginDeposit : false,
-        marginDeposit : 0
+        marginDeposit : 0,
+        expiryTimeDelta: 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -3959,7 +3997,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.params.tokenPath);
 
         Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
-        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, pools, accounts.length);
+        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, accounts, pools);
 
         return (accounts, actions);
     }
@@ -3995,6 +4033,38 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         otherAddress : address(0),
         otherAccountId : toAccountIndex,
         data : bytes("")
+        });
+    }
+
+    function _encodeExpirationAction(
+        ModifyPositionParams memory params,
+        Account.Info memory account,
+        uint accountIndex,
+        uint owedMarketId
+    ) internal view returns (Actions.ActionArgs memory) {
+        require(
+            params.expiryTimeDelta == uint32(params.expiryTimeDelta),
+            "DolomiteAmmRouterProxy::_encodeExpirationAction: INVALID_EXPIRY_TIME"
+        );
+
+        IExpiryV2.CallFunctionType callType = IExpiryV2.CallFunctionType.SetExpiry;
+        IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
+        expiryArgs[0] = IExpiryV2.SetExpiryArg({
+        account : account,
+        marketId : owedMarketId,
+        timeDelta : uint32(params.expiryTimeDelta),
+        forceUpdate : true
+        });
+
+        return Actions.ActionArgs({
+        actionType : Actions.ActionType.Call,
+        accountId : accountIndex,
+        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
+        primaryMarketId : uint(- 1),
+        secondaryMarketId : uint(- 1),
+        otherAddress : EXPIRY_V2,
+        otherAccountId : uint(- 1),
+        data : abi.encode(IExpiryV2.CallFunctionType.SetExpiry, expiryArgs)
         });
     }
 
@@ -4072,8 +4142,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
     function _getActionArgsForModifyPosition(
         ModifyPositionCache memory cache,
-        address[] memory pools,
-        uint accountsLength
+        Account.Info[] memory accounts,
+        address[] memory pools
     ) internal view returns (Actions.ActionArgs[] memory) {
         Actions.ActionArgs[] memory actions;
         if (cache.params.depositToken == address(0)) {
@@ -4084,19 +4154,26 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 "DolomiteAmmRouterProxy::_getActionArgsForModifyPosition: INVALID_MARGIN_DEPOSIT"
             );
 
-            actions = new Actions.ActionArgs[](pools.length + 1);
+            uint expiryActionCount = cache.params.expiryTimeDelta == 0 ? 0 : 1;
+            actions = new Actions.ActionArgs[](pools.length + 1 + expiryActionCount);
 
-            // if `cache.params.marginDeposit < 0` then the user is withdrawing to accountNumber `0` (index length - 1).
-            // else then the user is depositing to `accountNumber` at index (0).
             // `accountNumber` `0` is at index `accountsLength - 1`
 
             bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
-            actions[actions.length - 1] = _encodeTransferAction(
-                isWithdrawal ? 0 : accountsLength - 1 /* from */,
-                isWithdrawal ? accountsLength - 1 : 0 /* to */,
+            actions[actions.length - 1 - expiryActionCount] = _encodeTransferAction(
+                isWithdrawal ? 0 : accounts.length - 1 /* from */,
+                isWithdrawal ? accounts.length - 1 : 0 /* to */,
                 cache.soloMargin.getMarketIdByTokenAddress(cache.params.depositToken),
                 cache.params.marginDeposit
             );
+            if (expiryActionCount == 1) {
+                actions[actions.length - 1] = _encodeExpirationAction(
+                    cache.params,
+                    accounts[0],
+                    0,
+                    cache.marketPath[0] /* the market at index 0 is being borrowed and traded */
+                );
+            }
         }
 
         for (uint i = 0; i < pools.length; i++) {

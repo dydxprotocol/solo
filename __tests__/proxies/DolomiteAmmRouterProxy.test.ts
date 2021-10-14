@@ -30,7 +30,7 @@ const parB = new BigNumber('2000000');
 const parC = new BigNumber('300000000000000000000');
 const prices = [
   new BigNumber('1e20'),
-  new BigNumber('1e18'),
+  new BigNumber('1e32'),
   new BigNumber('1e18'),
   new BigNumber('1e21'),
 ];
@@ -380,6 +380,66 @@ describe('DolomiteAmmRouterProxy', () => {
           ),
           'DolomiteAmmRouterProxy::_getParamsForSwapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT'
         );
+      });
+    });
+  });
+
+  describe('#swapExactTokensForTokensAndModifyPosition', () => {
+    describe('Success cases', () => {
+      it('should work for normal case', async () => {
+        const account = { owner: owner1, number: INTEGERS.ZERO.toString(), };
+        const marketIdA = await getMarketId(solo.testing.tokenA);
+        const marketIdB = await getMarketId(solo.testing.tokenB);
+
+        let result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdA).call();
+        console.log('account wei before ', result.toString());
+
+        await addLiquidity(
+          owner1,
+          parA.div(10),
+          parB.div(10),
+          solo.testing.tokenA.getAddress(),
+          solo.testing.tokenB.getAddress(),
+        );
+
+        const uniswapV2Pair = await getUniswapLpToken();
+        console.log('reserves par ', (await uniswapV2Pair.methods.getReservesPar().call()));
+
+        const accountNumber = INTEGERS.ONE;
+        const txResult = await solo.dolomiteAmmRouterProxy.swapExactTokensForTokensAndModifyPosition(
+          accountNumber,
+          parA.div(100),
+          INTEGERS.ONE,
+          [solo.testing.tokenA.getAddress(), solo.testing.tokenB.getAddress()],
+          solo.testing.tokenB.getAddress(),
+          true,
+          parB.div(10),
+          new BigNumber('3600'),
+          new BigNumber('123456789123'),
+          { from: owner1 },
+        );
+
+        console.log('#swapExactTokensForTokensAndModifyPosition gas used  ', txResult.gasUsed.toString());
+
+        result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdA).call();
+        console.log('account marketIdA wei after ', result.toString());
+
+        result = await solo.contracts.soloMargin.methods.getAccountWei(account, marketIdB).call();
+        console.log('account marketIdB wei after ', result.toString());
+
+        const pair = solo.contracts.getUniswapV2Pair(token_ab);
+        const reserves = await pair.methods.getReservesWei().call();
+        console.log('reserves wei after ', reserves);
+
+        const marketId0 = await pair.methods.marketId0().call();
+        const balance0 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId0).call();
+        expect(reserves._reserve0).toEqual(balance0.value);
+        expect(balance0.sign).toEqual(true);
+
+        const marketId1 = await pair.methods.marketId1().call();
+        const balance1 = await solo.contracts.soloMargin.methods.getAccountWei(token_ab_account, marketId1).call();
+        expect(reserves._reserve1).toEqual(balance1.value);
+        expect(balance1.sign).toEqual(true);
       });
     });
   });

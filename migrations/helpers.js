@@ -141,8 +141,8 @@ function getDaiPriceOracleParams(network) {
   };
 }
 
-function getExpiryRampTime() {
-  return '3600';
+function getExpiryRampTime(network) {
+  return isMaticTest(network) ? '60' : '3600';
 }
 
 function verifyNetwork(network) {
