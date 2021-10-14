@@ -468,7 +468,6 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             "DolomiteAmmRouterProxy::_encodeExpirationAction: INVALID_EXPIRY_TIME"
         );
 
-        IExpiryV2.CallFunctionType callType = IExpiryV2.CallFunctionType.SetExpiry;
         IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
         expiryArgs[0] = IExpiryV2.SetExpiryArg({
         account : account,
