@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/v2-protocol",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Ethereum Smart Contracts and TypeScript library used for the Dolomite Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
-    "build": "npm run compile -- --all && npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
+    "build": "npm run compile -- --all && npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers && npm run build:js",
     "copy_tew": "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "compile": "node_modules/.bin/truffle compile",
@@ -31,7 +31,7 @@
     "coverage": "node scripts/coverage.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "build:js": "rm -rf dist/ && tsc && cp -r build/wrappers dist/build",
+    "build:js": "rm -rf dist/ && node --max-old-space-size=8192 node_modules/.bin/tsc && cp -r build/wrappers dist/build",
     "build:cov": "npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
