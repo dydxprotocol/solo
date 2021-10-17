@@ -19,25 +19,27 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import {SoloMargin} from "../../protocol/SoloMargin.sol";
-import {Account} from "../../protocol/lib/Account.sol";
-import {Actions} from "../../protocol/lib/Actions.sol";
-import {Types} from "../../protocol/lib/Types.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {OnlySolo} from "../helpers/OnlySolo.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+
+import { SoloMargin } from "../../protocol/SoloMargin.sol";
+
+import { Account } from "../../protocol/lib/Account.sol";
+import { Actions } from "../../protocol/lib/Actions.sol";
+import { Types } from "../../protocol/lib/Types.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+
+import { OnlySolo } from "../helpers/OnlySolo.sol";
+
+import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
 
 
 /**
- * @title PayableProxyForSoloMargin
- * @author dYdX
+ * @title TransferProxy
+ * @author Dolomite
  *
- * Contract for wrapping/unwrapping ETH before/after interacting with Solo
+ * Contract for sending internal balances within Dolomite to other users/margin accounts easily
  */
-contract TransferProxy is
-OnlySolo,
-ReentrancyGuard
-{
+contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
     // ============ Constants ============
 
     bytes32 constant FILE = "TransferProxy";

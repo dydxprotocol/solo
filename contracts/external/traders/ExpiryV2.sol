@@ -31,6 +31,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
 
 
 /**
@@ -42,6 +43,7 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
 contract ExpiryV2 is
     Ownable,
     OnlySolo,
+    IExpiryV2,
     ICallee,
     IAutoTrader
 {
@@ -54,27 +56,6 @@ contract ExpiryV2 is
     // ============ Constants ============
 
     bytes32 constant FILE = "ExpiryV2";
-
-    // ============ Enums ============
-
-    enum CallFunctionType {
-        SetExpiry,
-        SetApproval
-    }
-
-    // ============ Structs ============
-
-    struct SetExpiryArg {
-        Account.Info account;
-        uint256 marketId;
-        uint32 timeDelta;
-        bool forceUpdate;
-    }
-
-    struct SetApprovalArg {
-        address sender;
-        uint32 minTimeDelta;
-    }
 
     // ============ Events ============
 

@@ -1,226 +1,4 @@
 
-// File: contracts/external/interfaces/IUniswapV2ERC20.sol
-
-pragma solidity >=0.5.0;
-
-interface IUniswapV2ERC20 {
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    function name() external pure returns (string memory);
-    function symbol() external pure returns (string memory);
-    function decimals() external pure returns (uint8);
-    function totalSupply() external view returns (uint);
-    function balanceOf(address owner) external view returns (uint);
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function approve(address spender, uint value) external returns (bool);
-    function transfer(address to, uint value) external returns (bool);
-    function transferFrom(address from, address to, uint value) external returns (bool);
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
-    function nonces(address owner) external view returns (uint);
-
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-}
-
-// File: contracts/external/amm/UniswapV2ERC20.sol
-
-pragma solidity ^0.5.16;
-
-
-
-
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
-    using SafeMath for uint;
-
-    string public constant name = 'Dolomite LP Token';
-    string public constant symbol = 'DLP';
-    uint8 public constant decimals = 18;
-    uint  public totalSupply;
-    mapping(address => uint) public balanceOf;
-    mapping(address => mapping(address => uint)) public allowance;
-
-    bytes32 public DOMAIN_SEPARATOR;
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-    mapping(address => uint) public nonces;
-
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    constructor() public {
-        uint chainId;
-        assembly {
-            chainId := chainid
-        }
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(name)),
-                keccak256(bytes('1')),
-                chainId,
-                address(this)
-            )
-        );
-    }
-
-    function _mint(address to, uint value) internal {
-        totalSupply = totalSupply.add(value);
-        balanceOf[to] = balanceOf[to].add(value);
-        emit Transfer(address(0), to, value);
-    }
-
-    function _burn(address from, uint value) internal {
-        balanceOf[from] = balanceOf[from].sub(value);
-        totalSupply = totalSupply.sub(value);
-        emit Transfer(from, address(0), value);
-    }
-
-    function _approve(address owner, address spender, uint value) private {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
-    }
-
-    function _transfer(address from, address to, uint value) private {
-        balanceOf[from] = balanceOf[from].sub(value);
-        balanceOf[to] = balanceOf[to].add(value);
-        emit Transfer(from, to, value);
-    }
-
-    function approve(address spender, uint value) external returns (bool) {
-        _approve(msg.sender, spender, value);
-        return true;
-    }
-
-    function transfer(address to, uint value) external returns (bool) {
-        _transfer(msg.sender, to, value);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint value) external returns (bool) {
-        if (allowance[from][msg.sender] != uint(-1)) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
-        }
-        _transfer(from, to, value);
-        return true;
-    }
-
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, 'DLP: EXPIRED');
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DLP: INVALID_SIGNATURE');
-        _approve(owner, spender, value);
-    }
-}
-
-// File: contracts/external/interfaces/ITransferProxy.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-interface ITransferProxy {
-
-    function transfer(
-        uint fromAccountIndex,
-        address to,
-        uint toAccountIndex,
-        address token,
-        uint amount
-    ) external;
-
-    function transferMultiple(
-        uint fromAccountIndex,
-        address to,
-        uint toAccountIndex,
-        address[] calldata tokens,
-        uint[] calldata amounts
-    ) external;
-
-    function transferMultipleWithMarkets(
-        uint fromAccountIndex,
-        address to,
-        uint toAccountIndex,
-        uint[] calldata markets,
-        uint[] calldata amounts
-    ) external;
-}
-
-// File: contracts/external/lib/UQ112x112.sol
-
-pragma solidity ^0.5.16;
-
-// a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
-
-// range: [0, 2**112 - 1]
-// resolution: 1 / 2**112
-
-library UQ112x112 {
-    uint224 constant Q112 = 2 ** 112;
-
-    // encode a uint112 as a UQ112x112
-    function encode(uint112 y) internal pure returns (uint224 z) {
-        // never overflows
-        z = uint224(y) * Q112;
-    }
-
-    // divide a UQ112x112 by a uint112, returning a UQ112x112
-    function uqdiv(uint224 x, uint112 y) internal pure returns (uint224 z) {
-        z = x / uint224(y);
-    }
-}
-
-// File: contracts/external/lib/AdvancedMath.sol
-
-pragma solidity =0.5.16;
-
-// a library for performing various math operations
-
-library AdvancedMath {
-    function min(uint x, uint y) internal pure returns (uint z) {
-        z = x < y ? x : y;
-    }
-
-    // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
-    function sqrt(uint y) internal pure returns (uint z) {
-        if (y > 3) {
-            z = y;
-            uint x = y / 2 + 1;
-            while (x < z) {
-                z = x;
-                x = (y / x + x) / 2;
-            }
-        } else if (y != 0) {
-            z = 1;
-        }
-    }
-}
-
 // File: contracts/external/interfaces/IUniswapV2Pair.sol
 
 /*
@@ -373,6 +151,227 @@ interface IUniswapV2Factory {
 
 }
 
+// File: contracts/external/lib/UniswapV2Library.sol
+
+pragma solidity >=0.5.0;
+
+
+
+
+library UniswapV2Library {
+    using SafeMath for uint;
+
+    function getPools(
+        address factory,
+        address[] memory path
+    ) internal pure returns (address[] memory) {
+        require(
+            path.length >= 2,
+            "UniswapV2Library::getPools: INVALID_PATH_LENGTH"
+        );
+
+        address[] memory pools = new address[](path.length - 1);
+        for (uint i = 0; i < path.length - 1; i++) {
+            pools[i] = pairFor(factory, path[i], path[i + 1]);
+        }
+        return pools;
+    }
+
+    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
+        require(tokenA != tokenB, "UniswapV2Library: IDENTICAL_ADDRESSES");
+        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        require(token0 != address(0), "UniswapV2Library: ZERO_ADDRESS");
+    }
+
+    // calculates the CREATE2 address for a pair without making any external calls
+    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+        (address token0, address token1) = sortTokens(tokenA, tokenB);
+        pair = address(uint(keccak256(abi.encodePacked(
+                hex"ff",
+                factory,
+                keccak256(abi.encodePacked(token0, token1)),
+                keccak256(IUniswapV2Factory(factory).getPairInitCode()) // init code hash
+            ))));
+    }
+
+    // fetches and sorts the reserves for a pair
+    function getReservesWei(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReservesWei();
+        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+        require(amountA > 0, "UniswapV2Library: INSUFFICIENT_AMOUNT");
+        require(reserveA > 0 && reserveB > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
+        amountB = amountA.mul(reserveB) / reserveA;
+    }
+
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+        require(amountIn > 0, "UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT");
+        require(reserveIn > 0 && reserveOut > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
+        uint amountInWithFee = amountIn.mul(997);
+        uint numerator = amountInWithFee.mul(reserveOut);
+        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+        amountOut = numerator / denominator;
+    }
+
+    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+        require(amountOut > 0, "UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT");
+        require(reserveIn > 0 && reserveOut > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
+        uint numerator = reserveIn.mul(amountOut).mul(1000);
+        uint denominator = reserveOut.sub(amountOut).mul(997);
+        amountIn = (numerator / denominator).add(1);
+    }
+
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOutWei(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i], path[i + 1]);
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    // performs chained getAmountIn calculations on any number of pairs
+    function getAmountsInWei(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i - 1], path[i]);
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+        }
+    }
+}
+
+// File: contracts/external/lib/TypedSignature.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title TypedSignature
+ * @author dYdX
+ *
+ * Library to unparse typed signatures
+ */
+library TypedSignature {
+
+    // ============ Constants ============
+
+    bytes32 constant private FILE = "TypedSignature";
+
+    // prepended message with the length of the signed hash in decimal
+    bytes constant private PREPEND_DEC = "\x19Ethereum Signed Message:\n32";
+
+    // prepended message with the length of the signed hash in hexadecimal
+    bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";
+
+    // Number of bytes in a typed signature
+    uint256 constant private NUM_SIGNATURE_BYTES = 66;
+
+    // ============ Enums ============
+
+    // Different RPC providers may implement signing methods differently, so we allow different
+    // signature types depending on the string prepended to a hash before it was signed.
+    enum SignatureType {
+        NoPrepend,   // No string was prepended.
+        Decimal,     // PREPEND_DEC was prepended.
+        Hexadecimal, // PREPEND_HEX was prepended.
+        Invalid      // Not a valid type. Used for bound-checking.
+    }
+
+    // ============ Functions ============
+
+    /**
+     * Gives the address of the signer of a hash. Also allows for the commonly prepended string of
+     * '\x19Ethereum Signed Message:\n' + message.length
+     *
+     * @param  hash               Hash that was signed (does not include prepended message)
+     * @param  signatureWithType  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}
+     * @return                    address of the signer of the hash
+     */
+    function recover(
+        bytes32 hash,
+        bytes memory signatureWithType
+    )
+    internal
+    pure
+    returns (address)
+    {
+        Require.that(
+            signatureWithType.length == NUM_SIGNATURE_BYTES,
+            FILE,
+            "Invalid signature length"
+        );
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        uint8 rawSigType;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            r := mload(add(signatureWithType, 0x20))
+            s := mload(add(signatureWithType, 0x40))
+            let lastSlot := mload(add(signatureWithType, 0x60))
+            v := byte(0, lastSlot)
+            rawSigType := byte(1, lastSlot)
+        }
+
+        Require.that(
+            rawSigType < uint8(SignatureType.Invalid),
+            FILE,
+            "Invalid signature type"
+        );
+
+        SignatureType sigType = SignatureType(rawSigType);
+
+        bytes32 signedHash;
+        if (sigType == SignatureType.NoPrepend) {
+            signedHash = hash;
+        } else if (sigType == SignatureType.Decimal) {
+            signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
+        } else {
+            assert(sigType == SignatureType.Hexadecimal);
+            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
+        }
+
+        return ecrecover(
+            signedHash,
+            v,
+            r,
+            s
+        );
+    }
+}
+
 // File: contracts/protocol/interfaces/IPriceOracle.sol
 
 /*
@@ -423,9 +422,9 @@ contract IPriceOracle {
     function getPrice(
         address token
     )
-        public
-        view
-        returns (Monetary.Price memory);
+    public
+    view
+    returns (Monetary.Price memory);
 }
 
 // File: contracts/protocol/interfaces/IInterestSetter.sol
@@ -475,9 +474,9 @@ interface IInterestSetter {
         uint256 borrowWei,
         uint256 supplyWei
     )
-        external
-        view
-        returns (Interest.Rate memory);
+    external
+    view
+    returns (Interest.Rate memory);
 }
 
 // File: contracts/protocol/interfaces/IERC20.sol
@@ -627,9 +626,9 @@ library Token {
         address token,
         address owner
     )
-        internal
-        view
-        returns (uint256)
+    internal
+    view
+    returns (uint256)
     {
         return IERC20(token).balanceOf(owner);
     }
@@ -639,9 +638,9 @@ library Token {
         address owner,
         address spender
     )
-        internal
-        view
-        returns (uint256)
+    internal
+    view
+    returns (uint256)
     {
         return IERC20(token).allowance(owner, spender);
     }
@@ -651,7 +650,7 @@ library Token {
         address spender,
         uint256 amount
     )
-        internal
+    internal
     {
         IERC20(token).approve(spender, amount);
 
@@ -666,7 +665,7 @@ library Token {
         address token,
         address spender
     )
-        internal
+    internal
     {
         approve(
             token,
@@ -680,7 +679,7 @@ library Token {
         address to,
         uint256 amount
     )
-        internal
+    internal
     {
         if (amount == 0 || to == address(this)) {
             return;
@@ -701,7 +700,7 @@ library Token {
         address to,
         uint256 amount
     )
-        internal
+    internal
     {
         if (amount == 0 || to == from) {
             return;
@@ -724,15 +723,15 @@ library Token {
      */
     function checkSuccess(
     )
-        private
-        pure
-        returns (bool)
+    private
+    pure
+    returns (bool)
     {
         uint256 returnValue = 0;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            // check number of bytes returned from last function call
+        // check number of bytes returned from last function call
             switch returndatasize
 
             // no bytes returned: assume success
@@ -742,10 +741,10 @@ library Token {
 
             // 32 bytes returned: check if non-zero
             case 0x20 {
-                // copy 32 bytes into scratch space
+            // copy 32 bytes into scratch space
                 returndatacopy(0x0, 0x0, 0x20)
 
-                // load those bytes into returnValue
+            // load those bytes into returnValue
                 returnValue := mload(0x0)
             }
 
@@ -858,12 +857,12 @@ library Cache {
     function create(
         uint256 numMarkets
     )
-        internal
-        pure
-        returns (MarketCache memory)
+    internal
+    pure
+    returns (MarketCache memory)
     {
         return MarketCache({
-            markets: new MarketInfo[](numMarkets)
+        markets: new MarketInfo[](numMarkets)
         });
     }
 
@@ -876,9 +875,9 @@ library Cache {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         if (cache.hasMarket(marketId)) {
             return false;
@@ -896,9 +895,9 @@ library Cache {
     function getNumMarkets(
         MarketCache memory cache
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return cache.markets.length;
     }
@@ -907,9 +906,9 @@ library Cache {
         MarketCache memory cache,
         uint256 marketId
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return cache.markets[marketId].price.value != 0;
     }
@@ -918,9 +917,9 @@ library Cache {
         MarketCache memory cache,
         uint256 marketId
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return cache.markets[marketId].isClosing;
     }
@@ -929,9 +928,9 @@ library Cache {
         MarketCache memory cache,
         uint256 marketId
     )
-        internal
-        pure
-        returns (Monetary.Price memory)
+    internal
+    pure
+    returns (Monetary.Price memory)
     {
         return cache.markets[marketId].price;
     }
@@ -940,9 +939,9 @@ library Cache {
         MarketCache memory cache,
         uint256 marketId
     )
-        internal
-        pure
-        returns (uint128)
+    internal
+    pure
+    returns (uint128)
     {
         return cache.markets[marketId].borrowPar;
     }
@@ -1102,9 +1101,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (address)
+    internal
+    view
+    returns (address)
     {
         return state.markets[marketId].token;
     }
@@ -1113,9 +1112,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.TotalPar memory)
+    internal
+    view
+    returns (Types.TotalPar memory)
     {
         return state.markets[marketId].totalPar;
     }
@@ -1124,9 +1123,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Interest.Index memory)
+    internal
+    view
+    returns (Interest.Index memory)
     {
         return state.markets[marketId].index;
     }
@@ -1135,9 +1134,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Wei memory)
+    internal
+    view
+    returns (Types.Wei memory)
     {
         Interest.Index memory index = state.getIndex(marketId);
         Types.TotalPar memory totalPar = state.getTotalPar(marketId);
@@ -1145,13 +1144,13 @@ library Storage {
         address token = state.getToken(marketId);
 
         Types.Wei memory balanceWei = Types.Wei({
-            sign: true,
-            value: Token.balanceOf(token, address(this))
+        sign: true,
+        value: Token.balanceOf(token, address(this))
         });
 
         (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
         // borrowWei is negative, so subtracting it makes the value more positive
@@ -1162,9 +1161,9 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account
     )
-        internal
-        view
-        returns (Account.Status)
+    internal
+    view
+    returns (Account.Status)
     {
         return state.accounts[account.owner][account.number].status;
     }
@@ -1174,9 +1173,9 @@ library Storage {
         Account.Info memory account,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Par memory)
+    internal
+    view
+    returns (Types.Par memory)
     {
         return state.accounts[account.owner][account.number].balances[marketId];
     }
@@ -1186,9 +1185,9 @@ library Storage {
         Account.Info memory account,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Wei memory)
+    internal
+    view
+    returns (Types.Wei memory)
     {
         Types.Par memory par = state.getPar(account, marketId);
 
@@ -1205,15 +1204,15 @@ library Storage {
         uint256 heldMarketId,
         uint256 owedMarketId
     )
-        internal
-        view
-        returns (Decimal.D256 memory)
+    internal
+    view
+    returns (Decimal.D256 memory)
     {
         uint256 result = state.riskParams.liquidationSpread.value;
         result = Decimal.mul(result, Decimal.onePlus(state.markets[heldMarketId].spreadPremium));
         result = Decimal.mul(result, Decimal.onePlus(state.markets[owedMarketId].spreadPremium));
         return Decimal.D256({
-            value: result
+        value: result
         });
     }
 
@@ -1222,9 +1221,9 @@ library Storage {
         uint256 marketId,
         Interest.Index memory index
     )
-        internal
-        view
-        returns (Interest.Index memory)
+    internal
+    view
+    returns (Interest.Index memory)
     {
         Interest.Rate memory rate = state.fetchInterestRate(marketId, index);
 
@@ -1241,14 +1240,14 @@ library Storage {
         uint256 marketId,
         Interest.Index memory index
     )
-        internal
-        view
-        returns (Interest.Rate memory)
+    internal
+    view
+    returns (Interest.Rate memory)
     {
         Types.TotalPar memory totalPar = state.getTotalPar(marketId);
         (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
         Interest.Rate memory rate = state.markets[marketId].interestSetter.getInterestRate(
@@ -1264,9 +1263,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Monetary.Price memory)
+    internal
+    view
+    returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
         Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
@@ -1285,9 +1284,9 @@ library Storage {
         Cache.MarketCache memory cache,
         bool adjustForLiquidity
     )
-        internal
-        view
-        returns (Monetary.Value memory, Monetary.Value memory)
+    internal
+    view
+    returns (Monetary.Value memory, Monetary.Value memory)
     {
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
@@ -1326,14 +1325,14 @@ library Storage {
         Cache.MarketCache memory cache,
         bool requireMinBorrow
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         // get account values (adjusted for liquidity)
         (
-            Monetary.Value memory supplyValue,
-            Monetary.Value memory borrowValue
+        Monetary.Value memory supplyValue,
+        Monetary.Value memory borrowValue
         ) = state.getAccountValues(account, cache, /* adjustForLiquidity = */ true);
 
         if (borrowValue.value == 0) {
@@ -1360,9 +1359,9 @@ library Storage {
         Storage.State storage state,
         address operator
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         return state.globalOperators[operator];
     }
@@ -1372,9 +1371,9 @@ library Storage {
         address owner,
         address operator
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         return state.operators[owner][operator];
     }
@@ -1383,8 +1382,8 @@ library Storage {
         Storage.State storage state,
         address operator
     )
-        internal
-        view
+    internal
+    view
     {
         bool isValidOperator = state.isGlobalOperator(operator);
 
@@ -1401,13 +1400,13 @@ library Storage {
         Account.Info memory account,
         address operator
     )
-        internal
-        view
+    internal
+    view
     {
         bool isValidOperator =
-            operator == account.owner
-            || state.isGlobalOperator(operator)
-            || state.isLocalOperator(account.owner, operator);
+        operator == account.owner
+        || state.isGlobalOperator(operator)
+        || state.isLocalOperator(account.owner, operator);
 
         Require.that(
             isValidOperator,
@@ -1427,9 +1426,9 @@ library Storage {
         uint256 marketId,
         Types.AssetAmount memory amount
     )
-        internal
-        view
-        returns (Types.Par memory, Types.Wei memory)
+    internal
+    view
+    returns (Types.Par memory, Types.Wei memory)
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -1444,8 +1443,8 @@ library Storage {
 
         if (amount.denomination == Types.AssetDenomination.Wei) {
             deltaWei = Types.Wei({
-                sign: amount.sign,
-                value: amount.value
+            sign: amount.sign,
+            value: amount.value
             });
             if (amount.ref == Types.AssetReference.Target) {
                 deltaWei = deltaWei.sub(oldWei);
@@ -1453,8 +1452,8 @@ library Storage {
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
         } else { // AssetDenomination.Par
             newPar = Types.Par({
-                sign: amount.sign,
-                value: amount.value.to128()
+            sign: amount.sign,
+            value: amount.value.to128()
             });
             if (amount.ref == Types.AssetReference.Delta) {
                 newPar = oldPar.add(newPar);
@@ -1471,9 +1470,9 @@ library Storage {
         uint256 marketId,
         Types.AssetAmount memory amount
     )
-        internal
-        view
-        returns (Types.Par memory, Types.Wei memory)
+    internal
+    view
+    returns (Types.Par memory, Types.Wei memory)
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -1487,8 +1486,8 @@ library Storage {
         );
 
         (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
+        Types.Par memory newPar,
+        Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             account,
             marketId,
@@ -1523,9 +1522,9 @@ library Storage {
         Account.Info memory account,
         Cache.MarketCache memory cache
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         bool hasNegative = false;
         uint256 numMarkets = cache.getNumMarkets();
@@ -1551,8 +1550,8 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        returns (Interest.Index memory)
+    internal
+    returns (Interest.Index memory)
     {
         Interest.Index memory index = state.getIndex(marketId);
         if (index.lastUpdate == Time.currentTime()) {
@@ -1566,7 +1565,7 @@ library Storage {
         Account.Info memory account,
         Account.Status status
     )
-        internal
+    internal
     {
         state.accounts[account.owner][account.number].status = status;
     }
@@ -1577,7 +1576,7 @@ library Storage {
         uint256 marketId,
         Types.Par memory newPar
     )
-        internal
+    internal
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -1615,7 +1614,7 @@ library Storage {
         uint256 marketId,
         Types.Wei memory deltaWei
     )
-        internal
+    internal
     {
         if (deltaWei.isZero()) {
             return;
@@ -1698,7 +1697,7 @@ pragma solidity ^0.5.7;
  * Public function that allows other addresses to manage accounts
  */
 contract Permission is
-    State
+State
 {
     // ============ Events ============
 
@@ -1731,7 +1730,7 @@ contract Permission is
     function setOperators(
         OperatorArg[] memory args
     )
-        public
+    public
     {
         for (uint256 i = 0; i < args.length; i++) {
             address operator = args[i].operator;
@@ -1957,9 +1956,9 @@ library Actions {
     function getMarketLayout(
         ActionType actionType
     )
-        internal
-        pure
-        returns (MarketLayout)
+    internal
+    pure
+    returns (MarketLayout)
     {
         if (
             actionType == Actions.ActionType.Deposit
@@ -1977,9 +1976,9 @@ library Actions {
     function getAccountLayout(
         ActionType actionType
     )
-        internal
-        pure
-        returns (AccountLayout)
+    internal
+    pure
+    returns (AccountLayout)
     {
         if (
             actionType == Actions.ActionType.Transfer
@@ -2001,16 +2000,16 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (DepositArgs memory)
+    internal
+    pure
+    returns (DepositArgs memory)
     {
         assert(args.actionType == ActionType.Deposit);
         return DepositArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            from: args.otherAddress
+        amount: args.amount,
+        account: accounts[args.accountId],
+        market: args.primaryMarketId,
+        from: args.otherAddress
         });
     }
 
@@ -2018,16 +2017,16 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (WithdrawArgs memory)
+    internal
+    pure
+    returns (WithdrawArgs memory)
     {
         assert(args.actionType == ActionType.Withdraw);
         return WithdrawArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            to: args.otherAddress
+        amount: args.amount,
+        account: accounts[args.accountId],
+        market: args.primaryMarketId,
+        to: args.otherAddress
         });
     }
 
@@ -2035,16 +2034,16 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (TransferArgs memory)
+    internal
+    pure
+    returns (TransferArgs memory)
     {
         assert(args.actionType == ActionType.Transfer);
         return TransferArgs({
-            amount: args.amount,
-            accountOne: accounts[args.accountId],
-            accountTwo: accounts[args.otherAccountId],
-            market: args.primaryMarketId
+        amount: args.amount,
+        accountOne: accounts[args.accountId],
+        accountTwo: accounts[args.otherAccountId],
+        market: args.primaryMarketId
         });
     }
 
@@ -2052,18 +2051,18 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (BuyArgs memory)
+    internal
+    pure
+    returns (BuyArgs memory)
     {
         assert(args.actionType == ActionType.Buy);
         return BuyArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            makerMarket: args.primaryMarketId,
-            takerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
+        amount: args.amount,
+        account: accounts[args.accountId],
+        makerMarket: args.primaryMarketId,
+        takerMarket: args.secondaryMarketId,
+        exchangeWrapper: args.otherAddress,
+        orderData: args.data
         });
     }
 
@@ -2071,18 +2070,18 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (SellArgs memory)
+    internal
+    pure
+    returns (SellArgs memory)
     {
         assert(args.actionType == ActionType.Sell);
         return SellArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            takerMarket: args.primaryMarketId,
-            makerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
+        amount: args.amount,
+        account: accounts[args.accountId],
+        takerMarket: args.primaryMarketId,
+        makerMarket: args.secondaryMarketId,
+        exchangeWrapper: args.otherAddress,
+        orderData: args.data
         });
     }
 
@@ -2090,19 +2089,19 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (TradeArgs memory)
+    internal
+    pure
+    returns (TradeArgs memory)
     {
         assert(args.actionType == ActionType.Trade);
         return TradeArgs({
-            amount: args.amount,
-            takerAccount: accounts[args.accountId],
-            makerAccount: accounts[args.otherAccountId],
-            inputMarket: args.primaryMarketId,
-            outputMarket: args.secondaryMarketId,
-            autoTrader: args.otherAddress,
-            tradeData: args.data
+        amount: args.amount,
+        takerAccount: accounts[args.accountId],
+        makerAccount: accounts[args.otherAccountId],
+        inputMarket: args.primaryMarketId,
+        outputMarket: args.secondaryMarketId,
+        autoTrader: args.otherAddress,
+        tradeData: args.data
         });
     }
 
@@ -2110,17 +2109,17 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (LiquidateArgs memory)
+    internal
+    pure
+    returns (LiquidateArgs memory)
     {
         assert(args.actionType == ActionType.Liquidate);
         return LiquidateArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            liquidAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
+        amount: args.amount,
+        solidAccount: accounts[args.accountId],
+        liquidAccount: accounts[args.otherAccountId],
+        owedMarket: args.primaryMarketId,
+        heldMarket: args.secondaryMarketId
         });
     }
 
@@ -2128,17 +2127,17 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (VaporizeArgs memory)
+    internal
+    pure
+    returns (VaporizeArgs memory)
     {
         assert(args.actionType == ActionType.Vaporize);
         return VaporizeArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            vaporAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
+        amount: args.amount,
+        solidAccount: accounts[args.accountId],
+        vaporAccount: accounts[args.otherAccountId],
+        owedMarket: args.primaryMarketId,
+        heldMarket: args.secondaryMarketId
         });
     }
 
@@ -2146,15 +2145,15 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (CallArgs memory)
+    internal
+    pure
+    returns (CallArgs memory)
     {
         assert(args.actionType == ActionType.Call);
         return CallArgs({
-            account: accounts[args.accountId],
-            callee: args.otherAddress,
-            data: args.data
+        account: accounts[args.accountId],
+        callee: args.otherAddress,
+        data: args.data
         });
     }
 }
@@ -2194,9 +2193,9 @@ library Time {
     // ============ Library Functions ============
 
     function currentTime()
-        internal
-        view
-        returns (uint32)
+    internal
+    view
+    returns (uint32)
     {
         return Math.to32(block.timestamp);
     }
@@ -2249,9 +2248,9 @@ library Decimal {
     // ============ Functions ============
 
     function one()
-        internal
-        pure
-        returns (D256 memory)
+    internal
+    pure
+    returns (D256 memory)
     {
         return D256({ value: BASE });
     }
@@ -2259,9 +2258,9 @@ library Decimal {
     function onePlus(
         D256 memory d
     )
-        internal
-        pure
-        returns (D256 memory)
+    internal
+    pure
+    returns (D256 memory)
     {
         return D256({ value: d.value.add(BASE) });
     }
@@ -2270,9 +2269,9 @@ library Decimal {
         uint256 target,
         D256 memory d
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return Math.getPartial(target, d.value, BASE);
     }
@@ -2281,9 +2280,9 @@ library Decimal {
         uint256 target,
         D256 memory d
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return Math.getPartial(target, BASE, d.value);
     }
@@ -2365,13 +2364,13 @@ library Interest {
         Types.TotalPar memory totalPar,
         Decimal.D256 memory earningsRate
     )
-        internal
-        view
-        returns (Index memory)
+    internal
+    view
+    returns (Index memory)
     {
         (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
         ) = totalParToWei(totalPar, index);
 
         // get interest increase for borrowers
@@ -2391,21 +2390,21 @@ library Interest {
         assert(supplyInterest <= borrowInterest);
 
         return Index({
-            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
-            supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
-            lastUpdate: currentTime
+        borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
+        supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
+        lastUpdate: currentTime
         });
     }
 
     function newIndex()
-        internal
-        view
-        returns (Index memory)
+    internal
+    view
+    returns (Index memory)
     {
         return Index({
-            borrow: BASE,
-            supply: BASE,
-            lastUpdate: Time.currentTime()
+        borrow: BASE,
+        supply: BASE,
+        lastUpdate: Time.currentTime()
         });
     }
 
@@ -2416,20 +2415,20 @@ library Interest {
         Types.Par memory input,
         Index memory index
     )
-        internal
-        pure
-        returns (Types.Wei memory)
+    internal
+    pure
+    returns (Types.Wei memory)
     {
         uint256 inputValue = uint256(input.value);
         if (input.sign) {
             return Types.Wei({
-                sign: true,
-                value: inputValue.getPartial(index.supply, BASE)
+            sign: true,
+            value: inputValue.getPartial(index.supply, BASE)
             });
         } else {
             return Types.Wei({
-                sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+            sign: false,
+            value: inputValue.getPartialRoundUp(index.borrow, BASE)
             });
         }
     }
@@ -2441,19 +2440,19 @@ library Interest {
         Types.Wei memory input,
         Index memory index
     )
-        internal
-        pure
-        returns (Types.Par memory)
+    internal
+    pure
+    returns (Types.Par memory)
     {
         if (input.sign) {
             return Types.Par({
-                sign: true,
-                value: input.value.getPartial(BASE, index.supply).to128()
+            sign: true,
+            value: input.value.getPartial(BASE, index.supply).to128()
             });
         } else {
             return Types.Par({
-                sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+            sign: false,
+            value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
             });
         }
     }
@@ -2466,65 +2465,22 @@ library Interest {
         Types.TotalPar memory totalPar,
         Index memory index
     )
-        internal
-        pure
-        returns (Types.Wei memory, Types.Wei memory)
+    internal
+    pure
+    returns (Types.Wei memory, Types.Wei memory)
     {
         Types.Par memory supplyPar = Types.Par({
-            sign: true,
-            value: totalPar.supply
+        sign: true,
+        value: totalPar.supply
         });
         Types.Par memory borrowPar = Types.Par({
-            sign: false,
-            value: totalPar.borrow
+        sign: false,
+        value: totalPar.borrow
         });
         Types.Wei memory supplyWei = parToWei(supplyPar, index);
         Types.Wei memory borrowWei = parToWei(borrowPar, index);
         return (supplyWei, borrowWei);
     }
-}
-
-// File: contracts/protocol/interfaces/ISoloMargin.sol
-
-pragma solidity >=0.5.0;
-
-
-
-
-
-interface ISoloMargin {
-
-    function getMarketIdByTokenAddress(
-        address token
-    ) external view returns (uint256);
-
-    function getMarketTokenAddress(
-        uint256 marketId
-    ) external view returns (address);
-
-    function getMarketCurrentIndex(
-        uint256 marketId
-    ) external view returns (Interest.Index memory);
-
-    function getAccountPar(
-        Account.Info calldata account,
-        uint256 marketId
-    ) external view returns (Types.Par memory);
-
-    function getAccountWei(
-        Account.Info calldata account,
-        uint256 marketId
-    ) external view returns (Types.Wei memory);
-
-    function operate(
-        Account.Info[] calldata accounts,
-        Actions.ActionArgs[] calldata actions
-    ) external;
-
-    function setOperators(
-        Permission.OperatorArg[] calldata args
-    ) external;
-
 }
 
 // File: contracts/protocol/lib/Require.sol
@@ -2576,18 +2532,18 @@ library Require {
         bytes32 file,
         bytes32 reason
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason)
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason)
                 )
+            )
             );
         }
     }
@@ -2598,21 +2554,21 @@ library Require {
         bytes32 reason,
         uint256 payloadA
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2624,23 +2580,23 @@ library Require {
         uint256 payloadA,
         uint256 payloadB
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2651,21 +2607,21 @@ library Require {
         bytes32 reason,
         address payloadA
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2677,23 +2633,23 @@ library Require {
         address payloadA,
         uint256 payloadB
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2706,25 +2662,25 @@ library Require {
         uint256 payloadB,
         uint256 payloadC
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    COMMA,
+                    stringify(payloadC),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2735,21 +2691,21 @@ library Require {
         bytes32 reason,
         bytes32 payloadA
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2762,25 +2718,25 @@ library Require {
         uint256 payloadB,
         uint256 payloadC
     )
-        internal
-        pure
+    internal
+    pure
     {
         if (!must) {
             revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    COMMA,
+                    stringify(payloadC),
+                    RPAREN
                 )
+            )
             );
         }
     }
@@ -2790,9 +2746,9 @@ library Require {
     function stringifyTruncated(
         bytes32 input
     )
-        private
-        pure
-        returns (bytes memory)
+    private
+    pure
+    returns (bytes memory)
     {
         // put the input bytes into the result
         bytes memory result = abi.encodePacked(input);
@@ -2823,9 +2779,9 @@ library Require {
     function stringify(
         uint256 input
     )
-        private
-        pure
-        returns (bytes memory)
+    private
+    pure
+    returns (bytes memory)
     {
         if (input == 0) {
             return "0";
@@ -2862,9 +2818,9 @@ library Require {
     function stringify(
         address input
     )
-        private
-        pure
-        returns (bytes memory)
+    private
+    pure
+    returns (bytes memory)
     {
         uint256 z = uint256(input);
 
@@ -2895,9 +2851,9 @@ library Require {
     function stringify(
         bytes32 input
     )
-        private
-        pure
-        returns (bytes memory)
+    private
+    pure
+    returns (bytes memory)
     {
         uint256 z = uint256(input);
 
@@ -2928,9 +2884,9 @@ library Require {
     function char(
         uint256 input
     )
-        private
-        pure
-        returns (byte)
+    private
+    pure
+    returns (byte)
     {
         // return ASCII digit (0-9)
         if (input < 10) {
@@ -2990,9 +2946,9 @@ library Math {
         uint256 numerator,
         uint256 denominator
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return target.mul(numerator).div(denominator);
     }
@@ -3005,9 +2961,9 @@ library Math {
         uint256 numerator,
         uint256 denominator
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         if (target == 0 || numerator == 0) {
             // SafeMath will check for zero denominator
@@ -3019,9 +2975,9 @@ library Math {
     function to128(
         uint256 number
     )
-        internal
-        pure
-        returns (uint128)
+    internal
+    pure
+    returns (uint128)
     {
         uint128 result = uint128(number);
         Require.that(
@@ -3035,9 +2991,9 @@ library Math {
     function to96(
         uint256 number
     )
-        internal
-        pure
-        returns (uint96)
+    internal
+    pure
+    returns (uint96)
     {
         uint96 result = uint96(number);
         Require.that(
@@ -3051,9 +3007,9 @@ library Math {
     function to32(
         uint256 number
     )
-        internal
-        pure
-        returns (uint32)
+    internal
+    pure
+    returns (uint32)
     {
         uint32 result = uint32(number);
         Require.that(
@@ -3068,9 +3024,9 @@ library Math {
         uint256 a,
         uint256 b
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return a < b ? a : b;
     }
@@ -3079,79 +3035,11 @@ library Math {
         uint256 a,
         uint256 b
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return a > b ? a : b;
-    }
-}
-
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
- */
-library SafeMath {
-    /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b);
-
-        return c;
-    }
-
-    /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
-
-        return c;
-    }
-
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
-        return a % b;
     }
 }
 
@@ -3223,13 +3111,13 @@ library Types {
     }
 
     function zeroPar()
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return Par({
-            sign: false,
-            value: 0
+        sign: false,
+        value: 0
         });
     }
 
@@ -3237,9 +3125,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return add(a, negative(b));
     }
@@ -3248,9 +3136,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         Par memory result;
         if (a.sign == b.sign) {
@@ -3272,9 +3160,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         if (a.value == b.value) {
             if (a.value == 0) {
@@ -3288,22 +3176,22 @@ library Types {
     function negative(
         Par memory a
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return Par({
-            sign: !a.sign,
-            value: a.value
+        sign: !a.sign,
+        value: a.value
         });
     }
 
     function isNegative(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return !a.sign && a.value > 0;
     }
@@ -3311,9 +3199,9 @@ library Types {
     function isPositive(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.sign && a.value > 0;
     }
@@ -3321,9 +3209,9 @@ library Types {
     function isZero(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.value == 0;
     }
@@ -3337,13 +3225,13 @@ library Types {
     }
 
     function zeroWei()
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return Wei({
-            sign: false,
-            value: 0
+        sign: false,
+        value: 0
         });
     }
 
@@ -3351,9 +3239,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return add(a, negative(b));
     }
@@ -3362,9 +3250,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         Wei memory result;
         if (a.sign == b.sign) {
@@ -3386,9 +3274,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         if (a.value == b.value) {
             if (a.value == 0) {
@@ -3402,22 +3290,22 @@ library Types {
     function negative(
         Wei memory a
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return Wei({
-            sign: !a.sign,
-            value: a.value
+        sign: !a.sign,
+        value: a.value
         });
     }
 
     function isNegative(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return !a.sign && a.value > 0;
     }
@@ -3425,9 +3313,9 @@ library Types {
     function isPositive(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.sign && a.value > 0;
     }
@@ -3435,9 +3323,9 @@ library Types {
     function isZero(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.value == 0;
     }
@@ -3511,19 +3399,165 @@ library Account {
         Info memory a,
         Info memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.owner == b.owner && a.number == b.number;
     }
 }
 
-// File: contracts/protocol/interfaces/IAutoTrader.sol
+// File: contracts/protocol/interfaces/ISoloMargin.sol
+
+pragma solidity >=0.5.0;
+
+
+
+
+
+interface ISoloMargin {
+
+    function getMarketIdByTokenAddress(
+        address token
+    ) external view returns (uint256);
+
+    function getMarketTokenAddress(
+        uint256 marketId
+    ) external view returns (address);
+
+    function getMarketCurrentIndex(
+        uint256 marketId
+    ) external view returns (Interest.Index memory);
+
+    function getAccountPar(
+        Account.Info calldata account,
+        uint256 marketId
+    ) external view returns (Types.Par memory);
+
+    function getAccountWei(
+        Account.Info calldata account,
+        uint256 marketId
+    ) external view returns (Types.Wei memory);
+
+    function operate(
+        Account.Info[] calldata accounts,
+        Actions.ActionArgs[] calldata actions
+    ) external;
+
+    function setOperators(
+        Permission.OperatorArg[] calldata args
+    ) external;
+
+}
+
+// File: openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @title Helps contracts guard against reentrancy attacks.
+ * @author Remco Bloemen <remco@2π.com>, Eenae <alexey@mixbytes.io>
+ * @dev If you mark a function `nonReentrant`, you should also
+ * mark it `external`.
+ */
+contract ReentrancyGuard {
+    /// @dev counter to allow mutex lock with only one SSTORE operation
+    uint256 private _guardCounter;
+
+    constructor () internal {
+        // The counter starts at one to prevent changing it from zero to a non-zero
+        // value, which is a more expensive operation.
+        _guardCounter = 1;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        _guardCounter += 1;
+        uint256 localCounter = _guardCounter;
+        _;
+        require(localCounter == _guardCounter);
+    }
+}
+
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
+ */
+library SafeMath {
+    /**
+    * @dev Multiplies two unsigned integers, reverts on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b);
+
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+    * @dev Adds two unsigned integers, reverts on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a);
+
+        return c;
+    }
+
+    /**
+    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+    * reverts when dividing by zero.
+    */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
+    }
+}
+
+// File: contracts/external/proxies/DolomiteAmmRouterProxy.sol
 
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2021 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -3544,48 +3578,6 @@ pragma solidity ^0.5.7;
 
 
 
-/**
- * @title IAutoTrader
- * @author dYdX
- *
- * Interface that Auto-Traders for Solo must implement in order to approve trades.
- */
-contract IAutoTrader {
-
-    // ============ Public Functions ============
-
-    /**
-     * Allows traders to make trades approved by this smart contract. The active trader's account is
-     * the takerAccount and the passive account (for which this contract approves trades
-     * on-behalf-of) is the makerAccount.
-     *
-     * @param  inputMarketId   The market for which the trader specified the original amount
-     * @param  outputMarketId  The market for which the trader wants the resulting amount specified
-     * @param  makerAccount    The account for which this contract is making trades
-     * @param  takerAccount    The account requesting the trade
-     * @param  oldInputPar     The old principal amount for the makerAccount for the inputMarketId
-     * @param  newInputPar     The new principal amount for the makerAccount for the inputMarketId
-     * @param  inputWei        The change in token amount for the makerAccount for the inputMarketId
-     * @param  data            Arbitrary data passed in by the trader
-     * @return                 The AssetAmount for the makerAccount for the outputMarketId
-     */
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory oldInputPar,
-        Types.Par memory newInputPar,
-        Types.Wei memory inputWei,
-        bytes memory data
-    )
-        public
-        returns (Types.AssetAmount memory);
-}
-
-// File: contracts/external/amm/UniswapV2Pair.sol
-
-pragma solidity ^0.5.16;
 
 
 
@@ -3593,194 +3585,393 @@ pragma solidity ^0.5.16;
 
 
 
+contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
+    using UniswapV2Library for *;
+    using SafeMath for uint;
 
-contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
-    using SafeMath  for uint;
-    using UQ112x112 for uint224;
-
-    uint public constant INTEREST_INDEX_BASE = 1e18;
-    uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
-
-    address public factory;
-    address public soloMargin;
-    address public soloMarginTransferProxy;
-    address public token0;
-    address public token1;
-
-    uint112 private reserve0Par;            // uses single storage slot, accessible via getReserves
-    uint112 private reserve1Par;            // uses single storage slot, accessible via getReserves
-    uint32  private blockTimestampLast;     // uses single storage slot, accessible via getReserves
-
-    uint128 public marketId0;
-    uint128 public marketId1;
-
-    uint public price0CumulativeLast;
-    uint public price1CumulativeLast;
-    uint public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
-
-    uint private unlocked = 1;
-    modifier lock() {
-        require(unlocked == 1, "DLP: LOCKED");
-        unlocked = 0;
+    modifier ensure(uint deadline) {
+        require(deadline >= block.timestamp, 'DolomiteAmmRouterProxy: EXPIRED');
         _;
-        unlocked = 1;
     }
 
-    struct Cache {
+    struct ModifyPositionParams {
+        uint accountNumber;
+        Types.AssetAmount amountIn;
+        Types.AssetAmount amountOut;
+        address[] tokenPath;
+        /// the token to be deposited/withdrawn to/from account number. To not perform any margin deposits or
+        /// withdrawals, simply set this to `address(0)`
+        address depositToken;
+        /// a positive number means funds are deposited to `accountNumber` from accountNumber zero
+        /// a negative number means funds are withdrawn from `accountNumber` and moved to accountNumber zero
+        bool isPositiveMarginDeposit;
+        /// the amount of the margin deposit/withdrawal, in wei
+        uint marginDeposit;
+    }
+
+    struct ModifyPositionCache {
+        ModifyPositionParams params;
         ISoloMargin soloMargin;
-        uint marketId0;
-        uint marketId1;
-        uint balance0Wei;
-        uint balance1Wei;
-        Interest.Index index0;
-        Interest.Index index1;
+        IUniswapV2Factory uniswapFactory;
+        address account;
+        uint[] marketPath;
+        uint[] amountsWei;
     }
 
-    constructor() public {
-        factory = msg.sender;
+    struct PermitSignature {
+        bool approveMax;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
-    // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1, address _transferProxy) external {
-        require(msg.sender == factory, "DLP: FORBIDDEN");
-        // sufficient check
-        token0 = _token0;
-        token1 = _token1;
-        soloMargin = IUniswapV2Factory(msg.sender).soloMargin();
-        soloMarginTransferProxy = _transferProxy;
+    ISoloMargin public SOLO_MARGIN;
+    IUniswapV2Factory public UNISWAP_FACTORY;
+    address public WETH;
 
-        marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
-        marketId1 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token1));
+    constructor(
+        address soloMargin,
+        address uniswapFactory,
+        address weth
+    ) public {
+        SOLO_MARGIN = ISoloMargin(soloMargin);
+        UNISWAP_FACTORY = IUniswapV2Factory(uniswapFactory);
+        WETH = weth;
     }
 
-    function token0Symbol() public view returns (string memory) {
-        return IERC20(token0).symbol();
-    }
+    function addLiquidity(
+        address to,
+        uint fromAccountNumber,
+        address tokenA,
+        address tokenB,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMinWei,
+        uint amountBMinWei,
+        uint deadline
+    )
+    external
+    ensure(deadline)
+    returns (uint amountAWei, uint amountBWei, uint liquidity) {
+        (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMinWei, amountBMinWei);
+        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
 
-    function token1Symbol() public view returns (string memory) {
-        return IERC20(token1).symbol();
-    }
-
-    function pairName() external view returns (string memory) {
-        return string(abi.encodePacked(token0Symbol(), "-", token1Symbol()));
-    }
-
-    function getReservesPar() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        _reserve0 = reserve0Par;
-        _reserve1 = reserve1Par;
-        _blockTimestampLast = blockTimestampLast;
-    }
-
-    function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-
-        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(marketId0).supply;
-        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(marketId1).supply;
-
-        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
-        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
-        _blockTimestampLast = blockTimestampLast;
-    }
-
-    // this low-level function should be called from a contract which performs important safety checks
-    function mint(address to) external lock returns (uint liquidity) {
-        (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
-        // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-        uint balance0 = _getTokenBalancePar(_soloMargin, marketId0);
-        uint balance1 = _getTokenBalancePar(_soloMargin, marketId1);
-        uint amount0 = balance0.sub(_reserve0);
-        uint amount1 = balance1.sub(_reserve1);
-
-        require(
-            amount0 > 0,
-            "DLP: INVALID_MINT_AMOUNT_0"
-        );
-        require(
-            amount1 > 0,
-            "DLP: INVALID_MINT_AMOUNT_1"
-        );
-
-        bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint _totalSupply = totalSupply;
-        // gas savings, must be defined here since totalSupply can update in _mintFee
-        if (_totalSupply == 0) {
-            liquidity = AdvancedMath.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
-            // permanently lock the first MINIMUM_LIQUIDITY tokens
-            _mint(address(0), MINIMUM_LIQUIDITY);
-        } else {
-            liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
-        }
-
-        require(
-            liquidity > 0,
-            "DLP: INSUFFICIENT_LIQUIDITY_MINTED"
-        );
-
-        _mint(to, liquidity);
-
-        _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
-        // reserve0 and reserve1 are up-to-date
-        emit Mint(msg.sender, amount0, amount1);
-    }
-
-    // this low-level function should be called from a contract which performs important safety checks
-    function burn(address to, uint toAccountNumber) external lock returns (uint amount0Wei, uint amount1Wei) {
-        (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
-        // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-        uint[] memory markets = new uint[](2);
-        markets[0] = marketId0;
-        markets[1] = marketId1;
-
-        // gas savings
-        uint balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
-        uint balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
-
-        bool feeOn;
-        // new scope to prevent stack-too-deep issues
         {
-            uint liquidity = balanceOf[address(this)];
+            Account.Info[] memory accounts = new Account.Info[](2);
+            accounts[0] = Account.Info(msg.sender, fromAccountNumber);
+            accounts[1] = Account.Info(pair, 0);
 
-            uint token0Index = _soloMargin.getMarketCurrentIndex(markets[0]).supply;
-            uint token1Index = _soloMargin.getMarketCurrentIndex(markets[1]).supply;
+            uint marketIdA = SOLO_MARGIN.getMarketIdByTokenAddress(tokenA);
+            uint marketIdB = SOLO_MARGIN.getMarketIdByTokenAddress(tokenB);
 
-            feeOn = _mintFee(_reserve0, _reserve1);
-            uint _totalSupply = totalSupply;
-            // gas savings, must be defined here since totalSupply can update in _mintFee
-            amount0Wei = (liquidity.mul(balance0) / _totalSupply).mul(token0Index).div(INTEREST_INDEX_BASE);
-            // using balances ensures pro-rata distribution
-            amount1Wei = (liquidity.mul(balance1) / _totalSupply).mul(token1Index).div(INTEREST_INDEX_BASE);
-            require(
-                amount0Wei > 0 && amount1Wei > 0,
-                "DLP: INSUFFICIENT_LIQUIDITY_BURNED"
-            );
-
-            _burn(address(this), liquidity);
+            Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
+            actions[0] = _encodeTransferAction(0, 1, marketIdA, amountAWei);
+            actions[1] = _encodeTransferAction(0, 1, marketIdB, amountBWei);
+            SOLO_MARGIN.operate(accounts, actions);
         }
 
-        uint[] memory amounts = new uint[](2);
-        amounts[0] = amount0Wei;
-        amounts[1] = amount1Wei;
+        liquidity = IUniswapV2Pair(pair).mint(to);
+    }
 
-        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
-            0,
+    function removeLiquidity(
+        address to,
+        uint toAccountNumber,
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMinWei,
+        uint amountBMinWei,
+        uint deadline
+    ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
+        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        // send liquidity to pair
+        IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
+
+        (uint amount0Wei, uint amount1Wei) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
+        (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
+        (amountAWei, amountBWei) = tokenA == token0 ? (amount0Wei, amount1Wei) : (amount1Wei, amount0Wei);
+        require(amountAWei >= amountAMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
+        require(amountBWei >= amountBMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
+    }
+
+    function removeLiquidityWithPermit(
+        address to,
+        uint toAccountNumber,
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMinWei,
+        uint amountBMinWei,
+        uint deadline,
+        PermitSignature memory permit
+    ) public returns (uint amountAWei, uint amountBWei) {
+        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        uint value = permit.approveMax ? uint(- 1) : liquidity;
+        IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
+
+        (amountAWei, amountBWei) = removeLiquidity(
             to,
             toAccountNumber,
-            markets,
-            amounts
+            tokenA,
+            tokenB,
+            liquidity,
+            amountAMinWei,
+            amountBMinWei,
+            deadline
+        );
+    }
+
+    function swapExactTokensForTokensAndModifyPosition(
+        ModifyPositionParams memory params,
+        uint deadline
+    ) public ensure(deadline) {
+        _swapExactTokensForTokensAndModifyPosition(
+            ModifyPositionCache({
+        params : params,
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    function swapExactTokensForTokens(
+        uint accountNumber,
+        uint amountInWei,
+        uint amountOutMinWei,
+        address[] calldata tokenPath,
+        uint deadline
+    )
+    external
+    ensure(deadline) {
+        _swapExactTokensForTokensAndModifyPosition(
+            ModifyPositionCache({
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    function getParamsForSwapExactTokensForTokens(
+        address account,
+        uint accountNumber,
+        uint amountInWei,
+        uint amountOutMinWei,
+        address[] calldata tokenPath
+    )
+    external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
+        return _getParamsForSwapExactTokensForTokens(
+            ModifyPositionCache({
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    function swapTokensForExactTokensAndModifyPosition(
+        ModifyPositionParams memory params,
+        uint deadline
+    ) public ensure(deadline) {
+        _swapTokensForExactTokensAndModifyPosition(
+            ModifyPositionCache({
+        params : params,
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    function swapTokensForExactTokens(
+        uint accountNumber,
+        uint amountInMaxWei,
+        uint amountOutWei,
+        address[] calldata tokenPath,
+        uint deadline
+    )
+    external
+    ensure(deadline) {
+        _swapTokensForExactTokensAndModifyPosition(
+            ModifyPositionCache({
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    function getParamsForSwapTokensForExactTokens(
+        address account,
+        uint accountNumber,
+        uint amountInMaxWei,
+        uint amountOutWei,
+        address[] calldata tokenPath
+    )
+    external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
+        return _getParamsForSwapTokensForExactTokens(
+            ModifyPositionCache({
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0
+        }),
+        soloMargin : SOLO_MARGIN,
+        uniswapFactory : UNISWAP_FACTORY,
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0)
+        })
+        );
+    }
+
+    // *************************
+    // ***** Internal Functions
+    // *************************
+
+    function _swapExactTokensForTokensAndModifyPosition(
+        ModifyPositionCache memory cache
+    ) internal {
+        (
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+        ) = _getParamsForSwapExactTokensForTokens(cache);
+
+        cache.soloMargin.operate(accounts, actions);
+    }
+
+    function _swapTokensForExactTokensAndModifyPosition(
+        ModifyPositionCache memory cache
+    ) internal {
+        (
+        Account.Info[] memory accounts,
+        Actions.ActionArgs[] memory actions
+        ) = _getParamsForSwapTokensForExactTokens(cache);
+
+        cache.soloMargin.operate(accounts, actions);
+    }
+
+    function _getParamsForSwapExactTokensForTokens(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        cache.marketPath = _getMarketPathFromTokenPath(cache);
+
+        // Convert from par to wei, if necessary
+        uint amountInWei = _convertAssetAmountToWei(cache.params.amountIn, cache.marketPath[0], cache);
+
+        // Convert from par to wei, if necessary
+        uint amountOutMinWei = _convertAssetAmountToWei(cache.params.amountOut, cache.marketPath[cache.marketPath.length - 1], cache);
+
+        // amountsWei[0] == amountInWei
+        // amountsWei[amountsWei.length - 1] == amountOutWei
+        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), amountInWei, cache.params.tokenPath);
+        require(
+            cache.amountsWei[cache.amountsWei.length - 1] >= amountOutMinWei,
+            "DolomiteAmmRouterProxy::_getParamsForSwapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
         );
 
-        balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
-        balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
+        return _getParamsForSwap(cache);
+    }
 
-        _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
+    function _getParamsForSwapTokensForExactTokens(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        cache.marketPath = _getMarketPathFromTokenPath(cache);
 
-        // reserve0 and reserve1 are up-to-date
-        emit Burn(msg.sender, amount0Wei, amount1Wei, to);
+        // Convert from par to wei, if necessary
+        uint amountInMaxWei = _convertAssetAmountToWei(cache.params.amountIn, cache.marketPath[0], cache);
+
+        // Convert from par to wei, if necessary
+        uint amountOutWei = _convertAssetAmountToWei(cache.params.amountOut, cache.marketPath[cache.marketPath.length - 1], cache);
+
+        // cache.amountsWei[0] == amountInWei
+        // cache.amountsWei[amountsWei.length - 1] == amountOutWei
+        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), amountOutWei, cache.params.tokenPath);
+        require(
+            cache.amountsWei[0] <= amountInMaxWei,
+            "DolomiteAmmRouterProxy::_getParamsForSwapTokensForExactTokens: EXCESSIVE_INPUT_AMOUNT"
+        );
+
+        return _getParamsForSwap(cache);
+    }
+
+    function _getParamsForSwap(
+        ModifyPositionCache memory cache
+    ) internal view returns (
+        Account.Info[] memory,
+        Actions.ActionArgs[] memory
+    ) {
+        require(
+            cache.params.amountIn.ref == Types.AssetReference.Delta && cache.params.amountOut.ref == Types.AssetReference.Delta,
+            "DolomiteAmmRouterProxy::_getParamsForSwap: INVALID_ASSET_REFERENCE"
+        );
+
+        // pools.length == cache.params.tokenPath.length - 1
+        address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.params.tokenPath);
+
+        Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
+        Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, pools, accounts.length);
+
+        return (accounts, actions);
+    }
+
+    function _getMarketPathFromTokenPath(
+        ModifyPositionCache memory cache
+    ) internal view returns (uint[] memory) {
+        uint[] memory marketPath = new uint[](cache.params.tokenPath.length);
+        for (uint i = 0; i < cache.params.tokenPath.length; i++) {
+            marketPath[i] = cache.soloMargin.getMarketIdByTokenAddress(cache.params.tokenPath[i]);
+        }
+        return marketPath;
     }
 
     function _encodeTransferAction(
@@ -3789,10 +3980,16 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint marketId,
         uint amount
     ) internal pure returns (Actions.ActionArgs memory) {
+        Types.AssetAmount memory assetAmount;
+        if (amount == uint(- 1)) {
+            assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
+        } else {
+            assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount);
+        }
         return Actions.ActionArgs({
         actionType : Actions.ActionType.Transfer,
         accountId : fromAccountIndex,
-        amount : Types.AssetAmount(false, Types.AssetDenomination.Par, Types.AssetReference.Delta, amount),
+        amount : assetAmount,
         primaryMarketId : marketId,
         secondaryMarketId : uint(- 1),
         otherAddress : address(0),
@@ -3801,237 +3998,148 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         });
     }
 
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory,
-        Types.Par memory,
-        Types.Wei memory inputWei,
-        bytes memory data
-    )
-    public
-    returns (Types.AssetAmount memory) {
-        Cache memory cache;
-        {
-            ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-            cache = Cache({
-            soloMargin : _soloMargin,
-            marketId0 : marketId0,
-            marketId1 : marketId1,
-            balance0Wei : _getTokenBalanceWei(_soloMargin, marketId0),
-            balance1Wei : _getTokenBalanceWei(_soloMargin, marketId1),
-            index0 : _soloMargin.getMarketCurrentIndex(marketId0),
-            index1 : _soloMargin.getMarketCurrentIndex(marketId1)
-            });
-        }
-
-        require(
-            msg.sender == address(cache.soloMargin),
-            "DLP: INVALID_SENDER"
-        );
-        require(
-            makerAccount.owner == address(this),
-            "DLP: INVALID_MAKER_ACCOUNT_OWNER"
-        );
-        require(
-            makerAccount.number == 0,
-            "DLP: INVALID_MAKER_ACCOUNT_NUMBER"
-        );
-
-        require(
-            token0 != takerAccount.owner && token1 != takerAccount.owner,
-            "DLP: INVALID_TO"
-        );
-
-        uint amount0OutWei;
-        uint amount1OutWei;
-        {
-            require(
-                inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
-                "DLP: INVALID_INPUT_TOKEN"
-            );
-            require(
-                outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
-                "DLP: INVALID_INPUT_TOKEN"
-            );
-            require(
-                inputWei.sign,
-                "DLP: INPUT_WEI_MUST_BE_POSITIVE"
-            );
-
-            (uint amountOutWei) = abi.decode(data, ((uint)));
-
-            require(
-                amountOutWei > 0,
-                "DLP: INSUFFICIENT_OUTPUT_AMOUNT"
-            );
-
-            if (inputMarketId == cache.marketId0) {
-                cache.balance0Wei = cache.balance0Wei.add(inputWei.value);
-                cache.balance1Wei = cache.balance1Wei.sub(amountOutWei);
-
-                amount0OutWei = 0;
-                amount1OutWei = amountOutWei;
-            } else {
-                assert(inputMarketId == cache.marketId1);
-
-                cache.balance1Wei = cache.balance1Wei.add(inputWei.value);
-                cache.balance0Wei = cache.balance0Wei.sub(amountOutWei);
-
-                amount0OutWei = amountOutWei;
-                amount1OutWei = 0;
-            }
-        }
-
-        uint amount0InWei;
-        uint amount1InWei;
-        {
-            // gas savings
-            (uint112 _reserve0, uint112 _reserve1,) = getReservesWei();
-            require(
-                amount0OutWei < _reserve0 && amount1OutWei < _reserve1,
-                "DLP: INSUFFICIENT_LIQUIDITY"
-            );
-
-            amount0InWei = cache.balance0Wei > (_reserve0 - amount0OutWei) ? cache.balance0Wei - (_reserve0 - amount0OutWei) : 0;
-            amount1InWei = cache.balance1Wei > (_reserve1 - amount1OutWei) ? cache.balance1Wei - (_reserve1 - amount1OutWei) : 0;
-            require(
-                amount0InWei > 0 || amount1InWei > 0,
-                "DLP: INSUFFICIENT_INPUT_AMOUNT"
-            );
-
-            uint balance0Adjusted = cache.balance0Wei.mul(1000).sub(amount0InWei.mul(3));
-            uint balance1Adjusted = cache.balance1Wei.mul(1000).sub(amount1InWei.mul(3));
-            require(
-                balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000 ** 2),
-                "DLP: K"
-            );
-
-            // convert the numbers from wei to par
-            _update(
-                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
-                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
-                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
-                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
-            );
-        }
-
-        emit Swap(msg.sender, amount0InWei, amount1InWei, amount0OutWei, amount1OutWei, takerAccount.owner);
-
-        return Types.AssetAmount({
-        sign : false,
-        denomination : Types.AssetDenomination.Wei,
-        ref : Types.AssetReference.Delta,
-        value : amount0OutWei > 0 ? amount0OutWei : amount1OutWei
+    function _encodeTradeAction(
+        uint fromAccountIndex,
+        uint toAccountIndex,
+        uint primaryMarketId,
+        uint secondaryMarketId,
+        address traderAddress,
+        uint amountInWei,
+        uint amountOutWei
+    ) internal pure returns (Actions.ActionArgs memory) {
+        return Actions.ActionArgs({
+        actionType : Actions.ActionType.Trade,
+        accountId : fromAccountIndex,
+        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+        primaryMarketId : primaryMarketId,
+        secondaryMarketId : secondaryMarketId,
+        otherAddress : traderAddress,
+        otherAccountId : toAccountIndex,
+        data : abi.encode(amountOutWei)
         });
     }
 
-    // force balances to match reserves
-    function skim(address to, uint toAccountNumber) external lock {
-        // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-
-        uint[] memory markets = new uint[](2);
-        markets[0] = marketId0;
-        markets[1] = marketId1;
-
-        uint amount0 = _getTokenBalancePar(_soloMargin, markets[0]).sub(reserve0Par);
-        uint amount1 = _getTokenBalancePar(_soloMargin, markets[1]).sub(reserve1Par);
-
-        uint[] memory amounts = new uint[](2);
-        amounts[0] = amount0;
-        amounts[1] = amount1;
-
-        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
-            0,
-            to,
-            toAccountNumber,
-            markets,
-            amounts
-        );
-    }
-
-    // force reserves to match balances
-    function sync() external lock {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-        _update(
-            _getTokenBalancePar(_soloMargin, marketId0),
-            _getTokenBalancePar(_soloMargin, marketId1),
-            reserve0Par,
-            reserve1Par
-        );
-    }
-
-    // *************************
-    // ***** Internal Functions
-    // *************************
-
-    // update reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
-    function _update(
-        uint balance0,
-        uint balance1,
-        uint112 reserve0,
-        uint112 reserve1
-    ) internal {
-        require(
-            balance0 <= uint112(- 1) && balance1 <= uint112(- 1),
-            "DLP: OVERFLOW"
-        );
-
-        uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
-        uint32 timeElapsed = blockTimestamp - blockTimestampLast;
-        // overflow is desired
-        if (timeElapsed > 0 && reserve0 != 0 && reserve1 != 0) {
-            // * never overflows, and + overflow is desired
-            price0CumulativeLast += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
-            price1CumulativeLast += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
+    function _addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint amountADesiredWei,
+        uint amountBDesiredWei,
+        uint amountAMinWei,
+        uint amountBMinWei
+    ) internal returns (uint amountAWei, uint amountBWei) {
+        IUniswapV2Factory uniswapFactory = UNISWAP_FACTORY;
+        // create the pair if it doesn't exist yet
+        if (uniswapFactory.getPair(tokenA, tokenB) == address(0)) {
+            uniswapFactory.createPair(tokenA, tokenB);
         }
-        reserve0Par = uint112(balance0);
-        reserve1Par = uint112(balance1);
-        blockTimestampLast = blockTimestamp;
-        emit Sync(reserve0Par, reserve1Par);
-    }
-
-    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
-    function _mintFee(
-        uint112 reserve0,
-        uint112 reserve1
-    ) private returns (bool feeOn) {
-        address feeTo = IUniswapV2Factory(factory).feeTo();
-        // gas savings
-        feeOn = feeTo != address(0);
-        uint _kLast = kLast;
-        // gas savings
-        if (feeOn) {
-            if (_kLast != 0) {
-                uint rootK = AdvancedMath.sqrt(uint(reserve0).mul(reserve1));
-                uint rootKLast = AdvancedMath.sqrt(_kLast);
-                if (rootK > rootKLast) {
-                    uint numerator = totalSupply.mul(rootK.sub(rootKLast));
-                    uint denominator = rootK.mul(5).add(rootKLast);
-                    uint liquidity = numerator / denominator;
-                    if (liquidity > 0) _mint(feeTo, liquidity);
-                }
+        (uint reserveAWei, uint reserveBWei) = UniswapV2Library.getReservesWei(address(uniswapFactory), tokenA, tokenB);
+        if (reserveAWei == 0 && reserveBWei == 0) {
+            (amountAWei, amountBWei) = (amountADesiredWei, amountBDesiredWei);
+        } else {
+            uint amountBOptimal = UniswapV2Library.quote(amountADesiredWei, reserveAWei, reserveBWei);
+            if (amountBOptimal <= amountBDesiredWei) {
+                require(amountBOptimal >= amountBMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_B_AMOUNT');
+                (amountAWei, amountBWei) = (amountADesiredWei, amountBOptimal);
+            } else {
+                uint amountAOptimal = UniswapV2Library.quote(amountBDesiredWei, reserveBWei, reserveAWei);
+                assert(amountAOptimal <= amountADesiredWei);
+                require(amountAOptimal >= amountAMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_A_AMOUNT');
+                (amountAWei, amountBWei) = (amountAOptimal, amountBDesiredWei);
             }
-        } else if (_kLast != 0) {
-            kLast = 0;
         }
     }
 
-    function _getTokenBalancePar(
-        ISoloMargin _soloMargin,
-        uint marketId
-    ) internal view returns (uint) {
-        return _soloMargin.getAccountPar(Account.Info(address(this), 0), marketId).value;
+    function _getAccountsForModifyPosition(
+        ModifyPositionCache memory cache,
+        address[] memory pools
+    ) internal pure returns (Account.Info[] memory) {
+        Account.Info[] memory accounts;
+        if (cache.params.depositToken == address(0)) {
+            accounts = new Account.Info[](1 + pools.length);
+        } else {
+            accounts = new Account.Info[](2 + pools.length);
+            accounts[accounts.length - 1] = Account.Info(cache.account, 0);
+        }
+
+        accounts[0] = Account.Info(cache.account, cache.params.accountNumber);
+
+        for (uint i = 0; i < pools.length; i++) {
+            accounts[i + 1] = Account.Info(pools[i], 0);
+        }
+
+        return accounts;
     }
 
-    function _getTokenBalanceWei(
-        ISoloMargin _soloMargin,
-        uint marketId
+    function _getActionArgsForModifyPosition(
+        ModifyPositionCache memory cache,
+        address[] memory pools,
+        uint accountsLength
+    ) internal view returns (Actions.ActionArgs[] memory) {
+        Actions.ActionArgs[] memory actions;
+        if (cache.params.depositToken == address(0)) {
+            actions = new Actions.ActionArgs[](pools.length);
+        } else {
+            require(
+                cache.params.marginDeposit != 0,
+                "DolomiteAmmRouterProxy::_getActionArgsForModifyPosition: INVALID_MARGIN_DEPOSIT"
+            );
+
+            actions = new Actions.ActionArgs[](pools.length + 1);
+
+            // if `cache.params.marginDeposit < 0` then the user is withdrawing to accountNumber `0` (index length - 1).
+            // else then the user is depositing to `accountNumber` at index (0).
+            // `accountNumber` `0` is at index `accountsLength - 1`
+
+            bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
+            actions[actions.length - 1] = _encodeTransferAction(
+                isWithdrawal ? 0 : accountsLength - 1 /* from */,
+                isWithdrawal ? accountsLength - 1 : 0 /* to */,
+                cache.soloMargin.getMarketIdByTokenAddress(cache.params.depositToken),
+                cache.params.marginDeposit
+            );
+        }
+
+        for (uint i = 0; i < pools.length; i++) {
+            actions[i] = _encodeTradeAction(
+                0,
+                i + 1,
+                cache.marketPath[i],
+                cache.marketPath[i + 1],
+                pools[i],
+                cache.amountsWei[i],
+                cache.amountsWei[i + 1]
+            );
+        }
+
+        return actions;
+    }
+
+    function _defaultAssetAmount(uint value) internal pure returns (Types.AssetAmount memory) {
+        return Types.AssetAmount({
+        sign : true,
+        denomination : Types.AssetDenomination.Wei,
+        ref : Types.AssetReference.Delta,
+        value : value
+        });
+    }
+
+    function _convertAssetAmountToWei(
+        Types.AssetAmount memory amount,
+        uint marketId,
+        ModifyPositionCache memory cache
     ) internal view returns (uint) {
-        return _soloMargin.getAccountWei(Account.Info(address(this), 0), marketId).value;
+        if (amount.denomination == Types.AssetDenomination.Wei) {
+            return amount.value;
+        } else {
+            require(
+                uint128(amount.value) == amount.value,
+                "DolomiteAmmRouterProxy::_convertAssetAmountToWei: INVALID_VALUE"
+            );
+            return Interest.parToWei(
+                Types.Par({sign : amount.sign, value : uint128(amount.value)}),
+                cache.soloMargin.getMarketCurrentIndex(marketId)
+            ).value;
+        }
     }
 
 }

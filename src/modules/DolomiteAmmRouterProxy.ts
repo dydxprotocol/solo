@@ -1,6 +1,6 @@
 import { Contracts } from '../lib/Contracts';
 import {
-  address,
+  address, AmountDenomination, AmountReference,
   ContractCallOptions,
   Integer,
   TxResult,
@@ -85,6 +85,45 @@ export class DolomiteAmmRouterProxy {
         amountIn.toFixed(0),
         amountOutMin.toFixed(0),
         tokenPath,
+        deadline.toFixed(0),
+      ),
+      options,
+    );
+  }
+
+  public async swapExactTokensForTokensAndModifyPosition(
+    accountNumber: Integer,
+    amountIn: Integer,
+    amountOutMin: Integer,
+    tokenPath: address[],
+    depositToken: address,
+    isPositiveMarginDeposit: boolean,
+    marginDeposit: Integer,
+    expiryTimeDelta: Integer,
+    deadline: Integer,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    const createAmount = (value: Integer) => {
+      return {
+        sign: true,
+        denomination: AmountDenomination.Wei,
+        ref: AmountReference.Delta,
+        value: value.toFixed(0)
+      };
+    };
+
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteAmmRouterProxy.methods.swapExactTokensForTokensAndModifyPosition(
+        {
+          tokenPath,
+          depositToken,
+          isPositiveMarginDeposit,
+          accountNumber: accountNumber.toFixed(0),
+          amountIn: createAmount(amountIn),
+          amountOut: createAmount(amountOutMin),
+          marginDeposit: marginDeposit.toFixed(0),
+          expiryTimeDelta: expiryTimeDelta.toFixed(0),
+        },
         deadline.toFixed(0),
       ),
       options,

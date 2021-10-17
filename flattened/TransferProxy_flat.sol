@@ -1,4 +1,53 @@
 
+// File: contracts/external/interfaces/ITransferProxy.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+interface ITransferProxy {
+
+    function transfer(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        address token,
+        uint amount
+    ) external;
+
+    function transferMultiple(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        address[] calldata tokens,
+        uint[] calldata amounts
+    ) external;
+
+    function transferMultipleWithMarkets(
+        uint fromAccountIndex,
+        address to,
+        uint toAccountIndex,
+        uint[] calldata markets,
+        uint[] calldata amounts
+    ) external;
+}
+
 // File: contracts/external/helpers/OnlySolo.sol
 
 /*
@@ -2253,6 +2302,41 @@ library OperationImpl {
     }
 }
 
+// File: openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @title Helps contracts guard against reentrancy attacks.
+ * @author Remco Bloemen <remco@2π.com>, Eenae <alexey@mixbytes.io>
+ * @dev If you mark a function `nonReentrant`, you should also
+ * mark it `external`.
+ */
+contract ReentrancyGuard {
+    /// @dev counter to allow mutex lock with only one SSTORE operation
+    uint256 private _guardCounter;
+
+    constructor () internal {
+        // The counter starts at one to prevent changing it from zero to a non-zero
+        // value, which is a more expensive operation.
+        _guardCounter = 1;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        _guardCounter += 1;
+        uint256 localCounter = _guardCounter;
+        _;
+        require(localCounter == _guardCounter);
+    }
+}
+
 // File: contracts/protocol/impl/AdminImpl.sol
 
 /*
@@ -3181,7 +3265,7 @@ library Interest {
      * Calculate interest for borrowers by using the formula rate * time. Approximates
      * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all suppliers.
+     * then prorated across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
@@ -5983,41 +6067,6 @@ State
     }
 }
 
-// File: openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @title Helps contracts guard against reentrancy attacks.
- * @author Remco Bloemen <remco@2π.com>, Eenae <alexey@mixbytes.io>
- * @dev If you mark a function `nonReentrant`, you should also
- * mark it `external`.
- */
-contract ReentrancyGuard {
-    /// @dev counter to allow mutex lock with only one SSTORE operation
-    uint256 private _guardCounter;
-
-    constructor () internal {
-        // The counter starts at one to prevent changing it from zero to a non-zero
-        // value, which is a more expensive operation.
-        _guardCounter = 1;
-    }
-
-    /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and make it call a
-     * `private` function that does the actual work.
-     */
-    modifier nonReentrant() {
-        _guardCounter += 1;
-        uint256 localCounter = _guardCounter;
-        _;
-        require(localCounter == _guardCounter);
-    }
-}
-
 // File: contracts/protocol/Operation.sol
 
 /*
@@ -6160,6 +6209,7 @@ State
         }
     }
 }
+
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
 
@@ -6620,16 +6670,14 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
- * @title PayableProxyForSoloMargin
- * @author dYdX
+ * @title TransferProxy
+ * @author Dolomite
  *
- * Contract for wrapping/unwrapping ETH before/after interacting with Solo
+ * Contract for sending internal balances within Dolomite to other users/margin accounts easily
  */
-contract TransferProxy is
-OnlySolo,
-ReentrancyGuard
-{
+contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
     // ============ Constants ============
 
     bytes32 constant FILE = "TransferProxy";

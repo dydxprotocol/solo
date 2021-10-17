@@ -121,7 +121,7 @@ const migration = async (deployer, network, accounts) => {
   ]);
   await deployer.deploy(
     SimpleFeeOwner,
-    await getUniswapV2FactoryAddress(network),
+    await UniswapV2Factory.address,
     (await getSoloMargin(network)).address,
   );
   await (await UniswapV2Factory.deployed()).contract.methods.setFeeToSetter(SimpleFeeOwner.address);
@@ -273,15 +273,22 @@ async function deploySecondLayer(deployer, network, accounts) {
   await deployer.deploy(
     UniswapV2Factory,
     getSenderAddress(network, accounts),
-    (await getSoloMargin(network)).address,
+    soloMargin.address,
     TransferProxy.address,
+  );
+
+  await deployer.deploy(
+    ExpiryV2,
+    soloMargin.address,
+    getExpiryRampTime(network),
   );
 
   await deployer.deploy(
     DolomiteAmmRouterProxy,
     soloMargin.address,
-    getUniswapV2FactoryAddress(network),
+    UniswapV2Factory.address,
     getWethAddress(network, WETH9),
+    ExpiryV2.address,
   );
 
   await Promise.all([
@@ -293,12 +300,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     deployer.deploy(
       Expiry,
       soloMargin.address,
-      getExpiryRampTime(),
-    ),
-    deployer.deploy(
-      ExpiryV2,
-      soloMargin.address,
-      getExpiryRampTime(),
+      getExpiryRampTime(network),
     ),
     deployer.deploy(
       Refunder,
@@ -430,10 +432,6 @@ function getOasisAddress(network) {
     return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
   }
   throw new Error('Cannot find OasisDex');
-}
-
-function getUniswapV2FactoryAddress(network) {
-  return UniswapV2Factory.address;
 }
 
 function getDaiUniswapAddress(network) {
