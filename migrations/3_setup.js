@@ -154,17 +154,22 @@ async function getSoloMargin(network) {
 }
 
 function getTokens(network) {
-  const tokens = [
-    { address: getDaiAddress(network, TokenB) },
-    { address: getMaticAddress(network, TokenD) },
-    { address: getUsdcAddress(network, TokenA) },
-    { address: getWethAddress(network, WETH9) },
-  ];
   if (isMatic(network)) {
-    tokens.push({ address: getLinkAddress(network, TokenF) });
+    return [
+      { address: getDaiAddress(network, TokenB) },
+      { address: getMaticAddress(network, TokenD) },
+      { address: getUsdcAddress(network, TokenA) },
+      { address: getWethAddress(network, WETH9) },
+      { address: getLinkAddress(network, TokenF) }
+    ];
+  } else {
+    return [
+      { address: getDaiAddress(network, TokenB) },
+      { address: getMaticAddress(network, TokenD) },
+      { address: getUsdcAddress(network, TokenA) },
+      { address: getWethAddress(network, WETH9) },
+    ];
   }
-
-  return tokens;
 }
 
 async function getOracles(network) {

@@ -115,7 +115,7 @@ async function getDoubleExponentParams(network) {
   }
   return {
     maxAPR: decimalToString('1.00'), // 100%
-    coefficients: coefficientsToString([20, 20, 20, 20, 20]),
+    coefficients: coefficientsToString([0, 20, 0, 0, 0, 0, 20, 60]),
   };
 }
 
@@ -141,8 +141,12 @@ function getDaiPriceOracleParams(network) {
   };
 }
 
-function getExpiryRampTime() {
-  return '3600';
+function getExpiryRampTime(network) {
+  if (isMaticTest(network)) {
+    return '300';
+  } else {
+    return '3600';
+  }
 }
 
 function verifyNetwork(network) {

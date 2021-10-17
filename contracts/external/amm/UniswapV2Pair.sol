@@ -375,7 +375,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
     // ***** Internal Functions
     // *************************
 
-    // update reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
+    /// @notice Updates reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
     function _update(
         uint balance0,
         uint balance1,
