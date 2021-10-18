@@ -19,19 +19,23 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import {SoloMargin} from "../../protocol/SoloMargin.sol";
-import {Account} from "../../protocol/lib/Account.sol";
-import {Actions} from "../../protocol/lib/Actions.sol";
-import {Decimal} from "../../protocol/lib/Decimal.sol";
-import {Interest} from "../../protocol/lib/Interest.sol";
-import {Math} from "../../protocol/lib/Math.sol";
-import {Monetary} from "../../protocol/lib/Monetary.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {Types} from "../../protocol/lib/Types.sol";
-import {OnlySolo} from "../helpers/OnlySolo.sol";
-import {DolomiteAmmRouterProxy} from "./DolomiteAmmRouterProxy.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+
+import { ISoloMargin } from "../../protocol/interfaces/ISoloMargin.sol";
+
+import { Account } from "../../protocol/lib/Account.sol";
+import { Actions } from "../../protocol/lib/Actions.sol";
+import { Decimal } from "../../protocol/lib/Decimal.sol";
+import { Interest } from "../../protocol/lib/Interest.sol";
+import { Math } from "../../protocol/lib/Math.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { Types } from "../../protocol/lib/Types.sol";
+
+import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
+
+import { DolomiteAmmRouterProxy } from "./DolomiteAmmRouterProxy.sol";
 
 
 /**
@@ -41,7 +45,6 @@ import {DolomiteAmmRouterProxy} from "./DolomiteAmmRouterProxy.sol";
  * Contract for liquidating other accounts in Solo. Does not take marginPremium into account.
  */
 contract LiquidatorProxyV1WithAmmForSoloMargin is
-OnlySolo,
 ReentrancyGuard
 {
     using Math for uint256;
@@ -59,6 +62,8 @@ ReentrancyGuard
         Account.Info solidAccount;
         Account.Info liquidAccount;
         MarketInfo[] markets;
+        IExpiryV2 EXPIRY_PROXY;
+        uint32 expiry;
     }
 
     struct MarketInfo {
@@ -76,7 +81,6 @@ ReentrancyGuard
         Types.Wei liquidOwedWei;
 
         // immutable
-        Decimal.D256 spread;
         uint256 heldMarket;
         uint256 owedMarket;
         uint256 heldPrice;
@@ -86,18 +90,22 @@ ReentrancyGuard
 
     // ============ Storage ============
 
+    ISoloMargin SOLO_MARGIN;
     DolomiteAmmRouterProxy ROUTER_PROXY;
+    IExpiryV2 EXPIRY_PROXY;
 
     // ============ Constructor ============
 
     constructor (
         address soloMargin,
-        address dolomiteAmmRouterProxy
+        address dolomiteAmmRouterProxy,
+        address expiryProxy
     )
     public
-    OnlySolo(soloMargin)
     {
+        SOLO_MARGIN = ISoloMargin(soloMargin);
         ROUTER_PROXY = DolomiteAmmRouterProxy(dolomiteAmmRouterProxy);
+        EXPIRY_PROXY = IExpiryV2(expiryProxy);
     }
 
     // ============ Public Functions ============
@@ -112,6 +120,8 @@ ReentrancyGuard
      * @param  heldMarket                   The held market whose collateral will be recovered to take on the debt of
      *                                      `owedMarket`
      * @param  tokenPath                    The path through which the trade will be routed to recover the collateral
+     * @param  expiry                       The time at which the position expires, if this liquidation is for closing
+     *                                      an expired position. Else, 0.
      * @param  revertOnFailToSellCollateral True to revert the transaction completely if all collateral from the
      *                                      liquidation cannot repay the owed debt. False to swallow the error and sell
      *                                      whatever is possible.
@@ -122,6 +132,7 @@ ReentrancyGuard
         uint256 owedMarket,
         uint256 heldMarket,
         address[] memory tokenPath,
+        uint expiry,
         bool revertOnFailToSellCollateral
     )
     public
@@ -163,11 +174,20 @@ ReentrancyGuard
             tokenPath[tokenPath.length - 1]
         );
 
+        Require.that(
+            uint32(expiry) == expiry,
+            FILE,
+            "expiry overflow",
+            expiry
+        );
+
         // put all values that will not change into a single struct
         Constants memory constants = Constants({
         solidAccount : solidAccount,
         liquidAccount : liquidAccount,
-        markets : getMarketsInfo()
+        markets : getMarketsInfo(),
+        EXPIRY_PROXY: expiry > 0 ? EXPIRY_PROXY : IExpiryV2(address(0)),
+        expiry: uint32(expiry)
         });
 
         LiquidatorWithAmmCache memory cache = initializeCache(
@@ -229,7 +249,7 @@ ReentrancyGuard
         // execute the liquidations
         SOLO_MARGIN.operate(
             accounts,
-            constructActionsArray(cache, accounts, actions)
+            constructActionsArray(constants, cache, accounts, actions)
         );
     }
 
@@ -385,7 +405,21 @@ ReentrancyGuard
     {
         uint256 heldPrice = constants.markets[heldMarket].price.value;
         uint256 owedPrice = constants.markets[owedMarket].price.value;
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
+
+        uint256 owedPriceAdj;
+        if (constants.expiry > 0) {
+            (, Monetary.Price memory owedPricePrice) = constants.EXPIRY_PROXY.getSpreadAdjustedPrices(
+                heldMarket,
+                owedMarket,
+                constants.expiry
+            );
+            owedPriceAdj = owedPricePrice.value;
+        } else {
+            owedPriceAdj = Decimal.mul(
+                owedPrice,
+                Decimal.onePlus(SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket))
+            );
+        }
 
         return LiquidatorWithAmmCache({
         toLiquidate : 0,
@@ -402,12 +436,11 @@ ReentrancyGuard
                 SOLO_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
                 constants.markets[owedMarket].index
             ),
-        spread : spread,
         heldMarket : heldMarket,
         owedMarket : owedMarket,
         heldPrice : heldPrice,
         owedPrice : owedPrice,
-        owedPriceAdj : Decimal.mul(owedPrice, Decimal.onePlus(spread))
+        owedPriceAdj : owedPriceAdj
         });
     }
 
@@ -435,6 +468,7 @@ ReentrancyGuard
     }
 
     function constructActionsArray(
+        Constants memory constants,
         LiquidatorWithAmmCache memory cache,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actionsForTrade
@@ -445,21 +479,41 @@ ReentrancyGuard
     {
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](actionsForTrade.length + 1);
 
-        actions[0] = Actions.ActionArgs({
-        actionType : Actions.ActionType.Liquidate,
-        accountId : 0, // solidAccount
-        amount : Types.AssetAmount({
-        sign : true,
-        denomination : Types.AssetDenomination.Wei,
-        ref : Types.AssetReference.Delta,
-        value : cache.toLiquidate
-        }),
-        primaryMarketId : cache.owedMarket,
-        secondaryMarketId : cache.heldMarket,
-        otherAddress : address(0),
-        otherAccountId : accounts.length - 1, // liquidAccount
-        data : new bytes(0)
-        });
+        if (constants.expiry > 0) {
+            // First action is a trade for closing the expired account
+            actions[0] = Actions.ActionArgs({
+            actionType : Actions.ActionType.Trade,
+            accountId : 0, // solidAccount
+            amount : Types.AssetAmount({
+            sign : true,
+            denomination : Types.AssetDenomination.Wei,
+            ref : Types.AssetReference.Delta,
+            value : cache.toLiquidate
+            }),
+            primaryMarketId : cache.owedMarket,
+            secondaryMarketId : cache.heldMarket,
+            otherAddress : address(constants.EXPIRY_PROXY),
+            otherAccountId : accounts.length - 1, // liquidAccount
+            data : abi.encode(cache.owedMarket, constants.expiry)
+            });
+        } else {
+            // First action is a liquidation
+            actions[0] = Actions.ActionArgs({
+            actionType : Actions.ActionType.Liquidate,
+            accountId : 0, // solidAccount
+            amount : Types.AssetAmount({
+            sign : true,
+            denomination : Types.AssetDenomination.Wei,
+            ref : Types.AssetReference.Delta,
+            value : cache.toLiquidate
+            }),
+            primaryMarketId : cache.owedMarket,
+            secondaryMarketId : cache.heldMarket,
+            otherAddress : address(0),
+            otherAccountId : accounts.length - 1, // liquidAccount
+            data : new bytes(0)
+            });
+        }
 
         for (uint i = 0; i < actionsForTrade.length; i++) {
             actions[i + 1] = actionsForTrade[i];

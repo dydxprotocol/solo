@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Account } from "../../protocol/lib/Account.sol";
+import { Monetary } from "../../protocol/lib/Monetary.sol";
 
 
 /**
@@ -48,5 +49,17 @@ contract IExpiryV2 {
         address sender;
         uint32 minTimeDelta;
     }
+
+    function getSpreadAdjustedPrices(
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 expiry
+    )
+    public
+    view
+    returns (
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPriceAdj
+    );
 
 }

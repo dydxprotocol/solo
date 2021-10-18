@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { State } from "./State.sol";
+import { Types } from "./lib/Types.sol";
 
 
 /**
@@ -39,13 +40,6 @@ contract Permission is
         bool trusted
     );
 
-    // ============ Structs ============
-
-    struct OperatorArg {
-        address operator;
-        bool trusted;
-    }
-
     // ============ Public Functions ============
 
     /**
@@ -60,7 +54,7 @@ contract Permission is
      *               denotes whether to approve (true) or revoke approval (false) for that address.
      */
     function setOperators(
-        OperatorArg[] memory args
+        Types.OperatorArg[] memory args
     )
         public
     {

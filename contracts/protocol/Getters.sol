@@ -31,6 +31,7 @@ import { Require } from "./lib/Require.sol";
 import { Storage } from "./lib/Storage.sol";
 import { Token } from "./lib/Token.sol";
 import { Types } from "./lib/Types.sol";
+import { MarketCachePersister } from "./lib/MarketCachePersister.sol";
 
 
 /**
@@ -43,6 +44,7 @@ contract Getters is
     State
 {
     using Cache for Cache.MarketCache;
+    using MarketCachePersister for Cache.MarketCache;
     using Storage for Storage.State;
     using Types for Types.Par;
 

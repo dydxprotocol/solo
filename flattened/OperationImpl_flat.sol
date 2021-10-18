@@ -1,5 +1,72 @@
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
-// File: contracts/protocol/interfaces/IExchangeWrapper.sol
+pragma solidity ^0.5.0;
+
+/**
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
+ */
+library SafeMath {
+    /**
+    * @dev Multiplies two unsigned integers, reverts on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b);
+
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+    * @dev Adds two unsigned integers, reverts on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a);
+
+        return c;
+    }
+
+    /**
+    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+    * reverts when dividing by zero.
+    */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
+    }
+}
+
+// File: contracts/protocol/lib/Require.sol
 
 /*
 
@@ -24,679 +91,1450 @@ pragma experimental ABIEncoderV2;
 
 
 /**
- * @title IExchangeWrapper
+ * @title Require
  * @author dYdX
  *
- * Interface that Exchange Wrappers for Solo must implement in order to trade ERC20 tokens.
+ * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
  */
-interface IExchangeWrapper {
-
-    // ============ Public Functions ============
-
-    /**
-     * Exchange some amount of takerToken for makerToken.
-     *
-     * @param  tradeOriginator      Address of the initiator of the trade (however, this value
-     *                              cannot always be trusted as it is set at the discretion of the
-     *                              msg.sender)
-     * @param  receiver             Address to set allowance on once the trade has completed
-     * @param  makerToken           Address of makerToken, the token to receive
-     * @param  takerToken           Address of takerToken, the token to pay
-     * @param  requestedFillAmount  Amount of takerToken being paid
-     * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken received
-     */
-    function exchange(
-        address tradeOriginator,
-        address receiver,
-        address makerToken,
-        address takerToken,
-        uint256 requestedFillAmount,
-        bytes calldata orderData
-    )
-        external
-        returns (uint256);
-
-    /**
-     * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
-     * Should match the takerToken amount used in exchangeForAmount. If the order cannot provide
-     * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
-     * than desiredMakerToken
-     *
-     * @param  makerToken         Address of makerToken, the token to receive
-     * @param  takerToken         Address of takerToken, the token to pay
-     * @param  desiredMakerToken  Amount of makerToken requested
-     * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
-     * @return                    Amount of takerToken the needed to complete the exchange
-     */
-    function getExchangeCost(
-        address makerToken,
-        address takerToken,
-        uint256 desiredMakerToken,
-        bytes calldata orderData
-    )
-        external
-        view
-        returns (uint256);
-}
-
-// File: contracts/protocol/lib/Exchange.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-
-
-/**
- * @title Exchange
- * @author dYdX
- *
- * Library for transferring tokens and interacting with ExchangeWrappers by using the Wei struct
- */
-library Exchange {
-    using Types for Types.Wei;
+library Require {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "Exchange";
+    uint256 constant ASCII_ZERO = 48; // '0'
+    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
+    uint256 constant ASCII_LOWER_EX = 120; // 'x'
+    bytes2 constant COLON = 0x3a20; // ': '
+    bytes2 constant COMMA = 0x2c20; // ', '
+    bytes2 constant LPAREN = 0x203c; // ' <'
+    byte constant RPAREN = 0x3e; // '>'
+    uint256 constant FOUR_BIT_MASK = 0xf;
 
     // ============ Library Functions ============
 
-    function transferOut(
-        address token,
-        address to,
-        Types.Wei memory deltaWei
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason
     )
         internal
+        pure
     {
-        Require.that(
-            !deltaWei.isPositive(),
-            FILE,
-            "Cannot transferOut positive",
-            deltaWei.value
-        );
-
-        Token.transfer(
-            token,
-            to,
-            deltaWei.value
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason)
+                    )
+                )
+            );
+        }
     }
 
-    function transferIn(
-        address token,
-        address from,
-        Types.Wei memory deltaWei
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        uint256 payloadA
     )
         internal
+        pure
     {
-        Require.that(
-            !deltaWei.isNegative(),
-            FILE,
-            "Cannot transferIn negative",
-            deltaWei.value
-        );
-
-        Token.transferFrom(
-            token,
-            from,
-            address(this),
-            deltaWei.value
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    function getCost(
-        address exchangeWrapper,
-        address supplyToken,
-        address borrowToken,
-        Types.Wei memory desiredAmount,
-        bytes memory orderData
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        uint256 payloadA,
+        uint256 payloadB
     )
         internal
-        view
-        returns (Types.Wei memory)
+        pure
     {
-        Require.that(
-            !desiredAmount.isNegative(),
-            FILE,
-            "Cannot getCost negative",
-            desiredAmount.value
-        );
-
-        Types.Wei memory result;
-        result.sign = false;
-        result.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
-            supplyToken,
-            borrowToken,
-            desiredAmount.value,
-            orderData
-        );
-
-        return result;
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    function exchange(
-        address exchangeWrapper,
-        address accountOwner,
-        address supplyToken,
-        address borrowToken,
-        Types.Wei memory requestedFillAmount,
-        bytes memory orderData
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA
     )
         internal
-        returns (Types.Wei memory)
+        pure
     {
-        Require.that(
-            !requestedFillAmount.isPositive(),
-            FILE,
-            "Cannot exchange positive",
-            requestedFillAmount.value
-        );
-
-        transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
-
-        Types.Wei memory result;
-        result.sign = true;
-        result.value = IExchangeWrapper(exchangeWrapper).exchange(
-            accountOwner,
-            address(this),
-            supplyToken,
-            borrowToken,
-            requestedFillAmount.value,
-            orderData
-        );
-
-        transferIn(supplyToken, exchangeWrapper, result);
-
-        return result;
-    }
-}
-
-// File: contracts/protocol/lib/Events.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-
-
-
-/**
- * @title Events
- * @author dYdX
- *
- * Library to parse and emit logs from which the state of all accounts and indexes can be followed
- */
-library Events {
-    using Types for Types.Wei;
-    using Storage for Storage.State;
-
-    // ============ Events ============
-
-    event LogIndexUpdate(
-        uint256 indexed market,
-        Interest.Index index
-    );
-
-    event LogOperation(
-        address sender
-    );
-
-    event LogDeposit(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 market,
-        BalanceUpdate update,
-        address from
-    );
-
-    event LogWithdraw(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 market,
-        BalanceUpdate update,
-        address to
-    );
-
-    event LogTransfer(
-        address indexed accountOneOwner,
-        uint256 accountOneNumber,
-        address indexed accountTwoOwner,
-        uint256 accountTwoNumber,
-        uint256 market,
-        BalanceUpdate updateOne,
-        BalanceUpdate updateTwo
-    );
-
-    event LogBuy(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 takerMarket,
-        uint256 makerMarket,
-        BalanceUpdate takerUpdate,
-        BalanceUpdate makerUpdate,
-        address exchangeWrapper
-    );
-
-    event LogSell(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 takerMarket,
-        uint256 makerMarket,
-        BalanceUpdate takerUpdate,
-        BalanceUpdate makerUpdate,
-        address exchangeWrapper
-    );
-
-    event LogTrade(
-        address indexed takerAccountOwner,
-        uint256 takerAccountNumber,
-        address indexed makerAccountOwner,
-        uint256 makerAccountNumber,
-        uint256 inputMarket,
-        uint256 outputMarket,
-        BalanceUpdate takerInputUpdate,
-        BalanceUpdate takerOutputUpdate,
-        BalanceUpdate makerInputUpdate,
-        BalanceUpdate makerOutputUpdate,
-        address autoTrader
-    );
-
-    event LogCall(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        address callee
-    );
-
-    event LogLiquidate(
-        address indexed solidAccountOwner,
-        uint256 solidAccountNumber,
-        address indexed liquidAccountOwner,
-        uint256 liquidAccountNumber,
-        uint256 heldMarket,
-        uint256 owedMarket,
-        BalanceUpdate solidHeldUpdate,
-        BalanceUpdate solidOwedUpdate,
-        BalanceUpdate liquidHeldUpdate,
-        BalanceUpdate liquidOwedUpdate
-    );
-
-    event LogVaporize(
-        address indexed solidAccountOwner,
-        uint256 solidAccountNumber,
-        address indexed vaporAccountOwner,
-        uint256 vaporAccountNumber,
-        uint256 heldMarket,
-        uint256 owedMarket,
-        BalanceUpdate solidHeldUpdate,
-        BalanceUpdate solidOwedUpdate,
-        BalanceUpdate vaporOwedUpdate
-    );
-
-    // ============ Structs ============
-
-    struct BalanceUpdate {
-        Types.Wei deltaWei;
-        Types.Par newPar;
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    // ============ Internal Functions ============
-
-    function logIndexUpdate(
-        uint256 marketId,
-        Interest.Index memory index
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB
     )
         internal
+        pure
     {
-        emit LogIndexUpdate(
-            marketId,
-            index
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    function logOperation()
-        internal
-    {
-        emit LogOperation(msg.sender);
-    }
-
-    function logDeposit(
-        Storage.State storage state,
-        Actions.DepositArgs memory args,
-        Types.Wei memory deltaWei
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB,
+        uint256 payloadC
     )
         internal
+        pure
     {
-        emit LogDeposit(
-            args.account.owner,
-            args.account.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.market,
-                deltaWei
-            ),
-            args.from
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        COMMA,
+                        stringify(payloadC),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    function logWithdraw(
-        Storage.State storage state,
-        Actions.WithdrawArgs memory args,
-        Types.Wei memory deltaWei
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA
     )
         internal
+        pure
     {
-        emit LogWithdraw(
-            args.account.owner,
-            args.account.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.market,
-                deltaWei
-            ),
-            args.to
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
-    function logTransfer(
-        Storage.State storage state,
-        Actions.TransferArgs memory args,
-        Types.Wei memory deltaWei
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA,
+        uint256 payloadB,
+        uint256 payloadC
     )
         internal
+        pure
     {
-        emit LogTransfer(
-            args.accountOne.owner,
-            args.accountOne.number,
-            args.accountTwo.owner,
-            args.accountTwo.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.accountOne,
-                args.market,
-                deltaWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.accountTwo,
-                args.market,
-                deltaWei.negative()
-            )
-        );
-    }
-
-    function logBuy(
-        Storage.State storage state,
-        Actions.BuyArgs memory args,
-        Types.Wei memory takerWei,
-        Types.Wei memory makerWei
-    )
-        internal
-    {
-        emit LogBuy(
-            args.account.owner,
-            args.account.number,
-            args.takerMarket,
-            args.makerMarket,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.takerMarket,
-                takerWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.makerMarket,
-                makerWei
-            ),
-            args.exchangeWrapper
-        );
-    }
-
-    function logSell(
-        Storage.State storage state,
-        Actions.SellArgs memory args,
-        Types.Wei memory takerWei,
-        Types.Wei memory makerWei
-    )
-        internal
-    {
-        emit LogSell(
-            args.account.owner,
-            args.account.number,
-            args.takerMarket,
-            args.makerMarket,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.takerMarket,
-                takerWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.makerMarket,
-                makerWei
-            ),
-            args.exchangeWrapper
-        );
-    }
-
-    function logTrade(
-        Storage.State storage state,
-        Actions.TradeArgs memory args,
-        Types.Wei memory inputWei,
-        Types.Wei memory outputWei
-    )
-        internal
-    {
-        BalanceUpdate[4] memory updates = [
-            getBalanceUpdate(
-                state,
-                args.takerAccount,
-                args.inputMarket,
-                inputWei.negative()
-            ),
-            getBalanceUpdate(
-                state,
-                args.takerAccount,
-                args.outputMarket,
-                outputWei.negative()
-            ),
-            getBalanceUpdate(
-                state,
-                args.makerAccount,
-                args.inputMarket,
-                inputWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.makerAccount,
-                args.outputMarket,
-                outputWei
-            )
-        ];
-
-        emit          LogTrade(
-            args.takerAccount.owner,
-            args.takerAccount.number,
-            args.makerAccount.owner,
-            args.makerAccount.number,
-            args.inputMarket,
-            args.outputMarket,
-            updates[0],
-            updates[1],
-            updates[2],
-            updates[3],
-            args.autoTrader
-        );
-    }
-
-    function logCall(
-        Actions.CallArgs memory args
-    )
-        internal
-    {
-        emit LogCall(
-            args.account.owner,
-            args.account.number,
-            args.callee
-        );
-    }
-
-    function logLiquidate(
-        Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Types.Wei memory heldWei,
-        Types.Wei memory owedWei
-    )
-        internal
-    {
-        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
-            state,
-            args.liquidAccount,
-            args.heldMarket,
-            heldWei
-        );
-        BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
-            state,
-            args.liquidAccount,
-            args.owedMarket,
-            owedWei
-        );
-
-        emit LogLiquidate(
-            args.solidAccount.owner,
-            args.solidAccount.number,
-            args.liquidAccount.owner,
-            args.liquidAccount.number,
-            args.heldMarket,
-            args.owedMarket,
-            solidHeldUpdate,
-            solidOwedUpdate,
-            liquidHeldUpdate,
-            liquidOwedUpdate
-        );
-    }
-
-    function logVaporize(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args,
-        Types.Wei memory heldWei,
-        Types.Wei memory owedWei,
-        Types.Wei memory excessWei
-    )
-        internal
-    {
-        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
-            state,
-            args.vaporAccount,
-            args.owedMarket,
-            owedWei.add(excessWei)
-        );
-
-        emit LogVaporize(
-            args.solidAccount.owner,
-            args.solidAccount.number,
-            args.vaporAccount.owner,
-            args.vaporAccount.number,
-            args.heldMarket,
-            args.owedMarket,
-            solidHeldUpdate,
-            solidOwedUpdate,
-            vaporOwedUpdate
-        );
+        if (!must) {
+            revert(
+                string(
+                    abi.encodePacked(
+                        stringifyTruncated(file),
+                        COLON,
+                        stringifyTruncated(reason),
+                        LPAREN,
+                        stringify(payloadA),
+                        COMMA,
+                        stringify(payloadB),
+                        COMMA,
+                        stringify(payloadC),
+                        RPAREN
+                    )
+                )
+            );
+        }
     }
 
     // ============ Private Functions ============
 
-    function getBalanceUpdate(
-        Storage.State storage state,
-        Account.Info memory account,
-        uint256 market,
-        Types.Wei memory deltaWei
+    function stringifyTruncated(
+        bytes32 input
     )
         private
-        view
-        returns (BalanceUpdate memory)
+        pure
+        returns (bytes memory)
     {
-        return BalanceUpdate({
-            deltaWei: deltaWei,
-            newPar: state.getPar(account, market)
+        // put the input bytes into the result
+        bytes memory result = abi.encodePacked(input);
+
+        // determine the length of the input by finding the location of the last non-zero byte
+        for (uint256 i = 32; i > 0; ) {
+            // reverse-for-loops with unsigned integer
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // find the last non-zero byte in order to determine the length
+            if (result[i] != 0) {
+                uint256 length = i + 1;
+
+                /* solium-disable-next-line security/no-inline-assembly */
+                assembly {
+                    mstore(result, length) // r.length = length;
+                }
+
+                return result;
+            }
+        }
+
+        // all bytes are zero
+        return new bytes(0);
+    }
+
+    function stringify(
+        uint256 input
+    )
+        private
+        pure
+        returns (bytes memory)
+    {
+        if (input == 0) {
+            return "0";
+        }
+
+        // get the final string length
+        uint256 j = input;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+
+        // allocate the string
+        bytes memory bstr = new bytes(length);
+
+        // populate the string starting with the least-significant character
+        j = input;
+        for (uint256 i = length; i > 0; ) {
+            // reverse-for-loops with unsigned integer
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // take last decimal digit
+            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
+
+            // remove the last decimal digit
+            j /= 10;
+        }
+
+        return bstr;
+    }
+
+    function stringify(
+        address input
+    )
+        private
+        pure
+        returns (bytes memory)
+    {
+        uint256 z = uint256(input);
+
+        // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(42);
+
+        // populate the result with "0x"
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 20; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[41 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[40 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function stringify(
+        bytes32 input
+    )
+        private
+        pure
+        returns (bytes memory)
+    {
+        uint256 z = uint256(input);
+
+        // bytes32 are "0x" followed by 32 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(66);
+
+        // populate the result with "0x"
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 32; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[65 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[64 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function char(
+        uint256 input
+    )
+        private
+        pure
+        returns (byte)
+    {
+        // return ASCII digit (0-9)
+        if (input < 10) {
+            return byte(uint8(input + ASCII_ZERO));
+        }
+
+        // return ASCII letter (a-f)
+        return byte(uint8(input + ASCII_RELATIVE_ZERO));
+    }
+}
+
+// File: contracts/protocol/lib/Math.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title Math
+ * @author dYdX
+ *
+ * Library for non-standard Math functions
+ */
+library Math {
+    using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "Math";
+
+    // ============ Library Functions ============
+
+    /*
+     * Return target * (numerator / denominator).
+     */
+    function getPartial(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return target.mul(numerator).div(denominator);
+    }
+
+    /*
+     * Return target * (numerator / denominator), but rounded up.
+     */
+    function getPartialRoundUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (target == 0 || numerator == 0) {
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
+        }
+        return target.mul(numerator).sub(1).div(denominator).add(1);
+    }
+
+    function to128(
+        uint256 number
+    )
+        internal
+        pure
+        returns (uint128)
+    {
+        uint128 result = uint128(number);
+        Require.that(
+            result == number,
+            FILE,
+            "Unsafe cast to uint128"
+        );
+        return result;
+    }
+
+    function to96(
+        uint256 number
+    )
+        internal
+        pure
+        returns (uint96)
+    {
+        uint96 result = uint96(number);
+        Require.that(
+            result == number,
+            FILE,
+            "Unsafe cast to uint96"
+        );
+        return result;
+    }
+
+    function to32(
+        uint256 number
+    )
+        internal
+        pure
+        returns (uint32)
+    {
+        uint32 result = uint32(number);
+        Require.that(
+            result == number,
+            FILE,
+            "Unsafe cast to uint32"
+        );
+        return result;
+    }
+
+    function min(
+        uint256 a,
+        uint256 b
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return a < b ? a : b;
+    }
+
+    function max(
+        uint256 a,
+        uint256 b
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return a > b ? a : b;
+    }
+}
+
+// File: contracts/protocol/lib/Types.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title Types
+ * @author dYdX
+ *
+ * Library for interacting with the basic structs used in Solo
+ */
+library Types {
+    using Math for uint256;
+
+    // ============ Permission ============
+
+    struct OperatorArg {
+        address operator;
+        bool trusted;
+    }
+
+    // ============ AssetAmount ============
+
+    enum AssetDenomination {
+        Wei, // the amount is denominated in wei
+        Par  // the amount is denominated in par
+    }
+
+    enum AssetReference {
+        Delta, // the amount is given as a delta from the current value
+        Target // the amount is given as an exact number to end up at
+    }
+
+    struct AssetAmount {
+        bool sign; // true if positive
+        AssetDenomination denomination;
+        AssetReference ref;
+        uint256 value;
+    }
+
+    // ============ Par (Principal Amount) ============
+
+    // Total borrow and supply values for a market
+    struct TotalPar {
+        uint128 borrow;
+        uint128 supply;
+    }
+
+    // Individual principal amount for an account
+    struct Par {
+        bool sign; // true if positive
+        uint128 value;
+    }
+
+    function zeroPar()
+        internal
+        pure
+        returns (Par memory)
+    {
+        return Par({
+            sign: false,
+            value: 0
+        });
+    }
+
+    function sub(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        return add(a, negative(b));
+    }
+
+    function add(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        Par memory result;
+        if (a.sign == b.sign) {
+            result.sign = a.sign;
+            result.value = SafeMath.add(a.value, b.value).to128();
+        } else {
+            if (a.value >= b.value) {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value).to128();
+            } else {
+                result.sign = b.sign;
+                result.value = SafeMath.sub(b.value, a.value).to128();
+            }
+        }
+        return result;
+    }
+
+    function equals(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
+        }
+        return false;
+    }
+
+    function negative(
+        Par memory a
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        return Par({
+            sign: !a.sign,
+            value: a.value
+        });
+    }
+
+    function isNegative(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return !a.sign && a.value > 0;
+    }
+
+    function isPositive(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
+    }
+
+    // ============ Wei (Token Amount) ============
+
+    // Individual token amount for an account
+    struct Wei {
+        bool sign; // true if positive
+        uint256 value;
+    }
+
+    function zeroWei()
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return Wei({
+            sign: false,
+            value: 0
+        });
+    }
+
+    function sub(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return add(a, negative(b));
+    }
+
+    function add(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        Wei memory result;
+        if (a.sign == b.sign) {
+            result.sign = a.sign;
+            result.value = SafeMath.add(a.value, b.value);
+        } else {
+            if (a.value >= b.value) {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value);
+            } else {
+                result.sign = b.sign;
+                result.value = SafeMath.sub(b.value, a.value);
+            }
+        }
+        return result;
+    }
+
+    function equals(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
+        }
+        return false;
+    }
+
+    function negative(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return Wei({
+            sign: !a.sign,
+            value: a.value
+        });
+    }
+
+    function isNegative(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return !a.sign && a.value > 0;
+    }
+
+    function isPositive(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
+    }
+}
+
+// File: contracts/protocol/lib/Account.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+/**
+ * @title Account
+ * @author dYdX
+ *
+ * Library of structs and functions that represent an account
+ */
+library Account {
+    // ============ Enums ============
+
+    /*
+     * Most-recently-cached account status.
+     *
+     * Normal: Can only be liquidated if the account values are violating the global margin-ratio.
+     * Liquid: Can be liquidated no matter the account values.
+     *         Can be vaporized if there are no more positive account values.
+     * Vapor:  Has only negative (or zeroed) account values. Can be vaporized.
+     *
+     */
+    enum Status {
+        Normal,
+        Liquid,
+        Vapor
+    }
+
+    // ============ Structs ============
+
+    // Represents the unique key that specifies an account
+    struct Info {
+        address owner;  // The address that owns the account
+        uint256 number; // A nonce that allows a single address to control many accounts
+    }
+
+    // The complete storage for any account
+    struct Storage {
+        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
+        Status status;
+    }
+
+    // ============ Library Functions ============
+
+    function equals(
+        Info memory a,
+        Info memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.owner == b.owner && a.number == b.number;
+    }
+}
+
+// File: contracts/protocol/interfaces/IAutoTrader.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title IAutoTrader
+ * @author dYdX
+ *
+ * Interface that Auto-Traders for Solo must implement in order to approve trades.
+ */
+contract IAutoTrader {
+
+    // ============ Public Functions ============
+
+    /**
+     * Allows traders to make trades approved by this smart contract. The active trader's account is
+     * the takerAccount and the passive account (for which this contract approves trades
+     * on-behalf-of) is the makerAccount.
+     *
+     * @param  inputMarketId   The market for which the trader specified the original amount
+     * @param  outputMarketId  The market for which the trader wants the resulting amount specified
+     * @param  makerAccount    The account for which this contract is making trades
+     * @param  takerAccount    The account requesting the trade
+     * @param  oldInputPar     The old principal amount for the makerAccount for the inputMarketId
+     * @param  newInputPar     The new principal amount for the makerAccount for the inputMarketId
+     * @param  inputWei        The change in token amount for the makerAccount for the inputMarketId
+     * @param  data            Arbitrary data passed in by the trader
+     * @return                 The AssetAmount for the makerAccount for the outputMarketId
+     */
+    function getTradeCost(
+        uint256 inputMarketId,
+        uint256 outputMarketId,
+        Account.Info memory makerAccount,
+        Account.Info memory takerAccount,
+        Types.Par memory oldInputPar,
+        Types.Par memory newInputPar,
+        Types.Wei memory inputWei,
+        bytes memory data
+    )
+        public
+        returns (Types.AssetAmount memory);
+}
+
+// File: contracts/protocol/interfaces/ICallee.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+/**
+ * @title ICallee
+ * @author dYdX
+ *
+ * Interface that Callees for Solo must implement in order to ingest data.
+ */
+contract ICallee {
+
+    // ============ Public Functions ============
+
+    /**
+     * Allows users to send this contract arbitrary data.
+     *
+     * @param  sender       The msg.sender to Solo
+     * @param  accountInfo  The account from which the data is being sent
+     * @param  data         Arbitrary data given by the sender
+     */
+    function callFunction(
+        address sender,
+        Account.Info memory accountInfo,
+        bytes memory data
+    )
+        public;
+}
+
+// File: contracts/protocol/lib/Actions.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title Actions
+ * @author dYdX
+ *
+ * Library that defines and parses valid Actions
+ */
+library Actions {
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "Actions";
+
+    // ============ Enums ============
+
+    enum ActionType {
+        Deposit,   // supply tokens
+        Withdraw,  // borrow tokens
+        Transfer,  // transfer balance between accounts
+        Buy,       // buy an amount of some token (externally)
+        Sell,      // sell an amount of some token (externally)
+        Trade,     // trade tokens against another account
+        Liquidate, // liquidate an undercollateralized or expiring account
+        Vaporize,  // use excess tokens to zero-out a completely negative account
+        Call       // send arbitrary data to an address
+    }
+
+    enum AccountLayout {
+        OnePrimary,
+        TwoPrimary,
+        PrimaryAndSecondary
+    }
+
+    enum MarketLayout {
+        ZeroMarkets,
+        OneMarket,
+        TwoMarkets
+    }
+
+    // ============ Structs ============
+
+    /*
+     * Arguments that are passed to Solo in an ordered list as part of a single operation.
+     * Each ActionArgs has an actionType which specifies which action struct that this data will be
+     * parsed into before being processed.
+     */
+    struct ActionArgs {
+        ActionType actionType;
+        uint256 accountId;
+        Types.AssetAmount amount;
+        uint256 primaryMarketId;
+        uint256 secondaryMarketId;
+        address otherAddress;
+        uint256 otherAccountId;
+        bytes data;
+    }
+
+    // ============ Action Types ============
+
+    /*
+     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
+     */
+    struct DepositArgs {
+        Types.AssetAmount amount;
+        Account.Info account;
+        uint256 market;
+        address from;
+    }
+
+    /*
+     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
+     * previously supplied.
+     */
+    struct WithdrawArgs {
+        Types.AssetAmount amount;
+        Account.Info account;
+        uint256 market;
+        address to;
+    }
+
+    /*
+     * Transfers balance between two accounts. The msg.sender must be an operator for both accounts.
+     * The amount field applies to accountOne.
+     * This action does not require any token movement since the trade is done internally to Solo.
+     */
+    struct TransferArgs {
+        Types.AssetAmount amount;
+        Account.Info accountOne;
+        Account.Info accountTwo;
+        uint256 market;
+    }
+
+    /*
+     * Acquires a certain amount of tokens by spending other tokens. Sends takerMarket tokens to the
+     * specified exchangeWrapper contract and expects makerMarket tokens in return. The amount field
+     * applies to the makerMarket.
+     */
+    struct BuyArgs {
+        Types.AssetAmount amount;
+        Account.Info account;
+        uint256 makerMarket;
+        uint256 takerMarket;
+        address exchangeWrapper;
+        bytes orderData;
+    }
+
+    /*
+     * Spends a certain amount of tokens to acquire other tokens. Sends takerMarket tokens to the
+     * specified exchangeWrapper and expects makerMarket tokens in return. The amount field applies
+     * to the takerMarket.
+     */
+    struct SellArgs {
+        Types.AssetAmount amount;
+        Account.Info account;
+        uint256 takerMarket;
+        uint256 makerMarket;
+        address exchangeWrapper;
+        bytes orderData;
+    }
+
+    /*
+     * Trades balances between two accounts using any external contract that implements the
+     * AutoTrader interface. The AutoTrader contract must be an operator for the makerAccount (for
+     * which it is trading on-behalf-of). The amount field applies to the makerAccount and the
+     * inputMarket. This proposed change to the makerAccount is passed to the AutoTrader which will
+     * quote a change for the makerAccount in the outputMarket (or will disallow the trade).
+     * This action does not require any token movement since the trade is done internally to Solo.
+     */
+    struct TradeArgs {
+        Types.AssetAmount amount;
+        Account.Info takerAccount;
+        Account.Info makerAccount;
+        uint256 inputMarket;
+        uint256 outputMarket;
+        address autoTrader;
+        bytes tradeData;
+    }
+
+    /*
+     * Each account must maintain a certain margin-ratio (specified globally). If the account falls
+     * below this margin-ratio, it can be liquidated by any other account. This allows anyone else
+     * (arbitrageurs) to repay any borrowed asset (owedMarket) of the liquidating account in
+     * exchange for any collateral asset (heldMarket) of the liquidAccount. The ratio is determined
+     * by the price ratio (given by the oracles) plus a spread (specified globally). Liquidating an
+     * account also sets a flag on the account that the account is being liquidated. This allows
+     * anyone to continue liquidating the account until there are no more borrows being taken by the
+     * liquidating account. Liquidators do not have to liquidate the entire account all at once but
+     * can liquidate as much as they choose. The liquidating flag allows liquidators to continue
+     * liquidating the account even if it becomes collateralized through partial liquidation or
+     * price movement.
+     */
+    struct LiquidateArgs {
+        Types.AssetAmount amount;
+        Account.Info solidAccount;
+        Account.Info liquidAccount;
+        uint256 owedMarket;
+        uint256 heldMarket;
+    }
+
+    /*
+     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances
+     * remaining. The arbitrageur pays back the negative asset (owedMarket) of the vaporAccount in
+     * exchange for a collateral asset (heldMarket) at a favorable spread. However, since the
+     * liquidAccount has no collateral assets, the collateral must come from Solo's excess tokens.
+     */
+    struct VaporizeArgs {
+        Types.AssetAmount amount;
+        Account.Info solidAccount;
+        Account.Info vaporAccount;
+        uint256 owedMarket;
+        uint256 heldMarket;
+    }
+
+    /*
+     * Passes arbitrary bytes of data to an external contract that implements the Callee interface.
+     * Does not change any asset amounts. This function may be useful for setting certain variables
+     * on layer-two contracts for certain accounts without having to make a separate Ethereum
+     * transaction for doing so. Also, the second-layer contracts can ensure that the call is coming
+     * from an operator of the particular account.
+     */
+    struct CallArgs {
+        Account.Info account;
+        address callee;
+        bytes data;
+    }
+
+    // ============ Helper Functions ============
+
+    function getMarketLayout(
+        ActionType actionType
+    )
+        internal
+        pure
+        returns (MarketLayout)
+    {
+        if (
+            actionType == Actions.ActionType.Deposit
+            || actionType == Actions.ActionType.Withdraw
+            || actionType == Actions.ActionType.Transfer
+        ) {
+            return MarketLayout.OneMarket;
+        }
+        else if (actionType == Actions.ActionType.Call) {
+            return MarketLayout.ZeroMarkets;
+        }
+        return MarketLayout.TwoMarkets;
+    }
+
+    function getAccountLayout(
+        ActionType actionType
+    )
+        internal
+        pure
+        returns (AccountLayout)
+    {
+        if (
+            actionType == Actions.ActionType.Transfer
+            || actionType == Actions.ActionType.Trade
+        ) {
+            return AccountLayout.TwoPrimary;
+        } else if (
+            actionType == Actions.ActionType.Liquidate
+            || actionType == Actions.ActionType.Vaporize
+        ) {
+            return AccountLayout.PrimaryAndSecondary;
+        }
+        return AccountLayout.OnePrimary;
+    }
+
+    // ============ Parsing Functions ============
+
+    function parseDepositArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (DepositArgs memory)
+    {
+        assert(args.actionType == ActionType.Deposit);
+        return DepositArgs({
+            amount: args.amount,
+            account: accounts[args.accountId],
+            market: args.primaryMarketId,
+            from: args.otherAddress
+        });
+    }
+
+    function parseWithdrawArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (WithdrawArgs memory)
+    {
+        assert(args.actionType == ActionType.Withdraw);
+        return WithdrawArgs({
+            amount: args.amount,
+            account: accounts[args.accountId],
+            market: args.primaryMarketId,
+            to: args.otherAddress
+        });
+    }
+
+    function parseTransferArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (TransferArgs memory)
+    {
+        assert(args.actionType == ActionType.Transfer);
+        return TransferArgs({
+            amount: args.amount,
+            accountOne: accounts[args.accountId],
+            accountTwo: accounts[args.otherAccountId],
+            market: args.primaryMarketId
+        });
+    }
+
+    function parseBuyArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (BuyArgs memory)
+    {
+        assert(args.actionType == ActionType.Buy);
+        return BuyArgs({
+            amount: args.amount,
+            account: accounts[args.accountId],
+            makerMarket: args.primaryMarketId,
+            takerMarket: args.secondaryMarketId,
+            exchangeWrapper: args.otherAddress,
+            orderData: args.data
+        });
+    }
+
+    function parseSellArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (SellArgs memory)
+    {
+        assert(args.actionType == ActionType.Sell);
+        return SellArgs({
+            amount: args.amount,
+            account: accounts[args.accountId],
+            takerMarket: args.primaryMarketId,
+            makerMarket: args.secondaryMarketId,
+            exchangeWrapper: args.otherAddress,
+            orderData: args.data
+        });
+    }
+
+    function parseTradeArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (TradeArgs memory)
+    {
+        assert(args.actionType == ActionType.Trade);
+        return TradeArgs({
+            amount: args.amount,
+            takerAccount: accounts[args.accountId],
+            makerAccount: accounts[args.otherAccountId],
+            inputMarket: args.primaryMarketId,
+            outputMarket: args.secondaryMarketId,
+            autoTrader: args.otherAddress,
+            tradeData: args.data
+        });
+    }
+
+    function parseLiquidateArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (LiquidateArgs memory)
+    {
+        assert(args.actionType == ActionType.Liquidate);
+        return LiquidateArgs({
+            amount: args.amount,
+            solidAccount: accounts[args.accountId],
+            liquidAccount: accounts[args.otherAccountId],
+            owedMarket: args.primaryMarketId,
+            heldMarket: args.secondaryMarketId
+        });
+    }
+
+    function parseVaporizeArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (VaporizeArgs memory)
+    {
+        assert(args.actionType == ActionType.Vaporize);
+        return VaporizeArgs({
+            amount: args.amount,
+            solidAccount: accounts[args.accountId],
+            vaporAccount: accounts[args.otherAccountId],
+            owedMarket: args.primaryMarketId,
+            heldMarket: args.secondaryMarketId
+        });
+    }
+
+    function parseCallArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (CallArgs memory)
+    {
+        assert(args.actionType == ActionType.Call);
+        return CallArgs({
+            account: accounts[args.accountId],
+            callee: args.otherAddress,
+            data: args.data
         });
     }
 }
 
-// File: contracts/protocol/interfaces/IPriceOracle.sol
+// File: contracts/protocol/lib/Monetary.sol
 
 /*
 
@@ -717,41 +1555,241 @@ library Events {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+/**
+ * @title Monetary
+ * @author dYdX
+ *
+ * Library for types involving money
+ */
+library Monetary {
+
+    /*
+     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
+     */
+    struct Price {
+        uint256 value;
+    }
+
+    /*
+     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
+     */
+    struct Value {
+        uint256 value;
+    }
+}
+
+// File: contracts/protocol/lib/Cache.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
 /**
- * @title IPriceOracle
+ * @title Cache
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement in order to report prices.
+ * Library for caching information about markets
  */
-contract IPriceOracle {
+library Cache {
+    using Cache for MarketCache;
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        bool isClosing;
+        uint128 borrowPar;
+        Monetary.Price price;
+    }
+
+    struct MarketCache {
+        MarketInfo[] markets;
+    }
+
+    // ============ Setter Functions ============
+
+    /**
+     * Initialize an empty cache for some given number of total markets.
+     */
+    function create(
+        uint256 numMarkets
+    )
+        internal
+        pure
+        returns (MarketCache memory)
+    {
+        return MarketCache({
+            markets: new MarketInfo[](numMarkets)
+        });
+    }
+
+    // ============ Getter Functions ============
+
+    function getNumMarkets(
+        MarketCache memory cache
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return cache.markets.length;
+    }
+
+    function hasMarket(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return cache.markets[marketId].price.value != 0;
+    }
+
+    function getIsClosing(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return cache.markets[marketId].isClosing;
+    }
+
+    function getPrice(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (Monetary.Price memory)
+    {
+        return cache.markets[marketId].price;
+    }
+
+    function getBorrowPar(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (uint128)
+    {
+        return cache.markets[marketId].borrowPar;
+    }
+}
+
+// File: contracts/protocol/lib/Decimal.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title Decimal
+ * @author dYdX
+ *
+ * Library that defines a fixed-point number with 18 decimal places.
+ */
+library Decimal {
+    using SafeMath for uint256;
 
     // ============ Constants ============
 
-    uint256 public constant ONE_DOLLAR = 10 ** 36;
+    uint256 constant BASE = 10**18;
 
-    // ============ Public Functions ============
+    // ============ Structs ============
 
-    /**
-     * Get the price of a token
-     *
-     * @param  token  The ERC20 token address of the market
-     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
-     *                So a USD-stable coin with 18 decimal places would return 10^18.
-     *                This is the price of the base unit rather than the price of a "human-readable"
-     *                token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
+    struct D256 {
+        uint256 value;
+    }
+
+    // ============ Functions ============
+
+    function one()
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: BASE });
+    }
+
+    function onePlus(
+        D256 memory d
     )
-        public
-        view
-        returns (Monetary.Price memory);
+        internal
+        pure
+        returns (D256 memory)
+    {
+        return D256({ value: d.value.add(BASE) });
+    }
+
+    function mul(
+        uint256 target,
+        D256 memory d
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return Math.getPartial(target, d.value, BASE);
+    }
+
+    function div(
+        uint256 target,
+        D256 memory d
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return Math.getPartial(target, BASE, d.value);
+    }
 }
 
-// File: contracts/protocol/interfaces/IInterestSetter.sol
+// File: contracts/protocol/lib/Time.sol
 
 /*
 
@@ -772,35 +1810,223 @@ contract IPriceOracle {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
 /**
- * @title IInterestSetter
+ * @title Time
  * @author dYdX
  *
- * Interface that Interest Setters for Solo must implement in order to report interest rates.
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
  */
-interface IInterestSetter {
+library Time {
 
-    // ============ Public Functions ============
+    // ============ Library Functions ============
+
+    function currentTime()
+        internal
+        view
+        returns (uint32)
+    {
+        return Math.to32(block.timestamp);
+    }
+}
+
+// File: contracts/protocol/lib/Interest.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+
+
+
+/**
+ * @title Interest
+ * @author dYdX
+ *
+ * Library for managing the interest rate and interest indexes of Solo
+ */
+library Interest {
+    using Math for uint256;
+    using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "Interest";
+    uint64 constant BASE = 10**18;
+
+    // ============ Structs ============
+
+    struct Rate {
+        uint256 value;
+    }
+
+    struct Index {
+        uint96 borrow;
+        uint96 supply;
+        uint32 lastUpdate;
+    }
+
+    // ============ Library Functions ============
 
     /**
-     * Get the interest rate of a token given some borrowed and supplied amounts
+     * Get a new market Index based on the old index and market interest rate.
+     * Calculate interest for borrowers by using the formula rate * time. Approximates
+     * continuously-compounded interest when called frequently, but is much more
+     * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
+     * then prorated across all suppliers.
      *
-     * @param  token        The address of the ERC20 token for the market
-     * @param  borrowWei    The total borrowed token amount for the market
-     * @param  supplyWei    The total supplied token amount for the market
-     * @return              The interest rate per second
+     * @param  index         The old index for a market
+     * @param  rate          The current interest rate of the market
+     * @param  totalPar      The total supply and borrow par values of the market
+     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
+     * @return               The updated index for a market
      */
-    function getInterestRate(
-        address token,
-        uint256 borrowWei,
-        uint256 supplyWei
+    function calculateNewIndex(
+        Index memory index,
+        Rate memory rate,
+        Types.TotalPar memory totalPar,
+        Decimal.D256 memory earningsRate
     )
-        external
+        internal
         view
-        returns (Interest.Rate memory);
+        returns (Index memory)
+    {
+        (
+            Types.Wei memory supplyWei,
+            Types.Wei memory borrowWei
+        ) = totalParToWei(totalPar, index);
+
+        // get interest increase for borrowers
+        uint32 currentTime = Time.currentTime();
+        uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
+
+        // get interest increase for suppliers
+        uint256 supplyInterest;
+        if (Types.isZero(supplyWei)) {
+            supplyInterest = 0;
+        } else {
+            supplyInterest = Decimal.mul(borrowInterest, earningsRate);
+            if (borrowWei.value < supplyWei.value) {
+                supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
+            }
+        }
+        assert(supplyInterest <= borrowInterest);
+
+        return Index({
+            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
+            supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
+            lastUpdate: currentTime
+        });
+    }
+
+    function newIndex()
+        internal
+        view
+        returns (Index memory)
+    {
+        return Index({
+            borrow: BASE,
+            supply: BASE,
+            lastUpdate: Time.currentTime()
+        });
+    }
+
+    /*
+     * Convert a principal amount to a token amount given an index.
+     */
+    function parToWei(
+        Types.Par memory input,
+        Index memory index
+    )
+        internal
+        pure
+        returns (Types.Wei memory)
+    {
+        uint256 inputValue = uint256(input.value);
+        if (input.sign) {
+            return Types.Wei({
+                sign: true,
+                value: inputValue.getPartial(index.supply, BASE)
+            });
+        } else {
+            return Types.Wei({
+                sign: false,
+                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+            });
+        }
+    }
+
+    /*
+     * Convert a token amount to a principal amount given an index.
+     */
+    function weiToPar(
+        Types.Wei memory input,
+        Index memory index
+    )
+        internal
+        pure
+        returns (Types.Par memory)
+    {
+        if (input.sign) {
+            return Types.Par({
+                sign: true,
+                value: input.value.getPartial(BASE, index.supply).to128()
+            });
+        } else {
+            return Types.Par({
+                sign: false,
+                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+            });
+        }
+    }
+
+    /*
+     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
+     * token amounts.
+     */
+    function totalParToWei(
+        Types.TotalPar memory totalPar,
+        Index memory index
+    )
+        internal
+        pure
+        returns (Types.Wei memory, Types.Wei memory)
+    {
+        Types.Par memory supplyPar = Types.Par({
+            sign: true,
+            value: totalPar.supply
+        });
+        Types.Par memory borrowPar = Types.Par({
+            sign: false,
+            value: totalPar.borrow
+        });
+        Types.Wei memory supplyWei = parToWei(supplyPar, index);
+        Types.Wei memory borrowWei = parToWei(borrowPar, index);
+        return (supplyWei, borrowWei);
+    }
 }
 
 // File: contracts/protocol/interfaces/IERC20.sol
@@ -824,6 +2050,7 @@ interface IInterestSetter {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 /**
  * @title IERC20
@@ -926,6 +2153,7 @@ interface IERC20 {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1080,7 +2308,7 @@ library Token {
     }
 }
 
-// File: contracts/protocol/lib/Time.sol
+// File: contracts/protocol/interfaces/IInterestSetter.sol
 
 /*
 
@@ -1101,224 +2329,39 @@ library Token {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
 /**
- * @title Time
+ * @title IInterestSetter
  * @author dYdX
  *
- * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
+ * Interface that Interest Setters for Solo must implement in order to report interest rates.
  */
-library Time {
+interface IInterestSetter {
 
-    // ============ Library Functions ============
-
-    function currentTime()
-        internal
-        view
-        returns (uint32)
-    {
-        return Math.to32(block.timestamp);
-    }
-}
-
-// File: contracts/protocol/lib/Interest.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-
-
-
-/**
- * @title Interest
- * @author dYdX
- *
- * Library for managing the interest rate and interest indexes of Solo
- */
-library Interest {
-    using Math for uint256;
-    using SafeMath for uint256;
-
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Interest";
-    uint64 constant BASE = 10**18;
-
-    // ============ Structs ============
-
-    struct Rate {
-        uint256 value;
-    }
-
-    struct Index {
-        uint96 borrow;
-        uint96 supply;
-        uint32 lastUpdate;
-    }
-
-    // ============ Library Functions ============
+    // ============ Public Functions ============
 
     /**
-     * Get a new market Index based on the old index and market interest rate.
-     * Calculate interest for borrowers by using the formula rate * time. Approximates
-     * continuously-compounded interest when called frequently, but is much more
-     * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all suppliers.
+     * Get the interest rate of a token given some borrowed and supplied amounts
      *
-     * @param  index         The old index for a market
-     * @param  rate          The current interest rate of the market
-     * @param  totalPar      The total supply and borrow par values of the market
-     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
-     * @return               The updated index for a market
+     * @param  token        The address of the ERC20 token for the market
+     * @param  borrowWei    The total borrowed token amount for the market
+     * @param  supplyWei    The total supplied token amount for the market
+     * @return              The interest rate per second
      */
-    function calculateNewIndex(
-        Index memory index,
-        Rate memory rate,
-        Types.TotalPar memory totalPar,
-        Decimal.D256 memory earningsRate
+    function getInterestRate(
+        address token,
+        uint256 borrowWei,
+        uint256 supplyWei
     )
-        internal
+        external
         view
-        returns (Index memory)
-    {
-        (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
-        ) = totalParToWei(totalPar, index);
-
-        // get interest increase for borrowers
-        uint32 currentTime = Time.currentTime();
-        uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
-
-        // get interest increase for suppliers
-        uint256 supplyInterest;
-        if (Types.isZero(supplyWei)) {
-            supplyInterest = 0;
-        } else {
-            supplyInterest = Decimal.mul(borrowInterest, earningsRate);
-            if (borrowWei.value < supplyWei.value) {
-                supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
-            }
-        }
-        assert(supplyInterest <= borrowInterest);
-
-        return Index({
-            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
-            supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
-            lastUpdate: currentTime
-        });
-    }
-
-    function newIndex()
-        internal
-        view
-        returns (Index memory)
-    {
-        return Index({
-            borrow: BASE,
-            supply: BASE,
-            lastUpdate: Time.currentTime()
-        });
-    }
-
-    /*
-     * Convert a principal amount to a token amount given an index.
-     */
-    function parToWei(
-        Types.Par memory input,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        uint256 inputValue = uint256(input.value);
-        if (input.sign) {
-            return Types.Wei({
-                sign: true,
-                value: inputValue.getPartial(index.supply, BASE)
-            });
-        } else {
-            return Types.Wei({
-                sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
-            });
-        }
-    }
-
-    /*
-     * Convert a token amount to a principal amount given an index.
-     */
-    function weiToPar(
-        Types.Wei memory input,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Par memory)
-    {
-        if (input.sign) {
-            return Types.Par({
-                sign: true,
-                value: input.value.getPartial(BASE, index.supply).to128()
-            });
-        } else {
-            return Types.Par({
-                sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
-            });
-        }
-    }
-
-    /*
-     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
-     * token amounts.
-     */
-    function totalParToWei(
-        Types.TotalPar memory totalPar,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Wei memory, Types.Wei memory)
-    {
-        Types.Par memory supplyPar = Types.Par({
-            sign: true,
-            value: totalPar.supply
-        });
-        Types.Par memory borrowPar = Types.Par({
-            sign: false,
-            value: totalPar.borrow
-        });
-        Types.Wei memory supplyWei = parToWei(supplyPar, index);
-        Types.Wei memory borrowWei = parToWei(borrowPar, index);
-        return (supplyWei, borrowWei);
-    }
+        returns (Interest.Rate memory);
 }
 
-// File: contracts/protocol/lib/Decimal.sol
+// File: contracts/protocol/interfaces/IPriceOracle.sol
 
 /*
 
@@ -1339,70 +2382,39 @@ library Interest {
 */
 
 pragma solidity ^0.5.7;
-
+pragma experimental ABIEncoderV2;
 
 
 
 /**
- * @title Decimal
+ * @title IPriceOracle
  * @author dYdX
  *
- * Library that defines a fixed-point number with 18 decimal places.
+ * Interface that Price Oracles for Solo must implement in order to report prices.
  */
-library Decimal {
-    using SafeMath for uint256;
+contract IPriceOracle {
 
     // ============ Constants ============
 
-    uint256 constant BASE = 10**18;
+    uint256 public constant ONE_DOLLAR = 10 ** 36;
 
-    // ============ Structs ============
+    // ============ Public Functions ============
 
-    struct D256 {
-        uint256 value;
-    }
-
-    // ============ Functions ============
-
-    function one()
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: BASE });
-    }
-
-    function onePlus(
-        D256 memory d
+    /**
+     * Get the price of a token
+     *
+     * @param  token  The ERC20 token address of the market
+     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
+     *                So a USD-stable coin with 18 decimal places would return 10^18.
+     *                This is the price of the base unit rather than the price of a "human-readable"
+     *                token amount. Every ERC20 may have a different number of decimals.
+     */
+    function getPrice(
+        address token
     )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: d.value.add(BASE) });
-    }
-
-    function mul(
-        uint256 target,
-        D256 memory d
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return Math.getPartial(target, d.value, BASE);
-    }
-
-    function div(
-        uint256 target,
-        D256 memory d
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return Math.getPartial(target, BASE, d.value);
-    }
+        public
+        view
+        returns (Monetary.Price memory);
 }
 
 // File: contracts/protocol/lib/Storage.sol
@@ -1426,6 +2438,7 @@ library Decimal {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -2089,7 +3102,7 @@ library Storage {
     }
 }
 
-// File: contracts/protocol/lib/Monetary.sol
+// File: contracts/protocol/lib/Events.sol
 
 /*
 
@@ -2110,107 +3123,725 @@ library Storage {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
-/**
- * @title Monetary
- * @author dYdX
- *
- * Library for types involving money
- */
-library Monetary {
 
-    /*
-     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
-     */
-    struct Price {
-        uint256 value;
-    }
-
-    /*
-     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
-     */
-    struct Value {
-        uint256 value;
-    }
-}
-
-// File: contracts/protocol/lib/Cache.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
 
 
 
 
 /**
- * @title Cache
+ * @title Events
  * @author dYdX
  *
- * Library for caching information about markets
+ * Library to parse and emit logs from which the state of all accounts and indexes can be followed
  */
-library Cache {
-    using Cache for MarketCache;
+library Events {
+    using Types for Types.Wei;
     using Storage for Storage.State;
+
+    // ============ Events ============
+
+    event LogIndexUpdate(
+        uint256 indexed market,
+        Interest.Index index
+    );
+
+    event LogOperation(
+        address sender
+    );
+
+    event LogDeposit(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
+        BalanceUpdate update,
+        address from
+    );
+
+    event LogWithdraw(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
+        BalanceUpdate update,
+        address to
+    );
+
+    event LogTransfer(
+        address indexed accountOneOwner,
+        uint256 accountOneNumber,
+        address indexed accountTwoOwner,
+        uint256 accountTwoNumber,
+        uint256 market,
+        BalanceUpdate updateOne,
+        BalanceUpdate updateTwo
+    );
+
+    event LogBuy(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
+        BalanceUpdate takerUpdate,
+        BalanceUpdate makerUpdate,
+        address exchangeWrapper
+    );
+
+    event LogSell(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
+        BalanceUpdate takerUpdate,
+        BalanceUpdate makerUpdate,
+        address exchangeWrapper
+    );
+
+    event LogTrade(
+        address indexed takerAccountOwner,
+        uint256 takerAccountNumber,
+        address indexed makerAccountOwner,
+        uint256 makerAccountNumber,
+        uint256 inputMarket,
+        uint256 outputMarket,
+        BalanceUpdate takerInputUpdate,
+        BalanceUpdate takerOutputUpdate,
+        BalanceUpdate makerInputUpdate,
+        BalanceUpdate makerOutputUpdate,
+        address autoTrader
+    );
+
+    event LogCall(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        address callee
+    );
+
+    event LogLiquidate(
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed liquidAccountOwner,
+        uint256 liquidAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
+        BalanceUpdate solidHeldUpdate,
+        BalanceUpdate solidOwedUpdate,
+        BalanceUpdate liquidHeldUpdate,
+        BalanceUpdate liquidOwedUpdate
+    );
+
+    event LogVaporize(
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed vaporAccountOwner,
+        uint256 vaporAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
+        BalanceUpdate solidHeldUpdate,
+        BalanceUpdate solidOwedUpdate,
+        BalanceUpdate vaporOwedUpdate
+    );
 
     // ============ Structs ============
 
-    struct MarketInfo {
-        bool isClosing;
-        uint128 borrowPar;
-        Monetary.Price price;
+    struct BalanceUpdate {
+        Types.Wei deltaWei;
+        Types.Par newPar;
     }
 
-    struct MarketCache {
-        MarketInfo[] markets;
-    }
+    // ============ Internal Functions ============
 
-    // ============ Setter Functions ============
-
-    /**
-     * Initialize an empty cache for some given number of total markets.
-     */
-    function create(
-        uint256 numMarkets
+    function logIndexUpdate(
+        uint256 marketId,
+        Interest.Index memory index
     )
         internal
-        pure
-        returns (MarketCache memory)
     {
-        return MarketCache({
-            markets: new MarketInfo[](numMarkets)
+        emit LogIndexUpdate(
+            marketId,
+            index
+        );
+    }
+
+    function logOperation()
+        internal
+    {
+        emit LogOperation(msg.sender);
+    }
+
+    function logDeposit(
+        Storage.State storage state,
+        Actions.DepositArgs memory args,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        emit LogDeposit(
+            args.account.owner,
+            args.account.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.market,
+                deltaWei
+            ),
+            args.from
+        );
+    }
+
+    function logWithdraw(
+        Storage.State storage state,
+        Actions.WithdrawArgs memory args,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        emit LogWithdraw(
+            args.account.owner,
+            args.account.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.market,
+                deltaWei
+            ),
+            args.to
+        );
+    }
+
+    function logTransfer(
+        Storage.State storage state,
+        Actions.TransferArgs memory args,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        emit LogTransfer(
+            args.accountOne.owner,
+            args.accountOne.number,
+            args.accountTwo.owner,
+            args.accountTwo.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.accountOne,
+                args.market,
+                deltaWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.accountTwo,
+                args.market,
+                deltaWei.negative()
+            )
+        );
+    }
+
+    function logBuy(
+        Storage.State storage state,
+        Actions.BuyArgs memory args,
+        Types.Wei memory takerWei,
+        Types.Wei memory makerWei
+    )
+        internal
+    {
+        emit LogBuy(
+            args.account.owner,
+            args.account.number,
+            args.takerMarket,
+            args.makerMarket,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.takerMarket,
+                takerWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.makerMarket,
+                makerWei
+            ),
+            args.exchangeWrapper
+        );
+    }
+
+    function logSell(
+        Storage.State storage state,
+        Actions.SellArgs memory args,
+        Types.Wei memory takerWei,
+        Types.Wei memory makerWei
+    )
+        internal
+    {
+        emit LogSell(
+            args.account.owner,
+            args.account.number,
+            args.takerMarket,
+            args.makerMarket,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.takerMarket,
+                takerWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.makerMarket,
+                makerWei
+            ),
+            args.exchangeWrapper
+        );
+    }
+
+    function logTrade(
+        Storage.State storage state,
+        Actions.TradeArgs memory args,
+        Types.Wei memory inputWei,
+        Types.Wei memory outputWei
+    )
+        internal
+    {
+        BalanceUpdate[4] memory updates = [
+            getBalanceUpdate(
+                state,
+                args.takerAccount,
+                args.inputMarket,
+                inputWei.negative()
+            ),
+            getBalanceUpdate(
+                state,
+                args.takerAccount,
+                args.outputMarket,
+                outputWei.negative()
+            ),
+            getBalanceUpdate(
+                state,
+                args.makerAccount,
+                args.inputMarket,
+                inputWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.makerAccount,
+                args.outputMarket,
+                outputWei
+            )
+        ];
+
+        emit          LogTrade(
+            args.takerAccount.owner,
+            args.takerAccount.number,
+            args.makerAccount.owner,
+            args.makerAccount.number,
+            args.inputMarket,
+            args.outputMarket,
+            updates[0],
+            updates[1],
+            updates[2],
+            updates[3],
+            args.autoTrader
+        );
+    }
+
+    function logCall(
+        Actions.CallArgs memory args
+    )
+        internal
+    {
+        emit LogCall(
+            args.account.owner,
+            args.account.number,
+            args.callee
+        );
+    }
+
+    function logLiquidate(
+        Storage.State storage state,
+        Actions.LiquidateArgs memory args,
+        Types.Wei memory heldWei,
+        Types.Wei memory owedWei
+    )
+        internal
+    {
+        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
+            state,
+            args.liquidAccount,
+            args.heldMarket,
+            heldWei
+        );
+        BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
+            state,
+            args.liquidAccount,
+            args.owedMarket,
+            owedWei
+        );
+
+        emit LogLiquidate(
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.liquidAccount.owner,
+            args.liquidAccount.number,
+            args.heldMarket,
+            args.owedMarket,
+            solidHeldUpdate,
+            solidOwedUpdate,
+            liquidHeldUpdate,
+            liquidOwedUpdate
+        );
+    }
+
+    function logVaporize(
+        Storage.State storage state,
+        Actions.VaporizeArgs memory args,
+        Types.Wei memory heldWei,
+        Types.Wei memory owedWei,
+        Types.Wei memory excessWei
+    )
+        internal
+    {
+        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
+            state,
+            args.vaporAccount,
+            args.owedMarket,
+            owedWei.add(excessWei)
+        );
+
+        emit LogVaporize(
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.vaporAccount.owner,
+            args.vaporAccount.number,
+            args.heldMarket,
+            args.owedMarket,
+            solidHeldUpdate,
+            solidOwedUpdate,
+            vaporOwedUpdate
+        );
+    }
+
+    // ============ Private Functions ============
+
+    function getBalanceUpdate(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 market,
+        Types.Wei memory deltaWei
+    )
+        private
+        view
+        returns (BalanceUpdate memory)
+    {
+        return BalanceUpdate({
+            deltaWei: deltaWei,
+            newPar: state.getPar(account, market)
         });
     }
+}
+
+// File: contracts/protocol/interfaces/IExchangeWrapper.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+/**
+ * @title IExchangeWrapper
+ * @author dYdX
+ *
+ * Interface that Exchange Wrappers for Solo must implement in order to trade ERC20 tokens.
+ */
+interface IExchangeWrapper {
+
+    // ============ Public Functions ============
+
+    /**
+     * Exchange some amount of takerToken for makerToken.
+     *
+     * @param  tradeOriginator      Address of the initiator of the trade (however, this value
+     *                              cannot always be trusted as it is set at the discretion of the
+     *                              msg.sender)
+     * @param  receiver             Address to set allowance on once the trade has completed
+     * @param  makerToken           Address of makerToken, the token to receive
+     * @param  takerToken           Address of takerToken, the token to pay
+     * @param  requestedFillAmount  Amount of takerToken being paid
+     * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
+     * @return                      The amount of makerToken received
+     */
+    function exchange(
+        address tradeOriginator,
+        address receiver,
+        address makerToken,
+        address takerToken,
+        uint256 requestedFillAmount,
+        bytes calldata orderData
+    )
+        external
+        returns (uint256);
+
+    /**
+     * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
+     * Should match the takerToken amount used in exchangeForAmount. If the order cannot provide
+     * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
+     * than desiredMakerToken
+     *
+     * @param  makerToken         Address of makerToken, the token to receive
+     * @param  takerToken         Address of takerToken, the token to pay
+     * @param  desiredMakerToken  Amount of makerToken requested
+     * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
+     * @return                    Amount of takerToken the needed to complete the exchange
+     */
+    function getExchangeCost(
+        address makerToken,
+        address takerToken,
+        uint256 desiredMakerToken,
+        bytes calldata orderData
+    )
+        external
+        view
+        returns (uint256);
+}
+
+// File: contracts/protocol/lib/Exchange.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+
+
+/**
+ * @title Exchange
+ * @author dYdX
+ *
+ * Library for transferring tokens and interacting with ExchangeWrappers by using the Wei struct
+ */
+library Exchange {
+    using Types for Types.Wei;
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "Exchange";
+
+    // ============ Library Functions ============
+
+    function transferOut(
+        address token,
+        address to,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        Require.that(
+            !deltaWei.isPositive(),
+            FILE,
+            "Cannot transferOut positive",
+            deltaWei.value
+        );
+
+        Token.transfer(
+            token,
+            to,
+            deltaWei.value
+        );
+    }
+
+    function transferIn(
+        address token,
+        address from,
+        Types.Wei memory deltaWei
+    )
+        internal
+    {
+        Require.that(
+            !deltaWei.isNegative(),
+            FILE,
+            "Cannot transferIn negative",
+            deltaWei.value
+        );
+
+        Token.transferFrom(
+            token,
+            from,
+            address(this),
+            deltaWei.value
+        );
+    }
+
+    function getCost(
+        address exchangeWrapper,
+        address supplyToken,
+        address borrowToken,
+        Types.Wei memory desiredAmount,
+        bytes memory orderData
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        Require.that(
+            !desiredAmount.isNegative(),
+            FILE,
+            "Cannot getCost negative",
+            desiredAmount.value
+        );
+
+        Types.Wei memory result;
+        result.sign = false;
+        result.value = IExchangeWrapper(exchangeWrapper).getExchangeCost(
+            supplyToken,
+            borrowToken,
+            desiredAmount.value,
+            orderData
+        );
+
+        return result;
+    }
+
+    function exchange(
+        address exchangeWrapper,
+        address accountOwner,
+        address supplyToken,
+        address borrowToken,
+        Types.Wei memory requestedFillAmount,
+        bytes memory orderData
+    )
+        internal
+        returns (Types.Wei memory)
+    {
+        Require.that(
+            !requestedFillAmount.isPositive(),
+            FILE,
+            "Cannot exchange positive",
+            requestedFillAmount.value
+        );
+
+        transferOut(borrowToken, exchangeWrapper, requestedFillAmount);
+
+        Types.Wei memory result;
+        result.sign = true;
+        result.value = IExchangeWrapper(exchangeWrapper).exchange(
+            accountOwner,
+            address(this),
+            supplyToken,
+            borrowToken,
+            requestedFillAmount.value,
+            orderData
+        );
+
+        transferIn(supplyToken, exchangeWrapper, result);
+
+        return result;
+    }
+}
+
+// File: contracts/protocol/lib/MarketCachePersister.sol
+
+/*
+
+    Copyright 2021 Dolomite
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+library MarketCachePersister {
+    using Cache for Cache.MarketCache;
+    using Storage for Storage.State;
 
     /**
      * Add market information (price and total borrowed par if the market is closing) to the cache.
      * Return true if the market information did not previously exist in the cache.
      */
     function addMarket(
-        MarketCache memory cache,
+        Cache.MarketCache memory cache,
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         if (cache.hasMarket(marketId)) {
             return false;
@@ -2223,1583 +3854,6 @@ library Cache {
         return true;
     }
 
-    // ============ Getter Functions ============
-
-    function getNumMarkets(
-        MarketCache memory cache
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return cache.markets.length;
-    }
-
-    function hasMarket(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return cache.markets[marketId].price.value != 0;
-    }
-
-    function getIsClosing(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return cache.markets[marketId].isClosing;
-    }
-
-    function getPrice(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (Monetary.Price memory)
-    {
-        return cache.markets[marketId].price;
-    }
-
-    function getBorrowPar(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (uint128)
-    {
-        return cache.markets[marketId].borrowPar;
-    }
-}
-
-// File: contracts/protocol/lib/Actions.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title Actions
- * @author dYdX
- *
- * Library that defines and parses valid Actions
- */
-library Actions {
-
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Actions";
-
-    // ============ Enums ============
-
-    enum ActionType {
-        Deposit,   // supply tokens
-        Withdraw,  // borrow tokens
-        Transfer,  // transfer balance between accounts
-        Buy,       // buy an amount of some token (externally)
-        Sell,      // sell an amount of some token (externally)
-        Trade,     // trade tokens against another account
-        Liquidate, // liquidate an undercollateralized or expiring account
-        Vaporize,  // use excess tokens to zero-out a completely negative account
-        Call       // send arbitrary data to an address
-    }
-
-    enum AccountLayout {
-        OnePrimary,
-        TwoPrimary,
-        PrimaryAndSecondary
-    }
-
-    enum MarketLayout {
-        ZeroMarkets,
-        OneMarket,
-        TwoMarkets
-    }
-
-    // ============ Structs ============
-
-    /*
-     * Arguments that are passed to Solo in an ordered list as part of a single operation.
-     * Each ActionArgs has an actionType which specifies which action struct that this data will be
-     * parsed into before being processed.
-     */
-    struct ActionArgs {
-        ActionType actionType;
-        uint256 accountId;
-        Types.AssetAmount amount;
-        uint256 primaryMarketId;
-        uint256 secondaryMarketId;
-        address otherAddress;
-        uint256 otherAccountId;
-        bytes data;
-    }
-
-    // ============ Action Types ============
-
-    /*
-     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
-     */
-    struct DepositArgs {
-        Types.AssetAmount amount;
-        Account.Info account;
-        uint256 market;
-        address from;
-    }
-
-    /*
-     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
-     * previously supplied.
-     */
-    struct WithdrawArgs {
-        Types.AssetAmount amount;
-        Account.Info account;
-        uint256 market;
-        address to;
-    }
-
-    /*
-     * Transfers balance between two accounts. The msg.sender must be an operator for both accounts.
-     * The amount field applies to accountOne.
-     * This action does not require any token movement since the trade is done internally to Solo.
-     */
-    struct TransferArgs {
-        Types.AssetAmount amount;
-        Account.Info accountOne;
-        Account.Info accountTwo;
-        uint256 market;
-    }
-
-    /*
-     * Acquires a certain amount of tokens by spending other tokens. Sends takerMarket tokens to the
-     * specified exchangeWrapper contract and expects makerMarket tokens in return. The amount field
-     * applies to the makerMarket.
-     */
-    struct BuyArgs {
-        Types.AssetAmount amount;
-        Account.Info account;
-        uint256 makerMarket;
-        uint256 takerMarket;
-        address exchangeWrapper;
-        bytes orderData;
-    }
-
-    /*
-     * Spends a certain amount of tokens to acquire other tokens. Sends takerMarket tokens to the
-     * specified exchangeWrapper and expects makerMarket tokens in return. The amount field applies
-     * to the takerMarket.
-     */
-    struct SellArgs {
-        Types.AssetAmount amount;
-        Account.Info account;
-        uint256 takerMarket;
-        uint256 makerMarket;
-        address exchangeWrapper;
-        bytes orderData;
-    }
-
-    /*
-     * Trades balances between two accounts using any external contract that implements the
-     * AutoTrader interface. The AutoTrader contract must be an operator for the makerAccount (for
-     * which it is trading on-behalf-of). The amount field applies to the makerAccount and the
-     * inputMarket. This proposed change to the makerAccount is passed to the AutoTrader which will
-     * quote a change for the makerAccount in the outputMarket (or will disallow the trade).
-     * This action does not require any token movement since the trade is done internally to Solo.
-     */
-    struct TradeArgs {
-        Types.AssetAmount amount;
-        Account.Info takerAccount;
-        Account.Info makerAccount;
-        uint256 inputMarket;
-        uint256 outputMarket;
-        address autoTrader;
-        bytes tradeData;
-    }
-
-    /*
-     * Each account must maintain a certain margin-ratio (specified globally). If the account falls
-     * below this margin-ratio, it can be liquidated by any other account. This allows anyone else
-     * (arbitrageurs) to repay any borrowed asset (owedMarket) of the liquidating account in
-     * exchange for any collateral asset (heldMarket) of the liquidAccount. The ratio is determined
-     * by the price ratio (given by the oracles) plus a spread (specified globally). Liquidating an
-     * account also sets a flag on the account that the account is being liquidated. This allows
-     * anyone to continue liquidating the account until there are no more borrows being taken by the
-     * liquidating account. Liquidators do not have to liquidate the entire account all at once but
-     * can liquidate as much as they choose. The liquidating flag allows liquidators to continue
-     * liquidating the account even if it becomes collateralized through partial liquidation or
-     * price movement.
-     */
-    struct LiquidateArgs {
-        Types.AssetAmount amount;
-        Account.Info solidAccount;
-        Account.Info liquidAccount;
-        uint256 owedMarket;
-        uint256 heldMarket;
-    }
-
-    /*
-     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances
-     * remaining. The arbitrageur pays back the negative asset (owedMarket) of the vaporAccount in
-     * exchange for a collateral asset (heldMarket) at a favorable spread. However, since the
-     * liquidAccount has no collateral assets, the collateral must come from Solo's excess tokens.
-     */
-    struct VaporizeArgs {
-        Types.AssetAmount amount;
-        Account.Info solidAccount;
-        Account.Info vaporAccount;
-        uint256 owedMarket;
-        uint256 heldMarket;
-    }
-
-    /*
-     * Passes arbitrary bytes of data to an external contract that implements the Callee interface.
-     * Does not change any asset amounts. This function may be useful for setting certain variables
-     * on layer-two contracts for certain accounts without having to make a separate Ethereum
-     * transaction for doing so. Also, the second-layer contracts can ensure that the call is coming
-     * from an operator of the particular account.
-     */
-    struct CallArgs {
-        Account.Info account;
-        address callee;
-        bytes data;
-    }
-
-    // ============ Helper Functions ============
-
-    function getMarketLayout(
-        ActionType actionType
-    )
-        internal
-        pure
-        returns (MarketLayout)
-    {
-        if (
-            actionType == Actions.ActionType.Deposit
-            || actionType == Actions.ActionType.Withdraw
-            || actionType == Actions.ActionType.Transfer
-        ) {
-            return MarketLayout.OneMarket;
-        }
-        else if (actionType == Actions.ActionType.Call) {
-            return MarketLayout.ZeroMarkets;
-        }
-        return MarketLayout.TwoMarkets;
-    }
-
-    function getAccountLayout(
-        ActionType actionType
-    )
-        internal
-        pure
-        returns (AccountLayout)
-    {
-        if (
-            actionType == Actions.ActionType.Transfer
-            || actionType == Actions.ActionType.Trade
-        ) {
-            return AccountLayout.TwoPrimary;
-        } else if (
-            actionType == Actions.ActionType.Liquidate
-            || actionType == Actions.ActionType.Vaporize
-        ) {
-            return AccountLayout.PrimaryAndSecondary;
-        }
-        return AccountLayout.OnePrimary;
-    }
-
-    // ============ Parsing Functions ============
-
-    function parseDepositArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (DepositArgs memory)
-    {
-        assert(args.actionType == ActionType.Deposit);
-        return DepositArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            from: args.otherAddress
-        });
-    }
-
-    function parseWithdrawArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (WithdrawArgs memory)
-    {
-        assert(args.actionType == ActionType.Withdraw);
-        return WithdrawArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            to: args.otherAddress
-        });
-    }
-
-    function parseTransferArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (TransferArgs memory)
-    {
-        assert(args.actionType == ActionType.Transfer);
-        return TransferArgs({
-            amount: args.amount,
-            accountOne: accounts[args.accountId],
-            accountTwo: accounts[args.otherAccountId],
-            market: args.primaryMarketId
-        });
-    }
-
-    function parseBuyArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (BuyArgs memory)
-    {
-        assert(args.actionType == ActionType.Buy);
-        return BuyArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            makerMarket: args.primaryMarketId,
-            takerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
-        });
-    }
-
-    function parseSellArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (SellArgs memory)
-    {
-        assert(args.actionType == ActionType.Sell);
-        return SellArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            takerMarket: args.primaryMarketId,
-            makerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
-        });
-    }
-
-    function parseTradeArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (TradeArgs memory)
-    {
-        assert(args.actionType == ActionType.Trade);
-        return TradeArgs({
-            amount: args.amount,
-            takerAccount: accounts[args.accountId],
-            makerAccount: accounts[args.otherAccountId],
-            inputMarket: args.primaryMarketId,
-            outputMarket: args.secondaryMarketId,
-            autoTrader: args.otherAddress,
-            tradeData: args.data
-        });
-    }
-
-    function parseLiquidateArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (LiquidateArgs memory)
-    {
-        assert(args.actionType == ActionType.Liquidate);
-        return LiquidateArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            liquidAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
-        });
-    }
-
-    function parseVaporizeArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (VaporizeArgs memory)
-    {
-        assert(args.actionType == ActionType.Vaporize);
-        return VaporizeArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            vaporAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
-        });
-    }
-
-    function parseCallArgs(
-        Account.Info[] memory accounts,
-        ActionArgs memory args
-    )
-        internal
-        pure
-        returns (CallArgs memory)
-    {
-        assert(args.actionType == ActionType.Call);
-        return CallArgs({
-            account: accounts[args.accountId],
-            callee: args.otherAddress,
-            data: args.data
-        });
-    }
-}
-
-// File: contracts/protocol/interfaces/ICallee.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title ICallee
- * @author dYdX
- *
- * Interface that Callees for Solo must implement in order to ingest data.
- */
-contract ICallee {
-
-    // ============ Public Functions ============
-
-    /**
-     * Allows users to send this contract arbitrary data.
-     *
-     * @param  sender       The msg.sender to Solo
-     * @param  accountInfo  The account from which the data is being sent
-     * @param  data         Arbitrary data given by the sender
-     */
-    function callFunction(
-        address sender,
-        Account.Info memory accountInfo,
-        bytes memory data
-    )
-        public;
-}
-
-// File: contracts/protocol/lib/Require.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-/**
- * @title Require
- * @author dYdX
- *
- * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
- */
-library Require {
-
-    // ============ Constants ============
-
-    uint256 constant ASCII_ZERO = 48; // '0'
-    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
-    uint256 constant ASCII_LOWER_EX = 120; // 'x'
-    bytes2 constant COLON = 0x3a20; // ': '
-    bytes2 constant COMMA = 0x2c20; // ', '
-    bytes2 constant LPAREN = 0x203c; // ' <'
-    byte constant RPAREN = 0x3e; // '>'
-    uint256 constant FOUR_BIT_MASK = 0xf;
-
-    // ============ Library Functions ============
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason)
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        uint256 payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        uint256 payloadA,
-        uint256 payloadB
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA,
-        uint256 payloadB
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA,
-        uint256 payloadB,
-        uint256 payloadC
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        bytes32 payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        bytes32 payloadA,
-        uint256 payloadB,
-        uint256 payloadC
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    // ============ Private Functions ============
-
-    function stringifyTruncated(
-        bytes32 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        // put the input bytes into the result
-        bytes memory result = abi.encodePacked(input);
-
-        // determine the length of the input by finding the location of the last non-zero byte
-        for (uint256 i = 32; i > 0; ) {
-            // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
-            i--;
-
-            // find the last non-zero byte in order to determine the length
-            if (result[i] != 0) {
-                uint256 length = i + 1;
-
-                /* solium-disable-next-line security/no-inline-assembly */
-                assembly {
-                    mstore(result, length) // r.length = length;
-                }
-
-                return result;
-            }
-        }
-
-        // all bytes are zero
-        return new bytes(0);
-    }
-
-    function stringify(
-        uint256 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        if (input == 0) {
-            return "0";
-        }
-
-        // get the final string length
-        uint256 j = input;
-        uint256 length;
-        while (j != 0) {
-            length++;
-            j /= 10;
-        }
-
-        // allocate the string
-        bytes memory bstr = new bytes(length);
-
-        // populate the string starting with the least-significant character
-        j = input;
-        for (uint256 i = length; i > 0; ) {
-            // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
-            i--;
-
-            // take last decimal digit
-            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
-
-            // remove the last decimal digit
-            j /= 10;
-        }
-
-        return bstr;
-    }
-
-    function stringify(
-        address input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        uint256 z = uint256(input);
-
-        // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
-        bytes memory result = new bytes(42);
-
-        // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
-
-        // for each byte (starting from the lowest byte), populate the result with two characters
-        for (uint256 i = 0; i < 20; i++) {
-            // each byte takes two characters
-            uint256 shift = i * 2;
-
-            // populate the least-significant character
-            result[41 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-
-            // populate the most-significant character
-            result[40 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-        }
-
-        return result;
-    }
-
-    function stringify(
-        bytes32 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        uint256 z = uint256(input);
-
-        // bytes32 are "0x" followed by 32 bytes of data which take up 2 characters each
-        bytes memory result = new bytes(66);
-
-        // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
-
-        // for each byte (starting from the lowest byte), populate the result with two characters
-        for (uint256 i = 0; i < 32; i++) {
-            // each byte takes two characters
-            uint256 shift = i * 2;
-
-            // populate the least-significant character
-            result[65 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-
-            // populate the most-significant character
-            result[64 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-        }
-
-        return result;
-    }
-
-    function char(
-        uint256 input
-    )
-        private
-        pure
-        returns (byte)
-    {
-        // return ASCII digit (0-9)
-        if (input < 10) {
-            return byte(uint8(input + ASCII_ZERO));
-        }
-
-        // return ASCII letter (a-f)
-        return byte(uint8(input + ASCII_RELATIVE_ZERO));
-    }
-}
-
-// File: contracts/protocol/lib/Math.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title Math
- * @author dYdX
- *
- * Library for non-standard Math functions
- */
-library Math {
-    using SafeMath for uint256;
-
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Math";
-
-    // ============ Library Functions ============
-
-    /*
-     * Return target * (numerator / denominator).
-     */
-    function getPartial(
-        uint256 target,
-        uint256 numerator,
-        uint256 denominator
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return target.mul(numerator).div(denominator);
-    }
-
-    /*
-     * Return target * (numerator / denominator), but rounded up.
-     */
-    function getPartialRoundUp(
-        uint256 target,
-        uint256 numerator,
-        uint256 denominator
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        if (target == 0 || numerator == 0) {
-            // SafeMath will check for zero denominator
-            return SafeMath.div(0, denominator);
-        }
-        return target.mul(numerator).sub(1).div(denominator).add(1);
-    }
-
-    function to128(
-        uint256 number
-    )
-        internal
-        pure
-        returns (uint128)
-    {
-        uint128 result = uint128(number);
-        Require.that(
-            result == number,
-            FILE,
-            "Unsafe cast to uint128"
-        );
-        return result;
-    }
-
-    function to96(
-        uint256 number
-    )
-        internal
-        pure
-        returns (uint96)
-    {
-        uint96 result = uint96(number);
-        Require.that(
-            result == number,
-            FILE,
-            "Unsafe cast to uint96"
-        );
-        return result;
-    }
-
-    function to32(
-        uint256 number
-    )
-        internal
-        pure
-        returns (uint32)
-    {
-        uint32 result = uint32(number);
-        Require.that(
-            result == number,
-            FILE,
-            "Unsafe cast to uint32"
-        );
-        return result;
-    }
-
-    function min(
-        uint256 a,
-        uint256 b
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return a < b ? a : b;
-    }
-
-    function max(
-        uint256 a,
-        uint256 b
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return a > b ? a : b;
-    }
-}
-
-// File: contracts/protocol/lib/Types.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title Types
- * @author dYdX
- *
- * Library for interacting with the basic structs used in Solo
- */
-library Types {
-    using Math for uint256;
-
-    // ============ AssetAmount ============
-
-    enum AssetDenomination {
-        Wei, // the amount is denominated in wei
-        Par  // the amount is denominated in par
-    }
-
-    enum AssetReference {
-        Delta, // the amount is given as a delta from the current value
-        Target // the amount is given as an exact number to end up at
-    }
-
-    struct AssetAmount {
-        bool sign; // true if positive
-        AssetDenomination denomination;
-        AssetReference ref;
-        uint256 value;
-    }
-
-    // ============ Par (Principal Amount) ============
-
-    // Total borrow and supply values for a market
-    struct TotalPar {
-        uint128 borrow;
-        uint128 supply;
-    }
-
-    // Individual principal amount for an account
-    struct Par {
-        bool sign; // true if positive
-        uint128 value;
-    }
-
-    function zeroPar()
-        internal
-        pure
-        returns (Par memory)
-    {
-        return Par({
-            sign: false,
-            value: 0
-        });
-    }
-
-    function sub(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        return add(a, negative(b));
-    }
-
-    function add(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        Par memory result;
-        if (a.sign == b.sign) {
-            result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value).to128();
-        } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value).to128();
-            } else {
-                result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value).to128();
-            }
-        }
-        return result;
-    }
-
-    function equals(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        if (a.value == b.value) {
-            if (a.value == 0) {
-                return true;
-            }
-            return a.sign == b.sign;
-        }
-        return false;
-    }
-
-    function negative(
-        Par memory a
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        return Par({
-            sign: !a.sign,
-            value: a.value
-        });
-    }
-
-    function isNegative(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return !a.sign && a.value > 0;
-    }
-
-    function isPositive(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.sign && a.value > 0;
-    }
-
-    function isZero(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.value == 0;
-    }
-
-    // ============ Wei (Token Amount) ============
-
-    // Individual token amount for an account
-    struct Wei {
-        bool sign; // true if positive
-        uint256 value;
-    }
-
-    function zeroWei()
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return Wei({
-            sign: false,
-            value: 0
-        });
-    }
-
-    function sub(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return add(a, negative(b));
-    }
-
-    function add(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        Wei memory result;
-        if (a.sign == b.sign) {
-            result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value);
-        } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value);
-            } else {
-                result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value);
-            }
-        }
-        return result;
-    }
-
-    function equals(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        if (a.value == b.value) {
-            if (a.value == 0) {
-                return true;
-            }
-            return a.sign == b.sign;
-        }
-        return false;
-    }
-
-    function negative(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return Wei({
-            sign: !a.sign,
-            value: a.value
-        });
-    }
-
-    function isNegative(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return !a.sign && a.value > 0;
-    }
-
-    function isPositive(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.sign && a.value > 0;
-    }
-
-    function isZero(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.value == 0;
-    }
-}
-
-// File: contracts/protocol/lib/Account.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title Account
- * @author dYdX
- *
- * Library of structs and functions that represent an account
- */
-library Account {
-    // ============ Enums ============
-
-    /*
-     * Most-recently-cached account status.
-     *
-     * Normal: Can only be liquidated if the account values are violating the global margin-ratio.
-     * Liquid: Can be liquidated no matter the account values.
-     *         Can be vaporized if there are no more positive account values.
-     * Vapor:  Has only negative (or zeroed) account values. Can be vaporized.
-     *
-     */
-    enum Status {
-        Normal,
-        Liquid,
-        Vapor
-    }
-
-    // ============ Structs ============
-
-    // Represents the unique key that specifies an account
-    struct Info {
-        address owner;  // The address that owns the account
-        uint256 number; // A nonce that allows a single address to control many accounts
-    }
-
-    // The complete storage for any account
-    struct Storage {
-        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
-        Status status;
-    }
-
-    // ============ Library Functions ============
-
-    function equals(
-        Info memory a,
-        Info memory b
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.owner == b.owner && a.number == b.number;
-    }
-}
-
-// File: contracts/protocol/interfaces/IAutoTrader.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title IAutoTrader
- * @author dYdX
- *
- * Interface that Auto-Traders for Solo must implement in order to approve trades.
- */
-contract IAutoTrader {
-
-    // ============ Public Functions ============
-
-    /**
-     * Allows traders to make trades approved by this smart contract. The active trader's account is
-     * the takerAccount and the passive account (for which this contract approves trades
-     * on-behalf-of) is the makerAccount.
-     *
-     * @param  inputMarketId   The market for which the trader specified the original amount
-     * @param  outputMarketId  The market for which the trader wants the resulting amount specified
-     * @param  makerAccount    The account for which this contract is making trades
-     * @param  takerAccount    The account requesting the trade
-     * @param  oldInputPar     The old principal amount for the makerAccount for the inputMarketId
-     * @param  newInputPar     The new principal amount for the makerAccount for the inputMarketId
-     * @param  inputWei        The change in token amount for the makerAccount for the inputMarketId
-     * @param  data            Arbitrary data passed in by the trader
-     * @return                 The AssetAmount for the makerAccount for the outputMarketId
-     */
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory oldInputPar,
-        Types.Par memory newInputPar,
-        Types.Wei memory inputWei,
-        bytes memory data
-    )
-        public
-        returns (Types.AssetAmount memory);
-}
-
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
- */
-library SafeMath {
-    /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b);
-
-        return c;
-    }
-
-    /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
-
-        return c;
-    }
-
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
-        return a % b;
-    }
 }
 
 // File: contracts/protocol/impl/OperationImpl.sol
@@ -3823,6 +3877,8 @@ library SafeMath {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
 
 
 
@@ -3847,6 +3903,7 @@ pragma solidity ^0.5.7;
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
+    using MarketCachePersister for Cache.MarketCache;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;

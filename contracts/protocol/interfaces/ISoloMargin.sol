@@ -2,10 +2,10 @@ pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "../lib/Account.sol";
-import "../lib/Interest.sol";
 import "../lib/Actions.sol";
-
-import "../Permission.sol";
+import "../lib/Interest.sol";
+import "../lib/Monetary.sol";
+import "../lib/Types.sol";
 
 interface ISoloMargin {
 
@@ -37,7 +37,29 @@ interface ISoloMargin {
     ) external;
 
     function setOperators(
-        Permission.OperatorArg[] calldata args
+        Types.OperatorArg[] calldata args
     ) external;
+
+    function getIsLocalOperator(
+        address owner,
+        address operator
+    ) external view returns (bool);
+
+    function getAccountStatus(
+        Account.Info calldata account
+    ) external view returns (Account.Status);
+
+    function getMarketPrice(
+        uint256 marketId
+    ) external view returns (Monetary.Price memory);
+
+    function getNumMarkets() external view returns (uint256);
+
+    function getMarginRatio() external view returns (Decimal.D256 memory);
+
+    function getLiquidationSpreadForPair(
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    ) external view returns (Decimal.D256 memory);
 
 }

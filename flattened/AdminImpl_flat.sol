@@ -1317,6 +1317,13 @@ pragma solidity ^0.5.7;
 library Types {
     using Math for uint256;
 
+    // ============ Permission ============
+
+    struct OperatorArg {
+        address operator;
+        bool trusted;
+    }
+
     // ============ AssetAmount ============
 
     enum AssetDenomination {

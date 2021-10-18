@@ -597,6 +597,10 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         }
 
         for (uint i = 0; i < pools.length; i++) {
+            require(
+                accounts[i + 1].owner == pools[i],
+                "DolomiteAmmRouterProxy::_getActionArgsForModifyPosition: INVALID_OTHER_ADDRESS"
+            );
             actions[i] = _encodeTradeAction(
                 0,
                 i + 1,

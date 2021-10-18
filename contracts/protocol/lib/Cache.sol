@@ -20,7 +20,6 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Monetary } from "./Monetary.sol";
-import { Storage } from "./Storage.sol";
 
 
 /**
@@ -31,7 +30,6 @@ import { Storage } from "./Storage.sol";
  */
 library Cache {
     using Cache for MarketCache;
-    using Storage for Storage.State;
 
     // ============ Structs ============
 
@@ -60,30 +58,6 @@ library Cache {
         return MarketCache({
             markets: new MarketInfo[](numMarkets)
         });
-    }
-
-    /**
-     * Add market information (price and total borrowed par if the market is closing) to the cache.
-     * Return true if the market information did not previously exist in the cache.
-     */
-    function addMarket(
-        MarketCache memory cache,
-        Storage.State storage state,
-        uint256 marketId
-    )
-        internal
-        view
-        returns (bool)
-    {
-        if (cache.hasMarket(marketId)) {
-            return false;
-        }
-        cache.markets[marketId].price = state.fetchPrice(marketId);
-        if (state.markets[marketId].isClosing) {
-            cache.markets[marketId].isClosing = true;
-            cache.markets[marketId].borrowPar = state.getTotalPar(marketId).borrow;
-        }
-        return true;
     }
 
     // ============ Getter Functions ============

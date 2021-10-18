@@ -1,333 +1,68 @@
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
-// File: contracts/protocol/lib/Types.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
-
-
-
+pragma solidity ^0.5.0;
 
 /**
- * @title Types
- * @author dYdX
- *
- * Library for interacting with the basic structs used in Solo
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
  */
-library Types {
-    using Math for uint256;
-
-    // ============ AssetAmount ============
-
-    enum AssetDenomination {
-        Wei, // the amount is denominated in wei
-        Par  // the amount is denominated in par
-    }
-
-    enum AssetReference {
-        Delta, // the amount is given as a delta from the current value
-        Target // the amount is given as an exact number to end up at
-    }
-
-    struct AssetAmount {
-        bool sign; // true if positive
-        AssetDenomination denomination;
-        AssetReference ref;
-        uint256 value;
-    }
-
-    // ============ Par (Principal Amount) ============
-
-    // Total borrow and supply values for a market
-    struct TotalPar {
-        uint128 borrow;
-        uint128 supply;
-    }
-
-    // Individual principal amount for an account
-    struct Par {
-        bool sign; // true if positive
-        uint128 value;
-    }
-
-    function zeroPar()
-        internal
-        pure
-        returns (Par memory)
-    {
-        return Par({
-            sign: false,
-            value: 0
-        });
-    }
-
-    function sub(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        return add(a, negative(b));
-    }
-
-    function add(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        Par memory result;
-        if (a.sign == b.sign) {
-            result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value).to128();
-        } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value).to128();
-            } else {
-                result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value).to128();
-            }
+library SafeMath {
+    /**
+    * @dev Multiplies two unsigned integers, reverts on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
         }
-        return result;
+
+        uint256 c = a * b;
+        require(c / a == b);
+
+        return c;
     }
 
-    function equals(
-        Par memory a,
-        Par memory b
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        if (a.value == b.value) {
-            if (a.value == 0) {
-                return true;
-            }
-            return a.sign == b.sign;
-        }
-        return false;
+    /**
+    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
     }
 
-    function negative(
-        Par memory a
-    )
-        internal
-        pure
-        returns (Par memory)
-    {
-        return Par({
-            sign: !a.sign,
-            value: a.value
-        });
+    /**
+    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a);
+        uint256 c = a - b;
+
+        return c;
     }
 
-    function isNegative(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return !a.sign && a.value > 0;
+    /**
+    * @dev Adds two unsigned integers, reverts on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a);
+
+        return c;
     }
 
-    function isPositive(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.sign && a.value > 0;
-    }
-
-    function isZero(
-        Par memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.value == 0;
-    }
-
-    // ============ Wei (Token Amount) ============
-
-    // Individual token amount for an account
-    struct Wei {
-        bool sign; // true if positive
-        uint256 value;
-    }
-
-    function zeroWei()
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return Wei({
-            sign: false,
-            value: 0
-        });
-    }
-
-    function sub(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return add(a, negative(b));
-    }
-
-    function add(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        Wei memory result;
-        if (a.sign == b.sign) {
-            result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value);
-        } else {
-            if (a.value >= b.value) {
-                result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value);
-            } else {
-                result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value);
-            }
-        }
-        return result;
-    }
-
-    function equals(
-        Wei memory a,
-        Wei memory b
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        if (a.value == b.value) {
-            if (a.value == 0) {
-                return true;
-            }
-            return a.sign == b.sign;
-        }
-        return false;
-    }
-
-    function negative(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (Wei memory)
-    {
-        return Wei({
-            sign: !a.sign,
-            value: a.value
-        });
-    }
-
-    function isNegative(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return !a.sign && a.value > 0;
-    }
-
-    function isPositive(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.sign && a.value > 0;
-    }
-
-    function isZero(
-        Wei memory a
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        return a.value == 0;
-    }
-}
-
-// File: contracts/protocol/lib/Time.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title Time
- * @author dYdX
- *
- * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
- */
-library Time {
-
-    // ============ Library Functions ============
-
-    function currentTime()
-        internal
-        view
-        returns (uint32)
-    {
-        return Math.to32(block.timestamp);
+    /**
+    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+    * reverts when dividing by zero.
+    */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
     }
 }
 
@@ -352,6 +87,7 @@ library Time {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 /**
@@ -767,6 +503,7 @@ library Require {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -912,6 +649,7 @@ library Math {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -978,6 +716,346 @@ library Decimal {
     }
 }
 
+// File: contracts/protocol/lib/Time.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+/**
+ * @title Time
+ * @author dYdX
+ *
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
+ */
+library Time {
+
+    // ============ Library Functions ============
+
+    function currentTime()
+        internal
+        view
+        returns (uint32)
+    {
+        return Math.to32(block.timestamp);
+    }
+}
+
+// File: contracts/protocol/lib/Types.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+
+/**
+ * @title Types
+ * @author dYdX
+ *
+ * Library for interacting with the basic structs used in Solo
+ */
+library Types {
+    using Math for uint256;
+
+    // ============ Permission ============
+
+    struct OperatorArg {
+        address operator;
+        bool trusted;
+    }
+
+    // ============ AssetAmount ============
+
+    enum AssetDenomination {
+        Wei, // the amount is denominated in wei
+        Par  // the amount is denominated in par
+    }
+
+    enum AssetReference {
+        Delta, // the amount is given as a delta from the current value
+        Target // the amount is given as an exact number to end up at
+    }
+
+    struct AssetAmount {
+        bool sign; // true if positive
+        AssetDenomination denomination;
+        AssetReference ref;
+        uint256 value;
+    }
+
+    // ============ Par (Principal Amount) ============
+
+    // Total borrow and supply values for a market
+    struct TotalPar {
+        uint128 borrow;
+        uint128 supply;
+    }
+
+    // Individual principal amount for an account
+    struct Par {
+        bool sign; // true if positive
+        uint128 value;
+    }
+
+    function zeroPar()
+        internal
+        pure
+        returns (Par memory)
+    {
+        return Par({
+            sign: false,
+            value: 0
+        });
+    }
+
+    function sub(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        return add(a, negative(b));
+    }
+
+    function add(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        Par memory result;
+        if (a.sign == b.sign) {
+            result.sign = a.sign;
+            result.value = SafeMath.add(a.value, b.value).to128();
+        } else {
+            if (a.value >= b.value) {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value).to128();
+            } else {
+                result.sign = b.sign;
+                result.value = SafeMath.sub(b.value, a.value).to128();
+            }
+        }
+        return result;
+    }
+
+    function equals(
+        Par memory a,
+        Par memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
+        }
+        return false;
+    }
+
+    function negative(
+        Par memory a
+    )
+        internal
+        pure
+        returns (Par memory)
+    {
+        return Par({
+            sign: !a.sign,
+            value: a.value
+        });
+    }
+
+    function isNegative(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return !a.sign && a.value > 0;
+    }
+
+    function isPositive(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
+    }
+
+    // ============ Wei (Token Amount) ============
+
+    // Individual token amount for an account
+    struct Wei {
+        bool sign; // true if positive
+        uint256 value;
+    }
+
+    function zeroWei()
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return Wei({
+            sign: false,
+            value: 0
+        });
+    }
+
+    function sub(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return add(a, negative(b));
+    }
+
+    function add(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        Wei memory result;
+        if (a.sign == b.sign) {
+            result.sign = a.sign;
+            result.value = SafeMath.add(a.value, b.value);
+        } else {
+            if (a.value >= b.value) {
+                result.sign = a.sign;
+                result.value = SafeMath.sub(a.value, b.value);
+            } else {
+                result.sign = b.sign;
+                result.value = SafeMath.sub(b.value, a.value);
+            }
+        }
+        return result;
+    }
+
+    function equals(
+        Wei memory a,
+        Wei memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.value == b.value) {
+            if (a.value == 0) {
+                return true;
+            }
+            return a.sign == b.sign;
+        }
+        return false;
+    }
+
+    function negative(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (Wei memory)
+    {
+        return Wei({
+            sign: !a.sign,
+            value: a.value
+        });
+    }
+
+    function isNegative(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return !a.sign && a.value > 0;
+    }
+
+    function isPositive(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.sign && a.value > 0;
+    }
+
+    function isZero(
+        Wei memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value == 0;
+    }
+}
+
 // File: contracts/protocol/lib/Interest.sol
 
 /*
@@ -999,6 +1077,7 @@ library Decimal {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1040,7 +1119,7 @@ library Interest {
      * Calculate interest for borrowers by using the formula rate * time. Approximates
      * continuously-compounded interest when called frequently, but is much more
      * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated the across all suppliers.
+     * then prorated across all suppliers.
      *
      * @param  index         The old index for a market
      * @param  rate          The current interest rate of the market
@@ -1194,6 +1273,7 @@ library Interest {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1225,74 +1305,6 @@ interface IInterestSetter {
         returns (Interest.Rate memory);
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
- */
-library SafeMath {
-    /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b);
-
-        return c;
-    }
-
-    /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
-
-        return c;
-    }
-
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
-        return a % b;
-    }
-}
-
 // File: contracts/external/interestsetters/DoubleExponentInterestSetter.sol
 
 /*
@@ -1314,6 +1326,7 @@ library SafeMath {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
 
 

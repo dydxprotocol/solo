@@ -28,6 +28,7 @@ import { Cache } from "../lib/Cache.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { MarketCachePersister } from "../lib/MarketCachePersister.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
@@ -43,6 +44,7 @@ import { Types } from "../lib/Types.sol";
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
+    using MarketCachePersister for Cache.MarketCache;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;

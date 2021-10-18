@@ -1,137 +1,69 @@
-// Be sure to check constructor args when verifying
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
 
-// File: contracts/external/interfaces/IChainlinkAggregator.sol
-
-/*
-
-    Copyright 2020 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
-
+pragma solidity ^0.5.0;
 
 /**
- * @title IChainlinkAggregator
- * @author Dolomite
- *
- * Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
  */
-contract IChainlinkAggregator {
+library SafeMath {
+    /**
+    * @dev Multiplies two unsigned integers, reverts on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
 
-    function latestAnswer() public view returns (int256);
+        uint256 c = a * b;
+        require(c / a == b);
 
-}
-// File: contracts/protocol/lib/Monetary.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-/**
- * @title Monetary
- * @author dYdX
- *
- * Library for types involving money
- */
-library Monetary {
-
-    /*
-     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
-     */
-    struct Price {
-        uint256 value;
+        return c;
     }
-
-    /*
-     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
-     */
-    struct Value {
-        uint256 value;
-    }
-}
-
-// File: contracts/protocol/interfaces/IPriceOracle.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-/**
- * @title IPriceOracle
- * @author dYdX
- *
- * Interface that Price Oracles for Solo must implement in order to report prices.
- */
-contract IPriceOracle {
-
-    // ============ Constants ============
-
-    uint256 public constant ONE_DOLLAR = 10 ** 36;
-
-    // ============ Public Functions ============
 
     /**
-     * Get the price of a token
-     *
-     * @param  token  The ERC20 token address of the market
-     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
-     *                So a USD-stable coin with 18 decimal places would return 10^18.
-     *                This is the price of the base unit rather than the price of a "human-readable"
-     *                token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
-    )
-        public
-        view
-        returns (Monetary.Price memory);
+    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+    * @dev Adds two unsigned integers, reverts on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a);
+
+        return c;
+    }
+
+    /**
+    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+    * reverts when dividing by zero.
+    */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
+    }
 }
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
@@ -209,72 +141,143 @@ contract Ownable {
     }
 }
 
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: contracts/protocol/lib/Monetary.sol
 
-pragma solidity ^0.5.0;
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
 
 /**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
+ * @title Monetary
+ * @author dYdX
+ *
+ * Library for types involving money
  */
-library SafeMath {
-    /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
+library Monetary {
 
-        uint256 c = a * b;
-        require(c / a == b);
-
-        return c;
+    /*
+     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
+     */
+    struct Price {
+        uint256 value;
     }
 
-    /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
+    /*
+     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
+     */
+    struct Value {
+        uint256 value;
     }
+}
+
+// File: contracts/protocol/interfaces/IPriceOracle.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+/**
+ * @title IPriceOracle
+ * @author dYdX
+ *
+ * Interface that Price Oracles for Solo must implement in order to report prices.
+ */
+contract IPriceOracle {
+
+    // ============ Constants ============
+
+    uint256 public constant ONE_DOLLAR = 10 ** 36;
+
+    // ============ Public Functions ============
 
     /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
+     * Get the price of a token
+     *
+     * @param  token  The ERC20 token address of the market
+     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
+     *                So a USD-stable coin with 18 decimal places would return 10^18.
+     *                This is the price of the base unit rather than the price of a "human-readable"
+     *                token amount. Every ERC20 may have a different number of decimals.
+     */
+    function getPrice(
+        address token
+    )
+        public
+        view
+        returns (Monetary.Price memory);
+}
 
-        return c;
-    }
+// File: contracts/external/interfaces/IChainlinkAggregator.sol
 
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
+/*
 
-        return c;
-    }
+    Copyright 2020 Dolomite.
 
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
-        return a % b;
-    }
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+/**
+ * @title IChainlinkAggregator
+ * @author Dolomite
+ *
+ * Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
+ */
+contract IChainlinkAggregator {
+
+    function latestAnswer() public view returns (int256);
+
 }
 
 // File: contracts/external/oracles/ChainlinkPriceOracleV1.sol
@@ -298,6 +301,8 @@ library SafeMath {
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
 
 
 
