@@ -20,6 +20,7 @@ export class LiquidatorProxyWithAmm {
     owedMarket: Integer,
     heldMarket: Integer,
     tokenPath: address[],
+    expiry: Integer | null,
     revertOnFailToSellCollateral: boolean,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
@@ -36,6 +37,7 @@ export class LiquidatorProxyWithAmm {
         owedMarket.toFixed(0),
         heldMarket.toFixed(0),
         tokenPath,
+        expiry ? expiry.toFixed(0) : '0',
         revertOnFailToSellCollateral,
       ),
       options,

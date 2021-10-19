@@ -1,7 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
-import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
+import {
+  fastForward, mineAvgBlock, resetEVM, snapshot,
+} from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -455,6 +457,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           market1,
           market2,
           defaultTokenPath,
+          null,
           true,
           { from: operator },
         );
@@ -713,6 +716,7 @@ async function liquidate(
     owedMarket,
     heldMarket,
     tokenPath,
+    null,
     revertOnFailToSellCollateral,
     { from: operator },
   );
