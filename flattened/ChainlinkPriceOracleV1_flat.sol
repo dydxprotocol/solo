@@ -209,7 +209,6 @@ library Monetary {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -265,7 +264,6 @@ contract IPriceOracle {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 /**
@@ -301,7 +299,6 @@ contract IChainlinkAggregator {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 

@@ -158,7 +158,7 @@
     "LiquidatorProxyV1WithAmmForSoloMargin": {
         "80001": {
             "links": {},
-            "address": "0x45B95F9B3B44FcF2fD4e6583D2aE1Ac1feA14CC4",
+            "address": "0x0A88a8021D95DC7698fDa69f20726162ebEaCD02",
             "transactionHash": "0x32453ab01629ab738ef2b29049663ed7bb18bd989ae3f3592f276098208289f4"
         }
     },

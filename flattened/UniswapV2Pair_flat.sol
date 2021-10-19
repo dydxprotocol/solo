@@ -503,7 +503,6 @@ library Require {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -649,7 +648,6 @@ library Math {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -945,7 +943,6 @@ library Types {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1022,7 +1019,6 @@ library Account {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1087,7 +1083,6 @@ contract IAutoTrader {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1505,7 +1500,6 @@ library Actions {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1593,7 +1587,6 @@ library Decimal {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1637,7 +1630,6 @@ library Time {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1833,7 +1825,6 @@ library Interest {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 /**
@@ -1862,7 +1853,6 @@ library Monetary {
 // File: contracts/protocol/interfaces/ISoloMargin.sol
 
 pragma solidity >=0.5.0;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1947,7 +1937,6 @@ interface ISoloMargin {
 */
 
 pragma solidity >=0.5.0;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1991,7 +1980,6 @@ interface IUniswapV2Factory {
 */
 
 pragma solidity >=0.5.0;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2200,7 +2188,6 @@ interface ITransferProxy {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title IERC20
@@ -2408,7 +2395,6 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
 // File: contracts/external/amm/UniswapV2Pair.sol
 
 pragma solidity ^0.5.16;
-pragma experimental ABIEncoderV2;
 
 
 

@@ -1372,7 +1372,6 @@ library Require {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1518,7 +1517,6 @@ library Math {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1814,7 +1812,6 @@ library Types {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1891,7 +1888,6 @@ library Account {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 /**
@@ -1938,7 +1934,6 @@ library Monetary {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2058,7 +2053,6 @@ library Cache {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2146,7 +2140,6 @@ library Decimal {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2190,7 +2183,6 @@ library Time {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2386,7 +2378,6 @@ library Interest {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title IERC20
@@ -2489,7 +2480,6 @@ interface IERC20 {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2665,7 +2655,6 @@ library Token {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2718,7 +2707,6 @@ interface IInterestSetter {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -2774,7 +2762,6 @@ contract IPriceOracle {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -3459,7 +3446,6 @@ library Storage {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -3495,7 +3481,6 @@ contract State
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -3935,7 +3920,6 @@ library AdminImpl {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -4235,7 +4219,6 @@ contract Admin is
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -4290,7 +4273,6 @@ library MarketCachePersister {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -4973,7 +4955,6 @@ contract Getters is
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -5038,7 +5019,6 @@ contract IAutoTrader {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -5088,7 +5068,6 @@ contract ICallee {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -5506,7 +5485,6 @@ library Actions {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -5971,7 +5949,6 @@ library Events {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 /**
@@ -6052,7 +6029,6 @@ interface IExchangeWrapper {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -6205,7 +6181,6 @@ library Exchange {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -7171,7 +7146,6 @@ library OperationImpl {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -7240,7 +7214,6 @@ contract Operation is
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -7310,7 +7283,6 @@ contract Permission is
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -7366,7 +7338,6 @@ contract SoloMargin is
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -7431,7 +7402,6 @@ contract OnlySolo {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 

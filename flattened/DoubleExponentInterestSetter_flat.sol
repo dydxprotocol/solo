@@ -503,7 +503,6 @@ library Require {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -649,7 +648,6 @@ library Math {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -737,7 +735,6 @@ library Decimal {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -781,7 +778,6 @@ library Time {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1077,7 +1073,6 @@ library Types {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1273,7 +1268,6 @@ library Interest {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1326,7 +1320,6 @@ interface IInterestSetter {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 

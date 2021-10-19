@@ -578,7 +578,6 @@ library Require {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -724,7 +723,6 @@ library Math {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1020,7 +1018,6 @@ library Types {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1097,7 +1094,6 @@ library Account {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
@@ -1162,7 +1158,6 @@ contract IAutoTrader {
 */
 
 pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
 
 
 
