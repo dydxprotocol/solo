@@ -1454,6 +1454,7 @@ interface IUniswapV2Factory {
     function allPairs(uint) external view returns (address pair);
     function allPairsLength() external view returns (uint);
     function getPairInitCode() external pure returns (bytes memory);
+    function getPairInitCodeHash() external pure returns (bytes32);
 
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
@@ -4094,6 +4095,10 @@ contract UniswapV2Factory is IUniswapV2Factory {
 
     function getPairInitCode() public pure returns (bytes memory) {
         return type(UniswapV2Pair).creationCode;
+    }
+
+    function getPairInitCodeHash() public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(getPairInitCode()));
     }
 
     function createPair(address tokenA, address tokenB) external returns (address pair) {

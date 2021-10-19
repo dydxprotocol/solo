@@ -41,6 +41,10 @@ contract UniswapV2Factory is IUniswapV2Factory {
         return type(UniswapV2Pair).creationCode;
     }
 
+    function getPairInitCodeHash() public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(getPairInitCode()));
+    }
+
     function createPair(address tokenA, address tokenB) external returns (address pair) {
         require(tokenA != tokenB, "DolomiteAmm: IDENTICAL_ADDRESSES");
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
