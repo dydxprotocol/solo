@@ -170,6 +170,7 @@ describe('Refunder', () => {
         skipRefunderLogs: false,
         skipAdminLogs: true,
         skipExpiryLogs: true,
+        skipFinalSettlementLogs: true,
         skipOperationLogs: true,
         skipPermissionLogs: true,
         skipLimitOrdersLogs: true,

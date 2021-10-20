@@ -30,6 +30,7 @@ import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInteres
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { Expiry } from '../../build/wrappers/Expiry';
 import { ExpiryV2 } from '../../build/wrappers/ExpiryV2';
+import { FinalSettlement } from '../../build/wrappers/FinalSettlement';
 import { Refunder } from '../../build/wrappers/Refunder';
 import { DaiMigrator } from '../../build/wrappers/DaiMigrator';
 import { LimitOrders } from '../../build/wrappers/LimitOrders';
@@ -56,6 +57,7 @@ import interestSetterJson from '../../build/published_contracts/IInterestSetter.
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
 import expiryJson from '../../build/published_contracts/Expiry.json';
 import expiryV2Json from '../../build/published_contracts/ExpiryV2.json';
+import finalSettlementJson from '../../build/published_contracts/FinalSettlement.json';
 import refunderJson from '../../build/published_contracts/Refunder.json';
 import daiMigratorJson from '../../build/published_contracts/DaiMigrator.json';
 import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
@@ -105,6 +107,7 @@ export class Contracts {
   public priceOracle: PriceOracle;
   public expiry: Expiry;
   public expiryV2: ExpiryV2;
+  public finalSettlement: FinalSettlement;
   public refunder: Refunder;
   public daiMigrator: DaiMigrator;
   public limitOrders: LimitOrders;
@@ -142,6 +145,7 @@ export class Contracts {
     this.priceOracle = new this.web3.eth.Contract(priceOracleJson.abi) as PriceOracle;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.expiryV2 = new this.web3.eth.Contract(expiryV2Json.abi) as ExpiryV2;
+    this.finalSettlement = new this.web3.eth.Contract(finalSettlementJson.abi) as FinalSettlement;
     this.refunder = new this.web3.eth.Contract(refunderJson.abi) as Refunder;
     this.daiMigrator = new this.web3.eth.Contract(daiMigratorJson.abi) as DaiMigrator;
     this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
@@ -180,6 +184,7 @@ export class Contracts {
       { contract: this.priceOracle, json: priceOracleJson },
       { contract: this.expiry, json: expiryJson },
       { contract: this.expiryV2, json: expiryV2Json },
+      { contract: this.finalSettlement, json: finalSettlementJson },
       { contract: this.refunder, json: refunderJson },
       { contract: this.daiMigrator, json: daiMigratorJson },
       { contract: this.limitOrders, json: limitOrdersJson },
@@ -222,6 +227,7 @@ export class Contracts {
     this.priceOracle.options.from = account;
     this.expiry.options.from = account;
     this.expiryV2.options.from = account;
+    this.finalSettlement.options.from = account;
     this.refunder.options.from = account;
     this.daiMigrator.options.from = account;
     this.limitOrders.options.from = account;

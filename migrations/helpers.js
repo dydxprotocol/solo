@@ -115,7 +115,11 @@ function getDaiPriceOracleDeviationParams(network) {
 }
 
 function getExpiryRampTime() {
-  return '3600';
+  return '3600'; // 1 hour
+}
+
+function getFinalSettlementRampTime() {
+  return '2419200'; // 28 days
 }
 
 function verifyNetwork(network) {
@@ -179,6 +183,7 @@ module.exports = {
   getDoubleExponentParams,
   getDaiPriceOracleDeviationParams,
   getExpiryRampTime,
+  getFinalSettlementRampTime,
   getOraclePokerAddress,
   getSenderAddress,
   getPartiallyDelayedMultisigAddress,

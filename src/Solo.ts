@@ -23,6 +23,7 @@ import { Interest } from './lib/Interest';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
 import { ExpiryV2 } from './modules/ExpiryV2';
+import { FinalSettlement } from './modules/FinalSettlement';
 import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
@@ -46,6 +47,7 @@ export class Solo {
   public interest: Interest;
   public token: Token;
   public expiryV2: ExpiryV2;
+  public finalSettlement: FinalSettlement;
   public oracle: Oracle;
   public weth: Weth;
   public web3: Web3;
@@ -89,6 +91,7 @@ export class Solo {
     this.interest = new Interest(networkId);
     this.token = new Token(this.contracts);
     this.expiryV2 = new ExpiryV2(this.contracts);
+    this.finalSettlement = new FinalSettlement(this.contracts);
     this.oracle = new Oracle(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
     this.admin = new Admin(this.contracts);

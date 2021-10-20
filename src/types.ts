@@ -119,6 +119,7 @@ export interface LogParsingOptions {
   skipAdminLogs?: boolean;
   skipPermissionLogs?: boolean;
   skipExpiryLogs?: boolean;
+  skipFinalSettlementLogs?: boolean;
   skipRefunderLogs?: boolean;
   skipLimitOrdersLogs?: boolean;
   skipSignedOperationProxyLogs?: boolean;

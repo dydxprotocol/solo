@@ -26,6 +26,7 @@ const {
   getRiskParams,
   getDaiPriceOracleDeviationParams,
   getExpiryRampTime,
+  getFinalSettlementRampTime,
   getOraclePokerAddress,
   getSenderAddress,
   getChainId,
@@ -64,6 +65,7 @@ const WETH9 = artifacts.require('WETH9');
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
 const Expiry = artifacts.require('Expiry');
 const ExpiryV2 = artifacts.require('ExpiryV2');
+const FinalSettlement = artifacts.require('FinalSettlement');
 const Refunder = artifacts.require('Refunder');
 const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
@@ -206,6 +208,11 @@ async function deploySecondLayer(deployer, network, accounts) {
       getExpiryRampTime(),
     ),
     deployer.deploy(
+      FinalSettlement,
+      soloMargin.address,
+      getFinalSettlementRampTime(),
+    ),
+    deployer.deploy(
       Refunder,
       soloMargin.address,
       [],
@@ -252,6 +259,10 @@ async function deploySecondLayer(deployer, network, accounts) {
     ),
     soloMargin.ownerSetGlobalOperator(
       ExpiryV2.address,
+      true,
+    ),
+    soloMargin.ownerSetGlobalOperator(
+      FinalSettlement.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(
