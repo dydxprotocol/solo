@@ -113,6 +113,13 @@
             "transactionHash": "0x4a321713b896facd93fa4baf340a57975432ad599cb084bc381cda5155ef5bc4"
         }
     },
+    "TestChainlinkPriceOracleV1": {
+        "80001": {
+            "links": {},
+            "address": "0xc55d2951D56BA3d379aa5c2a8e061c31927Ea428",
+            "transactionHash": "0xe11a32ca8211d05ae2c10837722eac99ae27a1580b639d50fc46959d5032f5ea"
+        }
+    },
     "ExpiryV2": {
         "80001": {
             "links": {},
