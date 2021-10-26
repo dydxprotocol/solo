@@ -8,6 +8,7 @@ import { default as IInterestSetter } from '../build/contracts/IInterestSetter.j
 import { default as IPriceOracle } from '../build/contracts/IPriceOracle.json';
 import { default as Expiry } from '../build/contracts/Expiry.json';
 import { default as ExpiryV2 } from '../build/contracts/ExpiryV2.json';
+import { default as FinalSettlement } from '../build/contracts/FinalSettlement.json';
 import { default as Refunder } from '../build/contracts/Refunder.json';
 import { default as DaiMigrator } from '../build/contracts/DaiMigrator.json';
 import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
@@ -41,6 +42,7 @@ export default {
   IPriceOracle,
   Expiry,
   ExpiryV2,
+  FinalSettlement,
   Refunder,
   DaiMigrator,
   LimitOrders,

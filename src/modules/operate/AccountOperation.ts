@@ -772,6 +772,34 @@ export class AccountOperation {
     return this;
   }
 
+  public finalSettlement(
+    settlement: Liquidate,
+  ): AccountOperation {
+    this.addActionArgs(
+      {
+        primaryAccountOwner: settlement.primaryAccountOwner,
+        primaryAccountId: settlement.primaryAccountId,
+      },
+      {
+        actionType: ActionType.Trade,
+        amount: {
+          value: INTEGERS.ZERO,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+        primaryMarketId: settlement.liquidMarketId.toFixed(0),
+        secondaryMarketId: settlement.payoutMarketId.toFixed(0),
+        otherAccountId: this.getAccountId(
+          settlement.liquidAccountOwner,
+          settlement.liquidAccountId,
+        ),
+        otherAddress: this.contracts.finalSettlement.options.address,
+        data: toBytes(settlement.liquidMarketId),
+      },
+    );
+    return this;
+  }
+
   /**
    * Adds all actions from a SignedOperation and also adds the authorization object that allows the
    * proxy to process the actions.

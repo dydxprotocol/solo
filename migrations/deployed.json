@@ -223,6 +223,13 @@
             "transactionHash": "0xac3aafe0ce3e012d8624b4896d92a55b145d568e69dac7a5af4f0d4d131effc5"
         }
     },
+    "FinalSettlement": {
+        "1": {
+            "links": {},
+            "address": "0xc4E53Af1D56D3B2eF378134A2cA55676be2D0f1b",
+            "transactionHash": "0xd0f1aa3ea3826564ea0efdccb89bdac1fe50e8e8c2d684367bc614e8a1a1a4bd"
+        }
+    },
     "DoubleExponentInterestSetter": {
         "1": {
             "links": {},
