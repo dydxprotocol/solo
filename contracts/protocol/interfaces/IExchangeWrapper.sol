@@ -37,8 +37,8 @@ interface IExchangeWrapper {
      *                              cannot always be trusted as it is set at the discretion of the
      *                              msg.sender)
      * @param  receiver             Address to set allowance on once the trade has completed
-     * @param  makerToken           Address of makerToken, the token to receive
-     * @param  takerToken           Address of takerToken, the token to pay
+     * @param  makerToken           Address of makerToken, the token to receive (target asset; IE path[path.length - 1])
+     * @param  takerToken           Address of takerToken, the token to pay (originator asset; IE path[0])
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
