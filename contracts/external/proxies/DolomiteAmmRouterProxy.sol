@@ -212,7 +212,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         depositToken : address(0),
         isPositiveMarginDeposit : false,
         marginDeposit : 0,
-    expiryTimeDelta: 0
+        expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -241,7 +241,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         depositToken : address(0),
         isPositiveMarginDeposit : false,
         marginDeposit : 0,
-        expiryTimeDelta: 0
+        expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -287,7 +287,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         depositToken : address(0),
         isPositiveMarginDeposit : false,
         marginDeposit : 0,
-        expiryTimeDelta: 0
+        expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,
@@ -316,7 +316,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         depositToken : address(0),
         isPositiveMarginDeposit : false,
         marginDeposit : 0,
-        expiryTimeDelta: 0
+        expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
         uniswapFactory : UNISWAP_FACTORY,

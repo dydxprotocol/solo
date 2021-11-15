@@ -12,6 +12,14 @@ library UniswapV2Library {
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
+        return getPools(factory, IUniswapV2Factory(factory).getPairInitCode(), path);
+    }
+
+    function getPools(
+        address factory,
+        bytes memory initCode,
+        address[] memory path
+    ) internal pure returns (address[] memory) {
         require(
             path.length >= 2,
             "UniswapV2Library::getPools: INVALID_PATH_LENGTH"
@@ -19,7 +27,7 @@ library UniswapV2Library {
 
         address[] memory pools = new address[](path.length - 1);
         for (uint i = 0; i < path.length - 1; i++) {
-            pools[i] = pairFor(factory, path[i], path[i + 1]);
+            pools[i] = pairFor(factory, path[i], path[i + 1], initCode);
         }
         return pools;
     }
@@ -42,10 +50,38 @@ library UniswapV2Library {
             ))));
     }
 
+    function pairFor(
+        address factory,
+        address tokenA,
+        address tokenB,
+        bytes memory initCode
+    ) internal pure returns (address pair) {
+        (address token0, address token1) = sortTokens(tokenA, tokenB);
+        pair = address(uint(keccak256(abi.encodePacked(
+                hex"ff",
+                factory,
+                keccak256(abi.encodePacked(token0, token1)),
+                keccak256(initCode) // init code hash
+            ))));
+    }
+
     // fetches and sorts the reserves for a pair
-    function getReservesWei(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
+    function getReservesWei(
+        address factory,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
+        return getReservesWei(factory, IUniswapV2Factory(factory).getPairInitCode(), tokenA, tokenB);
+    }
+
+    function getReservesWei(
+        address factory,
+        bytes memory initCode,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReservesWei();
+        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
@@ -76,7 +112,11 @@ library UniswapV2Library {
     }
 
     // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOutWei(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
+    function getAmountsOutWei(
+        address factory,
+        uint amountIn,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
@@ -86,14 +126,43 @@ library UniswapV2Library {
         }
     }
 
-    // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsInWei(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOutWei(
+        address factory,
+        bytes memory initCode,
+        uint amountIn,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCode, path[i], path[i + 1]);
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    function getAmountsInWei(
+        address factory,
+        bytes memory initCode,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
         amounts = new uint[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i - 1], path[i]);
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCode, path[i - 1], path[i]);
             amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
         }
+    }
+
+    // performs chained getAmountIn calculations on any number of pairs
+    function getAmountsInWei(
+        address factory,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        return getAmountsInWei(factory, IUniswapV2Factory(factory).getPairInitCode(), amountOut, path);
     }
 }
