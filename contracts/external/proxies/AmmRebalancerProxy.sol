@@ -53,6 +53,8 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
     address public DOLOMITE_AMM_FACTORY;
     mapping(address => bytes) public ROUTER_TO_BYTECODE_MAP;
 
+    event RouterBytecodeSet(address indexed router);
+
     // ============ Constructor ============
 
     constructor (
@@ -74,13 +76,24 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         );
         for (uint i = 0; i < routers.length; i++) {
             ROUTER_TO_BYTECODE_MAP[routers[i]] = initCodes[i];
+            emit RouterBytecodeSet(routers[i]);
         }
     }
 
+    function adminSetRouterInitCode(
+        address router,
+        bytes calldata initCode
+    )
+    external
+    onlyOwner {
+        ROUTER_TO_BYTECODE_MAP[router] = initCode;
+        emit RouterBytecodeSet(router);
+    }
+
     function performRebalance(
-        address otherRouter,
         address[] calldata dolomitePath,
         uint dolomiteAmountIn,
+        address otherRouter,
         address[] calldata otherPath
     ) external {
         Require.that(
@@ -105,7 +118,6 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         });
 
         address dolomiteFactory = DOLOMITE_AMM_FACTORY;
-        address otherFactory = IUniswapV2Router(otherRouter).factory();
 
         address[] memory dolomitePools = UniswapV2Library.getPools(dolomiteFactory, dolomitePath);
         for (uint i = 0; i < dolomitePools.length; i++) {
@@ -116,39 +128,52 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         }
 
         uint[] memory dolomiteMarketPath = _getMarketPathFromTokenPath(dolomitePath);
-        bytes memory otherInitCode = ROUTER_TO_BYTECODE_MAP[otherRouter];
-        Require.that(
-            otherInitCode.length > 0,
-            FILE,
-            "router not recognized"
-        );
 
-        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
+        uint otherAmountIn;
+        {
+            // blocked off to prevent the "stack too deep" error
+            bytes memory otherInitCode = ROUTER_TO_BYTECODE_MAP[otherRouter];
+            Require.that(
+                otherInitCode.length > 0,
+                FILE,
+                "router not recognized"
+            );
 
-        // dolomiteAmountIn is the amountOut for the other trade
-        uint otherAmountIn = UniswapV2Library.getAmountsInWei(
-            otherFactory,
-            otherInitCode,
-            dolomiteAmountIn,
-            otherPath
-        )[0];
-        uint dolomiteInputMarketId = dolomiteMarketPath[0];
-        uint dolomiteOutputMarketId = dolomiteMarketPath[dolomiteMarketPath.length - 1];
+            // dolomiteAmountIn is the amountOut for the other trade
+            otherAmountIn = UniswapV2Library.getAmountsInWei(
+                IUniswapV2Router(otherRouter).factory(),
+                otherInitCode,
+                dolomiteAmountIn,
+                otherPath
+            )[0];
+        }
 
         // 1 action for transferring, and trades are paths.length - 1
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1 + dolomitePath.length + otherPath.length - 2);
 
         // trade from accountIndex=1 and transfer to 0, to ensure re-balances are down with flash-loaned funds
         // the dolomiteInputMarketId is the output market for the other trade and vice versa
-        actions[0] = _encodeSell(
-            1,
-            dolomiteOutputMarketId,
-            dolomiteInputMarketId,
-            otherAmountIn,
-            otherRouter,
-            otherPath,
-            dolomiteAmountIn // this is the other trade's output amount
+        {
+            // done to prevent the "stack too deep" error
+            uint otherAmountOut = dolomiteAmountIn;
+            actions[0] = _encodeSell(
+                1,
+                dolomiteMarketPath[dolomiteMarketPath.length - 1],
+                dolomiteMarketPath[0],
+                otherAmountIn,
+                otherRouter,
+                otherPath,
+                otherAmountOut // this is the other trade's output amount
+            );
+        }
+
+        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
+        Require.that(
+            otherAmountIn <= dolomiteAmountsOut[dolomiteAmountsOut.length - 1],
+            FILE,
+            "arb closed"
         );
+
         for (uint i = 0; i < dolomitePools.length; i++) {
             Require.that(
                 accounts[i + 2].owner == dolomitePools[i],
@@ -168,7 +193,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         actions[actions.length - 1] = _encodeTransferAll(
             1,
             0,
-            dolomiteOutputMarketId
+            dolomiteMarketPath[dolomiteMarketPath.length - 1]
         );
 
         SOLO_MARGIN.operate(accounts, actions);
