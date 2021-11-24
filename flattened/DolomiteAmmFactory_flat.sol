@@ -1415,7 +1415,7 @@ library Actions {
     }
 }
 
-// File: contracts/external/interfaces/IUniswapV2Factory.sol
+// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
 
 /*
 
@@ -1959,7 +1959,7 @@ interface ISoloMargin {
 
 }
 
-// File: contracts/external/interfaces/IUniswapV2Pair.sol
+// File: contracts/external/interfaces/IDolomiteAmmPair.sol
 
 /*
 
@@ -2295,7 +2295,7 @@ interface IUniswapV2ERC20 {
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 
-// File: contracts/external/amm/UniswapV2ERC20.sol
+// File: contracts/external/amm/DolomiteAmmERC20.sol
 
 pragma solidity ^0.5.16;
 
@@ -2392,7 +2392,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     }
 }
 
-// File: contracts/external/amm/UniswapV2Pair.sol
+// File: contracts/external/amm/DolomiteAmmPair.sol
 
 pragma solidity ^0.5.16;
 
@@ -4034,7 +4034,7 @@ contract Permission is
     }
 }
 
-// File: contracts/external/amm/UniswapV2Factory.sol
+// File: contracts/external/amm/DolomiteAmmFactory.sol
 
 pragma solidity ^0.5.16;
 
@@ -4045,7 +4045,7 @@ pragma solidity ^0.5.16;
 
 
 
-contract UniswapV2Factory is IUniswapV2Factory {
+contract DolomiteAmmFactory is IUniswapV2Factory {
     address public feeTo;
     address public feeToSetter;
     address public soloMargin;

@@ -172,8 +172,8 @@
     "DolomiteAmmRouterProxy": {
         "80001": {
             "links": {},
-            "address": "0xA662c5cE12A908151a87D31eB2b4Aa38277f2c12",
-            "transactionHash": "0xdf390bb5d1c03c81b0da53e1903fcb626b2b0e276b7f58cff3a19a94f6c6009c"
+            "address": "0x1834A9d1211F91F740b7D80B9a107FA40E068b06",
+            "transactionHash": "0x64bed784adc57fb87d1eb608793c230a8e9d12d97a7d28032f357c2290f64c42"
         }
     },
     "UniswapV2Factory": {

@@ -42,14 +42,14 @@ async function clean(): Promise<void> {
       cleaned.networks = deployed[contractName];
     }
 
-    if (contract.networks[TEST_NETWORK_ID]) {
+    if (contract.networks && contract.networks[TEST_NETWORK_ID]) {
       cleaned.networks[TEST_NETWORK_ID] = {
         links: contract.networks[TEST_NETWORK_ID].links,
         address: contract.networks[TEST_NETWORK_ID].address,
         transactionHash: contract.networks[TEST_NETWORK_ID].transactionHash,
       };
     }
-    if (contract.networks[COVERAGE_NETWORK_ID]) {
+    if (contract.networks && contract.networks[COVERAGE_NETWORK_ID]) {
       cleaned.networks[COVERAGE_NETWORK_ID] = {
         links: contract.networks[COVERAGE_NETWORK_ID].links,
         address: contract.networks[COVERAGE_NETWORK_ID].address,

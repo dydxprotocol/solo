@@ -1916,7 +1916,7 @@ interface ISoloMargin {
 
 }
 
-// File: contracts/external/interfaces/IUniswapV2Factory.sol
+// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
 
 /*
 
@@ -1940,7 +1940,7 @@ pragma solidity >=0.5.0;
 
 
 
-interface IUniswapV2Factory {
+interface IDolomiteAmmFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);
@@ -1959,7 +1959,7 @@ interface IUniswapV2Factory {
 
 }
 
-// File: contracts/external/interfaces/IUniswapV2Pair.sol
+// File: contracts/external/interfaces/IDolomiteAmmPair.sol
 
 /*
 
@@ -1983,7 +1983,7 @@ pragma solidity >=0.5.0;
 
 
 
-interface IUniswapV2Pair {
+interface IDolomiteAmmPair {
 
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
@@ -2295,14 +2295,14 @@ interface IUniswapV2ERC20 {
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 
-// File: contracts/external/amm/UniswapV2ERC20.sol
+// File: contracts/external/amm/DolomiteAmmERC20.sol
 
 pragma solidity ^0.5.16;
 
 
 
 
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
+contract DolomiteAmmERC20 is IUniswapV2ERC20 {
     using SafeMath for uint;
 
     string public constant name = 'Dolomite LP Token';
@@ -2392,7 +2392,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     }
 }
 
-// File: contracts/external/amm/UniswapV2Pair.sol
+// File: contracts/external/amm/DolomiteAmmPair.sol
 
 pragma solidity ^0.5.16;
 
@@ -2404,7 +2404,7 @@ pragma solidity ^0.5.16;
 
 
 
-contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
+contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
@@ -2456,7 +2456,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // sufficient check
         token0 = _token0;
         token1 = _token1;
-        soloMargin = IUniswapV2Factory(msg.sender).soloMargin();
+        soloMargin = IDolomiteAmmFactory(msg.sender).soloMargin();
         soloMarginTransferProxy = _transferProxy;
 
         marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
@@ -2808,7 +2808,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint112 reserve0,
         uint112 reserve1
     ) private returns (bool feeOn) {
-        address feeTo = IUniswapV2Factory(factory).feeTo();
+        address feeTo = IDolomiteAmmFactory(factory).feeTo();
         // gas savings
         feeOn = feeTo != address(0);
         uint _kLast = kLast;

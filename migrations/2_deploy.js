@@ -81,15 +81,9 @@ const WETH9 = artifacts.require('WETH9');
 
 // Second-Layer Contracts
 const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
-const Expiry = artifacts.require('Expiry');
 const ExpiryV2 = artifacts.require('ExpiryV2');
-const Refunder = artifacts.require('Refunder');
-const DaiMigrator = artifacts.require('DaiMigrator');
 const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
 const LiquidatorProxyV1WithAmmForSoloMargin = artifacts.require('LiquidatorProxyV1WithAmmForSoloMargin');
-const LimitOrders = artifacts.require('LimitOrders');
-const StopLimitOrders = artifacts.require('StopLimitOrders');
-const CanonicalOrders = artifacts.require('CanonicalOrders');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const TransferProxy = artifacts.require('TransferProxy');
@@ -104,6 +98,7 @@ const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // Amm
+const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
 const UniswapV2Factory = artifacts.require('UniswapV2Factory');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
 
@@ -121,10 +116,9 @@ const migration = async (deployer, network, accounts) => {
   ]);
   await deployer.deploy(
     SimpleFeeOwner,
-    await UniswapV2Factory.address,
+    await DolomiteAmmFactory.address,
     (await getSoloMargin(network)).address,
   );
-  await (await UniswapV2Factory.deployed()).contract.methods.setFeeToSetter(SimpleFeeOwner.address);
 };
 
 module.exports = migration;
@@ -262,6 +256,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     await Promise.all([
       deployer.deploy(TestCallee, soloMargin.address),
       deployer.deploy(TestSimpleCallee, soloMargin.address),
+      deployer.deploy(UniswapV2Factory, getSenderAddress(network, accounts)),
     ]);
   }
 
@@ -271,7 +266,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   );
 
   await deployer.deploy(
-    UniswapV2Factory,
+    DolomiteAmmFactory,
     getSenderAddress(network, accounts),
     soloMargin.address,
     TransferProxy.address,
@@ -286,7 +281,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   await deployer.deploy(
     DolomiteAmmRouterProxy,
     soloMargin.address,
-    UniswapV2Factory.address,
+    DolomiteAmmFactory.address,
     getWethAddress(network, WETH9),
     ExpiryV2.address,
   );
@@ -298,20 +293,6 @@ async function deploySecondLayer(deployer, network, accounts) {
       isMatic(network) || isMaticTest(network) ? getMaticAddress(network) : getWethAddress(network, WETH9),
     ),
     deployer.deploy(
-      Expiry,
-      soloMargin.address,
-      getExpiryRampTime(network),
-    ),
-    deployer.deploy(
-      Refunder,
-      soloMargin.address,
-      [],
-    ),
-    deployer.deploy(
-      DaiMigrator,
-      [],
-    ),
-    deployer.deploy(
       LiquidatorProxyV1ForSoloMargin,
       soloMargin.address,
     ),
@@ -319,22 +300,7 @@ async function deploySecondLayer(deployer, network, accounts) {
       LiquidatorProxyV1WithAmmForSoloMargin,
       soloMargin.address,
       DolomiteAmmRouterProxy.address,
-    ),
-    deployer.deploy(
-      LimitOrders,
-      soloMargin.address,
-      getChainId(network),
-    ),
-    deployer.deploy(
-      StopLimitOrders,
-      soloMargin.address,
-      getChainId(network),
-    ),
-    deployer.deploy(
-      CanonicalOrders,
-      soloMargin.address,
-      getSenderAddress(network, accounts),
-      getChainId(network),
+      ExpiryV2.address,
     ),
     deployer.deploy(
       SignedOperationProxy,
@@ -349,31 +315,7 @@ async function deploySecondLayer(deployer, network, accounts) {
       true,
     ),
     soloMargin.ownerSetGlobalOperator(
-      Expiry.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
       ExpiryV2.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
-      Refunder.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
-      DaiMigrator.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
-      LimitOrders.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
-      StopLimitOrders.address,
-      true,
-    ),
-    soloMargin.ownerSetGlobalOperator(
-      CanonicalOrders.address,
       true,
     ),
     soloMargin.ownerSetGlobalOperator(

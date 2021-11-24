@@ -1995,7 +1995,7 @@ interface ISoloMargin {
 
 }
 
-// File: contracts/external/interfaces/IUniswapV2Factory.sol
+// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
 
 /*
 
@@ -2038,7 +2038,7 @@ interface IUniswapV2Factory {
 
 }
 
-// File: contracts/external/interfaces/IUniswapV2Pair.sol
+// File: contracts/external/interfaces/IDolomiteAmmPair.sol
 
 /*
 

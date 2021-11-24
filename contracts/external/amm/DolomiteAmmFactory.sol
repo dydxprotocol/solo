@@ -4,14 +4,14 @@ pragma experimental ABIEncoderV2;
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
 
-import "../interfaces/IUniswapV2Factory.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
 
-import "./UniswapV2Pair.sol";
+import "./DolomiteAmmPair.sol";
 import "../../protocol/Permission.sol";
 import "../../protocol/Permission.sol";
 import "../../protocol/Permission.sol";
 
-contract UniswapV2Factory is IUniswapV2Factory {
+contract DolomiteAmmFactory is IDolomiteAmmFactory {
     address public feeTo;
     address public feeToSetter;
     address public soloMargin;
@@ -38,7 +38,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function getPairInitCode() public pure returns (bytes memory) {
-        return type(UniswapV2Pair).creationCode;
+        return type(DolomiteAmmPair).creationCode;
     }
 
     function getPairInitCodeHash() public pure returns (bytes32) {
@@ -56,7 +56,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        IUniswapV2Pair(pair).initialize(token0, token1, transferProxy);
+        IDolomiteAmmPair(pair).initialize(token0, token1, transferProxy);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
         isPairCreated[pair] = true;

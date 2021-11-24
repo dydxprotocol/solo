@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Types.sol";
 
-interface IUniswapV2Pair {
+interface IDolomiteAmmPair {
 
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);

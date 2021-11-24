@@ -23,6 +23,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
 import "../../protocol/interfaces/ISoloMargin.sol";
+import "../../protocol/lib/Events.sol";
 
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
@@ -32,8 +33,8 @@ import "../lib/TypedSignature.sol";
 import "../lib/UniswapV2Library.sol";
 
 import "../interfaces/IExpiryV2.sol";
-import "../interfaces/IUniswapV2Factory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
+import "../interfaces/IDolomiteAmmPair.sol";
 
 contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
@@ -65,7 +66,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     struct ModifyPositionCache {
         ModifyPositionParams params;
         ISoloMargin soloMargin;
-        IUniswapV2Factory uniswapFactory;
+        IDolomiteAmmFactory uniswapFactory;
         address account;
         uint[] marketPath;
         uint[] amountsWei;
@@ -79,9 +80,31 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     }
 
     ISoloMargin public SOLO_MARGIN;
-    IUniswapV2Factory public UNISWAP_FACTORY;
+    IDolomiteAmmFactory public UNISWAP_FACTORY;
     address public WETH;
     address public EXPIRY_V2;
+
+    event MarginPositionOpen(
+        address indexed user,
+        uint indexed accountIndex,
+        address inputToken,
+        address outputToken,
+        address depositToken,
+        Events.BalanceUpdate inputBalanceUpdate, // the amount of borrow amount being sold to purchase collateral
+        Events.BalanceUpdate outputBalanceUpdate, // the amount of collateral purchased by the borrowed amount
+        Events.BalanceUpdate marginDepositUpdate
+    );
+
+    event MarginPositionClose(
+        address indexed user,
+        uint indexed accountIndex,
+        address inputToken,
+        address outputToken,
+        address withdrawalToken,
+        Events.BalanceUpdate inputBalanceUpdate, // the amount of held amount being sold to repay debt
+        Events.BalanceUpdate outputBalanceUpdate, // the amount of borrow amount being repaid
+        Events.BalanceUpdate marginWithdrawalUpdate
+    );
 
     constructor(
         address soloMargin,
@@ -90,7 +113,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         address expiryV2
     ) public {
         SOLO_MARGIN = ISoloMargin(soloMargin);
-        UNISWAP_FACTORY = IUniswapV2Factory(uniswapFactory);
+        UNISWAP_FACTORY = IDolomiteAmmFactory(uniswapFactory);
         WETH = weth;
         EXPIRY_V2 = expiryV2;
     }
@@ -126,7 +149,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             SOLO_MARGIN.operate(accounts, actions);
         }
 
-        liquidity = IUniswapV2Pair(pair).mint(to);
+        liquidity = IDolomiteAmmPair(pair).mint(to);
     }
 
     function removeLiquidity(
@@ -141,9 +164,9 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         // send liquidity to pair
-        IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
+        IDolomiteAmmPair(pair).transferFrom(msg.sender, pair, liquidity);
 
-        (uint amount0Wei, uint amount1Wei) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
+        (uint amount0Wei, uint amount1Wei) = IDolomiteAmmPair(pair).burn(to, toAccountNumber);
         (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
         (amountAWei, amountBWei) = tokenA == token0 ? (amount0Wei, amount1Wei) : (amount1Wei, amount0Wei);
         require(amountAWei >= amountAMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
@@ -163,7 +186,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         uint value = permit.approveMax ? uint(- 1) : liquidity;
-        IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
+        IDolomiteAmmPair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
 
         (amountAWei, amountBWei) = removeLiquidity(
             to,
@@ -340,6 +363,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         ) = _getParamsForSwapExactTokensForTokens(cache);
 
         cache.soloMargin.operate(accounts, actions);
+
+        _logEvents(cache, accounts);
     }
 
     function _swapTokensForExactTokensAndModifyPosition(
@@ -351,6 +376,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         ) = _getParamsForSwapTokensForExactTokens(cache);
 
         cache.soloMargin.operate(accounts, actions);
+
+        _logEvents(cache, accounts);
     }
 
     function _getParamsForSwapExactTokensForTokens(
@@ -517,7 +544,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint amountAMinWei,
         uint amountBMinWei
     ) internal returns (uint amountAWei, uint amountBWei) {
-        IUniswapV2Factory uniswapFactory = UNISWAP_FACTORY;
+        IDolomiteAmmFactory uniswapFactory = UNISWAP_FACTORY;
         // create the pair if it doesn't exist yet
         if (uniswapFactory.getPair(tokenA, tokenB) == address(0)) {
             uniswapFactory.createPair(tokenA, tokenB);
@@ -641,6 +668,70 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 cache.soloMargin.getMarketCurrentIndex(marketId)
             ).value;
         }
+    }
+
+    function _logEvents(
+        ModifyPositionCache memory cache,
+        Account.Info[] memory accounts
+    ) internal {
+        if (cache.params.isPositiveMarginDeposit && cache.params.accountNumber > 0) {
+            Types.Par memory newOutputPar = cache.soloMargin.getAccountPar(
+                accounts[0],
+                cache.marketPath[cache.marketPath.length - 1]
+            );
+
+            emit MarginPositionOpen(
+                msg.sender,
+                cache.params.accountNumber,
+                cache.params.tokenPath[0],
+                cache.params.tokenPath[cache.params.tokenPath.length - 1],
+                cache.params.depositToken,
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(false, cache.amountsWei[0]),
+                    newPar: cache.soloMargin.getAccountPar(accounts[0], cache.marketPath[0])
+                }),
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+                    newPar: newOutputPar
+                }),
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(true, cache.params.marginDeposit),
+                    newPar: newOutputPar
+                })
+            );
+        } else if (cache.params.accountNumber > 0) {
+            Types.Par memory newInputPar = cache.soloMargin.getAccountPar(accounts[0], cache.marketPath[0]);
+
+            emit MarginPositionClose(
+                msg.sender,
+                cache.params.accountNumber,
+                cache.params.tokenPath[0],
+                cache.params.tokenPath[cache.params.tokenPath.length - 1],
+                cache.params.depositToken,
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(false, cache.amountsWei[0]),
+                    newPar: newInputPar
+                }),
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+                    newPar: _getOutputPar(cache, accounts[0])
+                }),
+                Events.BalanceUpdate({
+                    deltaWei: Types.Wei(false, cache.params.marginDeposit),
+                    newPar: newInputPar
+                })
+            );
+        }
+    }
+
+    function _getOutputPar(
+        ModifyPositionCache memory cache,
+        Account.Info memory account
+    ) internal view returns (Types.Par memory) {
+        return cache.soloMargin.getAccountPar(
+            account,
+            cache.marketPath[cache.marketPath.length - 1]
+        );
     }
 
 }

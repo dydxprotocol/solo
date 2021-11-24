@@ -810,6 +810,6 @@ async function removeAlmostAllLiquidity(
 }
 
 async function deployUniswapLpTokens(tokenA: address, tokenB: address) {
-  const callObject = solo.contracts.uniswapV2Factory.methods.createPair(tokenA, tokenB);
+  const callObject = solo.contracts.dolomiteAmmFactory.methods.createPair(tokenA, tokenB);
   await solo.contracts.callContractFunction(callObject);
 }

@@ -126,18 +126,17 @@ export class TestToken {
     );
   }
 
-  public async setAllowance(
+  public async setBalance(
     ownerAddress: address,
-    spenderAddress: address,
     amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.setAllowance(
-      this.testTokenContract.options.address,
-      ownerAddress,
-      spenderAddress,
-      amount,
-      options,
+    return this.contracts.callContractFunction(
+      this.testTokenContract.methods.setBalance(
+        ownerAddress,
+        amount.toFixed(0),
+      ),
+      { ...options, from: ownerAddress },
     );
   }
 

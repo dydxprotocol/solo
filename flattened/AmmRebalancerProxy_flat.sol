@@ -4912,7 +4912,7 @@ ReentrancyGuard
     }
 }
 
-// File: contracts/external/interfaces/IUniswapV2Pair.sol
+// File: contracts/external/interfaces/IDolomiteAmmPair.sol
 
 /*
 
@@ -4936,7 +4936,7 @@ pragma solidity >=0.5.0;
 
 
 
-interface IUniswapV2Pair {
+interface IDolomiteAmmPair {
 
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
@@ -7054,7 +7054,7 @@ contract OnlySolo {
     }
 }
 
-// File: contracts/external/interfaces/IUniswapV2Factory.sol
+// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
 
 /*
 
@@ -7180,7 +7180,7 @@ library UniswapV2Library {
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
+        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
@@ -7430,7 +7430,6 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint fromAccountNumber,
         address tokenA,
         address tokenB,
-        uint amountADesired,
         uint amountBDesired,
         uint amountAMinWei,
         uint amountBMinWei,
@@ -7456,7 +7455,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             SOLO_MARGIN.operate(accounts, actions);
         }
 
-        liquidity = IUniswapV2Pair(pair).mint(to);
+        liquidity = IDolomiteAmmPair(pair).mint(to);
     }
 
     function removeLiquidity(
@@ -7471,9 +7470,9 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         // send liquidity to pair
-        IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity);
+        IDolomiteAmmPair(pair).transferFrom(msg.sender, pair, liquidity);
 
-        (uint amount0Wei, uint amount1Wei) = IUniswapV2Pair(pair).burn(to, toAccountNumber);
+        (uint amount0Wei, uint amount1Wei) = IDolomiteAmmPair(pair).burn(to, toAccountNumber);
         (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
         (amountAWei, amountBWei) = tokenA == token0 ? (amount0Wei, amount1Wei) : (amount1Wei, amount0Wei);
         require(amountAWei >= amountAMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
@@ -7493,7 +7492,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public returns (uint amountAWei, uint amountBWei) {
         address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
         uint value = permit.approveMax ? uint(- 1) : liquidity;
-        IUniswapV2Pair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
+        IDolomiteAmmPair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
 
         (amountAWei, amountBWei) = removeLiquidity(
             to,

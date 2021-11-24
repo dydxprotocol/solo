@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
 
-interface IUniswapV2Factory {
+interface IDolomiteAmmFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);

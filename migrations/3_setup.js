@@ -160,16 +160,16 @@ function getTokens(network) {
       { address: getMaticAddress(network, TokenD) },
       { address: getUsdcAddress(network, TokenA) },
       { address: getWethAddress(network, WETH9) },
-      { address: getLinkAddress(network, TokenF) }
-    ];
-  } else {
-    return [
-      { address: getDaiAddress(network, TokenB) },
-      { address: getMaticAddress(network, TokenD) },
-      { address: getUsdcAddress(network, TokenA) },
-      { address: getWethAddress(network, WETH9) },
+      { address: getLinkAddress(network, TokenF) },
     ];
   }
+
+  return [
+    { address: getDaiAddress(network, TokenB) },
+    { address: getMaticAddress(network, TokenD) },
+    { address: getUsdcAddress(network, TokenA) },
+    { address: getWethAddress(network, WETH9) },
+  ];
 }
 
 async function getOracles(network) {

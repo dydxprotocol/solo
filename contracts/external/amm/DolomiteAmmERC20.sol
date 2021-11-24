@@ -6,7 +6,7 @@ import "../../protocol/interfaces/IERC20.sol";
 
 import "../interfaces/IUniswapV2ERC20.sol";
 
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
+contract DolomiteAmmERC20 is IUniswapV2ERC20 {
     using SafeMath for uint;
 
     string public constant name = 'Dolomite LP Token';

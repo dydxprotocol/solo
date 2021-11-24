@@ -39,6 +39,7 @@ import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
 import { address, EthereumAccount, Index, Networks, SoloOptions } from './types';
+import { AmmRebalancerProxy } from './modules/AmmRebalancerProxy';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
 import { LiquidatorProxyWithAmm } from './modules/LiquidatorProxyWithAmm';
 import { BigNumber } from './index';
@@ -62,6 +63,7 @@ export class Solo {
   public liquidatorProxy: LiquidatorProxy;
   public liquidatorProxyWithAmm: LiquidatorProxyWithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
+  public ammRebalancerProxy: AmmRebalancerProxy;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -326,8 +328,8 @@ export class Solo {
     tokenIn: address,
     tokenOut: address
   ): Promise<{ reserveIn: BigNumber, reserveOut: BigNumber }> {
-    const pairAddress = await this.contracts.uniswapV2Factory.methods.getPair(tokenIn, tokenOut).call();
-    const pair = this.contracts.getUniswapV2Pair(pairAddress);
+    const pairAddress = await this.contracts.dolomiteAmmFactory.methods.getPair(tokenIn, tokenOut).call();
+    const pair = this.contracts.getDolomiteAmmPair(pairAddress);
 
     const { _reserve0, _reserve1 } = await pair.methods.getReservesWei().call();
     const token0 = await pair.methods.token0().call();

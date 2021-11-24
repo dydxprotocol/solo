@@ -36,8 +36,8 @@ import "../../protocol/lib/Types.sol";
 import "../lib/TypedSignature.sol";
 import "../lib/UniswapV2Library.sol";
 
-import "../interfaces/IUniswapV2Factory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
+import "../interfaces/IDolomiteAmmPair.sol";
 import "../interfaces/IUniswapV2Router.sol";
 
 import "../helpers/OnlySolo.sol";

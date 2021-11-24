@@ -39,9 +39,12 @@ import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
 import { default as ChainlinkPriceOracleV1 } from '../build/contracts/ChainlinkPriceOracleV1.json';
 import { default as SimpleFeeOwner } from '../build/contracts/SimpleFeeOwner.json';
-import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
-import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
+import { default as DolomiteAmmFactory } from '../build/contracts/DolomiteAmmFactory.json';
+import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.json';
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
+import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerProxy.json';
+import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
+import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 
 export default {
   SoloMargin,
@@ -59,6 +62,7 @@ export default {
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,
   LiquidatorProxyV1WithAmmForSoloMargin,
+  AmmRebalancerProxy,
   DolomiteAmmRouterProxy,
   PolynomialInterestSetter,
   DoubleExponentInterestSetter,
@@ -72,8 +76,10 @@ export default {
   Permission,
   PartiallyDelayedMultiSig,
   ChainlinkPriceOracleV1,
-  UniswapV2Factory,
-  UniswapV2Pair,
+  DolomiteAmmFactory,
+  DolomiteAmmPair,
   SimpleFeeOwner,
   TransferProxy,
+  UniswapV2Factory,
+  UniswapV2Pair,
 };

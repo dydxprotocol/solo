@@ -4,17 +4,17 @@ pragma experimental ABIEncoderV2;
 import "../../protocol/interfaces/IAutoTrader.sol";
 import "../../protocol/interfaces/ISoloMargin.sol";
 
-import "../interfaces/IUniswapV2Factory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
+import "../interfaces/IDolomiteAmmPair.sol";
 
 import "../lib/AdvancedMath.sol";
 import "../lib/UQ112x112.sol";
 
 import "../interfaces/ITransferProxy.sol";
 
-import "./UniswapV2ERC20.sol";
+import "./DolomiteAmmERC20.sol";
 
-contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
+contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
@@ -66,7 +66,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // sufficient check
         token0 = _token0;
         token1 = _token1;
-        soloMargin = IUniswapV2Factory(msg.sender).soloMargin();
+        soloMargin = IDolomiteAmmFactory(msg.sender).soloMargin();
         soloMarginTransferProxy = _transferProxy;
 
         marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
@@ -418,7 +418,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint112 reserve0,
         uint112 reserve1
     ) private returns (bool feeOn) {
-        address feeTo = IUniswapV2Factory(factory).feeTo();
+        address feeTo = IDolomiteAmmFactory(factory).feeTo();
         // gas savings
         feeOn = feeTo != address(0);
         uint _kLast = kLast;

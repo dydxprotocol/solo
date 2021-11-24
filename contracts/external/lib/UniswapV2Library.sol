@@ -2,8 +2,8 @@ pragma solidity >=0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../interfaces/IUniswapV2Factory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
+import "../interfaces/IDolomiteAmmPair.sol";
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -12,7 +12,7 @@ library UniswapV2Library {
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, IUniswapV2Factory(factory).getPairInitCode(), path);
+        return getPools(factory, IDolomiteAmmFactory(factory).getPairInitCode(), path);
     }
 
     function getPools(
@@ -46,7 +46,7 @@ library UniswapV2Library {
                 hex"ff",
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                keccak256(IUniswapV2Factory(factory).getPairInitCode()) // init code hash
+                keccak256(IDolomiteAmmFactory(factory).getPairInitCode()) // init code hash
             ))));
     }
 
@@ -71,7 +71,7 @@ library UniswapV2Library {
         address tokenA,
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
-        return getReservesWei(factory, IUniswapV2Factory(factory).getPairInitCode(), tokenA, tokenB);
+        return getReservesWei(factory, IDolomiteAmmFactory(factory).getPairInitCode(), tokenA, tokenB);
     }
 
     function getReservesWei(
@@ -81,7 +81,7 @@ library UniswapV2Library {
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
+        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
@@ -163,6 +163,6 @@ library UniswapV2Library {
         uint amountOut,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
-        return getAmountsInWei(factory, IUniswapV2Factory(factory).getPairInitCode(), amountOut, path);
+        return getAmountsInWei(factory, IDolomiteAmmFactory(factory).getPairInitCode(), amountOut, path);
     }
 }

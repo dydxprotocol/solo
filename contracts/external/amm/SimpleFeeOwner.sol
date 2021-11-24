@@ -8,8 +8,8 @@ import "../../protocol/interfaces/ISoloMargin.sol";
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
 
-import "../interfaces/IUniswapV2Factory.sol";
-import "../interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IDolomiteAmmFactory.sol";
+import "../interfaces/IDolomiteAmmPair.sol";
 
 contract SimpleFeeOwner is Ownable {
 
@@ -17,14 +17,14 @@ contract SimpleFeeOwner is Ownable {
 
     event OwnershipChanged(address indexed newOwner, address indexed oldOwner);
 
-    IUniswapV2Factory uniswapFactory;
+    IDolomiteAmmFactory uniswapFactory;
     ISoloMargin soloMargin;
 
     constructor(
         address _uniswapFactory,
         address _soloMargin
     ) public {
-        uniswapFactory = IUniswapV2Factory(_uniswapFactory);
+        uniswapFactory = IDolomiteAmmFactory(_uniswapFactory);
         soloMargin = ISoloMargin(_soloMargin);
     }
 
@@ -64,7 +64,7 @@ contract SimpleFeeOwner is Ownable {
     external
     onlyOwner {
         for (uint i = 0; i < lpTokens.length; i++) {
-            IUniswapV2Pair lpToken = IUniswapV2Pair(lpTokens[i]);
+            IDolomiteAmmPair lpToken = IDolomiteAmmPair(lpTokens[i]);
             lpToken.transfer(address(lpToken), lpToken.balanceOf(address(this)));
             lpToken.burn(address(this), 0);
 
