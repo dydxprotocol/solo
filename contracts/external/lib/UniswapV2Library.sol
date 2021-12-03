@@ -2,6 +2,8 @@ pragma solidity >=0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
 
@@ -12,12 +14,12 @@ library UniswapV2Library {
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, IDolomiteAmmFactory(factory).getPairInitCode(), path);
+        return getPools(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), path);
     }
 
     function getPools(
         address factory,
-        bytes memory initCode,
+        bytes32 initCodeHash,
         address[] memory path
     ) internal pure returns (address[] memory) {
         require(
@@ -27,7 +29,7 @@ library UniswapV2Library {
 
         address[] memory pools = new address[](path.length - 1);
         for (uint i = 0; i < path.length - 1; i++) {
-            pools[i] = pairFor(factory, path[i], path[i + 1], initCode);
+            pools[i] = pairFor(factory, path[i], path[i + 1], initCodeHash);
         }
         return pools;
     }
@@ -41,27 +43,21 @@ library UniswapV2Library {
 
     // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex"ff",
-                factory,
-                keccak256(abi.encodePacked(token0, token1)),
-                keccak256(IDolomiteAmmFactory(factory).getPairInitCode()) // init code hash
-            ))));
+        return pairFor(factory, tokenA, tokenB, IDolomiteAmmFactory(factory).getPairInitCodeHash());
     }
 
     function pairFor(
         address factory,
         address tokenA,
         address tokenB,
-        bytes memory initCode
+        bytes32 initCodeHash
     ) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(uint(keccak256(abi.encodePacked(
                 hex"ff",
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                keccak256(initCode) // init code hash
+                initCodeHash
             ))));
     }
 
@@ -71,17 +67,28 @@ library UniswapV2Library {
         address tokenA,
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
-        return getReservesWei(factory, IDolomiteAmmFactory(factory).getPairInitCode(), tokenA, tokenB);
+        return getReservesWei(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), tokenA, tokenB);
     }
 
-    function getReservesWei(
+    function getReserves(
         address factory,
-        bytes memory initCode,
+        bytes32 initCodeHash,
         address tokenA,
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(pairFor(factory, tokenA, tokenB, initCode)).getReservesWei();
+        (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB, initCodeHash)).getReserves();
+        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
+    function getReservesWei(
+        address factory,
+        bytes32 initCodeHash,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(pairFor(factory, tokenA, tokenB, initCodeHash)).getReservesWei();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
@@ -107,8 +114,8 @@ library UniswapV2Library {
         require(amountOut > 0, "UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT");
         require(reserveIn > 0 && reserveOut > 0, "UniswapV2Library: INSUFFICIENT_LIQUIDITY");
         uint numerator = reserveIn.mul(amountOut).mul(1000);
-        uint denominator = reserveOut.sub(amountOut).mul(997);
-        amountIn = (numerator / denominator).add(1);
+        uint denominator = reserveOut.sub(amountOut).mul(997); // reverts from the 'sub'
+        amountIn = numerator.div(denominator).add(1);
     }
 
     // performs chained getAmountOut calculations on any number of pairs
@@ -129,7 +136,7 @@ library UniswapV2Library {
     // performs chained getAmountOut calculations on any number of pairs
     function getAmountsOutWei(
         address factory,
-        bytes memory initCode,
+        bytes32 initCodeHash,
         uint amountIn,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
@@ -137,14 +144,14 @@ library UniswapV2Library {
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCode, path[i], path[i + 1]);
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCodeHash, path[i], path[i + 1]);
             amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
 
     function getAmountsInWei(
         address factory,
-        bytes memory initCode,
+        bytes32 initCodeHash,
         uint amountOut,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
@@ -152,7 +159,22 @@ library UniswapV2Library {
         amounts = new uint[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCode, path[i - 1], path[i]);
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, initCodeHash, path[i - 1], path[i]);
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    function getAmountsIn(
+        address factory,
+        bytes32 initCodeHash,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        require(path.length >= 2, "UniswapV2Library: INVALID_PATH");
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut) = getReserves(factory, initCodeHash, path[i - 1], path[i]);
             amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
         }
     }
@@ -163,6 +185,6 @@ library UniswapV2Library {
         uint amountOut,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
-        return getAmountsInWei(factory, IDolomiteAmmFactory(factory).getPairInitCode(), amountOut, path);
+        return getAmountsInWei(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), amountOut, path);
     }
 }

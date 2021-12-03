@@ -4,6 +4,7 @@ const {
   isKovan,
   isMatic,
   isMaticTest,
+  isArbitrum,
 } = require('./helpers');
 
 function getDaiAddress(network, TokenB) {

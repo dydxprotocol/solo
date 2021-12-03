@@ -107,6 +107,7 @@ export class Solo {
     this.signedOperations = new SignedOperations(this.contracts, this.web3, networkId);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
+    this.ammRebalancerProxy = new AmmRebalancerProxy(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);

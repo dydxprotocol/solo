@@ -43,8 +43,6 @@ import { default as DolomiteAmmFactory } from '../build/contracts/DolomiteAmmFac
 import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.json';
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerProxy.json';
-import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
-import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 
 export default {
   SoloMargin,
@@ -80,6 +78,4 @@ export default {
   DolomiteAmmPair,
   SimpleFeeOwner,
   TransferProxy,
-  UniswapV2Factory,
-  UniswapV2Pair,
 };

@@ -55,6 +55,20 @@ export class TestToken {
     );
   }
 
+  public approve(
+    spender: address,
+    amount: Integer,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.testTokenContract.methods.approve(
+        spender,
+        amount.toFixed(0),
+      ),
+      { ...options },
+    );
+  }
+
   public async getAllowance(
     ownerAddress: address,
     spenderAddress: address,
@@ -136,7 +150,7 @@ export class TestToken {
         ownerAddress,
         amount.toFixed(0),
       ),
-      { ...options, from: ownerAddress },
+      { ...options, from: options.from ? options.from : ownerAddress },
     );
   }
 

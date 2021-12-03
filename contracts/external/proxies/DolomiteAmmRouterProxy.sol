@@ -80,8 +80,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     }
 
     ISoloMargin public SOLO_MARGIN;
-    IDolomiteAmmFactory public UNISWAP_FACTORY;
-    address public WETH;
+    IDolomiteAmmFactory public DOLOMITE_AMM_FACTORY;
     address public EXPIRY_V2;
 
     event MarginPositionOpen(
@@ -108,13 +107,11 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
     constructor(
         address soloMargin,
-        address uniswapFactory,
-        address weth,
+        address dolomiteAmmFactory,
         address expiryV2
     ) public {
         SOLO_MARGIN = ISoloMargin(soloMargin);
-        UNISWAP_FACTORY = IDolomiteAmmFactory(uniswapFactory);
-        WETH = weth;
+        DOLOMITE_AMM_FACTORY = IDolomiteAmmFactory(dolomiteAmmFactory);
         EXPIRY_V2 = expiryV2;
     }
 
@@ -133,7 +130,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ensure(deadline)
     returns (uint amountAWei, uint amountBWei, uint liquidity) {
         (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMinWei, amountBMinWei);
-        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
 
         {
             Account.Info[] memory accounts = new Account.Info[](2);
@@ -162,7 +159,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint amountBMinWei,
         uint deadline
     ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
-        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
         // send liquidity to pair
         IDolomiteAmmPair(pair).transferFrom(msg.sender, pair, liquidity);
 
@@ -184,7 +181,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint deadline,
         PermitSignature memory permit
     ) public returns (uint amountAWei, uint amountBWei) {
-        address pair = UniswapV2Library.pairFor(address(UNISWAP_FACTORY), tokenA, tokenB);
+        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
         uint value = permit.approveMax ? uint(- 1) : liquidity;
         IDolomiteAmmPair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
 
@@ -208,7 +205,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : params,
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -238,7 +235,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -267,7 +264,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -283,7 +280,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : params,
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -313,7 +310,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -342,7 +339,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : UNISWAP_FACTORY,
+        uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
         amountsWei : new uint[](0)
@@ -544,12 +541,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint amountAMinWei,
         uint amountBMinWei
     ) internal returns (uint amountAWei, uint amountBWei) {
-        IDolomiteAmmFactory uniswapFactory = UNISWAP_FACTORY;
+        IDolomiteAmmFactory dolomiteAmmFactory = DOLOMITE_AMM_FACTORY;
         // create the pair if it doesn't exist yet
-        if (uniswapFactory.getPair(tokenA, tokenB) == address(0)) {
-            uniswapFactory.createPair(tokenA, tokenB);
+        if (dolomiteAmmFactory.getPair(tokenA, tokenB) == address(0)) {
+            dolomiteAmmFactory.createPair(tokenA, tokenB);
         }
-        (uint reserveAWei, uint reserveBWei) = UniswapV2Library.getReservesWei(address(uniswapFactory), tokenA, tokenB);
+        (uint reserveAWei, uint reserveBWei) = UniswapV2Library.getReservesWei(address(dolomiteAmmFactory), tokenA, tokenB);
         if (reserveAWei == 0 && reserveBWei == 0) {
             (amountAWei, amountBWei) = (amountADesiredWei, amountBDesiredWei);
         } else {

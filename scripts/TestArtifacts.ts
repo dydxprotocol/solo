@@ -22,6 +22,9 @@ import { default as TestDoubleExponentInterestSetter }
   from '../build/contracts/TestDoubleExponentInterestSetter.json';
 import { default as TestInterestSetter } from '../build/contracts/TestInterestSetter.json';
 import { default as TestSoloMargin } from '../build/contracts/TestSoloMargin.json';
+import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
+import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
+import { default as UniswapV2Router02 } from '../build/contracts/UniswapV2Router02.json';
 
 export default {
   TokenA,
@@ -46,4 +49,7 @@ export default {
   TestCallee,
   TestSimpleCallee,
   TestExchangeWrapper,
+  UniswapV2Pair,
+  UniswapV2Factory,
+  UniswapV2Router02,
 };

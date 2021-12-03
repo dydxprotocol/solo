@@ -59,9 +59,15 @@ import testPolynomialInterestSetterJson
 import testDoubleExponentInterestSetterJson
   from '../../build/testing_contracts/TestDoubleExponentInterestSetter.json';
 import testInterestSetterJson from '../../build/testing_contracts/TestInterestSetter.json';
+import testUniswapV2PairJson from '../../build/testing_contracts/UniswapV2Pair.json';
+import testUniswapV2RouterJson from '../../build/testing_contracts/UniswapV2Router02.json';
+import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Factory.json';
 
 import { address, SoloOptions } from '../../src/types';
 import { Contracts } from '../../src/lib/Contracts';
+import { UniswapV2Factory } from '../../build/wrappers/UniswapV2Factory';
+import { UniswapV2Router02 } from '../../build/wrappers/UniswapV2Router02';
+import { UniswapV2Pair } from '../../build/wrappers/UniswapV2Pair';
 
 export class TestContracts extends Contracts {
 
@@ -89,6 +95,8 @@ export class TestContracts extends Contracts {
   public testPolynomialInterestSetter: TestPolynomialInterestSetter;
   public testDoubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public testInterestSetter: TestInterestSetter;
+  public testUniswapV2Factory: UniswapV2Factory;
+  public testUniswapV2Router: UniswapV2Router02;
 
   constructor(
     provider: Provider,
@@ -125,9 +133,23 @@ export class TestContracts extends Contracts {
       testPolynomialInterestSetterJson.abi) as TestPolynomialInterestSetter;
     this.testDoubleExponentInterestSetter = new this.web3.eth.Contract(
       testDoubleExponentInterestSetterJson.abi) as TestDoubleExponentInterestSetter;
+    this.testUniswapV2Factory = new this.web3.eth.Contract(
+      testUniswapV2FactoryJson.abi) as UniswapV2Factory;
+    this.testUniswapV2Router = new this.web3.eth.Contract(
+      testUniswapV2RouterJson.abi) as UniswapV2Router02;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
+  }
+
+  public async getUniswapV2PairByTokens(
+    tokenA: address,
+    tokenB: address,
+  ): Promise<UniswapV2Pair> {
+    const pairAddress = await this.testUniswapV2Factory.methods.getPair(tokenA, tokenB).call();
+    const pair = new this.web3.eth.Contract(testUniswapV2PairJson.abi, pairAddress) as UniswapV2Pair;
+    pair.options.from = this.testUniswapV2Factory.options.from;
+    return pair;
   }
 
   public setProvider(
@@ -166,6 +188,8 @@ export class TestContracts extends Contracts {
       { contract: this.testDoubleExponentInterestSetter,
         json: testDoubleExponentInterestSetterJson },
       { contract: this.testInterestSetter, json: testInterestSetterJson },
+      { contract: this.testUniswapV2Factory, json: testUniswapV2FactoryJson },
+      { contract: this.testUniswapV2Router, json: testUniswapV2RouterJson },
     ];
 
     contracts.forEach(contract => this.setContractProvider(
@@ -208,5 +232,15 @@ export class TestContracts extends Contracts {
     this.testPolynomialInterestSetter.options.from = account;
     this.testDoubleExponentInterestSetter.options.from = account;
     this.testInterestSetter.options.from = account;
+    this.testUniswapV2Factory.options.from = account;
+    this.testUniswapV2Router.options.from = account;
+  }
+
+  public getUniswapV2Pair(
+    contractAddress: address
+  ): UniswapV2Pair {
+    const pair = new this.web3.eth.Contract(testUniswapV2PairJson.abi, contractAddress) as UniswapV2Pair;
+    pair.options.from = this.testUniswapV2Factory.options.from;
+    return pair;
   }
 }

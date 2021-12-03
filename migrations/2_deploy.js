@@ -16,6 +16,9 @@
 
 */
 
+const ethers = require('ethers');
+const fs = require('fs');
+
 const {
   isDevNetwork,
   isKovan,
@@ -31,6 +34,7 @@ const {
   getDaiPriceOracleParams,
   isMatic,
   isMaticTest,
+  isArbitrum,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleV1Params,
@@ -40,7 +44,9 @@ const {
   getMaticAddress,
   getWethAddress,
 } = require('./token_helpers');
+const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV2Pair.json');
 const { ADDRESSES } = require('../src/lib/Constants');
+
 
 // ============ Contracts ============
 
@@ -86,6 +92,7 @@ const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSo
 const LiquidatorProxyV1WithAmmForSoloMargin = artifacts.require('LiquidatorProxyV1WithAmmForSoloMargin');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
+const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
@@ -100,6 +107,7 @@ const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 // Amm
 const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
 const UniswapV2Factory = artifacts.require('UniswapV2Factory');
+const UniswapV2Router02 = artifacts.require('UniswapV2Router02');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
 
 // ============ Main Migration ============
@@ -157,7 +165,7 @@ async function deployBaseProtocol(deployer, network) {
   let soloMargin;
   if (isDevNetwork(network)) {
     soloMargin = TestSoloMargin;
-  } else if (isMatic(network) || isMaticTest(network)) {
+  } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network)) {
     soloMargin = SoloMargin;
   } else if (isKovan(network) || isMainNet(network)) {
     soloMargin = SoloMargin;
@@ -229,7 +237,7 @@ async function deployPriceOracles(deployer, network, accounts) {
     ),
   ]);
 
-  if (!isMaticTest(network) && !isMatic(network)) {
+  if (!isMaticTest(network) && !isMatic(network) && !isArbitrum(network)) {
     const daiPriceOracleParams = getDaiPriceOracleParams(network);
     await Promise.all([
       deployer.deploy(
@@ -258,6 +266,11 @@ async function deploySecondLayer(deployer, network, accounts) {
       deployer.deploy(TestSimpleCallee, soloMargin.address),
       deployer.deploy(UniswapV2Factory, getSenderAddress(network, accounts)),
     ]);
+
+    const weth = getWethAddress(network, WETH9);
+    const uniswapV2Factory = await UniswapV2Factory.deployed();
+    await deployer.deploy(UniswapV2Router02, uniswapV2Factory.address, weth);
+    await UniswapV2Router02.deployed();
   }
 
   await deployer.deploy(
@@ -265,14 +278,14 @@ async function deploySecondLayer(deployer, network, accounts) {
     soloMargin.address,
   );
 
-  await deployer.deploy(
+  const dolomiteAmmFactory = await deployer.deploy(
     DolomiteAmmFactory,
     getSenderAddress(network, accounts),
     soloMargin.address,
     TransferProxy.address,
   );
 
-  await deployer.deploy(
+  const expiryV2 = await deployer.deploy(
     ExpiryV2,
     soloMargin.address,
     getExpiryRampTime(network),
@@ -281,10 +294,32 @@ async function deploySecondLayer(deployer, network, accounts) {
   await deployer.deploy(
     DolomiteAmmRouterProxy,
     soloMargin.address,
-    DolomiteAmmFactory.address,
-    getWethAddress(network, WETH9),
-    ExpiryV2.address,
+    dolomiteAmmFactory.address,
+    expiryV2.address,
   );
+
+  const dolomiteAmmRouterProxy = await DolomiteAmmRouterProxy.deployed();
+
+  if (isDevNetwork(network)) {
+    const uniswapV2Router = await UniswapV2Router02.deployed();
+    await deployer.deploy(
+      AmmRebalancerProxy,
+      soloMargin.address,
+      dolomiteAmmRouterProxy.address,
+      [uniswapV2Router.address],
+      [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
+    );
+    await AmmRebalancerProxy.deployed();
+  } else {
+    await deployer.deploy(
+      AmmRebalancerProxy,
+      soloMargin.address,
+      dolomiteAmmRouterProxy.address,
+      [],
+      [],
+    );
+    await AmmRebalancerProxy.deployed();
+  }
 
   await Promise.all([
     deployer.deploy(

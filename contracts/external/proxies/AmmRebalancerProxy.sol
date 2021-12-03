@@ -25,6 +25,8 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
+import "@uniswap/lib/contracts/libraries/Babylonian.sol";
+
 import "../../protocol/interfaces/IExchangeWrapper.sol";
 import "../../protocol/interfaces/ISoloMargin.sol";
 
@@ -46,14 +48,23 @@ import "./DolomiteAmmRouterProxy.sol";
 
 contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
     using SafeERC20 for IERC20;
+    using SafeMath for uint;
 
     bytes32 public constant FILE = "AmmRebalancerProxy";
 
     DolomiteAmmRouterProxy public DOLOMITE_ROUTER;
     address public DOLOMITE_AMM_FACTORY;
-    mapping(address => bytes) public ROUTER_TO_BYTECODE_MAP;
+    mapping(address => bytes32) public ROUTER_TO_INIT_CODE_HASH_MAP;
 
-    event RouterBytecodeSet(address indexed router);
+    struct RebalanceParams {
+        address[] dolomitePath;
+        uint truePriceTokenA;
+        uint truePriceTokenB;
+        address otherRouter;
+        address[] otherPath;
+    }
+
+    event RouterInitCodeHashSet(address indexed router, bytes32 initCodeHash);
 
     // ============ Constructor ============
 
@@ -61,53 +72,84 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         address soloMargin,
         address dolomiteRouter,
         address[] memory routers,
-        bytes[] memory initCodes
+        bytes32[] memory initCodeHashes
     )
     public
     OnlySolo(soloMargin)
     {
         DOLOMITE_ROUTER = DolomiteAmmRouterProxy(dolomiteRouter);
-        DOLOMITE_AMM_FACTORY = address(DOLOMITE_ROUTER.UNISWAP_FACTORY());
+        DOLOMITE_AMM_FACTORY = address(DOLOMITE_ROUTER.DOLOMITE_AMM_FACTORY());
 
         Require.that(
-            routers.length == initCodes.length,
+            routers.length == initCodeHashes.length,
             FILE,
             "routers/initCodes invalid length"
         );
         for (uint i = 0; i < routers.length; i++) {
-            ROUTER_TO_BYTECODE_MAP[routers[i]] = initCodes[i];
-            emit RouterBytecodeSet(routers[i]);
+            ROUTER_TO_INIT_CODE_HASH_MAP[routers[i]] = initCodeHashes[i];
+            emit RouterInitCodeHashSet(routers[i], initCodeHashes[i]);
         }
     }
 
-    function adminSetRouterInitCode(
-        address router,
-        bytes calldata initCode
+    function adminSetRouterInitCodeHashes(
+        address[] calldata routers,
+        bytes32[] calldata initCodeHashes
     )
     external
     onlyOwner {
-        ROUTER_TO_BYTECODE_MAP[router] = initCode;
-        emit RouterBytecodeSet(router);
+        Require.that(
+            routers.length == initCodeHashes.length,
+            FILE,
+            "routers/initCodes invalid length"
+        );
+
+        for (uint i = 0; i < routers.length; i++) {
+            ROUTER_TO_INIT_CODE_HASH_MAP[routers[i]] = initCodeHashes[i];
+            emit RouterInitCodeHashSet(routers[i], initCodeHashes[i]);
+        }
     }
 
     function performRebalance(
-        address[] calldata dolomitePath,
-        uint dolomiteAmountIn,
-        address otherRouter,
-        address[] calldata otherPath
-    ) external {
+        RebalanceParams memory params
+    ) public {
         Require.that(
-            dolomitePath.length >= 2 && otherPath.length >= 2,
+            params.dolomitePath.length == 2 && params.otherPath.length >= 2,
             FILE,
-            "invalid paths"
+            "invalid path lengths"
         );
         Require.that(
-            dolomitePath[0] == otherPath[otherPath.length - 1] && dolomitePath[dolomitePath.length - 1] == otherPath[0],
+            params.dolomitePath[0] == params.otherPath[params.otherPath.length - 1] && params.dolomitePath[params.dolomitePath.length - 1] == params.otherPath[0],
             FILE,
             "invalid path alignment"
         );
 
-        Account.Info[] memory accounts = new Account.Info[](2 + dolomitePath.length - 1);
+        address dolomiteFactory = DOLOMITE_AMM_FACTORY;
+        address[] memory dolomitePools = UniswapV2Library.getPools(dolomiteFactory, params.dolomitePath);
+
+        uint dolomiteAmountIn;
+        {
+            (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReservesWei(
+                dolomiteFactory,
+                params.dolomitePath[0],
+                params.dolomitePath[1]
+            );
+            (bool isAToB, uint _dolomiteAmountIn) = _computeProfitMaximizingTrade(
+                params.truePriceTokenA,
+                params.truePriceTokenB,
+                reserveA,
+                reserveB
+            );
+
+            Require.that(
+                isAToB,
+                FILE,
+                "invalid aToB"
+            );
+
+            dolomiteAmountIn = _dolomiteAmountIn;
+        }
+
+        Account.Info[] memory accounts = new Account.Info[](2 + dolomitePools.length);
         accounts[0] = Account.Info({
         owner : msg.sender,
         number : 0
@@ -117,9 +159,6 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         number : 1
         });
 
-        address dolomiteFactory = DOLOMITE_AMM_FACTORY;
-
-        address[] memory dolomitePools = UniswapV2Library.getPools(dolomiteFactory, dolomitePath);
         for (uint i = 0; i < dolomitePools.length; i++) {
             accounts[2 + i] = Account.Info({
             owner : dolomitePools[i],
@@ -127,29 +166,30 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
             });
         }
 
-        uint[] memory dolomiteMarketPath = _getMarketPathFromTokenPath(dolomitePath);
+        uint[] memory dolomiteMarketPath = _getMarketPathFromTokenPath(params.dolomitePath);
 
         uint otherAmountIn;
         {
             // blocked off to prevent the "stack too deep" error
-            bytes memory otherInitCode = ROUTER_TO_BYTECODE_MAP[otherRouter];
+            bytes32 otherInitCodeHash = ROUTER_TO_INIT_CODE_HASH_MAP[params.otherRouter];
             Require.that(
-                otherInitCode.length > 0,
+                otherInitCodeHash != bytes32(0),
                 FILE,
                 "router not recognized"
             );
 
             // dolomiteAmountIn is the amountOut for the other trade
-            otherAmountIn = UniswapV2Library.getAmountsInWei(
-                IUniswapV2Router(otherRouter).factory(),
-                otherInitCode,
+            //            Require.that(false, FILE, "printing results", dolomiteAmountIn);
+            otherAmountIn = UniswapV2Library.getAmountsIn(
+                IUniswapV2Router(params.otherRouter).factory(),
+                otherInitCodeHash,
                 dolomiteAmountIn,
-                otherPath
+                params.otherPath
             )[0];
         }
 
-        // 1 action for transferring, and trades are paths.length - 1
-        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1 + dolomitePath.length + otherPath.length - 2);
+        // 1 action for transferring, 1 for selling via the other router, and trades are paths.length - 1
+        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2 + params.dolomitePath.length - 1);
 
         // trade from accountIndex=1 and transfer to 0, to ensure re-balances are down with flash-loaned funds
         // the dolomiteInputMarketId is the output market for the other trade and vice versa
@@ -161,13 +201,13 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
                 dolomiteMarketPath[dolomiteMarketPath.length - 1],
                 dolomiteMarketPath[0],
                 otherAmountIn,
-                otherRouter,
-                otherPath,
+                params.otherRouter,
+                params.otherPath,
                 otherAmountOut // this is the other trade's output amount
             );
         }
 
-        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
+        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, params.dolomitePath);
         Require.that(
             otherAmountIn <= dolomiteAmountsOut[dolomiteAmountsOut.length - 1],
             FILE,
@@ -269,6 +309,26 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         return IUniswapV2Router(router).getAmountsIn(desiredMakerToken, path)[0];
     }
 
+    function _computeProfitMaximizingTrade(
+        uint256 truePriceTokenA,
+        uint256 truePriceTokenB,
+        uint256 reserveA,
+        uint256 reserveB
+    ) internal pure returns (bool isAToB, uint256 amountIn) {
+        isAToB = reserveA.mul(truePriceTokenB).div(reserveB) < truePriceTokenA;
+
+        uint256 invariant = reserveA.mul(reserveB);
+
+        uint256 leftSide = Babylonian.sqrt(
+            invariant.mul(isAToB ? truePriceTokenA : truePriceTokenB).mul(1000) /
+            uint256(isAToB ? truePriceTokenB : truePriceTokenA).mul(997)
+        );
+        uint256 rightSide = (isAToB ? reserveA.mul(1000) : reserveB.mul(1000)) / 997;
+
+        // compute the amount that must be sent to move the price to the profit-maximizing price
+        amountIn = leftSide.sub(rightSide);
+    }
+
     function _checkAllowanceAndApprove(
         address token,
         address spender,
@@ -291,7 +351,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         return Actions.ActionArgs({
         actionType : Actions.ActionType.Sell,
         accountId : fromAccountIndex,
-        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+        amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
         primaryMarketId : primaryMarketId,
         secondaryMarketId : secondaryMarketId,
         otherAddress : address(this),

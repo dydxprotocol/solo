@@ -25,6 +25,7 @@ const {
   isDocker,
   isMatic,
   isMaticTest,
+  isArbitrum,
 } = require('./helpers');
 const {
   getDaiAddress,
@@ -163,6 +164,10 @@ function getTokens(network) {
       { address: getLinkAddress(network, TokenF) },
     ];
   }
+  if (isArbitrum(network)) {
+    // TODO
+    throw new Error('TODO: add tokens');
+  }
 
   return [
     { address: getDaiAddress(network, TokenB) },
@@ -189,6 +194,9 @@ async function getOracles(network) {
   if (isMatic(network)) {
     return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
   }
+  if (isArbitrum(network)) {
+    return tokens.map(() => ({ address: ChainlinkPriceOracleV1.address }));
+  }
   throw new Error('Cannot find Oracles');
 }
 
@@ -207,6 +215,9 @@ async function getSetters(network) {
     return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isMaticTest(network)) {
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
+  }
+  if (isArbitrum(network)) {
     return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   throw new Error('Cannot find Setters');

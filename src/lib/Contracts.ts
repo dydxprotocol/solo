@@ -51,7 +51,6 @@ import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
 import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
 import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
-import { UniswapV2Pair } from '../../build/wrappers/UniswapV2Pair';
 import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
@@ -82,9 +81,8 @@ import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.j
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import chainlinkPriceOracleV1Json
   from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
-import uniswapV2FactoryJson from '../../build/published_contracts/UniswapV2Factory.json';
+import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
-import uniswapV2PairJson from '../../build/published_contracts/UniswapV2Pair.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
@@ -98,7 +96,6 @@ import {
   SoloOptions,
   TxResult,
 } from '../types';
-import { UniswapV2Factory } from '../../build/wrappers/UniswapV2Factory';
 import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
 
@@ -123,8 +120,8 @@ export class Contracts {
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
   public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
-  public ammRebalancerProxy: AmmRebalancerProxy;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
+  public ammRebalancerProxy: AmmRebalancerProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
@@ -133,7 +130,6 @@ export class Contracts {
   public usdcPriceOracle: UsdcPriceOracle;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
   public dolomiteAmmFactory: DolomiteAmmFactory;
-  public uniswapV2Factory: UniswapV2Factory;
   public simpleFeeOwner: SimpleFeeOwner;
   public weth: Weth;
   protected web3: Web3;
@@ -190,7 +186,7 @@ export class Contracts {
     this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
     this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(chainlinkPriceOracleV1Json.abi) as
       ChainlinkPriceOracleV1;
-    this.dolomiteAmmFactory = new this.web3.eth.Contract(uniswapV2FactoryJson.abi) as
+    this.dolomiteAmmFactory = new this.web3.eth.Contract(dolomiteAmmFactoryJson.abi) as
       DolomiteAmmFactory;
     this.simpleFeeOwner = new this.web3.eth.Contract(simpleFeeOwnerJson.abi) as
       SimpleFeeOwner;
@@ -200,28 +196,27 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
-  public getDolomiteAmmPair(
-    contractAddress: address
-  ): DolomiteAmmPair {
+  public getDolomiteLpTokenAddress(
+    tokenA: address,
+    tokenB: address,
+  ): Promise<string> {
+    return this.dolomiteAmmFactory.methods.getPair(tokenA, tokenB).call();
+  }
+
+  public async getDolomiteAmmPairFromTokens(
+    tokenA: address,
+    tokenB: address
+  ): Promise<DolomiteAmmPair> {
+    const contractAddress = await this.getDolomiteLpTokenAddress(tokenA, tokenB);
     const pair = new this.web3.eth.Contract(dolomiteAmmPairJson.abi, contractAddress) as DolomiteAmmPair;
     pair.options.from = this.dolomiteAmmFactory.options.from;
     return pair;
   }
 
-  public getUniswapV2Pair(
+  public getDolomiteAmmPair(
     contractAddress: address
-  ): UniswapV2Pair {
-    const pair = new this.web3.eth.Contract(uniswapV2PairJson.abi, contractAddress) as UniswapV2Pair;
-    pair.options.from = this.uniswapV2Factory.options.from;
-    return pair;
-  }
-
-  public async getUniswapV2PairByTokens(
-    tokenA: address,
-    tokenB: address,
-  ): Promise<UniswapV2Pair> {
-    const pairAddress = await this.dolomiteAmmFactory.methods.getPair(tokenA, tokenB).call();
-    const pair = new this.web3.eth.Contract(dolomiteAmmPairJson.abi, pairAddress) as UniswapV2Pair;
+  ): DolomiteAmmPair {
+    const pair = new this.web3.eth.Contract(dolomiteAmmPairJson.abi, contractAddress) as DolomiteAmmPair;
     pair.options.from = this.dolomiteAmmFactory.options.from;
     return pair;
   }
@@ -250,6 +245,7 @@ export class Contracts {
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
       { contract: this.liquidatorProxyV1WithAmm, json: liquidatorV1WithAmmJson },
       { contract: this.dolomiteAmmRouterProxy, json: dolomiteAmmRouterProxyJson },
+      { contract: this.ammRebalancerProxy, json: ammRebalancerProxyJson },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
@@ -263,7 +259,7 @@ export class Contracts {
         }
       },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
-      { contract: this.dolomiteAmmFactory, json: uniswapV2FactoryJson },
+      { contract: this.dolomiteAmmFactory, json: dolomiteAmmFactoryJson },
       { contract: this.simpleFeeOwner, json: simpleFeeOwnerJson },
       { contract: this.chainlinkPriceOracleV1, json: chainlinkPriceOracleV1Json },
       { contract: this.weth, json: wethJson },
@@ -299,6 +295,7 @@ export class Contracts {
     this.liquidatorProxyV1.options.from = account;
     this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
+    this.ammRebalancerProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;

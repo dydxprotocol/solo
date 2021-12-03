@@ -21,6 +21,7 @@ import {
   TxResult,
   address,
 } from '../../src/types';
+import { UniswapV2Router } from '../../src/modules/UniswapV2Router';
 
 export class Testing {
   private contracts: TestContracts;
@@ -38,6 +39,7 @@ export class Testing {
   public polynomialInterestSetter: TestPolynomialInterestSetter;
   public doubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public interestSetter: TestInterestSetter;
+  public uniswapV2Router: UniswapV2Router;
 
   constructor(
     provider: Provider,
@@ -59,6 +61,7 @@ export class Testing {
     this.polynomialInterestSetter = new TestPolynomialInterestSetter(contracts);
     this.doubleExponentInterestSetter = new TestDoubleExponentInterestSetter(contracts);
     this.interestSetter = new TestInterestSetter(contracts);
+    this.uniswapV2Router = new UniswapV2Router(contracts);
   }
 
   public setProvider(
