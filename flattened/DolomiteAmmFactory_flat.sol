@@ -1439,7 +1439,7 @@ pragma solidity >=0.5.0;
 
 
 
-interface IUniswapV2Factory {
+interface IDolomiteAmmFactory {
 
     function feeTo() external view returns (address);
     function feeToSetter() external view returns (address);
@@ -1983,7 +1983,7 @@ pragma solidity >=0.5.0;
 
 
 
-interface IUniswapV2Pair {
+interface IDolomiteAmmPair {
 
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
@@ -2302,7 +2302,7 @@ pragma solidity ^0.5.16;
 
 
 
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
+contract DolomiteAmmERC20 is IUniswapV2ERC20 {
     using SafeMath for uint;
 
     string public constant name = 'Dolomite LP Token';
@@ -2404,7 +2404,7 @@ pragma solidity ^0.5.16;
 
 
 
-contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
+contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
@@ -2456,7 +2456,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         // sufficient check
         token0 = _token0;
         token1 = _token1;
-        soloMargin = IUniswapV2Factory(msg.sender).soloMargin();
+        soloMargin = IDolomiteAmmFactory(msg.sender).soloMargin();
         soloMarginTransferProxy = _transferProxy;
 
         marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
@@ -2808,7 +2808,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20, IAutoTrader {
         uint112 reserve0,
         uint112 reserve1
     ) private returns (bool feeOn) {
-        address feeTo = IUniswapV2Factory(factory).feeTo();
+        address feeTo = IDolomiteAmmFactory(factory).feeTo();
         // gas savings
         feeOn = feeTo != address(0);
         uint _kLast = kLast;
@@ -4045,7 +4045,7 @@ pragma solidity ^0.5.16;
 
 
 
-contract DolomiteAmmFactory is IUniswapV2Factory {
+contract DolomiteAmmFactory is IDolomiteAmmFactory {
     address public feeTo;
     address public feeToSetter;
     address public soloMargin;
@@ -4072,7 +4072,7 @@ contract DolomiteAmmFactory is IUniswapV2Factory {
     }
 
     function getPairInitCode() public pure returns (bytes memory) {
-        return type(UniswapV2Pair).creationCode;
+        return type(DolomiteAmmPair).creationCode;
     }
 
     function getPairInitCodeHash() public pure returns (bytes32) {
@@ -4090,7 +4090,7 @@ contract DolomiteAmmFactory is IUniswapV2Factory {
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        IUniswapV2Pair(pair).initialize(token0, token1, transferProxy);
+        IDolomiteAmmPair(pair).initialize(token0, token1, transferProxy);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
         isPairCreated[pair] = true;
