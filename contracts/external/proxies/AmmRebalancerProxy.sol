@@ -44,8 +44,6 @@ import "../interfaces/IUniswapV2Router.sol";
 
 import "../helpers/OnlySolo.sol";
 
-import "./DolomiteAmmRouterProxy.sol";
-
 contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint;
