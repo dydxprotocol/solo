@@ -70,6 +70,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         address account;
         uint[] marketPath;
         uint[] amountsWei;
+        uint marginDepositDeltaWei;
     }
 
     struct PermitSignature {
@@ -208,7 +209,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -238,7 +240,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -267,7 +270,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -283,7 +287,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -313,7 +318,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -342,7 +348,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uniswapFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
-        amountsWei : new uint[](0)
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
         })
         );
     }
@@ -443,6 +450,29 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
         Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
         Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, accounts, pools);
+
+        if (cache.params.depositToken != address(0) && cache.params.marginDeposit == uint(- 1)) {
+            uint expiryActionCount = cache.params.expiryTimeDelta == 0 ? 0 : 1;
+            uint marketId = actions[actions.length - 1 - expiryActionCount].primaryMarketId;
+            if (cache.params.isPositiveMarginDeposit) {
+                // the marginDeposit is equal to the amount of `marketId` in account 0 (which is at accounts.length - 1)
+                cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[accounts.length - 1], marketId).value;
+            } else {
+                uint amountOutWeiFromAccount = cache.marketPath[0] == marketId ? cache.amountsWei[0] : cache.amountsWei[cache.amountsWei.length - 1];
+                if (cache.marketPath[0] == marketId) {
+                    // the trade downsizes the potential withdrawal
+                    cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[0], marketId).value.sub(cache.amountsWei[0]);
+                } else if (cache.marketPath[cache.marketPath.length - 1] == marketId) {
+                    // the trade upsizes the withdrawal
+                    cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[0], marketId).value.add(cache.amountsWei[cache.amountsWei.length - 1]);
+                } else {
+                    // the trade doesn't impact the withdrawal
+                    cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[0], marketId).value;
+                }
+            }
+        } else {
+            cache.marginDepositDeltaWei = cache.params.marginDeposit;
+        }
 
         return (accounts, actions);
     }
@@ -684,17 +714,17 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 cache.params.tokenPath[cache.params.tokenPath.length - 1],
                 cache.params.depositToken,
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(false, cache.amountsWei[0]),
-                    newPar: cache.soloMargin.getAccountPar(accounts[0], cache.marketPath[0])
-                }),
+            deltaWei : Types.Wei(false, cache.amountsWei[0]),
+            newPar : cache.soloMargin.getAccountPar(accounts[0], cache.marketPath[0])
+            }),
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
-                    newPar: newOutputPar
-                }),
+            deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+            newPar : newOutputPar
+            }),
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(true, cache.params.marginDeposit),
-                    newPar: newOutputPar
-                })
+            deltaWei : Types.Wei(true, cache.marginDepositDeltaWei),
+            newPar : newOutputPar
+            })
             );
         } else if (cache.params.accountNumber > 0) {
             Types.Par memory newInputPar = cache.soloMargin.getAccountPar(accounts[0], cache.marketPath[0]);
@@ -706,17 +736,17 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 cache.params.tokenPath[cache.params.tokenPath.length - 1],
                 cache.params.depositToken,
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(false, cache.amountsWei[0]),
-                    newPar: newInputPar
-                }),
+            deltaWei : Types.Wei(false, cache.amountsWei[0]),
+            newPar : newInputPar
+            }),
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
-                    newPar: _getOutputPar(cache, accounts[0])
-                }),
+            deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+            newPar : _getOutputPar(cache, accounts[0])
+            }),
                 Events.BalanceUpdate({
-                    deltaWei: Types.Wei(false, cache.params.marginDeposit),
-                    newPar: newInputPar
-                })
+            deltaWei : Types.Wei(false, cache.marginDepositDeltaWei),
+            newPar : newInputPar
+            })
             );
         }
     }

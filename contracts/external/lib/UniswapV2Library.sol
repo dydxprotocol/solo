@@ -14,7 +14,7 @@ library UniswapV2Library {
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), path);
+        return getPools(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), path);
     }
 
     function getPools(
@@ -43,7 +43,7 @@ library UniswapV2Library {
 
     // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        return pairFor(factory, tokenA, tokenB, IDolomiteAmmFactory(factory).getPairInitCodeHash());
+        return pairFor(factory, tokenA, tokenB, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()));
     }
 
     function pairFor(
@@ -67,7 +67,7 @@ library UniswapV2Library {
         address tokenA,
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
-        return getReservesWei(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), tokenA, tokenB);
+        return getReservesWei(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), tokenA, tokenB);
     }
 
     function getReserves(
@@ -185,6 +185,6 @@ library UniswapV2Library {
         uint amountOut,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
-        return getAmountsInWei(factory, IDolomiteAmmFactory(factory).getPairInitCodeHash(), amountOut, path);
+        return getAmountsInWei(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), amountOut, path);
     }
 }

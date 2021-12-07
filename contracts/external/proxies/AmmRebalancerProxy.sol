@@ -52,7 +52,6 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
 
     bytes32 public constant FILE = "AmmRebalancerProxy";
 
-    DolomiteAmmRouterProxy public DOLOMITE_ROUTER;
     address public DOLOMITE_AMM_FACTORY;
     mapping(address => bytes32) public ROUTER_TO_INIT_CODE_HASH_MAP;
 
@@ -70,15 +69,14 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
 
     constructor (
         address soloMargin,
-        address dolomiteRouter,
+        address dolomiteAmmFactory,
         address[] memory routers,
         bytes32[] memory initCodeHashes
     )
     public
     OnlySolo(soloMargin)
     {
-        DOLOMITE_ROUTER = DolomiteAmmRouterProxy(dolomiteRouter);
-        DOLOMITE_AMM_FACTORY = address(DOLOMITE_ROUTER.DOLOMITE_AMM_FACTORY());
+        DOLOMITE_AMM_FACTORY = dolomiteAmmFactory;
 
         Require.that(
             routers.length == initCodeHashes.length,

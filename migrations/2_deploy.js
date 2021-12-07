@@ -298,14 +298,12 @@ async function deploySecondLayer(deployer, network, accounts) {
     expiryV2.address,
   );
 
-  const dolomiteAmmRouterProxy = await DolomiteAmmRouterProxy.deployed();
-
   if (isDevNetwork(network)) {
     const uniswapV2Router = await UniswapV2Router02.deployed();
     await deployer.deploy(
       AmmRebalancerProxy,
       soloMargin.address,
-      dolomiteAmmRouterProxy.address,
+      dolomiteAmmFactory.address,
       [uniswapV2Router.address],
       [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
     );
@@ -314,7 +312,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     await deployer.deploy(
       AmmRebalancerProxy,
       soloMargin.address,
-      dolomiteAmmRouterProxy.address,
+      dolomiteAmmFactory.address,
       [],
       [],
     );
