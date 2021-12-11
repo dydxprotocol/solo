@@ -33,6 +33,11 @@ function isArbitrum(network) {
   return network.startsWith('arbitrum');
 }
 
+function isArbitrumTest(network) {
+  verifyNetwork(network);
+  return network.startsWith('arbitrum_test');
+}
+
 function isKovan(network) {
   verifyNetwork(network);
   return network.startsWith('kovan');
@@ -199,6 +204,7 @@ function getMultisigAddress(network) {
 
 module.exports = {
   isArbitrum,
+  isArbitrumTest,
   isDevNetwork,
   isMainNet,
   isMatic,

@@ -176,7 +176,14 @@
             "transactionHash": "0x64bed784adc57fb87d1eb608793c230a8e9d12d97a7d28032f357c2290f64c42"
         }
     },
-    "UniswapV2Factory": {
+    "DolomiteAmmRouterProxy": {
+        "80001": {
+            "links": {},
+            "address": "0x9b3Ad6151c41dcCB74123eb72a6b7BD28Af4a69B",
+            "transactionHash": "0x1f02ac635c01863a9ed2a82b3f6e3bc8581640dc8e2e8c06ec983faceafb0f92"
+        }
+    },
+    "DolomiteAmmFactory": {
         "80001": {
             "links": {},
             "address": "0xaE3a05f33E2f358eB98c24F59f0E13f92D869160",

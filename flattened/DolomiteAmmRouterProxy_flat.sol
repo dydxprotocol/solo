@@ -4579,7 +4579,6 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 // the marginDeposit is equal to the amount of `marketId` in account 0 (which is at accounts.length - 1)
                 cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[accounts.length - 1], marketId).value;
             } else {
-                uint amountOutWeiFromAccount = cache.marketPath[0] == marketId ? cache.amountsWei[0] : cache.amountsWei[cache.amountsWei.length - 1];
                 if (cache.marketPath[0] == marketId) {
                     // the trade downsizes the potential withdrawal
                     cache.marginDepositDeltaWei = cache.soloMargin.getAccountWei(accounts[0], marketId).value.sub(cache.amountsWei[0]);

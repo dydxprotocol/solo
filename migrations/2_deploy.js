@@ -17,7 +17,6 @@
 */
 
 const ethers = require('ethers');
-const fs = require('fs');
 
 const {
   isDevNetwork,
@@ -35,6 +34,7 @@ const {
   isMatic,
   isMaticTest,
   isArbitrum,
+  isArbitrumTest,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleV1Params,
@@ -93,6 +93,7 @@ const LiquidatorProxyV1WithAmmForSoloMargin = artifacts.require('LiquidatorProxy
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
+const TestnetAmmRebalancerProxy = artifacts.require('TestnetAmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
@@ -317,6 +318,16 @@ async function deploySecondLayer(deployer, network, accounts) {
       [],
     );
     await AmmRebalancerProxy.deployed();
+  }
+
+  if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
+    await deployer.deploy(
+      TestnetAmmRebalancerProxy,
+      soloMargin.address,
+      dolomiteAmmFactory.address,
+      [],
+      [],
+    );
   }
 
   await Promise.all([
