@@ -43,6 +43,7 @@ import { default as DolomiteAmmFactory } from '../build/contracts/DolomiteAmmFac
 import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.json';
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerProxy.json';
+import { default as TestnetAmmRebalancerProxy } from '../build/contracts/TestnetAmmRebalancerProxy.json';
 
 export default {
   SoloMargin,
@@ -61,6 +62,7 @@ export default {
   LiquidatorProxyV1ForSoloMargin,
   LiquidatorProxyV1WithAmmForSoloMargin,
   AmmRebalancerProxy,
+  TestnetAmmRebalancerProxy,
   DolomiteAmmRouterProxy,
   PolynomialInterestSetter,
   DoubleExponentInterestSetter,

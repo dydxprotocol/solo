@@ -86,6 +86,7 @@ import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.j
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
+import testnetAmmRebalancerProxyJson from '../../build/published_contracts/TestnetAmmRebalancerProxy.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -97,6 +98,7 @@ import {
   TxResult,
 } from '../types';
 import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
+import { TestnetAmmRebalancerProxy } from '../../build/wrappers/TestnetAmmRebalancerProxy';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
 
 interface CallableTransactionObject<T> {
@@ -122,6 +124,7 @@ export class Contracts {
   public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxy: AmmRebalancerProxy;
+  public testnetAmmRebalancerProxy: TestnetAmmRebalancerProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
@@ -176,6 +179,7 @@ export class Contracts {
     this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(dolomiteAmmRouterProxyJson.abi) as
       DolomiteAmmRouterProxy;
     this.ammRebalancerProxy = new this.web3.eth.Contract(ammRebalancerProxyJson.abi) as AmmRebalancerProxy;
+    this.testnetAmmRebalancerProxy = new this.web3.eth.Contract(testnetAmmRebalancerProxyJson.abi) as TestnetAmmRebalancerProxy;
     this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
       PolynomialInterestSetter;
     this.doubleExponentInterestSetter = new this.web3.eth.Contract(
@@ -246,6 +250,7 @@ export class Contracts {
       { contract: this.liquidatorProxyV1WithAmm, json: liquidatorV1WithAmmJson },
       { contract: this.dolomiteAmmRouterProxy, json: dolomiteAmmRouterProxyJson },
       { contract: this.ammRebalancerProxy, json: ammRebalancerProxyJson },
+      { contract: this.testnetAmmRebalancerProxy, json: testnetAmmRebalancerProxyJson },
       { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
       { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
@@ -296,6 +301,7 @@ export class Contracts {
     this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
     this.ammRebalancerProxy.options.from = account;
+    this.testnetAmmRebalancerProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;
