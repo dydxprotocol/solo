@@ -172,15 +172,8 @@
     "DolomiteAmmRouterProxy": {
         "80001": {
             "links": {},
-            "address": "0x06E000fA56c208b4BB91a65acB6F6684953BA099",
-            "transactionHash": "0x64bed784adc57fb87d1eb608793c230a8e9d12d97a7d28032f357c2290f64c42"
-        }
-    },
-    "DolomiteAmmRouterProxy": {
-        "80001": {
-            "links": {},
-            "address": "0x9b3Ad6151c41dcCB74123eb72a6b7BD28Af4a69B",
-            "transactionHash": "0x1f02ac635c01863a9ed2a82b3f6e3bc8581640dc8e2e8c06ec983faceafb0f92"
+            "address": "0x61450D665D2Cb7f5E06cA89cb0c1daC43aD87738",
+            "transactionHash": "0xec6bdfd8b94ee5cf7d8a0491c47a82b9ab695cfb7c9108a52e708eae744fd1be"
         }
     },
     "DolomiteAmmFactory": {

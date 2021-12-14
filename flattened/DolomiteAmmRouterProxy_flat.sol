@@ -4187,11 +4187,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     struct ModifyPositionCache {
         ModifyPositionParams params;
         ISoloMargin soloMargin;
-        IDolomiteAmmFactory uniswapFactory;
+        IDolomiteAmmFactory ammFactory;
         address account;
         uint[] marketPath;
         uint[] amountsWei;
         uint marginDepositDeltaWei;
+        bool isResized;
     }
 
     struct PermitSignature {
@@ -4226,6 +4227,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         Events.BalanceUpdate outputBalanceUpdate, // the amount of borrow amount being repaid
         Events.BalanceUpdate marginWithdrawalUpdate
     );
+
+    event TradeResized(address token, uint marketId, uint amount);
 
     constructor(
         address soloMargin,
@@ -4327,11 +4330,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : params,
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4358,11 +4362,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4388,11 +4393,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4405,11 +4411,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             ModifyPositionCache({
         params : params,
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4436,11 +4443,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : msg.sender,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4466,11 +4474,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         expiryTimeDelta : 0
         }),
         soloMargin : SOLO_MARGIN,
-        uniswapFactory : DOLOMITE_AMM_FACTORY,
+        ammFactory : DOLOMITE_AMM_FACTORY,
         account : account,
         marketPath : new uint[](0),
         amountsWei : new uint[](0),
-        marginDepositDeltaWei : 0
+        marginDepositDeltaWei : 0,
+        isResized : false
         })
         );
     }
@@ -4490,6 +4499,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         cache.soloMargin.operate(accounts, actions);
 
         _logEvents(cache, accounts);
+
+        if (cache.isResized) {
+            for (uint i = 0; i < cache.amountsWei.length; i++) {
+                emit TradeResized(cache.params.tokenPath[i], cache.marketPath[i], cache.amountsWei[i]);
+            }
+        }
     }
 
     function _swapTokensForExactTokensAndModifyPosition(
@@ -4503,6 +4518,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         cache.soloMargin.operate(accounts, actions);
 
         _logEvents(cache, accounts);
+
+        if (cache.isResized) {
+            for (uint i = 0; i < cache.amountsWei.length; i++) {
+                emit TradeResized(cache.params.tokenPath[i], cache.marketPath[i], cache.amountsWei[i]);
+            }
+        }
     }
 
     function _getParamsForSwapExactTokensForTokens(
@@ -4521,7 +4542,20 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
         // amountsWei[0] == amountInWei
         // amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.uniswapFactory), amountInWei, cache.params.tokenPath);
+        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.ammFactory), amountInWei, cache.params.tokenPath);
+        for (uint i = 1; i < cache.amountsWei.length; i++) {
+            Interest.Index memory interestIndex = cache.soloMargin.getMarketCurrentIndex(cache.marketPath[i]);
+            uint recreatedValue = Math.getPartial(Math.getPartial(cache.amountsWei[i], 1e18, interestIndex.supply), interestIndex.supply, 1e18);
+            if (recreatedValue != cache.amountsWei[i]) {
+                // there is a rounding error. The inputAmount needs to be subtracted by 1 to account for this, or else
+                // user's balances can go negative.
+                amountInWei = amountInWei.sub(1);
+                cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.ammFactory), amountInWei, cache.params.tokenPath);
+                cache.isResized = true;
+                break;
+            }
+        }
+
         require(
             cache.amountsWei[cache.amountsWei.length - 1] >= amountOutMinWei,
             "DolomiteAmmRouterProxy::_getParamsForSwapExactTokensForTokens: INSUFFICIENT_OUTPUT_AMOUNT"
@@ -4546,7 +4580,20 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
         // cache.amountsWei[0] == amountInWei
         // cache.amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.uniswapFactory), amountOutWei, cache.params.tokenPath);
+        bytes32 initHash = keccak256(cache.ammFactory.getPairInitCode());
+        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.ammFactory), initHash, amountOutWei, cache.params.tokenPath);
+        for (uint i = 1; i < cache.amountsWei.length; i++) {
+            Interest.Index memory interestIndex = cache.soloMargin.getMarketCurrentIndex(cache.marketPath[i]);
+            uint recreatedValue = Math.getPartial(Math.getPartial(cache.amountsWei[i], 1e18, interestIndex.supply), interestIndex.supply, 1e18);
+            if (recreatedValue != cache.amountsWei[i]) {
+                // there is a rounding error. The inputAmount needs to be subtracted by 1 to account for this, or else
+                // user's balances can go negative.
+                amountOutWei = amountOutWei.sub(1);
+                cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.ammFactory), initHash, amountOutWei, cache.params.tokenPath);
+                cache.isResized = true;
+                break;
+            }
+        }
         require(
             cache.amountsWei[0] <= amountInMaxWei,
             "DolomiteAmmRouterProxy::_getParamsForSwapTokensForExactTokens: EXCESSIVE_INPUT_AMOUNT"
@@ -4567,7 +4614,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         );
 
         // pools.length == cache.params.tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(cache.uniswapFactory), cache.params.tokenPath);
+        address[] memory pools = UniswapV2Library.getPools(address(cache.ammFactory), cache.params.tokenPath);
 
         Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
         Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, accounts, pools);

@@ -72,6 +72,26 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    function getPartialRoundHalfUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (target == 0 || numerator == 0) {
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
+        }
+        uint result = target.mul(numerator);
+        // round the denominator comparator up to ensure a fair comparison is done on the `result`'s modulo.
+        // For example, 51 / 103 == 0; 51 % 103 == 51; ((103 - 1) / 2) + 1 == 52; 51 < 52, therefore no round up
+        // TODO this needs to be checked that it works for super large numbers
+        return result.div(denominator).add(result.mod(denominator) >= denominator.sub(1).div(2).add(1) ? 1 : 0);
+    }
+
     function to128(
         uint256 number
     )
