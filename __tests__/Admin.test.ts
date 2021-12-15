@@ -3,7 +3,7 @@ import { getSolo } from './helpers/Solo';
 import { TestSolo } from './modules/TestSolo';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
-import { INTEGERS, ADDRESSES } from '../src/lib/Constants';
+import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stringToDecimal } from '../src/lib/Helpers';
 import { expectThrow } from '../src/lib/Expect';
 import {
@@ -13,7 +13,7 @@ import {
   MarketWithInfo,
   RiskLimits,
   RiskParams,
- } from '../src/types';
+} from '../src/types';
 
 let txr: any;
 let solo: TestSolo;
@@ -51,10 +51,7 @@ describe('Admin', () => {
 
     await resetEVM();
 
-    [
-      riskLimits,
-      riskParams,
-    ] = await Promise.all([
+    [riskLimits, riskParams] = await Promise.all([
       solo.getters.getRiskLimits(),
       solo.getters.getRiskParams(),
       setupMarkets(solo, accounts, 2),
@@ -84,59 +81,117 @@ describe('Admin', () => {
     it('Succeeds even if has more tokens than enough', async () => {
       // has 2X tokens but has X excess
       await Promise.all([
-        solo.testing.setAccountBalance(owner, account1, market, amount.times(2)),
-        solo.testing.setAccountBalance(owner, account2, market, amount.times(-1)),
+        solo.testing.setAccountBalance(
+          owner,
+          account1,
+          market,
+          amount.times(2),
+        ),
+        solo.testing.setAccountBalance(
+          owner,
+          account2,
+          market,
+          amount.times(-1),
+        ),
         solo.testing.tokenA.issueTo(amount.times(2), soloAddress),
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, amount, amount);
     });
 
     it('Succeeds even if existing tokens arent enough', async () => {
       // has X tokens but has 3X excess
       await Promise.all([
-        solo.testing.setAccountBalance(owner, account1, market, amount.times(-3)),
-        solo.testing.setAccountBalance(owner, account2, market, amount.times(1)),
+        solo.testing.setAccountBalance(
+          owner,
+          account1,
+          market,
+          amount.times(-3),
+        ),
+        solo.testing.setAccountBalance(
+          owner,
+          account2,
+          market,
+          amount.times(1),
+        ),
         solo.testing.tokenA.issueTo(amount, soloAddress),
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount.times(3));
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, INTEGERS.ZERO, amount);
     });
 
     it('Succeeds for zero available', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(owner, account1, market, amount.times(-2)),
-        solo.testing.setAccountBalance(owner, account2, market, amount.times(1)),
+        solo.testing.setAccountBalance(
+          owner,
+          account1,
+          market,
+          amount.times(-2),
+        ),
+        solo.testing.setAccountBalance(
+          owner,
+          account2,
+          market,
+          amount.times(1),
+        ),
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, INTEGERS.ZERO, INTEGERS.ZERO);
     });
 
     it('Succeeds for zero excess', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(owner, account1, market, amount.times(-1)),
-        solo.testing.setAccountBalance(owner, account2, market, amount.times(2)),
+        solo.testing.setAccountBalance(
+          owner,
+          account1,
+          market,
+          amount.times(-1),
+        ),
+        solo.testing.setAccountBalance(
+          owner,
+          account2,
+          market,
+          amount.times(2),
+        ),
         solo.testing.tokenA.issueTo(amount, soloAddress),
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
       expect(excess).toEqual(INTEGERS.ZERO);
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, { from: admin });
+      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, amount, INTEGERS.ZERO);
     });
 
     it('Fails for negative excess', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(owner, account1, market, amount.times(-1)),
-        solo.testing.setAccountBalance(owner, account2, market, amount.times(3)),
+        solo.testing.setAccountBalance(
+          owner,
+          account1,
+          market,
+          amount.times(-1),
+        ),
+        solo.testing.setAccountBalance(
+          owner,
+          account2,
+          market,
+          amount.times(3),
+        ),
         solo.testing.tokenA.issueTo(amount, soloAddress),
       ]);
       const excess = await solo.getters.getNumExcessTokens(market);
@@ -150,7 +205,9 @@ describe('Admin', () => {
 
     it('Fails for non-existent market', async () => {
       await expectThrow(
-        solo.admin.withdrawExcessTokens(invalidMarket, recipient, { from: nonAdmin }),
+        solo.admin.withdrawExcessTokens(invalidMarket, recipient, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -174,10 +231,7 @@ describe('Admin', () => {
         expect(log.args.token).toEqual(token);
         expect(log.args.amount).toEqual(expectedRecipient);
       }
-      const [
-        soloBalance,
-        recipientBalance,
-      ] = await Promise.all([
+      const [soloBalance, recipientBalance] = await Promise.all([
         solo.testing.tokenA.getBalance(soloAddress),
         solo.testing.tokenA.getBalance(recipient),
       ]);
@@ -223,11 +277,9 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.withdrawUnsupportedTokens(
-          ADDRESSES.TEST[1],
-          recipient,
-          { from: nonAdmin },
-        ),
+        solo.admin.withdrawUnsupportedTokens(ADDRESSES.TEST[1], recipient, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -245,10 +297,7 @@ describe('Admin', () => {
         expect(log.args.token).toEqual(token);
         expect(log.args.amount).toEqual(expectedRecipient);
       }
-      const [
-        soloBalance,
-        recipientBalance,
-      ] = await Promise.all([
+      const [soloBalance, recipientBalance] = await Promise.all([
         solo.testing.tokenC.getBalance(soloAddress),
         solo.testing.tokenC.getBalance(recipient),
       ]);
@@ -263,10 +312,7 @@ describe('Admin', () => {
     const token = ADDRESSES.TEST[2];
 
     it('Successfully adds a market', async () => {
-      await solo.testing.priceOracle.setPrice(
-        token,
-        defaultPrice,
-      );
+      await solo.testing.priceOracle.setPrice(token, defaultPrice);
 
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
@@ -285,7 +331,9 @@ describe('Admin', () => {
 
       const numMarkets = await solo.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(marketId);
+      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(
+        marketId,
+      );
 
       expect(marketInfo.market.token.toLowerCase()).toEqual(token);
       expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
@@ -297,12 +345,16 @@ describe('Admin', () => {
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.market.index.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(marketInfo.market.index.lastUpdate).toEqual(
+        new BigNumber(timestamp),
+      );
       expect(marketInfo.currentPrice).toEqual(defaultPrice);
       expect(marketInfo.currentInterestRate).toEqual(INTEGERS.ZERO);
       expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(marketInfo.market.index.lastUpdate).toEqual(
+        new BigNumber(timestamp),
+      );
 
       const logs = solo.logs.parseLogs(txResult);
       expect(logs.length).toEqual(5);
@@ -428,7 +480,9 @@ describe('Admin', () => {
       await expectIsClosing(null, false);
 
       // set to false again
-      txr = await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
+      txr = await solo.admin.setIsClosing(defaultMarket, false, {
+        from: admin,
+      });
       await expectIsClosing(txr, false);
 
       // set to true
@@ -440,7 +494,9 @@ describe('Admin', () => {
       await expectIsClosing(txr, true);
 
       // set to false
-      txr = await solo.admin.setIsClosing(defaultMarket, false, { from: admin });
+      txr = await solo.admin.setIsClosing(defaultMarket, false, {
+        from: admin,
+      });
       await expectIsClosing(txr, false);
     });
 
@@ -475,11 +531,9 @@ describe('Admin', () => {
     it('Succeeds', async () => {
       const token = await solo.getters.getMarketTokenAddress(defaultMarket);
       await solo.testing.priceOracle.setPrice(token, defaultPrice);
-      txr = await solo.admin.setPriceOracle(
-        defaultMarket,
-        oracleAddress,
-        { from: admin },
-      );
+      txr = await solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+        from: admin,
+      });
       const logs = solo.logs.parseLogs(txr);
       expect(logs.length).toEqual(1);
       const log = logs[0];
@@ -492,44 +546,34 @@ describe('Admin', () => {
       const token = await solo.getters.getMarketTokenAddress(defaultMarket);
       await solo.testing.priceOracle.setPrice(token, invalidPrice);
       await expectThrow(
-        solo.admin.setPriceOracle(
-          defaultMarket,
-          oracleAddress,
-          { from: admin },
-        ),
+        solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+          from: admin,
+        }),
         'AdminImpl: Invalid oracle price',
       );
     });
 
     it('Fails for contract without proper function', async () => {
       await expectThrow(
-        solo.admin.setPriceOracle(
-          defaultMarket,
-          setterAddress,
-          { from: admin },
-        ),
+        solo.admin.setPriceOracle(defaultMarket, setterAddress, {
+          from: admin,
+        }),
       );
     });
 
     it('Fails for index OOB', async () => {
       const numMarkets = await solo.getters.getNumMarkets();
       await expectThrow(
-        solo.admin.setPriceOracle(
-          numMarkets,
-          setterAddress,
-          { from: admin },
-        ),
+        solo.admin.setPriceOracle(numMarkets, setterAddress, { from: admin }),
         'AdminImpl: Market OOB',
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setPriceOracle(
-          defaultMarket,
-          oracleAddress,
-          { from: nonAdmin },
-        ),
+        solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+          from: nonAdmin,
+        }),
       );
     });
   });
@@ -538,11 +582,9 @@ describe('Admin', () => {
     it('Succeeds', async () => {
       const token = await solo.getters.getMarketTokenAddress(defaultMarket);
       await solo.testing.interestSetter.setInterestRate(token, defaultRate);
-      txr = await solo.admin.setInterestSetter(
-        defaultMarket,
-        setterAddress,
-        { from: admin },
-      );
+      txr = await solo.admin.setInterestSetter(defaultMarket, setterAddress, {
+        from: admin,
+      });
       const logs = solo.logs.parseLogs(txr);
       expect(logs.length).toEqual(1);
       const log = logs[0];
@@ -553,33 +595,27 @@ describe('Admin', () => {
 
     it('Fails for contract without proper function', async () => {
       await expectThrow(
-        solo.admin.setInterestSetter(
-          defaultMarket,
-          oracleAddress,
-          { from: admin },
-        ),
+        solo.admin.setInterestSetter(defaultMarket, oracleAddress, {
+          from: admin,
+        }),
       );
     });
 
     it('Fails for index OOB', async () => {
       const numMarkets = await solo.getters.getNumMarkets();
       await expectThrow(
-        solo.admin.setInterestSetter(
-          numMarkets,
-          setterAddress,
-          { from: admin },
-        ),
+        solo.admin.setInterestSetter(numMarkets, setterAddress, {
+          from: admin,
+        }),
         'AdminImpl: Market OOB',
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setInterestSetter(
-          defaultMarket,
-          setterAddress,
-          { from: nonAdmin },
-        ),
+        solo.admin.setInterestSetter(defaultMarket, setterAddress, {
+          from: nonAdmin,
+        }),
       );
     });
   });
@@ -589,32 +625,44 @@ describe('Admin', () => {
       await expectMarginPremium(null, defaultPremium);
 
       // set to default
-      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, {
+        from: admin,
+      });
       await expectMarginPremium(txr, defaultPremium);
 
       // set risky
-      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, {
+        from: admin,
+      });
       await expectMarginPremium(txr, highPremium);
 
       // set to risky again
-      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, { from: admin });
+      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, {
+        from: admin,
+      });
       await expectMarginPremium(txr, highPremium);
 
       // set back to default
-      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, { from: admin });
+      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, {
+        from: admin,
+      });
       await expectMarginPremium(txr, defaultPremium);
     });
 
     it('Fails for index OOB', async () => {
       await expectThrow(
-        solo.admin.setMarginPremium(invalidMarket, highPremium, { from: admin }),
+        solo.admin.setMarginPremium(invalidMarket, highPremium, {
+          from: admin,
+        }),
         'AdminImpl: Market OOB',
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setMarginPremium(defaultMarket, highPremium, { from: nonAdmin }),
+        solo.admin.setMarginPremium(defaultMarket, highPremium, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -647,19 +695,27 @@ describe('Admin', () => {
       await expectSpreadPremium(null, defaultPremium);
 
       // set to default
-      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, {
+        from: admin,
+      });
       await expectSpreadPremium(txr, defaultPremium);
 
       // set risky
-      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+        from: admin,
+      });
       await expectSpreadPremium(txr, highPremium);
 
       // set to risky again
-      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: admin });
+      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+        from: admin,
+      });
       await expectSpreadPremium(txr, highPremium);
 
       // set back to default
-      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, { from: admin });
+      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, {
+        from: admin,
+      });
       await expectSpreadPremium(txr, defaultPremium);
     });
 
@@ -677,24 +733,26 @@ describe('Admin', () => {
         secondaryMarket,
       );
 
-      const expected = riskParams.liquidationSpread.times(
-        premium1.plus(1),
-      ).times(
-        premium2.plus(1),
-      );
+      const expected = riskParams.liquidationSpread
+        .times(premium1.plus(1))
+        .times(premium2.plus(1));
       expect(result).toEqual(expected);
     });
 
     it('Fails for index OOB', async () => {
       await expectThrow(
-        solo.admin.setSpreadPremium(invalidMarket, highPremium, { from: admin }),
+        solo.admin.setSpreadPremium(invalidMarket, highPremium, {
+          from: admin,
+        }),
         'AdminImpl: Market OOB',
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setSpreadPremium(defaultMarket, highPremium, { from: nonAdmin }),
+        solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -729,15 +787,21 @@ describe('Admin', () => {
       await expectMarginRatio(null, riskParams.marginRatio);
 
       // keep same
-      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, {
+        from: admin,
+      });
       await expectMarginRatio(txr, riskParams.marginRatio);
 
       // set to max
-      txr = await solo.admin.setMarginRatio(riskLimits.marginRatioMax, { from: admin });
+      txr = await solo.admin.setMarginRatio(riskLimits.marginRatioMax, {
+        from: admin,
+      });
       await expectMarginRatio(txr, riskLimits.marginRatioMax);
 
       // set back to original
-      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, { from: admin });
+      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, {
+        from: admin,
+      });
       await expectMarginRatio(txr, riskParams.marginRatio);
     });
 
@@ -762,10 +826,9 @@ describe('Admin', () => {
 
       // revert when below the spread
       await expectThrow(
-        solo.admin.setMarginRatio(
-          liquidationSpread.minus(smallestDecimal),
-          { from: admin },
-        ),
+        solo.admin.setMarginRatio(liquidationSpread.minus(smallestDecimal), {
+          from: admin,
+        }),
         error,
       );
     });
@@ -802,22 +865,30 @@ describe('Admin', () => {
   describe('#ownerSetLiquidationSpread', () => {
     it('Succeeds', async () => {
       // setup
-      await solo.admin.setMarginRatio(
-        riskLimits.marginRatioMax,
-        { from: admin },
-      );
+      await solo.admin.setMarginRatio(riskLimits.marginRatioMax, {
+        from: admin,
+      });
       await expectLiquidationSpread(null, riskParams.liquidationSpread);
 
       // keep same
-      txr = await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
+      txr = await solo.admin.setLiquidationSpread(
+        riskParams.liquidationSpread,
+        { from: admin },
+      );
       await expectLiquidationSpread(txr, riskParams.liquidationSpread);
 
       // set to max
-      txr = await solo.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax, { from: admin });
+      txr = await solo.admin.setLiquidationSpread(
+        riskLimits.liquidationSpreadMax,
+        { from: admin },
+      );
       await expectLiquidationSpread(txr, riskLimits.liquidationSpreadMax);
 
       // set back to original
-      txr = await solo.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
+      txr = await solo.admin.setLiquidationSpread(
+        riskParams.liquidationSpread,
+        { from: admin },
+      );
       await expectLiquidationSpread(txr, riskParams.liquidationSpread);
     });
 
@@ -825,10 +896,7 @@ describe('Admin', () => {
       // setup
       const error = 'AdminImpl: Spread cannot be >= ratio';
       const marginRatio = new BigNumber('0.1');
-      await solo.admin.setMarginRatio(
-        marginRatio,
-        { from: admin },
-      );
+      await solo.admin.setMarginRatio(marginRatio, { from: admin });
 
       // passes when below the ratio
       txr = await solo.admin.setLiquidationSpread(
@@ -839,19 +907,15 @@ describe('Admin', () => {
 
       // reverts when equal to the ratio
       await expectThrow(
-        solo.admin.setLiquidationSpread(
-          marginRatio,
-          { from: admin },
-        ),
+        solo.admin.setLiquidationSpread(marginRatio, { from: admin }),
         error,
       );
 
       // reverts when above the ratio
       await expectThrow(
-        solo.admin.setLiquidationSpread(
-          marginRatio.plus(smallestDecimal),
-          { from: admin },
-        ),
+        solo.admin.setLiquidationSpread(marginRatio.plus(smallestDecimal), {
+          from: admin,
+        }),
         error,
       );
     });
@@ -868,10 +932,9 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setLiquidationSpread(
-          riskParams.liquidationSpread,
-          { from: nonAdmin },
-        ),
+        solo.admin.setLiquidationSpread(riskParams.liquidationSpread, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -893,24 +956,21 @@ describe('Admin', () => {
       await expectEarningsRate(null, riskParams.earningsRate);
 
       // keep same
-      txr = await solo.admin.setEarningsRate(
-        riskParams.earningsRate,
-        { from: admin },
-      );
+      txr = await solo.admin.setEarningsRate(riskParams.earningsRate, {
+        from: admin,
+      });
       await expectEarningsRate(txr, riskParams.earningsRate);
 
       // set to max
-      txr = await solo.admin.setEarningsRate(
-        riskLimits.earningsRateMax,
-        { from: admin },
-      );
+      txr = await solo.admin.setEarningsRate(riskLimits.earningsRateMax, {
+        from: admin,
+      });
       await expectEarningsRate(txr, riskLimits.earningsRateMax);
 
       // set back to original
-      txr = await solo.admin.setEarningsRate(
-        riskParams.earningsRate,
-        { from: admin },
-      );
+      txr = await solo.admin.setEarningsRate(riskParams.earningsRate, {
+        from: admin,
+      });
       await expectEarningsRate(txr, riskParams.earningsRate);
     });
 
@@ -926,10 +986,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setEarningsRate(
-          riskParams.earningsRate,
-          { from: nonAdmin },
-        ),
+        solo.admin.setEarningsRate(riskParams.earningsRate, { from: nonAdmin }),
       );
     });
 
@@ -953,28 +1010,39 @@ describe('Admin', () => {
       await expectMinBorrowedValue(null, riskParams.minBorrowedValue);
 
       // keep same
-      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
+      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+        from: admin,
+      });
       await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
 
       // set to max
-      txr = await solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax, { from: admin });
+      txr = await solo.admin.setMinBorrowedValue(
+        riskLimits.minBorrowedValueMax,
+        { from: admin },
+      );
       await expectMinBorrowedValue(txr, riskLimits.minBorrowedValueMax);
 
       // set back to original
-      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: admin });
+      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+        from: admin,
+      });
       await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
     });
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax.plus(1), { from: admin }),
+        solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax.plus(1), {
+          from: admin,
+        }),
         'AdminImpl: Value too high',
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, { from: nonAdmin }),
+        solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+          from: nonAdmin,
+        }),
       );
     });
 
@@ -996,13 +1064,17 @@ describe('Admin', () => {
   describe('#ownerSetGlobalOperator', () => {
     it('Succeeds', async () => {
       await expectGlobalOperatorToBe(null, false);
-      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      txr = await solo.admin.setGlobalOperator(operator, false, {
+        from: admin,
+      });
       await expectGlobalOperatorToBe(txr, false);
       txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
       await expectGlobalOperatorToBe(txr, true);
       txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
       await expectGlobalOperatorToBe(txr, true);
-      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      txr = await solo.admin.setGlobalOperator(operator, false, {
+        from: admin,
+      });
       await expectGlobalOperatorToBe(txr, false);
     });
 
@@ -1030,7 +1102,9 @@ describe('Admin', () => {
 
   describe('Logs', () => {
     it('Skips logs when necessary', async () => {
-      txr = await solo.admin.setGlobalOperator(operator, false, { from: admin });
+      txr = await solo.admin.setGlobalOperator(operator, false, {
+        from: admin,
+      });
       const logs = solo.logs.parseLogs(txr, { skipAdminLogs: true });
       expect(logs.length).toEqual(0);
     });

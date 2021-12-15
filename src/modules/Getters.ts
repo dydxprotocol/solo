@@ -1,9 +1,10 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
-  address,
   AccountStatus,
+  address,
   Balance,
+  ContractConstantCallOptions,
   Decimal,
   Index,
   Integer,
@@ -13,22 +14,21 @@ import {
   RiskParams,
   TotalPar,
   Values,
-  ContractConstantCallOptions,
 } from '../types';
 import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 
 export class Getters {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
   // ============ Getters for Risk ============
 
-  public async getMarginRatio(options?: ContractConstantCallOptions): Promise<Decimal> {
+  public async getMarginRatio(
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getMarginRatio(),
       options,
@@ -36,7 +36,9 @@ export class Getters {
     return stringToDecimal(result.value);
   }
 
-  public async getLiquidationSpread(options?: ContractConstantCallOptions): Promise<Decimal> {
+  public async getLiquidationSpread(
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getLiquidationSpread(),
       options,
@@ -44,7 +46,9 @@ export class Getters {
     return stringToDecimal(result.value);
   }
 
-  public async getEarningsRate(options?: ContractConstantCallOptions): Promise<Decimal> {
+  public async getEarningsRate(
+    options?: ContractConstantCallOptions,
+  ): Promise<Decimal> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getEarningsRate(),
       options,
@@ -52,7 +56,9 @@ export class Getters {
     return stringToDecimal(result.value);
   }
 
-  public async getMinBorrowedValue(options?: ContractConstantCallOptions): Promise<Integer> {
+  public async getMinBorrowedValue(
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getMinBorrowedValue(),
       options,
@@ -60,7 +66,9 @@ export class Getters {
     return new BigNumber(result.value);
   }
 
-  public async getRiskParams(options?: ContractConstantCallOptions): Promise<RiskParams> {
+  public async getRiskParams(
+    options?: ContractConstantCallOptions,
+  ): Promise<RiskParams> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getRiskParams(),
       options,
@@ -73,7 +81,9 @@ export class Getters {
     };
   }
 
-  public async getRiskLimits(options?: ContractConstantCallOptions): Promise<RiskLimits> {
+  public async getRiskLimits(
+    options?: ContractConstantCallOptions,
+  ): Promise<RiskLimits> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getRiskLimits(),
       options,
@@ -90,7 +100,9 @@ export class Getters {
 
   // ============ Getters for Markets ============
 
-  public async getNumMarkets(options?: ContractConstantCallOptions): Promise<Integer> {
+  public async getNumMarkets(
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.soloMargin.methods.getNumMarkets(),
       options,
@@ -115,9 +127,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<TotalPar> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.soloMargin.methods.getMarketTotalPar(
-        marketId.toFixed(0),
-      ),
+      this.contracts.soloMargin.methods.getMarketTotalPar(marketId.toFixed(0)),
       options,
     );
     return {
@@ -207,9 +217,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<boolean> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.soloMargin.methods.getMarketIsClosing(
-        marketId.toFixed(0),
-      ),
+      this.contracts.soloMargin.methods.getMarketIsClosing(marketId.toFixed(0)),
       options,
     );
   }
@@ -219,9 +227,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.soloMargin.methods.getMarketPrice(
-        marketId.toFixed(0),
-      ),
+      this.contracts.soloMargin.methods.getMarketPrice(marketId.toFixed(0)),
       options,
     );
     return new BigNumber(result.value);
@@ -232,8 +238,12 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<Decimal> {
     const market = await this.getMarket(marketId, options);
-    const totalSupply: Decimal = market.totalPar.supply.times(market.index.supply);
-    const totalBorrow: Decimal = market.totalPar.borrow.times(market.index.borrow);
+    const totalSupply: Decimal = market.totalPar.supply.times(
+      market.index.supply,
+    );
+    const totalBorrow: Decimal = market.totalPar.borrow.times(
+      market.index.borrow,
+    );
     return totalBorrow.div(totalSupply);
   }
 
@@ -254,11 +264,7 @@ export class Getters {
     marketId: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<Decimal> {
-    const [
-      earningsRate,
-      borrowInterestRate,
-      utilization,
-    ] = await Promise.all([
+    const [earningsRate, borrowInterestRate, utilization] = await Promise.all([
       this.getEarningsRate(options),
       this.getMarketInterestRate(marketId, options),
       this.getMarketUtilization(marketId, options),
@@ -468,21 +474,10 @@ export class Getters {
     liquidNumber: Integer,
     options: ContractConstantCallOptions = {},
   ): Promise<boolean> {
-    const [
-      accountStatus,
-      marginRatio,
-      accountValues,
-    ] = await Promise.all([
-      this.getAccountStatus(
-        liquidOwner,
-        liquidNumber,
-      ),
+    const [accountStatus, marginRatio, accountValues] = await Promise.all([
+      this.getAccountStatus(liquidOwner, liquidNumber),
       this.getMarginRatio(options),
-      this.getAdjustedAccountValues(
-        liquidOwner,
-        liquidNumber,
-        options,
-      ),
+      this.getAdjustedAccountValues(liquidOwner, liquidNumber, options),
     ]);
 
     // return true if account has been partially liquidated
@@ -501,7 +496,9 @@ export class Getters {
 
     // return true if account is undercollateralized
     const marginRequirement = accountValues.borrow.times(marginRatio);
-    return accountValues.supply.lt(accountValues.borrow.plus(marginRequirement));
+    return accountValues.supply.lt(
+      accountValues.borrow.plus(marginRequirement),
+    );
   }
 
   // ============ Getters for Permissions ============
@@ -573,7 +570,7 @@ export class Getters {
     owedMarketId: Integer,
     expiryTimestamp: Integer,
     options?: ContractConstantCallOptions,
-  ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
+  ): Promise<{ heldPrice: Integer; owedPrice: Integer }> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.expiry.methods.getSpreadAdjustedPrices(
         heldMarketId.toFixed(0),
@@ -601,9 +598,15 @@ export class Getters {
 
   // ============ Helper Functions ============
 
-  private parseIndex(
-    { borrow, supply, lastUpdate }: { borrow: string, supply: string, lastUpdate: string },
-  ): Index {
+  private parseIndex({
+    borrow,
+    supply,
+    lastUpdate,
+  }: {
+    borrow: string;
+    supply: string;
+    lastUpdate: string;
+  }): Index {
     return {
       borrow: stringToDecimal(borrow),
       supply: stringToDecimal(supply),
@@ -611,9 +614,13 @@ export class Getters {
     };
   }
 
-  private parseTotalPar(
-    { supply, borrow }: { supply: string, borrow: string },
-  ): TotalPar {
+  private parseTotalPar({
+    supply,
+    borrow,
+  }: {
+    supply: string;
+    borrow: string;
+  }): TotalPar {
     return {
       borrow: new BigNumber(borrow),
       supply: new BigNumber(supply),

@@ -1,12 +1,10 @@
 import { TestContracts } from './TestContracts';
-import { ContractCallOptions, TxResult, Integer } from '../../src/types';
+import { ContractCallOptions, Integer, TxResult } from '../../src/types';
 
 export class TestPolynomialInterestSetter {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 

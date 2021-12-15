@@ -1,17 +1,10 @@
 import { TestContracts } from '../../__tests__/modules/TestContracts';
-import {
-  address,
-  ContractCallOptions,
-  Integer,
-  TxResult,
-} from '../types';
+import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
 export class UniswapV2Router {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 

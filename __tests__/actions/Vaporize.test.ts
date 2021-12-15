@@ -10,8 +10,8 @@ import {
   address,
   AmountDenomination,
   AmountReference,
-  Vaporize,
   Integer,
+  Vaporize,
 } from '../../src/types';
 
 let vaporOwner: address;
@@ -66,8 +66,18 @@ describe('Vaporize', () => {
     await Promise.all([
       solo.testing.setMarketIndex(owedMarket, defaultIndex),
       solo.testing.setMarketIndex(heldMarket, defaultIndex),
-      solo.testing.setAccountBalance(vaporOwner, vaporAccountNumber, owedMarket, negPar),
-      solo.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par),
+      solo.testing.setAccountBalance(
+        vaporOwner,
+        vaporAccountNumber,
+        owedMarket,
+        negPar,
+      ),
+      solo.testing.setAccountBalance(
+        solidOwner,
+        solidAccountNumber,
+        owedMarket,
+        par,
+      ),
     ]);
     snapshotId = await snapshot();
   });
@@ -93,14 +103,8 @@ describe('Vaporize', () => {
       issueHeldTokensToSolo(wei.times(premium)),
       solo.permissions.approveOperator(operator, { from: solidOwner }),
     ]);
-    const txResult = await expectVaporizeOkay(
-      {},
-      { from: operator },
-    );
-    const [
-      heldIndex,
-      owedIndex,
-    ] = await Promise.all([
+    const txResult = await expectVaporizeOkay({}, { from: operator });
+    const [heldIndex, owedIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(heldMarket),
       solo.getters.getMarketCachedIndex(owedMarket),
       expectExcessHeldToken(zero),
@@ -148,7 +152,12 @@ describe('Vaporize', () => {
   });
 
   it('Fails for unvaporizable account', async () => {
-    await solo.testing.setAccountBalance(vaporOwner, vaporAccountNumber, heldMarket, par);
+    await solo.testing.setAccountBalance(
+      vaporOwner,
+      vaporAccountNumber,
+      heldMarket,
+      par,
+    );
     await expectVaporizeRevert({}, 'OperationImpl: Unvaporizable account');
   });
 
@@ -158,10 +167,7 @@ describe('Vaporize', () => {
 
     const txResult = await expectVaporizeOkay({});
 
-    const [
-      heldIndex,
-      owedIndex,
-    ] = await Promise.all([
+    const [heldIndex, owedIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(heldMarket),
       solo.getters.getMarketCachedIndex(owedMarket),
       expectExcessOwedToken(zero),
@@ -217,10 +223,7 @@ describe('Vaporize', () => {
 
     const txResult = await expectVaporizeOkay({});
 
-    const [
-      heldIndex,
-      owedIndex,
-    ] = await Promise.all([
+    const [heldIndex, owedIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(heldMarket),
       solo.getters.getMarketCachedIndex(owedMarket),
       expectExcessHeldToken(payoutAmount.div(2)),
@@ -304,7 +307,11 @@ describe('Vaporize', () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
       issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(vaporOwner, vaporAccountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        vaporOwner,
+        vaporAccountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
 
     await expectVaporizeOkay({});
@@ -320,7 +327,11 @@ describe('Vaporize', () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
       issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(vaporOwner, vaporAccountNumber, AccountStatus.Vaporizing),
+      solo.testing.setAccountStatus(
+        vaporOwner,
+        vaporAccountNumber,
+        AccountStatus.Vaporizing,
+      ),
     ]);
 
     await expectVaporizeOkay({});
@@ -336,9 +347,19 @@ describe('Vaporize', () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
       issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par.div(2)),
+      solo.testing.setAccountBalance(
+        solidOwner,
+        solidAccountNumber,
+        owedMarket,
+        par.div(2),
+      ),
       // need another positive balance so there is zero (or negative) excess owedToken
-      solo.testing.setAccountBalance(operator, solidAccountNumber, owedMarket, par),
+      solo.testing.setAccountBalance(
+        operator,
+        solidAccountNumber,
+        owedMarket,
+        par,
+      ),
     ]);
     await expectVaporizeOkay({});
     await Promise.all([
@@ -352,10 +373,17 @@ describe('Vaporize', () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
       issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(solidOwner, solidAccountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        solidOwner,
+        solidAccountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
     await expectVaporizeOkay({});
-    const status = await solo.getters.getAccountStatus(solidOwner, solidAccountNumber);
+    const status = await solo.getters.getAccountStatus(
+      solidOwner,
+      solidAccountNumber,
+    );
     expect(status).toEqual(AccountStatus.Normal);
   });
 
@@ -413,11 +441,9 @@ describe('Vaporize', () => {
   it('Fails for non-operator', async () => {
     const payoutAmount = wei.times(premium);
     await issueHeldTokensToSolo(payoutAmount);
-    await expectVaporizeRevert(
-      {},
-      'Storage: Unpermissioned operator',
-      { from: operator },
-    );
+    await expectVaporizeRevert({}, 'Storage: Unpermissioned operator', {
+      from: operator,
+    });
   });
 
   it('Fails if vaporizing after account used as primary', async () => {
@@ -459,7 +485,12 @@ describe('Vaporize', () => {
   });
 
   it('Fails for negative excess heldTokens', async () => {
-    await solo.testing.setAccountBalance(solidOwner, solidAccountNumber, heldMarket, par);
+    await solo.testing.setAccountBalance(
+      solidOwner,
+      solidAccountNumber,
+      heldMarket,
+      par,
+    );
     await expectExcessHeldToken(negWei);
     await expectVaporizeRevert({}, 'OperationImpl: Excess cannot be negative');
   });
@@ -491,19 +522,25 @@ describe('Vaporize', () => {
 // ============ Helper Functions ============
 
 async function issueHeldTokensToSolo(amount: BigNumber) {
-  return solo.testing.tokenB.issueTo(amount, solo.contracts.soloMargin.options.address);
+  return solo.testing.tokenB.issueTo(
+    amount,
+    solo.contracts.soloMargin.options.address,
+  );
 }
 
 async function issueOwedTokensToSolo(amount: BigNumber) {
-  return solo.testing.tokenA.issueTo(amount, solo.contracts.soloMargin.options.address);
+  return solo.testing.tokenA.issueTo(
+    amount,
+    solo.contracts.soloMargin.options.address,
+  );
 }
 
-async function expectVaporizeOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectVaporizeOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().vaporize(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .vaporize(combinedGlob)
+    .commit(options);
 }
 
 async function expectVaporizeRevert(
@@ -518,7 +555,10 @@ async function expectSolidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(solidOwner, solidAccountNumber);
+  const balances = await solo.getters.getAccountBalances(
+    solidOwner,
+    solidAccountNumber,
+  );
   balances.forEach((balance, i) => {
     if (i === heldMarket.toNumber()) {
       expect(balance.par).toEqual(expectedHeldPar);
@@ -534,7 +574,10 @@ async function expectVaporPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(vaporOwner, vaporAccountNumber);
+  const balances = await solo.getters.getAccountBalances(
+    vaporOwner,
+    vaporAccountNumber,
+  );
   balances.forEach((balance, i) => {
     if (i === heldMarket.toNumber()) {
       expect(balance.par).toEqual(expectedHeldPar);
@@ -546,16 +589,12 @@ async function expectVaporPars(
   });
 }
 
-async function expectExcessHeldToken(
-  expected: Integer,
-) {
+async function expectExcessHeldToken(expected: Integer) {
   const actual = await solo.getters.getNumExcessTokens(heldMarket);
   expect(actual).toEqual(expected);
 }
 
-async function expectExcessOwedToken(
-  expected: Integer,
-) {
+async function expectExcessOwedToken(expected: Integer) {
   const actual = await solo.getters.getNumExcessTokens(owedMarket);
   expect(actual).toEqual(expected);
 }

@@ -1,21 +1,19 @@
 import Web3 from 'web3';
 import { Signer } from './Signer';
 import { Contracts } from '../lib/Contracts';
+import { addressesAreEqual } from '../lib/BytesHelper';
 import {
-  addressesAreEqual,
-} from '../lib/BytesHelper';
-import {
-  SIGNATURE_TYPES,
   createTypedSignature,
   ecRecoverTypedSignature,
+  SIGNATURE_TYPES,
 } from '../lib/SignatureHelper';
 import {
   address,
-  SigningMethod,
-  SignableOrder,
-  SignedOrder,
   ContractCallOptions,
   ContractConstantCallOptions,
+  SignableOrder,
+  SignedOrder,
+  SigningMethod,
 } from '../../src/types';
 
 export abstract class OrderSigner extends Signer {
@@ -24,10 +22,7 @@ export abstract class OrderSigner extends Signer {
 
   // ============ Constructor ============
 
-  constructor(
-    web3: Web3,
-    contracts: Contracts,
-  ) {
+  constructor(web3: Web3, contracts: Contracts) {
     super(web3);
     this.contracts = contracts;
   }
@@ -92,16 +87,31 @@ export abstract class OrderSigner extends Signer {
       case SigningMethod.UnsafeHash:
       case SigningMethod.Compatibility:
         const orderHash = this.getOrderHash(order);
-        const rawSignature = await this.web3.eth.sign(orderHash, order.makerAccountOwner);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        const rawSignature = await this.web3.eth.sign(
+          orderHash,
+          order.makerAccountOwner,
+        );
+        const hashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.DECIMAL,
+        );
         if (signingMethod === SigningMethod.Hash) {
           return hashSig;
         }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        const unsafeHashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.orderByHashHasValidSignature(orderHash, unsafeHashSig, order.makerAccountOwner)) {
+        if (
+          this.orderByHashHasValidSignature(
+            orderHash,
+            unsafeHashSig,
+            order.makerAccountOwner,
+          )
+        ) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -110,10 +120,7 @@ export abstract class OrderSigner extends Signer {
       case SigningMethod.MetaMask:
       case SigningMethod.MetaMaskLatest:
       case SigningMethod.CoinbaseWallet:
-        return this.ethSignTypedOrderInternal(
-          order,
-          signingMethod,
-        );
+        return this.ethSignTypedOrderInternal(order, signingMethod);
 
       default:
         throw new Error(`Invalid signing method ${signingMethod}`);
@@ -150,15 +157,27 @@ export abstract class OrderSigner extends Signer {
       case SigningMethod.Compatibility:
         const cancelHash = this.orderHashToCancelOrderHash(orderHash);
         const rawSignature = await this.web3.eth.sign(cancelHash, signer);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        const hashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.DECIMAL,
+        );
         if (signingMethod === SigningMethod.Hash) {
           return hashSig;
         }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        const unsafeHashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.cancelOrderByHashHasValidSignature(orderHash, unsafeHashSig, signer)) {
+        if (
+          this.cancelOrderByHashHasValidSignature(
+            orderHash,
+            unsafeHashSig,
+            signer,
+          )
+        ) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -183,9 +202,7 @@ export abstract class OrderSigner extends Signer {
   /**
    * Returns true if the order object has a non-null valid signature from the maker of the order.
    */
-  public orderHasValidSignature(
-    order: SignedOrder,
-  ): boolean {
+  public orderHasValidSignature(order: SignedOrder): boolean {
     return this.orderByHashHasValidSignature(
       this.getOrderHash(order),
       order.typedSignature,
@@ -234,17 +251,11 @@ export abstract class OrderSigner extends Signer {
 
   // ============ Abstract Functions ============
 
-  public abstract getOrderHash(
-    order: SignableOrder,
-  ): string;
+  public abstract getOrderHash(order: SignableOrder): string;
 
-  protected abstract stringifyOrder(
-    order: SignableOrder,
-  ): string;
+  protected abstract stringifyOrder(order: SignableOrder): string;
 
-  protected abstract orderHashToCancelOrderHash(
-    orderHash: string,
-  ): string;
+  protected abstract orderHashToCancelOrderHash(orderHash: string): string;
 
   protected abstract getContract(): any;
 

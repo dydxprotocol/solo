@@ -36,7 +36,7 @@ import "../../protocol/lib/Require.sol";
 import "../../protocol/lib/Types.sol";
 
 import "../lib/TypedSignature.sol";
-import "../lib/UniswapV2Library.sol";
+import "../lib/DolomiteAmmLibrary.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
@@ -120,11 +120,11 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         );
 
         address dolomiteFactory = DOLOMITE_AMM_FACTORY;
-        address[] memory dolomitePools = UniswapV2Library.getPools(dolomiteFactory, params.dolomitePath);
+        address[] memory dolomitePools = DolomiteAmmLibrary.getPools(dolomiteFactory, params.dolomitePath);
 
         uint dolomiteAmountIn;
         {
-            (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReservesWei(
+            (uint256 reserveA, uint256 reserveB) = DolomiteAmmLibrary.getReservesWei(
                 dolomiteFactory,
                 params.dolomitePath[0],
                 params.dolomitePath[1]
@@ -176,7 +176,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
 
             // dolomiteAmountIn is the amountOut for the other trade
             //            Require.that(false, FILE, "printing results", dolomiteAmountIn);
-            otherAmountIn = UniswapV2Library.getAmountsIn(
+            otherAmountIn = DolomiteAmmLibrary.getAmountsIn(
                 IUniswapV2Router(params.otherRouter).factory(),
                 otherInitCodeHash,
                 dolomiteAmountIn,
@@ -203,7 +203,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
             );
         }
 
-        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, params.dolomitePath);
+        uint[] memory dolomiteAmountsOut = DolomiteAmmLibrary.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, params.dolomitePath);
         Require.that(
             otherAmountIn <= dolomiteAmountsOut[dolomiteAmountsOut.length - 1],
             FILE,

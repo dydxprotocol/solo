@@ -30,15 +30,13 @@ import "../../protocol/lib/Actions.sol";
 import "../../protocol/lib/Types.sol";
 
 import "../lib/TypedSignature.sol";
-import "../lib/UniswapV2Library.sol";
+import "../lib/DolomiteAmmLibrary.sol";
 
 import "../interfaces/IExpiryV2.sol";
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
 
 contract DolomiteAmmRouterProxy is ReentrancyGuard {
-
-    using UniswapV2Library for *;
     using SafeMath for uint;
 
     modifier ensure(uint deadline) {
@@ -106,8 +104,6 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         Events.BalanceUpdate marginWithdrawalUpdate
     );
 
-    event TradeResized(address token, uint marketId, uint amount);
-
     constructor(
         address soloMargin,
         address dolomiteAmmFactory,
@@ -133,7 +129,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ensure(deadline)
     returns (uint amountAWei, uint amountBWei, uint liquidity) {
         (amountAWei, amountBWei) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMinWei, amountBMinWei);
-        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
+        address pair = DolomiteAmmLibrary.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
 
         {
             Account.Info[] memory accounts = new Account.Info[](2);
@@ -162,12 +158,12 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint amountBMinWei,
         uint deadline
     ) public ensure(deadline) returns (uint amountAWei, uint amountBWei) {
-        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
+        address pair = DolomiteAmmLibrary.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
         // send liquidity to pair
         IDolomiteAmmPair(pair).transferFrom(msg.sender, pair, liquidity);
 
         (uint amount0Wei, uint amount1Wei) = IDolomiteAmmPair(pair).burn(to, toAccountNumber);
-        (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
+        (address token0,) = DolomiteAmmLibrary.sortTokens(tokenA, tokenB);
         (amountAWei, amountBWei) = tokenA == token0 ? (amount0Wei, amount1Wei) : (amount1Wei, amount0Wei);
         require(amountAWei >= amountAMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_A_AMOUNT');
         require(amountBWei >= amountBMinWei, 'DolomiteAmmRouterProxy::removeLiquidity: INSUFFICIENT_B_AMOUNT');
@@ -184,7 +180,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint deadline,
         PermitSignature memory permit
     ) public returns (uint amountAWei, uint amountBWei) {
-        address pair = UniswapV2Library.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
+        address pair = DolomiteAmmLibrary.pairFor(address(DOLOMITE_AMM_FACTORY), tokenA, tokenB);
         uint value = permit.approveMax ? uint(- 1) : liquidity;
         IDolomiteAmmPair(pair).permit(msg.sender, address(this), value, deadline, permit.v, permit.r, permit.s);
 
@@ -402,7 +398,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
         // amountsWei[0] == amountInWei
         // amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsOutWei(address(cache.ammFactory), amountInWei, cache.params.tokenPath);
+        cache.amountsWei = DolomiteAmmLibrary.getAmountsOutWei(address(cache.ammFactory), amountInWei, cache.params.tokenPath);
 
         require(
             cache.amountsWei[cache.amountsWei.length - 1] >= amountOutMinWei,
@@ -428,7 +424,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
         // cache.amountsWei[0] == amountInWei
         // cache.amountsWei[amountsWei.length - 1] == amountOutWei
-        cache.amountsWei = UniswapV2Library.getAmountsInWei(address(cache.ammFactory), amountOutWei, cache.params.tokenPath);
+        cache.amountsWei = DolomiteAmmLibrary.getAmountsInWei(address(cache.ammFactory), amountOutWei, cache.params.tokenPath);
         require(
             cache.amountsWei[0] <= amountInMaxWei,
             "DolomiteAmmRouterProxy::_getParamsForSwapTokensForExactTokens: EXCESSIVE_INPUT_AMOUNT"
@@ -449,7 +445,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         );
 
         // pools.length == cache.params.tokenPath.length - 1
-        address[] memory pools = UniswapV2Library.getPools(address(cache.ammFactory), cache.params.tokenPath);
+        address[] memory pools = DolomiteAmmLibrary.getPools(address(cache.ammFactory), cache.params.tokenPath);
 
         Account.Info[] memory accounts = _getAccountsForModifyPosition(cache, pools);
         Actions.ActionArgs[] memory actions = _getActionArgsForModifyPosition(cache, accounts, pools);
@@ -578,16 +574,16 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         if (dolomiteAmmFactory.getPair(tokenA, tokenB) == address(0)) {
             dolomiteAmmFactory.createPair(tokenA, tokenB);
         }
-        (uint reserveAWei, uint reserveBWei) = UniswapV2Library.getReservesWei(address(dolomiteAmmFactory), tokenA, tokenB);
+        (uint reserveAWei, uint reserveBWei) = DolomiteAmmLibrary.getReservesWei(address(dolomiteAmmFactory), tokenA, tokenB);
         if (reserveAWei == 0 && reserveBWei == 0) {
             (amountAWei, amountBWei) = (amountADesiredWei, amountBDesiredWei);
         } else {
-            uint amountBOptimal = UniswapV2Library.quote(amountADesiredWei, reserveAWei, reserveBWei);
+            uint amountBOptimal = DolomiteAmmLibrary.quote(amountADesiredWei, reserveAWei, reserveBWei);
             if (amountBOptimal <= amountBDesiredWei) {
                 require(amountBOptimal >= amountBMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_B_AMOUNT');
                 (amountAWei, amountBWei) = (amountADesiredWei, amountBOptimal);
             } else {
-                uint amountAOptimal = UniswapV2Library.quote(amountBDesiredWei, reserveBWei, reserveAWei);
+                uint amountAOptimal = DolomiteAmmLibrary.quote(amountBDesiredWei, reserveBWei, reserveAWei);
                 assert(amountAOptimal <= amountADesiredWei);
                 require(amountAOptimal >= amountAMinWei, 'DolomiteAmmRouterProxy::_addLiquidity: INSUFFICIENT_A_AMOUNT');
                 (amountAWei, amountBWei) = (amountAOptimal, amountBDesiredWei);

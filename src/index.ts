@@ -25,8 +25,5 @@ BigNumber.config({
 });
 
 export { Solo } from './Solo';
-export {
-  Web3,
-  BigNumber,
-};
+export { Web3, BigNumber };
 export * from './types';

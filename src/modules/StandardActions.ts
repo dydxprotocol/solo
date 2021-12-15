@@ -2,23 +2,20 @@ import { BigNumber } from 'bignumber.js';
 import { Operation } from './operate/Operation';
 import { Contracts } from '../lib/Contracts';
 import {
-  TxResult,
-  MarketId,
   address,
-  AmountReference,
   AmountDenomination,
+  AmountReference,
   ContractCallOptions,
+  MarketId,
   ProxyType,
+  TxResult,
 } from '../types';
 
 export class StandardActions {
   private operation: Operation;
   private contracts: Contracts;
 
-  constructor(
-    operation: Operation,
-    contracts: Contracts,
-  ) {
+  constructor(operation: Operation, contracts: Contracts) {
     this.operation = operation;
     this.contracts = contracts;
   }
@@ -30,11 +27,11 @@ export class StandardActions {
     accountNumber = new BigNumber(0),
     options,
   }: {
-    accountOwner: address,
-    marketId: BigNumber | string,
-    amount: BigNumber | string,
-    accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    accountOwner: address;
+    marketId: BigNumber | string;
+    amount: BigNumber | string;
+    accountNumber: BigNumber | string;
+    options?: ContractCallOptions;
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
@@ -42,7 +39,9 @@ export class StandardActions {
       sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
-    const depositTokensFrom = isEth ? this.contracts.payableProxy.options.address : accountOwner;
+    const depositTokensFrom = isEth
+      ? this.contracts.payableProxy.options.address
+      : accountOwner;
 
     operation.deposit({
       primaryAccountOwner: accountOwner,
@@ -74,11 +73,11 @@ export class StandardActions {
     accountNumber = new BigNumber(0),
     options,
   }: {
-    accountOwner: address,
-    marketId: BigNumber | string,
-    amount: BigNumber | string,
-    accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    accountOwner: address;
+    marketId: BigNumber | string;
+    amount: BigNumber | string;
+    accountNumber: BigNumber | string;
+    options?: ContractCallOptions;
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
@@ -86,7 +85,9 @@ export class StandardActions {
       sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
-    const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;
+    const withdrawTokensTo = isEth
+      ? this.contracts.payableProxy.options.address
+      : accountOwner;
 
     operation.withdraw({
       primaryAccountOwner: accountOwner,
@@ -114,10 +115,10 @@ export class StandardActions {
     accountNumber = new BigNumber(0),
     options,
   }: {
-    accountOwner: address,
-    marketId: BigNumber | string,
-    accountNumber: BigNumber | string,
-    options?: ContractCallOptions,
+    accountOwner: address;
+    marketId: BigNumber | string;
+    accountNumber: BigNumber | string;
+    options?: ContractCallOptions;
   }): Promise<TxResult> {
     const isEth = new BigNumber(marketId).eq(MarketId.ETH);
     const operation = this.operation.initiate({
@@ -125,7 +126,9 @@ export class StandardActions {
       sendEthTo: accountOwner,
     });
     const realMarketId = isEth ? MarketId.WETH : marketId;
-    const withdrawTokensTo = isEth ? this.contracts.payableProxy.options.address : accountOwner;
+    const withdrawTokensTo = isEth
+      ? this.contracts.payableProxy.options.address
+      : accountOwner;
 
     operation.withdraw({
       primaryAccountOwner: accountOwner,

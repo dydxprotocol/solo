@@ -1,6 +1,8 @@
 import { Contracts } from '../lib/Contracts';
 import {
-  address, AmountDenomination, AmountReference,
+  address,
+  AmountDenomination,
+  AmountReference,
   ContractCallOptions,
   Integer,
   TxResult,
@@ -9,9 +11,7 @@ import {
 export class DolomiteAmmRouterProxy {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
@@ -108,7 +108,7 @@ export class DolomiteAmmRouterProxy {
         sign: true,
         denomination: AmountDenomination.Wei,
         ref: AmountReference.Delta,
-        value: value.toFixed(0)
+        value: value.toFixed(0),
       };
     };
 

@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
-import { snapshot, resetEVM } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { expectThrow } from '../../src/lib/Expect';
 import { TestToken } from '../modules/TestToken';
 import {
-  address,
   AccountStatus,
+  address,
   AmountDenomination,
   AmountReference,
   Integer,
@@ -82,7 +82,12 @@ describe('Sell', () => {
     await Promise.all([
       solo.testing.setMarketIndex(makerMarket, defaultIndex),
       solo.testing.setMarketIndex(takerMarket, defaultIndex),
-      solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
+      solo.testing.setAccountBalance(
+        who,
+        accountNumber,
+        collateralMarket,
+        collateralAmount,
+      ),
       solo.testing.tokenA.setMaximumSoloAllowance(who),
     ]);
     snapshotId = await snapshot();
@@ -115,15 +120,8 @@ describe('Sell', () => {
       issueTakerTokenToSolo(takerWei),
       setTakerBalance(takerPar),
     ]);
-    const txResult = await expectSellOkay(
-      {},
-      { from: operator },
-    );
-    const [
-      makerIndex,
-      takerIndex,
-      collateralIndex,
-    ] = await Promise.all([
+    const txResult = await expectSellOkay({}, { from: operator });
+    const [makerIndex, takerIndex, collateralIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(makerMarket),
       solo.getters.getMarketCachedIndex(takerMarket),
       solo.getters.getMarketCachedIndex(collateralMarket),
@@ -161,9 +159,17 @@ describe('Sell', () => {
     expect(sellLog.args.accountNumber).toEqual(accountNumber);
     expect(sellLog.args.takerMarket).toEqual(takerMarket);
     expect(sellLog.args.makerMarket).toEqual(makerMarket);
-    expect(sellLog.args.takerUpdate).toEqual({ newPar: zero, deltaWei: takerWei.times(-1) });
-    expect(sellLog.args.makerUpdate).toEqual({ newPar: makerPar, deltaWei: makerWei });
-    expect(sellLog.args.exchangeWrapper).toEqual(solo.testing.exchangeWrapper.getAddress());
+    expect(sellLog.args.takerUpdate).toEqual({
+      newPar: zero,
+      deltaWei: takerWei.times(-1),
+    });
+    expect(sellLog.args.makerUpdate).toEqual({
+      newPar: makerPar,
+      deltaWei: makerWei,
+    });
+    expect(sellLog.args.exchangeWrapper).toEqual(
+      solo.testing.exchangeWrapper.getAddress(),
+    );
   });
 
   it('Succeeds for zero makerAmount', async () => {
@@ -216,7 +222,11 @@ describe('Sell', () => {
       issueMakerTokenToWrapper(makerWei),
       issueTakerTokenToSolo(takerWei),
       setTakerBalance(takerPar),
-      solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        who,
+        accountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
     await expectSellOkay({});
     const status = await solo.getters.getAccountStatus(who, accountNumber);
@@ -258,11 +268,9 @@ describe('Sell', () => {
   });
 
   it('Fails for non-operator', async () => {
-    await expectSellRevert(
-      {},
-      'Storage: Unpermissioned operator',
-      { from: operator },
-    );
+    await expectSellRevert({}, 'Storage: Unpermissioned operator', {
+      from: operator,
+    });
   });
 
   it('Fails for positive takerAmount', async () => {
@@ -312,11 +320,11 @@ describe('Sell', () => {
 
 // ============ Helper Functions ============
 
-async function expectPars(expectedMakerPar: Integer, expectedTakerPar: Integer) {
-  const [
-    makerBalance,
-    balances,
-  ] = await Promise.all([
+async function expectPars(
+  expectedMakerPar: Integer,
+  expectedTakerPar: Integer,
+) {
+  const [makerBalance, balances] = await Promise.all([
     makerToken.getBalance(solo.contracts.soloMargin.options.address),
     solo.getters.getAccountBalances(who, accountNumber),
   ]);
@@ -334,11 +342,11 @@ async function expectPars(expectedMakerPar: Integer, expectedTakerPar: Integer) 
   });
 }
 
-async function expectWrapperBalances(expectedMakerWei: Integer, expectedTakerWei: Integer) {
-  const [
-    makerWei,
-    takerWei,
-  ] = await Promise.all([
+async function expectWrapperBalances(
+  expectedMakerWei: Integer,
+  expectedTakerWei: Integer,
+) {
+  const [makerWei, takerWei] = await Promise.all([
     makerToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
     takerToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
   ]);
@@ -346,11 +354,11 @@ async function expectWrapperBalances(expectedMakerWei: Integer, expectedTakerWei
   expect(takerWei).toEqual(expectedTakerWei);
 }
 
-async function expectExchangeBalances(expectedMakerWei: Integer, expectedTakerWei: Integer) {
-  const [
-    makerWei,
-    takerWei,
-  ] = await Promise.all([
+async function expectExchangeBalances(
+  expectedMakerWei: Integer,
+  expectedTakerWei: Integer,
+) {
+  const [makerWei, takerWei] = await Promise.all([
     makerToken.getBalance(EXCHANGE_ADDRESS),
     takerToken.getBalance(EXCHANGE_ADDRESS),
   ]);
@@ -358,11 +366,11 @@ async function expectExchangeBalances(expectedMakerWei: Integer, expectedTakerWe
   expect(takerWei).toEqual(expectedTakerWei);
 }
 
-async function expectSoloBalances(expectedMakerWei: Integer, expectedTakerWei: Integer) {
-  const [
-    makerWei,
-    takerWei,
-  ] = await Promise.all([
+async function expectSoloBalances(
+  expectedMakerWei: Integer,
+  expectedTakerWei: Integer,
+) {
+  const [makerWei, takerWei] = await Promise.all([
     makerToken.getBalance(solo.contracts.soloMargin.options.address),
     takerToken.getBalance(solo.contracts.soloMargin.options.address),
   ]);
@@ -382,12 +390,12 @@ async function setTakerBalance(par: Integer) {
   return solo.testing.setAccountBalance(who, accountNumber, takerMarket, par);
 }
 
-async function expectSellOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectSellOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().sell(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .sell(combinedGlob)
+    .commit(options);
 }
 
 async function expectSellRevert(

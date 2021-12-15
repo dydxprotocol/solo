@@ -1,12 +1,10 @@
 import { Contracts } from '../lib/Contracts';
-import { address, ContractCallOptions, Integer, TxResult, } from '../types';
+import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
 export class AmmRebalancerProxy {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
@@ -21,14 +19,13 @@ export class AmmRebalancerProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.ammRebalancerProxy.methods.performRebalance(
-        {
-          dolomitePath,
-          otherRouter,
-          otherPath,
-          truePriceTokenA: truePriceTokenA.toFixed(0),
-          truePriceTokenB: truePriceTokenB.toFixed(0),
-        }),
+      this.contracts.ammRebalancerProxy.methods.performRebalance({
+        dolomitePath,
+        otherRouter,
+        otherPath,
+        truePriceTokenA: truePriceTokenA.toFixed(0),
+        truePriceTokenB: truePriceTokenB.toFixed(0),
+      }),
       options,
     );
   }

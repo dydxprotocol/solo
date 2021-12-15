@@ -21,9 +21,13 @@ export function integerToValue(i: Integer) {
   };
 }
 
-export function valueToInteger(
-  { value, sign }: { value: string, sign: boolean },
-) {
+export function valueToInteger({
+  value,
+  sign,
+}: {
+  value: string;
+  sign: boolean;
+}) {
   let result = new BigNumber(value);
   if (!result.isZero() && !sign) {
     result = result.times(-1);
@@ -50,19 +54,15 @@ export function toNumber(input: string | number | BigNumber): number {
 export function getInterestPerSecond(
   maxAPR: Decimal,
   coefficients: number[],
-  totals: { totalBorrowed: Integer, totalSupply: Integer },
+  totals: { totalBorrowed: Integer; totalSupply: Integer },
 ): Decimal {
-  return getInterestPerSecondForDoubleExponent(
-    maxAPR,
-    coefficients,
-    totals,
-  );
+  return getInterestPerSecondForDoubleExponent(maxAPR, coefficients, totals);
 }
 
 export function getInterestPerSecondForPolynomial(
   maxAPR: Decimal,
   coefficients: number[],
-  totals: { totalBorrowed: Integer, totalSupply: Integer },
+  totals: { totalBorrowed: Integer; totalSupply: Integer },
 ): Decimal {
   if (totals.totalBorrowed.isZero()) {
     return new BigNumber(0);
@@ -80,7 +80,11 @@ export function getInterestPerSecondForPolynomial(
       const coefficient = new BigNumber(coefficients[i]);
       const term = polynomial.times(coefficient);
       result = result.plus(term);
-      polynomial = partial(polynomial, totals.totalBorrowed, totals.totalSupply);
+      polynomial = partial(
+        polynomial,
+        totals.totalBorrowed,
+        totals.totalSupply,
+      );
     }
   }
 
@@ -95,7 +99,7 @@ export function getInterestPerSecondForPolynomial(
 export function getInterestPerSecondForDoubleExponent(
   maxAPR: Decimal,
   coefficients: number[],
-  totals: { totalBorrowed: Integer, totalSupply: Integer },
+  totals: { totalBorrowed: Integer; totalSupply: Integer },
 ): Decimal {
   if (totals.totalBorrowed.isZero()) {
     return new BigNumber(0);
@@ -131,5 +135,8 @@ function partial(
   numerator: BigNumber,
   denominator: BigNumber,
 ): BigNumber {
-  return target.times(numerator).div(denominator).integerValue(BigNumber.ROUND_DOWN);
+  return target
+    .times(numerator)
+    .div(denominator)
+    .integerValue(BigNumber.ROUND_DOWN);
 }

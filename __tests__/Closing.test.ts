@@ -5,11 +5,7 @@ import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
-import {
-  address,
-  AmountDenomination,
-  AmountReference,
-} from '../src/types';
+import { address, AmountDenomination, AmountReference } from '../src/types';
 
 let owner: address;
 let admin: address;
@@ -37,9 +33,22 @@ describe('Closing', () => {
     await Promise.all([
       solo.admin.setIsClosing(market, true, { from: admin }),
       solo.testing.setAccountBalance(owner, accountOne, market, amount),
-      solo.testing.setAccountBalance(owner, accountOne, collateralMarket, amount.times(2)),
-      solo.testing.setAccountBalance(owner, accountTwo, collateralMarket, amount.times(2)),
-      solo.testing.tokenA.issueTo(amount, solo.contracts.soloMargin.options.address),
+      solo.testing.setAccountBalance(
+        owner,
+        accountOne,
+        collateralMarket,
+        amount.times(2),
+      ),
+      solo.testing.setAccountBalance(
+        owner,
+        accountTwo,
+        collateralMarket,
+        amount.times(2),
+      ),
+      solo.testing.tokenA.issueTo(
+        amount,
+        solo.contracts.soloMargin.options.address,
+      ),
       solo.testing.tokenA.setMaximumSoloAllowance(owner),
     ]);
     snapshotId = await snapshot();
@@ -50,44 +59,11 @@ describe('Closing', () => {
   });
 
   it('Succeeds for withdraw when closing', async () => {
-    await solo.operation.initiate()
-    .withdraw({
-      primaryAccountOwner: owner,
-      primaryAccountId: accountOne,
-      marketId: market,
-      to: owner,
-      amount: {
-        value: amount.times(-1),
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-    })
-    .commit();
-  });
-
-  it('Succeeds for borrow if totalPar doesnt increase', async () => {
-    await solo.operation.initiate()
-    .transfer({
-      primaryAccountOwner: owner,
-      primaryAccountId: accountOne,
-      toAccountOwner: owner,
-      toAccountId: accountTwo,
-      marketId: market,
-      amount: {
-        value: zero,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Target,
-      },
-    })
-    .commit();
-  });
-
-  it('Fails for borrowing when closing', async () => {
-    await expectThrow(
-      solo.operation.initiate()
+    await solo.operation
+      .initiate()
       .withdraw({
         primaryAccountOwner: owner,
-        primaryAccountId: accountTwo,
+        primaryAccountId: accountOne,
         marketId: market,
         to: owner,
         amount: {
@@ -96,7 +72,43 @@ describe('Closing', () => {
           reference: AmountReference.Delta,
         },
       })
-      .commit(),
+      .commit();
+  });
+
+  it('Succeeds for borrow if totalPar doesnt increase', async () => {
+    await solo.operation
+      .initiate()
+      .transfer({
+        primaryAccountOwner: owner,
+        primaryAccountId: accountOne,
+        toAccountOwner: owner,
+        toAccountId: accountTwo,
+        marketId: market,
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      })
+      .commit();
+  });
+
+  it('Fails for borrowing when closing', async () => {
+    await expectThrow(
+      solo.operation
+        .initiate()
+        .withdraw({
+          primaryAccountOwner: owner,
+          primaryAccountId: accountTwo,
+          marketId: market,
+          to: owner,
+          amount: {
+            value: amount.times(-1),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+        })
+        .commit(),
       'OperationImpl: Market is closing',
     );
   });

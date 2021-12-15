@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
-import { snapshot, resetEVM } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 

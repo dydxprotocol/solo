@@ -131,11 +131,8 @@ library Interest {
     {
         uint256 inputValue = uint256(input.value);
         if (input.sign) {
-            // TODO make this getPartialRoundUp too, since going from weiToPar and vice versa leads to a lossy
-            //      conversion, when the math leads to truncation (when it should round up)
             return Types.Wei({
                 sign: true,
-//                value: inputValue.getPartial(index.supply, BASE)
                 value: inputValue.getPartialRoundHalfUp(index.supply, BASE)
             });
         } else {
@@ -158,11 +155,8 @@ library Interest {
         returns (Types.Par memory)
     {
         if (input.sign) {
-            // TODO make this getPartialRoundUp too, since going from weiToPar and vice versa leads to a lossy
-            //      conversion, when the math leads to truncation (when it should round up)
             return Types.Par({
                 sign: true,
-//                value: input.value.getPartial(BASE, index.supply).to128()
                 value: input.value.getPartialRoundHalfUp(BASE, index.supply).to128()
             });
         } else {

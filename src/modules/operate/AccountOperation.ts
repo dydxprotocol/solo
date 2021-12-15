@@ -6,49 +6,49 @@ import { StopLimitOrders } from '../StopLimitOrders';
 import { CanonicalOrders } from '../CanonicalOrders';
 import { Contracts } from '../../lib/Contracts';
 import {
-  AmountReference,
-  AmountDenomination,
   AccountAction,
-  Deposit,
-  Withdraw,
-  ActionType,
-  ActionArgs,
-  ContractCallOptions,
-  TxResult,
-  Buy,
-  Sell,
-  Exchange,
-  Transfer,
-  Trade,
-  Liquidate,
-  Vaporize,
+  AccountActionWithOrder,
   AccountInfo,
+  AccountOperationOptions,
+  Action,
+  ActionArgs,
+  ActionType,
+  address,
+  Amount,
+  AmountDenomination,
+  AmountReference,
+  Buy,
+  Call,
+  CanonicalOrder,
+  ConfirmationType,
+  ContractCallOptions,
+  DaiMigrate,
+  Decimal,
+  Deposit,
+  Exchange,
+  ExpiryV2CallFunctionType,
+  Integer,
+  LimitOrder,
+  LimitOrderCallFunctionType,
+  Liquidate,
+  Operation,
   OperationAuthorization,
+  ProxyType,
+  Refund,
+  Sell,
+  SetApprovalForExpiryV2,
   SetExpiry,
   SetExpiryV2,
-  SetApprovalForExpiryV2,
-  ExpiryV2CallFunctionType,
-  Refund,
-  DaiMigrate,
-  AccountActionWithOrder,
-  Call,
-  Amount,
-  Decimal,
-  Integer,
-  AccountOperationOptions,
-  ConfirmationType,
-  address,
-  LimitOrder,
-  SignedLimitOrder,
-  StopLimitOrder,
-  SignedStopLimitOrder,
-  CanonicalOrder,
   SignedCanonicalOrder,
-  LimitOrderCallFunctionType,
-  ProxyType,
-  Operation,
+  SignedLimitOrder,
   SignedOperation,
-  Action,
+  SignedStopLimitOrder,
+  StopLimitOrder,
+  Trade,
+  Transfer,
+  TxResult,
+  Vaporize,
+  Withdraw,
 } from '../../types';
 import {
   addressesAreEqual,
@@ -114,43 +114,37 @@ export class AccountOperation {
   }
 
   public deposit(deposit: Deposit): AccountOperation {
-    this.addActionArgs(
-      deposit,
-      {
-        actionType: ActionType.Deposit,
-        amount: deposit.amount,
-        otherAddress: deposit.from,
-        primaryMarketId: deposit.marketId.toFixed(0),
-      },
-    );
+    this.addActionArgs(deposit, {
+      actionType: ActionType.Deposit,
+      amount: deposit.amount,
+      otherAddress: deposit.from,
+      primaryMarketId: deposit.marketId.toFixed(0),
+    });
 
     return this;
   }
 
   public withdraw(withdraw: Withdraw): AccountOperation {
-    this.addActionArgs(
-      withdraw,
-      {
-        amount: withdraw.amount,
-        actionType: ActionType.Withdraw,
-        otherAddress: withdraw.to,
-        primaryMarketId: withdraw.marketId.toFixed(0),
-      },
-    );
+    this.addActionArgs(withdraw, {
+      amount: withdraw.amount,
+      actionType: ActionType.Withdraw,
+      otherAddress: withdraw.to,
+      primaryMarketId: withdraw.marketId.toFixed(0),
+    });
 
     return this;
   }
 
   public transfer(transfer: Transfer): AccountOperation {
-    this.addActionArgs(
-      transfer,
-      {
-        actionType: ActionType.Transfer,
-        amount: transfer.amount,
-        primaryMarketId: transfer.marketId.toFixed(0),
-        otherAccountId: this.getAccountId(transfer.toAccountOwner, transfer.toAccountId),
-      },
-    );
+    this.addActionArgs(transfer, {
+      actionType: ActionType.Transfer,
+      amount: transfer.amount,
+      primaryMarketId: transfer.marketId.toFixed(0),
+      otherAccountId: this.getAccountId(
+        transfer.toAccountOwner,
+        transfer.toAccountId,
+      ),
+    });
 
     return this;
   }
@@ -164,61 +158,57 @@ export class AccountOperation {
   }
 
   public liquidate(liquidate: Liquidate): AccountOperation {
-    this.addActionArgs(
-      liquidate,
-      {
-        actionType: ActionType.Liquidate,
-        amount: liquidate.amount,
-        primaryMarketId: liquidate.liquidMarketId.toFixed(0),
-        secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
-        otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
-      },
-    );
+    this.addActionArgs(liquidate, {
+      actionType: ActionType.Liquidate,
+      amount: liquidate.amount,
+      primaryMarketId: liquidate.liquidMarketId.toFixed(0),
+      secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
+      otherAccountId: this.getAccountId(
+        liquidate.liquidAccountOwner,
+        liquidate.liquidAccountId,
+      ),
+    });
 
     return this;
   }
 
   public vaporize(vaporize: Vaporize): AccountOperation {
-    this.addActionArgs(
-      vaporize,
-      {
-        actionType: ActionType.Vaporize,
-        amount: vaporize.amount,
-        primaryMarketId: vaporize.vaporMarketId.toFixed(0),
-        secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
-        otherAccountId: this.getAccountId(vaporize.vaporAccountOwner, vaporize.vaporAccountId),
-      },
-    );
+    this.addActionArgs(vaporize, {
+      actionType: ActionType.Vaporize,
+      amount: vaporize.amount,
+      primaryMarketId: vaporize.vaporMarketId.toFixed(0),
+      secondaryMarketId: vaporize.payoutMarketId.toFixed(0),
+      otherAccountId: this.getAccountId(
+        vaporize.vaporAccountOwner,
+        vaporize.vaporAccountId,
+      ),
+    });
 
     return this;
   }
 
   public setExpiry(args: SetExpiry): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.expiry.options.address,
-        data: toBytes(args.marketId, args.expiryTime),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.expiry.options.address,
+      data: toBytes(args.marketId, args.expiryTime),
+    });
 
     return this;
   }
 
-  public setApprovalForExpiryV2(args: SetApprovalForExpiryV2): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.expiryV2.options.address,
-        data: toBytes(
-          ExpiryV2CallFunctionType.SetApproval,
-          args.sender,
-          args.minTimeDelta,
-        ),
-      },
-    );
+  public setApprovalForExpiryV2(
+    args: SetApprovalForExpiryV2,
+  ): AccountOperation {
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.expiryV2.options.address,
+      data: toBytes(
+        ExpiryV2CallFunctionType.SetApproval,
+        args.sender,
+        args.minTimeDelta,
+      ),
+    });
 
     return this;
   }
@@ -227,116 +217,99 @@ export class AccountOperation {
     const callType = toBytes(ExpiryV2CallFunctionType.SetExpiry);
     let callData = callType;
     callData = callData.concat(toBytes(new BigNumber(64)));
-    callData = callData.concat(toBytes(new BigNumber(args.expiryV2Args.length)));
+    callData = callData.concat(
+      toBytes(new BigNumber(args.expiryV2Args.length)),
+    );
     for (let i = 0; i < args.expiryV2Args.length; i += 1) {
       const expiryV2Arg = args.expiryV2Args[i];
-      callData = callData.concat(toBytes(
-        expiryV2Arg.accountOwner,
-        expiryV2Arg.accountId,
-        expiryV2Arg.marketId,
-        expiryV2Arg.timeDelta,
-        expiryV2Arg.forceUpdate,
-      ));
+      callData = callData.concat(
+        toBytes(
+          expiryV2Arg.accountOwner,
+          expiryV2Arg.accountId,
+          expiryV2Arg.marketId,
+          expiryV2Arg.timeDelta,
+          expiryV2Arg.forceUpdate,
+        ),
+      );
     }
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.expiryV2.options.address,
-        data: callData,
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.expiryV2.options.address,
+      data: callData,
+    });
 
     return this;
   }
 
   public approveLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Approve,
-          this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.limitOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Approve,
+        this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
+      ),
+    });
     return this;
   }
 
   public cancelLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.limitOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Cancel,
-          this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.limitOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Cancel,
+        this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
+      ),
+    });
     return this;
   }
 
   public approveStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.stopLimitOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Approve,
-          this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.stopLimitOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Approve,
+        this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
+      ),
+    });
     return this;
   }
 
   public cancelStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.stopLimitOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Cancel,
-          this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.stopLimitOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Cancel,
+        this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
+      ),
+    });
     return this;
   }
 
   public approveCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.canonicalOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Approve,
-          this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.canonicalOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Approve,
+        this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
+      ),
+    });
     return this;
   }
 
   public cancelCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.canonicalOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.Cancel,
-          this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
-        ),
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: this.contracts.canonicalOrders.options.address,
+      data: toBytes(
+        LimitOrderCallFunctionType.Cancel,
+        this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
+      ),
+    });
     return this;
   }
 
@@ -366,31 +339,28 @@ export class AccountOperation {
   }
 
   public call(args: Call): AccountOperation {
-    this.addActionArgs(
-      args,
-      {
-        actionType: ActionType.Call,
-        otherAddress: args.callee,
-        data: args.data,
-      },
-    );
+    this.addActionArgs(args, {
+      actionType: ActionType.Call,
+      otherAddress: args.callee,
+      data: args.data,
+    });
 
     return this;
   }
 
   public trade(trade: Trade): AccountOperation {
-    this.addActionArgs(
-      trade,
-      {
-        actionType: ActionType.Trade,
-        amount: trade.amount,
-        primaryMarketId: trade.inputMarketId.toFixed(0),
-        secondaryMarketId: trade.outputMarketId.toFixed(0),
-        otherAccountId: this.getAccountId(trade.otherAccountOwner, trade.otherAccountId),
-        otherAddress: trade.autoTrader,
-        data: trade.data,
-      },
-    );
+    this.addActionArgs(trade, {
+      actionType: ActionType.Trade,
+      amount: trade.amount,
+      primaryMarketId: trade.inputMarketId.toFixed(0),
+      secondaryMarketId: trade.outputMarketId.toFixed(0),
+      otherAccountId: this.getAccountId(
+        trade.otherAccountOwner,
+        trade.otherAccountId,
+      ),
+      otherAddress: trade.autoTrader,
+      data: trade.data,
+    });
 
     return this;
   }
@@ -510,7 +480,9 @@ export class AccountOperation {
       outputMarketId: order.quoteMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
-      data: hexStringToBytes(this.canonicalOrders.orderToBytes(order, price, fee)),
+      data: hexStringToBytes(
+        this.canonicalOrders.orderToBytes(order, price, fee),
+      ),
       amount: {
         denomination: AmountDenomination.Wei,
         reference: AmountReference.Delta,
@@ -534,7 +506,9 @@ export class AccountOperation {
       outputMarketId: order.isBuy ? order.quoteMarket : order.baseMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
-      data: hexStringToBytes(this.canonicalOrders.orderToBytes(order, price, fee)),
+      data: hexStringToBytes(
+        this.canonicalOrders.orderToBytes(order, price, fee),
+      ),
       amount: {
         denomination: AmountDenomination.Par,
         reference: AmountReference.Target,
@@ -577,7 +551,10 @@ export class AccountOperation {
     });
   }
 
-  public liquidateExpiredAccount(liquidate: Liquidate, maxExpiry?: Integer): AccountOperation {
+  public liquidateExpiredAccount(
+    liquidate: Liquidate,
+    maxExpiry?: Integer,
+  ): AccountOperation {
     return this.liquidateExpiredAccountInternal(
       liquidate,
       maxExpiry || INTEGERS.ONES_31,
@@ -585,32 +562,15 @@ export class AccountOperation {
     );
   }
 
-  public liquidateExpiredAccountV2(liquidate: Liquidate, maxExpiry?: Integer): AccountOperation {
+  public liquidateExpiredAccountV2(
+    liquidate: Liquidate,
+    maxExpiry?: Integer,
+  ): AccountOperation {
     return this.liquidateExpiredAccountInternal(
       liquidate,
       maxExpiry || INTEGERS.ONES_31,
       this.contracts.expiryV2.options.address,
     );
-  }
-
-  private liquidateExpiredAccountInternal(
-    liquidate: Liquidate,
-    maxExpiryTimestamp: Integer,
-    contractAddress: address,
-  ): AccountOperation {
-    this.addActionArgs(
-      liquidate,
-      {
-        actionType: ActionType.Trade,
-        amount: liquidate.amount,
-        primaryMarketId: liquidate.liquidMarketId.toFixed(0),
-        secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
-        otherAccountId: this.getAccountId(liquidate.liquidAccountOwner, liquidate.liquidAccountId),
-        otherAddress: contractAddress,
-        data: toBytes(liquidate.liquidMarketId, maxExpiryTimestamp),
-      },
-    );
-    return this;
   }
 
   public fullyLiquidateExpiredAccount(
@@ -671,6 +631,201 @@ export class AccountOperation {
     );
   }
 
+  /**
+   * Adds all actions from a SignedOperation and also adds the authorization object that allows the
+   * proxy to process the actions.
+   */
+  public addSignedOperation(
+    signedOperation: SignedOperation,
+  ): AccountOperation {
+    // throw error if operation is not going to use the signed proxy
+    if (this.proxy !== ProxyType.Signed) {
+      throw new Error(
+        'Cannot add signed operation if not using signed operation proxy',
+      );
+    }
+
+    // store the auth
+    this.auths.push({
+      startIndex: new BigNumber(this.actions.length),
+      numActions: new BigNumber(signedOperation.actions.length),
+      salt: signedOperation.salt,
+      expiration: signedOperation.expiration,
+      sender: signedOperation.sender,
+      signer: signedOperation.signer,
+      typedSignature: signedOperation.typedSignature,
+    });
+
+    // store the actions
+    for (let i = 0; i < signedOperation.actions.length; i += 1) {
+      const action = signedOperation.actions[i];
+
+      const secondaryAccountId =
+        action.secondaryAccountOwner === ADDRESSES.ZERO
+          ? 0
+          : this.getAccountId(
+              action.secondaryAccountOwner,
+              action.secondaryAccountNumber,
+            );
+
+      this.addActionArgs(
+        {
+          primaryAccountOwner: action.primaryAccountOwner,
+          primaryAccountId: action.primaryAccountNumber,
+        },
+        {
+          actionType: action.actionType,
+          primaryMarketId: action.primaryMarketId.toFixed(0),
+          secondaryMarketId: action.secondaryMarketId.toFixed(0),
+          otherAddress: action.otherAddress,
+          otherAccountId: secondaryAccountId,
+          data: hexStringToBytes(action.data),
+          amount: {
+            reference: action.amount.ref,
+            denomination: action.amount.denomination,
+            value: action.amount.value.times(action.amount.sign ? 1 : -1),
+          },
+        },
+      );
+    }
+
+    return this;
+  }
+
+  /**
+   * Takes all current actions/accounts and creates an Operation struct that can then be signed and
+   * later used with the SignedOperationProxy.
+   */
+  public createSignableOperation(
+    options: {
+      expiration?: Integer;
+      salt?: Integer;
+      sender?: address;
+      signer?: address;
+    } = {},
+  ): Operation {
+    if (this.auths.length) {
+      throw new Error('Cannot create operation out of operation with auths');
+    }
+    if (!this.actions.length) {
+      throw new Error(
+        'Cannot create operation out of operation with no actions',
+      );
+    }
+
+    function actionArgsToAction(action: ActionArgs): Action {
+      const secondaryAccount: AccountInfo =
+        action.actionType === ActionType.Transfer ||
+        action.actionType === ActionType.Trade ||
+        action.actionType === ActionType.Liquidate ||
+        action.actionType === ActionType.Vaporize
+          ? this.accounts[action.otherAccountId]
+          : { owner: ADDRESSES.ZERO, number: '0' };
+
+      return {
+        actionType: toNumber(action.actionType),
+        primaryAccountOwner: this.accounts[action.accountId].owner,
+        primaryAccountNumber: new BigNumber(
+          this.accounts[action.accountId].number,
+        ),
+        secondaryAccountOwner: secondaryAccount.owner,
+        secondaryAccountNumber: new BigNumber(secondaryAccount.number),
+        primaryMarketId: new BigNumber(action.primaryMarketId),
+        secondaryMarketId: new BigNumber(action.secondaryMarketId),
+        amount: {
+          sign: action.amount.sign,
+          ref: toNumber(action.amount.ref),
+          denomination: toNumber(action.amount.denomination),
+          value: new BigNumber(action.amount.value),
+        },
+        otherAddress: action.otherAddress,
+        data: bytesToHexString(action.data),
+      };
+    }
+
+    const actions: Action[] = this.actions.map(actionArgsToAction.bind(this));
+
+    return {
+      actions,
+      expiration: options.expiration || INTEGERS.ZERO,
+      salt: options.salt || INTEGERS.ZERO,
+      sender: options.sender || ADDRESSES.ZERO,
+      signer: options.signer || this.accounts[0].owner,
+    };
+  }
+
+  /**
+   * Commits the operation to the chain by sending a transaction.
+   */
+  public async commit(options?: ContractCallOptions): Promise<TxResult> {
+    if (this.committed) {
+      throw new Error('Operation already committed');
+    }
+    if (this.actions.length === 0) {
+      throw new Error('No actions have been added to operation');
+    }
+
+    if (options && options.confirmationType !== ConfirmationType.Simulate) {
+      this.committed = true;
+    }
+
+    try {
+      let method: TransactionObject<void>;
+
+      switch (this.proxy) {
+        case ProxyType.None:
+          method = this.contracts.soloMargin.methods.operate(
+            this.accounts,
+            this.actions,
+          );
+          break;
+        case ProxyType.Payable:
+          method = this.contracts.payableProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.sendEthTo ||
+              (options && options.from) ||
+              this.contracts.payableProxy.options.from,
+          );
+          break;
+        case ProxyType.Signed:
+          method = this.contracts.signedOperationProxy.methods.operate(
+            this.accounts,
+            this.actions,
+            this.generateAuthData(),
+          );
+          break;
+        default:
+          throw new Error(`Invalid proxy type: ${this.proxy}`);
+      }
+
+      return this.contracts.callContractFunction(method, options);
+    } catch (error) {
+      this.committed = false;
+      throw error;
+    }
+  }
+
+  private liquidateExpiredAccountInternal(
+    liquidate: Liquidate,
+    maxExpiryTimestamp: Integer,
+    contractAddress: address,
+  ): AccountOperation {
+    this.addActionArgs(liquidate, {
+      actionType: ActionType.Trade,
+      amount: liquidate.amount,
+      primaryMarketId: liquidate.liquidMarketId.toFixed(0),
+      secondaryMarketId: liquidate.payoutMarketId.toFixed(0),
+      otherAccountId: this.getAccountId(
+        liquidate.liquidAccountOwner,
+        liquidate.liquidAccountId,
+      ),
+      otherAddress: contractAddress,
+      data: toBytes(liquidate.liquidMarketId, maxExpiryTimestamp),
+    });
+    return this;
+  }
+
   private fullyLiquidateExpiredAccountInternal(
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
@@ -721,9 +876,16 @@ export class AccountOperation {
         blockTimestamp.minus(expiryTimestamp).div(expiryRampTime),
         INTEGERS.ONE,
       );
-      const spread = defaultSpread.times(heldSpreadMult).times(owedSpreadMult).plus(1);
+      const spread = defaultSpread
+        .times(heldSpreadMult)
+        .times(owedSpreadMult)
+        .plus(1);
       const heldValue = heldWei.times(heldPrice).abs();
-      const owedValue = owedWei.times(owedPrice).times(rampAdjustment).times(spread).abs();
+      const owedValue = owedWei
+        .times(owedPrice)
+        .times(rampAdjustment)
+        .times(spread)
+        .abs();
 
       // add variables that need to be populated
       let primaryMarketId: Integer;
@@ -738,7 +900,10 @@ export class AccountOperation {
         secondaryMarketId = heldMarket;
       } else {
         // calculate the expected remaining owedWei
-        owedWei = owedValue.minus(heldValue).div(owedValue).times(owedWei);
+        owedWei = owedValue
+          .minus(heldValue)
+          .div(owedValue)
+          .times(owedWei);
 
         primaryMarketId = heldMarket;
         secondaryMarketId = expiredMarket;
@@ -772,178 +937,6 @@ export class AccountOperation {
     return this;
   }
 
-  /**
-   * Adds all actions from a SignedOperation and also adds the authorization object that allows the
-   * proxy to process the actions.
-   */
-  public addSignedOperation(
-    signedOperation: SignedOperation,
-  ): AccountOperation {
-    // throw error if operation is not going to use the signed proxy
-    if (this.proxy !== ProxyType.Signed) {
-      throw new Error('Cannot add signed operation if not using signed operation proxy');
-    }
-
-    // store the auth
-    this.auths.push({
-      startIndex: new BigNumber(this.actions.length),
-      numActions: new BigNumber(signedOperation.actions.length),
-      salt: signedOperation.salt,
-      expiration: signedOperation.expiration,
-      sender: signedOperation.sender,
-      signer: signedOperation.signer,
-      typedSignature: signedOperation.typedSignature,
-    });
-
-    // store the actions
-    for (let i = 0; i < signedOperation.actions.length; i += 1) {
-      const action = signedOperation.actions[i];
-
-      const secondaryAccountId = action.secondaryAccountOwner === ADDRESSES.ZERO
-        ? 0
-        : this.getAccountId(
-          action.secondaryAccountOwner,
-          action.secondaryAccountNumber,
-        );
-
-      this.addActionArgs(
-        {
-          primaryAccountOwner: action.primaryAccountOwner,
-          primaryAccountId: action.primaryAccountNumber,
-        },
-        {
-          actionType: action.actionType,
-          primaryMarketId: action.primaryMarketId.toFixed(0),
-          secondaryMarketId: action.secondaryMarketId.toFixed(0),
-          otherAddress: action.otherAddress,
-          otherAccountId: secondaryAccountId,
-          data: hexStringToBytes(action.data),
-          amount: {
-            reference: action.amount.ref,
-            denomination: action.amount.denomination,
-            value: action.amount.value.times(action.amount.sign ? 1 : -1),
-          },
-        },
-      );
-    }
-
-    return this;
-  }
-
-  /**
-   * Takes all current actions/accounts and creates an Operation struct that can then be signed and
-   * later used with the SignedOperationProxy.
-   */
-  public createSignableOperation(
-    options: {
-      expiration?: Integer,
-      salt?: Integer,
-      sender?: address,
-      signer?: address,
-    } = {},
-  ): Operation {
-    if (this.auths.length) {
-      throw new Error('Cannot create operation out of operation with auths');
-    }
-    if (!this.actions.length) {
-      throw new Error('Cannot create operation out of operation with no actions');
-    }
-
-    function actionArgsToAction(action: ActionArgs): Action {
-      const secondaryAccount: AccountInfo = (
-        action.actionType === ActionType.Transfer ||
-        action.actionType === ActionType.Trade ||
-        action.actionType === ActionType.Liquidate ||
-        action.actionType === ActionType.Vaporize
-      )
-        ? this.accounts[action.otherAccountId]
-        : { owner: ADDRESSES.ZERO, number: '0' };
-
-      return {
-        actionType: toNumber(action.actionType),
-        primaryAccountOwner: this.accounts[action.accountId].owner,
-        primaryAccountNumber: new BigNumber(this.accounts[action.accountId].number),
-        secondaryAccountOwner: secondaryAccount.owner,
-        secondaryAccountNumber: new BigNumber(secondaryAccount.number),
-        primaryMarketId: new BigNumber(action.primaryMarketId),
-        secondaryMarketId: new BigNumber(action.secondaryMarketId),
-        amount: {
-          sign: action.amount.sign,
-          ref: toNumber(action.amount.ref),
-          denomination: toNumber(action.amount.denomination),
-          value: new BigNumber(action.amount.value),
-        },
-        otherAddress: action.otherAddress,
-        data: bytesToHexString(action.data),
-      };
-    }
-
-    const actions: Action[] = this.actions.map(actionArgsToAction.bind(this));
-
-    return {
-      actions,
-      expiration: options.expiration || INTEGERS.ZERO,
-      salt: options.salt || INTEGERS.ZERO,
-      sender: options.sender || ADDRESSES.ZERO,
-      signer: options.signer || this.accounts[0].owner,
-    };
-  }
-
-  /**
-   * Commits the operation to the chain by sending a transaction.
-   */
-  public async commit(
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
-    if (this.committed) {
-      throw new Error('Operation already committed');
-    }
-    if (this.actions.length === 0) {
-      throw new Error('No actions have been added to operation');
-    }
-
-    if (options && options.confirmationType !== ConfirmationType.Simulate) {
-      this.committed = true;
-    }
-
-    try {
-      let method: TransactionObject<void>;
-
-      switch (this.proxy) {
-        case ProxyType.None:
-          method = this.contracts.soloMargin.methods.operate(
-            this.accounts,
-            this.actions,
-          );
-          break;
-        case ProxyType.Payable:
-          method = this.contracts.payableProxy.methods.operate(
-            this.accounts,
-            this.actions,
-            this.sendEthTo || (options && options.from) || this.contracts.payableProxy.options.from,
-          );
-          break;
-        case ProxyType.Signed:
-          method = this.contracts.signedOperationProxy.methods.operate(
-            this.accounts,
-            this.actions,
-            this.generateAuthData(),
-          );
-          break;
-        default:
-          throw new Error(`Invalid proxy type: ${this.proxy}`);
-      }
-
-      return this.contracts.callContractFunction(
-        method,
-        options,
-      );
-    } catch (error) {
-      this.committed = false;
-      throw error;
-    }
-  }
-
   // ============ Private Helper Functions ============
 
   /**
@@ -965,8 +958,12 @@ export class AccountOperation {
       primaryAccountOwner,
       primaryAccountId: primaryAccountNumber,
       autoTrader: this.contracts.limitOrders.options.address,
-      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
-      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
+      inputMarketId: denotedInMakerAmount
+        ? order.makerMarket
+        : order.takerMarket,
+      outputMarketId: denotedInMakerAmount
+        ? order.takerMarket
+        : order.makerMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
       amount: {
@@ -997,64 +994,67 @@ export class AccountOperation {
       primaryAccountOwner,
       primaryAccountId: primaryAccountNumber,
       autoTrader: this.contracts.stopLimitOrders.options.address,
-      inputMarketId: denotedInMakerAmount ? order.makerMarket : order.takerMarket,
-      outputMarketId: denotedInMakerAmount ? order.takerMarket : order.makerMarket,
+      inputMarketId: denotedInMakerAmount
+        ? order.makerMarket
+        : order.takerMarket,
+      outputMarketId: denotedInMakerAmount
+        ? order.takerMarket
+        : order.makerMarket,
       otherAccountOwner: order.makerAccountOwner,
       otherAccountId: order.makerAccountNumber,
       data: hexStringToBytes(dataString),
     });
   }
 
-  private exchange(exchange: Exchange, actionType: ActionType): AccountOperation {
+  private exchange(
+    exchange: Exchange,
+    actionType: ActionType,
+  ): AccountOperation {
     const {
       bytes,
       exchangeWrapperAddress,
     }: {
-      bytes: number[],
-      exchangeWrapperAddress: string,
+      bytes: number[];
+      exchangeWrapperAddress: string;
     } = this.orderMapper.mapOrder(exchange.order);
 
     const [primaryMarketId, secondaryMarketId] =
-      actionType === ActionType.Buy ?
-      [exchange.makerMarketId, exchange.takerMarketId] :
-      [exchange.takerMarketId, exchange.makerMarketId];
+      actionType === ActionType.Buy
+        ? [exchange.makerMarketId, exchange.takerMarketId]
+        : [exchange.takerMarketId, exchange.makerMarketId];
 
-    const orderData = bytes.map((a :number): number[] => [a]);
+    const orderData = bytes.map((a: number): number[] => [a]);
 
-    this.addActionArgs(
-      exchange,
-      {
-        actionType,
-        amount: exchange.amount,
-        otherAddress: exchangeWrapperAddress,
-        data: orderData,
-        primaryMarketId: primaryMarketId.toFixed(0),
-        secondaryMarketId: secondaryMarketId.toFixed(0),
-      },
-    );
+    this.addActionArgs(exchange, {
+      actionType,
+      amount: exchange.amount,
+      otherAddress: exchangeWrapperAddress,
+      data: orderData,
+      primaryMarketId: primaryMarketId.toFixed(0),
+      secondaryMarketId: secondaryMarketId.toFixed(0),
+    });
 
     return this;
   }
 
-  private addActionArgs(
-    action: AccountAction,
-    args: OptionalActionArgs,
-  ): void {
+  private addActionArgs(action: AccountAction, args: OptionalActionArgs): void {
     if (this.committed) {
       throw new Error('Operation already committed');
     }
 
-    const amount = args.amount ? {
-      sign: !args.amount.value.isNegative(),
-      denomination: args.amount.denomination,
-      ref: args.amount.reference,
-      value: args.amount.value.abs().toFixed(0),
-    } : {
-      sign: false,
-      denomination: 0,
-      ref: 0,
-      value: 0,
-    };
+    const amount = args.amount
+      ? {
+          sign: !args.amount.value.isNegative(),
+          denomination: args.amount.denomination,
+          ref: args.amount.reference,
+          value: args.amount.value.abs().toFixed(0),
+        }
+      : {
+          sign: false,
+          denomination: 0,
+          ref: 0,
+          value: 0,
+        };
 
     const actionArgs: ActionArgs = {
       amount,
@@ -1071,7 +1071,10 @@ export class AccountOperation {
   }
 
   private getPrimaryAccountId(operation: AccountAction): number {
-    return this.getAccountId(operation.primaryAccountOwner, operation.primaryAccountId);
+    return this.getAccountId(
+      operation.primaryAccountOwner,
+      operation.primaryAccountId,
+    );
   }
 
   private getAccountId(accountOwner: string, accountNumber: Integer): number {
@@ -1081,7 +1084,8 @@ export class AccountOperation {
     };
 
     const correctIndex = (i: AccountInfo) =>
-      (addressesAreEqual(i.owner, accountInfo.owner) && i.number === accountInfo.number);
+      addressesAreEqual(i.owner, accountInfo.owner) &&
+      i.number === accountInfo.number;
     const index = this.accounts.findIndex(correctIndex);
 
     if (index >= 0) {
@@ -1094,14 +1098,14 @@ export class AccountOperation {
   }
 
   private generateAuthData(): {
-    numActions: string,
+    numActions: string;
     header: {
-      expiration: string,
-      salt: string,
-      sender: string,
-      signer: string,
-    },
-    signature: number[][],
+      expiration: string;
+      salt: string;
+      sender: string;
+      signer: string;
+    };
+    signature: number[][];
   }[] {
     let actionIndex: Integer = INTEGERS.ZERO;
     const result = [];
@@ -1149,7 +1153,9 @@ export class AccountOperation {
     if (actionIndex.lt(this.actions.length)) {
       result.push({
         ...emptyAuth,
-        numActions: new BigNumber(this.actions.length).minus(actionIndex).toFixed(0),
+        numActions: new BigNumber(this.actions.length)
+          .minus(actionIndex)
+          .toFixed(0),
       });
     }
 

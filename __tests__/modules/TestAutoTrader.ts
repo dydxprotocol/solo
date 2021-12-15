@@ -1,12 +1,15 @@
 import { TestContracts } from './TestContracts';
-import { Amount, ContractCallOptions, TxResult, Integer } from '../../src/types';
+import {
+  Amount,
+  ContractCallOptions,
+  Integer,
+  TxResult,
+} from '../../src/types';
 
 export class TestAutoTrader {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 
@@ -34,9 +37,7 @@ export class TestAutoTrader {
     );
   }
 
-  public async setRequireInputMarketId(
-    market: Integer,
-  ): Promise<TxResult> {
+  public async setRequireInputMarketId(market: Integer): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.testAutoTrader.methods.setRequireInputMarketId(
         market.toFixed(0),
@@ -44,9 +45,7 @@ export class TestAutoTrader {
     );
   }
 
-  public async setRequireOutputMarketId(
-    market: Integer,
-  ): Promise<TxResult> {
+  public async setRequireOutputMarketId(market: Integer): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.testAutoTrader.methods.setRequireOutputMarketId(
         market.toFixed(0),
@@ -78,9 +77,7 @@ export class TestAutoTrader {
     );
   }
 
-  public async setRequireOldInputPar(
-    par: Integer,
-  ): Promise<TxResult> {
+  public async setRequireOldInputPar(par: Integer): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.testAutoTrader.methods.setRequireOldInputPar({
         sign: par.gt(0),
@@ -89,9 +86,7 @@ export class TestAutoTrader {
     );
   }
 
-  public async setRequireNewInputPar(
-    par: Integer,
-  ): Promise<TxResult> {
+  public async setRequireNewInputPar(par: Integer): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.testAutoTrader.methods.setRequireNewInputPar({
         sign: par.gt(0),
@@ -100,9 +95,7 @@ export class TestAutoTrader {
     );
   }
 
-  public async setRequireInputWei(
-    wei: Integer,
-  ): Promise<TxResult> {
+  public async setRequireInputWei(wei: Integer): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.testAutoTrader.methods.setRequireInputWei({
         sign: wei.gt(0),

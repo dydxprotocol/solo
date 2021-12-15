@@ -3,51 +3,126 @@
     "earningsRate": "0.95",
     "0": {
       "maxAPR": "0.50",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     },
     "1": {
       "maxAPR": "0.50",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     },
     "2": {
       "maxAPR": "0.50",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     },
     "3": {
       "maxAPR": "0.50",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     }
   },
   "42": {
     "earningsRate": "0.9",
     "0": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80]
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
+      ]
     },
     "1": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80]
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
+      ]
     },
     "2": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80]
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
+      ]
     }
   },
   "1001": {
     "earningsRate": "0.9",
     "0": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
       ]
     },
     "1": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
       ]
     },
     "2": {
       "maxAPR": "1.00",
-      "coefficients": [0, 10, 10, 0, 0, 80
+      "coefficients": [
+        0,
+        10,
+        10,
+        0,
+        0,
+        80
       ]
     }
   },
@@ -55,15 +130,42 @@
     "earningsRate": "0.9",
     "0": {
       "maxAPR": "1.00",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     },
     "1": {
       "maxAPR": "1.00",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     },
     "2": {
       "maxAPR": "1.00",
-      "coefficients": [0, 20, 0, 0, 0, 0, 20, 60]
+      "coefficients": [
+        0,
+        20,
+        0,
+        0,
+        0,
+        0,
+        20,
+        60
+      ]
     }
   }
 }

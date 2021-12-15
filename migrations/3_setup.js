@@ -26,6 +26,7 @@ const {
   isMatic,
   isMaticTest,
   isArbitrum,
+  isArbitrumTest,
 } = require('./helpers');
 const {
   getDaiAddress,
@@ -218,6 +219,9 @@ async function getSetters(network) {
     return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   if (isArbitrum(network)) {
+    return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
+  }
+  if (isArbitrumTest(network)) {
     return tokens.map(() => ({ address: DoubleExponentInterestSetter.address }));
   }
   throw new Error('Cannot find Setters');

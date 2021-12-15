@@ -19,7 +19,7 @@
 import BigNumber from 'bignumber.js';
 import { Order } from '@dydxprotocol/exchange-wrappers';
 import { Tx } from 'web3/eth/types';
-import { TransactionReceipt, Log, EventLog } from 'web3/types';
+import { EventLog, Log, TransactionReceipt } from 'web3/types';
 
 export type address = string;
 export type Integer = BigNumber;
@@ -57,11 +57,11 @@ export enum ProxyType {
 }
 
 export enum SigningMethod {
-  Compatibility = 'Compatibility',   // picks intelligently between UnsafeHash and Hash
-  UnsafeHash = 'UnsafeHash',         // raw hash signed
-  Hash = 'Hash',                     // hash prepended according to EIP-191
-  TypedData = 'TypedData',           // order hashed according to EIP-712
-  MetaMask = 'MetaMask',             // order hashed according to EIP-712 (MetaMask-only)
+  Compatibility = 'Compatibility', // picks intelligently between UnsafeHash and Hash
+  UnsafeHash = 'UnsafeHash', // raw hash signed
+  Hash = 'Hash', // hash prepended according to EIP-191
+  TypedData = 'TypedData', // order hashed according to EIP-712
+  MetaMask = 'MetaMask', // order hashed according to EIP-712 (MetaMask-only)
   MetaMaskLatest = 'MetaMaskLatest', // ... according to latest version of EIP-712 (MetaMask-only)
   CoinbaseWallet = 'CoinbaseWallet', // ... according to latest version of EIP-712 (CoinbaseWallet)
 }
@@ -204,6 +204,7 @@ export interface Exchange extends AccountAction {
 }
 
 export interface Buy extends Exchange {}
+
 export interface Sell extends Exchange {}
 
 export interface Trade extends AccountAction {
@@ -404,16 +405,14 @@ export interface LimitOrder extends SignableOrder {
   salt: Integer;
 }
 
-export interface SignedLimitOrder extends LimitOrder, SignedOrder {
-}
+export interface SignedLimitOrder extends LimitOrder, SignedOrder {}
 
 export interface StopLimitOrder extends LimitOrder {
   triggerPrice: Integer;
   decreaseOnly: boolean;
 }
 
-export interface SignedStopLimitOrder extends StopLimitOrder, SignedOrder {
-}
+export interface SignedStopLimitOrder extends StopLimitOrder, SignedOrder {}
 
 export interface CanonicalOrder extends SignableOrder {
   isBuy: boolean;
@@ -428,8 +427,7 @@ export interface CanonicalOrder extends SignableOrder {
   salt: Integer;
 }
 
-export interface SignedCanonicalOrder extends CanonicalOrder, SignedOrder {
-}
+export interface SignedCanonicalOrder extends CanonicalOrder, SignedOrder {}
 
 export enum LimitOrderStatus {
   Null = 0,

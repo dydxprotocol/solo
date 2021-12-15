@@ -18,6 +18,7 @@ rules:
   no-console: off
   max-line-length: 200
   camelcase: off
+  no-await-in-loop: off
   max-len:
     - error
     - 150

@@ -3,9 +3,7 @@ import { TestContracts } from './TestContracts';
 export class TestExchangeWrapper {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 

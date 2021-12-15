@@ -2,11 +2,11 @@ import { Contracts } from '../lib/Contracts';
 import { Token } from './Token';
 import { Weth as WethContract } from '../../build/wrappers/Weth';
 import {
+  address,
   ContractCallOptions,
   ContractConstantCallOptions,
-  TxResult,
-  address,
   Integer,
+  TxResult,
 } from '../types';
 
 export class Weth {
@@ -14,10 +14,7 @@ export class Weth {
   private token: Token;
   private weth: WethContract;
 
-  constructor(
-    contracts: Contracts,
-    token: Token,
-  ) {
+  constructor(contracts: Contracts, token: Token) {
     this.contracts = contracts;
     this.token = token;
     this.weth = contracts.weth;
@@ -32,14 +29,11 @@ export class Weth {
     amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
-      this.weth.methods.deposit(),
-      {
-        ...options,
-        from: ownerAddress,
-        value: amount.toFixed(0),
-      },
-    );
+    return this.contracts.callContractFunction(this.weth.methods.deposit(), {
+      ...options,
+      from: ownerAddress,
+      value: amount.toFixed(0),
+    });
   }
 
   public async unwrap(
@@ -48,9 +42,7 @@ export class Weth {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.weth.methods.withdraw(
-        amount.toFixed(0),
-      ),
+      this.weth.methods.withdraw(amount.toFixed(0)),
       {
         ...options,
         from: ownerAddress,
@@ -85,37 +77,23 @@ export class Weth {
   public async getTotalSupply(
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    return this.token.getTotalSupply(
-      this.weth.options.address,
-      options,
-    );
+    return this.token.getTotalSupply(this.weth.options.address, options);
   }
 
-  public async getName(
-    options?: ContractConstantCallOptions,
-  ): Promise<string> {
-    return this.token.getName(
-      this.weth.options.address,
-      options,
-    );
+  public async getName(options?: ContractConstantCallOptions): Promise<string> {
+    return this.token.getName(this.weth.options.address, options);
   }
 
   public async getSymbol(
     options?: ContractConstantCallOptions,
   ): Promise<string> {
-    return this.token.getSymbol(
-      this.weth.options.address,
-      options,
-    );
+    return this.token.getSymbol(this.weth.options.address, options);
   }
 
   public async getDecimals(
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    return this.token.getDecimals(
-      this.weth.options.address,
-      options,
-    );
+    return this.token.getDecimals(this.weth.options.address, options);
   }
 
   public async getSoloAllowance(

@@ -1,26 +1,17 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
-import { snapshot, resetEVM } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
-import {
-  address,
-  Integer,
-  MarketId,
-} from '../../src/types';
+import { address, Integer, MarketId } from '../../src/types';
 
 let solo: TestSolo;
 let tokens: address[];
 let accountOwner: address;
 const amount = new BigNumber(123456);
 const accountNumber = INTEGERS.ZERO;
-const markets = [
-  MarketId.ETH,
-  MarketId.WETH,
-  MarketId.SAI,
-  MarketId.USDC,
-];
+const markets = [MarketId.ETH, MarketId.WETH, MarketId.SAI, MarketId.USDC];
 
 describe('StandardActions', () => {
   let snapshotId: string;
@@ -33,7 +24,10 @@ describe('StandardActions', () => {
     const soloAddress = solo.contracts.testSoloMargin.options.address;
 
     // setup markets
-    await solo.testing.priceOracle.setPrice(solo.weth.getAddress(), new BigNumber('1e40'));
+    await solo.testing.priceOracle.setPrice(
+      solo.weth.getAddress(),
+      new BigNumber('1e40'),
+    );
     await solo.admin.addMarket(
       solo.weth.getAddress(),
       solo.testing.priceOracle.getAddress(),

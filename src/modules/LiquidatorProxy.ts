@@ -11,9 +11,7 @@ import { decimalToString } from '../lib/Helpers';
 export class LiquidatorProxy {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 

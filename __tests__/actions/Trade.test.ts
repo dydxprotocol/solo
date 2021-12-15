@@ -7,13 +7,13 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
-  address,
   AccountStatus,
+  address,
   AmountDenomination,
   AmountReference,
   Balance,
-  Trade,
   Integer,
+  Trade,
 } from '../../src/types';
 
 let who1: address;
@@ -38,11 +38,13 @@ const defaultData = {
   denomination: AmountDenomination.Actual,
   reference: AmountReference.Delta,
 };
-const zeroGlob = { amount: {
-  value: zero,
-  denomination: AmountDenomination.Principal,
-  reference: AmountReference.Delta,
-} };
+const zeroGlob = {
+  amount: {
+    value: zero,
+    denomination: AmountDenomination.Principal,
+    reference: AmountReference.Delta,
+  },
+};
 
 const tradeId = new BigNumber(1234);
 
@@ -82,8 +84,18 @@ describe('Trade', () => {
     await Promise.all([
       solo.testing.setMarketIndex(inputMkt, defaultIndex),
       solo.testing.setMarketIndex(outputMkt, defaultIndex),
-      solo.testing.setAccountBalance(who1, accountNumber1, collateralMkt, collateralAmount),
-      solo.testing.setAccountBalance(who2, accountNumber2, collateralMkt, collateralAmount),
+      solo.testing.setAccountBalance(
+        who1,
+        accountNumber1,
+        collateralMkt,
+        collateralAmount,
+      ),
+      solo.testing.setAccountBalance(
+        who2,
+        accountNumber2,
+        collateralMkt,
+        collateralAmount,
+      ),
     ]);
     snapshotId = await snapshot();
   });
@@ -93,10 +105,7 @@ describe('Trade', () => {
   });
 
   it('Basic trade test', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData(),
-    ]);
+    await Promise.all([approveTrader(), setTradeData()]);
     const txResult = await expectTradeOkay({});
     console.log(`\tTrade gas used: ${txResult.gasUsed}`);
     await Promise.all([
@@ -111,16 +120,9 @@ describe('Trade', () => {
       approveTrader(),
       setTradeData(),
     ]);
-    const txResult = await expectTradeOkay(
-      {},
-      { from: operator },
-    );
+    const txResult = await expectTradeOkay({}, { from: operator });
 
-    const [
-      inputIndex,
-      outputIndex,
-      collateralIndex,
-    ] = await Promise.all([
+    const [inputIndex, outputIndex, collateralIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(inputMkt),
       solo.getters.getMarketCachedIndex(outputMkt),
       solo.getters.getMarketCachedIndex(collateralMkt),
@@ -158,26 +160,44 @@ describe('Trade', () => {
     expect(tradeLog.args.makerAccountNumber).toEqual(accountNumber2);
     expect(tradeLog.args.inputMarket).toEqual(inputMkt);
     expect(tradeLog.args.outputMarket).toEqual(outputMkt);
-    expect(tradeLog.args.takerInputUpdate).toEqual({ newPar: par, deltaWei: wei });
-    expect(tradeLog.args.takerOutputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
-    expect(tradeLog.args.makerInputUpdate).toEqual({ newPar: negPar, deltaWei: negWei });
-    expect(tradeLog.args.makerOutputUpdate).toEqual({ newPar: par, deltaWei: wei });
-    expect(tradeLog.args.autoTrader).toEqual(solo.testing.autoTrader.getAddress());
+    expect(tradeLog.args.takerInputUpdate).toEqual({
+      newPar: par,
+      deltaWei: wei,
+    });
+    expect(tradeLog.args.takerOutputUpdate).toEqual({
+      newPar: negPar,
+      deltaWei: negWei,
+    });
+    expect(tradeLog.args.makerInputUpdate).toEqual({
+      newPar: negPar,
+      deltaWei: negWei,
+    });
+    expect(tradeLog.args.makerOutputUpdate).toEqual({
+      newPar: par,
+      deltaWei: wei,
+    });
+    expect(tradeLog.args.autoTrader).toEqual(
+      solo.testing.autoTrader.getAddress(),
+    );
   });
 
   it('Succeeds for positive delta par/wei', async () => {
     await approveTrader();
     const globs = [
-      { amount: {
-        value: par,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Delta,
-      } },
-      { amount: {
-        value: wei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      } },
+      {
+        amount: {
+          value: par,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Delta,
+        },
+      },
+      {
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
     ];
 
     // test input (output will be zero)
@@ -262,16 +282,20 @@ describe('Trade', () => {
   it('Succeeds for negative delta par/wei', async () => {
     await approveTrader();
     const globs = [
-      { amount: {
-        value: negPar,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Delta,
-      } },
-      { amount: {
-        value: negWei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      } },
+      {
+        amount: {
+          value: negPar,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Delta,
+        },
+      },
+      {
+        amount: {
+          value: negWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      },
     ];
 
     // test input (output will be zero)
@@ -356,16 +380,20 @@ describe('Trade', () => {
   it('Succeeds for positive target par/wei', async () => {
     await approveTrader();
     const globs = [
-      { amount: {
-        value: par,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
-      } },
-      { amount: {
-        value: wei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Target,
-      } },
+      {
+        amount: {
+          value: par,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        amount: {
+          value: wei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
     ];
 
     // test input (output will be zero)
@@ -498,16 +526,20 @@ describe('Trade', () => {
   it('Succeeds for negative target par/wei', async () => {
     await approveTrader();
     const globs = [
-      { amount: {
-        value: negPar,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
-      } },
-      { amount: {
-        value: negWei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Target,
-      } },
+      {
+        amount: {
+          value: negPar,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        amount: {
+          value: negWei,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
     ];
 
     // test input (output will be zero)
@@ -640,16 +672,20 @@ describe('Trade', () => {
   it('Succeeds for zero target par/wei', async () => {
     await approveTrader();
     const globs = [
-      { amount: {
-        value: zero,
-        denomination: AmountDenomination.Principal,
-        reference: AmountReference.Target,
-      } },
-      { amount: {
-        value: zero,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Target,
-      } },
+      {
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Target,
+        },
+      },
+      {
+        amount: {
+          value: zero,
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Target,
+        },
+      },
     ];
 
     const start1 = par.div(2);
@@ -695,10 +731,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for zero input and output', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: zero }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: zero })]);
     await expectTradeOkay({
       amount: {
         value: zero,
@@ -713,10 +746,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for zero input amount (positive output)', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: wei }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: wei })]);
     await expectTradeOkay({
       amount: {
         value: zero,
@@ -731,10 +761,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for zero input amount (negative output)', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: negWei }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: negWei })]);
     await expectTradeOkay({
       amount: {
         value: zero,
@@ -749,10 +776,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for zero output amount (positive input)', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: zero }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: zero })]);
     await expectTradeOkay({
       amount: {
         value: wei,
@@ -767,10 +791,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for zero output amount (negative input)', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: zero }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: zero })]);
     await expectTradeOkay({
       amount: {
         value: negWei,
@@ -786,16 +807,21 @@ describe('Trade', () => {
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      solo.testing.setAccountStatus(who1, accountNumber1, AccountStatus.Liquidating),
-      solo.testing.setAccountStatus(who2, accountNumber2, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        who1,
+        accountNumber1,
+        AccountStatus.Liquidating,
+      ),
+      solo.testing.setAccountStatus(
+        who2,
+        accountNumber2,
+        AccountStatus.Liquidating,
+      ),
       approveTrader(),
       setTradeData(),
     ]);
     await expectTradeOkay({});
-    const [
-      status1,
-      status2,
-    ] = await Promise.all([
+    const [status1, status2] = await Promise.all([
       solo.getters.getAccountStatus(who1, accountNumber1),
       solo.getters.getAccountStatus(who2, accountNumber2),
     ]);
@@ -804,11 +830,7 @@ describe('Trade', () => {
   });
 
   it('Succeeds for local operator sender', async () => {
-    await Promise.all([
-      approveTrader(),
-      approveOperator(),
-      setTradeData(),
-    ]);
+    await Promise.all([approveTrader(), approveOperator(), setTradeData()]);
     await expectTradeOkay({}, { from: operator });
     await Promise.all([
       expectBalances1(par, negPar),
@@ -859,7 +881,10 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: maker account owner mismatch');
     await solo.testing.autoTrader.setRequireMakerAccount(who2, accountNumber1);
-    await expectTradeRevert({}, 'TestAutoTrader: maker account number mismatch');
+    await expectTradeRevert(
+      {},
+      'TestAutoTrader: maker account number mismatch',
+    );
     await solo.testing.autoTrader.setRequireMakerAccount(who2, accountNumber2);
     await expectTradeOkay({});
   });
@@ -872,7 +897,10 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: taker account owner mismatch');
     await solo.testing.autoTrader.setRequireTakerAccount(who1, accountNumber2);
-    await expectTradeRevert({}, 'TestAutoTrader: taker account number mismatch');
+    await expectTradeRevert(
+      {},
+      'TestAutoTrader: taker account number mismatch',
+    );
     await solo.testing.autoTrader.setRequireTakerAccount(who1, accountNumber1);
     await expectTradeOkay({});
   });
@@ -918,22 +946,14 @@ describe('Trade', () => {
   });
 
   it('Fails for non-operator sender', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData(),
-    ]);
-    await expectTradeRevert(
-      {},
-      'Storage: Unpermissioned operator',
-      { from: operator },
-    );
+    await Promise.all([approveTrader(), setTradeData()]);
+    await expectTradeRevert({}, 'Storage: Unpermissioned operator', {
+      from: operator,
+    });
   });
 
   it('Fails for non-operator autoTrader', async () => {
-    await Promise.all([
-      approveOperator(),
-      setTradeData(),
-    ]);
+    await Promise.all([approveOperator(), setTradeData()]);
     await expectTradeRevert({}, 'Storage: Unpermissioned operator');
   });
 
@@ -944,10 +964,7 @@ describe('Trade', () => {
   });
 
   it('Fails for one-sided trades', async () => {
-    await Promise.all([
-      approveTrader(),
-      setTradeData({ value: negWei }),
-    ]);
+    await Promise.all([approveTrader(), setTradeData({ value: negWei })]);
     await expectTradeRevert({}, 'OperationImpl: Trades cannot be one-sided');
   });
 
@@ -978,9 +995,7 @@ async function setBalances2(inputPar: Integer, outputPar: Integer) {
   ]);
 }
 
-async function setTradeData(
-  data?: object,
-) {
+async function setTradeData(data?: object) {
   const combinedData = { ...defaultData, ...data };
   return solo.testing.autoTrader.setData(tradeId, combinedData);
 }
@@ -1020,19 +1035,22 @@ function expectBalances(
 }
 
 async function approveTrader() {
-  return solo.permissions.approveOperator(solo.testing.autoTrader.getAddress(), { from: who2 });
+  return solo.permissions.approveOperator(
+    solo.testing.autoTrader.getAddress(),
+    { from: who2 },
+  );
 }
 
 async function approveOperator() {
   return solo.permissions.approveOperator(operator, { from: who1 });
 }
 
-async function expectTradeOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectTradeOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().trade(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .trade(combinedGlob)
+    .commit(options);
 }
 
 async function expectTradeRevert(

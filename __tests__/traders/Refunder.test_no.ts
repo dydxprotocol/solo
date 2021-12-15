@@ -63,14 +63,10 @@ describe('Refunder', () => {
 
   describe('constructor', () => {
     it('Succeeds', async () => {
-      const createdContract = await deployContract(
-        solo,
-        RefunderJson,
-        [
-          solo.contracts.soloMargin.options.address,
-          [giver, rando],
-        ],
-      );
+      const createdContract = await deployContract(solo, RefunderJson, [
+        solo.contracts.soloMargin.options.address,
+        [giver, rando],
+      ]);
       const [
         giverIsGiver,
         randoIsGiver,
@@ -155,16 +151,12 @@ describe('Refunder', () => {
     it('Succeeds', async () => {
       await solo.testing.setAccountBalance(giver, giverNumber, giveMarket, wei);
 
-      const txResult = await solo.operation.initiate()
+      const txResult = await solo.operation
+        .initiate()
         .refund(defaultGlob)
         .commit({ from: giver });
 
-      await expectBalances(
-        wei,
-        zero,
-        zero,
-        zero,
-      );
+      await expectBalances(wei, zero, zero, zero);
 
       const logs = solo.logs.parseLogs(txResult, {
         skipRefunderLogs: false,
@@ -188,30 +180,39 @@ describe('Refunder', () => {
 
     it('Fails for zero', async () => {
       await expectThrow(
-        solo.operation.initiate().refund({
-          ...defaultGlob,
-          wei: zero,
-        }).commit({ from: giver }),
+        solo.operation
+          .initiate()
+          .refund({
+            ...defaultGlob,
+            wei: zero,
+          })
+          .commit({ from: giver }),
         'Refunder: Refund must be positive',
       );
     });
 
     it('Fails for negative', async () => {
       await expectThrow(
-        solo.operation.initiate().refund({
-          ...defaultGlob,
-          wei: wei.times(-1),
-        }).commit({ from: giver }),
+        solo.operation
+          .initiate()
+          .refund({
+            ...defaultGlob,
+            wei: wei.times(-1),
+          })
+          .commit({ from: giver }),
         'Refunder: Refund must be positive',
       );
     });
 
     it('Fails for non-approved giver', async () => {
       await expectThrow(
-        solo.operation.initiate().refund({
-          ...defaultGlob,
-          primaryAccountOwner: rando,
-        }).commit({ from: rando }),
+        solo.operation
+          .initiate()
+          .refund({
+            ...defaultGlob,
+            primaryAccountOwner: rando,
+          })
+          .commit({ from: rando }),
         `Refunder: Giver not approved <${rando.toLowerCase()}>`,
       );
     });
@@ -258,12 +259,7 @@ async function expectBalances(
   expectedRB: BigNumber,
   expectedGB: BigNumber,
 ) {
-  const [
-    rg,
-    gg,
-    rb,
-    gb,
-  ] = await Promise.all([
+  const [rg, gg, rb, gb] = await Promise.all([
     solo.getters.getAccountWei(receiver, receiverNumber, giveMarket),
     solo.getters.getAccountWei(giver, giverNumber, giveMarket),
     solo.getters.getAccountWei(receiver, receiverNumber, blankMarket),

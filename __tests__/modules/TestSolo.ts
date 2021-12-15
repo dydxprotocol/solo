@@ -19,10 +19,7 @@ export class TestSolo extends Solo {
     this.testing = new Testing(provider, this.contracts, this.token);
   }
 
-  public setProvider(
-    provider: Provider,
-    networkId: number,
-  ): void {
+  public setProvider(provider: Provider, networkId: number): void {
     super.setProvider(provider, networkId);
     this.testing.setProvider(provider);
   }

@@ -13,9 +13,7 @@ export class ExpiryV2 {
 
   // ============ Constructor ============
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
@@ -66,7 +64,7 @@ export class ExpiryV2 {
     owedMarketId: Integer,
     expiryTimestamp: Integer,
     options?: ContractConstantCallOptions,
-  ): Promise<{heldPrice: Integer, owedPrice: Integer}> {
+  ): Promise<{ heldPrice: Integer; owedPrice: Integer }> {
     const result = await this.contracts.callConstantContractFunction(
       this.contracts.expiryV2.methods.getSpreadAdjustedPrices(
         heldMarketId.toFixed(0),
@@ -100,7 +98,10 @@ export class ExpiryV2 {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiryV2.methods.approveSender(sender, minTimeDelta.toFixed(0)),
+      this.contracts.expiryV2.methods.approveSender(
+        sender,
+        minTimeDelta.toFixed(0),
+      ),
       options,
     );
   }
@@ -112,7 +113,9 @@ export class ExpiryV2 {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiryV2.methods.ownerSetExpiryRampTime(newExpiryRampTime.toFixed(0)),
+      this.contracts.expiryV2.methods.ownerSetExpiryRampTime(
+        newExpiryRampTime.toFixed(0),
+      ),
       options,
     );
   }

@@ -24,15 +24,11 @@ import interestConstants from './interest-constants.json';
 export class Interest {
   private networkId: number;
 
-  constructor(
-    networkId: number,
-  ) {
+  constructor(networkId: number) {
     this.setNetworkId(networkId);
   }
 
-  public setNetworkId(
-    networkId: number,
-  ): void {
+  public setNetworkId(networkId: number): void {
     this.networkId = networkId;
   }
 
@@ -47,7 +43,7 @@ export class Interest {
 
   public getInterestPerSecondByMarket(
     marketId: Integer,
-    totals: { totalBorrowed: Integer, totalSupply: Integer },
+    totals: { totalBorrowed: Integer; totalSupply: Integer },
   ) {
     const earningsRate = this.getEarningsRate();
     const constants = this.getMarketConstants(marketId);
@@ -62,7 +58,9 @@ export class Interest {
     // determine the supply interest rate (uncapped decimal places)
     let supplyInterestRate = borrowInterestRate.times(earningsRate);
     if (totals.totalBorrowed.lt(totals.totalSupply)) {
-      supplyInterestRate = supplyInterestRate.times(totals.totalBorrowed).div(totals.totalSupply);
+      supplyInterestRate = supplyInterestRate
+        .times(totals.totalBorrowed)
+        .div(totals.totalSupply);
     }
 
     return {
@@ -81,13 +79,13 @@ export class Interest {
     return networkConstants;
   }
 
-  private getMarketConstants(
-    marketId: Integer,
-  ) {
+  private getMarketConstants(marketId: Integer) {
     const networkConstants = this.getNetworkConstants();
     const constants = networkConstants[marketId.toFixed(0)];
     if (!constants) {
-      throw new Error(`No interest constants for marketId: ${marketId.toFixed(0)}`);
+      throw new Error(
+        `No interest constants for marketId: ${marketId.toFixed(0)}`,
+      );
     }
     return constants;
   }

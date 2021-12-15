@@ -9,11 +9,9 @@ export enum SIGNATURE_TYPES {
   HEXADECIMAL = 2,
 }
 
-export const PREPEND_DEC: string =
-  '\x19Ethereum Signed Message:\n32';
+export const PREPEND_DEC: string = '\x19Ethereum Signed Message:\n32';
 
-export const PREPEND_HEX: string =
-  '\x19Ethereum Signed Message:\n\x20';
+export const PREPEND_HEX: string = '\x19Ethereum Signed Message:\n\x20';
 
 export const EIP712_DOMAIN_STRING: string =
   'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)';
@@ -34,9 +32,7 @@ export const EIP712_DOMAIN_STRUCT_NO_CONTRACT = [
   { name: 'chainId', type: 'uint256' },
 ];
 
-export function isValidSigType(
-  sigType: number,
-): boolean {
+export function isValidSigType(sigType: number): boolean {
   switch (sigType) {
     case SIGNATURE_TYPES.NO_PREPEND:
     case SIGNATURE_TYPES.DECIMAL:
@@ -80,7 +76,10 @@ export function ecRecoverTypedSignature(
 
   const signature = typedSignature.slice(0, -2);
 
-  return ethers.utils.recoverAddress(ethers.utils.arrayify(prependedHash), signature);
+  return ethers.utils.recoverAddress(
+    ethers.utils.arrayify(prependedHash),
+    signature,
+  );
 }
 
 export function createTypedSignature(
@@ -96,9 +95,7 @@ export function createTypedSignature(
 /**
  * Fixes any signatures that don't have a 'v' value of 27 or 28
  */
-export function fixRawSignature(
-  signature: string,
-): string {
+export function fixRawSignature(signature: string): string {
   const stripped = stripHexPrefix(signature);
 
   if (stripped.length !== 130) {

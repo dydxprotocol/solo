@@ -2,11 +2,11 @@ import { TestContracts } from './TestContracts';
 import { Token } from '../../src/modules/Token';
 import { TestToken as TestTokenContract } from '../../build/testing_wrappers/TestToken';
 import {
+  address,
   ContractCallOptions,
   ContractConstantCallOptions,
-  TxResult,
-  address,
   Integer,
+  TxResult,
 } from '../../src/types';
 
 export class TestToken {
@@ -34,9 +34,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.testTokenContract.methods.issue(
-        amount.toFixed(0),
-      ),
+      this.testTokenContract.methods.issue(amount.toFixed(0)),
       { ...options, from },
     );
   }
@@ -47,10 +45,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.testTokenContract.methods.issueTo(
-        who,
-        amount.toFixed(0),
-      ),
+      this.testTokenContract.methods.issueTo(who, amount.toFixed(0)),
       { ...options },
     );
   }
@@ -61,10 +56,7 @@ export class TestToken {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.testTokenContract.methods.approve(
-        spender,
-        amount.toFixed(0),
-      ),
+      this.testTokenContract.methods.approve(spender, amount.toFixed(0)),
       { ...options },
     );
   }
@@ -102,13 +94,8 @@ export class TestToken {
     );
   }
 
-  public async getName(
-    options?: ContractConstantCallOptions,
-  ): Promise<string> {
-    return this.token.getName(
-      this.testTokenContract.options.address,
-      options,
-    );
+  public async getName(options?: ContractConstantCallOptions): Promise<string> {
+    return this.token.getName(this.testTokenContract.options.address, options);
   }
 
   public async getSymbol(

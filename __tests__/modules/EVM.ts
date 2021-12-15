@@ -16,20 +16,16 @@
 
 */
 
-import { Provider, JsonRPCRequest, JsonRPCResponse } from 'web3/providers';
+import { JsonRPCRequest, JsonRPCResponse, Provider } from 'web3/providers';
 
 export class EVM {
   private provider: Provider;
 
-  constructor(
-    provider: Provider,
-  ) {
+  constructor(provider: Provider) {
     this.provider = provider;
   }
 
-  public setProvider(
-    provider: Provider,
-  ): void {
+  public setProvider(provider: Provider): void {
     this.provider = provider;
   }
 
@@ -81,7 +77,10 @@ export class EVM {
     return this.callJsonrpcMethod('evm_increaseTime', [duration]);
   }
 
-  public async callJsonrpcMethod(method: string, params?: (any[])): Promise<string> {
+  public async callJsonrpcMethod(
+    method: string,
+    params?: any[],
+  ): Promise<string> {
     const args: JsonRPCRequest = {
       method,
       params,
@@ -104,10 +103,7 @@ export class EVM {
         }
       };
 
-      this.provider.send(
-        args,
-        callback,
-      );
+      this.provider.send(args, callback);
     });
   }
 }

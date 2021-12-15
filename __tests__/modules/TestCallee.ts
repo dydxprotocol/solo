@@ -1,12 +1,10 @@
 import { TestContracts } from './TestContracts';
-import { address, Integer, ContractConstantCallOptions } from '../../src/types';
+import { address, ContractConstantCallOptions, Integer } from '../../src/types';
 
 export class TestCallee {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 
@@ -33,9 +31,7 @@ export class TestCallee {
     options?: ContractConstantCallOptions,
   ): Promise<string> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.testCallee.methods.senderData(
-        sender,
-      ),
+      this.contracts.testCallee.methods.senderData(sender),
       options,
     );
   }

@@ -4,11 +4,11 @@ import { Contracts } from '../lib/Contracts';
 import { INTEGERS } from '../lib/Constants';
 import { IERC20 } from '../../build/wrappers/IERC20';
 import {
-  ContractCallOptions,
-  TxResult,
   address,
-  Integer,
+  ContractCallOptions,
   ContractConstantCallOptions,
+  Integer,
+  TxResult,
 } from '../types';
 
 // noinspection TypeScriptUnresolvedFunction
@@ -16,9 +16,7 @@ export class Token {
   private contracts: Contracts;
   private tokens: object;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.tokens = {};
   }
@@ -122,10 +120,7 @@ export class Token {
     const token = this.getToken(tokenAddress);
 
     return this.contracts.callContractFunction(
-      token.methods.approve(
-        spenderAddress,
-        amount.toFixed(0),
-      ),
+      token.methods.approve(spenderAddress, amount.toFixed(0)),
       { ...options, from: ownerAddress },
     );
   }
@@ -198,10 +193,7 @@ export class Token {
     const token = this.getToken(tokenAddress);
 
     return this.contracts.callContractFunction(
-      token.methods.transfer(
-        toAddress,
-        amount.toFixed(0),
-      ),
+      token.methods.transfer(toAddress, amount.toFixed(0)),
       { ...options, from: fromAddress },
     );
   }
@@ -217,11 +209,7 @@ export class Token {
     const token = this.getToken(tokenAddress);
 
     return this.contracts.callContractFunction(
-      token.methods.transferFrom(
-        fromAddress,
-        toAddress,
-        amount.toFixed(0),
-      ),
+      token.methods.transferFrom(fromAddress, toAddress, amount.toFixed(0)),
       { ...options, from: senderAddress },
     );
   }
@@ -233,14 +221,14 @@ export class Token {
       to,
       fromBlock,
     }: {
-      from?: address,
-      to?: address,
-      fromBlock?: number,
+      from?: address;
+      to?: address;
+      fromBlock?: number;
     } = {},
   ): EventEmitter {
     const token = this.getToken(tokenAddress);
 
-    const filter: { from?: address, to?: address } = {};
+    const filter: { from?: address; to?: address } = {};
 
     if (from) {
       filter.from = from;
@@ -262,14 +250,14 @@ export class Token {
       spender,
       fromBlock,
     }: {
-      owner?: address,
-      spender?: address,
-      fromBlock?: number,
+      owner?: address;
+      spender?: address;
+      fromBlock?: number;
     } = {},
   ): EventEmitter {
     const token = this.getToken(tokenAddress);
 
-    const filter: { owner?: address, spender?: address } = {};
+    const filter: { owner?: address; spender?: address } = {};
 
     if (owner) {
       filter.owner = owner;
@@ -284,9 +272,7 @@ export class Token {
     });
   }
 
-  private getToken(
-    tokenAddress: string,
-  ): IERC20 {
+  private getToken(tokenAddress: string): IERC20 {
     if (this.tokens[tokenAddress]) {
       return this.tokens[tokenAddress];
     }

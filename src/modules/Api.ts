@@ -3,25 +3,25 @@ import BigNumber from 'bignumber.js';
 import queryString from 'query-string';
 import {
   address,
-  Integer,
-  SigningMethod,
-  ApiOrderQueryV2,
-  ApiOrderV2,
-  ApiOrder,
   ApiAccount,
   ApiFillQueryV2,
   ApiFillV2,
+  ApiMarket,
+  ApiMarketMessageV2,
+  ApiMarketName,
+  ApiOrder,
+  ApiOrderOnOrderbook,
+  ApiOrderQueryV2,
+  ApiOrderV2,
+  ApiSide,
   ApiTradeQueryV2,
   ApiTradeV2,
-  ApiMarket,
-  ApiOrderOnOrderbook,
-  ApiMarketName,
-  CanonicalOrder,
-  ApiSide,
-  MarketId,
   BigNumberable,
+  CanonicalOrder,
+  Integer,
+  MarketId,
   SignedCanonicalOrder,
-  ApiMarketMessageV2,
+  SigningMethod,
 } from '../types';
 import { CanonicalOrders } from './CanonicalOrders';
 
@@ -61,19 +61,19 @@ export class Api {
     cancelAmountOnRevert,
   }: {
     order: {
-      side: ApiSide,
-      market: ApiMarketName,
-      amount: BigNumberable,
-      price: BigNumberable,
-      makerAccountOwner: address,
-      expiration: BigNumberable,
-      limitFee?: BigNumberable,
-    },
-    fillOrKill?: boolean,
-    postOnly?: boolean,
-    clientId?: string,
-    cancelId?: string,
-    cancelAmountOnRevert?: boolean,
+      side: ApiSide;
+      market: ApiMarketName;
+      amount: BigNumberable;
+      price: BigNumberable;
+      makerAccountOwner: address;
+      expiration: BigNumberable;
+      limitFee?: BigNumberable;
+    };
+    fillOrKill?: boolean;
+    postOnly?: boolean;
+    clientId?: string;
+    cancelId?: string;
+    cancelAmountOnRevert?: boolean;
   }): Promise<{ order: ApiOrder }> {
     const order: SignedCanonicalOrder = await this.createCanonicalOrder({
       side,
@@ -109,14 +109,14 @@ export class Api {
     limitFee,
     postOnly,
   }: {
-    side: ApiSide,
-    market: ApiMarketName,
-    amount: BigNumberable,
-    price: BigNumberable,
-    makerAccountOwner: address,
-    expiration: BigNumberable,
-    limitFee?: BigNumberable,
-    postOnly?: boolean,
+    side: ApiSide;
+    market: ApiMarketName;
+    amount: BigNumberable;
+    price: BigNumberable;
+    makerAccountOwner: address;
+    expiration: BigNumberable;
+    limitFee?: BigNumberable;
+    postOnly?: boolean;
   }): Promise<SignedCanonicalOrder> {
     if (!Object.values(ApiSide).includes(side)) {
       throw new Error(`side: ${side} is invalid`);
@@ -171,12 +171,12 @@ export class Api {
     clientId,
     cancelAmountOnRevert,
   }: {
-    order: SignedCanonicalOrder,
-    fillOrKill: boolean,
-    postOnly: boolean,
-    cancelId: string,
-    clientId?: string,
-    cancelAmountOnRevert?: boolean,
+    order: SignedCanonicalOrder;
+    fillOrKill: boolean;
+    postOnly: boolean;
+    cancelId: string;
+    clientId?: string;
+    cancelAmountOnRevert?: boolean;
   }): Promise<{ order: ApiOrder }> {
     const jsonOrder = jsonifyCanonicalOrder(order);
 
@@ -203,8 +203,8 @@ export class Api {
     orderId,
     makerAccountOwner,
   }: {
-    orderId: string,
-    makerAccountOwner: address,
+    orderId: string;
+    makerAccountOwner: address;
   }): Promise<{ order: ApiOrder }> {
     const signature = await this.canonicalOrders.signCancelOrderByHash(
       orderId,
@@ -245,7 +245,10 @@ export class Api {
       startingBefore: startingBefore && startingBefore.toISOString(),
     };
 
-    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+    const query: string = queryString.stringify(queryObj, {
+      skipNull: true,
+      arrayFormat: 'comma',
+    });
     const response = await axios({
       url: `${this.endpoint}/v2/orders?${query}`,
       method: 'get',
@@ -258,7 +261,7 @@ export class Api {
   public async getOrderV2({
     id,
   }: {
-    id: string,
+    id: string;
   }): Promise<{ order: ApiOrderV2 }> {
     const response = await axios({
       url: `${this.endpoint}/v2/orders/${id}`,
@@ -271,7 +274,7 @@ export class Api {
   public async getMarketV2({
     market,
   }: {
-    market: string,
+    market: string;
   }): Promise<{ market: ApiMarketMessageV2 }> {
     const response = await axios({
       url: `${this.endpoint}/v2/markets/${market}`,
@@ -281,8 +284,9 @@ export class Api {
     return response.data;
   }
 
-  public async getMarketsV2():
-    Promise<{ markets: { [market: string]: ApiMarketMessageV2 } }> {
+  public async getMarketsV2(): Promise<{
+    markets: { [market: string]: ApiMarketMessageV2 };
+  }> {
     const response = await axios({
       url: `${this.endpoint}/v2/markets`,
       method: 'get',
@@ -312,7 +316,10 @@ export class Api {
       startingBefore: startingBefore && startingBefore.toISOString(),
     };
 
-    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+    const query: string = queryString.stringify(queryObj, {
+      skipNull: true,
+      arrayFormat: 'comma',
+    });
 
     const response = await axios({
       url: `${this.endpoint}/v2/fills?${query}`,
@@ -344,7 +351,10 @@ export class Api {
       startingBefore: startingBefore && startingBefore.toISOString(),
     };
 
-    const query: string = queryString.stringify(queryObj, { skipNull: true, arrayFormat: 'comma' });
+    const query: string = queryString.stringify(queryObj, {
+      skipNull: true,
+      arrayFormat: 'comma',
+    });
 
     const response = await axios({
       url: `${this.endpoint}/v2/trades?${query}`,
@@ -359,8 +369,8 @@ export class Api {
     accountOwner,
     accountNumber = new BigNumber(0),
   }: {
-    accountOwner: address,
-    accountNumber: Integer | string,
+    accountOwner: address;
+    accountNumber: Integer | string;
   }): Promise<ApiAccount> {
     const numberStr = new BigNumber(accountNumber).toFixed(0);
 
@@ -376,8 +386,8 @@ export class Api {
   public async getOrderbookV2({
     market,
   }: {
-    market: ApiMarketName,
-  }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
+    market: ApiMarketName;
+  }): Promise<{ bids: ApiOrderOnOrderbook[]; asks: ApiOrderOnOrderbook[] }> {
     const response = await axios({
       url: `${this.endpoint}/v1/orderbook/${market}`,
       method: 'get',
@@ -429,9 +439,9 @@ function jsonifyCanonicalOrder(order: SignedCanonicalOrder) {
 }
 
 function getRealExpiration(expiration: BigNumberable): BigNumber {
-  return new BigNumber(expiration).eq(0) ?
-    new BigNumber(0)
+  return new BigNumber(expiration).eq(0)
+    ? new BigNumber(0)
     : new BigNumber(Math.round(new Date().getTime() / 1000)).plus(
-      new BigNumber(expiration),
-    );
+        new BigNumber(expiration),
+      );
 }

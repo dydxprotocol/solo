@@ -8,9 +8,9 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
-  DaiMigrate,
   AmountDenomination,
   AmountReference,
+  DaiMigrate,
 } from '../../src/types';
 import DaiMigratorJson from '../../build/contracts/DaiMigrator.json';
 
@@ -71,11 +71,9 @@ describe('DaiMigrator', () => {
 
   describe('constructor', () => {
     it('Succeeds', async () => {
-      const createdContract = await deployContract(
-        solo,
-        DaiMigratorJson,
-        [[migrator, rando]],
-      );
+      const createdContract = await deployContract(solo, DaiMigratorJson, [
+        [migrator, rando],
+      ]);
       const [
         migratorIsMigrator,
         randoIsMigrator,
@@ -143,7 +141,8 @@ describe('DaiMigrator', () => {
 
   describe('getTradeCost', () => {
     it('Succeeds for zero', async () => {
-      await solo.operation.initiate()
+      await solo.operation
+        .initiate()
         .daiMigrate(defaultGlob)
         .commit({ from: migrator });
     });
@@ -285,10 +284,13 @@ describe('DaiMigrator', () => {
 
     it('Fails for non-migrator', async () => {
       await expectThrow(
-        solo.operation.initiate().daiMigrate({
-          ...defaultGlob,
-          primaryAccountOwner: rando,
-        }).commit({ from: rando }),
+        solo.operation
+          .initiate()
+          .daiMigrate({
+            ...defaultGlob,
+            primaryAccountOwner: rando,
+          })
+          .commit({ from: rando }),
         `DaiMigrator: Migrator not approved <${rando.toLowerCase()}>`,
       );
     });
@@ -306,19 +308,21 @@ async function callTradeCost({
   newInputParBN,
   inputWeiBN,
 }) {
-  const result = await solo.contracts.daiMigrator.methods.getTradeCost(
-    saiMarketBN.toFixed(0),
-    daiMarketBN.toFixed(0),
-    {
-      owner: user,
-      number: '0',
-    },
-    migratorAccount,
-    bnToValue(oldInputParBN),
-    bnToValue(newInputParBN),
-    bnToValue(inputWeiBN),
-    [],
-  ).call();
+  const result = await solo.contracts.daiMigrator.methods
+    .getTradeCost(
+      saiMarketBN.toFixed(0),
+      daiMarketBN.toFixed(0),
+      {
+        owner: user,
+        number: '0',
+      },
+      migratorAccount,
+      bnToValue(oldInputParBN),
+      bnToValue(newInputParBN),
+      bnToValue(inputWeiBN),
+      [],
+    )
+    .call();
   return {
     sign: result[0],
     denomination: result[1],

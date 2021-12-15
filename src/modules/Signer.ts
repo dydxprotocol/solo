@@ -1,23 +1,15 @@
 import Web3 from 'web3';
 import { promisify } from 'es6-promisify';
-import {
-  stripHexPrefix,
-} from '../lib/BytesHelper';
-import {
-  SIGNATURE_TYPES,
-} from '../lib/SignatureHelper';
-import {
-  SigningMethod,
-} from '../../src/types';
+import { stripHexPrefix } from '../lib/BytesHelper';
+import { SIGNATURE_TYPES } from '../lib/SignatureHelper';
+import { SigningMethod } from '../../src/types';
 
 export abstract class Signer {
   protected web3: Web3;
 
   // ============ Constructor ============
 
-  constructor(
-    web3: Web3,
-  ) {
+  constructor(web3: Web3) {
     this.web3 = web3;
   }
 
@@ -26,9 +18,7 @@ export abstract class Signer {
   /**
    * Returns a signable EIP712 Hash of a struct
    */
-  public getEIP712Hash(
-    structHash: string,
-  ): string {
+  public getEIP712Hash(structHash: string): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes2', v: '0x1901' },
       { t: 'bytes32', v: this.getDomainHash() },

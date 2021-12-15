@@ -5,7 +5,10 @@ import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 import { expectThrow } from '../../src/lib/Expect';
-import { coefficientsToString, getInterestPerSecondForDoubleExponent } from '../../src/lib/Helpers';
+import {
+  coefficientsToString,
+  getInterestPerSecondForDoubleExponent,
+} from '../../src/lib/Helpers';
 
 let solo: TestSolo;
 let owner: address;
@@ -17,7 +20,7 @@ const par = new BigNumber(10000);
 const negPar = par.times(-1);
 const defaultPrice = new BigNumber(10000);
 const maximumRate = new BigNumber(31709791983).div('1e18');
-const defaultCoefficients = [20, 20, 20, 20, 20];
+const defaultCoefficients = [0, 20, 0, 0, 0, 0, 20, 60];
 const defaultMaxAPR = new BigNumber('1.00');
 const defaultIsClosing = false;
 
@@ -79,7 +82,12 @@ describe('DoubleExponentInterestSetter', () => {
   it('Succeeds for 200/100', async () => {
     await Promise.all([
       solo.testing.setAccountBalance(owner, accountNumber1, zero, par),
-      solo.testing.setAccountBalance(owner, accountNumber2, zero, negPar.times(2)),
+      solo.testing.setAccountBalance(
+        owner,
+        accountNumber2,
+        zero,
+        negPar.times(2),
+      ),
     ]);
     const rate = await solo.getters.getMarketInterestRate(zero);
     expect(rate).toEqual(maximumRate);
@@ -88,7 +96,12 @@ describe('DoubleExponentInterestSetter', () => {
   it('Succeeds for 50/100', async () => {
     await Promise.all([
       solo.testing.setAccountBalance(owner, accountNumber1, zero, par),
-      solo.testing.setAccountBalance(owner, accountNumber2, zero, negPar.div(2)),
+      solo.testing.setAccountBalance(
+        owner,
+        accountNumber2,
+        zero,
+        negPar.div(2),
+      ),
     ]);
     const rate = await solo.getters.getMarketInterestRate(zero);
     expect(rate).toEqual(
@@ -124,7 +137,9 @@ describe('DoubleExponentInterestSetter', () => {
       await getRateFunction(ADDRESSES.ZERO, '1', '2').estimateGas(),
     ]);
     const costs = totalCosts.map(x => x - baseGasCost);
-    console.log(`\tInterest calculation gas used: ${costs[0]}, ${costs[1]}, ${costs[2]}`);
+    console.log(
+      `\tInterest calculation gas used: ${costs[0]}, ${costs[1]}, ${costs[2]}`,
+    );
   });
 
   it('Succeeds for some hardcoded numbers (1)', async () => {
@@ -184,7 +199,12 @@ describe('DoubleExponentInterestSetter', () => {
       const utilization = new BigNumber(i).div(100);
       await Promise.all([
         solo.testing.setAccountBalance(owner, accountNumber1, zero, par),
-        solo.testing.setAccountBalance(owner, accountNumber2, zero, negPar.times(utilization)),
+        solo.testing.setAccountBalance(
+          owner,
+          accountNumber2,
+          zero,
+          negPar.times(utilization),
+        ),
       ]);
       const rate = await solo.getters.getMarketInterestRate(zero);
       expect(rate).toEqual(
@@ -217,8 +237,9 @@ describe('DoubleExponentInterestSetter', () => {
   });
 
   it('Succeeds for setting/getting maxAPR', async () => {
-    const maxAPR1 =
-      await solo.contracts.testDoubleExponentInterestSetter.methods.getMaxAPR().call();
+    const maxAPR1 = await solo.contracts.testDoubleExponentInterestSetter.methods
+      .getMaxAPR()
+      .call();
     expect(maxAPR1).toEqual(new BigNumber('1e18').toFixed(0));
 
     const newAPR = new BigNumber('1.5e18').toFixed(0);
@@ -231,17 +252,20 @@ describe('DoubleExponentInterestSetter', () => {
       }),
     );
 
-    const maxAPR2 =
-      await solo.contracts.testDoubleExponentInterestSetter.methods.getMaxAPR().call();
+    const maxAPR2 = await solo.contracts.testDoubleExponentInterestSetter.methods
+      .getMaxAPR()
+      .call();
     expect(maxAPR2).toEqual(newAPR);
   });
 
   it("Fails to deploy contracts whose coefficients don't add to 100", async () => {
     await expectThrow(
-      solo.contracts.testDoubleExponentInterestSetter.methods.createNew({
-        maxAPR: '0',
-        coefficients: coefficientsToString([10, 0, 10]),
-      }).call(),
+      solo.contracts.testDoubleExponentInterestSetter.methods
+        .createNew({
+          maxAPR: '0',
+          coefficients: coefficientsToString([10, 0, 10]),
+        })
+        .call(),
       'Coefficients must sum to 100',
     );
   });
@@ -249,22 +273,18 @@ describe('DoubleExponentInterestSetter', () => {
 
 // ============ Helper Functions ============
 
-async function expectCoefficients(
-  expected: number[],
-) {
-  const coefficients =
-    await solo.contracts.testDoubleExponentInterestSetter.methods.getCoefficients().call();
+async function expectCoefficients(expected: number[]) {
+  const coefficients = await solo.contracts.testDoubleExponentInterestSetter.methods
+    .getCoefficients()
+    .call();
   expect(coefficients).toEqual(expected.map(x => x.toString()));
 }
 
-async function setCoefficients(
-  maximumRate: BigNumber,
-  coefficients: number[],
-) {
+async function setCoefficients(maxAPR: BigNumber, coefficients: number[]) {
   const coefficientsString = coefficientsToString(coefficients);
   await solo.contracts.callContractFunction(
     solo.contracts.testDoubleExponentInterestSetter.methods.setParameters({
-      maxAPR: maximumRate.toFixed(0),
+      maxAPR: maxAPR.toFixed(0),
       coefficients: coefficientsString,
     }),
   );

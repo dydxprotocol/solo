@@ -1,12 +1,10 @@
 import { Contracts } from '../lib/Contracts';
-import { address, ContractCallOptions, Integer, TxResult, } from '../types';
+import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
 export class TestnetAmmRebalancerProxy {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
@@ -24,7 +22,7 @@ export class TestnetAmmRebalancerProxy {
         tokenA,
         tokenB,
         truePriceTokenA.toFixed(0),
-        truePriceTokenB.toFixed(0)
+        truePriceTokenB.toFixed(0),
       ),
       options,
     );

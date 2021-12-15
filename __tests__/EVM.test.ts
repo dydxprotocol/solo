@@ -21,10 +21,7 @@ describe('EVM', () => {
   it('Resets the state of the EVM successfully', async () => {
     const account = accounts[1];
     const amount = new BigNumber(1);
-    await solo.testing.tokenA.issueTo(
-      amount,
-      account,
-    );
+    await solo.testing.tokenA.issueTo(amount, account);
     const balance: BigNumber = await solo.testing.tokenA.getBalance(account);
     expect(balance).toEqual(amount);
 

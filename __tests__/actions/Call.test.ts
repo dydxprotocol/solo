@@ -6,11 +6,7 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
-import {
-  address,
-  AccountStatus,
-  Call,
-} from '../../src/types';
+import { AccountStatus, address, Call } from '../../src/types';
 
 let who: address;
 let operator: address;
@@ -77,7 +73,11 @@ describe('Call', () => {
   });
 
   it('Succeeds and sets status to Normal', async () => {
-    await solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating);
+    await solo.testing.setAccountStatus(
+      who,
+      accountNumber,
+      AccountStatus.Liquidating,
+    );
     await expectCallOkay({
       data: toBytes(accountData, senderData),
     });
@@ -119,23 +119,21 @@ describe('Call', () => {
   });
 
   it('Fails for non-ICallee contract', async () => {
-    await expectCallRevert(
-      {
-        data: toBytes(accountData, senderData),
-        callee: solo.testing.priceOracle.getAddress(),
-      },
-    );
+    await expectCallRevert({
+      data: toBytes(accountData, senderData),
+      callee: solo.testing.priceOracle.getAddress(),
+    });
   });
 });
 
 // ============ Helper Functions ============
 
-async function expectCallOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectCallOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().call(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .call(combinedGlob)
+    .commit(options);
 }
 
 async function expectCallRevert(
@@ -147,10 +145,7 @@ async function expectCallRevert(
 }
 
 async function verifyDataIntegrity(sender: address) {
-  const [
-    foundAccountData,
-    foundSenderData,
-  ] = await Promise.all([
+  const [foundAccountData, foundSenderData] = await Promise.all([
     solo.testing.callee.getAccountData(who, accountNumber),
     solo.testing.callee.getSenderData(sender),
   ]);

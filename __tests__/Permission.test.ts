@@ -39,7 +39,9 @@ describe('Permission', () => {
   describe('setOperators', () => {
     it('Succeeds for single approve', async () => {
       await expectOperator(operator1, false);
-      const txResult = await solo.permissions.approveOperator(operator1, { from: owner });
+      const txResult = await solo.permissions.approveOperator(operator1, {
+        from: owner,
+      });
       await expectOperator(operator1, true);
 
       const logs = solo.logs.parseLogs(txResult);
@@ -54,7 +56,9 @@ describe('Permission', () => {
     it('Succeeds for single disapprove', async () => {
       await solo.permissions.approveOperator(operator1, { from: owner });
       await expectOperator(operator1, true);
-      const txResult = await solo.permissions.disapproveOperator(operator1, { from: owner });
+      const txResult = await solo.permissions.disapproveOperator(operator1, {
+        from: owner,
+      });
       await expectOperator(operator1, false);
 
       const logs = solo.logs.parseLogs(txResult);
@@ -69,7 +73,10 @@ describe('Permission', () => {
     it('Succeeds for multiple approve/disapprove', async () => {
       const txResult = await solo.permissions.setOperators([
         { operator: operator1, trusted: true },
-        { operator: operator2, trusted: false },
+        {
+          operator: operator2,
+          trusted: false,
+        },
         { operator: operator3, trusted: true },
       ]);
 
@@ -100,7 +107,10 @@ describe('Permission', () => {
     it('Succeeds for multiple repeated approve/disapprove', async () => {
       const txResult = await solo.permissions.setOperators([
         { operator: operator1, trusted: true },
-        { operator: operator1, trusted: false },
+        {
+          operator: operator1,
+          trusted: false,
+        },
         { operator: operator2, trusted: true },
         { operator: operator2, trusted: true },
       ]);
@@ -133,14 +143,16 @@ describe('Permission', () => {
     });
 
     it('Skips logs when necessary', async () => {
-      const txResult = await solo.permissions.approveOperator(operator1, { from: owner });
+      const txResult = await solo.permissions.approveOperator(operator1, {
+        from: owner,
+      });
       const logs = solo.logs.parseLogs(txResult, { skipPermissionLogs: true });
       expect(logs.length).toEqual(0);
     });
   });
 });
 
-async function expectOperator(operator:address, b: boolean) {
+async function expectOperator(operator: address, b: boolean) {
   const result = await solo.getters.getIsLocalOperator(owner, operator);
   expect(result).toEqual(b);
 }

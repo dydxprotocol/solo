@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { deployContract } from '../helpers/Deploy';
 import { TestSolo } from '../modules/TestSolo';
-import { resetEVM, snapshot, fastForward } from '../helpers/EVM';
+import { fastForward, resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { address } from '../../src/types';
@@ -46,17 +46,13 @@ describe('PartiallyDelayedMultiSig', () => {
     ]);
     counterAAddress = testCounterA.options.address;
     counterBAddress = testCounterB.options.address;
-    multiSig = await deployContract(
-      solo,
-      MultiSigJson,
-      [
-        [owner1, owner2, owner3],
-        '2',
-        '120',
-        [counterAAddress, ADDRESSES.ZERO, counterBAddress],
-        [functionOneSelector, functionTwoSelector, fallbackSelector],
-      ],
-    );
+    multiSig = await deployContract(solo, MultiSigJson, [
+      [owner1, owner2, owner3],
+      '2',
+      '120',
+      [counterAAddress, ADDRESSES.ZERO, counterBAddress],
+      [functionOneSelector, functionTwoSelector, fallbackSelector],
+    ]);
 
     // synchronously submit all transaction from owner1
     await submitTransaction(counterAAddress, functionOneData());
@@ -124,17 +120,13 @@ describe('PartiallyDelayedMultiSig', () => {
 
     it('Fails for array mismatch', async () => {
       await expectThrow(
-        deployContract(
-          solo,
-          MultiSigJson,
-          [
-            [owner1, owner2, owner3],
-            '2',
-            '120',
-            [counterAAddress, ADDRESSES.ZERO, counterBAddress],
-            [functionOneSelector, functionTwoSelector],
-          ],
-        ),
+        deployContract(solo, MultiSigJson, [
+          [owner1, owner2, owner3],
+          '2',
+          '120',
+          [counterAAddress, ADDRESSES.ZERO, counterBAddress],
+          [functionOneSelector, functionTwoSelector],
+        ]),
         'ADDRESS_AND_SELECTOR_MISMATCH',
       );
     });
@@ -168,11 +160,7 @@ describe('PartiallyDelayedMultiSig', () => {
     it('Fails for external sender', async () => {
       await expectThrow(
         solo.contracts.callContractFunction(
-          multiSig.methods.setSelector(
-            ADDRESSES.ZERO,
-            '0x00000000',
-            true,
-          ),
+          multiSig.methods.setSelector(ADDRESSES.ZERO, '0x00000000', true),
         ),
       );
     });
@@ -180,10 +168,7 @@ describe('PartiallyDelayedMultiSig', () => {
 
   describe('#executeTransaction (slow)', () => {
     it('Fails for before timelock', async () => {
-      await expectThrow(
-        executeTransaction(5),
-        'TIME_LOCK_INCOMPLETE',
-      );
+      await expectThrow(executeTransaction(5), 'TIME_LOCK_INCOMPLETE');
     });
 
     it('Succeeds for past timelock', async () => {
@@ -198,10 +183,7 @@ describe('PartiallyDelayedMultiSig', () => {
     });
 
     it('Fails for other addresses', async () => {
-      await expectThrow(
-        executeTransaction(1),
-        'TIME_LOCK_INCOMPLETE',
-      );
+      await expectThrow(executeTransaction(1), 'TIME_LOCK_INCOMPLETE');
     });
   });
 
@@ -211,9 +193,7 @@ describe('PartiallyDelayedMultiSig', () => {
     });
 
     it('Fails for rando', async () => {
-      await expectThrow(
-        executeTransaction(3, rando),
-      );
+      await expectThrow(executeTransaction(3, rando));
     });
   });
 
@@ -223,19 +203,13 @@ describe('PartiallyDelayedMultiSig', () => {
     });
 
     it('Fails for other addresses', async () => {
-      await expectThrow(
-        executeTransaction(6),
-        'TIME_LOCK_INCOMPLETE',
-      );
+      await expectThrow(executeTransaction(6), 'TIME_LOCK_INCOMPLETE');
     });
   });
 
   describe('#executeTransaction (short data)', () => {
     it('Fails', async () => {
-      await expectThrow(
-        executeTransaction(8),
-        'TIME_LOCK_INCOMPLETE',
-      );
+      await expectThrow(executeTransaction(8), 'TIME_LOCK_INCOMPLETE');
     });
   });
 });
@@ -260,8 +234,14 @@ async function confirmTransaction(n: number) {
   );
 }
 
-function setSelectorData(destination: address, selector: string, approved: boolean) {
-  const data = multiSig.methods.setSelector(destination, selector, approved).encodeABI();
+function setSelectorData(
+  destination: address,
+  selector: string,
+  approved: boolean,
+) {
+  const data = multiSig.methods
+    .setSelector(destination, selector, approved)
+    .encodeABI();
   return hexToBytes(data);
 }
 
@@ -276,21 +256,23 @@ function numberToFunctionTwoData(n: number) {
 }
 
 function numbersToFunctionThreeData(n1: number, n2: number) {
-  const data = testCounterA.methods.functionThree(n1.toString(), n2.toString()).encodeABI();
+  const data = testCounterA.methods
+    .functionThree(n1.toString(), n2.toString())
+    .encodeABI();
   return hexToBytes(data);
 }
 
 function hexToBytes(hex: string) {
-  return hex.toLowerCase().match(/.{1,2}/g).slice(1).map(
-    x => [new BigNumber(x, 16).toNumber()],
-  );
+  return hex
+    .toLowerCase()
+    .match(/.{1,2}/g)
+    .slice(1)
+    .map(x => [new BigNumber(x, 16).toNumber()]);
 }
 
 async function executeTransaction(n: number, from?: address) {
   const txResult = await solo.contracts.callContractFunction(
-    multiSig.methods.executeTransaction(
-      n.toString(),
-    ),
+    multiSig.methods.executeTransaction(n.toString()),
     {
       from: from || owner3,
       gas: '5000000',
@@ -305,7 +287,11 @@ async function executeTransaction(n: number, from?: address) {
   return txResult;
 }
 
-async function expectInstantData(dest: address, selector: string, expected: boolean) {
+async function expectInstantData(
+  dest: address,
+  selector: string,
+  expected: boolean,
+) {
   const result = await solo.contracts.callConstantContractFunction(
     multiSig.methods.instantData(dest, selector),
   );

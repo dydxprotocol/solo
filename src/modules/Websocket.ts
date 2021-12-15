@@ -1,9 +1,9 @@
 import ws from 'ws';
 
 import {
-  ApiOrderOnOrderbook,
   ApiMarketName,
   ApiOrderbookUpdate,
+  ApiOrderOnOrderbook,
 } from '../types';
 
 export enum Channel {
@@ -60,8 +60,12 @@ export class Websocket {
   private endpoint: string;
   private timeout: number;
   private ws: any;
-  private subscribedCallbacks: { [channel: string]: { [id: string]: (contents: any) => void } };
-  private listeners: { [channel: string]: { [id: string]: (contents: any) => void } };
+  private subscribedCallbacks: {
+    [channel: string]: { [id: string]: (contents: any) => void };
+  };
+  private listeners: {
+    [channel: string]: { [id: string]: (contents: any) => void };
+  };
 
   constructor(
     timeout: number = DEFAULT_TIMEOUT_MS,
@@ -77,8 +81,8 @@ export class Websocket {
     onClose = () => null,
     onError = () => null,
   }: {
-    onClose?: () => void,
-    onError?: (error: Error) => void,
+    onClose?: () => void;
+    onError?: (error: Error) => void;
   } = {}): Promise<void> {
     if (this.ws) {
       throw new Error('Websocket already connected');
@@ -94,8 +98,8 @@ export class Websocket {
     onClose = () => null,
     onError = () => null,
   }: {
-    onClose?: () => void,
-    onError?: (error: Error) => void,
+    onClose?: () => void;
+    onError?: (error: Error) => void;
   } = {}): Promise<void> {
     this.subscribedCallbacks = {};
     this.listeners = {};
@@ -104,10 +108,7 @@ export class Websocket {
       options.origin = this.wsOrigin;
     }
 
-    this.ws = new ws(
-      this.endpoint,
-      options,
-    );
+    this.ws = new ws(this.endpoint, options);
 
     this.ws.on('close', () => {
       this.ws = null;
@@ -131,7 +132,11 @@ export class Websocket {
       }
 
       if (parsed.type === IncomingMessageType.ERROR) {
-        onError(new Error(`Websocket threw error: ${(parsed as ErrorMessage).message}`));
+        onError(
+          new Error(
+            `Websocket threw error: ${(parsed as ErrorMessage).message}`,
+          ),
+        );
         return;
       }
 
@@ -139,10 +144,17 @@ export class Websocket {
         const subscribedMessage = parsed as SubscribedMessage;
 
         if (this.subscribedCallbacks[subscribedMessage.channel]) {
-          if (this.subscribedCallbacks[subscribedMessage.channel][subscribedMessage.id]) {
-            const callback = this.subscribedCallbacks
-              [subscribedMessage.channel][subscribedMessage.id];
-            delete this.subscribedCallbacks[subscribedMessage.channel][subscribedMessage.id];
+          if (
+            this.subscribedCallbacks[subscribedMessage.channel][
+              subscribedMessage.id
+            ]
+          ) {
+            const callback = this.subscribedCallbacks[
+              subscribedMessage.channel
+            ][subscribedMessage.id];
+            delete this.subscribedCallbacks[subscribedMessage.channel][
+              subscribedMessage.id
+            ];
 
             callback(subscribedMessage.contents);
           }
@@ -155,7 +167,9 @@ export class Websocket {
         const subscribedMessage = parsed as ChannelDataMessage;
 
         if (this.listeners[subscribedMessage.channel]) {
-          const callback = this.listeners[subscribedMessage.channel][subscribedMessage.id];
+          const callback = this.listeners[subscribedMessage.channel][
+            subscribedMessage.id
+          ];
           if (callback) {
             callback(subscribedMessage.contents);
           }
@@ -181,9 +195,9 @@ export class Websocket {
     market,
     onUpdates,
   }: {
-    market: ApiMarketName,
-    onUpdates: (updates: ApiOrderbookUpdate[]) => void,
-  }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
+    market: ApiMarketName;
+    onUpdates: (updates: ApiOrderbookUpdate[]) => void;
+  }): Promise<{ bids: ApiOrderOnOrderbook[]; asks: ApiOrderOnOrderbook[] }> {
     if (!this.ws) {
       throw new Error('Websocket connection not open');
     }
@@ -196,23 +210,28 @@ export class Websocket {
 
     if (this.subscribedCallbacks[subscribeMessage.channel]) {
       if (
-        this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id]
-          || this.listeners[subscribeMessage.channel][subscribeMessage.id]
+        this.subscribedCallbacks[subscribeMessage.channel][
+          subscribeMessage.id
+        ] ||
+        this.listeners[subscribeMessage.channel][subscribeMessage.id]
       ) {
         throw new Error(`Already watching orderbook market ${market}`);
       }
     }
 
-    this.listeners[subscribeMessage.channel][subscribeMessage.id] = (contents: any) => {
+    this.listeners[subscribeMessage.channel][subscribeMessage.id] = (
+      contents: any,
+    ) => {
       onUpdates(contents.updates);
     };
 
     const initialResponsePromise = new Promise<{
-      bids: ApiOrderOnOrderbook[],
-      asks: ApiOrderOnOrderbook[],
+      bids: ApiOrderOnOrderbook[];
+      asks: ApiOrderOnOrderbook[];
     }>((resolve, reject) => {
       const timeout = setTimeout(
-        () => reject(new Error(`Websocket orderbook subscribe timeout: ${market}`)),
+        () =>
+          reject(new Error(`Websocket orderbook subscribe timeout: ${market}`)),
         this.timeout,
       );
 
@@ -220,7 +239,9 @@ export class Websocket {
         this.subscribedCallbacks[subscribeMessage.channel] = {};
       }
 
-      this.subscribedCallbacks[subscribeMessage.channel][subscribeMessage.id] = (contents: any) => {
+      this.subscribedCallbacks[subscribeMessage.channel][
+        subscribeMessage.id
+      ] = (contents: any) => {
         clearTimeout(timeout);
         resolve(contents);
       };

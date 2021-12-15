@@ -9,7 +9,9 @@ export async function setGlobalOperator(
   accounts: address[],
   operator: string,
 ): Promise<void> {
-  return solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }).then(() => undefined);
+  return solo.admin
+    .setGlobalOperator(operator, true, { from: accounts[0] })
+    .then(() => undefined);
 }
 
 export async function setupMarkets(
@@ -25,22 +27,10 @@ export async function setupMarkets(
   const isClosing = false;
 
   await Promise.all([
-    solo.testing.priceOracle.setPrice(
-      solo.testing.tokenA.getAddress(),
-      price,
-    ),
-    solo.testing.priceOracle.setPrice(
-      solo.testing.tokenB.getAddress(),
-      price,
-    ),
-    solo.testing.priceOracle.setPrice(
-      solo.testing.tokenC.getAddress(),
-      price,
-    ),
-    solo.testing.priceOracle.setPrice(
-      ADDRESSES.ZERO,
-      price,
-    ),
+    solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), price),
+    solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), price),
+    solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), price),
+    solo.testing.priceOracle.setPrice(ADDRESSES.ZERO, price),
   ]);
 
   const tokens = [

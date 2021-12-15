@@ -35,14 +35,14 @@ import { DaiMigrator } from '../../build/wrappers/DaiMigrator';
 import { LimitOrders } from '../../build/wrappers/LimitOrders';
 import { StopLimitOrders } from '../../build/wrappers/StopLimitOrders';
 import { CanonicalOrders } from '../../build/wrappers/CanonicalOrders';
-import { PayableProxyForSoloMargin as PayableProxy, } from '../../build/wrappers/PayableProxyForSoloMargin';
+import { PayableProxyForSoloMargin as PayableProxy } from '../../build/wrappers/PayableProxyForSoloMargin';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
-import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1, } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
+import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
 import {
   LiquidatorProxyV1WithAmmForSoloMargin,
   LiquidatorProxyV1WithAmmForSoloMargin as LiquidatorProxyV1WithAmm,
 } from '../../build/wrappers/LiquidatorProxyV1WithAmmForSoloMargin';
-import { DolomiteAmmRouterProxy as DolomiteAmmRouterProxy, } from '../../build/wrappers/DolomiteAmmRouterProxy';
+import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
@@ -86,7 +86,8 @@ import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.j
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
-import testnetAmmRebalancerProxyJson from '../../build/published_contracts/TestnetAmmRebalancerProxy.json';
+import testnetAmmRebalancerProxyJson
+  from '../../build/published_contracts/TestnetAmmRebalancerProxy.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -152,48 +153,86 @@ export class Contracts {
     this.web3 = web3;
     this.defaultConfirmations = options.defaultConfirmations;
     this.autoGasMultiplier = options.autoGasMultiplier || 1.5;
-    this.confirmationType = options.confirmationType || ConfirmationType.Confirmed;
+    this.confirmationType =
+      options.confirmationType || ConfirmationType.Confirmed;
     this.defaultGas = options.defaultGas;
     this.defaultGasPrice = options.defaultGasPrice;
     this.blockGasLimit = options.blockGasLimit;
 
     // Contracts
-    this.soloMargin = new this.web3.eth.Contract(soloMarginJson.abi) as SoloMargin;
+    this.soloMargin = new this.web3.eth.Contract(
+      soloMarginJson.abi,
+    ) as SoloMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
-    this.interestSetter = new this.web3.eth.Contract(interestSetterJson.abi) as InterestSetter;
-    this.priceOracle = new this.web3.eth.Contract(priceOracleJson.abi) as PriceOracle;
+    this.interestSetter = new this.web3.eth.Contract(
+      interestSetterJson.abi,
+    ) as InterestSetter;
+    this.priceOracle = new this.web3.eth.Contract(
+      priceOracleJson.abi,
+    ) as PriceOracle;
     this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.expiryV2 = new this.web3.eth.Contract(expiryV2Json.abi) as ExpiryV2;
     this.refunder = new this.web3.eth.Contract(refunderJson.abi) as Refunder;
-    this.daiMigrator = new this.web3.eth.Contract(daiMigratorJson.abi) as DaiMigrator;
-    this.limitOrders = new this.web3.eth.Contract(limitOrdersJson.abi) as LimitOrders;
-    this.stopLimitOrders = new this.web3.eth.Contract(stopLimitOrdersJson.abi) as StopLimitOrders;
-    this.canonicalOrders = new this.web3.eth.Contract(canonicalOrdersJson.abi) as CanonicalOrders;
-    this.payableProxy = new this.web3.eth.Contract(payableProxyJson.abi) as PayableProxy;
-    this.signedOperationProxy = new this.web3.eth.Contract(signedOperationProxyJson.abi) as
-      SignedOperationProxy;
-    this.liquidatorProxyV1 = new this.web3.eth.Contract(liquidatorV1Json.abi) as
-      LiquidatorProxyV1;
-    this.liquidatorProxyV1WithAmm = new this.web3.eth.Contract(liquidatorV1WithAmmJson.abi) as
-      LiquidatorProxyV1WithAmmForSoloMargin;
-    this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(dolomiteAmmRouterProxyJson.abi) as
-      DolomiteAmmRouterProxy;
-    this.ammRebalancerProxy = new this.web3.eth.Contract(ammRebalancerProxyJson.abi) as AmmRebalancerProxy;
-    this.testnetAmmRebalancerProxy = new this.web3.eth.Contract(testnetAmmRebalancerProxyJson.abi) as TestnetAmmRebalancerProxy;
-    this.polynomialInterestSetter = new this.web3.eth.Contract(polynomialInterestSetterJson.abi) as
-      PolynomialInterestSetter;
+    this.daiMigrator = new this.web3.eth.Contract(
+      daiMigratorJson.abi,
+    ) as DaiMigrator;
+    this.limitOrders = new this.web3.eth.Contract(
+      limitOrdersJson.abi,
+    ) as LimitOrders;
+    this.stopLimitOrders = new this.web3.eth.Contract(
+      stopLimitOrdersJson.abi,
+    ) as StopLimitOrders;
+    this.canonicalOrders = new this.web3.eth.Contract(
+      canonicalOrdersJson.abi,
+    ) as CanonicalOrders;
+    this.payableProxy = new this.web3.eth.Contract(
+      payableProxyJson.abi,
+    ) as PayableProxy;
+    this.signedOperationProxy = new this.web3.eth.Contract(
+      signedOperationProxyJson.abi,
+    ) as SignedOperationProxy;
+    this.liquidatorProxyV1 = new this.web3.eth.Contract(
+      liquidatorV1Json.abi,
+    ) as LiquidatorProxyV1;
+    this.liquidatorProxyV1WithAmm = new this.web3.eth.Contract(
+      liquidatorV1WithAmmJson.abi,
+    ) as LiquidatorProxyV1WithAmmForSoloMargin;
+    this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(
+      dolomiteAmmRouterProxyJson.abi,
+    ) as DolomiteAmmRouterProxy;
+    this.ammRebalancerProxy = new this.web3.eth.Contract(
+      ammRebalancerProxyJson.abi,
+    ) as AmmRebalancerProxy;
+    this.testnetAmmRebalancerProxy = new this.web3.eth.Contract(
+      testnetAmmRebalancerProxyJson.abi,
+    ) as TestnetAmmRebalancerProxy;
+    this.polynomialInterestSetter = new this.web3.eth.Contract(
+      polynomialInterestSetterJson.abi,
+    ) as PolynomialInterestSetter;
     this.doubleExponentInterestSetter = new this.web3.eth.Contract(
-      doubleExponentInterestSetterJson.abi) as DoubleExponentInterestSetter;
-    this.wethPriceOracle = new this.web3.eth.Contract(wethPriceOracleJson.abi) as WethPriceOracle;
-    this.daiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
-    this.saiPriceOracle = new this.web3.eth.Contract(daiPriceOracleJson.abi) as DaiPriceOracle;
-    this.usdcPriceOracle = new this.web3.eth.Contract(usdcPriceOracleJson.abi) as UsdcPriceOracle;
-    this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(chainlinkPriceOracleV1Json.abi) as
-      ChainlinkPriceOracleV1;
-    this.dolomiteAmmFactory = new this.web3.eth.Contract(dolomiteAmmFactoryJson.abi) as
-      DolomiteAmmFactory;
-    this.simpleFeeOwner = new this.web3.eth.Contract(simpleFeeOwnerJson.abi) as
-      SimpleFeeOwner;
+      doubleExponentInterestSetterJson.abi,
+    ) as DoubleExponentInterestSetter;
+    this.wethPriceOracle = new this.web3.eth.Contract(
+      wethPriceOracleJson.abi,
+    ) as WethPriceOracle;
+    this.daiPriceOracle = new this.web3.eth.Contract(
+      daiPriceOracleJson.abi,
+    ) as DaiPriceOracle;
+    this.saiPriceOracle = new this.web3.eth.Contract(
+      daiPriceOracleJson.abi,
+    ) as DaiPriceOracle;
+    this.usdcPriceOracle = new this.web3.eth.Contract(
+      usdcPriceOracleJson.abi,
+    ) as UsdcPriceOracle;
+    this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(
+      chainlinkPriceOracleV1Json.abi,
+    ) as ChainlinkPriceOracleV1;
+    this.dolomiteAmmFactory = new this.web3.eth.Contract(
+      dolomiteAmmFactoryJson.abi,
+    ) as DolomiteAmmFactory;
+    this.simpleFeeOwner = new this.web3.eth.Contract(
+      simpleFeeOwnerJson.abi,
+    ) as SimpleFeeOwner;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
 
     this.setProvider(provider, networkId);
@@ -209,26 +248,30 @@ export class Contracts {
 
   public async getDolomiteAmmPairFromTokens(
     tokenA: address,
-    tokenB: address
+    tokenB: address,
   ): Promise<DolomiteAmmPair> {
-    const contractAddress = await this.getDolomiteLpTokenAddress(tokenA, tokenB);
-    const pair = new this.web3.eth.Contract(dolomiteAmmPairJson.abi, contractAddress) as DolomiteAmmPair;
+    const contractAddress = await this.getDolomiteLpTokenAddress(
+      tokenA,
+      tokenB,
+    );
+    const pair = new this.web3.eth.Contract(
+      dolomiteAmmPairJson.abi,
+      contractAddress,
+    ) as DolomiteAmmPair;
     pair.options.from = this.dolomiteAmmFactory.options.from;
     return pair;
   }
 
-  public getDolomiteAmmPair(
-    contractAddress: address
-  ): DolomiteAmmPair {
-    const pair = new this.web3.eth.Contract(dolomiteAmmPairJson.abi, contractAddress) as DolomiteAmmPair;
+  public getDolomiteAmmPair(contractAddress: address): DolomiteAmmPair {
+    const pair = new this.web3.eth.Contract(
+      dolomiteAmmPairJson.abi,
+      contractAddress,
+    ) as DolomiteAmmPair;
     pair.options.from = this.dolomiteAmmFactory.options.from;
     return pair;
   }
 
-  public setProvider(
-    provider: Provider,
-    networkId: number,
-  ): void {
+  public setProvider(provider: Provider, networkId: number): void {
     this.soloMargin.setProvider(provider);
 
     const contracts = [
@@ -247,42 +290,61 @@ export class Contracts {
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
-      { contract: this.liquidatorProxyV1WithAmm, json: liquidatorV1WithAmmJson },
-      { contract: this.dolomiteAmmRouterProxy, json: dolomiteAmmRouterProxyJson },
+      {
+        contract: this.liquidatorProxyV1WithAmm,
+        json: liquidatorV1WithAmmJson,
+      },
+      {
+        contract: this.dolomiteAmmRouterProxy,
+        json: dolomiteAmmRouterProxyJson,
+      },
       { contract: this.ammRebalancerProxy, json: ammRebalancerProxyJson },
-      { contract: this.testnetAmmRebalancerProxy, json: testnetAmmRebalancerProxyJson },
-      { contract: this.polynomialInterestSetter, json: polynomialInterestSetterJson },
-      { contract: this.doubleExponentInterestSetter, json: doubleExponentInterestSetterJson },
+      {
+        contract: this.testnetAmmRebalancerProxy,
+        json: testnetAmmRebalancerProxyJson,
+      },
+      {
+        contract: this.polynomialInterestSetter,
+        json: polynomialInterestSetterJson,
+      },
+      {
+        contract: this.doubleExponentInterestSetter,
+        json: doubleExponentInterestSetterJson,
+      },
       { contract: this.wethPriceOracle, json: wethPriceOracleJson },
       { contract: this.daiPriceOracle, json: daiPriceOracleJson },
       {
-        contract: this.saiPriceOracle, json: daiPriceOracleJson, overrides: {
+        contract: this.saiPriceOracle,
+        json: daiPriceOracleJson,
+        overrides: {
           1: '0x787F552BDC17332c98aA360748884513e3cB401a',
           42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
           1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
           1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
-        }
+        },
       },
       { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
       { contract: this.dolomiteAmmFactory, json: dolomiteAmmFactoryJson },
       { contract: this.simpleFeeOwner, json: simpleFeeOwnerJson },
-      { contract: this.chainlinkPriceOracleV1, json: chainlinkPriceOracleV1Json },
+      {
+        contract: this.chainlinkPriceOracleV1,
+        json: chainlinkPriceOracleV1Json,
+      },
       { contract: this.weth, json: wethJson },
     ];
 
-    contracts.forEach(contract => this.setContractProvider(
-                        contract.contract,
-                        contract.json,
-                        provider,
-                        networkId,
-                        contract.overrides,
-                      ),
+    contracts.forEach(contract =>
+      this.setContractProvider(
+        contract.contract,
+        contract.json,
+        provider,
+        networkId,
+        contract.overrides,
+      ),
     );
   }
 
-  public setDefaultAccount(
-    account: address,
-  ): void {
+  public setDefaultAccount(account: address): void {
     // Contracts
     this.soloMargin.options.from = account;
     this.erc20.options.from = account;
@@ -318,7 +380,12 @@ export class Contracts {
     method: TransactionObject<T>,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    const { confirmations, confirmationType, autoGasMultiplier, ...txOptions } = options;
+    const {
+      confirmations,
+      confirmationType,
+      autoGasMultiplier,
+      ...txOptions
+    } = options;
 
     if (!this.blockGasLimit) {
       await this.setGasLimit();
@@ -346,7 +413,8 @@ export class Contracts {
 
         const multiplier = autoGasMultiplier || this.autoGasMultiplier;
         const totalGas: number = Math.floor(gasEstimate * multiplier);
-        txOptions.gas = totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
+        txOptions.gas =
+          totalGas < this.blockGasLimit ? totalGas : this.blockGasLimit;
       }
 
       if (confirmationType === ConfirmationType.Simulate) {
@@ -371,7 +439,8 @@ export class Contracts {
     let hashOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
 
-    const t = confirmationType !== undefined ? confirmationType : this.confirmationType;
+    const t =
+      confirmationType !== undefined ? confirmationType : this.confirmationType;
 
     if (!Object.values(ConfirmationType).includes(t)) {
       throw new Error(`Invalid confirmation type: ${t}`);
@@ -381,49 +450,49 @@ export class Contracts {
     let confirmationPromise: Promise<TransactionReceipt>;
 
     if (t === ConfirmationType.Hash || t === ConfirmationType.Both) {
-      hashPromise = new Promise(
-        (resolve, reject) => {
-          promi.on('error', (error: Error) => {
-            if (hashOutcome === OUTCOMES.INITIAL) {
-              hashOutcome = OUTCOMES.REJECTED;
-              reject(error);
+      hashPromise = new Promise((resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (hashOutcome === OUTCOMES.INITIAL) {
+            hashOutcome = OUTCOMES.REJECTED;
+            reject(error);
+            const anyPromi = promi as any;
+            anyPromi.off();
+          }
+        });
+
+        promi.on('transactionHash', (txHash: string) => {
+          if (hashOutcome === OUTCOMES.INITIAL) {
+            hashOutcome = OUTCOMES.RESOLVED;
+            resolve(txHash);
+            if (t !== ConfirmationType.Both) {
               const anyPromi = promi as any;
               anyPromi.off();
             }
-          });
-
-          promi.on('transactionHash', (txHash: string) => {
-            if (hashOutcome === OUTCOMES.INITIAL) {
-              hashOutcome = OUTCOMES.RESOLVED;
-              resolve(txHash);
-              if (t !== ConfirmationType.Both) {
-                const anyPromi = promi as any;
-                anyPromi.off();
-              }
-            }
-          });
-        },
-      );
+          }
+        });
+      });
     }
 
     if (t === ConfirmationType.Confirmed || t === ConfirmationType.Both) {
-      confirmationPromise = new Promise(
-        (resolve, reject) => {
-          promi.on('error', (error: Error) => {
-            if (
-              (t === ConfirmationType.Confirmed || hashOutcome === OUTCOMES.RESOLVED)
-              && confirmationOutcome === OUTCOMES.INITIAL
-            ) {
-              confirmationOutcome = OUTCOMES.REJECTED;
-              reject(error);
-              const anyPromi = promi as any;
-              anyPromi.off();
-            }
-          });
+      confirmationPromise = new Promise((resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (
+            (t === ConfirmationType.Confirmed ||
+              hashOutcome === OUTCOMES.RESOLVED) &&
+            confirmationOutcome === OUTCOMES.INITIAL
+          ) {
+            confirmationOutcome = OUTCOMES.REJECTED;
+            reject(error);
+            const anyPromi = promi as any;
+            anyPromi.off();
+          }
+        });
 
-          const desiredConf = confirmations || this.defaultConfirmations;
-          if (desiredConf) {
-            promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
+        const desiredConf = confirmations || this.defaultConfirmations;
+        if (desiredConf) {
+          promi.on(
+            'confirmation',
+            (confNumber: number, receipt: TransactionReceipt) => {
               if (confNumber >= desiredConf) {
                 if (confirmationOutcome === OUTCOMES.INITIAL) {
                   confirmationOutcome = OUTCOMES.RESOLVED;
@@ -432,17 +501,17 @@ export class Contracts {
                   anyPromi.off();
                 }
               }
-            });
-          } else {
-            promi.on('receipt', (receipt: TransactionReceipt) => {
-              confirmationOutcome = OUTCOMES.RESOLVED;
-              resolve(receipt);
-              const anyPromi = promi as any;
-              anyPromi.off();
-            });
-          }
-        },
-      );
+            },
+          );
+        } else {
+          promi.on('receipt', (receipt: TransactionReceipt) => {
+            confirmationOutcome = OUTCOMES.RESOLVED;
+            resolve(receipt);
+            const anyPromi = promi as any;
+            anyPromi.off();
+          });
+        }
+      });
     }
 
     if (t === ConfirmationType.Hash) {
@@ -480,8 +549,9 @@ export class Contracts {
   ): void {
     contract.setProvider(provider);
 
-    const contractAddress = contractJson.networks[networkId]
-      && contractJson.networks[networkId].address;
+    const contractAddress =
+      contractJson.networks[networkId] &&
+      contractJson.networks[networkId].address;
     const overrideAddress = overrides && overrides[networkId];
 
     contract.options.address = overrideAddress || contractAddress;

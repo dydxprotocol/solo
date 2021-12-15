@@ -1,14 +1,14 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from './helpers/Solo';
 import { TestSolo } from './modules/TestSolo';
-import { snapshot, resetEVM, fastForward } from './helpers/EVM';
+import { fastForward, resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/SoloHelpers';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import {
-  address,
   ActionArgs,
   ActionType,
+  address,
   AmountDenomination,
   AmountReference,
 } from '../src/types';
@@ -66,19 +66,20 @@ describe('Invalid', () => {
     ]);
     const invalidDenomination = 2;
     await expectThrow(
-      solo.operation.initiate()
-      .deposit({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market1,
-        amount: {
-          value: wei,
-          denomination: invalidDenomination,
-          reference: AmountReference.Delta,
-        },
-        from: owner1,
-      })
-      .commit({ from: owner1 }),
+      solo.operation
+        .initiate()
+        .deposit({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market1,
+          amount: {
+            value: wei,
+            denomination: invalidDenomination,
+            reference: AmountReference.Delta,
+          },
+          from: owner1,
+        })
+        .commit({ from: owner1 }),
     );
   });
 
@@ -89,19 +90,20 @@ describe('Invalid', () => {
     ]);
     const invalidReference = 2;
     await expectThrow(
-      solo.operation.initiate()
-      .deposit({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market1,
-        amount: {
-          value: wei,
-          denomination: AmountDenomination.Actual,
-          reference: invalidReference,
-        },
-        from: owner1,
-      })
-      .commit({ from: owner1 }),
+      solo.operation
+        .initiate()
+        .deposit({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market1,
+          amount: {
+            value: wei,
+            denomination: AmountDenomination.Actual,
+            reference: invalidReference,
+          },
+          from: owner1,
+        })
+        .commit({ from: owner1 }),
     );
   });
 
@@ -111,9 +113,7 @@ describe('Invalid', () => {
       ...zeroAction,
       actionType: invalidActionType,
     };
-    await expectThrow(
-      operate([account1], [action]),
-    );
+    await expectThrow(operate([account1], [action]));
   });
 
   it('Fails for zero actions and zero accounts', async () => {
@@ -179,35 +179,45 @@ describe('Invalid', () => {
     await Promise.all([
       solo.testing.tokenB.issueTo(wei.times(2), owner1),
       solo.testing.tokenB.setMaximumSoloAllowance(owner1),
-      solo.testing.tokenC.issueTo(wei, solo.contracts.soloMargin.options.address),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), INTEGERS.ONE),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenC.getAddress(), INTEGERS.ONE),
+      solo.testing.tokenC.issueTo(
+        wei,
+        solo.contracts.soloMargin.options.address,
+      ),
+      solo.testing.priceOracle.setPrice(
+        solo.testing.tokenB.getAddress(),
+        INTEGERS.ONE,
+      ),
+      solo.testing.priceOracle.setPrice(
+        solo.testing.tokenC.getAddress(),
+        INTEGERS.ONE,
+      ),
     ]);
     await expectThrow(
-      solo.operation.initiate()
-      .deposit({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market1,
-        amount: {
-          value: wei.times(2),
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-        from: owner1,
-      })
-      .withdraw({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market2,
-        amount: {
-          value: wei.times(-1),
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-        to: owner1,
-      })
-      .commit({ from: owner1 }),
+      solo.operation
+        .initiate()
+        .deposit({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market1,
+          amount: {
+            value: wei.times(2),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+          from: owner1,
+        })
+        .withdraw({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market2,
+          amount: {
+            value: wei.times(-1),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+          to: owner1,
+        })
+        .commit({ from: owner1 }),
       'Storage: Borrow value too low',
     );
   });
@@ -216,33 +226,37 @@ describe('Invalid', () => {
     await Promise.all([
       solo.testing.tokenB.issueTo(wei, owner1),
       solo.testing.tokenB.setMaximumSoloAllowance(owner1),
-      solo.testing.tokenC.issueTo(wei, solo.contracts.soloMargin.options.address),
+      solo.testing.tokenC.issueTo(
+        wei,
+        solo.contracts.soloMargin.options.address,
+      ),
     ]);
     await expectThrow(
-      solo.operation.initiate()
-      .deposit({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market1,
-        amount: {
-          value: wei,
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-        from: owner1,
-      })
-      .withdraw({
-        primaryAccountOwner: owner1,
-        primaryAccountId: accountNumber1,
-        marketId: market2,
-        amount: {
-          value: wei.times(-1),
-          denomination: AmountDenomination.Actual,
-          reference: AmountReference.Delta,
-        },
-        to: owner1,
-      })
-      .commit({ from: owner1 }),
+      solo.operation
+        .initiate()
+        .deposit({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market1,
+          amount: {
+            value: wei,
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+          from: owner1,
+        })
+        .withdraw({
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          marketId: market2,
+          amount: {
+            value: wei.times(-1),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+          to: owner1,
+        })
+        .commit({ from: owner1 }),
       'OperationImpl: Undercollateralized account',
     );
   });

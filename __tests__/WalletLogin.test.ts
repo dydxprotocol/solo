@@ -1,7 +1,4 @@
-import {
-  SigningMethod,
-  address,
-} from '../src/types';
+import { address, SigningMethod } from '../src/types';
 import { getSolo } from './helpers/Solo';
 import { TestSolo } from './modules/TestSolo';
 
@@ -19,25 +16,45 @@ describe('WalletLogin', () => {
 
   it('Succeeds for eth.sign', async () => {
     const expiration = new Date('December 30, 2500 11:20:25');
-    const signature = await solo.walletLogin.signLogin(expiration, signer, SigningMethod.Hash);
-    expect(solo.walletLogin.walletLoginIsValid(expiration, signature, signer)).toBe(true);
+    const signature = await solo.walletLogin.signLogin(
+      expiration,
+      signer,
+      SigningMethod.Hash,
+    );
+    expect(
+      solo.walletLogin.walletLoginIsValid(expiration, signature, signer),
+    ).toBe(true);
   });
 
   it('Succeeds for eth_signTypedData', async () => {
     const expiration = new Date('December 30, 2500 11:20:25');
-    const signature = await solo.walletLogin.signLogin(expiration, signer, SigningMethod.TypedData);
-    expect(solo.walletLogin.walletLoginIsValid(expiration, signature, signer)).toBe(true);
+    const signature = await solo.walletLogin.signLogin(
+      expiration,
+      signer,
+      SigningMethod.TypedData,
+    );
+    expect(
+      solo.walletLogin.walletLoginIsValid(expiration, signature, signer),
+    ).toBe(true);
   });
 
   it('Recognizes an invalid signature', async () => {
     const expiration = new Date('December 30, 2500 11:20:25');
     const signature = `0x${'1b'.repeat(65)}00`;
-    expect(solo.walletLogin.walletLoginIsValid(expiration, signature, signer)).toBe(false);
+    expect(
+      solo.walletLogin.walletLoginIsValid(expiration, signature, signer),
+    ).toBe(false);
   });
 
   it('Recognizes expired signatures', async () => {
     const expiration = new Date('December 30, 2017 11:20:25');
-    const signature = await solo.walletLogin.signLogin(expiration, signer, SigningMethod.Hash);
-    expect(solo.walletLogin.walletLoginIsValid(expiration, signature, signer)).toBe(false);
+    const signature = await solo.walletLogin.signLogin(
+      expiration,
+      signer,
+      SigningMethod.Hash,
+    );
+    expect(
+      solo.walletLogin.walletLoginIsValid(expiration, signature, signer),
+    ).toBe(false);
   });
 });

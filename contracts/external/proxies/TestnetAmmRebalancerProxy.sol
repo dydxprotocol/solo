@@ -33,7 +33,7 @@ import "../../protocol/lib/Require.sol";
 import "../../protocol/lib/Types.sol";
 
 import "../lib/TypedSignature.sol";
-import "../lib/UniswapV2Library.sol";
+import "../lib/DolomiteAmmLibrary.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
@@ -71,7 +71,7 @@ contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
         address[] memory dolomitePath = new address[](2);
         uint dolomiteAmountIn;
         {
-            (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReservesWei(
+            (uint256 reserveA, uint256 reserveB) = DolomiteAmmLibrary.getReservesWei(
                 dolomiteFactory,
                 tokenA,
                 tokenB
@@ -93,7 +93,7 @@ contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
             dolomiteAmountIn = _dolomiteAmountIn;
         }
 
-        address[] memory dolomitePools = UniswapV2Library.getPools(dolomiteFactory, dolomitePath);
+        address[] memory dolomitePools = DolomiteAmmLibrary.getPools(dolomiteFactory, dolomitePath);
 
         Account.Info[] memory accounts = new Account.Info[](1 + dolomitePools.length);
         accounts[0] = Account.Info({
@@ -111,7 +111,7 @@ contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
         // trades are dolomitePools.length
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](dolomitePools.length);
 
-        uint[] memory dolomiteAmountsOut = UniswapV2Library.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
+        uint[] memory dolomiteAmountsOut = DolomiteAmmLibrary.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
         for (uint i = 0; i < dolomitePools.length; i++) {
             Require.that(
                 accounts[i + 1].owner == dolomitePools[i],

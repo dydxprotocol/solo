@@ -4,10 +4,10 @@ import { ADDRESSES, INTEGERS } from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
 import {
   address,
+  ContractCallOptions,
+  ContractConstantCallOptions,
   Decimal,
   Integer,
-  ContractConstantCallOptions,
-  ContractCallOptions,
   TxResult,
 } from '../../types';
 
@@ -15,10 +15,7 @@ export class MakerStablecoinPriceOracle {
   private contracts: Contracts;
   private oracleContract: Contract;
 
-  constructor(
-    contracts: Contracts,
-    oracleContract: Contract,
-  ) {
+  constructor(contracts: Contracts, oracleContract: Contract) {
     this.contracts = contracts;
     this.oracleContract = oracleContract;
   }
@@ -86,7 +83,7 @@ export class MakerStablecoinPriceOracle {
 
   public async getPriceInfo(
     options?: ContractConstantCallOptions,
-  ): Promise<{ price: Decimal, lastUpdate: Integer }> {
+  ): Promise<{ price: Decimal; lastUpdate: Integer }> {
     const priceInfo = await this.contracts.callConstantContractFunction(
       this.oracleContract.methods.g_priceInfo(),
       options,
@@ -131,11 +128,13 @@ export class MakerStablecoinPriceOracle {
     ethUsdPrice?: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
+    const queryPrice = ethUsdPrice
+      ? ethUsdPrice
+      : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
-      this.oracleContract.methods.getOasisPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getOasisPrice({
+        value: queryPrice.toFixed(0),
+      }),
       options,
     );
     return new BigNumber(price.value);
@@ -145,11 +144,13 @@ export class MakerStablecoinPriceOracle {
     ethUsdPrice?: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    const queryPrice = ethUsdPrice ? ethUsdPrice : await this.getMedianizerPrice();
+    const queryPrice = ethUsdPrice
+      ? ethUsdPrice
+      : await this.getMedianizerPrice();
     const price = await this.contracts.callConstantContractFunction(
-      this.oracleContract.methods.getUniswapPrice(
-        { value: queryPrice.toFixed(0) },
-      ),
+      this.oracleContract.methods.getUniswapPrice({
+        value: queryPrice.toFixed(0),
+      }),
       options,
     );
     return new BigNumber(price.value);
@@ -158,16 +159,20 @@ export class MakerStablecoinPriceOracle {
   public async getDeviationParams(
     options?: ContractConstantCallOptions,
   ): Promise<{
-    maximumPerSecond: Decimal,
-    maximumAbsolute: Decimal,
+    maximumPerSecond: Decimal;
+    maximumAbsolute: Decimal;
   }> {
     const params = await this.contracts.callConstantContractFunction(
       this.oracleContract.methods.DEVIATION_PARAMS(),
       options,
     );
     return {
-      maximumPerSecond: new BigNumber(params.maximumPerSecond).div(params.denominator),
-      maximumAbsolute: new BigNumber(params.maximumAbsolute).div(params.denominator),
+      maximumPerSecond: new BigNumber(params.maximumPerSecond).div(
+        params.denominator,
+      ),
+      maximumAbsolute: new BigNumber(params.maximumAbsolute).div(
+        params.denominator,
+      ),
     };
   }
 }

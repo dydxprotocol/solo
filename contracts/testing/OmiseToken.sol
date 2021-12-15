@@ -68,7 +68,7 @@ contract OmiseToken {
         return 18;
     }
 
-    function transfer(address to, uint256 value) public {
+    function transfer(address to, uint256 value) public returns (bool) {
         require(balances[msg.sender] >= value);
 
         balances[msg.sender] -= value;
@@ -79,9 +79,10 @@ contract OmiseToken {
             to,
             value
         );
+        return true;
     }
 
-    function transferFrom(address from, address to, uint256 value) public {
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
         require(balances[from] >= value && allowed[from][msg.sender] >= value);
 
         balances[to] = balances[to].add(value);
@@ -93,9 +94,10 @@ contract OmiseToken {
             to,
             value
         );
+        return true;
     }
 
-    function approve(address spender, uint256 value) public {
+    function approve(address spender, uint256 value) public returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
             address(this),
@@ -103,5 +105,6 @@ contract OmiseToken {
             spender,
             value
         );
+        return true;
     }
 }

@@ -15,16 +15,15 @@ import { TestInterestSetter } from './TestInterestSetter';
 import { decimalToString } from '../../src/lib/Helpers';
 import {
   AccountStatus,
+  address,
   ContractCallOptions,
   Index,
   Integer,
   TxResult,
-  address,
 } from '../../src/types';
 import { UniswapV2Router } from '../../src/modules/UniswapV2Router';
 
 export class Testing {
-  private contracts: TestContracts;
   public evm: EVM;
   public tokenA: TestToken;
   public tokenB: TestToken;
@@ -40,18 +39,19 @@ export class Testing {
   public doubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public interestSetter: TestInterestSetter;
   public uniswapV2Router: UniswapV2Router;
+  private contracts: TestContracts;
 
-  constructor(
-    provider: Provider,
-    contracts: TestContracts,
-    token: Token,
-  ) {
+  constructor(provider: Provider, contracts: TestContracts, token: Token) {
     this.contracts = contracts;
     this.evm = new EVM(provider);
     this.tokenA = new TestToken(contracts, token, contracts.tokenA);
     this.tokenB = new TestToken(contracts, token, contracts.tokenB);
     this.tokenC = new TestToken(contracts, token, contracts.tokenC);
-    this.erroringToken = new TestToken(contracts, token, contracts.erroringToken);
+    this.erroringToken = new TestToken(
+      contracts,
+      token,
+      contracts.erroringToken,
+    );
     this.omiseToken = new TestToken(contracts, token, contracts.omiseToken);
     this.autoTrader = new TestAutoTrader(contracts);
     this.callee = new TestCallee(contracts);
@@ -59,14 +59,14 @@ export class Testing {
     this.exchangeWrapper = new TestExchangeWrapper(contracts);
     this.priceOracle = new TestPriceOracle(contracts);
     this.polynomialInterestSetter = new TestPolynomialInterestSetter(contracts);
-    this.doubleExponentInterestSetter = new TestDoubleExponentInterestSetter(contracts);
+    this.doubleExponentInterestSetter = new TestDoubleExponentInterestSetter(
+      contracts,
+    );
     this.interestSetter = new TestInterestSetter(contracts);
     this.uniswapV2Router = new UniswapV2Router(contracts);
   }
 
-  public setProvider(
-    provider: Provider,
-  ): void {
+  public setProvider(provider: Provider): void {
     this.evm.setProvider(provider);
   }
 
@@ -117,9 +117,9 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     if (index.lastUpdate.isZero()) {
-      const currentIndex = await this.contracts.testSoloMargin.methods.getMarketCachedIndex(
-          marketId.toFixed(0),
-        ).call();
+      const currentIndex = await this.contracts.testSoloMargin.methods
+        .getMarketCachedIndex(marketId.toFixed(0))
+        .call();
       index.lastUpdate = new BigNumber(currentIndex.lastUpdate);
     }
 

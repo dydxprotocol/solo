@@ -7168,7 +7168,7 @@ interface IDolomiteAmmFactory {
 
 }
 
-// File: contracts/external/lib/UniswapV2Library.sol
+// File: contracts/external/lib/DolomiteAmmLibrary.sol
 
 pragma solidity >=0.5.0;
 

@@ -4,31 +4,31 @@ import { Contracts } from '../lib/Contracts';
 import { ADDRESSES } from '../lib/Constants';
 import { toString } from '../lib/Helpers';
 import {
+  addressesAreEqual,
   addressToBytes32,
   hashBytes,
   hashString,
-  stripHexPrefix,
-  addressesAreEqual,
   hexStringToBytes,
+  stripHexPrefix,
 } from '../lib/BytesHelper';
 import {
-  SIGNATURE_TYPES,
-  EIP712_DOMAIN_STRING,
-  EIP712_DOMAIN_STRUCT,
   createTypedSignature,
   ecRecoverTypedSignature,
+  EIP712_DOMAIN_STRING,
+  EIP712_DOMAIN_STRUCT,
+  SIGNATURE_TYPES,
 } from '../lib/SignatureHelper';
 import {
-  address,
+  AccountInfo,
   Action,
+  address,
   AssetAmount,
-  Operation,
-  SignedOperation,
   ContractCallOptions,
   ContractConstantCallOptions,
-  SigningMethod,
-  AccountInfo,
   Integer,
+  Operation,
+  SignedOperation,
+  SigningMethod,
 } from '../../src/types';
 
 const EIP712_OPERATION_STRUCT = [
@@ -98,10 +98,7 @@ const EIP712_CANCEL_OPERATION_STRUCT = [
 ];
 
 const EIP712_CANCEL_OPERATION_STRUCT_STRING =
-  'CancelOperation(' +
-  'string action,' +
-  'bytes32[] operationHashes' +
-  ')';
+  'CancelOperation(' + 'string action,' + 'bytes32[] operationHashes' + ')';
 
 export class SignedOperations extends Signer {
   private contracts: Contracts;
@@ -109,11 +106,7 @@ export class SignedOperations extends Signer {
 
   // ============ Constructor ============
 
-  constructor(
-    contracts: Contracts,
-    web3: Web3,
-    networkId: number,
-  ) {
+  constructor(contracts: Contracts, web3: Web3, networkId: number) {
     super(web3);
     this.contracts = contracts;
     this.networkId = networkId;
@@ -131,7 +124,10 @@ export class SignedOperations extends Signer {
     const accounts = [];
     const actions = [];
 
-    const getAccountId = function (accountOwner: string, accountNumber: Integer): number {
+    const getAccountId = function(
+      accountOwner: string,
+      accountNumber: Integer,
+    ): number {
       if (accountOwner === ADDRESSES.ZERO) {
         return 0;
       }
@@ -153,12 +149,18 @@ export class SignedOperations extends Signer {
     for (let i = 0; i < operation.actions.length; i += 1) {
       const action = operation.actions[i];
       actions.push({
-        accountId: getAccountId(action.primaryAccountOwner, action.primaryAccountNumber),
+        accountId: getAccountId(
+          action.primaryAccountOwner,
+          action.primaryAccountNumber,
+        ),
         actionType: action.actionType,
         primaryMarketId: toString(action.primaryMarketId),
         secondaryMarketId: toString(action.secondaryMarketId),
         otherAddress: action.otherAddress,
-        otherAccountId: getAccountId(action.secondaryAccountOwner, action.secondaryAccountNumber),
+        otherAccountId: getAccountId(
+          action.secondaryAccountOwner,
+          action.secondaryAccountNumber,
+        ),
         data: hexStringToBytes(action.data),
         amount: {
           sign: action.amount.sign,
@@ -170,20 +172,16 @@ export class SignedOperations extends Signer {
     }
 
     return this.contracts.callContractFunction(
-      this.contracts.signedOperationProxy.methods.cancel(
-        accounts,
-        actions,
-        {
-          numActions: operation.actions.length.toString(),
-          header: {
-            expiration: operation.expiration.toFixed(0),
-            salt: operation.salt.toFixed(0),
-            sender: operation.sender,
-            signer: operation.signer,
-          },
-          signature: [],
+      this.contracts.signedOperationProxy.methods.cancel(accounts, actions, {
+        numActions: operation.actions.length.toString(),
+        header: {
+          expiration: operation.expiration.toFixed(0),
+          salt: operation.salt.toFixed(0),
+          sender: operation.sender,
+          signer: operation.signer,
         },
-      ),
+        signature: [],
+      }),
       options || { from: operation.signer },
     );
   }
@@ -209,9 +207,13 @@ export class SignedOperations extends Signer {
     operations: Operation[],
     options?: ContractConstantCallOptions,
   ): Promise<boolean[]> {
-    const hashes = operations.map(operation => this.getOperationHash(operation));
+    const hashes = operations.map(operation =>
+      this.getOperationHash(operation),
+    );
     return this.contracts.callConstantContractFunction(
-      this.contracts.signedOperationProxy.methods.getOperationsAreInvalid(hashes),
+      this.contracts.signedOperationProxy.methods.getOperationsAreInvalid(
+        hashes,
+      ),
       options,
     );
   }
@@ -232,15 +234,27 @@ export class SignedOperations extends Signer {
       case SigningMethod.Compatibility:
         const hash = this.getOperationHash(operation);
         const rawSignature = await this.web3.eth.sign(hash, operation.signer);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        const hashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.DECIMAL,
+        );
         if (signingMethod === SigningMethod.Hash) {
           return hashSig;
         }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        const unsafeHashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.operationByHashHasValidSignature(hash, unsafeHashSig, operation.signer)) {
+        if (
+          this.operationByHashHasValidSignature(
+            hash,
+            unsafeHashSig,
+            operation.signer,
+          )
+        ) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -249,10 +263,7 @@ export class SignedOperations extends Signer {
       case SigningMethod.MetaMask:
       case SigningMethod.MetaMaskLatest:
       case SigningMethod.CoinbaseWallet:
-        return this.ethSignTypedOperationInternal(
-          operation,
-          signingMethod,
-        );
+        return this.ethSignTypedOperationInternal(operation, signingMethod);
 
       default:
         throw new Error(`Invalid signing method ${signingMethod}`);
@@ -287,17 +298,31 @@ export class SignedOperations extends Signer {
       case SigningMethod.Hash:
       case SigningMethod.UnsafeHash:
       case SigningMethod.Compatibility:
-        const cancelHash = this.operationHashToCancelOperationHash(operationHash);
+        const cancelHash = this.operationHashToCancelOperationHash(
+          operationHash,
+        );
         const rawSignature = await this.web3.eth.sign(cancelHash, signer);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        const hashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.DECIMAL,
+        );
         if (signingMethod === SigningMethod.Hash) {
           return hashSig;
         }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        const unsafeHashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.cancelOperationByHashHasValidSignature(operationHash, unsafeHashSig, signer)) {
+        if (
+          this.cancelOperationByHashHasValidSignature(
+            operationHash,
+            unsafeHashSig,
+            signer,
+          )
+        ) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -324,9 +349,7 @@ export class SignedOperations extends Signer {
    * on-chain,but allows dYdX backend services to verify that the cancel operation api call is from
    * the original maker of the operation.
    */
-  public async ethSignCancelOperation(
-    operation: Operation,
-  ): Promise<string> {
+  public async ethSignCancelOperation(operation: Operation): Promise<string> {
     return this.ethSignCancelOperationByHash(
       this.getOperationHash(operation),
       operation.signer,
@@ -353,9 +376,7 @@ export class SignedOperations extends Signer {
    * Returns true if the operation object has a non-null valid signature from the maker of the
    * operation.
    */
-  public operationHasValidSignature(
-    signedOperation: SignedOperation,
-  ): boolean {
+  public operationHasValidSignature(signedOperation: SignedOperation): boolean {
     return this.operationByHashHasValidSignature(
       this.getOperationHash(signedOperation),
       signedOperation.typedSignature,
@@ -422,13 +443,11 @@ export class SignedOperations extends Signer {
   /**
    * Returns the EIP712 hash of the actions array.
    */
-  public getActionsHash(
-    actions: Action[],
-  ): string {
+  public getActionsHash(actions: Action[]): string {
     const actionsAsHashes = actions.length
-      ? actions.map(
-        action => stripHexPrefix(this.getActionHash(action)),
-      ).join('')
+      ? actions
+          .map(action => stripHexPrefix(this.getActionHash(action)))
+          .join('')
       : '';
     return hashBytes(actionsAsHashes);
   }
@@ -436,9 +455,7 @@ export class SignedOperations extends Signer {
   /**
    * Returns the EIP712 hash of a single Action struct.
    */
-  public getActionHash(
-    action: Action,
-  ): string {
+  public getActionHash(action: Action): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ACTION_STRING) },
       { t: 'uint256', v: toString(action.actionType) },
@@ -457,9 +474,7 @@ export class SignedOperations extends Signer {
   /**
    * Returns the EIP712 hash of an AssetAmount struct.
    */
-  public getAssetAmountHash(
-    amount: AssetAmount,
-  ): string {
+  public getAssetAmountHash(amount: AssetAmount): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ASSET_AMOUNT_STRING) },
       { t: 'uint256', v: toString(amount.sign ? 1 : 0) },
@@ -472,13 +487,14 @@ export class SignedOperations extends Signer {
   /**
    * Given some operation hash, returns the hash of a cancel-operation message.
    */
-  public operationHashToCancelOperationHash(
-    operationHash: string,
-  ): string {
+  public operationHashToCancelOperationHash(operationHash: string): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_OPERATION_STRUCT_STRING) },
       { t: 'bytes32', v: hashString('Cancel Operations') },
-      { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: operationHash }) },
+      {
+        t: 'bytes32',
+        v: Web3.utils.soliditySha3({ t: 'bytes32', v: operationHash }),
+      },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -492,16 +508,19 @@ export class SignedOperations extends Signer {
       { t: 'bytes32', v: hashString('SignedOperationProxy') },
       { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.signedOperationProxy.options.address) },
+      {
+        t: 'bytes32',
+        v: addressToBytes32(
+          this.contracts.signedOperationProxy.options.address,
+        ),
+      },
     );
   }
 
   /**
    * Returns a signable EIP712 Hash of a struct
    */
-  public getEIP712Hash(
-    structHash: string,
-  ): string {
+  public getEIP712Hash(structHash: string): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes2', v: '0x1901' },
       { t: 'bytes32', v: this.getDomainHash() },
@@ -524,7 +543,7 @@ export class SignedOperations extends Signer {
     operation: Operation,
     signingMethod: SigningMethod,
   ): Promise<string> {
-    const actionsData = operation.actions.map((action) => {
+    const actionsData = operation.actions.map(action => {
       return {
         actionType: toString(action.actionType),
         accountOwner: action.primaryAccountOwner,
@@ -561,11 +580,7 @@ export class SignedOperations extends Signer {
       primaryType: 'Operation',
       message: operationData,
     };
-    return this.ethSignTypedDataInternal(
-      operation.signer,
-      data,
-      signingMethod,
-    );
+    return this.ethSignTypedDataInternal(operation.signer, data, signingMethod);
   }
 
   private async ethSignTypedCancelOperationInternal(
@@ -585,10 +600,6 @@ export class SignedOperations extends Signer {
         operationHashes: [operationHash],
       },
     };
-    return this.ethSignTypedDataInternal(
-      signer,
-      data,
-      signingMethod,
-    );
+    return this.ethSignTypedDataInternal(signer, data, signingMethod);
   }
 }

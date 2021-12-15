@@ -1,23 +1,19 @@
 import { Contracts } from '../lib/Contracts';
-import { ContractCallOptions, TxResult, address } from '../types';
+import { address, ContractCallOptions, TxResult } from '../types';
 
 export class Permissions {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
   public async setOperators(
-    operatorArgs: ({ operator: address, trusted: boolean })[],
+    operatorArgs: ({ operator: address; trusted: boolean })[],
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators(
-        operatorArgs,
-      ),
+      this.contracts.soloMargin.methods.setOperators(operatorArgs),
       options,
     );
   }
@@ -27,14 +23,12 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators(
-        [
-          {
-            operator,
-            trusted: true,
-          },
-        ],
-      ),
+      this.contracts.soloMargin.methods.setOperators([
+        {
+          operator,
+          trusted: true,
+        },
+      ]),
       options,
     );
   }
@@ -44,14 +38,12 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators(
-        [
-          {
-            operator,
-            trusted: false,
-          },
-        ],
-      ),
+      this.contracts.soloMargin.methods.setOperators([
+        {
+          operator,
+          trusted: false,
+        },
+      ]),
       options,
     );
   }

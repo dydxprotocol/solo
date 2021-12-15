@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getSolo } from '../helpers/Solo';
 import { TestSolo } from '../modules/TestSolo';
-import { snapshot, resetEVM } from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/types';
 
@@ -62,14 +62,8 @@ describe('WethPriceOracle', () => {
 
 // ============ Helper Functions ============
 
-async function setPrice(
-  price: BigNumber,
-  valid: boolean,
-) {
+async function setPrice(price: BigNumber, valid: boolean) {
   await solo.contracts.callContractFunction(
-    solo.contracts.testMakerOracle.methods.setValues(
-      price.toFixed(0),
-      valid,
-    ),
+    solo.contracts.testMakerOracle.methods.setValues(price.toFixed(0), valid),
   );
 }

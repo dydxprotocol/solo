@@ -29,8 +29,6 @@ const {
   getExpiryRampTime,
   getSenderAddress,
   getChainId,
-  getOraclePokerAddress,
-  getDaiPriceOracleParams,
   isMatic,
   isMaticTest,
   isArbitrum,
@@ -40,7 +38,6 @@ const {
   getChainlinkPriceOracleV1Params,
 } = require('./oracle_helpers');
 const {
-  getDaiAddress,
   getMaticAddress,
   getWethAddress,
 } = require('./token_helpers');
@@ -190,7 +187,7 @@ async function deployInterestSetters(deployer, network) {
   ]);
 }
 
-async function deployPriceOracles(deployer, network, accounts) {
+async function deployPriceOracles(deployer, network) {
   if (isDevNetwork(network) || isKovan(network)) {
     await deployer.deploy(TestPriceOracle);
   }
@@ -237,25 +234,6 @@ async function deployPriceOracles(deployer, network, accounts) {
       params.aggregatorDecimals,
     ),
   ]);
-
-  if (!isMaticTest(network) && !isMatic(network) && !isArbitrum(network)) {
-    const daiPriceOracleParams = getDaiPriceOracleParams(network);
-    await Promise.all([
-      deployer.deploy(
-        DaiPriceOracle,
-        getOraclePokerAddress(network, accounts),
-        getWethAddress(network, WETH9),
-        getDaiAddress(network, TokenB),
-        getMedianizerAddress(network),
-        getOasisAddress(network),
-        getDaiUniswapAddress(network),
-        daiPriceOracleParams.oasisEthAmount,
-        daiPriceOracleParams.deviationParams,
-      ),
-      deployer.deploy(UsdcPriceOracle),
-      deployer.deploy(WethPriceOracle, getMedianizerAddress(network)),
-    ]);
-  }
 }
 
 async function deploySecondLayer(deployer, network, accounts) {
@@ -325,8 +303,6 @@ async function deploySecondLayer(deployer, network, accounts) {
       TestnetAmmRebalancerProxy,
       soloMargin.address,
       dolomiteAmmFactory.address,
-      [],
-      [],
     );
   }
 

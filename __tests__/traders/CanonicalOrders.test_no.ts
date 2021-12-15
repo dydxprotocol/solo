@@ -5,15 +5,15 @@ import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { setupMarkets } from '../helpers/SoloHelpers';
-import { toBytes, hexStringToBytes } from '../../src/lib/BytesHelper';
+import { hexStringToBytes, toBytes } from '../../src/lib/BytesHelper';
 import {
   address,
   AmountDenomination,
   AmountReference,
-  Integer,
   CanonicalOrder,
-  SignedCanonicalOrder,
+  Integer,
   LimitOrderStatus,
+  SignedCanonicalOrder,
   SigningMethod,
 } from '../../src/types';
 
@@ -69,8 +69,10 @@ describe('CanonicalOrders', () => {
       salt: new BigNumber(100),
       typedSignature: null,
     };
-    testOrder.typedSignature =
-        await solo.canonicalOrders.signOrder(testOrder, SigningMethod.TypedData);
+    testOrder.typedSignature = await solo.canonicalOrders.signOrder(
+      testOrder,
+      SigningMethod.TypedData,
+    );
     [
       sellOrder,
       noFeeOrder,
@@ -89,11 +91,21 @@ describe('CanonicalOrders', () => {
 
     // set balances
     await setupMarkets(solo, accounts);
-    await
-    await Promise.all([
-      setBalances(defaultAmount, INTEGERS.ZERO, INTEGERS.ZERO, defaultQuoteAmount),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), defaultPrice),
-      solo.testing.priceOracle.setPrice(solo.testing.tokenB.getAddress(), INTEGERS.ONE),
+    await await Promise.all([
+      setBalances(
+        defaultAmount,
+        INTEGERS.ZERO,
+        INTEGERS.ZERO,
+        defaultQuoteAmount,
+      ),
+      solo.testing.priceOracle.setPrice(
+        solo.testing.tokenA.getAddress(),
+        defaultPrice,
+      ),
+      solo.testing.priceOracle.setPrice(
+        solo.testing.tokenB.getAddress(),
+        INTEGERS.ONE,
+      ),
     ]);
 
     await mineAvgBlock();
@@ -107,13 +119,19 @@ describe('CanonicalOrders', () => {
   describe('Signing Orders', () => {
     it('Succeeds for eth.sign', async () => {
       const order = { ...testOrder };
-      order.typedSignature = await solo.canonicalOrders.signOrder(order, SigningMethod.Hash);
+      order.typedSignature = await solo.canonicalOrders.signOrder(
+        order,
+        SigningMethod.Hash,
+      );
       expect(solo.canonicalOrders.orderHasValidSignature(order)).toBe(true);
     });
 
     it('Succeeds for eth_signTypedData', async () => {
       const order = { ...testOrder };
-      order.typedSignature = await solo.canonicalOrders.signOrder(order, SigningMethod.TypedData);
+      order.typedSignature = await solo.canonicalOrders.signOrder(
+        order,
+        SigningMethod.TypedData,
+      );
       expect(solo.canonicalOrders.orderHasValidSignature(order)).toBe(true);
     });
 
@@ -127,20 +145,32 @@ describe('CanonicalOrders', () => {
   describe('Signing CancelOrders', () => {
     it('Succeeds for eth.sign', async () => {
       const order = { ...testOrder };
-      const cancelSig = await solo.canonicalOrders.signCancelOrder(order, SigningMethod.Hash);
-      expect(solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(true);
+      const cancelSig = await solo.canonicalOrders.signCancelOrder(
+        order,
+        SigningMethod.Hash,
+      );
+      expect(
+        solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig),
+      ).toBe(true);
     });
 
     it('Succeeds for eth_signTypedData', async () => {
       const order = { ...testOrder };
-      const cancelSig = await solo.canonicalOrders.signCancelOrder(order, SigningMethod.TypedData);
-      expect(solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(true);
+      const cancelSig = await solo.canonicalOrders.signCancelOrder(
+        order,
+        SigningMethod.TypedData,
+      );
+      expect(
+        solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig),
+      ).toBe(true);
     });
 
     it('Recognizes a bad signature', async () => {
       const order = { ...testOrder };
       const cancelSig = `0x${'1b'.repeat(65)}00`;
-      expect(solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig)).toBe(false);
+      expect(
+        solo.canonicalOrders.cancelOrderHasValidSignature(order, cancelSig),
+      ).toBe(false);
     });
   });
 
@@ -227,23 +257,36 @@ describe('CanonicalOrders', () => {
   describe('getTradeCost', () => {
     it('Succeeds for makerAmount specified', async () => {
       const txResult = await fillOrder(testOrder, {});
-      await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
+      await expectBalances(
+        INTEGERS.ZERO,
+        defaultQuoteAmount,
+        defaultAmount,
+        INTEGERS.ZERO,
+      );
       await expectFilledAmount(testOrder, defaultAmount);
       console.log(`\tCanonicalOrder Trade gas used: ${txResult.gasUsed}`);
     });
 
     it('Succeeds for takerAmount specified', async () => {
-      await solo.operation.initiate().trade({
-        ...orderToTradeData(testOrder),
-        inputMarketId: quoteMarket,
-        outputMarketId: baseMarket,
-        amount: {
-          denomination: AmountDenomination.Wei,
-          reference: AmountReference.Delta,
-          value: defaultQuoteAmount.negated(),
-        },
-      }).commit({ from: defaultTakerAddress }),
-      await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
+      await solo.operation
+        .initiate()
+        .trade({
+          ...orderToTradeData(testOrder),
+          inputMarketId: quoteMarket,
+          outputMarketId: baseMarket,
+          amount: {
+            denomination: AmountDenomination.Wei,
+            reference: AmountReference.Delta,
+            value: defaultQuoteAmount.negated(),
+          },
+        })
+        .commit({ from: defaultTakerAddress }),
+        await expectBalances(
+          INTEGERS.ZERO,
+          defaultQuoteAmount,
+          defaultAmount,
+          INTEGERS.ZERO,
+        );
       await expectFilledAmount(testOrder, defaultAmount);
     });
 
@@ -252,7 +295,12 @@ describe('CanonicalOrders', () => {
         expiration: INTEGERS.ZERO,
       });
       await fillOrder(testOrderNoExpiry, {});
-      await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
+      await expectBalances(
+        INTEGERS.ZERO,
+        defaultQuoteAmount,
+        defaultAmount,
+        INTEGERS.ZERO,
+      );
       await expectFilledAmount(testOrderNoExpiry, defaultAmount);
     });
 
@@ -262,14 +310,18 @@ describe('CanonicalOrders', () => {
       delete testOrderNoSig.typedSignature;
 
       // approve order
-      await solo.canonicalOrders.approveOrder(
-        testOrderNoSig,
-        { from: testOrder.makerAccountOwner },
-      );
+      await solo.canonicalOrders.approveOrder(testOrderNoSig, {
+        from: testOrder.makerAccountOwner,
+      });
 
       // verify okay
       await fillOrder(testOrderNoSig, {});
-      await expectBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
+      await expectBalances(
+        INTEGERS.ZERO,
+        defaultQuoteAmount,
+        defaultAmount,
+        INTEGERS.ZERO,
+      );
       await expectFilledAmount(testOrderNoSig, defaultAmount);
     });
 
@@ -279,8 +331,14 @@ describe('CanonicalOrders', () => {
           solo.contracts.canonicalOrders.methods.getTradeCost(
             baseMarket.toFixed(0),
             quoteMarket.toFixed(0),
-            { owner: defaultMakerAddress, number: defaultMakerNumber.toFixed(0) },
-            { owner: defaultTakerAddress, number: defaultTakerNumber.toFixed(0) },
+            {
+              owner: defaultMakerAddress,
+              number: defaultMakerNumber.toFixed(0),
+            },
+            {
+              owner: defaultTakerAddress,
+              number: defaultTakerNumber.toFixed(0),
+            },
             { sign: false, value: '0' },
             { sign: false, value: '0' },
             { sign: false, value: '0' },
@@ -312,47 +370,59 @@ describe('CanonicalOrders', () => {
 
     it('Fails for inputMarket mismatch', async () => {
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          inputMarketId: incorrectMarket,
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            inputMarketId: incorrectMarket,
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Market mismatch',
       );
     });
 
     it('Fails for outputMarket mismatch', async () => {
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          outputMarketId: incorrectMarket,
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            outputMarketId: incorrectMarket,
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Market mismatch',
       );
     });
 
     it('Fails for switching makerMarket and takerMarket', async () => {
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          inputMarketId: quoteMarket,
-          outputMarketId: baseMarket,
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            inputMarketId: quoteMarket,
+            outputMarketId: baseMarket,
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: InputWei sign mismatch',
       );
     });
 
     it('Fails to overfill order for output amount', async () => {
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          inputMarketId: quoteMarket,
-          outputMarketId: baseMarket,
-          amount: {
-            denomination: AmountDenomination.Wei,
-            reference: AmountReference.Delta,
-            value: defaultQuoteAmount.times(-1.01),
-          },
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            inputMarketId: quoteMarket,
+            outputMarketId: baseMarket,
+            amount: {
+              denomination: AmountDenomination.Wei,
+              reference: AmountReference.Delta,
+              value: defaultQuoteAmount.times(-1.01),
+            },
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Cannot overfill order',
       );
     });
@@ -365,7 +435,9 @@ describe('CanonicalOrders', () => {
     });
 
     it('Fails for canceled order', async () => {
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
       await expectThrow(
         fillOrder(testOrder, {}),
@@ -392,17 +464,23 @@ describe('CanonicalOrders', () => {
 
     it('Fails for incorrect maker account', async () => {
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          otherAccountOwner: defaultTakerAddress,
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            otherAccountOwner: defaultTakerAddress,
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Order maker account mismatch',
       );
       await expectThrow(
-        solo.operation.initiate().trade({
-          ...orderToTradeData(testOrder),
-          otherAccountId: defaultMakerNumber.plus(1),
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .trade({
+            ...orderToTradeData(testOrder),
+            otherAccountId: defaultMakerNumber.plus(1),
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Order maker account mismatch',
       );
     });
@@ -410,8 +488,14 @@ describe('CanonicalOrders', () => {
     it('Fails for invalid signature', async () => {
       const invalidSignature1 = `0x${'00'.repeat(65)}05`;
       const invalidSignature2 = `0x${'00'.repeat(65)}01`;
-      const testOrderInvalidSig1 = { ...testOrder, typedSignature: invalidSignature1 };
-      const testOrderInvalidSig2 = { ...testOrder, typedSignature: invalidSignature2 };
+      const testOrderInvalidSig1 = {
+        ...testOrder,
+        typedSignature: invalidSignature1,
+      };
+      const testOrderInvalidSig2 = {
+        ...testOrder,
+        typedSignature: invalidSignature2,
+      };
       await expectThrow(
         fillOrder(testOrderInvalidSig1, {}),
         'TypedSignature: Invalid signature type',
@@ -436,19 +520,23 @@ describe('CanonicalOrders', () => {
         'CanonicalOrders: Cannot parse order from data',
       );
       await expectThrow(
-        fillOrder({ ...testOrder, typedSignature: `0x${'00'.repeat(100)}` }, {}),
+        fillOrder(
+          { ...testOrder, typedSignature: `0x${'00'.repeat(100)}` },
+          {},
+        ),
         'CanonicalOrders: Cannot parse order from data',
       );
     });
 
     it('Fails for bad order data', async () => {
       await expectThrow(
-        solo.operation.initiate().trade(
-          {
+        solo.operation
+          .initiate()
+          .trade({
             ...orderToTradeData(testOrder),
             data: [[255], [255]],
-          },
-        ).commit({ from: defaultTakerAddress }),
+          })
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Cannot parse order from data',
       );
     });
@@ -457,16 +545,15 @@ describe('CanonicalOrders', () => {
   describe('constructor', () => {
     it('Sets constants correctly', async () => {
       const cccf = solo.contracts.callConstantContractFunction;
-      const [
-        domainHash,
-        soloMarginAddress,
-      ] = await Promise.all([
+      const [domainHash, soloMarginAddress] = await Promise.all([
         cccf(solo.contracts.canonicalOrders.methods.EIP712_DOMAIN_HASH()),
         cccf(solo.contracts.canonicalOrders.methods.SOLO_MARGIN()),
       ]);
       const expectedDomainHash = solo.canonicalOrders.getDomainHash();
       expect(domainHash).toEqual(expectedDomainHash);
-      expect(soloMarginAddress).toEqual(solo.contracts.soloMargin.options.address);
+      expect(soloMarginAddress).toEqual(
+        solo.contracts.soloMargin.options.address,
+      );
     });
   });
 
@@ -474,14 +561,18 @@ describe('CanonicalOrders', () => {
     it('Succeeds for null order', async () => {
       const approver = testOrder.makerAccountOwner;
       await expectStatus(testOrder, LimitOrderStatus.Null);
-      const txResult = await solo.canonicalOrders.approveOrder(testOrder, { from: approver });
+      const txResult = await solo.canonicalOrders.approveOrder(testOrder, {
+        from: approver,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Approved);
 
       const logs = solo.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogCanonicalOrderApproved');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.approver).toEqual(approver);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
@@ -491,23 +582,31 @@ describe('CanonicalOrders', () => {
       const approver = testOrder.makerAccountOwner;
       await solo.canonicalOrders.approveOrder(testOrder, { from: approver });
       await expectStatus(testOrder, LimitOrderStatus.Approved);
-      const txResult = await solo.canonicalOrders.approveOrder(testOrder, { from: approver });
+      const txResult = await solo.canonicalOrders.approveOrder(testOrder, {
+        from: approver,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Approved);
 
       const logs = solo.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogCanonicalOrderApproved');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.approver).toEqual(approver);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
     });
 
     it('Fails for canceled order', async () => {
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectThrow(
-        solo.canonicalOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner }),
+        solo.canonicalOrders.approveOrder(testOrder, {
+          from: testOrder.makerAccountOwner,
+        }),
         'CanonicalOrders: Cannot approve canceled order',
       );
     });
@@ -517,30 +616,42 @@ describe('CanonicalOrders', () => {
     it('Succeeds for null order', async () => {
       const canceler = testOrder.makerAccountOwner;
       await expectStatus(testOrder, LimitOrderStatus.Null);
-      const txResult = await solo.canonicalOrders.cancelOrder(testOrder, { from: canceler });
+      const txResult = await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: canceler,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
 
       const logs = solo.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogCanonicalOrderCanceled');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.canceler).toEqual(canceler);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
     });
 
     it('Succeeds for approved order', async () => {
-      await solo.canonicalOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.approveOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Approved);
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
 
     it('Succeeds for canceled order', async () => {
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
 
@@ -556,39 +667,46 @@ describe('CanonicalOrders', () => {
     it('Fails for bad callFunction type', async () => {
       const badType = new BigNumber(2);
       await expectThrow(
-        solo.operation.initiate().call({
-          primaryAccountOwner: defaultTakerAddress,
-          primaryAccountId: defaultTakerNumber,
-          callee: solo.contracts.canonicalOrders.options.address,
-          data: toBytes(
-            badType,
-            solo.canonicalOrders.getOrderHash(testOrder),
-          ),
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .call({
+            primaryAccountOwner: defaultTakerAddress,
+            primaryAccountId: defaultTakerNumber,
+            callee: solo.contracts.canonicalOrders.options.address,
+            data: toBytes(
+              badType,
+              solo.canonicalOrders.getOrderHash(testOrder),
+            ),
+          })
+          .commit({ from: defaultTakerAddress }),
       );
     });
 
     it('Fails for too-short data', async () => {
       await expectThrow(
-        solo.operation.initiate().call({
-          primaryAccountOwner: defaultTakerAddress,
-          primaryAccountId: defaultTakerNumber,
-          callee: solo.contracts.canonicalOrders.options.address,
-          data: toBytes(
-            solo.canonicalOrders.getOrderHash(testOrder),
-          ),
-        }).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .call({
+            primaryAccountOwner: defaultTakerAddress,
+            primaryAccountId: defaultTakerNumber,
+            callee: solo.contracts.canonicalOrders.options.address,
+            data: toBytes(solo.canonicalOrders.getOrderHash(testOrder)),
+          })
+          .commit({ from: defaultTakerAddress }),
       );
     });
   });
 
   describe('callFunction: approve', () => {
     async function approveTestOrder(from?: address) {
-      return solo.operation.initiate().approveCanonicalOrder({
-        primaryAccountOwner: from || testOrder.makerAccountOwner,
-        primaryAccountId: testOrder.makerAccountNumber,
-        order: testOrder,
-      }).commit({ from: from || testOrder.makerAccountOwner });
+      return solo.operation
+        .initiate()
+        .approveCanonicalOrder({
+          primaryAccountOwner: from || testOrder.makerAccountOwner,
+          primaryAccountId: testOrder.makerAccountNumber,
+          order: testOrder,
+        })
+        .commit({ from: from || testOrder.makerAccountOwner });
     }
 
     it('Fails for non-Solo caller', async () => {
@@ -618,7 +736,9 @@ describe('CanonicalOrders', () => {
       expect(logs.length).toEqual(4);
       const log = logs[2];
       expect(log.name).toEqual('LogCanonicalOrderApproved');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.approver).toEqual(approver);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
@@ -635,14 +755,18 @@ describe('CanonicalOrders', () => {
       expect(logs.length).toEqual(4);
       const log = logs[2];
       expect(log.name).toEqual('LogCanonicalOrderApproved');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.approver).toEqual(approver);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
     });
 
     it('Fails for canceled order', async () => {
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectThrow(
         approveTestOrder(),
         'CanonicalOrders: Cannot approve canceled order',
@@ -659,11 +783,14 @@ describe('CanonicalOrders', () => {
 
   describe('callFunction: cancel', () => {
     async function cancelTestOrder(from?: address) {
-      return solo.operation.initiate().cancelCanonicalOrder({
-        primaryAccountOwner: from || testOrder.makerAccountOwner,
-        primaryAccountId: testOrder.makerAccountNumber,
-        order: testOrder,
-      }).commit({ from: from || testOrder.makerAccountOwner });
+      return solo.operation
+        .initiate()
+        .cancelCanonicalOrder({
+          primaryAccountOwner: from || testOrder.makerAccountOwner,
+          primaryAccountId: testOrder.makerAccountNumber,
+          order: testOrder,
+        })
+        .commit({ from: from || testOrder.makerAccountOwner });
     }
 
     it('Fails for non-Solo caller', async () => {
@@ -693,21 +820,27 @@ describe('CanonicalOrders', () => {
       expect(logs.length).toEqual(4);
       const log = logs[2];
       expect(log.name).toEqual('LogCanonicalOrderCanceled');
-      expect(log.args.orderHash).toEqual(solo.canonicalOrders.getOrderHash(testOrder));
+      expect(log.args.orderHash).toEqual(
+        solo.canonicalOrders.getOrderHash(testOrder),
+      );
       expect(log.args.canceler).toEqual(canceler);
       expect(log.args.baseMarket).toEqual(testOrder.baseMarket);
       expect(log.args.quoteMarket).toEqual(testOrder.quoteMarket);
     });
 
     it('Succeeds for approved order', async () => {
-      await solo.canonicalOrders.approveOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.approveOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Approved);
       await cancelTestOrder();
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
     });
 
     it('Succeeds for canceled order', async () => {
-      await solo.canonicalOrders.cancelOrder(testOrder, { from: testOrder.makerAccountOwner });
+      await solo.canonicalOrders.cancelOrder(testOrder, {
+        from: testOrder.makerAccountOwner,
+      });
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
       await cancelTestOrder();
       await expectStatus(testOrder, LimitOrderStatus.Canceled);
@@ -723,10 +856,7 @@ describe('CanonicalOrders', () => {
 
   describe('', () => {
     async function getCurrentPrice() {
-      const [
-        basePrice,
-        quotePrice,
-      ] = await Promise.all([
+      const [basePrice, quotePrice] = await Promise.all([
         solo.getters.getMarketPrice(baseMarket),
         solo.getters.getMarketPrice(quoteMarket),
       ]);
@@ -737,11 +867,17 @@ describe('CanonicalOrders', () => {
       const triggerPrice = await getCurrentPrice();
       const order = await getModifiedTestOrder({ triggerPrice });
       const txResult = await fillOrder(order, {});
-      console.log(`\tCanonicalOrder Trade (w/ triggerPrice) gas used: ${txResult.gasUsed}`);
+      console.log(
+        `\tCanonicalOrder Trade (w/ triggerPrice) gas used: ${
+          txResult.gasUsed
+        }`,
+      );
     });
 
     it('Fails for unmet triggerPrice (buy)', async () => {
-      const triggerPrice = (await getCurrentPrice()).plus(MINIMAL_PRICE_INCREMENT);
+      const triggerPrice = (await getCurrentPrice()).plus(
+        MINIMAL_PRICE_INCREMENT,
+      );
       const order = await getModifiedTestOrder({ triggerPrice });
       await expectThrow(
         fillOrder(order, {}),
@@ -750,14 +886,21 @@ describe('CanonicalOrders', () => {
     });
 
     it('Succeeds for met triggerPrice (sell)', async () => {
-      await setBalances(INTEGERS.ZERO, defaultQuoteAmount, defaultAmount, INTEGERS.ZERO);
+      await setBalances(
+        INTEGERS.ZERO,
+        defaultQuoteAmount,
+        defaultAmount,
+        INTEGERS.ZERO,
+      );
       const triggerPrice = await getCurrentPrice();
       const order = await getModifiedTestOrder({ triggerPrice, isBuy: false });
       await fillOrder(order, {});
     });
 
     it('Fails for unmet triggerPrice (sell)', async () => {
-      const triggerPrice = (await getCurrentPrice()).minus(MINIMAL_PRICE_INCREMENT);
+      const triggerPrice = (await getCurrentPrice()).minus(
+        MINIMAL_PRICE_INCREMENT,
+      );
       const order = await getModifiedTestOrder({ triggerPrice, isBuy: false });
       await expectThrow(
         fillOrder(order, {}),
@@ -778,13 +921,16 @@ describe('CanonicalOrders', () => {
       });
 
       it('Succeeds for full close', async () => {
-        await solo.operation.initiate().fillDecreaseOnlyCanonicalOrder(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          reverseDecreaseOrder,
-          reverseDecreaseOrder.limitPrice,
-          INTEGERS.ZERO,
-        ).commit({ from: defaultTakerAddress });
+        await solo.operation
+          .initiate()
+          .fillDecreaseOnlyCanonicalOrder(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            reverseDecreaseOrder,
+            reverseDecreaseOrder.limitPrice,
+            INTEGERS.ZERO,
+          )
+          .commit({ from: defaultTakerAddress });
         await expectBalances(
           defaultAmount.times(9).div(8),
           defaultQuoteAmount.times(7).div(8),
@@ -841,13 +987,16 @@ describe('CanonicalOrders', () => {
       });
 
       it('Succeeds for full close', async () => {
-        await solo.operation.initiate().fillDecreaseOnlyCanonicalOrder(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          decreaseOrder,
-          decreaseOrder.limitPrice,
-          INTEGERS.ZERO,
-        ).commit({ from: defaultTakerAddress });
+        await solo.operation
+          .initiate()
+          .fillDecreaseOnlyCanonicalOrder(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            decreaseOrder,
+            decreaseOrder.limitPrice,
+            INTEGERS.ZERO,
+          )
+          .commit({ from: defaultTakerAddress });
         await expectBalances(
           defaultAmount.times(7).div(8),
           defaultQuoteAmount.times(9).div(8),
@@ -895,7 +1044,12 @@ describe('CanonicalOrders', () => {
 
     describe('zero position', () => {
       beforeEach(async () => {
-        await setBalances(defaultAmount, defaultQuoteAmount, INTEGERS.ZERO, INTEGERS.ZERO);
+        await setBalances(
+          defaultAmount,
+          defaultQuoteAmount,
+          INTEGERS.ZERO,
+          INTEGERS.ZERO,
+        );
       });
 
       it('Fails when position was originally zero', async () => {
@@ -911,7 +1065,9 @@ describe('CanonicalOrders', () => {
     it('Cannot violate limitPrice (buy)', async () => {
       const buyOrder = testOrder;
       await expectThrow(
-        fillOrder(buyOrder, { price: buyOrder.limitPrice.plus(MINIMAL_PRICE_INCREMENT) }),
+        fillOrder(buyOrder, {
+          price: buyOrder.limitPrice.plus(MINIMAL_PRICE_INCREMENT),
+        }),
         'CanonicalOrders: Fill invalid price',
       );
     });
@@ -919,7 +1075,9 @@ describe('CanonicalOrders', () => {
     it('Cannot violate limitPrice (sell)', async () => {
       const sellOrder = await getModifiedTestOrder({ isBuy: false });
       await expectThrow(
-        fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(MINIMAL_PRICE_INCREMENT) }),
+        fillOrder(sellOrder, {
+          price: sellOrder.limitPrice.minus(MINIMAL_PRICE_INCREMENT),
+        }),
         'CanonicalOrders: Fill invalid price',
       );
     });
@@ -958,7 +1116,9 @@ describe('CanonicalOrders', () => {
 
     it('Cannot violate fees', async () => {
       await expectThrow(
-        fillOrder(testOrder, { fee: testOrder.limitFee.plus(MINIMAL_FEE_INCREMENT) }),
+        fillOrder(testOrder, {
+          fee: testOrder.limitFee.plus(MINIMAL_FEE_INCREMENT),
+        }),
         INVALID_FEE_MESSAGE,
       );
       await expectThrow(
@@ -970,7 +1130,9 @@ describe('CanonicalOrders', () => {
         INVALID_FEE_MESSAGE,
       );
       await expectThrow(
-        fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.plus(MINIMAL_FEE_INCREMENT) }),
+        fillOrder(negativeFeeOrder, {
+          fee: negativeFeeOrder.limitFee.plus(MINIMAL_FEE_INCREMENT),
+        }),
         INVALID_FEE_MESSAGE,
       );
     });
@@ -1008,7 +1170,9 @@ describe('CanonicalOrders', () => {
     });
 
     it('Can take an extra-negative fee', async () => {
-      await fillOrder(negativeFeeOrder, { fee: negativeFeeOrder.limitFee.times(2) });
+      await fillOrder(negativeFeeOrder, {
+        fee: negativeFeeOrder.limitFee.times(2),
+      });
       const feeAmount = defaultQuoteAmount.times(defaultLimitFee).times(2);
       await expectBalances(
         INTEGERS.ZERO,
@@ -1103,26 +1267,34 @@ describe('CanonicalOrders', () => {
 
   describe('loading fillArgs', () => {
     it('Succeeds in loading in a price', async () => {
-      const txResult = await solo.operation.initiate().setCanonicalOrderFillArgs(
-        defaultTakerAddress,
-        defaultTakerNumber,
-        testOrder.limitPrice,
-        INTEGERS.ZERO,
-      ).fillCanonicalOrder(
-        defaultTakerAddress,
-        defaultTakerNumber,
-        testOrder,
-        testOrder.amount,
-        INTEGERS.ZERO,
-        INTEGERS.ZERO,
-      ).commit({ from: defaultTakerAddress });
+      const txResult = await solo.operation
+        .initiate()
+        .setCanonicalOrderFillArgs(
+          defaultTakerAddress,
+          defaultTakerNumber,
+          testOrder.limitPrice,
+          INTEGERS.ZERO,
+        )
+        .fillCanonicalOrder(
+          defaultTakerAddress,
+          defaultTakerNumber,
+          testOrder,
+          testOrder.amount,
+          INTEGERS.ZERO,
+          INTEGERS.ZERO,
+        )
+        .commit({ from: defaultTakerAddress });
       await expectBalances(
         INTEGERS.ZERO,
         defaultQuoteAmount,
         defaultAmount,
         INTEGERS.ZERO,
       );
-      console.log(`\tCanonicalOrder Trade (w/ setting fillArgs) gas used: ${txResult.gasUsed}`);
+      console.log(
+        `\tCanonicalOrder Trade (w/ setting fillArgs) gas used: ${
+          txResult.gasUsed
+        }`,
+      );
     });
 
     it('Cannot load in a null price', async () => {
@@ -1134,38 +1306,46 @@ describe('CanonicalOrders', () => {
 
     it('Cannot load in a price past the limit', async () => {
       await expectThrow(
-        solo.operation.initiate().setCanonicalOrderFillArgs(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          testOrder.limitPrice.times(2),
-          INTEGERS.ZERO,
-        ).fillCanonicalOrder(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          testOrder,
-          testOrder.amount,
-          INTEGERS.ZERO,
-          INTEGERS.ZERO,
-        ).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .setCanonicalOrderFillArgs(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            testOrder.limitPrice.times(2),
+            INTEGERS.ZERO,
+          )
+          .fillCanonicalOrder(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            testOrder,
+            testOrder.amount,
+            INTEGERS.ZERO,
+            INTEGERS.ZERO,
+          )
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Fill invalid price',
       );
     });
 
     it('Cannot load in a fee past the limit', async () => {
       await expectThrow(
-        solo.operation.initiate().setCanonicalOrderFillArgs(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          testOrder.limitPrice,
-          testOrder.limitFee.times(2),
-        ).fillCanonicalOrder(
-          defaultTakerAddress,
-          defaultTakerNumber,
-          testOrder,
-          testOrder.amount,
-          INTEGERS.ZERO,
-          INTEGERS.ZERO,
-        ).commit({ from: defaultTakerAddress }),
+        solo.operation
+          .initiate()
+          .setCanonicalOrderFillArgs(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            testOrder.limitPrice,
+            testOrder.limitFee.times(2),
+          )
+          .fillCanonicalOrder(
+            defaultTakerAddress,
+            defaultTakerNumber,
+            testOrder,
+            testOrder.amount,
+            INTEGERS.ZERO,
+            INTEGERS.ZERO,
+          )
+          .commit({ from: defaultTakerAddress }),
         'CanonicalOrders: Fill invalid fee',
       );
     });
@@ -1205,7 +1385,9 @@ describe('CanonicalOrders', () => {
       const orderHash = solo.canonicalOrders.getOrderHash(order);
 
       // fill half, once
-      const txResult1 = await fillOrder(order, { amount: defaultAmount.div(2) });
+      const txResult1 = await fillOrder(order, {
+        amount: defaultAmount.div(2),
+      });
       await expectFilledAmount(order, defaultAmount.div(2));
 
       // check logs for first tx
@@ -1227,8 +1409,12 @@ describe('CanonicalOrders', () => {
     it('Succeeds for multiple orders', async () => {
       const canceler = accounts[0];
       const approver = accounts[1];
-      const testOrderCancel = await getModifiedTestOrder({ makerAccountOwner: canceler });
-      const testOrderApprove = await getModifiedTestOrder({ makerAccountOwner: approver });
+      const testOrderCancel = await getModifiedTestOrder({
+        makerAccountOwner: canceler,
+      });
+      const testOrderApprove = await getModifiedTestOrder({
+        makerAccountOwner: approver,
+      });
 
       await Promise.all([
         solo.canonicalOrders.approveOrder(testOrderApprove, { from: approver }),
@@ -1241,9 +1427,18 @@ describe('CanonicalOrders', () => {
         testOrderApprove,
       ]);
       expect(states1).toEqual([
-        { status: LimitOrderStatus.Null, totalFilledAmount: testOrder.amount.div(2) },
-        { status: LimitOrderStatus.Canceled, totalFilledAmount: INTEGERS.ZERO },
-        { status: LimitOrderStatus.Approved, totalFilledAmount: INTEGERS.ZERO },
+        {
+          status: LimitOrderStatus.Null,
+          totalFilledAmount: testOrder.amount.div(2),
+        },
+        {
+          status: LimitOrderStatus.Canceled,
+          totalFilledAmount: INTEGERS.ZERO,
+        },
+        {
+          status: LimitOrderStatus.Approved,
+          totalFilledAmount: INTEGERS.ZERO,
+        },
       ]);
     });
   });
@@ -1261,14 +1456,10 @@ async function fillOrder(
     fee = INTEGERS.ZERO,
   },
 ) {
-  return solo.operation.initiate().fillCanonicalOrder(
-    taker,
-    takerNumber,
-    order,
-    amount,
-    price,
-    fee,
-  ).commit({ from: taker });
+  return solo.operation
+    .initiate()
+    .fillCanonicalOrder(taker, takerNumber, order, amount, price, fee)
+    .commit({ from: taker });
 }
 
 function orderToTradeData(
@@ -1289,7 +1480,9 @@ function orderToTradeData(
       reference: AmountReference.Delta,
       value: order.isBuy ? order.amount : order.amount.negated(),
     },
-    data: hexStringToBytes(solo.canonicalOrders.orderToBytes(order, price, fee)),
+    data: hexStringToBytes(
+      solo.canonicalOrders.orderToBytes(order, price, fee),
+    ),
   };
 }
 
@@ -1383,12 +1576,15 @@ async function expectStatus(
 }
 
 async function getModifiedTestOrder(
-  params:any,
-):Promise<SignedCanonicalOrder> {
+  params: any,
+): Promise<SignedCanonicalOrder> {
   const result = {
     ...testOrder,
     ...params,
   };
-  result.typedSignature = await solo.canonicalOrders.signOrder(result, SigningMethod.TypedData);
+  result.typedSignature = await solo.canonicalOrders.signOrder(
+    result,
+    SigningMethod.TypedData,
+  );
   return result;
 }

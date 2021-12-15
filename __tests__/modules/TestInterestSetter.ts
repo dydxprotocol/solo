@@ -1,13 +1,16 @@
 import { TestContracts } from './TestContracts';
-import { ContractCallOptions, TxResult, address, Decimal } from '../../src/types';
+import {
+  address,
+  ContractCallOptions,
+  Decimal,
+  TxResult,
+} from '../../src/types';
 import { decimalToString } from '../../src/lib/Helpers';
 
 export class TestInterestSetter {
   private contracts: TestContracts;
 
-  constructor(
-    contracts: TestContracts,
-  ) {
+  constructor(contracts: TestContracts) {
     this.contracts = contracts;
   }
 
@@ -21,10 +24,9 @@ export class TestInterestSetter {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.testInterestSetter.methods.setInterestRate(
-        token,
-        { value: decimalToString(interestRate) },
-      ),
+      this.contracts.testInterestSetter.methods.setInterestRate(token, {
+        value: decimalToString(interestRate),
+      }),
       options,
     );
   }

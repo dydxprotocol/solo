@@ -11,9 +11,7 @@ import { decimalToString } from '../lib/Helpers';
 export class Admin {
   private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
   }
 
@@ -148,9 +146,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetMarginRatio(
-        { value: decimalToString(ratio) },
-      ),
+      this.contracts.soloMargin.methods.ownerSetMarginRatio({
+        value: decimalToString(ratio),
+      }),
       options,
     );
   }
@@ -160,9 +158,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetLiquidationSpread(
-        { value: decimalToString(spread) },
-      ),
+      this.contracts.soloMargin.methods.ownerSetLiquidationSpread({
+        value: decimalToString(spread),
+      }),
       options,
     );
   }
@@ -172,9 +170,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetEarningsRate(
-        { value: decimalToString(rate) },
-      ),
+      this.contracts.soloMargin.methods.ownerSetEarningsRate({
+        value: decimalToString(rate),
+      }),
       options,
     );
   }
@@ -184,9 +182,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetMinBorrowedValue(
-        { value: minBorrowedValue.toFixed(0) },
-      ),
+      this.contracts.soloMargin.methods.ownerSetMinBorrowedValue({
+        value: minBorrowedValue.toFixed(0),
+      }),
       options,
     );
   }
@@ -214,7 +212,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiry.methods.ownerSetExpiryRampTime(newExpiryRampTime.toFixed(0)),
+      this.contracts.expiry.methods.ownerSetExpiryRampTime(
+        newExpiryRampTime.toFixed(0),
+      ),
       options,
     );
   }

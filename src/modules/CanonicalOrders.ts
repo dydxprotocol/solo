@@ -8,8 +8,8 @@ import {
   argToBytes,
   bytesToHexString,
   hashString,
-  toBytes,
   stripHexPrefix,
+  toBytes,
 } from '../lib/BytesHelper';
 import {
   EIP712_DOMAIN_STRING,
@@ -17,16 +17,16 @@ import {
 } from '../lib/SignatureHelper';
 import {
   address,
+  CanonicalOrder,
+  CanonicalOrderState,
   ContractCallOptions,
   ContractConstantCallOptions,
-  CanonicalOrder,
-  SignedCanonicalOrder,
-  CanonicalOrderState,
-  LimitOrder,
-  SigningMethod,
-  Integer,
   Decimal,
+  Integer,
+  LimitOrder,
   MarketId,
+  SignedCanonicalOrder,
+  SigningMethod,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -62,44 +62,17 @@ const EIP712_CANCEL_ORDER_STRUCT = [
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
-  'CancelLimitOrder(' +
-  'string action,' +
-  'bytes32[] orderHashes' +
-  ')';
+  'CancelLimitOrder(' + 'string action,' + 'bytes32[] orderHashes' + ')';
 
 export class CanonicalOrders extends OrderSigner {
   private networkId: number;
 
   // ============ Constructor ============
 
-  constructor(
-    contracts: Contracts,
-    web3: Web3,
-    networkId: number,
-  ) {
+  constructor(contracts: Contracts, web3: Web3, networkId: number) {
     super(web3, contracts);
     this.networkId = networkId;
   }
-
-  protected stringifyOrder(
-    order: CanonicalOrder,
-  ): any {
-    const stringifiedOrder: any = {
-      ...order,
-      flags: this.getCanonicalOrderFlags(order),
-      limitPrice: this.toSolidity(order.limitPrice),
-      triggerPrice: this.toSolidity(order.triggerPrice),
-      limitFee: this.toSolidity(order.limitFee),
-    };
-    for (const [key, value] of Object.entries(stringifiedOrder)) {
-      if (!['string', 'boolean'].includes(typeof value)) {
-        stringifiedOrder[key] = toString(value as BigNumber);
-      }
-    }
-    return stringifiedOrder;
-  }
-
-  // ============ Getter Contract Methods ============
 
   /**
    * Gets the status and the current filled amount (in makerAmount) of all given orders.
@@ -114,13 +87,15 @@ export class CanonicalOrders extends OrderSigner {
       options,
     );
 
-    return states.map((state) => {
+    return states.map(state => {
       return {
         status: parseInt(state[0], 10),
         totalFilledAmount: new BigNumber(state[1]),
       };
     });
   }
+
+  // ============ Getter Contract Methods ============
 
   public async getTakerAddress(
     options?: ContractConstantCallOptions,
@@ -130,8 +105,6 @@ export class CanonicalOrders extends OrderSigner {
       options,
     );
   }
-
-  // ============ Setter Contract Methods ============
 
   public async setTakerAddress(
     taker: address,
@@ -143,7 +116,7 @@ export class CanonicalOrders extends OrderSigner {
     );
   }
 
-  // ============ Off-Chain Fee Calculation Methods ============
+  // ============ Setter Contract Methods ============
 
   public getFeeForOrder(
     baseMarketBN: Integer,
@@ -160,18 +133,26 @@ export class CanonicalOrders extends OrderSigner {
       case MarketId.ETH.toNumber():
       case MarketId.WETH.toNumber():
         return amount.lt(ETH_SMALL_ORDER_THRESHOLD)
-          ? (isTaker ? BIPS.times(50) : ZERO)
-          : (isTaker ? BIPS.times(15) : ZERO);
+          ? isTaker
+            ? BIPS.times(50)
+            : ZERO
+          : isTaker
+          ? BIPS.times(15)
+          : ZERO;
       case MarketId.DAI.toNumber():
         return amount.lt(DAI_SMALL_ORDER_THRESHOLD)
-          ? (isTaker ? BIPS.times(50) : ZERO)
-          : (isTaker ? BIPS.times(5) : ZERO);
+          ? isTaker
+            ? BIPS.times(50)
+            : ZERO
+          : isTaker
+          ? BIPS.times(5)
+          : ZERO;
       default:
         throw new Error(`Invalid baseMarketNumber ${baseMarketBN}`);
     }
   }
 
-  // ============ Off-Chain Collateralization Calculation Methods ============
+  // ============ Off-Chain Fee Calculation Methods ============
 
   /**
    * Returns the estimated account collateralization after making each of the orders provided.
@@ -202,15 +183,23 @@ export class CanonicalOrders extends OrderSigner {
           : makerAmount.times(order.limitPrice);
 
         // update running weis
-        const makerMarket = (order.isBuy ? order.quoteMarket : order.baseMarket).toNumber();
-        const takerMarket = (order.isBuy ? order.baseMarket : order.quoteMarket).toNumber();
+        const makerMarket = (order.isBuy
+          ? order.quoteMarket
+          : order.baseMarket
+        ).toNumber();
+        const takerMarket = (order.isBuy
+          ? order.baseMarket
+          : order.quoteMarket
+        ).toNumber();
         runningWeis[makerMarket] = runningWeis[makerMarket].minus(makerAmount);
         runningWeis[takerMarket] = runningWeis[takerMarket].plus(takerAmount);
       } else {
         // calculate maker and taker amounts
         const order = orders[i] as LimitOrder;
         const makerAmount = remainingMakerAmounts[i];
-        const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
+        const takerAmount = order.takerAmount
+          .times(makerAmount)
+          .div(order.makerAmount)
           .integerValue(BigNumber.ROUND_UP);
 
         // update running weis
@@ -241,22 +230,18 @@ export class CanonicalOrders extends OrderSigner {
     return supplyValue.div(borrowValue);
   }
 
-  // ============ Public Helper Functions ============
+  // ============ Off-Chain Collateralization Calculation Methods ============
 
-  public toSolidity(
-    price: BigNumber,
-  ): BigNumber {
+  public toSolidity(price: BigNumber): BigNumber {
     return price.shiftedBy(18).integerValue();
   }
 
-  // ============ Hashing Functions ============
+  // ============ Public Helper Functions ============
 
   /**
    * Returns the final signable EIP712 hash for approving an order.
    */
-  public getOrderHash(
-    order: CanonicalOrder,
-  ): string {
+  public getOrderHash(order: CanonicalOrder): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: this.getCanonicalOrderFlags(order) },
@@ -273,16 +258,19 @@ export class CanonicalOrders extends OrderSigner {
     return this.getEIP712Hash(structHash);
   }
 
+  // ============ Hashing Functions ============
+
   /**
    * Given some order hash, returns the hash of a cancel-order message.
    */
-  public orderHashToCancelOrderHash(
-    orderHash: string,
-  ): string {
+  public orderHashToCancelOrderHash(orderHash: string): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: hashString('Cancel Orders') },
-      { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }) },
+      {
+        t: 'bytes32',
+        v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }),
+      },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -296,11 +284,12 @@ export class CanonicalOrders extends OrderSigner {
       { t: 'bytes32', v: hashString('CanonicalOrders') },
       { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.canonicalOrders.options.address) },
+      {
+        t: 'bytes32',
+        v: addressToBytes32(this.contracts.canonicalOrders.options.address),
+      },
     );
   }
-
-  // ============ To-Bytes Functions ============
 
   public orderToBytes(
     order: CanonicalOrder | SignedCanonicalOrder,
@@ -328,21 +317,32 @@ export class CanonicalOrders extends OrderSigner {
 
     const orderAndTradeHex = Web3.utils.bytesToHex(orderBytes);
 
-    return !!((order as SignedCanonicalOrder).typedSignature)
-      ? `${orderAndTradeHex}${stripHexPrefix((order as SignedCanonicalOrder).typedSignature)}`
+    return !!(order as SignedCanonicalOrder).typedSignature
+      ? `${orderAndTradeHex}${stripHexPrefix(
+          (order as SignedCanonicalOrder).typedSignature,
+        )}`
       : orderAndTradeHex;
   }
 
-  // ============ Private Helper Functions ============
+  // ============ To-Bytes Functions ============
 
-  private getDomainData() {
-    return {
-      name: 'CanonicalOrders',
-      version: '1.1',
-      chainId: this.networkId,
-      verifyingContract: this.contracts.canonicalOrders.options.address,
+  protected stringifyOrder(order: CanonicalOrder): any {
+    const stringifiedOrder: any = {
+      ...order,
+      flags: this.getCanonicalOrderFlags(order),
+      limitPrice: this.toSolidity(order.limitPrice),
+      triggerPrice: this.toSolidity(order.triggerPrice),
+      limitFee: this.toSolidity(order.limitFee),
     };
+    for (const [key, value] of Object.entries(stringifiedOrder)) {
+      if (!['string', 'boolean'].includes(typeof value)) {
+        stringifiedOrder[key] = toString(value as BigNumber);
+      }
+    }
+    return stringifiedOrder;
   }
+
+  // ============ Private Helper Functions ============
 
   protected async ethSignTypedOrderInternal(
     order: CanonicalOrder,
@@ -393,24 +393,29 @@ export class CanonicalOrders extends OrderSigner {
         orderHashes: [orderHash],
       },
     };
-    return this.ethSignTypedDataInternal(
-      signer,
-      data,
-      signingMethod,
-    );
-  }
-
-  private getCanonicalOrderFlags(
-    order: CanonicalOrder,
-  ): string {
-    let booleanFlags = 0;
-    booleanFlags += order.limitFee.isNegative() ? 4 : 0;
-    booleanFlags += order.isDecreaseOnly ? 2 : 0;
-    booleanFlags += order.isBuy ? 1 : 0;
-    return `0x${bytesToHexString(toBytes(order.salt)).slice(-63)}${booleanFlags}`;
+    return this.ethSignTypedDataInternal(signer, data, signingMethod);
   }
 
   protected getContract() {
     return this.contracts.canonicalOrders;
+  }
+
+  private getDomainData() {
+    return {
+      name: 'CanonicalOrders',
+      version: '1.1',
+      chainId: this.networkId,
+      verifyingContract: this.contracts.canonicalOrders.options.address,
+    };
+  }
+
+  private getCanonicalOrderFlags(order: CanonicalOrder): string {
+    let booleanFlags = 0;
+    booleanFlags += order.limitFee.isNegative() ? 4 : 0;
+    booleanFlags += order.isDecreaseOnly ? 2 : 0;
+    booleanFlags += order.isBuy ? 1 : 0;
+    return `0x${bytesToHexString(toBytes(order.salt)).slice(
+      -63,
+    )}${booleanFlags}`;
   }
 }

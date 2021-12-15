@@ -2,13 +2,11 @@ import { Contracts } from '../lib/Contracts';
 import { MakerStablecoinPriceOracle } from './oracles/MakerStablecoinPriceOracle';
 
 export class Oracle {
-  private contracts: Contracts;
   public daiPriceOracle: MakerStablecoinPriceOracle;
   public saiPriceOracle: MakerStablecoinPriceOracle;
+  private contracts: Contracts;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.daiPriceOracle = new MakerStablecoinPriceOracle(
       this.contracts,

@@ -3,11 +3,7 @@ import BigNumber from 'bignumber.js';
 import { OrderSigner } from './OrderSigner';
 import { Contracts } from '../lib/Contracts';
 import { toString } from '../lib/Helpers';
-import {
-  addressToBytes32,
-  argToBytes,
-  hashString,
-} from '../lib/BytesHelper';
+import { addressToBytes32, argToBytes, hashString } from '../lib/BytesHelper';
 import {
   EIP712_DOMAIN_STRING,
   EIP712_DOMAIN_STRUCT,
@@ -16,10 +12,10 @@ import {
   ContractConstantCallOptions,
   Decimal,
   Integer,
-  StopLimitOrder,
-  SignedStopLimitOrder,
   LimitOrderState,
+  SignedStopLimitOrder,
   SigningMethod,
+  StopLimitOrder,
 } from '../../src/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -32,7 +28,7 @@ const EIP712_ORDER_STRUCT = [
   { type: 'address', name: 'takerAccountOwner' },
   { type: 'uint256', name: 'takerAccountNumber' },
   { type: 'uint256', name: 'triggerPrice' },
-  { type: 'bool',    name: 'decreaseOnly' },
+  { type: 'bool', name: 'decreaseOnly' },
   { type: 'uint256', name: 'expiration' },
   { type: 'uint256', name: 'salt' },
 ];
@@ -59,21 +55,14 @@ const EIP712_CANCEL_ORDER_STRUCT = [
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
-  'CancelLimitOrder(' +
-  'string action,' +
-  'bytes32[] orderHashes' +
-  ')';
+  'CancelLimitOrder(' + 'string action,' + 'bytes32[] orderHashes' + ')';
 
 export class StopLimitOrders extends OrderSigner {
   private networkId: number;
 
   // ============ Constructor ============
 
-  constructor(
-    contracts: Contracts,
-    web3: Web3,
-    networkId: number,
-  ) {
+  constructor(contracts: Contracts, web3: Web3, networkId: number) {
     super(web3, contracts);
     this.networkId = networkId;
   }
@@ -93,7 +82,7 @@ export class StopLimitOrders extends OrderSigner {
       options,
     );
 
-    return states.map((state) => {
+    return states.map(state => {
       return {
         status: parseInt(state[0], 10),
         totalMakerFilledAmount: new BigNumber(state[1]),
@@ -125,7 +114,9 @@ export class StopLimitOrders extends OrderSigner {
 
       // calculate maker and taker amounts
       const makerAmount = remainingMakerAmounts[i];
-      const takerAmount = order.takerAmount.times(makerAmount).div(order.makerAmount)
+      const takerAmount = order.takerAmount
+        .times(makerAmount)
+        .div(order.makerAmount)
         .integerValue(BigNumber.ROUND_UP);
 
       // update running weis
@@ -160,9 +151,7 @@ export class StopLimitOrders extends OrderSigner {
   /**
    * Returns the final signable EIP712 hash for approving an order.
    */
-  public getOrderHash(
-    order: StopLimitOrder,
-  ): string {
+  public getOrderHash(order: StopLimitOrder): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
       { t: 'uint256', v: toString(order.makerMarket) },
@@ -184,13 +173,14 @@ export class StopLimitOrders extends OrderSigner {
   /**
    * Given some order hash, returns the hash of a cancel-order message.
    */
-  public orderHashToCancelOrderHash(
-    orderHash: string,
-  ): string {
+  public orderHashToCancelOrderHash(orderHash: string): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_CANCEL_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: hashString('Cancel Orders') },
-      { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }) },
+      {
+        t: 'bytes32',
+        v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }),
+      },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -204,54 +194,26 @@ export class StopLimitOrders extends OrderSigner {
       { t: 'bytes32', v: hashString('StopLimitOrders') },
       { t: 'bytes32', v: hashString('1.1') },
       { t: 'uint256', v: toString(this.networkId) },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.stopLimitOrders.options.address) },
+      {
+        t: 'bytes32',
+        v: addressToBytes32(this.contracts.stopLimitOrders.options.address),
+      },
     );
   }
 
   // ============ To-Bytes Functions ============
 
-  public unsignedOrderToBytes(
-    order: StopLimitOrder,
-  ): string {
+  public unsignedOrderToBytes(order: StopLimitOrder): string {
     return Web3.utils.bytesToHex(this.orderToByteArray(order));
   }
 
-  public signedOrderToBytes(
-    order: SignedStopLimitOrder,
-  ): string {
+  public signedOrderToBytes(order: SignedStopLimitOrder): string {
     const signatureBytes = Web3.utils.hexToBytes(order.typedSignature);
     const byteArray = this.orderToByteArray(order).concat(signatureBytes);
     return Web3.utils.bytesToHex(byteArray);
   }
 
   // ============ Private Helper Functions ============
-
-  private orderToByteArray(
-    order: StopLimitOrder,
-  ): number[] {
-    return []
-      .concat(argToBytes(order.makerMarket))
-      .concat(argToBytes(order.takerMarket))
-      .concat(argToBytes(order.makerAmount))
-      .concat(argToBytes(order.takerAmount))
-      .concat(argToBytes(order.makerAccountOwner))
-      .concat(argToBytes(order.makerAccountNumber))
-      .concat(argToBytes(order.takerAccountOwner))
-      .concat(argToBytes(order.takerAccountNumber))
-      .concat(argToBytes(order.triggerPrice))
-      .concat(argToBytes(order.decreaseOnly))
-      .concat(argToBytes(order.expiration))
-      .concat(argToBytes(order.salt));
-  }
-
-  private getDomainData() {
-    return {
-      name: 'StopLimitOrders',
-      version: '1.1',
-      chainId: this.networkId,
-      verifyingContract: this.contracts.stopLimitOrders.options.address,
-    };
-  }
 
   protected async ethSignTypedOrderInternal(
     order: StopLimitOrder,
@@ -304,17 +266,11 @@ export class StopLimitOrders extends OrderSigner {
         orderHashes: [orderHash],
       },
     };
-    return this.ethSignTypedDataInternal(
-      signer,
-      data,
-      signingMethod,
-    );
+    return this.ethSignTypedDataInternal(signer, data, signingMethod);
   }
 
-  protected stringifyOrder(
-    order: StopLimitOrder,
-  ): any {
-    const stringifiedOrder = { ... order };
+  protected stringifyOrder(order: StopLimitOrder): any {
+    const stringifiedOrder = { ...order };
     for (const [key, value] of Object.entries(order)) {
       if (typeof value !== 'string' && typeof value !== 'boolean') {
         stringifiedOrder[key] = toString(value);
@@ -325,5 +281,30 @@ export class StopLimitOrders extends OrderSigner {
 
   protected getContract() {
     return this.contracts.stopLimitOrders;
+  }
+
+  private orderToByteArray(order: StopLimitOrder): number[] {
+    return []
+      .concat(argToBytes(order.makerMarket))
+      .concat(argToBytes(order.takerMarket))
+      .concat(argToBytes(order.makerAmount))
+      .concat(argToBytes(order.takerAmount))
+      .concat(argToBytes(order.makerAccountOwner))
+      .concat(argToBytes(order.makerAccountNumber))
+      .concat(argToBytes(order.takerAccountOwner))
+      .concat(argToBytes(order.takerAccountNumber))
+      .concat(argToBytes(order.triggerPrice))
+      .concat(argToBytes(order.decreaseOnly))
+      .concat(argToBytes(order.expiration))
+      .concat(argToBytes(order.salt));
+  }
+
+  private getDomainData() {
+    return {
+      name: 'StopLimitOrders',
+      version: '1.1',
+      chainId: this.networkId,
+      verifyingContract: this.contracts.stopLimitOrders.options.address,
+    };
   }
 }

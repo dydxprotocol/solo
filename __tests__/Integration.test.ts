@@ -23,7 +23,7 @@ describe('Integration', () => {
   let solo: TestSolo;
   let accounts: address[];
   let snapshotId: string;
-  let who:address;
+  let who: address;
 
   beforeAll(async () => {
     const r = await getSolo();
@@ -53,7 +53,10 @@ describe('Integration', () => {
       from: who,
     };
     const actualRate = stringToDecimal('1234');
-    await solo.testing.interestSetter.setInterestRate(solo.testing.tokenA.getAddress(), actualRate);
+    await solo.testing.interestSetter.setInterestRate(
+      solo.testing.tokenA.getAddress(),
+      actualRate,
+    );
 
     let result1: TxResult;
     let result2: TxResult;
@@ -63,8 +66,14 @@ describe('Integration', () => {
     let numTries = 0;
     do {
       await solo.testing.evm.stopMining();
-      const tx1 = solo.operation.initiate().deposit(blob).commit();
-      const tx2 = solo.operation.initiate().deposit(blob).commit();
+      const tx1 = solo.operation
+        .initiate()
+        .deposit(blob)
+        .commit();
+      const tx2 = solo.operation
+        .initiate()
+        .deposit(blob)
+        .commit();
       await solo.testing.evm.startMining();
       [result1, result2] = await Promise.all([tx1, tx2]);
       [block1, block2] = await Promise.all([
@@ -72,29 +81,22 @@ describe('Integration', () => {
         solo.web3.eth.getBlock(result2.blockNumber),
       ]);
       numTries += 1;
-    }
-    while (block1.timestamp !== block2.timestamp || numTries > 10);
+    } while (block1.timestamp !== block2.timestamp || numTries > 10);
 
     expect(block1.timestamp).toEqual(block2.timestamp);
-    expect(
-      result1.events.LogIndexUpdate.returnValues,
-    ).toEqual(
+    expect(result1.events.LogIndexUpdate.returnValues).toEqual(
       result2.events.LogIndexUpdate.returnValues,
     );
   });
 
   it('Deposit then Withdraw', async () => {
     await Promise.all([
-      solo.testing.tokenA.issueTo(
-        amount,
-        who,
-      ),
-      solo.testing.tokenA.setMaximumSoloAllowance(
-        who,
-      ),
+      solo.testing.tokenA.issueTo(amount, who),
+      solo.testing.tokenA.setMaximumSoloAllowance(who),
     ]);
 
-    const { gasUsed } = await solo.operation.initiate()
+    const { gasUsed } = await solo.operation
+      .initiate()
       .deposit({
         primaryAccountOwner: who,
         primaryAccountId: accountNumber,
@@ -183,7 +185,8 @@ describe('Integration', () => {
       ),
     ]);
 
-    await solo.operation.initiate()
+    await solo.operation
+      .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
@@ -212,20 +215,14 @@ describe('Integration', () => {
       })
       .commit();
 
-    const [
-      solidBalances,
-      liquidBalances,
-    ] = await Promise.all([
+    const [solidBalances, liquidBalances] = await Promise.all([
       solo.getters.getAccountBalances(solidOwner, solidNumber),
       solo.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
     solidBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
-      if (
-          i === heldMarket1.toNumber()
-          || i === heldMarket2.toNumber()
-      ) {
+      if (i === heldMarket1.toNumber() || i === heldMarket2.toNumber()) {
         expected = amount.times(premium).div(2);
       }
       expect(balance.par).toEqual(expected);
@@ -277,7 +274,8 @@ describe('Integration', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.operation.initiate()
+    const { gasUsed } = await solo.operation
+      .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
@@ -308,10 +306,7 @@ describe('Integration', () => {
 
     console.log(`\tLiquidate => Vaporize gas used: ${gasUsed}`);
 
-    const [
-      solidBalances,
-      liquidBalances,
-    ] = await Promise.all([
+    const [solidBalances, liquidBalances] = await Promise.all([
       solo.getters.getAccountBalances(solidOwner, solidNumber),
       solo.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
@@ -351,10 +346,7 @@ describe('Integration', () => {
         amount.times(collateralization),
         solo.contracts.soloMargin.options.address,
       ),
-      owedToken.issueTo(
-        amount,
-        solo.testing.exchangeWrapper.getAddress(),
-      ),
+      owedToken.issueTo(amount, solo.testing.exchangeWrapper.getAddress()),
 
       // set balances
       solo.testing.setAccountBalance(
@@ -383,7 +375,8 @@ describe('Integration', () => {
       desiredMakerAmount: amount,
     };
 
-    const { gasUsed } = await solo.operation.initiate()
+    const { gasUsed } = await solo.operation
+      .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
         primaryAccountId: solidNumber,
@@ -448,7 +441,9 @@ describe('Integration', () => {
     expect(ownerOwedTokenBalance).toEqual(INTEGERS.ZERO);
     expect(wrapperHeldTokenBalance).toEqual(INTEGERS.ZERO);
     expect(wrapperOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(soloHeldTokenBalance).toEqual(amount.times(collateralization.minus(premium)));
+    expect(soloHeldTokenBalance).toEqual(
+      amount.times(collateralization.minus(premium)),
+    );
     expect(soloOwedTokenBalance).toEqual(amount);
 
     solidBalances.forEach((balance, _) => {
@@ -478,22 +473,11 @@ describe('Integration', () => {
 
     await Promise.all([
       // issue tokens
-      owedToken.issueTo(
-        amount,
-        solo.contracts.soloMargin.options.address,
-      ),
-      heldToken.issueTo(
-        amount,
-        solo.testing.exchangeWrapper.getAddress(),
-      ),
+      owedToken.issueTo(amount, solo.contracts.soloMargin.options.address),
+      heldToken.issueTo(amount, solo.testing.exchangeWrapper.getAddress()),
 
       // set balances
-      solo.testing.setAccountBalance(
-        owner,
-        oneNumber,
-        heldMarket,
-        amount,
-      ),
+      solo.testing.setAccountBalance(owner, oneNumber, heldMarket, amount),
     ]);
 
     const testOrder: TestOrder = {
@@ -508,7 +492,8 @@ describe('Integration', () => {
       desiredMakerAmount: amount,
     };
 
-    const { gasUsed } = await solo.operation.initiate()
+    const { gasUsed } = await solo.operation
+      .initiate()
       .transfer({
         primaryAccountOwner: owner,
         primaryAccountId: oneNumber,
@@ -589,7 +574,10 @@ describe('Integration', () => {
       },
       from: who,
     };
-    const txResult = await solo.operation.initiate().deposit(blob).commit();
+    const txResult = await solo.operation
+      .initiate()
+      .deposit(blob)
+      .commit();
     const noLogs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
     const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: false });
     expect(noLogs.length).toEqual(0);

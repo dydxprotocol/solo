@@ -21,7 +21,10 @@ let accounts: address[];
 
 let defaultAccountSet = false;
 
-export const getSolo = async (): Promise<{ solo: TestSolo, accounts: address[] }> => {
+export const getSolo = async (): Promise<{
+  solo: TestSolo;
+  accounts: address[];
+}> => {
   if (!defaultAccountSet) {
     accounts = await solo.web3.eth.getAccounts();
     solo.setDefaultAccount(accounts[1]);

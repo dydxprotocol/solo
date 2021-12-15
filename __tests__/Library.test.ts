@@ -2,15 +2,15 @@ import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
 import { getSolo } from './helpers/Solo';
 import { TestSolo } from './modules/TestSolo';
-import { resetEVM, mineAvgBlock } from './helpers/EVM';
+import { mineAvgBlock, resetEVM } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stripHexPrefix } from '../src/lib/BytesHelper';
 import {
-  SIGNATURE_TYPES,
+  createTypedSignature,
   PREPEND_DEC,
   PREPEND_HEX,
-  createTypedSignature,
+  SIGNATURE_TYPES,
 } from '../src/lib/SignatureHelper';
 import { address } from '../src/types';
 
@@ -21,7 +21,6 @@ const amount = '100';
 const addr = ADDRESSES.TEST[0];
 
 describe('Library', () => {
-
   beforeAll(async () => {
     const r = await getSolo();
     solo = r.solo;
@@ -30,9 +29,12 @@ describe('Library', () => {
   });
 
   describe('TypedSignature', () => {
-    const hash = '0x1234567812345678123456781234567812345678123456781234567812345678';
-    const r = '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
-    const s = '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
+    const hash =
+      '0x1234567812345678123456781234567812345678123456781234567812345678';
+    const r =
+      '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
+    const s =
+      '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
     const v = '0x1b';
     const signature = `${r}${stripHexPrefix(s)}${stripHexPrefix(v)}`;
 
@@ -65,7 +67,12 @@ describe('Library', () => {
       });
 
       it('succeeds for no prepend', async () => {
-        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: hash });
+        const signer = solo.web3.eth.accounts.recover({
+          r,
+          s,
+          v,
+          messageHash: hash,
+        });
         const recoveredAddress = await recover(
           hash,
           createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND),
@@ -78,7 +85,12 @@ describe('Library', () => {
           { t: 'string', v: PREPEND_DEC },
           { t: 'bytes32', v: hash },
         );
-        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: decHash });
+        const signer = solo.web3.eth.accounts.recover({
+          r,
+          s,
+          v,
+          messageHash: decHash,
+        });
         const recoveredAddress = await recover(
           hash,
           createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL),
@@ -91,7 +103,12 @@ describe('Library', () => {
           { t: 'string', v: PREPEND_HEX },
           { t: 'bytes32', v: hash },
         );
-        const signer = solo.web3.eth.accounts.recover({ r, s, v, messageHash: hexHash });
+        const signer = solo.web3.eth.accounts.recover({
+          r,
+          s,
+          v,
+          messageHash: hexHash,
+        });
         const recoveredAddress = await recover(
           hash,
           createTypedSignature(signature, SIGNATURE_TYPES.HEXADECIMAL),
@@ -122,15 +139,18 @@ describe('Library', () => {
 
     it('getPartial', async () => {
       const results = await Promise.all(
-        tests.map(
-          args => solo.contracts.testLib.methods.MathGetPartial(
-            args[0], args[1], args[2],
-          ).call(),
+        tests.map(args =>
+          solo.contracts.testLib.methods
+            .MathGetPartial(args[0], args[1], args[2])
+            .call(),
         ),
       );
       expect(results).toEqual(
-        tests.map(
-          args => new BN_DOWN(args[0]).times(args[1]).div(args[2]).toFixed(0),
+        tests.map(args =>
+          new BN_DOWN(args[0])
+            .times(args[1])
+            .div(args[2])
+            .toFixed(0),
         ),
       );
     });
@@ -146,15 +166,18 @@ describe('Library', () => {
 
     it('getPartialRoundUp', async () => {
       const results = await Promise.all(
-        tests.map(
-          args => solo.contracts.testLib.methods.MathGetPartialRoundUp(
-            args[0], args[1], args[2],
-          ).call(),
+        tests.map(args =>
+          solo.contracts.testLib.methods
+            .MathGetPartialRoundUp(args[0], args[1], args[2])
+            .call(),
         ),
       );
       expect(results).toEqual(
-        tests.map(
-          args => new BN_UP(args[0]).times(args[1]).div(args[2]).toFixed(0),
+        tests.map(args =>
+          new BN_UP(args[0])
+            .times(args[1])
+            .div(args[2])
+            .toFixed(0),
         ),
       );
     });
@@ -164,47 +187,52 @@ describe('Library', () => {
         solo.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call(),
       );
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartialRoundUp(large, large, 1).call(),
+        solo.contracts.testLib.methods
+          .MathGetPartialRoundUp(large, large, 1)
+          .call(),
       );
     });
 
     it('to128', async () => {
       const large = '340282366920938463463374607431768211456'; // 2^128
       const small = '340282366920938463463374607431768211455'; // 2^128 - 1
-      const result = await solo.contracts.testLib.methods.MathTo128(small).call();
+      const result = await solo.contracts.testLib.methods
+        .MathTo128(small)
+        .call();
       expect(result).toEqual(small);
-      await expectThrow(
-        solo.contracts.testLib.methods.MathTo128(large).call(),
-      );
+      await expectThrow(solo.contracts.testLib.methods.MathTo128(large).call());
     });
 
     it('to96', async () => {
       const large = '79228162514264337593543950336'; // 2^96
       const small = '79228162514264337593543950335'; // 2^96 - 1
-      const result = await solo.contracts.testLib.methods.MathTo96(small).call();
+      const result = await solo.contracts.testLib.methods
+        .MathTo96(small)
+        .call();
       expect(result).toEqual(small);
-      await expectThrow(
-        solo.contracts.testLib.methods.MathTo96(large).call(),
-      );
+      await expectThrow(solo.contracts.testLib.methods.MathTo96(large).call());
     });
 
     it('to32', async () => {
       const large = '4294967296'; // 2^32
       const small = '4294967295'; // 2^32 - 1
-      const result = await solo.contracts.testLib.methods.MathTo32(small).call();
+      const result = await solo.contracts.testLib.methods
+        .MathTo32(small)
+        .call();
       expect(result).toEqual(small);
-      await expectThrow(
-        solo.contracts.testLib.methods.MathTo32(large).call(),
-      );
+      await expectThrow(solo.contracts.testLib.methods.MathTo32(large).call());
     });
   });
 
   describe('Require', () => {
     const bytes32Hex = `0x${'0123456789abcdef'.repeat(4)}`;
-    const emptyReason = '0x0000000000000000000000000000000000000000000000000000000000000000';
-    const reason1 = '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
+    const emptyReason =
+      '0x0000000000000000000000000000000000000000000000000000000000000000';
+    const reason1 =
+      '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
     const reasonString1 = 'This Is the Text Reason.01234567';
-    const reason2 = '0x53686f727420526561736f6e2030393800000000000000000000000000000000';
+    const reason2 =
+      '0x53686f727420526561736f6e2030393800000000000000000000000000000000';
     const reasonString2 = 'Short Reason 098';
     const arg1 = '0';
     const arg2 = '1234567890987654321';
@@ -212,95 +240,71 @@ describe('Library', () => {
 
     it('that (emptyString)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat1(
-          emptyReason,
-          arg1,
-        ).call(),
+        solo.contracts.testLib.methods.RequireThat1(emptyReason, arg1).call(),
         `TestLib:  <${arg1}>`,
       );
     });
 
     it('that (0 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat0(
-          reason1,
-        ).call(),
+        solo.contracts.testLib.methods.RequireThat0(reason1).call(),
         `TestLib: ${reasonString1}`,
       );
     });
 
     it('that (1 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat1(
-          reason2,
-          arg1,
-        ).call(),
+        solo.contracts.testLib.methods.RequireThat1(reason2, arg1).call(),
         `TestLib: ${reasonString2} <${arg1}>`,
       );
     });
 
     it('that (2 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat2(
-          reason1,
-          arg2,
-          arg3,
-        ).call(),
+        solo.contracts.testLib.methods.RequireThat2(reason1, arg2, arg3).call(),
         `TestLib: ${reasonString1} <${arg2}, ${arg3}>`,
       );
     });
 
     it('that (address arg)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatA0(
-          reason2,
-          addr,
-        ).call(),
+        solo.contracts.testLib.methods.RequireThatA0(reason2, addr).call(),
         `TestLib: ${reasonString2} <${addr}>`,
       );
     });
 
     it('that (1 address, 1 number)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatA1(
-          reason2,
-          addr,
-          arg1,
-        ).call(),
+        solo.contracts.testLib.methods
+          .RequireThatA1(reason2, addr, arg1)
+          .call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}>`,
       );
     });
 
     it('that (1 address, 2 numbers)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatA2(
-          reason2,
-          addr,
-          arg1,
-          arg3,
-        ).call(),
+        solo.contracts.testLib.methods
+          .RequireThatA2(reason2, addr, arg1, arg3)
+          .call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}, ${arg3}>`,
       );
     });
 
     it('that (bytes32 arg)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatB0(
-          reason1,
-          bytes32Hex,
-        ).call(),
+        solo.contracts.testLib.methods
+          .RequireThatB0(reason1, bytes32Hex)
+          .call(),
         `TestLib: ${reasonString1} <${bytes32Hex}>`,
       );
     });
 
     it('that (1 bytes32, 2 numbers)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatB2(
-          reason2,
-          bytes32Hex,
-          arg1,
-          arg3,
-        ).call(),
+        solo.contracts.testLib.methods
+          .RequireThatB2(reason2, bytes32Hex, arg1, arg3)
+          .call(),
         `TestLib: ${reasonString2} <${bytes32Hex}, ${arg1}, ${arg3}>`,
       );
     });
@@ -308,23 +312,21 @@ describe('Library', () => {
 
   describe('Time', () => {
     it('currentTime', async () => {
-      const [
-        block1,
-        time1,
-      ] = await Promise.all([
+      const [block1, time1] = await Promise.all([
         solo.web3.eth.getBlock('latest'),
         solo.contracts.testLib.methods.TimeCurrentTime().call(),
       ]);
       await mineAvgBlock();
-      const [
-        block2,
-        time2,
-      ] = await Promise.all([
+      const [block2, time2] = await Promise.all([
         solo.web3.eth.getBlock('latest'),
         solo.contracts.testLib.methods.TimeCurrentTime().call(),
       ]);
-      expect(new BigNumber(time1).toNumber()).toBeGreaterThanOrEqual(block1.timestamp);
-      expect(new BigNumber(time2).toNumber()).toBeGreaterThanOrEqual(block2.timestamp);
+      expect(new BigNumber(time1).toNumber()).toBeGreaterThanOrEqual(
+        block1.timestamp,
+      );
+      expect(new BigNumber(time2).toNumber()).toBeGreaterThanOrEqual(
+        block2.timestamp,
+      );
       expect(block2.timestamp).toBeGreaterThanOrEqual(block1.timestamp + 15);
     });
   });
@@ -344,44 +346,60 @@ describe('Library', () => {
     });
 
     it('balanceOf (normal)', async () => {
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(token, addr)
+        .call();
       expect(result).toEqual(zero);
       await solo.contracts.callContractFunction(
         solo.contracts.tokenA.methods.issueTo(addr, amount),
       );
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(token, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
     it('balanceOf (omise)', async () => {
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(omise, addr)
+        .call();
       expect(result).toEqual(zero);
       await solo.contracts.callContractFunction(
         solo.contracts.omiseToken.methods.issueTo(addr, amount),
       );
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(omise, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
     it('allowance (normal)', async () => {
-      result = await solo.contracts.testLib.methods.TokenAllowance(token, owner, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(token, owner, addr)
+        .call();
       expect(result).toEqual(zero);
       await solo.contracts.callContractFunction(
         solo.contracts.tokenA.methods.approve(addr, amount),
         { from: owner },
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(token, owner, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(token, owner, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
     it('allowance (omise)', async () => {
-      result = await solo.contracts.testLib.methods.TokenAllowance(omise, owner, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(omise, owner, addr)
+        .call();
       expect(result).toEqual(zero);
       await solo.contracts.callContractFunction(
         solo.contracts.omiseToken.methods.approve(addr, amount),
         { from: owner },
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(omise, owner, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(omise, owner, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
@@ -389,7 +407,9 @@ describe('Library', () => {
       await solo.contracts.callContractFunction(
         solo.contracts.testLib.methods.TokenApprove(token, addr, amount),
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(token, libAddr, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(token, libAddr, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
@@ -406,7 +426,9 @@ describe('Library', () => {
       await solo.contracts.callContractFunction(
         solo.contracts.testLib.methods.TokenApprove(omise, addr, amount),
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(omise, libAddr, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(omise, libAddr, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
@@ -414,7 +436,9 @@ describe('Library', () => {
       await solo.contracts.callContractFunction(
         solo.contracts.testLib.methods.TokenApproveMax(token, addr),
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(token, libAddr, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(token, libAddr, addr)
+        .call();
       expect(result).toEqual(INTEGERS.ONES_255.toFixed(0));
     });
 
@@ -431,7 +455,9 @@ describe('Library', () => {
       await solo.contracts.callContractFunction(
         solo.contracts.testLib.methods.TokenApproveMax(omise, addr),
       );
-      result = await solo.contracts.testLib.methods.TokenAllowance(omise, libAddr, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenAllowance(omise, libAddr, addr)
+        .call();
       expect(result).toEqual(INTEGERS.ONES_255.toFixed(0));
     });
 
@@ -440,7 +466,9 @@ describe('Library', () => {
         solo.contracts.tokenA.methods.issueTo(libAddr, amount),
       );
       await solo.contracts.testLib.methods.TokenTransfer(token, addr, amount);
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(token, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
@@ -449,14 +477,20 @@ describe('Library', () => {
         solo.contracts.omiseToken.methods.issueTo(libAddr, amount),
       );
       await solo.contracts.testLib.methods.TokenTransfer(omise, addr, amount);
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(omise, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
     it('transfer (error)', async () => {
       await expectThrow(
         solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenTransfer(errorToken, addr, amount),
+          solo.contracts.testLib.methods.TokenTransfer(
+            errorToken,
+            addr,
+            amount,
+          ),
         ),
         'Token: Transfer failed',
       );
@@ -472,15 +506,27 @@ describe('Library', () => {
           { from: owner },
         ),
       ]);
-      await solo.contracts.testLib.methods.TokenTransferFrom(token, owner, addr, amount);
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
+      await solo.contracts.testLib.methods.TokenTransferFrom(
+        token,
+        owner,
+        addr,
+        amount,
+      );
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(token, addr)
+        .call();
       expect(result).toEqual(amount);
     });
 
     it('transferFrom (error)', async () => {
       await expectThrow(
         solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenTransferFrom(errorToken, owner, addr, amount),
+          solo.contracts.testLib.methods.TokenTransferFrom(
+            errorToken,
+            owner,
+            addr,
+            amount,
+          ),
         ),
         'Token: TransferFrom failed',
       );
@@ -496,8 +542,15 @@ describe('Library', () => {
           { from: owner },
         ),
       ]);
-      await solo.contracts.testLib.methods.TokenTransferFrom(omise, owner, addr, amount);
-      result = await solo.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
+      await solo.contracts.testLib.methods.TokenTransferFrom(
+        omise,
+        owner,
+        addr,
+        amount,
+      );
+      result = await solo.contracts.testLib.methods
+        .TokenBalanceOf(omise, addr)
+        .call();
       expect(result).toEqual(amount);
     });
   });
@@ -531,7 +584,16 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParSub(negLo, posZo).call(),
         solo.contracts.testLib.methods.TypesParSub(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        posLo,
+        posZo,
+        posZo,
+        negZo,
+        negZo,
+        negLo,
+        negLo,
+      ]);
 
       // sub positive
       results = await Promise.all([
@@ -542,7 +604,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParSub(posHi, posLo).call(),
         solo.contracts.testLib.methods.TypesParSub(negLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
+      expect(results.map(parse)).toEqual([
+        negLo,
+        posZo,
+        negLo,
+        negLo,
+        posLo,
+        negHi,
+      ]);
 
       // sub negative
       results = await Promise.all([
@@ -553,7 +622,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParSub(negHi, negLo).call(),
         solo.contracts.testLib.methods.TypesParSub(posLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        negZo,
+        posLo,
+        posLo,
+        negLo,
+        posHi,
+      ]);
     });
 
     it('parAdd', async () => {
@@ -569,7 +645,16 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParAdd(negLo, posZo).call(),
         solo.contracts.testLib.methods.TypesParAdd(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        posLo,
+        posZo,
+        posZo,
+        negZo,
+        negZo,
+        negLo,
+        negLo,
+      ]);
 
       // add positive
       results = await Promise.all([
@@ -580,7 +665,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParAdd(negHi, posLo).call(),
         solo.contracts.testLib.methods.TypesParAdd(posLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        negZo,
+        posLo,
+        posLo,
+        negLo,
+        posHi,
+      ]);
 
       // add negative
       results = await Promise.all([
@@ -591,7 +683,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParAdd(posHi, negLo).call(),
         solo.contracts.testLib.methods.TypesParAdd(negLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
+      expect(results.map(parse)).toEqual([
+        negLo,
+        posZo,
+        negLo,
+        negLo,
+        posLo,
+        negHi,
+      ]);
     });
 
     it('parEquals', async () => {
@@ -626,7 +725,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesParNegative(negLo).call(),
         solo.contracts.testLib.methods.TypesParNegative(negHi).call(),
       ]);
-      expect(results.map(parse)).toEqual([negHi, negLo, negZo, posZo, posLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        negHi,
+        negLo,
+        negZo,
+        posZo,
+        posLo,
+        posHi,
+      ]);
     });
 
     it('parIsNegative', async () => {
@@ -684,7 +790,16 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiSub(negLo, posZo).call(),
         solo.contracts.testLib.methods.TypesWeiSub(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        posLo,
+        posZo,
+        posZo,
+        negZo,
+        negZo,
+        negLo,
+        negLo,
+      ]);
 
       // sub positive
       results = await Promise.all([
@@ -695,7 +810,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiSub(posHi, posLo).call(),
         solo.contracts.testLib.methods.TypesWeiSub(negLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
+      expect(results.map(parse)).toEqual([
+        negLo,
+        posZo,
+        negLo,
+        negLo,
+        posLo,
+        negHi,
+      ]);
 
       // sub negative
       results = await Promise.all([
@@ -706,7 +828,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiSub(negHi, negLo).call(),
         solo.contracts.testLib.methods.TypesWeiSub(posLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        negZo,
+        posLo,
+        posLo,
+        negLo,
+        posHi,
+      ]);
     });
 
     it('weiAdd', async () => {
@@ -722,7 +851,16 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiAdd(negLo, posZo).call(),
         solo.contracts.testLib.methods.TypesWeiAdd(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        posLo,
+        posZo,
+        posZo,
+        negZo,
+        negZo,
+        negLo,
+        negLo,
+      ]);
 
       // add positive
       results = await Promise.all([
@@ -733,7 +871,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiAdd(negHi, posLo).call(),
         solo.contracts.testLib.methods.TypesWeiAdd(posLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        posLo,
+        negZo,
+        posLo,
+        posLo,
+        negLo,
+        posHi,
+      ]);
 
       // add negative
       results = await Promise.all([
@@ -744,7 +889,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiAdd(posHi, negLo).call(),
         solo.contracts.testLib.methods.TypesWeiAdd(negLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
+      expect(results.map(parse)).toEqual([
+        negLo,
+        posZo,
+        negLo,
+        negLo,
+        posLo,
+        negHi,
+      ]);
     });
 
     it('weiEquals', async () => {
@@ -779,7 +931,14 @@ describe('Library', () => {
         solo.contracts.testLib.methods.TypesWeiNegative(negLo).call(),
         solo.contracts.testLib.methods.TypesWeiNegative(negHi).call(),
       ]);
-      expect(results.map(parse)).toEqual([negHi, negLo, negZo, posZo, posLo, posHi]);
+      expect(results.map(parse)).toEqual([
+        negHi,
+        negLo,
+        negZo,
+        posZo,
+        posLo,
+        posHi,
+      ]);
     });
 
     it('weiIsNegative', async () => {

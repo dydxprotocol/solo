@@ -6,8 +6,8 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
-  address,
   AccountStatus,
+  address,
   AmountDenomination,
   AmountReference,
   Deposit,
@@ -64,7 +64,12 @@ describe('Deposit', () => {
     await setupMarkets(solo, accounts);
     await Promise.all([
       solo.testing.setMarketIndex(market, defaultIndex),
-      solo.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
+      solo.testing.setAccountBalance(
+        who,
+        accountNumber,
+        collateralMarket,
+        collateralAmount,
+      ),
       solo.testing.tokenA.setMaximumSoloAllowance(who),
     ]);
     snapshotId = await snapshot();
@@ -95,10 +100,7 @@ describe('Deposit', () => {
       { from: operator },
     );
 
-    const [
-      marketIndex,
-      collateralIndex,
-    ] = await Promise.all([
+    const [marketIndex, collateralIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(market),
       solo.getters.getMarketCachedIndex(collateralMarket),
       expectBalances(par.times(2), wei.times(2), zero, wei),
@@ -126,7 +128,10 @@ describe('Deposit', () => {
     expect(depositLog.args.accountOwner).toEqual(who);
     expect(depositLog.args.accountNumber).toEqual(accountNumber);
     expect(depositLog.args.market).toEqual(market);
-    expect(depositLog.args.update).toEqual({ newPar: par.times(2), deltaWei: wei });
+    expect(depositLog.args.update).toEqual({
+      newPar: par.times(2),
+      deltaWei: wei,
+    });
     expect(depositLog.args.from).toEqual(operator);
   });
 
@@ -150,18 +155,12 @@ describe('Deposit', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setAccountBalance(zero),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(zero), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par, wei, zero, wei);
 
       // starting positive
-      await Promise.all([
-        setAccountBalance(par),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(par), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par.times(2), wei.times(2), zero, wei);
 
@@ -174,10 +173,7 @@ describe('Deposit', () => {
       await expectBalances(negPar, negWei, zero, wei);
 
       // starting negative (=par)
-      await Promise.all([
-        setAccountBalance(negPar),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(negPar), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(zero, zero, zero, wei);
 
@@ -283,10 +279,7 @@ describe('Deposit', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setAccountBalance(zero),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(zero), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par, wei, zero, wei);
 
@@ -337,19 +330,15 @@ describe('Deposit', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await setAccountBalance(zero),
-      await expectDepositOkay(globs[i]);
+      await setAccountBalance(zero), await expectDepositOkay(globs[i]);
       await expectBalances(zero, zero, zero, zero);
 
       // starting positive
       await setAccountBalance(par),
-      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+        await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
 
       // starting negative
-      await Promise.all([
-        setAccountBalance(negPar),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(negPar), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(zero, zero, zero, wei);
     }
@@ -403,7 +392,9 @@ describe('Deposit', () => {
 
   it('Succeeds for lending in par', async () => {
     const supplyIndex = new BigNumber('3.99');
-    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
+    const expectedWei = par
+      .times(supplyIndex)
+      .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
       solo.testing.setMarketIndex(market, {
@@ -424,7 +415,9 @@ describe('Deposit', () => {
 
   it('Succeeds for lending in wei', async () => {
     const supplyIndex = new BigNumber('3.99');
-    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
+    const expectedWei = par
+      .times(supplyIndex)
+      .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
       solo.testing.setMarketIndex(market, {
@@ -490,7 +483,11 @@ describe('Deposit', () => {
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       issueTokensToUser(wei),
-      solo.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        who,
+        accountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
     await expectDepositOkay({});
     const status = await solo.getters.getAccountStatus(who, accountNumber);
@@ -515,11 +512,9 @@ describe('Deposit', () => {
 
   it('Fails for non-operator', async () => {
     await issueTokensToUser(wei);
-    await expectDepositRevert(
-      {},
-      'Storage: Unpermissioned operator',
-      { from: operator },
-    );
+    await expectDepositRevert({}, 'Storage: Unpermissioned operator', {
+      from: operator,
+    });
   });
 
   it('Fails for from random address', async () => {
@@ -585,12 +580,12 @@ async function expectBalances(
   cachedWeis.soloWei = soloTokenBalance;
 }
 
-async function expectDepositOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectDepositOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().deposit(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .deposit(combinedGlob)
+    .commit(options);
 }
 
 async function expectDepositRevert(

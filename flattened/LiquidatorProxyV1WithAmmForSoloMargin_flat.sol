@@ -2225,7 +2225,7 @@ interface IUniswapV2Pair {
     function initialize(address _token0, address _token1, address _transferProxy) external;
 }
 
-// File: contracts/external/lib/UniswapV2Library.sol
+// File: contracts/external/lib/DolomiteAmmLibrary.sol
 
 pragma solidity >=0.5.0;
 

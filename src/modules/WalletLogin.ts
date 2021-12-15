@@ -1,20 +1,14 @@
 import Web3 from 'web3';
 import { Signer } from './Signer';
-import {
-  SigningMethod,
-  address,
-} from '../../src/types';
+import { address, SigningMethod } from '../../src/types';
 import { toString } from '../lib/Helpers';
+import { addressesAreEqual, hashString } from '../lib/BytesHelper';
 import {
-  hashString,
-  addressesAreEqual,
-} from '../lib/BytesHelper';
-import {
-  SIGNATURE_TYPES,
-  EIP712_DOMAIN_STRING_NO_CONTRACT,
-  EIP712_DOMAIN_STRUCT_NO_CONTRACT,
   createTypedSignature,
   ecRecoverTypedSignature,
+  EIP712_DOMAIN_STRING_NO_CONTRACT,
+  EIP712_DOMAIN_STRUCT_NO_CONTRACT,
+  SIGNATURE_TYPES,
 } from '../lib/SignatureHelper';
 
 const EIP712_WALLET_LOGIN_STRUCT = [
@@ -43,10 +37,8 @@ export class WalletLogin extends Signer {
     this.domain = domain;
     this.networkId = networkId;
     this.version = version;
-    this.EIP712_WALLET_LOGIN_STRUCT_STRING = 'dYdX(' +
-      'string action,' +
-      'string expiration' +
-      ')';
+    this.EIP712_WALLET_LOGIN_STRUCT_STRING =
+      'dYdX(' + 'string action,' + 'string expiration' + ')';
   }
 
   public async signLogin(
@@ -60,11 +52,17 @@ export class WalletLogin extends Signer {
       case SigningMethod.Compatibility: {
         const hash = this.getWalletLoginHash(expiration);
         const rawSignature = await this.web3.eth.sign(hash, signer);
-        const hashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
+        const hashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.DECIMAL,
+        );
         if (signingMethod === SigningMethod.Hash) {
           return hashSig;
         }
-        const unsafeHashSig = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
+        const unsafeHashSig = createTypedSignature(
+          rawSignature,
+          SIGNATURE_TYPES.NO_PREPEND,
+        );
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
@@ -90,11 +88,7 @@ export class WalletLogin extends Signer {
             expiration: expiration.toUTCString(),
           },
         };
-        return this.ethSignTypedDataInternal(
-          signer,
-          data,
-          signingMethod,
-        );
+        return this.ethSignTypedDataInternal(signer, data, signingMethod);
       }
 
       default:
@@ -109,7 +103,7 @@ export class WalletLogin extends Signer {
   ): boolean {
     const hash = this.getWalletLoginHash(expiration);
     const signer = ecRecoverTypedSignature(hash, typedSignature);
-    return (addressesAreEqual(signer, expectedSigner) && expiration > new Date());
+    return addressesAreEqual(signer, expectedSigner) && expiration > new Date();
   }
 
   public getDomainHash(): string {
@@ -121,9 +115,7 @@ export class WalletLogin extends Signer {
     );
   }
 
-  public getWalletLoginHash(
-    expiration: Date,
-  ): string {
+  public getWalletLoginHash(expiration: Date): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(this.EIP712_WALLET_LOGIN_STRUCT_STRING) },
       { t: 'bytes32', v: hashString('Login') },

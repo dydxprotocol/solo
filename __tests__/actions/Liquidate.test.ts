@@ -10,8 +10,8 @@ import {
   address,
   AmountDenomination,
   AmountReference,
-  Liquidate,
   Integer,
+  Liquidate,
 } from '../../src/types';
 
 let liquidOwner: address;
@@ -73,9 +73,24 @@ describe('Liquidate', () => {
     await Promise.all([
       solo.testing.setMarketIndex(owedMarket, defaultIndex),
       solo.testing.setMarketIndex(heldMarket, defaultIndex),
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, owedMarket, negPar),
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, collatPar),
-      solo.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        owedMarket,
+        negPar,
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      ),
+      solo.testing.setAccountBalance(
+        solidOwner,
+        solidAccountNumber,
+        owedMarket,
+        par,
+      ),
     ]);
     snapshotId = await snapshot();
   });
@@ -95,14 +110,8 @@ describe('Liquidate', () => {
 
   it('Succeeds for events', async () => {
     await solo.permissions.approveOperator(operator, { from: solidOwner });
-    const txResult = await expectLiquidateOkay(
-      {},
-      { from: operator },
-    );
-    const [
-      heldIndex,
-      owedIndex,
-    ] = await Promise.all([
+    const txResult = await expectLiquidateOkay({}, { from: operator });
+    const [heldIndex, owedIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(heldMarket),
       solo.getters.getMarketCachedIndex(owedMarket),
       expectSolidPars(par.times(premium), zero),
@@ -184,7 +193,12 @@ describe('Liquidate', () => {
 
   it('Succeeds when bound by heldToken', async () => {
     const amount = par.times(premium).div(2);
-    await solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount);
+    await solo.testing.setAccountBalance(
+      liquidOwner,
+      liquidAccountNumber,
+      heldMarket,
+      amount,
+    );
     await expectLiquidateOkay({});
 
     await Promise.all([
@@ -194,7 +208,12 @@ describe('Liquidate', () => {
   });
 
   it('Succeeds for solid account that takes on a negative balance', async () => {
-    await solo.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par.div(2));
+    await solo.testing.setAccountBalance(
+      solidOwner,
+      solidAccountNumber,
+      owedMarket,
+      par.div(2),
+    );
     await expectLiquidateOkay({});
     await Promise.all([
       expectSolidPars(par.times(premium), negPar.div(2)),
@@ -205,10 +224,20 @@ describe('Liquidate', () => {
   it('Succeeds for liquidating twice', async () => {
     const amount = par.times(2);
     await Promise.all([
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount),
-      solo.testing.setAccountStatus(liquidOwner, liquidAccountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        heldMarket,
+        amount,
+      ),
+      solo.testing.setAccountStatus(
+        liquidOwner,
+        liquidAccountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
-    await await solo.operation.initiate()
+    await await solo.operation
+      .initiate()
       .liquidate({
         ...defaultGlob,
         amount: {
@@ -228,8 +257,17 @@ describe('Liquidate', () => {
   it('Succeeds for account already marked with liquidating flag', async () => {
     const amount = par.times(2);
     await Promise.all([
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount),
-      solo.testing.setAccountStatus(liquidOwner, liquidAccountNumber, AccountStatus.Liquidating),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        heldMarket,
+        amount,
+      ),
+      solo.testing.setAccountStatus(
+        liquidOwner,
+        liquidAccountNumber,
+        AccountStatus.Liquidating,
+      ),
     ]);
     await expectLiquidateOkay({});
     await Promise.all([
@@ -239,9 +277,16 @@ describe('Liquidate', () => {
   });
 
   it('Succeeds and sets status to Normal', async () => {
-    await solo.testing.setAccountStatus(solidOwner, solidAccountNumber, AccountStatus.Liquidating);
+    await solo.testing.setAccountStatus(
+      solidOwner,
+      solidAccountNumber,
+      AccountStatus.Liquidating,
+    );
     await expectLiquidateOkay({});
-    const status = await solo.getters.getAccountStatus(solidOwner, solidAccountNumber);
+    const status = await solo.getters.getAccountStatus(
+      solidOwner,
+      solidAccountNumber,
+    );
     expect(status).toEqual(AccountStatus.Normal);
   });
 
@@ -291,16 +336,19 @@ describe('Liquidate', () => {
 
   it('Fails for over-collateralized account', async () => {
     const amount = par.times(2);
-    await solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount);
+    await solo.testing.setAccountBalance(
+      liquidOwner,
+      liquidAccountNumber,
+      heldMarket,
+      amount,
+    );
     await expectLiquidateRevert({}, 'OperationImpl: Unliquidatable account');
   });
 
   it('Fails for non-global operator', async () => {
-    await expectLiquidateRevert(
-      {},
-      'Storage: Unpermissioned global operator',
-      { from: nonOperator },
-    );
+    await expectLiquidateRevert({}, 'Storage: Unpermissioned global operator', {
+      from: nonOperator,
+    });
   });
 
   it('Fails if liquidating after account used as primary', async () => {
@@ -342,7 +390,12 @@ describe('Liquidate', () => {
   });
 
   it('Fails for negative collateral', async () => {
-    await solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, negPar);
+    await solo.testing.setAccountBalance(
+      liquidOwner,
+      liquidAccountNumber,
+      heldMarket,
+      negPar,
+    );
     await expectLiquidateRevert(
       {},
       'OperationImpl: Collateral cannot be negative',
@@ -351,8 +404,18 @@ describe('Liquidate', () => {
 
   it('Fails for paying back market that is already positive', async () => {
     await Promise.all([
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, owedMarket, collatPar),
-      solo.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, negPar),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        owedMarket,
+        collatPar,
+      ),
+      solo.testing.setAccountBalance(
+        liquidOwner,
+        liquidAccountNumber,
+        heldMarket,
+        negPar,
+      ),
     ]);
     await expectLiquidateRevert(
       {
@@ -389,16 +452,19 @@ describe('Liquidate', () => {
 // ============ Helper Functions ============
 
 async function expectLiquidationFlagSet() {
-  const status = await solo.getters.getAccountStatus(liquidOwner, liquidAccountNumber);
+  const status = await solo.getters.getAccountStatus(
+    liquidOwner,
+    liquidAccountNumber,
+  );
   expect(status).toEqual(AccountStatus.Liquidating);
 }
 
-async function expectLiquidateOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectLiquidateOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  const txResult = await solo.operation.initiate().liquidate(combinedGlob).commit(options);
+  const txResult = await solo.operation
+    .initiate()
+    .liquidate(combinedGlob)
+    .commit(options);
   await expectLiquidationFlagSet();
   return txResult;
 }
@@ -415,7 +481,10 @@ async function expectSolidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(solidOwner, solidAccountNumber);
+  const balances = await solo.getters.getAccountBalances(
+    solidOwner,
+    solidAccountNumber,
+  );
   balances.forEach((balance, i) => {
     if (i === heldMarket.toNumber()) {
       expect(balance.par).toEqual(expectedHeldPar);
@@ -431,7 +500,10 @@ async function expectLiquidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(liquidOwner, liquidAccountNumber);
+  const balances = await solo.getters.getAccountBalances(
+    liquidOwner,
+    liquidAccountNumber,
+  );
   balances.forEach((balance, i) => {
     if (i === heldMarket.toNumber()) {
       expect(balance.par).toEqual(expectedHeldPar);

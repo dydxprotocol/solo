@@ -1,13 +1,13 @@
-import { Log, EventLog } from 'web3/types';
+import { EventLog, Log } from 'web3/types';
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
   address,
-  Decimal,
-  Integer,
   BalanceUpdate,
+  Decimal,
   Index,
+  Integer,
   LogParsingOptions,
   TxResult,
 } from '../types';
@@ -20,26 +20,18 @@ import { abi as refunderAbi } from '../../build/published_contracts/Refunder.jso
 import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
 import { abi as stopLimitOrdersAbi } from '../../build/published_contracts/StopLimitOrders.json';
 import { abi as canonicalOrdersAbi } from '../../build/published_contracts/CanonicalOrders.json';
-import {
-  abi as signedOperationProxyAbi,
-} from '../../build/published_contracts/SignedOperationProxy.json';
+import { abi as signedOperationProxyAbi } from '../../build/published_contracts/SignedOperationProxy.json';
 
 export class Logs {
   private contracts: Contracts;
   private web3: Web3;
 
-  constructor(
-    contracts: Contracts,
-    web3: Web3,
-  ) {
+  constructor(contracts: Contracts, web3: Web3) {
     this.contracts = contracts;
     this.web3 = web3;
   }
 
-  public parseLogs(
-    receipt: TxResult,
-    options: LogParsingOptions = {},
-  ): any {
+  public parseLogs(receipt: TxResult, options: LogParsingOptions = {}): any {
     let logs = this.parseAllLogs(receipt);
 
     if (options.skipAdminLogs) {
@@ -59,11 +51,17 @@ export class Logs {
     }
     if (options.skipLimitOrdersLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
-      logs = logs.filter((log: any) => !this.logIsFrom(log, stopLimitOrdersAbi));
-      logs = logs.filter((log: any) => !this.logIsFrom(log, canonicalOrdersAbi));
+      logs = logs.filter(
+        (log: any) => !this.logIsFrom(log, stopLimitOrdersAbi),
+      );
+      logs = logs.filter(
+        (log: any) => !this.logIsFrom(log, canonicalOrdersAbi),
+      );
     }
     if (options.skipSignedOperationProxyLogs) {
-      logs = logs.filter((log: any) => !this.logIsFrom(log, signedOperationProxyAbi));
+      logs = logs.filter(
+        (log: any) => !this.logIsFrom(log, signedOperationProxyAbi),
+      );
     }
 
     return logs;
@@ -119,20 +117,23 @@ export class Logs {
       case this.contracts.expiryV2.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiryV2, log);
       }
-      case this.contracts.refunder.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.refunder, log);
-      }
-      case this.contracts.limitOrders.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.limitOrders, log);
-      }
-      case this.contracts.stopLimitOrders.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.stopLimitOrders, log);
-      }
-      case this.contracts.canonicalOrders.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.canonicalOrders, log);
-      }
+      // case this.contracts.refunder.options.address.toLowerCase(): {
+      //   return this.parseLogWithContract(this.contracts.refunder, log);
+      // }
+      // case this.contracts.limitOrders.options.address.toLowerCase(): {
+      //   return this.parseLogWithContract(this.contracts.limitOrders, log);
+      // }
+      // case this.contracts.stopLimitOrders.options.address.toLowerCase(): {
+      //   return this.parseLogWithContract(this.contracts.stopLimitOrders, log);
+      // }
+      // case this.contracts.canonicalOrders.options.address.toLowerCase(): {
+      //   return this.parseLogWithContract(this.contracts.canonicalOrders, log);
+      // }
       case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.signedOperationProxy, log);
+        return this.parseLogWithContract(
+          this.contracts.signedOperationProxy,
+          log,
+        );
       }
     }
 
@@ -197,10 +198,12 @@ export class Logs {
     return parsed;
   }
 
-  private parseOrderFlags(flags: string): {
-    isBuy: boolean,
-    isDecreaseOnly: boolean,
-    isNegativeLimitFee: boolean,
+  private parseOrderFlags(
+    flags: string,
+  ): {
+    isBuy: boolean;
+    isDecreaseOnly: boolean;
+    isNegativeLimitFee: boolean;
   } {
     const flag = new BigNumber(flags.charAt(flags.length - 1)).toNumber();
     return {
@@ -212,43 +215,43 @@ export class Logs {
 
   private parseTuple(input: any, eventArgs: any) {
     if (
-      Array.isArray(input.components)
-      && input.components.length === 2
-      && input.components[0].name === 'owner'
-      && input.components[1].name === 'number'
+      Array.isArray(input.components) &&
+      input.components.length === 2 &&
+      input.components[0].name === 'owner' &&
+      input.components[1].name === 'number'
     ) {
       return this.parseAccountInfo(eventArgs[input.name]);
     }
 
     if (
-      Array.isArray(input.components)
-      && input.components.length === 2
-      && input.components[0].name === 'deltaWei'
-      && input.components[1].name === 'newPar'
+      Array.isArray(input.components) &&
+      input.components.length === 2 &&
+      input.components[0].name === 'deltaWei' &&
+      input.components[1].name === 'newPar'
     ) {
       return this.parseBalanceUpdate(eventArgs[input.name]);
     }
 
     if (
-      Array.isArray(input.components)
-      && input.components.length === 3
-      && input.components[0].name === 'borrow'
-      && input.components[1].name === 'supply'
-      && input.components[2].name === 'lastUpdate'
+      Array.isArray(input.components) &&
+      input.components.length === 3 &&
+      input.components[0].name === 'borrow' &&
+      input.components[1].name === 'supply' &&
+      input.components[2].name === 'lastUpdate'
     ) {
       return this.parseIndex(eventArgs[input.name]);
     }
 
     if (
-      Array.isArray(input.components)
-      && input.components.length === 1
-      && input.components[0].name === 'value'
+      Array.isArray(input.components) &&
+      input.components.length === 1 &&
+      input.components[0].name === 'value'
     ) {
       if (
-        input.name.toLowerCase().includes('spread')
-        || input.name.toLowerCase().includes('ratio')
-        || input.name.toLowerCase().includes('rate')
-        || input.name.toLowerCase().includes('premium')
+        input.name.toLowerCase().includes('spread') ||
+        input.name.toLowerCase().includes('ratio') ||
+        input.name.toLowerCase().includes('rate') ||
+        input.name.toLowerCase().includes('premium')
       ) {
         return this.parseDecimalValue(eventArgs[input.name]);
       }
@@ -256,11 +259,11 @@ export class Logs {
     }
 
     if (
-      Array.isArray(input.components)
-      && input.components.length === 3
-      && input.components[0].name === 'price'
-      && input.components[1].name === 'fee'
-      && input.components[2].name === 'isNegativeFee'
+      Array.isArray(input.components) &&
+      input.components.length === 3 &&
+      input.components[0].name === 'price' &&
+      input.components[1].name === 'fee' &&
+      input.components[2].name === 'isNegativeFee'
     ) {
       return this.parseFillData(eventArgs[input.name]);
     }
@@ -271,8 +274,8 @@ export class Logs {
   private parseAccountInfo(
     accountInfo: any,
   ): {
-    owner: address,
-    number: BigNumber,
+    owner: address;
+    number: BigNumber;
   } {
     return {
       owner: accountInfo.owner,
@@ -306,9 +309,9 @@ export class Logs {
   private parseFillData(
     fillData: any,
   ): {
-    price: BigNumber,
-    fee: BigNumber,
-    isNegativeFee: boolean,
+    price: BigNumber;
+    fee: BigNumber;
+    isNegativeFee: boolean;
   } {
     return {
       price: stringToDecimal(fillData.price),

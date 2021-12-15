@@ -6,8 +6,8 @@ import { setupMarkets } from '../helpers/SoloHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
-  address,
   AccountStatus,
+  address,
   AmountDenomination,
   AmountReference,
   Integer,
@@ -66,8 +66,18 @@ describe('Transfer', () => {
       }),
       solo.permissions.approveOperator(operator, { from: owner1 }),
       solo.permissions.approveOperator(operator, { from: owner2 }),
-      solo.testing.setAccountBalance(owner1, accountNumber1, collateralMarket, collateralAmount),
-      solo.testing.setAccountBalance(owner2, accountNumber2, collateralMarket, collateralAmount),
+      solo.testing.setAccountBalance(
+        owner1,
+        accountNumber1,
+        collateralMarket,
+        collateralAmount,
+      ),
+      solo.testing.setAccountBalance(
+        owner2,
+        accountNumber2,
+        collateralMarket,
+        collateralAmount,
+      ),
     ]);
     snapshotId = await snapshot();
   });
@@ -132,10 +142,7 @@ describe('Transfer', () => {
       { from: operator },
     );
 
-    const [
-      marketIndex,
-      collateralIndex,
-    ] = await Promise.all([
+    const [marketIndex, collateralIndex] = await Promise.all([
       solo.getters.getMarketCachedIndex(market),
       solo.getters.getMarketCachedIndex(collateralMarket),
       expectBalances(par, wei, negPar, negWei),
@@ -166,7 +173,10 @@ describe('Transfer', () => {
     expect(transferLog.args.accountTwoNumber).toEqual(accountNumber2);
     expect(transferLog.args.market).toEqual(market);
     expect(transferLog.args.updateOne).toEqual({ newPar: par, deltaWei: wei });
-    expect(transferLog.args.updateTwo).toEqual({ newPar: negPar, deltaWei: negWei });
+    expect(transferLog.args.updateTwo).toEqual({
+      newPar: negPar,
+      deltaWei: negWei,
+    });
   });
 
   it('Succeeds for positive delta par/wei', async () => {
@@ -427,14 +437,19 @@ describe('Transfer', () => {
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      solo.testing.setAccountStatus(owner1, accountNumber1, AccountStatus.Liquidating),
-      solo.testing.setAccountStatus(owner2, accountNumber2, AccountStatus.Liquidating),
+      solo.testing.setAccountStatus(
+        owner1,
+        accountNumber1,
+        AccountStatus.Liquidating,
+      ),
+      solo.testing.setAccountStatus(
+        owner2,
+        accountNumber2,
+        AccountStatus.Liquidating,
+      ),
     ]);
     await expectTransferOkay({});
-    const [
-      status1,
-      status2,
-    ] = await Promise.all([
+    const [status1, status2] = await Promise.all([
       solo.getters.getAccountStatus(owner1, accountNumber1),
       solo.getters.getAccountStatus(owner2, accountNumber2),
     ]);
@@ -511,10 +526,7 @@ async function expectBalances(
   par2: Integer,
   wei2: Integer,
 ) {
-  const [
-    accountBalances1,
-    accountBalances2,
-  ] = await Promise.all([
+  const [accountBalances1, accountBalances2] = await Promise.all([
     solo.getters.getAccountBalances(owner1, accountNumber1),
     solo.getters.getAccountBalances(owner2, accountNumber2),
   ]);
@@ -540,12 +552,12 @@ async function expectBalances(
   });
 }
 
-async function expectTransferOkay(
-  glob: Object,
-  options?: Object,
-) {
+async function expectTransferOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation.initiate().transfer(combinedGlob).commit(options);
+  return solo.operation
+    .initiate()
+    .transfer(combinedGlob)
+    .commit(options);
 }
 
 async function expectTransferRevert(

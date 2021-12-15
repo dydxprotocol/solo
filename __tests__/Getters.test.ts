@@ -6,13 +6,13 @@ import { setupMarkets } from './helpers/SoloHelpers';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
 import {
-  address,
   AccountStatus,
+  address,
   Decimal,
   Index,
   Integer,
   TotalPar,
- } from '../src/types';
+} from '../src/types';
 
 let solo: TestSolo;
 let accounts: address[];
@@ -24,11 +24,7 @@ let owner2: address;
 let soloAddress: address;
 let oracleAddress: address;
 let setterAddress: address;
-const prices = [
-  new BigNumber(123),
-  new BigNumber(456),
-  new BigNumber(789),
-];
+const prices = [new BigNumber(123), new BigNumber(456), new BigNumber(789)];
 const rates = [
   new BigNumber(101).div(INTEGERS.INTEREST_RATE_BASE),
   new BigNumber(202).div(INTEGERS.INTEREST_RATE_BASE),
@@ -123,7 +119,9 @@ describe('Getters', () => {
         const value1 = await solo.getters.getMarginRatio();
         expect(value1).toEqual(defaultParams.marginRatio);
 
-        await solo.admin.setMarginRatio(defaultLimits.marginRatioMax, { from: admin });
+        await solo.admin.setMarginRatio(defaultLimits.marginRatioMax, {
+          from: admin,
+        });
         const value2 = await solo.getters.getMarginRatio();
         expect(value2).toEqual(defaultLimits.marginRatioMax);
       });
@@ -145,7 +143,9 @@ describe('Getters', () => {
         const value1 = await solo.getters.getEarningsRate();
         expect(value1).toEqual(defaultParams.earningsRate);
 
-        await solo.admin.setEarningsRate(defaultLimits.earningsRateMax, { from: admin });
+        await solo.admin.setEarningsRate(defaultLimits.earningsRateMax, {
+          from: admin,
+        });
         const value2 = await solo.getters.getEarningsRate();
         expect(value2).toEqual(defaultLimits.earningsRateMax);
       });
@@ -156,7 +156,10 @@ describe('Getters', () => {
         const value1 = await solo.getters.getMinBorrowedValue();
         expect(value1).toEqual(defaultParams.minBorrowedValue);
 
-        await solo.admin.setMinBorrowedValue(defaultLimits.minBorrowedValueMax, { from: admin });
+        await solo.admin.setMinBorrowedValue(
+          defaultLimits.minBorrowedValueMax,
+          { from: admin },
+        );
         const value2 = await solo.getters.getMinBorrowedValue();
         expect(value2).toEqual(defaultLimits.minBorrowedValueMax);
       });
@@ -167,7 +170,9 @@ describe('Getters', () => {
         const params = await solo.getters.getRiskParams();
         expect(params.earningsRate).toEqual(defaultParams.earningsRate);
         expect(params.marginRatio).toEqual(defaultParams.marginRatio);
-        expect(params.liquidationSpread).toEqual(defaultParams.liquidationSpread);
+        expect(params.liquidationSpread).toEqual(
+          defaultParams.liquidationSpread,
+        );
         expect(params.minBorrowedValue).toEqual(defaultParams.minBorrowedValue);
       });
     });
@@ -176,11 +181,15 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         const limits = await solo.getters.getRiskLimits();
         expect(limits.marginRatioMax).toEqual(defaultLimits.marginRatioMax);
-        expect(limits.liquidationSpreadMax).toEqual(defaultLimits.liquidationSpreadMax);
+        expect(limits.liquidationSpreadMax).toEqual(
+          defaultLimits.liquidationSpreadMax,
+        );
         expect(limits.earningsRateMax).toEqual(defaultLimits.earningsRateMax);
         expect(limits.marginPremiumMax).toEqual(defaultLimits.marginPremiumMax);
         expect(limits.spreadPremiumMax).toEqual(defaultLimits.spreadPremiumMax);
-        expect(limits.minBorrowedValueMax).toEqual(defaultLimits.minBorrowedValueMax);
+        expect(limits.minBorrowedValueMax).toEqual(
+          defaultLimits.minBorrowedValueMax,
+        );
       });
     });
   });
@@ -233,7 +242,12 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         await Promise.all([
           solo.testing.setAccountBalance(owner1, account1, market2, par),
-          solo.testing.setAccountBalance(owner2, account2, market3, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market3,
+            par.times(-1),
+          ),
         ]);
         const totals = await Promise.all([
           solo.getters.getMarketTotalPar(market1),
@@ -292,20 +306,28 @@ describe('Getters', () => {
         };
         await Promise.all([
           solo.testing.setMarketIndex(market2, index),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account2, market2, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market2,
+            par.times(-1),
+          ),
         ]);
         await mineAvgBlock();
         const result = await solo.getters.getMarketCurrentIndex(market2);
         const block2 = await solo.web3.eth.getBlock('latest');
         expect(block2.timestamp).toBeGreaterThan(block1.timestamp);
-        expect(result.lastUpdate.toNumber()).toBeGreaterThanOrEqual(block2.timestamp);
+        expect(result.lastUpdate.toNumber()).toBeGreaterThanOrEqual(
+          block2.timestamp,
+        );
 
-        const [
-          totalPar,
-          interestRate,
-          earningsRate,
-        ] = await Promise.all([
+        const [totalPar, interestRate, earningsRate] = await Promise.all([
           solo.getters.getMarketTotalPar(market2),
           solo.getters.getMarketInterestRate(market2),
           solo.getters.getEarningsRate(),
@@ -371,7 +393,9 @@ describe('Getters', () => {
 
     describe('#getMarketMarginPremium', () => {
       it('Succeeds', async () => {
-        await solo.admin.setMarginPremium(market2, highPremium, { from: admin });
+        await solo.admin.setMarginPremium(market2, highPremium, {
+          from: admin,
+        });
         const result = await Promise.all([
           solo.getters.getMarketMarginPremium(market1),
           solo.getters.getMarketMarginPremium(market2),
@@ -392,7 +416,9 @@ describe('Getters', () => {
 
     describe('#getMarketSpreadPremium', () => {
       it('Succeeds', async () => {
-        await solo.admin.setSpreadPremium(market2, highPremium, { from: admin });
+        await solo.admin.setSpreadPremium(market2, highPremium, {
+          from: admin,
+        });
         const result = await Promise.all([
           solo.getters.getMarketSpreadPremium(market1),
           solo.getters.getMarketSpreadPremium(market2),
@@ -484,10 +510,22 @@ describe('Getters', () => {
         await Promise.all([
           solo.admin.setIsClosing(market2, true, { from: admin }),
           solo.admin.setMarginPremium(market2, highPremium, { from: admin }),
-          solo.admin.setSpreadPremium(market2, highPremium.div(2), { from: admin }),
+          solo.admin.setSpreadPremium(market2, highPremium.div(2), {
+            from: admin,
+          }),
           solo.testing.setMarketIndex(market2, index),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account2, market2, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market2,
+            par.times(-1),
+          ),
         ]);
 
         // verify
@@ -526,18 +564,26 @@ describe('Getters', () => {
         await Promise.all([
           solo.admin.setIsClosing(market2, true, { from: admin }),
           solo.admin.setMarginPremium(market2, highPremium, { from: admin }),
-          solo.admin.setSpreadPremium(market2, highPremium.div(2), { from: admin }),
+          solo.admin.setSpreadPremium(market2, highPremium.div(2), {
+            from: admin,
+          }),
           solo.testing.setMarketIndex(market2, index),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account2, market2, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market2,
+            par.times(-1),
+          ),
         ]);
 
         // verify
-        const [
-          earningsRate,
-          market,
-          marketwi,
-        ] = await Promise.all([
+        const [earningsRate, market, marketwi] = await Promise.all([
           solo.getters.getEarningsRate(),
           solo.getters.getMarket(market2),
           solo.getters.getMarketWithInfo(market2),
@@ -572,9 +618,24 @@ describe('Getters', () => {
 
       it('Succeeds for zero (zero balance)', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account1, market1, par.times(-1)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account1,
+            market1,
+            par.times(-1),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-1),
+          ),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
         expect(result).toEqual(zero);
@@ -582,8 +643,18 @@ describe('Getters', () => {
 
       it('Succeeds for zero (non-zero balance)', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-1),
+          ),
           solo.testing.tokenA.issueTo(wei, soloAddress),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
@@ -592,8 +663,18 @@ describe('Getters', () => {
 
       it('Succeeds for positive (zero balance)', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(1)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(1),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-2),
+          ),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
         expect(result).toEqual(wei);
@@ -601,8 +682,18 @@ describe('Getters', () => {
 
       it('Succeeds for positive > balance', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(1)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(1),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-2),
+          ),
           solo.testing.tokenA.issueTo(wei, soloAddress),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
@@ -611,8 +702,18 @@ describe('Getters', () => {
 
       it('Succeeds for positive < balance', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(3)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(3),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-2),
+          ),
           solo.testing.tokenA.issueTo(wei.times(2), soloAddress),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
@@ -621,8 +722,18 @@ describe('Getters', () => {
 
       it('Succeeds for negative (zero balance)', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(2)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(2),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-1),
+          ),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
         expect(result).toEqual(wei.times(-1));
@@ -630,8 +741,18 @@ describe('Getters', () => {
 
       it('Succeeds for negative (non-zero balance)', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(3)),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(3),
+          ),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.times(-1),
+          ),
           solo.testing.tokenA.issueTo(wei, soloAddress),
         ]);
         const result = await solo.getters.getNumExcessTokens(market1);
@@ -657,16 +778,17 @@ describe('Getters', () => {
       expect(timeDiff.isPositive()).toBeTruthy();
       const borrowInterest = interestRate.times(timeDiff);
       expect(borrowInterest.isZero()).toBeFalsy();
-      const borrowWei = totalPar.borrow.times(oldIndex.borrow).integerValue(BigNumber.ROUND_UP);
-      const supplyWei = totalPar.supply.times(oldIndex.supply).integerValue(BigNumber.ROUND_DOWN);
+      const borrowWei = totalPar.borrow
+        .times(oldIndex.borrow)
+        .integerValue(BigNumber.ROUND_UP);
+      const supplyWei = totalPar.supply
+        .times(oldIndex.supply)
+        .integerValue(BigNumber.ROUND_DOWN);
       let supplyInterest = crop(borrowInterest.times(earningsRate));
       if (borrowWei.lt(supplyWei)) {
-        supplyInterest =
-          crop(
-            crop(
-              supplyInterest.times(borrowWei),
-            ).div(supplyWei),
-          );
+        supplyInterest = crop(
+          crop(supplyInterest.times(borrowWei)).div(supplyWei),
+        );
       }
       expect(supplyInterest.lte(borrowInterest)).toBeTruthy();
       return {
@@ -677,7 +799,10 @@ describe('Getters', () => {
     }
 
     function crop(b: BigNumber) {
-      return b.times('1e18').integerValue(BigNumber.ROUND_DOWN).div('1e18');
+      return b
+        .times('1e18')
+        .integerValue(BigNumber.ROUND_DOWN)
+        .div('1e18');
     }
   });
 
@@ -688,12 +813,14 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         await Promise.all([
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
         ]);
-        const [
-          par1,
-          par2,
-        ] = await Promise.all([
+        const [par1, par2] = await Promise.all([
           solo.getters.getAccountPar(owner1, account1, market1),
           solo.getters.getAccountPar(owner1, account1, market2),
         ]);
@@ -716,12 +843,14 @@ describe('Getters', () => {
           solo.testing.interestSetter.setInterestRate(tokens[1], zero),
           solo.testing.interestSetter.setInterestRate(tokens[2], zero),
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
         ]);
-        const [
-          wei1,
-          wei2,
-        ] = await Promise.all([
+        const [wei1, wei2] = await Promise.all([
           solo.getters.getAccountWei(owner1, account1, market1),
           solo.getters.getAccountWei(owner1, account1, market2),
         ]);
@@ -736,15 +865,22 @@ describe('Getters', () => {
           solo.testing.interestSetter.setInterestRate(tokens[1], interest),
           solo.testing.interestSetter.setInterestRate(tokens[2], interest),
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner2, account2, market1, par.div(-2)),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner2,
+            account2,
+            market1,
+            par.div(-2),
+          ),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
           solo.testing.setAccountBalance(owner2, account2, market2, par.div(4)),
         ]);
         await mineAvgBlock();
-        const [
-          weiA1,
-          weiB1,
-        ] = await Promise.all([
+        const [weiA1, weiB1] = await Promise.all([
           solo.getters.getAccountWei(owner1, account1, market1),
           solo.getters.getAccountWei(owner1, account1, market2),
         ]);
@@ -753,10 +889,7 @@ describe('Getters', () => {
 
         await fastForward(86400); // one day
 
-        const [
-          weiA2,
-          weiB2,
-        ] = await Promise.all([
+        const [weiA2, weiB2] = await Promise.all([
           solo.getters.getAccountWei(owner1, account1, market1),
           solo.getters.getAccountWei(owner1, account1, market2),
         ]);
@@ -778,15 +911,27 @@ describe('Getters', () => {
         status = await solo.getters.getAccountStatus(owner1, account1);
         expect(status).toEqual(AccountStatus.Normal);
 
-        await solo.testing.setAccountStatus(owner1, account1, AccountStatus.Liquidating);
+        await solo.testing.setAccountStatus(
+          owner1,
+          account1,
+          AccountStatus.Liquidating,
+        );
         status = await solo.getters.getAccountStatus(owner1, account1);
         expect(status).toEqual(AccountStatus.Liquidating);
 
-        await solo.testing.setAccountStatus(owner1, account1, AccountStatus.Vaporizing);
+        await solo.testing.setAccountStatus(
+          owner1,
+          account1,
+          AccountStatus.Vaporizing,
+        );
         status = await solo.getters.getAccountStatus(owner1, account1);
         expect(status).toEqual(AccountStatus.Vaporizing);
 
-        await solo.testing.setAccountStatus(owner1, account1, AccountStatus.Normal);
+        await solo.testing.setAccountStatus(
+          owner1,
+          account1,
+          AccountStatus.Normal,
+        );
         status = await solo.getters.getAccountStatus(owner1, account1);
         expect(status).toEqual(AccountStatus.Normal);
       });
@@ -796,12 +941,14 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         await Promise.all([
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
         ]);
-        const [
-          values1,
-          values2,
-        ] = await Promise.all([
+        const [values1, values2] = await Promise.all([
           solo.getters.getAccountValues(owner1, account1),
           solo.getters.getAccountValues(owner2, account2),
         ]);
@@ -817,19 +964,27 @@ describe('Getters', () => {
         const rating1 = new BigNumber('1.2');
         const rating2 = new BigNumber('1.5');
         await Promise.all([
-          solo.admin.setMarginPremium(market1, rating1.minus(1), { from: admin }),
-          solo.admin.setMarginPremium(market2, rating2.minus(1), { from: admin }),
+          solo.admin.setMarginPremium(market1, rating1.minus(1), {
+            from: admin,
+          }),
+          solo.admin.setMarginPremium(market2, rating2.minus(1), {
+            from: admin,
+          }),
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
         ]);
-        const [
-          values1,
-          values2,
-        ] = await Promise.all([
+        const [values1, values2] = await Promise.all([
           solo.getters.getAdjustedAccountValues(owner1, account1),
           solo.getters.getAdjustedAccountValues(owner2, account2),
         ]);
-        expect(values1.borrow).toEqual(prices[1].times(wei.div(2)).times(rating2));
+        expect(values1.borrow).toEqual(
+          prices[1].times(wei.div(2)).times(rating2),
+        );
         expect(values1.supply).toEqual(prices[0].times(wei).div(rating1));
         expect(values2.borrow).toEqual(zero);
         expect(values2.supply).toEqual(zero);
@@ -840,12 +995,14 @@ describe('Getters', () => {
       it('Succeeds', async () => {
         await Promise.all([
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.div(-2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.div(-2),
+          ),
         ]);
-        const [
-          balances1,
-          balances2,
-        ] = await Promise.all([
+        const [balances1, balances2] = await Promise.all([
           solo.getters.getAccountBalances(owner1, account1),
           solo.getters.getAccountBalances(owner2, account2),
         ]);
@@ -874,37 +1031,87 @@ describe('Getters', () => {
       it('True for undercollateralized account', async () => {
         await Promise.all([
           solo.testing.setAccountBalance(owner1, account1, market1, par),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(-1)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(-1),
+          ),
         ]);
-        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        const liquidatable = await solo.getters.isAccountLiquidatable(
+          owner1,
+          account1,
+        );
         expect(liquidatable).toBe(true);
       });
 
       it('True for partially liquidated account', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
-          solo.testing.setAccountStatus(owner1, account1, AccountStatus.Liquidating),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(-1),
+          ),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(2),
+          ),
+          solo.testing.setAccountStatus(
+            owner1,
+            account1,
+            AccountStatus.Liquidating,
+          ),
         ]);
-        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        const liquidatable = await solo.getters.isAccountLiquidatable(
+          owner1,
+          account1,
+        );
         expect(liquidatable).toBe(true);
       });
 
       it('False for collateralized account', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
-          solo.testing.setAccountBalance(owner1, account1, market2, par.times(2)),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(-1),
+          ),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market2,
+            par.times(2),
+          ),
         ]);
-        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        const liquidatable = await solo.getters.isAccountLiquidatable(
+          owner1,
+          account1,
+        );
         expect(liquidatable).toBe(false);
       });
 
       it('False for vaporizable account', async () => {
         await Promise.all([
-          solo.testing.setAccountBalance(owner1, account1, market1, par.times(-1)),
-          solo.testing.setAccountStatus(owner1, account1, AccountStatus.Liquidating),
+          solo.testing.setAccountBalance(
+            owner1,
+            account1,
+            market1,
+            par.times(-1),
+          ),
+          solo.testing.setAccountStatus(
+            owner1,
+            account1,
+            AccountStatus.Liquidating,
+          ),
         ]);
-        const liquidatable = await solo.getters.isAccountLiquidatable(owner1, account1);
+        const liquidatable = await solo.getters.isAccountLiquidatable(
+          owner1,
+          account1,
+        );
         expect(liquidatable).toBe(false);
       });
     });
@@ -1007,7 +1214,6 @@ describe('Getters', () => {
         ]);
         expect(b1).toEqual(false);
         expect(b2).toEqual(true);
-
       });
     });
   });
