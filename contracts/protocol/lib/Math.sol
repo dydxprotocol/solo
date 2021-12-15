@@ -88,7 +88,6 @@ library Math {
         uint result = target.mul(numerator);
         // round the denominator comparator up to ensure a fair comparison is done on the `result`'s modulo.
         // For example, 51 / 103 == 0; 51 % 103 == 51; ((103 - 1) / 2) + 1 == 52; 51 < 52, therefore no round up
-        // TODO this needs to be checked that it works for super large numbers
         return result.div(denominator).add(result.mod(denominator) >= denominator.sub(1).div(2).add(1) ? 1 : 0);
     }
 

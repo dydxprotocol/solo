@@ -29,19 +29,16 @@ describe('Library', () => {
   });
 
   describe('TypedSignature', () => {
-    const hash =
-      '0x1234567812345678123456781234567812345678123456781234567812345678';
-    const r =
-      '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
-    const s =
-      '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
+    const hash = '0x1234567812345678123456781234567812345678123456781234567812345678';
+    const r = '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
+    const s = '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
     const v = '0x1b';
     const signature = `${r}${stripHexPrefix(s)}${stripHexPrefix(v)}`;
 
-    async function recover(hash: string, typedSignature: string) {
+    async function recover(hashString: string, typedSignature: string) {
       return solo.contracts.callConstantContractFunction(
         solo.contracts.testLib.methods.TypedSignatureRecover(
-          Web3.utils.hexToBytes(hash),
+          Web3.utils.hexToBytes(hashString),
           Web3.utils.hexToBytes(typedSignature).map(x => [x]),
         ),
       );
@@ -121,7 +118,8 @@ describe('Library', () => {
   describe('Math', () => {
     const BN_DOWN = BigNumber.clone({ ROUNDING_MODE: 1 });
     const BN_UP = BigNumber.clone({ ROUNDING_MODE: 0 });
-    const large = INTEGERS.ONES_255.div('1.5').toFixed(0);
+    const BN_HALF_UP = BigNumber.clone({ ROUNDING_MODE: BigNumber.ROUND_HALF_UP });
+    const largeNumber = INTEGERS.ONES_255.div('1.5').toFixed(0);
     const tests = [
       [1, 1, 1],
       [2, 0, 3],
@@ -139,19 +137,15 @@ describe('Library', () => {
 
     it('getPartial', async () => {
       const results = await Promise.all(
-        tests.map(args =>
-          solo.contracts.testLib.methods
-            .MathGetPartial(args[0], args[1], args[2])
-            .call(),
-        ),
+        tests.map(args => solo.contracts.testLib.methods
+          .MathGetPartial(args[0], args[1], args[2])
+          .call()),
       );
       expect(results).toEqual(
-        tests.map(args =>
-          new BN_DOWN(args[0])
-            .times(args[1])
-            .div(args[2])
-            .toFixed(0),
-        ),
+        tests.map(args => new BN_DOWN(args[0])
+          .times(args[1])
+          .div(args[2])
+          .toFixed(0)),
       );
     });
 
@@ -160,25 +154,35 @@ describe('Library', () => {
         solo.contracts.testLib.methods.MathGetPartial(1, 1, 0).call(),
       );
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartial(large, large, 1).call(),
+        solo.contracts.testLib.methods.MathGetPartial(largeNumber, largeNumber, 1).call(),
       );
     });
 
     it('getPartialRoundUp', async () => {
       const results = await Promise.all(
-        tests.map(args =>
-          solo.contracts.testLib.methods
-            .MathGetPartialRoundUp(args[0], args[1], args[2])
-            .call(),
-        ),
+        tests.map(args => solo.contracts.testLib.methods
+          .MathGetPartialRoundUp(args[0], args[1], args[2])
+          .call()),
       );
       expect(results).toEqual(
-        tests.map(args =>
-          new BN_UP(args[0])
-            .times(args[1])
-            .div(args[2])
-            .toFixed(0),
-        ),
+        tests.map(args => new BN_UP(args[0])
+          .times(args[1])
+          .div(args[2])
+          .toFixed(0)),
+      );
+    });
+
+    it('getPartialRoundHalfUp', async () => {
+      const results = await Promise.all(
+        tests.map(args => solo.contracts.testLib.methods
+          .MathGetPartialRoundHalfUp(args[0], args[1], args[2])
+          .call()),
+      );
+      expect(results).toEqual(
+        tests.map(args => new BN_HALF_UP(args[0])
+          .times(args[1])
+          .div(args[2])
+          .toFixed(0)),
       );
     });
 
@@ -188,7 +192,18 @@ describe('Library', () => {
       );
       await expectThrow(
         solo.contracts.testLib.methods
-          .MathGetPartialRoundUp(large, large, 1)
+          .MathGetPartialRoundUp(largeNumber, largeNumber, 1)
+          .call(),
+      );
+    });
+
+    it('getPartialRoundHalfUp reverts', async () => {
+      await expectThrow(
+        solo.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call(),
+      );
+      await expectThrow(
+        solo.contracts.testLib.methods
+          .MathGetPartialRoundHalfUp(largeNumber, largeNumber, 1)
           .call(),
       );
     });
@@ -226,13 +241,10 @@ describe('Library', () => {
 
   describe('Require', () => {
     const bytes32Hex = `0x${'0123456789abcdef'.repeat(4)}`;
-    const emptyReason =
-      '0x0000000000000000000000000000000000000000000000000000000000000000';
-    const reason1 =
-      '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
+    const emptyReason = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    const reason1 = '0x5468697320497320746865205465787420526561736f6e2e3031323334353637';
     const reasonString1 = 'This Is the Text Reason.01234567';
-    const reason2 =
-      '0x53686f727420526561736f6e2030393800000000000000000000000000000000';
+    const reason2 = '0x53686f727420526561736f6e2030393800000000000000000000000000000000';
     const reasonString2 = 'Short Reason 098';
     const arg1 = '0';
     const arg2 = '1234567890987654321';

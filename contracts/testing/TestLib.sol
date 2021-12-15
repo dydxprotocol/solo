@@ -66,6 +66,18 @@ contract TestLib {
         return Math.getPartial(target, numerator, denominator);
     }
 
+    function MathGetPartialRoundHalfUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return Math.getPartialRoundHalfUp(target, numerator, denominator);
+    }
+
     function MathGetPartialRoundUp(
         uint256 target,
         uint256 numerator,

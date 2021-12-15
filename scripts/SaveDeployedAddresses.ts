@@ -29,10 +29,10 @@ async function run() {
     });
   });
 
-  const json = JSON.stringify(deployed, null, 4) + '\n';
+  const json = JSON.stringify(deployed, null, 4).concat('\n');
 
   const filename = 'deployed.json';
-  await writeFileAsync(directory + filename, json, null);
+  await writeFileAsync(directory + filename, json);
   console.log(`Wrote ${filename}`);
 }
 
