@@ -97,9 +97,6 @@ const TransferProxy = artifacts.require('TransferProxy');
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
 
 // Oracles
-const DaiPriceOracle = artifacts.require('DaiPriceOracle');
-const WethPriceOracle = artifacts.require('WethPriceOracle');
-const UsdcPriceOracle = artifacts.require('UsdcPriceOracle');
 const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // Amm

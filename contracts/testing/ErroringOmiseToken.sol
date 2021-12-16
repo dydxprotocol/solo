@@ -24,18 +24,15 @@ import { OmiseToken } from "./OmiseToken.sol";
 
 contract ErroringOmiseToken is OmiseToken {
 
-    function transfer(address, uint256) public returns (bool) {
+    function transfer(address, uint256) public {
         require(false);
-        return false;
     }
 
-    function transferFrom(address, address, uint256) public returns (bool) {
+    function transferFrom(address, address, uint256) public {
         require(false);
-        return false;
     }
 
-    function approve(address, uint256) public returns (bool) {
+    function approve(address, uint256) public {
         require(false);
-        return false;
     }
 }

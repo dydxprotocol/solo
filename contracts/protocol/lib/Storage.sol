@@ -30,6 +30,7 @@ import { Require } from "./Require.sol";
 import { Time } from "./Time.sol";
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
+import { IERC20 } from "../interfaces/IERC20.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 
@@ -196,7 +197,7 @@ library Storage {
 
         Types.Wei memory balanceWei = Types.Wei({
             sign: true,
-            value: Token.balanceOf(token, address(this))
+            value: IERC20(token).balanceOf(address(this))
         });
 
         (
@@ -396,8 +397,7 @@ library Storage {
                 FILE,
                 "Borrow value too low",
                 account.owner,
-                account.number,
-                borrowValue.value
+                account.number
             );
         }
 
@@ -532,8 +532,7 @@ library Storage {
             FILE,
             "Owed balance cannot be positive",
             account.owner,
-            account.number,
-            marketId
+            account.number
         );
 
         (
@@ -556,8 +555,7 @@ library Storage {
             FILE,
             "Owed balance cannot increase",
             account.owner,
-            account.number,
-            marketId
+            account.number
         );
 
         // if not paying back enough wei to repay any par, then bound wei to zero

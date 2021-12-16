@@ -1,7 +1,7 @@
 pragma solidity >=0.5.0;
 
-import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol';
+import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -20,7 +20,7 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'1f6dc2394655698f3572996ecef1c7ffb58fee9465a937cca134f282eb8655e4'
+                hex'3f1ec623606a60b81296cb1f9641efe6bd66fdbda6b800b9e877ca276b6bb41f'
             ))));
     }
 

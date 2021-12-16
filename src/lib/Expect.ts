@@ -1,7 +1,5 @@
-const REQUIRE_MSG =
-  'Returned error: VM Exception while processing transaction: revert';
-const ASSERT_MSG =
-  'Returned error: VM Exception while processing transaction: invalid opcode';
+const REQUIRE_MSG = 'Returned error: VM Exception while processing transaction: revert';
+const ASSERT_MSG = 'Returned error: VM Exception while processing transaction: invalid opcode';
 
 // For solidity function calls that violate require()
 export async function expectThrow(promise: Promise<any>, reason?: string) {

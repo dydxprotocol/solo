@@ -261,7 +261,6 @@ library Actions {
         pure
         returns (DepositArgs memory)
     {
-        assert(args.actionType == ActionType.Deposit);
         return DepositArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -278,7 +277,6 @@ library Actions {
         pure
         returns (WithdrawArgs memory)
     {
-        assert(args.actionType == ActionType.Withdraw);
         return WithdrawArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -295,7 +293,6 @@ library Actions {
         pure
         returns (TransferArgs memory)
     {
-        assert(args.actionType == ActionType.Transfer);
         return TransferArgs({
             amount: args.amount,
             accountOne: accounts[args.accountId],
@@ -312,7 +309,6 @@ library Actions {
         pure
         returns (BuyArgs memory)
     {
-        assert(args.actionType == ActionType.Buy);
         return BuyArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -331,7 +327,6 @@ library Actions {
         pure
         returns (SellArgs memory)
     {
-        assert(args.actionType == ActionType.Sell);
         return SellArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -350,7 +345,6 @@ library Actions {
         pure
         returns (TradeArgs memory)
     {
-        assert(args.actionType == ActionType.Trade);
         return TradeArgs({
             amount: args.amount,
             takerAccount: accounts[args.accountId],
@@ -370,7 +364,6 @@ library Actions {
         pure
         returns (LiquidateArgs memory)
     {
-        assert(args.actionType == ActionType.Liquidate);
         return LiquidateArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
@@ -388,7 +381,6 @@ library Actions {
         pure
         returns (VaporizeArgs memory)
     {
-        assert(args.actionType == ActionType.Vaporize);
         return VaporizeArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
@@ -406,7 +398,6 @@ library Actions {
         pure
         returns (CallArgs memory)
     {
-        assert(args.actionType == ActionType.Call);
         return CallArgs({
             account: accounts[args.accountId],
             callee: args.otherAddress,

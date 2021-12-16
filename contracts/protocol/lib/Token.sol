@@ -19,7 +19,6 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { Require } from "./Require.sol";
 import { IERC20 } from "../interfaces/IERC20.sol";
 
 
@@ -33,63 +32,7 @@ import { IERC20 } from "../interfaces/IERC20.sol";
  */
 library Token {
 
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Token";
-
     // ============ Library Functions ============
-
-    function balanceOf(
-        address token,
-        address owner
-    )
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(token).balanceOf(owner);
-    }
-
-    function allowance(
-        address token,
-        address owner,
-        address spender
-    )
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(token).allowance(owner, spender);
-    }
-
-    function approve(
-        address token,
-        address spender,
-        uint256 amount
-    )
-        internal
-    {
-        IERC20(token).approve(spender, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "Approve failed"
-        );
-    }
-
-    function approveMax(
-        address token,
-        address spender
-    )
-        internal
-    {
-        approve(
-            token,
-            spender,
-            uint256(-1)
-        );
-    }
 
     function transfer(
         address token,
@@ -102,13 +45,7 @@ library Token {
             return;
         }
 
-        IERC20(token).transfer(to, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "Transfer failed"
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount));
     }
 
     function transferFrom(
@@ -123,52 +60,28 @@ library Token {
             return;
         }
 
-        IERC20(token).transferFrom(from, to, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "TransferFrom failed"
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount));
     }
 
     // ============ Private Functions ============
 
-    /**
-     * Check the return value of the previous function up to 32 bytes. Return true if the previous
-     * function returned 0 bytes or 32 bytes that are not all-zero.
-     */
-    function checkSuccess(
-    )
-        private
-        pure
-        returns (bool)
-    {
-        uint256 returnValue = 0;
+    function _callOptionalReturn(address token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
 
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            // check number of bytes returned from last function call
-            switch returndatasize
+        // A Solidity high level call has three parts:
+        // 1. The target address is checked to contain contract code. Not needed since tokens are manually added
+        // 2. The call itself is made, and success asserted
+        // 3. The return value is decoded, which in turn checks the size of the returned data.
 
-            // no bytes returned: assume success
-            case 0x0 {
-                returnValue := 1
-            }
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returnData) = token.call(data);
+        require(success, "Token: operation failed");
 
-            // 32 bytes returned: check if non-zero
-            case 0x20 {
-                // copy 32 bytes into scratch space
-                returndatacopy(0x0, 0x0, 0x20)
-
-                // load those bytes into returnValue
-                returnValue := mload(0x0)
-            }
-
-            // not sure what was returned: don't mark as success
-            default { }
+        if (returnData.length > 0) {
+            // Return data is optional
+            require(abi.decode(returnData, (bool)), "Token: operation failed");
         }
-
-        return returnValue != 0;
     }
+
 }

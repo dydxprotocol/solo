@@ -63,9 +63,9 @@ import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Fac
 
 import { address, SoloOptions } from '../../src/types';
 import { Contracts } from '../../src/lib/Contracts';
-import { UniswapV2Factory } from '../../build/wrappers/UniswapV2Factory';
-import { UniswapV2Router02 } from '../../build/wrappers/UniswapV2Router02';
-import { UniswapV2Pair } from '../../build/wrappers/UniswapV2Pair';
+import { UniswapV2Factory } from '../../build/testing_wrappers/UniswapV2Factory';
+import { UniswapV2Router02 } from '../../build/testing_wrappers/UniswapV2Router02';
+import { UniswapV2Pair } from '../../build/testing_wrappers/UniswapV2Pair';
 
 export class TestContracts extends Contracts {
   // Contract instances

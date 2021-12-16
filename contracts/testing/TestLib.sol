@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { TypedSignature } from "../external/lib/TypedSignature.sol";
+import { IERC20 } from "../protocol/interfaces/IERC20.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -272,38 +273,7 @@ contract TestLib {
         view
         returns (uint256)
     {
-        return Token.balanceOf(token, owner);
-    }
-
-    function TokenAllowance(
-        address token,
-        address owner,
-        address spender
-    )
-        external
-        view
-        returns (uint256)
-    {
-        return Token.allowance(token, owner, spender);
-    }
-
-    function TokenApprove(
-        address token,
-        address spender,
-        uint256 amount
-    )
-        external
-    {
-        Token.approve(token, spender, amount);
-    }
-
-    function TokenApproveMax(
-        address token,
-        address spender
-    )
-        external
-    {
-        Token.approveMax(token, spender);
+        return IERC20(token).balanceOf(owner);
     }
 
     function TokenTransfer(

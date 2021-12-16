@@ -305,7 +305,7 @@ describe('Sell', () => {
       issueTakerTokenToSolo(takerWei.div(2)),
       setTakerBalance(takerPar),
     ]);
-    await expectSellRevert({}, 'Token: Transfer failed');
+    await expectSellRevert({}, 'Token: operation failed');
   });
 
   it('Fails for exchangeWrapper without enough tokens', async () => {
@@ -314,7 +314,7 @@ describe('Sell', () => {
       issueTakerTokenToSolo(takerWei),
       setTakerBalance(takerPar),
     ]);
-    await expectSellRevert({}, 'Token: TransferFrom failed');
+    await expectSellRevert({}, 'Token: operation failed');
   });
 });
 

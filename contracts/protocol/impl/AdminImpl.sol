@@ -19,6 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
+import { IERC20 } from "../interfaces/IERC20.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { Decimal } from "../lib/Decimal.sol";
@@ -124,7 +125,7 @@ library AdminImpl {
 
         address token = state.getToken(marketId);
 
-        uint256 actualBalance = token.balanceOf(address(this));
+        uint256 actualBalance = IERC20(token).balanceOf(address(this));
         if (excessWei.value > actualBalance) {
             excessWei.value = actualBalance;
         }
@@ -146,7 +147,8 @@ library AdminImpl {
     {
         _requireNoMarket(state, token);
 
-        uint256 balance = token.balanceOf(address(this));
+//        uint256 balance = token.balanceOf(address(this));
+        uint256 balance = IERC20(token).balanceOf(address(this));
         token.transfer(recipient, balance);
 
         emit LogWithdrawExcessTokens(token, balance);

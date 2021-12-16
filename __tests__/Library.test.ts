@@ -385,94 +385,6 @@ describe('Library', () => {
       expect(result).toEqual(amount);
     });
 
-    it('allowance (normal)', async () => {
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(token, owner, addr)
-        .call();
-      expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
-        solo.contracts.tokenA.methods.approve(addr, amount),
-        { from: owner },
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(token, owner, addr)
-        .call();
-      expect(result).toEqual(amount);
-    });
-
-    it('allowance (omise)', async () => {
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(omise, owner, addr)
-        .call();
-      expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
-        solo.contracts.omiseToken.methods.approve(addr, amount),
-        { from: owner },
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(omise, owner, addr)
-        .call();
-      expect(result).toEqual(amount);
-    });
-
-    it('approve (normal)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.testLib.methods.TokenApprove(token, addr, amount),
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(token, libAddr, addr)
-        .call();
-      expect(result).toEqual(amount);
-    });
-
-    it('approve (error)', async () => {
-      await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenApprove(errorToken, addr, amount),
-        ),
-        'Token: Approve failed',
-      );
-    });
-
-    it('approve (omise)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.testLib.methods.TokenApprove(omise, addr, amount),
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(omise, libAddr, addr)
-        .call();
-      expect(result).toEqual(amount);
-    });
-
-    it('approveMax (normal)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.testLib.methods.TokenApproveMax(token, addr),
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(token, libAddr, addr)
-        .call();
-      expect(result).toEqual(INTEGERS.ONES_255.toFixed(0));
-    });
-
-    it('approveMax (error)', async () => {
-      await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenApproveMax(errorToken, addr),
-        ),
-        'Token: Approve failed',
-      );
-    });
-
-    it('approveMax (omise)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.testLib.methods.TokenApproveMax(omise, addr),
-      );
-      result = await solo.contracts.testLib.methods
-        .TokenAllowance(omise, libAddr, addr)
-        .call();
-      expect(result).toEqual(INTEGERS.ONES_255.toFixed(0));
-    });
-
     it('transfer (normal)', async () => {
       await solo.contracts.callContractFunction(
         solo.contracts.tokenA.methods.issueTo(libAddr, amount),
@@ -504,7 +416,7 @@ describe('Library', () => {
             amount,
           ),
         ),
-        'Token: Transfer failed',
+        'Token: operation failed',
       );
     });
 
@@ -540,7 +452,7 @@ describe('Library', () => {
             amount,
           ),
         ),
-        'Token: TransferFrom failed',
+        'Token: operation failed',
       );
     });
 

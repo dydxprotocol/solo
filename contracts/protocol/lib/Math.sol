@@ -102,7 +102,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint128"
+            "Unsafe cast to uint128",
+            number
         );
         return result;
     }
@@ -118,7 +119,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint96"
+            "Unsafe cast to uint96",
+            number
         );
         return result;
     }
@@ -134,7 +136,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint32"
+            "Unsafe cast to uint32",
+            number
         );
         return result;
     }

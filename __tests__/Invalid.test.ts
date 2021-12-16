@@ -119,7 +119,7 @@ describe('Invalid', () => {
   it('Fails for zero actions and zero accounts', async () => {
     await expectThrow(
       operate([], []),
-      'OperationImpl: Cannot have zero actions',
+      'OperationImpl: Cannot have zero accounts',
     );
   });
 

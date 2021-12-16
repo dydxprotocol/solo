@@ -99,15 +99,14 @@ library OperationImpl {
         pure
     {
         Require.that(
-            actions.length != 0,
-            FILE,
-            "Cannot have zero actions"
-        );
-
-        Require.that(
             accounts.length != 0,
             FILE,
             "Cannot have zero accounts"
+        );
+        Require.that(
+            actions.length != 0,
+            FILE,
+            "Cannot have zero actions"
         );
 
         for (uint256 a = 0; a < accounts.length; a++) {
@@ -116,8 +115,8 @@ library OperationImpl {
                     !Account.equals(accounts[a], accounts[b]),
                     FILE,
                     "Cannot duplicate accounts",
-                    a,
-                    b
+                    accounts[a].owner,
+                    accounts[a].number
                 );
             }
         }
@@ -156,7 +155,7 @@ library OperationImpl {
                 if (accountLayout == Actions.AccountLayout.TwoPrimary) {
                     primaryAccounts[arg.otherAccountId] = true;
                 } else {
-                    assert(accountLayout == Actions.AccountLayout.PrimaryAndSecondary);
+                    // accountLayout == Actions.AccountLayout.PrimaryAndSecondary
                     Require.that(
                         !primaryAccounts[arg.otherAccountId],
                         FILE,
@@ -179,8 +178,6 @@ library OperationImpl {
                 );
                 _updateMarket(state, cache, arg.primaryMarketId);
                 _updateMarket(state, cache, arg.secondaryMarketId);
-            } else {
-                assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
         }
 
@@ -254,8 +251,7 @@ library OperationImpl {
             else if (actionType == Actions.ActionType.Vaporize) {
                 _vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
-            else  {
-                assert(actionType == Actions.ActionType.Call);
+            else if (actionType == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, action));
             }
         }
@@ -471,8 +467,7 @@ library OperationImpl {
             tokensReceived.value >= makerWei.value,
             FILE,
             "Buy amount less than promised",
-            tokensReceived.value,
-            makerWei.value
+            tokensReceived.value
         );
 
         state.setPar(
@@ -589,7 +584,8 @@ library OperationImpl {
         Require.that(
             outputWei.isZero() || inputWei.isZero() || outputWei.sign != inputWei.sign,
             FILE,
-            "Trades cannot be one-sided"
+            "Trades cannot be one-sided",
+            args.autoTrader
         );
 
         // set the balance for the maker
@@ -654,8 +650,6 @@ library OperationImpl {
             !maxHeldWei.isNegative(),
             FILE,
             "Collateral cannot be negative",
-            args.liquidAccount.owner,
-            args.liquidAccount.number,
             args.heldMarket
         );
 
