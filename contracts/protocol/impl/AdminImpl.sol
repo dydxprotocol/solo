@@ -53,6 +53,11 @@ library AdminImpl {
         uint256 amount
     );
 
+    event LogWithdrawUnsupportedTokens(
+        address token,
+        uint256 amount
+    );
+
     event LogAddMarket(
         uint256 marketId,
         address token
@@ -147,11 +152,10 @@ library AdminImpl {
     {
         _requireNoMarket(state, token);
 
-//        uint256 balance = token.balanceOf(address(this));
         uint256 balance = IERC20(token).balanceOf(address(this));
         token.transfer(recipient, balance);
 
-        emit LogWithdrawExcessTokens(token, balance);
+        emit LogWithdrawUnsupportedTokens(token, balance);
 
         return balance;
     }
