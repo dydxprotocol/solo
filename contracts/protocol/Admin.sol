@@ -96,7 +96,8 @@ contract Admin is
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
-        bool isClosing
+        bool isClosing,
+        bool shouldAddToMaxMarketsPerIndex
     )
         public
         onlyOwner
@@ -109,7 +110,8 @@ contract Admin is
             interestSetter,
             marginPremium,
             spreadPremium,
-            isClosing
+            isClosing,
+            shouldAddToMaxMarketsPerIndex
         );
     }
 

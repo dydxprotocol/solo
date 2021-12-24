@@ -25,13 +25,13 @@ import { IPriceOracle } from "./interfaces/IPriceOracle.sol";
 import { Account } from "./lib/Account.sol";
 import { Cache } from "./lib/Cache.sol";
 import { Decimal } from "./lib/Decimal.sol";
+import { EnumerableSet } from "./lib/EnumerableSet.sol";
 import { Interest } from "./lib/Interest.sol";
 import { Monetary } from "./lib/Monetary.sol";
 import { Require } from "./lib/Require.sol";
 import { Storage } from "./lib/Storage.sol";
 import { Token } from "./lib/Token.sol";
 import { Types } from "./lib/Types.sol";
-import { MarketCachePersister } from "./lib/MarketCachePersister.sol";
 
 
 /**
@@ -44,9 +44,9 @@ contract Getters is
     State
 {
     using Cache for Cache.MarketCache;
-    using MarketCachePersister for Cache.MarketCache;
     using Storage for Storage.State;
     using Types for Types.Par;
+    using EnumerableSet for EnumerableSet.Set;
 
     // ============ Constants ============
 
@@ -666,13 +666,14 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        uint256 numMarkets = g_state.numMarkets;
+        uint256[] memory markets = g_state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
 
         // populate cache
-        Cache.MarketCache memory cache = Cache.create(numMarkets);
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!g_state.getPar(account, m).isZero()) {
-                cache.addMarket(g_state, m);
+        Cache.MarketCache memory cache = Cache.create(markets.length);
+        for (uint256 i = 0; i < markets.length; i++) {
+            if (!g_state.getPar(account, markets[i]).isZero()) {
+                cache.getAtIndex(i).marketId = markets[i];
+                cache.getAtIndex(i).price = g_state.fetchPrice(i);
             }
         }
 

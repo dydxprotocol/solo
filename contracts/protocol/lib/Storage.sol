@@ -24,6 +24,7 @@ import { Account } from "./Account.sol";
 import { Cache } from "./Cache.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
+import { EnumerableSet } from "./EnumerableSet.sol";
 import { Math } from "./Math.sol";
 import { Monetary } from "./Monetary.sol";
 import { Require } from "./Require.sol";
@@ -48,6 +49,7 @@ library Storage {
     using Types for Types.Par;
     using Types for Types.Wei;
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.Set;
 
     // ============ Constants ============
 
@@ -59,6 +61,9 @@ library Storage {
     struct Market {
         // Contract address of the associated ERC20 token
         address token;
+
+        // Whether additional borrows are allowed for this market
+        bool isClosing;
 
         // Total aggregated supply and borrow amount of the entire market
         Types.TotalPar totalPar;
@@ -86,9 +91,6 @@ library Storage {
         // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
         // (when performing a liquidation between two markets)
         Decimal.D256 spreadPremium;
-
-        // Whether additional borrows are allowed for this market
-        bool isClosing;
     }
 
     // The global risk parameters that govern the health and security of the system
@@ -126,6 +128,9 @@ library Storage {
     struct State {
         // number of markets
         uint256 numMarkets;
+
+        // The maximum number of unique markets that can be held in a account's index: [owner][accountId]
+        uint256 maxMarketsPerAccountIndex;
 
         // marketId => Market
         mapping (uint256 => Market) markets;
@@ -251,6 +256,17 @@ library Storage {
         return Interest.parToWei(par, index);
     }
 
+    function getMarketsWithBalances(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256[] memory)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
+    }
+
     function getLiquidationSpreadForPair(
         Storage.State storage state,
         uint256 heldMarketId,
@@ -344,21 +360,17 @@ library Storage {
         Monetary.Value memory borrowValue;
 
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-
-            Types.Wei memory userWei = state.getWei(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Wei memory userWei = state.getWei(account, cache.getAtIndex(i).marketId);
 
             if (userWei.isZero()) {
                 continue;
             }
 
-            uint256 assetValue = userWei.value.mul(cache.getPrice(m).value);
+            uint256 assetValue = userWei.value.mul(cache.getAtIndex(i).price.value);
             Decimal.D256 memory adjust = Decimal.one();
             if (adjustForLiquidity) {
-                adjust = Decimal.onePlus(state.markets[m].marginPremium);
+                adjust = Decimal.onePlus(state.markets[cache.getAtIndex(i).marketId].marginPremium);
             }
 
             if (userWei.sign) {
@@ -381,6 +393,11 @@ library Storage {
         view
         returns (bool)
     {
+        if (state.accounts[account.owner][account.number].numberOfMarketsWithBorrow == 0) {
+            // The user does not have a balance with a borrow amount, so they must be collateralized
+            return true;
+        }
+
         // get account values (adjusted for liquidity)
         (
             Monetary.Value memory supplyValue,
@@ -577,11 +594,8 @@ library Storage {
     {
         bool hasNegative = false;
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-            Types.Par memory par = state.getPar(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Par memory par = state.getPar(account, cache.getAtIndex(i).marketId);
             if (par.isZero()) {
                 continue;
             } else if (par.sign) {
@@ -630,6 +644,7 @@ library Storage {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
         if (Types.equals(oldPar, newPar)) {
+            // GUARD statement
             return;
         }
 
@@ -652,6 +667,20 @@ library Storage {
 
         state.markets[marketId].totalPar = totalPar;
         state.accounts[account.owner][account.number].balances[marketId] = newPar;
+
+        if (oldPar.isLessThanZero() && newPar.isGreaterThanOrEqualToZero()) {
+            // user went from borrowing to repaying or positive
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow -= 1;
+        } else if (oldPar.isGreaterThanOrEqualToZero() && newPar.isLessThanZero()) {
+            // user went from zero or positive to borrowing
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
+        }
+
+        if (newPar.isZero()) {
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.remove(marketId);
+        } else {
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.add(marketId);
+        }
     }
 
     /**

@@ -178,6 +178,26 @@ library Types {
         return a.value == 0;
     }
 
+    function isLessThanZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value > 0 && !a.sign;
+    }
+
+    function isGreaterThanOrEqualToZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return isZero(a) || a.sign;
+    }
+
     // ============ Wei (Token Amount) ============
 
     // Individual token amount for an account

@@ -29,11 +29,11 @@ import { Monetary } from "./Monetary.sol";
  * Library for caching information about markets
  */
 library Cache {
-    using Cache for MarketCache;
 
     // ============ Structs ============
 
     struct MarketInfo {
+        uint marketId;
         bool isClosing;
         uint128 borrowPar;
         Monetary.Price price;
@@ -41,6 +41,9 @@ library Cache {
 
     struct MarketCache {
         MarketInfo[] markets;
+        uint256[] marketBitmaps;
+        bool isSorted;
+        uint256 marketsLength;
     }
 
     // ============ Setter Functions ============
@@ -56,7 +59,10 @@ library Cache {
         returns (MarketCache memory)
     {
         return MarketCache({
-            markets: new MarketInfo[](numMarkets)
+            markets: new MarketInfo[](0),
+            marketBitmaps: new uint[]((numMarkets / 256) + 1),
+            isSorted: false,
+            marketsLength: 0
         });
     }
 
@@ -80,39 +86,115 @@ library Cache {
         pure
         returns (bool)
     {
-        return cache.markets[marketId].price.value != 0;
+        uint bucketIndex = uint(keccak256(abi.encodePacked(marketId))) % 4;
+        uint indexFromRight = uint(keccak256(abi.encodePacked(marketId))) % 256;
+        uint bit = cache.marketBitmaps[bucketIndex] & (1 << indexFromRight);
+        return bit > 0;
     }
 
-    function getIsClosing(
+    function get(
         MarketCache memory cache,
         uint256 marketId
     )
         internal
         pure
-        returns (bool)
+        returns (MarketInfo memory)
     {
-        return cache.markets[marketId].isClosing;
+        // TODO binary search
+        MarketInfo memory marketInfo = cache.markets[marketId];
+
+        require(marketId == marketInfo.marketId, "Cache: invalid marketId");
+        return marketInfo;
     }
 
-    function getPrice(
+    function set(
         MarketCache memory cache,
         uint256 marketId
     )
         internal
         pure
-        returns (Monetary.Price memory)
     {
-        return cache.markets[marketId].price;
+        require(
+            !cache.isSorted,
+            "Cache: cache already sorted"
+        );
+
+        uint bucketIndex = marketId / 256;
+        uint indexFromRight = marketId % 256;
+        cache.marketBitmaps[bucketIndex] |= (1 << indexFromRight);
+
+//        cache.markets[cache.marketsLength].marketId = marketId;
+//        cache.markets[cache.marketsLength].isClosing = isClosing;
+//        cache.markets[cache.marketsLength].borrowPar = borrowPar;
+//        cache.markets[cache.marketsLength].price = price;
+        cache.marketsLength += 1;
     }
 
-    function getBorrowPar(
+    function getAtIndex(
         MarketCache memory cache,
-        uint256 marketId
+        uint256 index
     )
         internal
         pure
-        returns (uint128)
+        returns (MarketInfo memory)
     {
-        return cache.markets[marketId].borrowPar;
+        require(index < cache.marketsLength, "Cache: invalid index");
+        return cache.markets[index];
     }
+
+    function leastSignificantBit(uint256 x) private pure returns (uint8) {
+        require(x > 0, 'Cache::leastSignificantBit: zero');
+        // TODO - reverse ordering so small numbers are checked first
+
+        uint8 lsb = 255;
+
+        if (x & uint128(-1) > 0) {
+            lsb -= 128;
+        } else {
+            x >>= 128;
+        }
+
+        if (x & uint64(-1) > 0) {
+            lsb -= 64;
+        } else {
+            x >>= 64;
+        }
+
+        if (x & uint32(-1) > 0) {
+            lsb -= 32;
+        } else {
+            x >>= 32;
+        }
+
+        if (x & uint16(-1) > 0) {
+            lsb -= 16;
+        } else {
+            x >>= 16;
+        }
+
+        if (x & uint8(-1) > 0) {
+            lsb -= 8;
+        } else {
+            x >>= 8;
+        }
+
+        if (x & 0xf > 0) {
+            lsb -= 4;
+        } else {
+            x >>= 4;
+        }
+
+        if (x & 0x3 > 0) {
+            lsb -= 2;
+        } else {
+            x >>= 2;
+        }
+
+        if (x & 0x1 > 0) {
+            lsb -= 1;
+        }
+
+        return lsb;
+    }
+
 }

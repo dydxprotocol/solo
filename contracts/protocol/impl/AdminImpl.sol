@@ -63,6 +63,11 @@ library AdminImpl {
         address token
     );
 
+    event LogSetIsAllowedInIndexZero(
+        uint256 marketId,
+        bool isAllowedInIndexZero
+    );
+
     event LogSetIsClosing(
         uint256 marketId,
         bool isClosing
@@ -169,7 +174,8 @@ library AdminImpl {
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
-        bool isClosing
+        bool isClosing,
+        bool shouldAddToMaxMarketsPerIndex
     )
     public
     {
@@ -178,6 +184,9 @@ library AdminImpl {
         uint256 marketId = state.numMarkets;
 
         state.numMarkets++;
+        if (shouldAddToMaxMarketsPerIndex) {
+            state.maxMarketsPerAccountIndex++;
+        }
         state.markets[marketId].token = token;
         state.markets[marketId].index = Interest.newIndex();
         state.markets[marketId].isClosing = isClosing;

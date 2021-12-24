@@ -12,6 +12,7 @@ import "../lib/UQ112x112.sol";
 
 import "../interfaces/ITransferProxy.sol";
 
+
 import "./DolomiteAmmERC20.sol";
 
 contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
