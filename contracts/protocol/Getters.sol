@@ -509,6 +509,38 @@ contract Getters is
     }
 
     /**
+     * Get a list of markets that have a non-zero balance for an account
+     *
+     * @param  account  The account to query
+     * @return          The non-sorted marketIds with non-zero balance for the account.
+     */
+    function getAccountMarketsWithNonZeroBalances(
+        Account.Info memory account
+    )
+        public
+        view
+        returns (uint256[] memory)
+    {
+        return g_state.getMarketsWithBalances(account);
+    }
+
+    /**
+     * Get the number of markets with which an account has a negative balance.
+     *
+     * @param  account  The account to query
+     * @return          The non-sorted marketIds with non-zero balance for the account.
+     */
+    function getNumberOfMarketsWithBorrow(
+        Account.Info memory account
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return g_state.getNumberOfMarketsWithBorrow(account);
+    }
+
+    /**
      * Get the total supplied and total borrowed value of an account.
      *
      * @param  account  The account to query

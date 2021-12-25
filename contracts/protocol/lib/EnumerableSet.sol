@@ -70,10 +70,10 @@ library EnumerableSet {
                 // Move the last value to the index where the value to delete is
                 set._values[toDeleteIndex] = lastValue;
                 // Update the index for the moved value
-                set._valueToIndexMap[lastValue] = valueIndex; // Replace lastvalue's index to valueIndex
+                set._valueToIndexMap[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
             }
 
-            // Delete the slot where the moved value was stored
+            // Delete the slot where the moved value was stored, which is the last index
             set._values.pop();
 
             // Delete the index for the deleted slot

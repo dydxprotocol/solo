@@ -33,8 +33,7 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
-import { LiquidationOrVaporization } from "../lib/LiquidationOrVaporization.sol";
-import { VaporizeImpl } from "./VaporizeImpl.sol";
+import { LiquidateOrVaporizeImpl } from "./LiquidateOrVaporizeImpl.sol";
 
 
 /**
@@ -53,6 +52,9 @@ library OperationImpl {
     // ============ Constants ============
 
     bytes32 constant FILE = "OperationImpl";
+
+    uint256 internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Public Functions ============
 
@@ -184,18 +186,14 @@ library OperationImpl {
         }
 
         // get any other markets for which an account has a balance
-        // TODO replace with population via accounts[i].marketsWithNonZeroBalanceSet.values();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.hasMarket(m)) {
-                continue;
-            }
-            for (uint256 a = 0; a < accounts.length; a++) {
-                if (!state.getPar(accounts[a], m).isZero()) {
-                    _updateMarket(state, cache, m);
-                    break;
-                }
+        for (uint256 a = 0; a < accounts.length; a++) {
+            uint[] memory marketIdsWithBalance = state.getMarketsWithBalances(accounts[a]);
+            for (uint256 i = 0; i < marketIdsWithBalance.length; i++) {
+                _updateMarket(state, cache, marketIdsWithBalance[i]);
             }
         }
+
+        _initializeCache(state, cache);
 
         return (primaryAccounts, cache);
     }
@@ -208,24 +206,54 @@ library OperationImpl {
         private
     {
         if (!cache.hasMarket(marketId)) {
-            if (state.markets[marketId].isClosing) {
-                cache.set(
-                    marketId
-//                    /* isClosing */ true,
-//                    state.getTotalPar(marketId).borrow,
-//                    state.fetchPrice(marketId)
-                );
-            } else {
-                cache.set(
-                    marketId
-//                    /* isClosing */ false,
-//                    /* borrowPar */ 0,
-//                    state.fetchPrice(marketId)
-                );
-            }
-
+            cache.set(marketId);
             Events.logIndexUpdate(marketId, state.updateIndex(marketId));
         }
+    }
+
+    function _initializeCache(
+        Storage.State storage state,
+        Cache.MarketCache memory cache
+    ) private view {
+        cache.markets = new Cache.MarketInfo[](cache.marketsLength);
+        uint counter = 0;
+
+        // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
+        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
+        // Meaning, this function call is O(n) where `n` is the number of markets in the cache
+        for (uint i = 0; i < cache.marketBitmaps.length; i++) {
+            uint bitmap = cache.marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Cache.leastSignificantBit(bitmap);
+                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                if (state.markets[marketId].isClosing) {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                        marketId: marketId,
+                        isClosing: true,
+                        borrowPar: state.getTotalPar(marketId).borrow,
+                        price: state.fetchPrice(marketId)
+                    });
+                } else {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                        marketId: marketId,
+                        isClosing: false,
+                        borrowPar: 0,
+                        price: state.fetchPrice(marketId)
+                    });
+                }
+
+                // unset the set bit
+                bitmap = bitmap - (ONE << nextSetBit);
+            }
+        }
+
+        Require.that(
+            cache.marketsLength == counter,
+            FILE,
+            "cache initialized improperly",
+            cache.marketsLength,
+            cache.markets.length
+        );
     }
 
     function _runActions(
@@ -259,11 +287,11 @@ library OperationImpl {
                 _trade(state, Actions.parseTradeArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Vaporize) {
                 // use the library to save space since this function is rarely ever called
-                VaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, action));
@@ -631,108 +659,6 @@ library OperationImpl {
             args,
             inputWei,
             outputWei
-        );
-    }
-
-    function _liquidate(
-        Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Cache.MarketCache memory cache
-    )
-        private
-    {
-        state.requireIsGlobalOperator(msg.sender);
-
-        // verify liquidatable
-        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
-            Require.that(
-                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
-                FILE,
-                "Unliquidatable account",
-                args.liquidAccount.owner,
-                args.liquidAccount.number
-            );
-            state.setStatus(args.liquidAccount, Account.Status.Liquid);
-        }
-
-        Types.Wei memory maxHeldWei = state.getWei(
-            args.liquidAccount,
-            args.heldMarket
-        );
-
-        Require.that(
-            !maxHeldWei.isNegative(),
-            FILE,
-            "Collateral cannot be negative",
-            args.heldMarket
-        );
-
-        (
-            Types.Par memory owedPar,
-            Types.Wei memory owedWei
-        ) = state.getNewParAndDeltaWeiForLiquidation(
-            args.liquidAccount,
-            args.owedMarket,
-            args.amount
-        );
-
-        (
-            Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPriceAdj
-        ) = LiquidationOrVaporization._getLiquidationPrices(
-            state,
-            cache,
-            args.heldMarket,
-            args.owedMarket
-        );
-
-        Types.Wei memory heldWei = LiquidationOrVaporization._owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
-
-        // if attempting to over-borrow the held asset, bound it by the maximum
-        if (heldWei.value > maxHeldWei.value) {
-            heldWei = maxHeldWei.negative();
-            owedWei = LiquidationOrVaporization._heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
-
-            state.setPar(
-                args.liquidAccount,
-                args.heldMarket,
-                Types.zeroPar()
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.owedMarket,
-                owedWei
-            );
-        } else {
-            state.setPar(
-                args.liquidAccount,
-                args.owedMarket,
-                owedPar
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.heldMarket,
-                heldWei
-            );
-        }
-
-        // set the balances for the solid account
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-
-        Events.logLiquidate(
-            state,
-            args,
-            heldWei,
-            owedWei
         );
     }
 

@@ -49,6 +49,14 @@ interface ISoloMargin {
         Account.Info calldata account
     ) external view returns (Account.Status);
 
+    function getAccountMarketsWithNonZeroBalances(
+        Account.Info calldata account
+    ) external view returns (uint256[] memory);
+
+    function getNumberOfMarketsWithBorrow(
+        Account.Info calldata account
+    ) external view returns (uint256);
+
     function getMarketPrice(
         uint256 marketId
     ) external view returns (Monetary.Price memory);

@@ -30,18 +30,120 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
-import { LiquidationOrVaporization } from "../lib/LiquidationOrVaporization.sol";
 
 
-library VaporizeImpl {
+library LiquidateOrVaporizeImpl {
     using Cache for Cache.MarketCache;
+    using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
     using Types for Types.Wei;
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "VaporizeImpl";
+    bytes32 constant FILE = "LiquidateOrVaporizeImpl";
+
+    function liquidate(
+        Storage.State storage state,
+        Actions.LiquidateArgs memory args,
+        Cache.MarketCache memory cache
+    )
+    public
+    {
+        state.requireIsGlobalOperator(msg.sender);
+
+        // verify liquidatable
+        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
+            Require.that(
+                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
+                FILE,
+                "Unliquidatable account",
+                args.liquidAccount.owner,
+                args.liquidAccount.number
+            );
+            state.setStatus(args.liquidAccount, Account.Status.Liquid);
+        }
+
+        Types.Wei memory maxHeldWei = state.getWei(
+            args.liquidAccount,
+            args.heldMarket
+        );
+
+        Require.that(
+            !maxHeldWei.isNegative(),
+            FILE,
+            "Collateral cannot be negative",
+            args.heldMarket
+        );
+
+        (
+        Types.Par memory owedPar,
+        Types.Wei memory owedWei
+        ) = state.getNewParAndDeltaWeiForLiquidation(
+            args.liquidAccount,
+            args.owedMarket,
+            args.amount
+        );
+
+        (
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPriceAdj
+        ) = _getLiquidationPrices(
+            state,
+            cache,
+            args.heldMarket,
+            args.owedMarket
+        );
+
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
+
+        // if attempting to over-borrow the held asset, bound it by the maximum
+        if (heldWei.value > maxHeldWei.value) {
+            heldWei = maxHeldWei.negative();
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
+
+            state.setPar(
+                args.liquidAccount,
+                args.heldMarket,
+                Types.zeroPar()
+            );
+            state.setParFromDeltaWei(
+                args.liquidAccount,
+                args.owedMarket,
+                owedWei
+            );
+        } else {
+            state.setPar(
+                args.liquidAccount,
+                args.owedMarket,
+                owedPar
+            );
+            state.setParFromDeltaWei(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei
+            );
+        }
+
+        // set the balances for the solid account
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+
+        Events.logLiquidate(
+            state,
+            args,
+            heldWei,
+            owedWei
+        );
+    }
 
     function vaporize(
         Storage.State storage state,
@@ -101,19 +203,19 @@ library VaporizeImpl {
         (
         Monetary.Price memory heldPrice,
         Monetary.Price memory owedPrice
-        ) = LiquidationOrVaporization._getLiquidationPrices(
+        ) = _getLiquidationPrices(
             state,
             cache,
             args.heldMarket,
             args.owedMarket
         );
 
-        Types.Wei memory heldWei = LiquidationOrVaporization._owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
 
         // if attempting to over-borrow the held asset, bound it by the maximum
         if (heldWei.value > maxHeldWei.value) {
             heldWei = maxHeldWei.negative();
-            owedWei = LiquidationOrVaporization._heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
             state.setParFromDeltaWei(
                 args.vaporAccount,
@@ -191,6 +293,74 @@ library VaporizeImpl {
             );
             return (false, excessWei);
         }
+    }
+
+    /**
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of owedWei
+     * given heldWei and the (spread-adjusted) prices of each asset.
+     */
+    function _heldWeiToOwedWei(
+        Types.Wei memory heldWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
+    )
+    internal
+    pure
+    returns (Types.Wei memory)
+    {
+        return Types.Wei({
+        sign: true,
+        value: Math.getPartialRoundUp(heldWei.value, heldPrice.value, owedPrice.value)
+        });
+    }
+
+    /**
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of heldWei
+     * given owedWei and the (spread-adjusted) prices of each asset.
+     */
+    function _owedWeiToHeldWei(
+        Types.Wei memory owedWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
+    )
+    internal
+    pure
+    returns (Types.Wei memory)
+    {
+        return Types.Wei({
+        sign: false,
+        value: Math.getPartial(owedWei.value, owedPrice.value, heldPrice.value)
+        });
+    }
+
+    /**
+     * Return the (spread-adjusted) prices of two assets for the purposes of liquidation or
+     * vaporization.
+     */
+    function _getLiquidationPrices(
+        Storage.State storage state,
+        Cache.MarketCache memory cache,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    )
+    internal
+    view
+    returns (
+        Monetary.Price memory,
+        Monetary.Price memory
+    )
+    {
+        uint256 owedPrice = cache.get(owedMarketId).price.value;
+        Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
+            heldMarketId,
+            owedMarketId
+        );
+
+        Monetary.Price memory owedPriceAdj = Monetary.Price({
+        value: owedPrice.add(Decimal.mul(owedPrice, spread))
+        });
+
+        return (cache.get(heldMarketId).price, owedPriceAdj);
     }
 
 }

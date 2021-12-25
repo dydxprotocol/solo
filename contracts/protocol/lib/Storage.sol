@@ -267,6 +267,17 @@ library Storage {
         return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
     }
 
+    function getNumberOfMarketsWithBorrow(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256)
+    {
+        return state.accounts[account.owner][account.number].numberOfMarketsWithBorrow;
+    }
+
     function getLiquidationSpreadForPair(
         Storage.State storage state,
         uint256 heldMarketId,

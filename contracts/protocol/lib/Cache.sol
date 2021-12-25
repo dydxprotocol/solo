@@ -30,6 +30,10 @@ import { Monetary } from "./Monetary.sol";
  */
 library Cache {
 
+    // ============ Constants ============
+
+    uint internal constant ONE = 1;
+
     // ============ Structs ============
 
     struct MarketInfo {
@@ -42,7 +46,6 @@ library Cache {
     struct MarketCache {
         MarketInfo[] markets;
         uint256[] marketBitmaps;
-        bool isSorted;
         uint256 marketsLength;
     }
 
@@ -61,7 +64,6 @@ library Cache {
         return MarketCache({
             markets: new MarketInfo[](0),
             marketBitmaps: new uint[]((numMarkets / 256) + 1),
-            isSorted: false,
             marketsLength: 0
         });
     }
@@ -86,8 +88,8 @@ library Cache {
         pure
         returns (bool)
     {
-        uint bucketIndex = uint(keccak256(abi.encodePacked(marketId))) % 4;
-        uint indexFromRight = uint(keccak256(abi.encodePacked(marketId))) % 256;
+        uint bucketIndex = marketId / 256;
+        uint indexFromRight = marketId % 256;
         uint bit = cache.marketBitmaps[bucketIndex] & (1 << indexFromRight);
         return bit > 0;
     }
@@ -100,11 +102,33 @@ library Cache {
         pure
         returns (MarketInfo memory)
     {
-        // TODO binary search
-        MarketInfo memory marketInfo = cache.markets[marketId];
+        require(
+            cache.markets.length > 0,
+            "Cache: not initialized"
+        );
+        return getInternal(cache.markets, 0, cache.marketsLength, marketId);
+    }
 
-        require(marketId == marketInfo.marketId, "Cache: invalid marketId");
-        return marketInfo;
+    function getInternal(
+        MarketInfo[] memory data,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
+            revert("Cache: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = data[mid].marketId;
+        if (marketId < midMarketId) {
+            return getInternal(data, beginInclusive, mid, marketId);
+        } else if (marketId > midMarketId) {
+            return getInternal(data, mid + 1, endExclusive, marketId);
+        } else {
+            return data[mid];
+        }
     }
 
     function set(
@@ -114,19 +138,16 @@ library Cache {
         internal
         pure
     {
+        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
         require(
-            !cache.isSorted,
-            "Cache: cache already sorted"
+            cache.markets.length == 0,
+            "Cache: cache already initialized"
         );
 
         uint bucketIndex = marketId / 256;
         uint indexFromRight = marketId % 256;
         cache.marketBitmaps[bucketIndex] |= (1 << indexFromRight);
 
-//        cache.markets[cache.marketsLength].marketId = marketId;
-//        cache.markets[cache.marketsLength].isClosing = isClosing;
-//        cache.markets[cache.marketsLength].borrowPar = borrowPar;
-//        cache.markets[cache.marketsLength].price = price;
         cache.marketsLength += 1;
     }
 
@@ -142,11 +163,10 @@ library Cache {
         return cache.markets[index];
     }
 
-    function leastSignificantBit(uint256 x) private pure returns (uint8) {
-        require(x > 0, 'Cache::leastSignificantBit: zero');
-        // TODO - reverse ordering so small numbers are checked first
+    function leastSignificantBit(uint256 x) internal pure returns (uint) {
+        // gas usage peaks at 350 per call
 
-        uint8 lsb = 255;
+        uint lsb = 255;
 
         if (x & uint128(-1) > 0) {
             lsb -= 128;
