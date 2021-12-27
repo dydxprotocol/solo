@@ -226,24 +226,30 @@ library OperationImpl {
             while (bitmap != 0) {
                 uint nextSetBit = Cache.leastSignificantBit(bitmap);
                 uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
                         marketId: marketId,
+                        token: token,
                         isClosing: true,
                         borrowPar: state.getTotalPar(marketId).borrow,
-                        price: state.fetchPrice(marketId)
+                        price: state.fetchPrice(marketId, token)
                     });
                 } else {
                     cache.markets[counter++] = Cache.MarketInfo({
                         marketId: marketId,
+                        token: token,
                         isClosing: false,
                         borrowPar: 0,
-                        price: state.fetchPrice(marketId)
+                        price: state.fetchPrice(marketId, token)
                     });
                 }
 
                 // unset the set bit
                 bitmap = bitmap - (ONE << nextSetBit);
+            }
+            if (counter == cache.marketsLength) {
+                break;
             }
         }
 
@@ -267,6 +273,7 @@ library OperationImpl {
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory action = actions[i];
             Actions.ActionType actionType = action.actionType;
+
 
             if (actionType == Actions.ActionType.Deposit) {
                 _deposit(state, Actions.parseDepositArgs(accounts, action));
@@ -307,16 +314,35 @@ library OperationImpl {
     )
         private
     {
+        // TODO check that no balance is held in an account that is recyclable and is NOT eq to the market's token address
         // verify no increase in borrowPar for closing markets
         uint256 numMarkets = cache.getNumMarkets();
         for (uint256 i = 0; i < numMarkets; i++) {
+            uint256 marketId = cache.getAtIndex(i).marketId;
             if (cache.getAtIndex(i).isClosing) {
                 Require.that(
-                    state.getTotalPar(cache.getAtIndex(i).marketId).borrow <= cache.getAtIndex(i).borrowPar,
+                    state.getTotalPar(marketId).borrow <= cache.getAtIndex(i).borrowPar,
                     FILE,
                     "Market is closing",
-                    cache.getAtIndex(i).marketId
+                    marketId
                 );
+            }
+            if (state.markets[marketId].isRecyclable) {
+                // This market is recyclable. Check that only the `token` is the owner
+                for (uint256 a = 0; a < accounts.length; a++) {
+                    if (accounts[a].owner != cache.getAtIndex(i).token) {
+                        // The owner of the recyclable token isn't the TokenProxy
+                        EnumerableSet.Set storage marketSet = state.getMarketsWithBalancesSet(accounts[a]);
+                        Require.that(
+                            !marketSet.contains(marketId),
+                            FILE,
+                            "invalid recyclable owner",
+                            account.owner,
+                            account.number,
+                            marketInfo.marketId
+                        );
+                    }
+                }
             }
         }
 

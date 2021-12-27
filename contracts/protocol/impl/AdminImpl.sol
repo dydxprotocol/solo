@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { IERC20 } from "../interfaces/IERC20.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
+import { IRecyclable } from "../interfaces/IRecyclable.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
 import { Monetary } from "../lib/Monetary.sol";
@@ -46,6 +47,8 @@ library AdminImpl {
 
     bytes32 constant FILE = "AdminImpl";
 
+    uint256 constant HEAD_POINTER = uint(-1);
+
     // ============ Events ============
 
     event LogWithdrawExcessTokens(
@@ -59,6 +62,11 @@ library AdminImpl {
     );
 
     event LogAddMarket(
+        uint256 marketId,
+        address token
+    );
+
+    event LogRemoveMarket(
         uint256 marketId,
         address token
     );
@@ -175,21 +183,27 @@ library AdminImpl {
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
         bool isClosing,
-        bool shouldAddToMaxMarketsPerIndex
+        bool isRecyclable
     )
     public
     {
         _requireNoMarket(state, token);
 
-        uint256 marketId = state.numMarkets;
-
-        state.numMarkets++;
-        if (shouldAddToMaxMarketsPerIndex) {
-            state.maxMarketsPerAccountIndex++;
+        uint256 marketId = state.recycledMarketIds[HEAD_POINTER];
+        if (marketId == 0) {
+            // we can't recycle a marketId, so we get a new ID and increment the number of markets
+            marketId = state.numMarkets;
+            state.numMarkets++;
+        } else {
+            // we successfully recycled the market ID.
+            // reset the head pointer to the next item in the linked list
+            state.recycledMarketIds[HEAD_POINTER] = state.recycledMarketIds[marketId];
         }
+
         state.markets[marketId].token = token;
         state.markets[marketId].index = Interest.newIndex();
         state.markets[marketId].isClosing = isClosing;
+        state.markets[marketId].isRecyclable = isRecyclable;
         state.tokenToMarketId[token] = marketId;
 
         emit LogAddMarket(marketId, token);
@@ -201,6 +215,49 @@ library AdminImpl {
         _setInterestSetter(state, marketId, interestSetter);
         _setMarginPremium(state, marketId, marginPremium);
         _setSpreadPremium(state, marketId, spreadPremium);
+
+        if (isRecyclable) {
+            IRecyclable(token).initialize();
+        }
+    }
+
+    function ownerRemoveMarkets(
+        Storage.State storage state,
+        uint[] memory marketIds,
+        address salvager
+    )
+    public
+    {
+        for (uint i = 0; i < marketIds.length; i++) {
+            address token = state.markets[marketIds[i]].token;
+            Require.that(
+                token != address(0),
+                FILE,
+                "market does not exist",
+                marketIds[i]
+            );
+            Require.that(
+                state.getTotalPar(marketIds[i]).borrow == 0,
+                FILE,
+                "market has active borrows",
+                marketIds[i]
+            );
+
+            delete state.markets[marketIds[i]];
+            delete state.tokenToMarketId[token];
+
+            uint previousHead = state.recycledMarketIds[HEAD_POINTER];
+            state.recycledMarketIds[HEAD_POINTER] = marketIds[i];
+            if (previousHead != 0) {
+                // marketId=0 is not recyclable so we can assume previousHead == 0 means the null case
+                state.recycledMarketIds[marketIds[i]] = previousHead;
+            }
+
+            Token.transfer(token, salvager, state.getTotalPar(marketIds[i]).supply);
+            IRecyclable(token).recycle();
+
+            emit LogRemoveMarket(marketIds[i], token);
+        }
     }
 
     function ownerSetIsClosing(

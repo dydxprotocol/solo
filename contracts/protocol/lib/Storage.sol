@@ -65,6 +65,9 @@ library Storage {
         // Whether additional borrows are allowed for this market
         bool isClosing;
 
+        // Whether this market can be removed and its ID can be recycled and reused
+        bool isRecyclable;
+
         // Total aggregated supply and borrow amount of the entire market
         Types.TotalPar totalPar;
 
@@ -129,12 +132,10 @@ library Storage {
         // number of markets
         uint256 numMarkets;
 
-        // The maximum number of unique markets that can be held in a account's index: [owner][accountId]
-        uint256 maxMarketsPerAccountIndex;
-
         // marketId => Market
         mapping (uint256 => Market) markets;
         mapping (address => uint256) tokenToMarketId;
+        mapping(uint256 => uint256) recycledMarketIds;
 
         // owner => account number => Account
         mapping (address => mapping (uint256 => Account.Storage)) accounts;
@@ -256,6 +257,17 @@ library Storage {
         return Interest.parToWei(par, index);
     }
 
+    function getMarketsWithBalancesSet(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (EnumerableSet.Set storage)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet;
+    }
+
     function getMarketsWithBalances(
         Storage.State storage state,
         Account.Info memory account
@@ -340,14 +352,15 @@ library Storage {
 
     function fetchPrice(
         Storage.State storage state,
-        uint256 marketId
+        uint256 marketId,
+        address token
     )
         internal
         view
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(token);
         Require.that(
             price.value != 0,
             FILE,
@@ -404,7 +417,7 @@ library Storage {
         view
         returns (bool)
     {
-        if (state.accounts[account.owner][account.number].numberOfMarketsWithBorrow == 0) {
+        if (state.getNumberOfMarketsWithBorrow(account) == 0) {
             // The user does not have a balance with a borrow amount, so they must be collateralized
             return true;
         }

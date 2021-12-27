@@ -97,7 +97,7 @@ contract Admin is
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
         bool isClosing,
-        bool shouldAddToMaxMarketsPerIndex
+        bool isRecyclable
     )
         public
         onlyOwner
@@ -111,7 +111,26 @@ contract Admin is
             marginPremium,
             spreadPremium,
             isClosing,
-            shouldAddToMaxMarketsPerIndex
+            isRecyclable
+        );
+    }
+
+    /**
+     * Removes a market from Solo, sends any remaining tokens in this contract to `salvager` and invokes the recyclable
+     * callback
+     */
+    function ownerRemoveMarkets(
+        uint[] memory marketIds,
+        address salvager
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerRemoveMarkets(
+            g_state,
+            marketIds,
+            salvager
         );
     }
 

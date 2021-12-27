@@ -325,6 +325,23 @@ contract Getters is
     }
 
     /**
+     * Return true if this market can be removed and its ID can be recycled and reused
+     *
+     * @param  marketId  The market to query
+     * @return           True if the market is recyclable
+     */
+    function getMarketIsRecyclable(
+        uint256 marketId
+    )
+        public
+        view
+        returns (bool)
+    {
+        _requireValidMarket(marketId);
+        return g_state.markets[marketId].isRecyclable;
+    }
+
+    /**
      * Get the price of the token for a market.
      *
      * @param  marketId  The market to query
@@ -338,7 +355,7 @@ contract Getters is
         returns (Monetary.Price memory)
     {
         _requireValidMarket(marketId);
-        return g_state.fetchPrice(marketId);
+        return g_state.fetchPrice(marketId, g_state.getToken(marketId));
     }
 
     /**
@@ -698,14 +715,14 @@ contract Getters is
         view
         returns (Monetary.Value memory, Monetary.Value memory)
     {
-        uint256[] memory markets = g_state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
+        uint256[] memory markets = g_state.getMarketsWithBalances(account);
 
         // populate cache
         Cache.MarketCache memory cache = Cache.create(markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
             if (!g_state.getPar(account, markets[i]).isZero()) {
                 cache.getAtIndex(i).marketId = markets[i];
-                cache.getAtIndex(i).price = g_state.fetchPrice(i);
+                cache.getAtIndex(i).price = g_state.fetchPrice(i, g_state.getToken(markets[i]));
             }
         }
 
