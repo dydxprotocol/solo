@@ -26,6 +26,7 @@ import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Cache } from "../lib/Cache.sol";
 import { Decimal } from "../lib/Decimal.sol";
+import { EnumerableSet } from "../lib/EnumerableSet.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
@@ -44,6 +45,7 @@ import { LiquidateOrVaporizeImpl } from "./LiquidateOrVaporizeImpl.sol";
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
+    using EnumerableSet for EnumerableSet.Set;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
@@ -224,7 +226,7 @@ library OperationImpl {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.leastSignificantBit(bitmap);
+                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
                 uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
@@ -331,15 +333,15 @@ library OperationImpl {
                 // This market is recyclable. Check that only the `token` is the owner
                 for (uint256 a = 0; a < accounts.length; a++) {
                     if (accounts[a].owner != cache.getAtIndex(i).token) {
-                        // The owner of the recyclable token isn't the TokenProxy
-                        EnumerableSet.Set storage marketSet = state.getMarketsWithBalancesSet(accounts[a]);
+                        // If the owner of the recyclable token isn't the TokenProxy,
+                        // THEN check that the account doesn't have a balance for this recyclable `marketId`
                         Require.that(
-                            !marketSet.contains(marketId),
+                            !state.getMarketsWithBalancesSet(accounts[a]).contains(marketId),
                             FILE,
                             "invalid recyclable owner",
-                            account.owner,
-                            account.number,
-                            marketInfo.marketId
+                            accounts[a].owner,
+                            accounts[a].number,
+                            marketId
                         );
                     }
                 }

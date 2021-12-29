@@ -142,31 +142,7 @@ library Cache {
         return cache.markets[index];
     }
 
-    // ============ Private Functions ============
-
-    function getInternal(
-        MarketInfo[] memory data,
-        uint beginInclusive,
-        uint endExclusive,
-        uint marketId
-    ) private pure returns (MarketInfo memory) {
-        uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
-            revert("Cache: item not found");
-        }
-
-        uint mid = beginInclusive + len / 2;
-        uint midMarketId = data[mid].marketId;
-        if (marketId < midMarketId) {
-            return getInternal(data, beginInclusive, mid, marketId);
-        } else if (marketId > midMarketId) {
-            return getInternal(data, mid + 1, endExclusive, marketId);
-        } else {
-            return data[mid];
-        }
-    }
-
-    function leastSignificantBit(uint256 x) private pure returns (uint) {
+    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
         // gas usage peaks at 350 per call
 
         uint lsb = 255;
@@ -218,6 +194,30 @@ library Cache {
         }
 
         return lsb;
+    }
+
+    // ============ Private Functions ============
+
+    function getInternal(
+        MarketInfo[] memory data,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
+            revert("Cache: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = data[mid].marketId;
+        if (marketId < midMarketId) {
+            return getInternal(data, beginInclusive, mid, marketId);
+        } else if (marketId > midMarketId) {
+            return getInternal(data, mid + 1, endExclusive, marketId);
+        } else {
+            return data[mid];
+        }
     }
 
 }
