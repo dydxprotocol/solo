@@ -34,6 +34,7 @@ const defaultPremium = new BigNumber(0);
 const highPremium = new BigNumber('0.2');
 const defaultMarket = new BigNumber(1);
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 const secondaryMarket = new BigNumber(0);
 const invalidMarket = new BigNumber(101);
 
@@ -324,6 +325,7 @@ describe('Admin', () => {
         marginPremium,
         spreadPremium,
         defaultIsClosing,
+        defaultIsRecyclable,
         { from: admin },
       );
 
@@ -385,17 +387,98 @@ describe('Admin', () => {
       expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
     });
 
-    it('Fails to add a market of the same token', async () => {
-      const token = solo.testing.tokenA.getAddress();
+    it('Successfully adds a market that is closing and recyclable', async () => {
       await solo.testing.priceOracle.setPrice(token, defaultPrice);
+
+      const marginPremium = new BigNumber('0.11');
+      const spreadPremium = new BigNumber('0.22');
+      const isClosing = true;
+      const isRecyclable = true;
+
+      const txResult = await solo.admin.addMarket(
+        token,
+        oracleAddress,
+        setterAddress,
+        marginPremium,
+        spreadPremium,
+        isClosing,
+        isRecyclable,
+        { from: admin },
+      );
+
+      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+
+      const numMarkets = await solo.getters.getNumMarkets();
+      const marketId = numMarkets.minus(1);
+      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(marketId);
+      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(marketId);
+
+      expect(marketInfo.market.token.toLowerCase()).toEqual(token);
+      expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
+      expect(marketInfo.market.interestSetter).toEqual(setterAddress);
+      expect(marketInfo.market.marginPremium).toEqual(marginPremium);
+      expect(marketInfo.market.spreadPremium).toEqual(spreadPremium);
+      expect(marketInfo.market.isClosing).toEqual(false);
+      expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
+      expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
+      expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
+      expect(marketInfo.market.index.supply).toEqual(INTEGERS.ONE);
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(marketInfo.currentPrice).toEqual(defaultPrice);
+      expect(marketInfo.currentInterestRate).toEqual(INTEGERS.ZERO);
+      expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
+      expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(isClosingResult).toEqual(isClosing);
+      expect(isRecyclableResult).toEqual(isRecyclable);
+
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(5);
+
+      const addLog = logs[0];
+      expect(addLog.name).toEqual('LogAddMarket');
+      expect(addLog.args.marketId).toEqual(marketId);
+      expect(addLog.args.token.toLowerCase()).toEqual(token);
+
+      const isClosingLog = logs[1];
+      expect(isClosingLog.name).toEqual('LogSetIsClosing');
+      expect(isClosingLog.args.marketId).toEqual(marketId);
+      expect(isClosingLog.args.isClosing).toEqual(isClosing);
+
+      const oracleLog = logs[2];
+      expect(oracleLog.name).toEqual('LogSetPriceOracle');
+      expect(oracleLog.args.marketId).toEqual(marketId);
+      expect(oracleLog.args.priceOracle).toEqual(oracleAddress);
+
+      const setterLog = logs[3];
+      expect(setterLog.name).toEqual('LogSetInterestSetter');
+      expect(setterLog.args.marketId).toEqual(marketId);
+      expect(setterLog.args.interestSetter).toEqual(setterAddress);
+
+      const marginPremiumLog = logs[4];
+      expect(marginPremiumLog.name).toEqual('LogSetMarginPremium');
+      expect(marginPremiumLog.args.marketId).toEqual(marketId);
+      expect(marginPremiumLog.args.marginPremium).toEqual(marginPremium);
+
+      const spreadPremiumLog = logs[5];
+      expect(spreadPremiumLog.name).toEqual('LogSetSpreadPremium');
+      expect(spreadPremiumLog.args.marketId).toEqual(marketId);
+      expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
+    });
+
+    it('Fails to add a market of the same token', async () => {
+      const duplicateToken = solo.testing.tokenA.getAddress();
+      await solo.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
       await expectThrow(
         solo.admin.addMarket(
-          token,
+          duplicateToken,
           oracleAddress,
           setterAddress,
           defaultPremium,
           defaultPremium,
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: admin },
         ),
         'AdminImpl: Market exists',
@@ -412,6 +495,7 @@ describe('Admin', () => {
           defaultPremium,
           defaultPremium,
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: admin },
         ),
         'AdminImpl: Invalid oracle price',
@@ -431,6 +515,7 @@ describe('Admin', () => {
           riskLimits.marginPremiumMax.plus(smallestDecimal),
           defaultPremium,
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: admin },
         ),
         'AdminImpl: Margin premium too high',
@@ -450,6 +535,7 @@ describe('Admin', () => {
           defaultPremium,
           riskLimits.spreadPremiumMax.plus(smallestDecimal),
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: admin },
         ),
         'AdminImpl: Spread premium too high',
@@ -469,6 +555,7 @@ describe('Admin', () => {
           defaultPremium,
           defaultPremium,
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: nonAdmin },
         ),
       );

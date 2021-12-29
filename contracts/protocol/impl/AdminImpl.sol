@@ -237,6 +237,12 @@ library AdminImpl {
                 marketIds[i]
             );
             Require.that(
+                state.markets[marketIds[i]].isRecyclable,
+                FILE,
+                "market is not recyclable",
+                marketIds[i]
+            );
+            Require.that(
                 state.getTotalPar(marketIds[i]).borrow == 0,
                 FILE,
                 "market has active borrows",

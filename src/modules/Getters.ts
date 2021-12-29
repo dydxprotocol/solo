@@ -222,6 +222,16 @@ export class Getters {
     );
   }
 
+  public async getMarketIsRecyclable(
+    marketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<boolean> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.getMarketIsRecyclable(marketId.toFixed(0)),
+      options,
+    );
+  }
+
   public async getMarketPrice(
     marketId: Integer,
     options?: ContractConstantCallOptions,

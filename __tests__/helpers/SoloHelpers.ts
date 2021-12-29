@@ -25,6 +25,7 @@ export async function setupMarkets(
   const marginPremium = new BigNumber(0);
   const spreadPremium = new BigNumber(0);
   const isClosing = false;
+  const isRecyclable = false;
 
   await Promise.all([
     solo.testing.priceOracle.setPrice(solo.testing.tokenA.getAddress(), price),
@@ -49,6 +50,7 @@ export async function setupMarkets(
       marginPremium,
       spreadPremium,
       isClosing,
+      isRecyclable,
       { from: accounts[0] },
     );
   }

@@ -54,6 +54,7 @@ export class Admin {
     marginPremium: Decimal,
     spreadPremium: Decimal,
     isClosing: boolean,
+    isRecyclable: boolean,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
@@ -64,6 +65,7 @@ export class Admin {
         { value: decimalToString(marginPremium) },
         { value: decimalToString(spreadPremium) },
         isClosing,
+        isRecyclable,
       ),
       options,
     );

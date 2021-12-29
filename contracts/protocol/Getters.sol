@@ -342,6 +342,29 @@ contract Getters is
     }
 
     /**
+     * Gets the recyclable markets, up to `n` length
+     *
+     * @param  n    The number of markets to get, bounded by the linked list being smaller than `n`
+     * @return      The list of recyclable markets, in the same order held by the linked list
+     */
+    function getRecyclableMarkets(
+        uint256 n
+    )
+        public
+        view
+        returns (uint[] memory)
+    {
+        uint counter = 0;
+        uint[] memory markets = new uint[](n);
+        uint pointer = g_state.recycledMarketIds[uint(-1)]; // uint(-1) is the HEAD_POINTER
+        while (pointer != 0 && counter < n) {
+            markets[counter++] = pointer;
+            pointer = g_state.recycledMarketIds[pointer];
+        }
+        return markets;
+    }
+
+    /**
      * Get the price of the token for a market.
      *
      * @param  marketId  The market to query

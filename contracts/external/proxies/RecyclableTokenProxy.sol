@@ -98,6 +98,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     OnlySolo(soloMargin)
     {
         TOKEN = IERC20(token);
+        isRecycled = false;
     }
 
     // ============ Public Functions ============
@@ -157,14 +158,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
-            actionType: Actions.ActionType.Withdraw,
-            accountId: 0,
-            amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
-            primaryMarketId: MARKET_ID,
-            secondaryMarketId: uint(-1),
-            otherAddress: msg.sender,
-            otherAccountId: uint(-1),
-            data: bytes("")
+        actionType: Actions.ActionType.Withdraw,
+        accountId: 0,
+        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
+        primaryMarketId: MARKET_ID,
+        secondaryMarketId: uint(-1),
+        otherAddress: msg.sender,
+        otherAccountId: uint(-1),
+        data: bytes("")
         });
 
         SOLO_MARGIN.operate(accounts, actions);
@@ -212,14 +213,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
-            actionType: Actions.ActionType.Sell,
-            accountId: 0,
-            amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, borrowAmount),
-            primaryMarketId: SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken),
-            secondaryMarketId: MARKET_ID,
-            otherAddress: exchangeWrapper,
-            otherAccountId: uint(-1),
-            data: tradeData
+        actionType: Actions.ActionType.Sell,
+        accountId: 0,
+        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, borrowAmount),
+        primaryMarketId: SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken),
+        secondaryMarketId: MARKET_ID,
+        otherAddress: exchangeWrapper,
+        otherAccountId: uint(-1),
+        data: tradeData
         });
 
         SOLO_MARGIN.operate(accounts, actions);
@@ -244,14 +245,24 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     }
 
     function balanceOf(address account) public view returns (uint256) {
-        return SOLO_MARGIN.getAccountPar(Account.Info(address(this), uint(account)), MARKET_ID).value;
+        if (userToHasWithdrawnAfterRecycle[account]) {
+            return 0;
+        } else {
+            return SOLO_MARGIN.getAccountPar(Account.Info(address(this), uint(account)), MARKET_ID).value;
+        }
     }
 
     function transfer(address recipient, uint256 amount) external onlySolo(msg.sender) returns (bool) {
+        // This condition fails when the market is recycled but Solo attempts to call this contract still
         Require.that(
             SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
             FILE,
             "invalid state"
+        );
+        Require.that(
+            !isRecycled,
+            FILE,
+            "cannot transfer while recycled"
         );
 
         TOKEN.safeTransfer(recipient, amount);
@@ -274,14 +285,20 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     ) external onlySolo(msg.sender) returns (bool) {
         // transferFrom should always send tokens to SOLO_MARGIN
         Require.that(
-            recipient == address(SOLO_MARGIN),
+            recipient == address(msg.sender), // msg.sender eq SOLO_MARGIN
             FILE,
             "invalid recipient"
         );
+        // This condition fails when the market is recycled but Solo attempts to call this contract still
         Require.that(
             SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
             FILE,
             "invalid state"
+        );
+        Require.that(
+            !isRecycled,
+            FILE,
+            "cannot transfer while recycled"
         );
 
         if (sender == address(this)) {
