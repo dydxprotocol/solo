@@ -50,6 +50,7 @@ const { ADDRESSES } = require('../src/lib/Constants');
 // Base Protocol
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
+const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
 const SoloMargin = artifacts.require('SoloMargin');
 
 // Test Contracts
@@ -152,6 +153,10 @@ async function deployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer, network) {
+  await deployer.deploy(LiquidateOrVaporizeImpl);
+
+  OperationImpl.link('LiquidateOrVaporizeImpl', LiquidateOrVaporizeImpl.address);
+
   await Promise.all([
     deployer.deploy(AdminImpl),
     deployer.deploy(OperationImpl, { gas: 6600000 }),

@@ -342,7 +342,7 @@ describe('Liquidate', () => {
       heldMarket,
       amount,
     );
-    await expectLiquidateRevert({}, 'OperationImpl: Unliquidatable account');
+    await expectLiquidateRevert({}, 'LiquidateOrVaporizeImpl: Unliquidatable account');
   });
 
   it('Fails for non-global operator', async () => {
@@ -378,7 +378,7 @@ describe('Liquidate', () => {
         liquidAccountOwner: liquidOwner,
         liquidAccountId: solidAccountNumber,
       },
-      'OperationImpl: Unliquidatable account',
+      'LiquidateOrVaporizeImpl: Unliquidatable account',
     );
   });
 
@@ -398,7 +398,7 @@ describe('Liquidate', () => {
     );
     await expectLiquidateRevert(
       {},
-      'OperationImpl: Collateral cannot be negative',
+      'LiquidateOrVaporizeImpl: Collateral cannot be negative',
     );
   });
 

@@ -32,6 +32,7 @@ const prices = [
   new BigNumber('1e21'),
 ];
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('LiquidatorProxyV1ForSoloMargin', () => {
   beforeAll(async () => {
@@ -77,6 +78,7 @@ describe('LiquidatorProxyV1ForSoloMargin', () => {
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     await mineAvgBlock();

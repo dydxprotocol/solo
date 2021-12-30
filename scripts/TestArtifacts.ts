@@ -1,3 +1,4 @@
+import { default as CustomTestToken } from '../build/contracts/CustomTestToken.json';
 import { default as TokenA } from '../build/contracts/TokenA.json';
 import { default as TokenB } from '../build/contracts/TokenB.json';
 import { default as TokenC } from '../build/contracts/TokenC.json';
@@ -25,8 +26,10 @@ import { default as TestSoloMargin } from '../build/contracts/TestSoloMargin.jso
 import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json';
 import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 import { default as UniswapV2Router02 } from '../build/contracts/UniswapV2Router02.json';
+import { default as TestRecyclableToken } from '../build/contracts/TestRecyclableToken.json';
 
 export default {
+  CustomTestToken,
   TokenA,
   TokenB,
   TokenC,
@@ -52,4 +55,5 @@ export default {
   UniswapV2Pair,
   UniswapV2Factory,
   UniswapV2Router02,
+  TestRecyclableToken,
 };

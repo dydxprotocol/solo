@@ -35,6 +35,7 @@ describe('StandardActions', () => {
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       false,
+      false,
       { from: r.accounts[0] },
     );
     await setupMarkets(solo, r.accounts, 2);
@@ -144,12 +145,14 @@ describe('StandardActions', () => {
         await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
-        await solo.testing.setAccountBalance(
-          accountOwner,
-          accountNumber,
-          marketId,
-          amount.times(2),
-        );
+        if (!marketId.eq(MarketId.ETH)) {
+          await solo.testing.setAccountBalance(
+            accountOwner,
+            accountNumber,
+            marketId,
+            amount.times(2),
+          );
+        }
         await solo.standardActions.withdrawToZero({
           accountNumber,
           accountOwner,

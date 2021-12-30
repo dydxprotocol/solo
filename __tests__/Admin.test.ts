@@ -15,6 +15,18 @@ import {
   RiskParams,
 } from '../src/types';
 
+import {
+  abi as recyclableABI,
+  bytecode as recyclableBytecode,
+} from '../build/contracts/TestRecyclableToken.json';
+import {
+  abi as customTestTokenABI,
+  bytecode as customTestTokenBytecode,
+} from '../build/contracts/CustomTestToken.json';
+
+import { CustomTestToken } from '../build/testing_wrappers/CustomTestToken';
+import { TestRecyclableToken } from '../build/testing_wrappers/TestRecyclableToken';
+
 let txr: any;
 let solo: TestSolo;
 let accounts: address[];
@@ -294,7 +306,7 @@ describe('Admin', () => {
         const logs = solo.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
-        expect(log.name).toEqual('LogWithdrawExcessTokens');
+        expect(log.name).toEqual('LogWithdrawUnsupportedTokens');
         expect(log.args.token).toEqual(token);
         expect(log.args.amount).toEqual(expectedRecipient);
       }
@@ -388,15 +400,34 @@ describe('Admin', () => {
     });
 
     it('Successfully adds a market that is closing and recyclable', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
-
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
       const isClosing = true;
       const isRecyclable = true;
 
+      const underlyingToken = await new solo.web3.eth.Contract(
+        customTestTokenABI,
+      )
+        .deploy({
+          data: customTestTokenBytecode,
+          arguments: ['TestToken', 'TEST', '18'],
+        })
+        .send({ from: admin, gas: '6000000' }) as CustomTestToken;
+
+      const recyclableToken = await new solo.web3.eth.Contract(recyclableABI)
+        .deploy({
+          data: recyclableBytecode,
+          arguments: [
+            solo.contracts.soloMargin.options.address,
+            underlyingToken.options.address,
+          ],
+        })
+        .send({ from: admin, gas: '6000000' }) as TestRecyclableToken;
+
+      await solo.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
+
       const txResult = await solo.admin.addMarket(
-        token,
+        recyclableToken.options.address,
         oracleAddress,
         setterAddress,
         marginPremium,
@@ -406,40 +437,54 @@ describe('Admin', () => {
         { from: admin },
       );
 
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
+      expect(getIsRecycledResult).toEqual(false);
+
+      const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
+      expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
+
       const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
 
       const numMarkets = await solo.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(marketId);
+      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(
+        marketId,
+      );
       const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(marketId);
+      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+        marketId,
+      );
 
-      expect(marketInfo.market.token.toLowerCase()).toEqual(token);
+      expect(marketInfo.market.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
       expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
       expect(marketInfo.market.interestSetter).toEqual(setterAddress);
       expect(marketInfo.market.marginPremium).toEqual(marginPremium);
       expect(marketInfo.market.spreadPremium).toEqual(spreadPremium);
-      expect(marketInfo.market.isClosing).toEqual(false);
+      expect(marketInfo.market.isClosing).toEqual(true);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.market.index.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(marketInfo.market.index.lastUpdate).toEqual(
+        new BigNumber(timestamp),
+      );
       expect(marketInfo.currentPrice).toEqual(defaultPrice);
       expect(marketInfo.currentInterestRate).toEqual(INTEGERS.ZERO);
       expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
+      expect(marketInfo.market.index.lastUpdate).toEqual(
+        new BigNumber(timestamp),
+      );
       expect(isClosingResult).toEqual(isClosing);
       expect(isRecyclableResult).toEqual(isRecyclable);
 
       const logs = solo.logs.parseLogs(txResult);
-      expect(logs.length).toEqual(5);
+      expect(logs.length).toEqual(6);
 
       const addLog = logs[0];
       expect(addLog.name).toEqual('LogAddMarket');
       expect(addLog.args.marketId).toEqual(marketId);
-      expect(addLog.args.token.toLowerCase()).toEqual(token);
+      expect(addLog.args.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
 
       const isClosingLog = logs[1];
       expect(isClosingLog.name).toEqual('LogSetIsClosing');
@@ -465,6 +510,41 @@ describe('Admin', () => {
       expect(spreadPremiumLog.name).toEqual('LogSetSpreadPremium');
       expect(spreadPremiumLog.args.marketId).toEqual(marketId);
       expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
+    });
+
+    it('Fails to add a recyclable market that is not actually recyclable', async () => {
+      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await expectThrow(
+        solo.admin.addMarket(
+          token,
+          oracleAddress,
+          setterAddress,
+          defaultPremium,
+          defaultPremium,
+          true,
+          true,
+          { from: admin },
+        ),
+        '', // reason is blank because the call to Recyclable#initialize fails
+      );
+    });
+
+    it('Fails to add a market of the same token', async () => {
+      const duplicateToken = solo.testing.tokenA.getAddress();
+      await solo.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
+      await expectThrow(
+        solo.admin.addMarket(
+          duplicateToken,
+          oracleAddress,
+          setterAddress,
+          defaultPremium,
+          defaultPremium,
+          defaultIsClosing,
+          defaultIsRecyclable,
+          { from: admin },
+        ),
+        'AdminImpl: Market exists',
+      );
     });
 
     it('Fails to add a market of the same token', async () => {
@@ -562,6 +642,136 @@ describe('Admin', () => {
     });
   });
 
+  describe('#ownerRemoveMarkets', () => {
+    const token = ADDRESSES.TEST[2];
+
+    async function addMarket(): Promise<TestRecyclableToken> {
+      const marginPremium = new BigNumber('0.11');
+      const spreadPremium = new BigNumber('0.22');
+      const isClosing = true;
+      const isRecyclable = true;
+
+      const underlyingToken = await new solo.web3.eth.Contract(
+        customTestTokenABI,
+      )
+        .deploy({
+                  data: customTestTokenBytecode,
+                  arguments: ['TestToken', 'TEST', '18'],
+                })
+        .send({ from: admin, gas: '6000000' }) as CustomTestToken;
+
+      const recyclableToken = await new solo.web3.eth.Contract(recyclableABI)
+        .deploy({
+                  data: recyclableBytecode,
+                  arguments: [
+                    solo.contracts.soloMargin.options.address,
+                    underlyingToken.options.address,
+                  ],
+                })
+        .send({ from: admin, gas: '6000000' }) as TestRecyclableToken;
+
+      await solo.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
+
+      await solo.admin.addMarket(
+        recyclableToken.options.address,
+        oracleAddress,
+        setterAddress,
+        marginPremium,
+        spreadPremium,
+        isClosing,
+        isRecyclable,
+        { from: admin },
+      );
+
+      return recyclableToken;
+    }
+
+    it('Successfully removes a market that is recyclable', async () => {
+      const recyclableToken = await addMarket();
+
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
+      expect(getIsRecycledResult).toEqual(false);
+
+      const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
+      expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
+
+      const numMarkets = await solo.getters.getNumMarkets();
+      const marketId = numMarkets.minus(1);
+      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+        marketId,
+      );
+
+      expect(isClosingResult).toEqual(true);
+      expect(isRecyclableResult).toEqual(true);
+
+      const txResult = await solo.admin.removeMarkets(
+        [marketId],
+        admin,
+        { from: admin },
+      );
+
+      expect(await solo.getters.getNumMarkets()).toEqual(numMarkets);
+      expect(await recyclableToken.methods.isRecycled().call()).toEqual(true);
+
+      await expectThrow(
+        solo.contracts.soloMargin.methods.getMarket(marketId.toFixed()).call(),
+        'Getters: Invalid market'
+      );
+
+      const recyclableMarkets = await solo.getters.getRecyclableMarkets(new BigNumber('10'));
+      expect(recyclableMarkets.length).toEqual(10);
+      expect(recyclableMarkets[0]).toEqual(new BigNumber('2'));
+      for (let i = 1; i < recyclableMarkets.length; i += 1) {
+        // all values  where `n` is >= the length of the recyclable markets is filled with 0's
+        expect(recyclableMarkets[i]).toEqual(INTEGERS.ZERO);
+      }
+
+      const logs = solo.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(1);
+
+      const addLog = logs[0];
+      expect(addLog.name).toEqual('LogRemoveMarket');
+      expect(addLog.args.marketId).toEqual(marketId);
+      expect(addLog.args.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
+    });
+
+    it('Fails to remove a non-recyclable market', async () => {
+      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await expectThrow(
+        solo.admin.removeMarkets(
+          [INTEGERS.ZERO],
+          admin,
+          { from: admin },
+        ),
+        'AdminImpl: market is not recyclable <0>',
+      );
+    });
+
+    it('Fails to remove an invalid market', async () => {
+      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await expectThrow(
+        solo.admin.removeMarkets(
+          [new BigNumber('9999999')],
+          admin,
+          { from: admin },
+        ),
+        'AdminImpl: market does not exist <9999999>',
+      );
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(
+        solo.admin.removeMarkets(
+          [INTEGERS.ZERO],
+          admin,
+          { from: nonAdmin },
+        ),
+        'Ownable: caller is not the owner'
+      );
+    });
+  });
+
   describe('#ownerSetIsClosing', () => {
     it('Succeeds', async () => {
       await expectIsClosing(null, false);
@@ -587,10 +797,10 @@ describe('Admin', () => {
       await expectIsClosing(txr, false);
     });
 
-    it('Fails for index OOB', async () => {
+    it('Fails for invalid market', async () => {
       await expectThrow(
         solo.admin.setIsClosing(invalidMarket, true, { from: admin }),
-        'AdminImpl: Market OOB',
+        `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
       );
     });
 
@@ -648,11 +858,11 @@ describe('Admin', () => {
       );
     });
 
-    it('Fails for index OOB', async () => {
+    it('Fails for invalid market', async () => {
       const numMarkets = await solo.getters.getNumMarkets();
       await expectThrow(
         solo.admin.setPriceOracle(numMarkets, setterAddress, { from: admin }),
-        'AdminImpl: Market OOB',
+        `AdminImpl: Invalid market <${numMarkets.toFixed()}>`,
       );
     });
 
@@ -688,13 +898,13 @@ describe('Admin', () => {
       );
     });
 
-    it('Fails for index OOB', async () => {
+    it('Fails for invalid market', async () => {
       const numMarkets = await solo.getters.getNumMarkets();
       await expectThrow(
         solo.admin.setInterestSetter(numMarkets, setterAddress, {
           from: admin,
         }),
-        'AdminImpl: Market OOB',
+        `AdminImpl: Invalid market <${numMarkets.toFixed()}>`,
       );
     });
 
@@ -736,12 +946,12 @@ describe('Admin', () => {
       await expectMarginPremium(txr, defaultPremium);
     });
 
-    it('Fails for index OOB', async () => {
+    it('Fails for invalid market', async () => {
       await expectThrow(
         solo.admin.setMarginPremium(invalidMarket, highPremium, {
           from: admin,
         }),
-        'AdminImpl: Market OOB',
+        `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
       );
     });
 
@@ -826,12 +1036,12 @@ describe('Admin', () => {
       expect(result).toEqual(expected);
     });
 
-    it('Fails for index OOB', async () => {
+    it('Fails for invalid market', async () => {
       await expectThrow(
         solo.admin.setSpreadPremium(invalidMarket, highPremium, {
           from: admin,
         }),
-        'AdminImpl: Market OOB',
+        `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
       );
     });
 

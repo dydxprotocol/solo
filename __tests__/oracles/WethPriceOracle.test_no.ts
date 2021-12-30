@@ -10,6 +10,7 @@ let accounts: address[];
 let admin: address;
 const defaultPrice = new BigNumber('1e20');
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('WethPriceOracle', () => {
   let snapshotId: string;
@@ -53,6 +54,7 @@ describe('WethPriceOracle', () => {
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     const price = await solo.getters.getMarketPrice(INTEGERS.ZERO);

@@ -232,6 +232,17 @@ export class Getters {
     );
   }
 
+  public async getRecyclableMarkets(
+    numberOfMarkets: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer[]> {
+    const marketIds = await this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.getRecyclableMarkets(numberOfMarkets.toFixed(0)),
+      options,
+    );
+    return marketIds.map(marketId => new BigNumber(marketId));
+  }
+
   public async getMarketPrice(
     marketId: Integer,
     options?: ContractConstantCallOptions,
@@ -412,7 +423,7 @@ export class Getters {
       case '2':
         return AccountStatus.Vaporizing;
       default:
-        throw new Error('invalid account status ${rawStatus}');
+        throw new Error(`invalid account status ${rawStatus}`);
     }
   }
 
@@ -432,6 +443,36 @@ export class Getters {
       supply: new BigNumber(result[0].value),
       borrow: new BigNumber(result[1].value),
     };
+  }
+
+  public async getAccountNonZeroBalances(
+    accountOwner: address,
+    accountNumber: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer[]> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.getAccountMarketsWithNonZeroBalances({
+        owner: accountOwner,
+        number: accountNumber.toFixed(0),
+      }),
+      options,
+    );
+    return result.map(marketIdString => new BigNumber(marketIdString));
+  }
+
+  public async getNumberOfMarketsWithBorrow(
+    accountOwner: address,
+    accountNumber: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.soloMargin.methods.getNumberOfMarketsWithBorrow({
+        owner: accountOwner,
+        number: accountNumber.toFixed(0),
+      }),
+      options,
+    );
+    return new BigNumber(result);
   }
 
   public async getAdjustedAccountValues(

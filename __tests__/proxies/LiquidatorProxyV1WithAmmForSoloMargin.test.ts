@@ -42,6 +42,7 @@ const price2 = prices[1]; // $1
 const price3 = prices[2]; // $1
 const price4 = prices[3]; // $1,000
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
   beforeAll(async () => {
@@ -88,6 +89,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
 

@@ -158,7 +158,7 @@ describe('Vaporize', () => {
       heldMarket,
       par,
     );
-    await expectVaporizeRevert({}, 'OperationImpl: Unvaporizable account');
+    await expectVaporizeRevert({}, 'LiquidateOrVaporizeImpl: Unvaporizable account');
   });
 
   it('Succeeds if enough excess owedTokens', async () => {
@@ -473,7 +473,7 @@ describe('Vaporize', () => {
         vaporAccountOwner: operator,
         vaporAccountId: zero,
       },
-      'OperationImpl: Unvaporizable account',
+      'LiquidateOrVaporizeImpl: Unvaporizable account',
     );
   });
 
@@ -492,7 +492,7 @@ describe('Vaporize', () => {
       par,
     );
     await expectExcessHeldToken(negWei);
-    await expectVaporizeRevert({}, 'OperationImpl: Excess cannot be negative');
+    await expectVaporizeRevert({}, 'LiquidateOrVaporizeImpl: Excess cannot be negative');
   });
 
   it('Fails for a negative delta', async () => {

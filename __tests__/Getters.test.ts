@@ -32,6 +32,7 @@ const rates = [
 ];
 const defaultPremium = new BigNumber(0);
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 const highPremium = new BigNumber('.2');
 const market1 = new BigNumber(0);
 const market2 = new BigNumber(1);
@@ -48,7 +49,7 @@ const defaultIndex = {
 };
 const zero = INTEGERS.ZERO;
 let tokens: address[];
-const MARKET_OOB_ERROR = 'Getters: Market OOB';
+const MARKET_OOB_ERROR = 'Getters: Invalid market';
 
 describe('Getters', () => {
   let snapshotId: string;
@@ -211,6 +212,7 @@ describe('Getters', () => {
           defaultPremium,
           defaultPremium,
           defaultIsClosing,
+          defaultIsRecyclable,
           { from: admin },
         );
         const nm2 = await solo.getters.getNumMarkets();
@@ -230,7 +232,7 @@ describe('Getters', () => {
         expect(actualTokens[2]).toEqual(tokens[2]);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketTokenAddress(invalidMarket),
           MARKET_OOB_ERROR,
@@ -262,7 +264,7 @@ describe('Getters', () => {
         expect(totals[2].borrow).toEqual(par);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketTotalPar(invalidMarket),
           MARKET_OOB_ERROR,
@@ -287,7 +289,7 @@ describe('Getters', () => {
         expect(result).toEqual(index);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketCachedIndex(invalidMarket),
           MARKET_OOB_ERROR,
@@ -343,7 +345,7 @@ describe('Getters', () => {
         expect(result).toEqual(expectedIndex);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketCurrentIndex(invalidMarket),
           MARKET_OOB_ERROR,
@@ -363,7 +365,7 @@ describe('Getters', () => {
         expect(actualOracles[2]).toEqual(oracleAddress);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketPriceOracle(invalidMarket),
           MARKET_OOB_ERROR,
@@ -383,7 +385,7 @@ describe('Getters', () => {
         expect(actualSetters[2]).toEqual(setterAddress);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketInterestSetter(invalidMarket),
           MARKET_OOB_ERROR,
@@ -406,7 +408,7 @@ describe('Getters', () => {
         expect(result[2]).toEqual(defaultPremium);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketMarginPremium(invalidMarket),
           MARKET_OOB_ERROR,
@@ -429,7 +431,7 @@ describe('Getters', () => {
         expect(result[2]).toEqual(defaultPremium);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketSpreadPremium(invalidMarket),
           MARKET_OOB_ERROR,
@@ -450,7 +452,7 @@ describe('Getters', () => {
         expect(actualClosing[2]).toEqual(false);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketIsClosing(invalidMarket),
           MARKET_OOB_ERROR,
@@ -470,7 +472,7 @@ describe('Getters', () => {
         expect(actualPrices[2]).toEqual(prices[2]);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketPrice(invalidMarket),
           MARKET_OOB_ERROR,
@@ -490,7 +492,7 @@ describe('Getters', () => {
         expect(actualRates[2]).toEqual(rates[2]);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketInterestRate(invalidMarket),
           MARKET_OOB_ERROR,
@@ -544,7 +546,7 @@ describe('Getters', () => {
         expect(market.totalPar).toEqual(expectedPar);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarket(invalidMarket),
           MARKET_OOB_ERROR,
@@ -601,7 +603,7 @@ describe('Getters', () => {
         expect(marketwi.currentInterestRate).toEqual(rates[1]);
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getMarketWithInfo(invalidMarket),
           MARKET_OOB_ERROR,
@@ -759,7 +761,7 @@ describe('Getters', () => {
         expect(result).toEqual(wei.times(-1));
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getNumExcessTokens(invalidMarket),
           MARKET_OOB_ERROR,
@@ -828,7 +830,7 @@ describe('Getters', () => {
         expect(par2).toEqual(par.div(-2));
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getAccountPar(owner1, account1, invalidMarket),
           MARKET_OOB_ERROR,
@@ -897,7 +899,7 @@ describe('Getters', () => {
         expect(weiB2.lt(weiB1)).toBeTruthy(); // lt is gt in the negative direction
       });
 
-      it('Fails for market OOB', async () => {
+      it('Fails for Invalid market', async () => {
         await expectThrow(
           solo.getters.getAccountWei(owner1, account1, invalidMarket),
           MARKET_OOB_ERROR,

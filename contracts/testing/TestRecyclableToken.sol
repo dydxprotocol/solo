@@ -26,4 +26,12 @@ contract TestRecyclableToken is RecyclableTokenProxy {
 
     bytes32 constant FILE = "TestRecyclableTokenProxy";
 
+    constructor (
+        address soloMargin,
+        address token
+    )
+    public
+    RecyclableTokenProxy(soloMargin, token)
+    {}
+
 }

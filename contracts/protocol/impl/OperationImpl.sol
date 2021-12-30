@@ -55,9 +55,6 @@ library OperationImpl {
 
     bytes32 constant FILE = "OperationImpl";
 
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
-
     // ============ Public Functions ============
 
     function operate(
@@ -195,7 +192,7 @@ library OperationImpl {
             }
         }
 
-        _initializeCache(state, cache);
+        state.initializeCache(cache);
 
         return (primaryAccounts, cache);
     }
@@ -211,57 +208,6 @@ library OperationImpl {
             cache.set(marketId);
             Events.logIndexUpdate(marketId, state.updateIndex(marketId));
         }
-    }
-
-    function _initializeCache(
-        Storage.State storage state,
-        Cache.MarketCache memory cache
-    ) private view {
-        cache.markets = new Cache.MarketInfo[](cache.marketsLength);
-        uint counter = 0;
-
-        // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
-        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
-        // Meaning, this function call is O(n) where `n` is the number of markets in the cache
-        for (uint i = 0; i < cache.marketBitmaps.length; i++) {
-            uint bitmap = cache.marketBitmaps[i];
-            while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
-                address token = state.getToken(marketId);
-                if (state.markets[marketId].isClosing) {
-                    cache.markets[counter++] = Cache.MarketInfo({
-                        marketId: marketId,
-                        token: token,
-                        isClosing: true,
-                        borrowPar: state.getTotalPar(marketId).borrow,
-                        price: state.fetchPrice(marketId, token)
-                    });
-                } else {
-                    cache.markets[counter++] = Cache.MarketInfo({
-                        marketId: marketId,
-                        token: token,
-                        isClosing: false,
-                        borrowPar: 0,
-                        price: state.fetchPrice(marketId, token)
-                    });
-                }
-
-                // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
-            }
-            if (counter == cache.marketsLength) {
-                break;
-            }
-        }
-
-        Require.that(
-            cache.marketsLength == counter,
-            FILE,
-            "cache initialized improperly",
-            cache.marketsLength,
-            cache.markets.length
-        );
     }
 
     function _runActions(
@@ -316,7 +262,6 @@ library OperationImpl {
     )
         private
     {
-        // TODO check that no balance is held in an account that is recyclable and is NOT eq to the market's token address
         // verify no increase in borrowPar for closing markets
         uint256 numMarkets = cache.getNumMarkets();
         for (uint256 i = 0; i < numMarkets; i++) {

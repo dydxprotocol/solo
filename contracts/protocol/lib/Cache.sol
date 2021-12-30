@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Monetary } from "./Monetary.sol";
+import { Require } from "./Require.sol";
 
 
 /**
@@ -32,7 +33,9 @@ library Cache {
 
     // ============ Constants ============
 
+    bytes32 internal constant FILE = "Cache";
     uint internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -64,7 +67,7 @@ library Cache {
     {
         return MarketCache({
             markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / 256) + 1),
+            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
             marketsLength: 0
         });
     }
@@ -89,9 +92,9 @@ library Cache {
         pure
         returns (bool)
     {
-        uint bucketIndex = marketId / 256;
-        uint indexFromRight = marketId % 256;
-        uint bit = cache.marketBitmaps[bucketIndex] & (1 << indexFromRight);
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
         return bit > 0;
     }
 
@@ -103,9 +106,10 @@ library Cache {
         pure
         returns (MarketInfo memory)
     {
-        require(
+        Require.that(
             cache.markets.length > 0,
-            "Cache: not initialized"
+            FILE,
+            "not initialized"
         );
         return getInternal(cache.markets, 0, cache.marketsLength, marketId);
     }
@@ -118,14 +122,15 @@ library Cache {
         pure
     {
         // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
-        require(
+        Require.that(
             cache.markets.length == 0,
-            "Cache: cache already initialized"
+            FILE,
+            "already initialized"
         );
 
-        uint bucketIndex = marketId / 256;
-        uint indexFromRight = marketId % 256;
-        cache.marketBitmaps[bucketIndex] |= (1 << indexFromRight);
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
 
         cache.marketsLength += 1;
     }
@@ -138,7 +143,13 @@ library Cache {
         pure
         returns (MarketInfo memory)
     {
-        require(index < cache.marketsLength, "Cache: invalid index");
+        Require.that(
+            index < cache.markets.length,
+            FILE,
+            "invalid index",
+            index,
+            cache.markets.length
+        );
         return cache.markets[index];
     }
 
@@ -205,7 +216,7 @@ library Cache {
         uint marketId
     ) private pure returns (MarketInfo memory) {
         uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
+        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
             revert("Cache: item not found");
         }
 

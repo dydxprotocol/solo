@@ -19,11 +19,9 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { SoloMargin } from "../protocol/SoloMargin.sol";
 import { Account } from "../protocol/lib/Account.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
-import { Math } from "../protocol/lib/Math.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
 import { Types } from "../protocol/lib/Types.sol";
 
@@ -31,8 +29,7 @@ import { Types } from "../protocol/lib/Types.sol";
 contract TestSoloMargin is
     SoloMargin
 {
-    using Math for uint256;
-    using SafeMath for uint256;
+    using Storage for Storage.State;
 
     // ============ Constructor ============
 
@@ -53,25 +50,8 @@ contract TestSoloMargin is
     )
         public
     {
-        Types.Par memory oldPar = g_state.accounts[account.owner][account.number].balances[market];
-        Types.TotalPar memory totalPar = g_state.markets[market].totalPar;
-
-        // roll-back oldPar
-        if (oldPar.sign) {
-            totalPar.supply = uint256(totalPar.supply).sub(oldPar.value).to128();
-        } else {
-            totalPar.borrow = uint256(totalPar.borrow).sub(oldPar.value).to128();
-        }
-
-        // roll-forward newPar
-        if (newPar.sign) {
-            totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
-        } else {
-            totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
-        }
-
-        g_state.markets[market].totalPar = totalPar;
-        g_state.accounts[account.owner][account.number].balances[market] = newPar;
+        _requireValidMarket(market);
+        g_state.setPar(account, market, newPar);
     }
 
     function setAccountStatus(

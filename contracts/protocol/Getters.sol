@@ -696,7 +696,7 @@ contract Getters is
         return g_state.isGlobalOperator(operator);
     }
 
-    // ============ Private Helper Functions ============
+    // ============ Internal/Private Helper Functions ============
 
     /**
      * Revert if marketId is invalid.
@@ -704,13 +704,13 @@ contract Getters is
     function _requireValidMarket(
         uint256 marketId
     )
-        private
+        internal
         view
     {
         Require.that(
-            marketId < g_state.numMarkets,
+            marketId < g_state.numMarkets && g_state.markets[marketId].token != address(0),
             FILE,
-            "Market OOB"
+            "Invalid market"
         );
     }
 
@@ -743,11 +743,9 @@ contract Getters is
         // populate cache
         Cache.MarketCache memory cache = Cache.create(markets.length);
         for (uint256 i = 0; i < markets.length; i++) {
-            if (!g_state.getPar(account, markets[i]).isZero()) {
-                cache.getAtIndex(i).marketId = markets[i];
-                cache.getAtIndex(i).price = g_state.fetchPrice(i, g_state.getToken(markets[i]));
-            }
+            cache.set(markets[i]);
         }
+        g_state.initializeCache(cache);
 
         return g_state.getAccountValues(account, cache, adjustForLiquidity);
     }

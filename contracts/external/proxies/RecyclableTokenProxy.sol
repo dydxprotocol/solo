@@ -173,7 +173,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     function recycle() external onlySolo(msg.sender) {
         Require.that(
-            SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(0),
+            SOLO_MARGIN.getRecyclableMarkets(1)[0] == MARKET_ID,
             FILE,
             "not recyclable"
         );

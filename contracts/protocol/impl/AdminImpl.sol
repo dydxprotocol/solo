@@ -507,9 +507,9 @@ library AdminImpl {
     view
     {
         Require.that(
-            marketId < state.numMarkets,
+            marketId < state.numMarkets && state.markets[marketId].token != address(0),
             FILE,
-            "Market OOB",
+            "Invalid market",
             marketId
         );
     }

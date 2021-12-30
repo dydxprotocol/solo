@@ -10,6 +10,7 @@ let accounts: address[];
 let admin: address;
 const USDC_PRICE = new BigNumber('1e30');
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('UsdcPriceOracle', () => {
   let snapshotId: string;
@@ -43,6 +44,7 @@ describe('UsdcPriceOracle', () => {
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     const price = await solo.getters.getMarketPrice(INTEGERS.ZERO);

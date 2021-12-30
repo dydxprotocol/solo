@@ -16,6 +16,7 @@ const defaultPrice = new BigNumber('1e18');
 const defaultEthPrice = new BigNumber('1e20');
 const uniswapAddress = ADDRESSES.TEST_UNISWAP;
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('DaiPriceOracle', () => {
   let snapshotId: string;
@@ -72,6 +73,7 @@ describe('DaiPriceOracle', () => {
         INTEGERS.ZERO,
         INTEGERS.ZERO,
         defaultIsClosing,
+        defaultIsRecyclable,
         { from: admin },
       );
       const price = await solo.getters.getMarketPrice(INTEGERS.ZERO);

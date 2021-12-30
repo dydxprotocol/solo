@@ -57,6 +57,9 @@ export class Admin {
     isRecyclable: boolean,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    if (options) {
+      options.gas = '1000000';
+    }
     return this.contracts.callContractFunction(
       this.contracts.soloMargin.methods.ownerAddMarket(
         token,
@@ -66,6 +69,23 @@ export class Admin {
         { value: decimalToString(spreadPremium) },
         isClosing,
         isRecyclable,
+      ),
+      options,
+    );
+  }
+
+  public async removeMarkets(
+    marketIds: Integer[],
+    salvager: address,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    if (options) {
+      options.gas = '1000000';
+    }
+    return this.contracts.callContractFunction(
+      this.contracts.soloMargin.methods.ownerRemoveMarkets(
+        marketIds.map(marketId => marketId.toFixed(0)),
+        salvager,
       ),
       options,
     );

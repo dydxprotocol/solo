@@ -33,11 +33,10 @@ const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const negPar = par.times(-1);
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
-const PRIMARY_REVERT_REASON =
-  'PayableProxyForSoloMargin: Sender must be primary account';
-const SECONDARY_REVERT_REASON =
-  'PayableProxyForSoloMargin: Sender must be secondary account';
+const PRIMARY_REVERT_REASON = 'PayableProxyForSoloMargin: Sender must be primary account';
+const SECONDARY_REVERT_REASON = 'PayableProxyForSoloMargin: Sender must be secondary account';
 
 const tradeId = new BigNumber('5678');
 
@@ -117,6 +116,7 @@ describe('PayableProxy', () => {
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     snapshotId = await snapshot();

@@ -53,7 +53,9 @@ library Storage {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "Storage";
+    bytes32 internal constant FILE = "Storage";
+    uint256 internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -700,9 +702,11 @@ library Storage {
             state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
         }
 
-        if (newPar.isZero()) {
+        if (newPar.isZero() && !oldPar.isZero()) {
+            // User went from a non-zero balance to zero. Remove the market from the set.
             state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.remove(marketId);
-        } else {
+        } else if (!newPar.isZero() && oldPar.isZero()) {
+            // User went from zero to non-zero. Add the market to the set.
             state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.add(marketId);
         }
     }
@@ -729,6 +733,57 @@ library Storage {
             account,
             marketId,
             newPar
+        );
+    }
+
+    function initializeCache(
+        Storage.State storage state,
+        Cache.MarketCache memory cache
+    ) internal view {
+        cache.markets = new Cache.MarketInfo[](cache.marketsLength);
+        uint counter = 0;
+
+        // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
+        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
+        // Meaning, this function call is O(n) where `n` is the number of markets in the cache
+        for (uint i = 0; i < cache.marketBitmaps.length; i++) {
+            uint bitmap = cache.marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
+                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                address token = state.getToken(marketId);
+                if (state.markets[marketId].isClosing) {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: true,
+                    borrowPar: state.getTotalPar(marketId).borrow,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                } else {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: false,
+                    borrowPar: 0,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                }
+
+                // unset the set bit
+                bitmap = bitmap - (ONE << nextSetBit);
+            }
+            if (counter == cache.marketsLength) {
+                break;
+            }
+        }
+
+        Require.that(
+            cache.marketsLength == counter,
+            FILE,
+            "cache initialized improperly",
+            cache.marketsLength,
+            cache.markets.length
         );
     }
 }

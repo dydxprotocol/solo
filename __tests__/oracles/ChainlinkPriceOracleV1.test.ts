@@ -14,6 +14,7 @@ const LRC_PRICE = new BigNumber('39402846000000000'); // 18 decimals
 const USDC_PRCE = new BigNumber('1000000000000000000000000000000'); // 30 decimals
 const WETH_PRICE = new BigNumber('211400000000000000000'); // 18 decimals
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('ChainlinkPriceOracleV1', () => {
   let snapshotId: string;
@@ -79,6 +80,7 @@ describe('ChainlinkPriceOracleV1', () => {
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     const price = await solo.getters.getMarketPrice(INTEGERS.ZERO);

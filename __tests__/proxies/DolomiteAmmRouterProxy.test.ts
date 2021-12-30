@@ -35,6 +35,7 @@ const prices = [
   new BigNumber('1e21'),
 ];
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('DolomiteAmmRouterProxy', () => {
   beforeAll(async () => {
@@ -71,6 +72,7 @@ describe('DolomiteAmmRouterProxy', () => {
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
 

@@ -23,6 +23,7 @@ const maximumRate = new BigNumber(31709791983).div('1e18');
 const defaultCoefficients = [0, 20, 0, 0, 0, 0, 20, 60];
 const defaultMaxAPR = new BigNumber('1.00');
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('DoubleExponentInterestSetter', () => {
   let snapshotId: string;
@@ -44,6 +45,7 @@ describe('DoubleExponentInterestSetter', () => {
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     snapshotId = await snapshot();
