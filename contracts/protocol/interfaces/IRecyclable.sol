@@ -18,6 +18,8 @@
 
 pragma solidity ^0.5.7;
 
+import "../lib/Account.sol";
+
 
 /**
  * @title IRecyclable
@@ -39,4 +41,9 @@ interface IRecyclable {
      * Called when the market is initialized in Solo
      */
     function initialize() external;
+
+    /**
+     * @return The account number used to index into the account for this user
+     */
+    function getAccountNumber(Account.Info calldata account) external pure returns (uint256);
 }

@@ -765,7 +765,7 @@ library Storage {
                     marketId: marketId,
                     token: token,
                     isClosing: false,
-                    borrowPar: 0,
+                    borrowPar: 0, // don't need the borrowPar if the market is not closing
                     price: state.fetchPrice(marketId, token)
                     });
                 }

@@ -646,8 +646,8 @@ describe('Admin', () => {
     const token = ADDRESSES.TEST[2];
 
     async function addMarket(): Promise<TestRecyclableToken> {
-      const marginPremium = new BigNumber('0.11');
-      const spreadPremium = new BigNumber('0.22');
+      const marginPremium = INTEGERS.ZERO;
+      const spreadPremium = INTEGERS.ZERO;
       const isClosing = true;
       const isRecyclable = true;
 

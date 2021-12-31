@@ -123,7 +123,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         Require.that(
             !isRecycled,
             FILE,
-            "can't deposit in recycled state"
+            "cannot deposit when recycled"
         );
 
         TOKEN.safeTransferFrom(msg.sender, address(this), amount);
@@ -150,7 +150,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         Require.that(
             !isRecycled,
             FILE,
-            "can't withdraw in recycled state"
+            "cannot withdraw when recycled"
         );
 
         Account.Info[] memory accounts = new Account.Info[](1);
@@ -205,7 +205,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         Require.that(
             !isRecycled,
             FILE,
-            "can't trade in recycled state"
+            "cannot trade when recycled"
         );
 
         Account.Info[] memory accounts = new Account.Info[](1);
