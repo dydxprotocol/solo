@@ -75,6 +75,8 @@ library EnumerableSet {
 
             // Delete the slot where the moved value was stored, which is the last index
             set._values.pop();
+//            delete set._values[lastIndex];
+//            set._values.length--;
 
             // Delete the index for the deleted slot
             delete set._valueToIndexMap[value];

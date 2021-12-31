@@ -691,9 +691,6 @@ library Storage {
             totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
         }
 
-        state.markets[marketId].totalPar = totalPar;
-        state.accounts[account.owner][account.number].balances[marketId] = newPar;
-
         if (oldPar.isLessThanZero() && newPar.isGreaterThanOrEqualToZero()) {
             // user went from borrowing to repaying or positive
             state.accounts[account.owner][account.number].numberOfMarketsWithBorrow -= 1;
@@ -702,13 +699,16 @@ library Storage {
             state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
         }
 
-        if (newPar.isZero() && !oldPar.isZero()) {
+        if (newPar.isZero() && (!oldPar.isZero())) {
             // User went from a non-zero balance to zero. Remove the market from the set.
             state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.remove(marketId);
-        } else if (!newPar.isZero() && oldPar.isZero()) {
+        } else if ((!newPar.isZero()) && oldPar.isZero()) {
             // User went from zero to non-zero. Add the market to the set.
             state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.add(marketId);
         }
+
+        state.markets[marketId].totalPar = totalPar;
+        state.accounts[account.owner][account.number].balances[marketId] = newPar;
     }
 
     /**
