@@ -45,7 +45,11 @@ library Token {
             return;
         }
 
-        _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount),
+            "Token: transfer failed"
+        );
     }
 
     function transferFrom(
@@ -60,12 +64,16 @@ library Token {
             return;
         }
 
-        _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
+            "Token: transferFrom failed"
+        );
     }
 
     // ============ Private Functions ============
 
-    function _callOptionalReturn(address token, bytes memory data) private {
+    function _callOptionalReturn(address token, bytes memory data, string memory error) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves.
 
@@ -76,11 +84,11 @@ library Token {
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returnData) = token.call(data);
-        require(success, "Token: operation failed");
+        require(success, error);
 
         if (returnData.length > 0) {
             // Return data is optional
-            require(abi.decode(returnData, (bool)), "Token: operation failed");
+            require(abi.decode(returnData, (bool)), error);
         }
     }
 

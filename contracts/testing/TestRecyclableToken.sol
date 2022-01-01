@@ -24,7 +24,7 @@ import { RecyclableTokenProxy } from "../external/proxies/RecyclableTokenProxy.s
 
 contract TestRecyclableToken is RecyclableTokenProxy {
 
-    bytes32 constant FILE = "TestRecyclableTokenProxy";
+    bytes32 internal constant FILE = "TestRecyclableTokenProxy";
 
     constructor (
         address soloMargin,

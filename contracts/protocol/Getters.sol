@@ -511,6 +511,25 @@ contract Getters is
     }
 
     /**
+     * Get the principal value for a particular account and market, with no check the market is valid. Meaning, markets
+     * that don't exist return 0.
+     *
+     * @param  account   The account to query
+     * @param  marketId  The market to query
+     * @return           The principal value
+     */
+    function getAccountParNoMarketCheck(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        public
+        view
+        returns (Types.Par memory)
+    {
+        return g_state.getPar(account, marketId);
+    }
+
+    /**
      * Get the token balance for a particular account and market.
      *
      * @param  account   The account to query

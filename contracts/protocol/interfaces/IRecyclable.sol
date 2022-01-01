@@ -17,9 +17,12 @@
 */
 
 pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
 
-import "../lib/Account.sol";
+import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
+import { Account } from "../lib/Account.sol";
+import { Types } from "../lib/Types.sol";
 
 /**
  * @title IRecyclable
@@ -31,9 +34,11 @@ interface IRecyclable {
 
     // ============ Public Functions ============
 
+    function TOKEN() external view returns (IERC20);
+
     /**
      * A callback for the recyclable market that allows it to perform any cleanup logic, preventing its usage with Solo
-     * once this transaction completes.
+     * once this transaction completes. #isRecycled  should return `true` after this function is called.
      */
     function recycle() external;
 
@@ -46,4 +51,18 @@ interface IRecyclable {
      * @return The account number used to index into the account for this user
      */
     function getAccountNumber(Account.Info calldata account) external pure returns (uint256);
+
+    function getAccountPar(Account.Info calldata account) external view returns (Types.Par memory);
+
+    /**
+     * @return  True if the tokens represented by this contract should be expired, allowing liquidators to close margin
+     *          positions involving this token, so this contract can be recycled.
+     */
+    function isExpired() external view returns (bool);
+
+    /**
+     * @return  True if this contract is recycled, disallowing further deposits/interactions with Solo and freeing this
+     *          token's `MARKET_ID`.
+     */
+    function isRecycled() external view returns (bool);
 }

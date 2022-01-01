@@ -27,6 +27,7 @@ import { default as UniswapV2Pair } from '../build/contracts/UniswapV2Pair.json'
 import { default as UniswapV2Factory } from '../build/contracts/UniswapV2Factory.json';
 import { default as UniswapV2Router02 } from '../build/contracts/UniswapV2Router02.json';
 import { default as TestRecyclableToken } from '../build/contracts/TestRecyclableToken.json';
+import { default as TestTrader } from '../build/contracts/TestTrader.json';
 
 export default {
   CustomTestToken,
@@ -56,4 +57,5 @@ export default {
   UniswapV2Factory,
   UniswapV2Router02,
   TestRecyclableToken,
+  TestTrader,
 };

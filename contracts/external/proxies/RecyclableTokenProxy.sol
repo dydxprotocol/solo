@@ -79,14 +79,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "RecyclableTokenProxy";
+    bytes32 internal constant FILE = "RecyclableTokenProxy";
 
     // ============ Public Variables ============
 
     IERC20 public TOKEN;
     uint256 public MARKET_ID;
     bool public isRecycled;
-    mapping(address => bool) public userToHasWithdrawnAfterRecycle;
+    mapping(address => mapping (uint256 => bool)) public userToAccountNumberHasWithdrawnAfterRecycle;
 
     // ============ Constructor ============
 
@@ -119,7 +119,40 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         );
     }
 
-    function depositIntoSolo(uint amount) public nonReentrant {
+    function recycle() external onlySolo(msg.sender) {
+        Require.that(
+            SOLO_MARGIN.getRecyclableMarkets(1)[0] == MARKET_ID,
+            FILE,
+            "not recyclable"
+        );
+
+        isRecycled = true;
+    }
+
+    function getAccountNumber(
+        Account.Info memory account
+    ) public pure returns (uint256) {
+        return _getAccountNumber(account.owner, account.number);
+    }
+
+    function getAccountPar(
+        Account.Info memory account
+    ) public view returns (Types.Par memory) {
+        if (userToAccountNumberHasWithdrawnAfterRecycle[account.owner][account.number]) {
+            return Types.zeroPar();
+        } else {
+            return SOLO_MARGIN.getAccountParNoMarketCheck(
+                Account.Info(address(this), getAccountNumber(account)),
+                MARKET_ID
+            );
+        }
+    }
+
+    function isExpired() external view returns (bool) {
+        return false;
+    }
+
+    function depositIntoSolo(uint accountNumber, uint amount) public nonReentrant {
         Require.that(
             !isRecycled,
             FILE,
@@ -129,7 +162,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         TOKEN.safeTransferFrom(msg.sender, address(this), amount);
 
         Account.Info[] memory accounts = new Account.Info[](1);
-        accounts[0] = Account.Info(address(this), uint(msg.sender));
+        accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
@@ -146,7 +179,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         SOLO_MARGIN.operate(accounts, actions);
     }
 
-    function withdrawFromSolo(uint amount) public nonReentrant {
+    function withdrawFromSolo(uint accountNumber, uint amount) public nonReentrant {
         Require.that(
             !isRecycled,
             FILE,
@@ -154,7 +187,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         );
 
         Account.Info[] memory accounts = new Account.Info[](1);
-        accounts[0] = Account.Info(address(this), uint(msg.sender));
+        accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
@@ -171,32 +204,29 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         SOLO_MARGIN.operate(accounts, actions);
     }
 
-    function recycle() external onlySolo(msg.sender) {
-        Require.that(
-            SOLO_MARGIN.getRecyclableMarkets(1)[0] == MARKET_ID,
-            FILE,
-            "not recyclable"
-        );
-
-        isRecycled = true;
-    }
-
-    function withdrawAfterRecycle() public {
+    function withdrawAfterRecycle(uint accountNumber) public {
         Require.that(
             isRecycled,
             FILE,
             "not recycled yet"
         );
         Require.that(
-            !userToHasWithdrawnAfterRecycle[msg.sender],
+            !userToAccountNumberHasWithdrawnAfterRecycle[msg.sender][accountNumber],
             FILE,
             "user already withdrew"
         );
-        userToHasWithdrawnAfterRecycle[msg.sender] = true;
-        TOKEN.safeTransfer(msg.sender, balanceOf(msg.sender));
+        userToAccountNumberHasWithdrawnAfterRecycle[msg.sender][accountNumber] = true;
+        TOKEN.safeTransfer(
+            msg.sender,
+            SOLO_MARGIN.getAccountParNoMarketCheck(
+                Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber)),
+                MARKET_ID
+            ).value
+        );
     }
 
     function trade(
+        uint accountNumber,
         address borrowToken,
         uint borrowAmount,
         address exchangeWrapper,
@@ -209,7 +239,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         );
 
         Account.Info[] memory accounts = new Account.Info[](1);
-        accounts[0] = Account.Info(address(this), uint(msg.sender));
+        accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
@@ -245,10 +275,16 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     }
 
     function balanceOf(address account) public view returns (uint256) {
-        if (userToHasWithdrawnAfterRecycle[account]) {
+        if (account == address(SOLO_MARGIN)) {
+            // The effective balance of Solo is the balance held of the underlying token in this contract
+            return TOKEN.balanceOf(address(this));
+        }
+
+        uint accountNumber = 0;
+        if (userToAccountNumberHasWithdrawnAfterRecycle[account][accountNumber]) {
             return 0;
         } else {
-            return SOLO_MARGIN.getAccountPar(Account.Info(address(this), uint(account)), MARKET_ID).value;
+            return getAccountPar(Account.Info(account, accountNumber)).value;
         }
     }
 
@@ -279,47 +315,63 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     }
 
     function transferFrom(
-        address sender,
-        address recipient,
+        address from,
+        address to,
         uint256 amount
     ) external onlySolo(msg.sender) returns (bool) {
         // transferFrom should always send tokens to SOLO_MARGIN
         Require.that(
-            recipient == address(msg.sender), // msg.sender eq SOLO_MARGIN
+            to == address(msg.sender), // msg.sender eq SOLO_MARGIN
             FILE,
             "invalid recipient"
-        );
-        // This condition fails when the market is recycled but Solo attempts to call this contract still
-        Require.that(
-            SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
-            FILE,
-            "invalid state"
         );
         Require.that(
             !isRecycled,
             FILE,
             "cannot transfer while recycled"
         );
+        // This condition fails when the market is recycled but Solo attempts to call this contract anyway
+        Require.that(
+            SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
+            FILE,
+            "invalid state"
+        );
 
-        if (sender == address(this)) {
+        if (from == address(this)) {
             // token is being transferred from here to Solo, for a deposit. The market's total par was already updated
             // before the call to `transferFrom`. Make sure enough was transferred in.
             // This implementation allows the user to "steal" funds from users that blindly send TOKEN into this
             // contract, without calling properly calling the `deposit` function to set their balances.
             Require.that(
-                TOKEN.balanceOf(sender) >= SOLO_MARGIN.getMarketTotalPar(MARKET_ID).supply,
+                TOKEN.balanceOf(address(this)) >= SOLO_MARGIN.getMarketTotalPar(MARKET_ID).supply,
                 FILE,
                 "insufficient balance for deposit"
             );
-            emit Transfer(address(this), recipient, amount);
+            emit Transfer(address(this), to, amount);
         } else {
             // TOKEN is being traded via IExchangeWrapper, transfer the tokens into this contract
-            TOKEN.safeTransferFrom(sender, address(this), amount);
+            TOKEN.safeTransferFrom(from, address(this), amount);
+
+            // The market's total par was already updated before the call to `transferFrom`. Make sure enough was
+            // transferred in. This implementation allows the user to "steal" funds from users that blindly send TOKEN
+            // into this contract, without calling properly calling the `deposit` function to set their balances.
+            Require.that(
+                TOKEN.balanceOf(address(this)) >= SOLO_MARGIN.getMarketTotalPar(MARKET_ID).supply,
+                FILE,
+                "insufficient balance for deposit"
+            );
+
             // this transfer event is technically incorrect since the tokens are really sent from address(this) to
             // recipient, not `sender`. However, we'll let it go.
-            emit Transfer(sender, recipient, amount);
+            emit Transfer(from, to, amount);
         }
         return true;
+    }
+
+    // ============ Private Functions ============
+
+    function _getAccountNumber(address owner, uint number) private pure returns (uint256) {
+        return uint(keccak256(abi.encode(owner, number)));
     }
 
 }
