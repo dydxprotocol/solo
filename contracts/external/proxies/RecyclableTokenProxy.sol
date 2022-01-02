@@ -35,6 +35,8 @@ import { OnlySolo } from "../helpers/OnlySolo.sol";
 
 import { IERC20Detailed } from "../interfaces/IERC20Detailed.sol";
 
+import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
+
 
 /**
  * @title RecyclableTokenProxy
@@ -84,7 +86,9 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     // ============ Public Variables ============
 
     IERC20 public TOKEN;
+    IExpiryV2 public EXPIRY;
     uint256 public MARKET_ID;
+    uint public EXPIRATION_TIMESTAMP;
     bool public isRecycled;
     mapping(address => mapping (uint256 => bool)) public userToAccountNumberHasWithdrawnAfterRecycle;
 
@@ -92,12 +96,23 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     constructor (
         address soloMargin,
-        address token
+        address token,
+        address expiry,
+        uint expirationTimestamp
     )
     public
     OnlySolo(soloMargin)
     {
+        Require.that(
+            expirationTimestamp >= block.timestamp,
+            FILE,
+            "invalid expiration timestamp",
+            expirationTimestamp,
+            block.timestamp
+        );
         TOKEN = IERC20(token);
+        EXPIRY = IExpiryV2(expiry);
+        EXPIRATION_TIMESTAMP = expirationTimestamp;
         isRecycled = false;
     }
 
@@ -146,10 +161,6 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
                 MARKET_ID
             );
         }
-    }
-
-    function isExpired() external view returns (bool) {
-        return false;
     }
 
     function depositIntoSolo(uint accountNumber, uint amount) public nonReentrant {
@@ -230,6 +241,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         address borrowToken,
         uint borrowAmount,
         address exchangeWrapper,
+        uint expirationTimestamp,
         bytes calldata tradeData
     ) external {
         Require.that(
@@ -237,20 +249,53 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             FILE,
             "cannot trade when recycled"
         );
+        Require.that(
+            expirationTimestamp > block.timestamp,
+            FILE,
+            "expiration timestamp too low",
+            expirationTimestamp
+        );
+        Require.that(
+            expirationTimestamp <= EXPIRATION_TIMESTAMP,
+            FILE,
+            "expiration timestamp too high",
+            expirationTimestamp
+        );
+
+        uint marketId = MARKET_ID;
 
         Account.Info[] memory accounts = new Account.Info[](1);
         accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
 
-        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
+        Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
         actions[0] = Actions.ActionArgs({
         actionType: Actions.ActionType.Sell,
         accountId: 0,
         amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, borrowAmount),
         primaryMarketId: SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken),
-        secondaryMarketId: MARKET_ID,
+        secondaryMarketId: marketId,
         otherAddress: exchangeWrapper,
-        otherAccountId: uint(-1),
+        otherAccountId: 0,
         data: tradeData
+        });
+
+        IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
+        expiryArgs[0] = IExpiryV2.SetExpiryArg({
+        account : accounts[0],
+        marketId : marketId,
+        timeDelta : uint32(expirationTimestamp - block.timestamp),
+        forceUpdate : true
+        });
+
+        actions[1] = Actions.ActionArgs({
+        actionType : Actions.ActionType.Call,
+        accountId : 0,
+        amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
+        primaryMarketId : uint(- 1),
+        secondaryMarketId : uint(- 1),
+        otherAddress : address(EXPIRY),
+        otherAccountId : uint(- 1),
+        data : abi.encode(IExpiryV2.CallFunctionType.SetExpiry, expiryArgs)
         });
 
         SOLO_MARGIN.operate(accounts, actions);

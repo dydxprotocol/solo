@@ -28,10 +28,12 @@ contract TestRecyclableToken is RecyclableTokenProxy {
 
     constructor (
         address soloMargin,
-        address token
+        address token,
+        address expiry,
+        uint expirationTimestamp
     )
     public
-    RecyclableTokenProxy(soloMargin, token)
+    RecyclableTokenProxy(soloMargin, token, expiry, expirationTimestamp)
     {}
 
 }

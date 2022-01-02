@@ -98,7 +98,7 @@ contract TestToken is IERC20 {
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        require(balances[from] >= value, "Token: TransferFrom failed");
+        require(balances[from] >= value, "#transferFrom: INSUFFICIENT_BALANCE");
         require(allowed[from][msg.sender] >= value, "#transferFrom: INSUFFICIENT_ALLOWANCE");
 
         balances[to] = balances[to].add(value);

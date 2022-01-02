@@ -34,7 +34,16 @@ interface IRecyclable {
 
     // ============ Public Functions ============
 
+    /**
+     * @return  The token around which this recycle contract wraps.
+     */
     function TOKEN() external view returns (IERC20);
+
+    /**
+     * @return  The max timestamp at which tokens represented by this contract should be expired, allowing liquidators
+     *          to close margin positions involving this token, so this contract can be recycled.
+     */
+    function EXPIRATION_TIMESTAMP() external view returns (uint);
 
     /**
      * A callback for the recyclable market that allows it to perform any cleanup logic, preventing its usage with Solo
@@ -53,12 +62,6 @@ interface IRecyclable {
     function getAccountNumber(Account.Info calldata account) external pure returns (uint256);
 
     function getAccountPar(Account.Info calldata account) external view returns (Types.Par memory);
-
-    /**
-     * @return  True if the tokens represented by this contract should be expired, allowing liquidators to close margin
-     *          positions involving this token, so this contract can be recycled.
-     */
-    function isExpired() external view returns (bool);
 
     /**
      * @return  True if this contract is recycled, disallowing further deposits/interactions with Solo and freeing this

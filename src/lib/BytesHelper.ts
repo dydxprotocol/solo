@@ -18,8 +18,7 @@ export function toBytes(
   ...args: (string | number | Integer | boolean)[]
 ): number[][] {
   const result = args.reduce(
-    (acc: number[], val: string | number | Integer | boolean): number[] =>
-      acc.concat(argToBytes(val)),
+    (acc: number[], val: string | number | Integer | boolean): number[] => acc.concat(argToBytes(val)),
     [],
   );
   return result.map((a: number): number[] => [a]);
@@ -74,9 +73,9 @@ export function addressesAreEqual(
   addressTwo: string,
 ): boolean {
   return (
-    addressOne &&
-    addressTwo &&
-    stripHexPrefix(addressOne).toLowerCase() ===
-      stripHexPrefix(addressTwo).toLowerCase()
+    addressOne
+    && addressTwo
+    && stripHexPrefix(addressOne).toLowerCase()
+      === stripHexPrefix(addressTwo).toLowerCase()
   );
 }

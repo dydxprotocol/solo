@@ -22,42 +22,42 @@ pragma experimental ABIEncoderV2;
 import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
+import { OnlySolo } from "../external/helpers/OnlySolo.sol";
+import { Require } from "../protocol/lib/Require.sol";
 import { IExchangeWrapper } from "../protocol/interfaces/IExchangeWrapper.sol";
 import { IRecyclable } from "../protocol/interfaces/IRecyclable.sol";
-import { OnlySolo } from "../external/helpers/OnlySolo.sol";
 import { CustomTestToken } from "./CustomTestToken.sol";
 
 contract TestTrader is IExchangeWrapper, OnlySolo {
     using SafeERC20 for IERC20;
 
-    IRecyclable RECYCLABLE_TOKEN;
 
     constructor(
-        address soloMargin,
-        address recyclableToken
+        address soloMargin
     ) public OnlySolo(soloMargin) {
-        RECYCLABLE_TOKEN = IRecyclable(RECYCLABLE_TOKEN);
     }
 
     function exchange(
         address,
         address,
         address makerToken,
-        address,
+        address takerToken,
         uint256 requestedFillAmount,
         bytes calldata orderData
     )
     external
     onlySolo(msg.sender)
     returns (uint256) {
+        // makerToken is the token being traded to (supply token after the tx is over). This contract receives
+        // takerToken in exchange for makerToken
         (uint makerAmount, uint takerAmount) = abi.decode(orderData, (uint, uint));
         require(
             takerAmount == requestedFillAmount,
             "TestTrader: invalid taker amounts"
         );
         IERC20 underlyingToken = IRecyclable(makerToken).TOKEN();
-        if (underlyingToken.allowance(address(this), address(RECYCLABLE_TOKEN)) <= makerAmount) {
-            underlyingToken.approve(address(RECYCLABLE_TOKEN), uint(-1));
+        if (underlyingToken.allowance(address(this), makerToken) < makerAmount) {
+            underlyingToken.approve(makerToken, uint(- 1));
         }
         CustomTestToken(address(underlyingToken)).setBalance(address(this), makerAmount);
         return makerAmount;

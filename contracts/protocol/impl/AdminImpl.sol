@@ -248,6 +248,12 @@ library AdminImpl {
                 "market has active borrows",
                 marketIds[i]
             );
+            Require.that(
+                IRecyclable(state.getToken(marketIds[i])).EXPIRATION_TIMESTAMP() < (block.timestamp + 86400), // give the expiration timestamp a 1-day buffer
+                FILE,
+                "market has not expired",
+                marketIds[i]
+            );
 
             delete state.markets[marketIds[i]];
             delete state.tokenToMarketId[token];
