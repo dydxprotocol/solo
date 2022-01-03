@@ -88,7 +88,6 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     IERC20 public TOKEN;
     IExpiryV2 public EXPIRY;
     uint256 public MARKET_ID;
-    uint public EXPIRATION_TIMESTAMP;
     bool public isRecycled;
     mapping(address => mapping (uint256 => bool)) public userToAccountNumberHasWithdrawnAfterRecycle;
 
@@ -98,21 +97,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         address soloMargin,
         address token,
         address expiry,
-        uint expirationTimestamp
+        uint maxExpirationTimestamp
     )
     public
     OnlySolo(soloMargin)
     {
-        Require.that(
-            expirationTimestamp >= block.timestamp,
-            FILE,
-            "invalid expiration timestamp",
-            expirationTimestamp,
-            block.timestamp
-        );
         TOKEN = IERC20(token);
         EXPIRY = IExpiryV2(expiry);
-        EXPIRATION_TIMESTAMP = expirationTimestamp;
+        MAX_EXPIRATION_TIMESTAMP = maxExpirationTimestamp;
         isRecycled = false;
     }
 
@@ -131,6 +123,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             SOLO_MARGIN.getMarketIsClosing(MARKET_ID),
             FILE,
             "market cannot allow borrowing"
+        );
+        // This statement is in this function because of an "InternalCompileError" error that occurs in the constructor
+        Require.that(
+            MAX_EXPIRATION_TIMESTAMP >= block.timestamp,
+            FILE,
+            "invalid expiration timestamp",
+            MAX_EXPIRATION_TIMESTAMP,
+            block.timestamp
         );
     }
 
@@ -168,6 +168,12 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             !isRecycled,
             FILE,
             "cannot deposit when recycled"
+        );
+        Require.that(
+            !isExpired(),
+            FILE,
+            "market is expired",
+            MAX_EXPIRATION_TIMESTAMP
         );
 
         TOKEN.safeTransferFrom(msg.sender, address(this), amount);
@@ -238,10 +244,12 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     function trade(
         uint accountNumber,
+        uint supplyAmount, // equivalent to amounts[amounts.length - 1]
         address borrowToken,
         uint borrowAmount,
         address exchangeWrapper,
         uint expirationTimestamp,
+        bool isOpen,
         bytes calldata tradeData
     ) external {
         Require.that(
@@ -256,13 +264,20 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             expirationTimestamp
         );
         Require.that(
-            expirationTimestamp <= EXPIRATION_TIMESTAMP,
+            expirationTimestamp <= MAX_EXPIRATION_TIMESTAMP,
             FILE,
             "expiration timestamp too high",
             expirationTimestamp
         );
+        Require.that(
+            !isExpired(),
+            FILE,
+            "market is expired",
+            MAX_EXPIRATION_TIMESTAMP
+        );
 
         uint marketId = MARKET_ID;
+        uint borrowMarketId = SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken);
 
         Account.Info[] memory accounts = new Account.Info[](1);
         accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
@@ -271,31 +286,26 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         actions[0] = Actions.ActionArgs({
         actionType: Actions.ActionType.Sell,
         accountId: 0,
-        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, borrowAmount),
-        primaryMarketId: SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken),
-        secondaryMarketId: marketId,
+        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, isOpen ? borrowAmount : supplyAmount),
+        primaryMarketId: isOpen ? borrowMarketId : marketId,
+        secondaryMarketId: isOpen ? marketId : borrowMarketId,
         otherAddress: exchangeWrapper,
         otherAccountId: 0,
         data: tradeData
-        });
-
-        IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
-        expiryArgs[0] = IExpiryV2.SetExpiryArg({
-        account : accounts[0],
-        marketId : marketId,
-        timeDelta : uint32(expirationTimestamp - block.timestamp),
-        forceUpdate : true
         });
 
         actions[1] = Actions.ActionArgs({
         actionType : Actions.ActionType.Call,
         accountId : 0,
         amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
-        primaryMarketId : uint(- 1),
-        secondaryMarketId : uint(- 1),
+        primaryMarketId : 0,
+        secondaryMarketId : 0,
         otherAddress : address(EXPIRY),
-        otherAccountId : uint(- 1),
-        data : abi.encode(IExpiryV2.CallFunctionType.SetExpiry, expiryArgs)
+        otherAccountId : 0,
+        data : abi.encode(
+                IExpiryV2.CallFunctionType.SetExpiry,
+                _getExpiryArgs(accounts[0], borrowMarketId, isOpen ? expirationTimestamp : 0)
+            )
         });
 
         SOLO_MARGIN.operate(accounts, actions);
@@ -417,6 +427,21 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     function _getAccountNumber(address owner, uint number) private pure returns (uint256) {
         return uint(keccak256(abi.encode(owner, number)));
+    }
+
+    function _getExpiryArgs(
+        Account.Info memory account,
+        uint marketId,
+        uint expirationTimestamp
+    ) private view returns (IExpiryV2.SetExpiryArg[] memory) {
+        IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
+        expiryArgs[0] = IExpiryV2.SetExpiryArg({
+        account : account,
+        marketId : marketId,
+        timeDelta : expirationTimestamp == 0 ? 0 : uint32(expirationTimestamp - block.timestamp),
+        forceUpdate : true
+        });
+        return expiryArgs;
     }
 
 }

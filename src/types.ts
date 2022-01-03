@@ -109,10 +109,8 @@ export interface LogParsingOptions {
   skipOperationLogs?: boolean;
   skipAdminLogs?: boolean;
   skipPermissionLogs?: boolean;
-  skipExpiryLogs?: boolean;
-  skipRefunderLogs?: boolean;
-  skipLimitOrdersLogs?: boolean;
   skipSignedOperationProxyLogs?: boolean;
+  skipExpiryLogs?: boolean;
 }
 
 export interface TxResult {

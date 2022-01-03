@@ -20,7 +20,7 @@
     "copy_uniswap_core": "cp -u node_modules/@uniswap/v2-core/build/UniswapV2Factory.json ./build/contracts/ && cp -u node_modules/@uniswap/v2-core/build/UniswapV2Pair.json ./build/contracts/",
     "copy_uniswap_periphery": "cp -u node_modules/@uniswap/v2-periphery/build/UniswapV2Router02.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
-    "compile": "node_modules/.bin/truffle compile",
+    "compile": "truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/published_contracts/*[^(Impl)].json'",
     "build:test_wrappers": "typechain --target=web3-1.0.0 --outDir=build/testing_wrappers/ './build/testing_contracts/*[^(Impl)].json'",
     "migrate": "truffle migrate",

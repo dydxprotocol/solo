@@ -234,7 +234,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiry.methods.ownerSetExpiryRampTime(
+      this.contracts.expiryV2.methods.ownerSetExpiryRampTime(
         newExpiryRampTime.toFixed(0),
       ),
       options,

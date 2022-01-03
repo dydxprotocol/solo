@@ -49,6 +49,8 @@ library AdminImpl {
 
     uint256 constant HEAD_POINTER = uint(-1);
 
+    uint256 constant ONE_WEEK = 86400 * 7;
+
     // ============ Events ============
 
     event LogWithdrawExcessTokens(
@@ -248,12 +250,23 @@ library AdminImpl {
                 "market has active borrows",
                 marketIds[i]
             );
-            Require.that(
-                IRecyclable(state.getToken(marketIds[i])).EXPIRATION_TIMESTAMP() < (block.timestamp + 86400), // give the expiration timestamp a 1-day buffer
-                FILE,
-                "market has not expired",
-                marketIds[i]
-            );
+            {
+                uint expirationTimestamp = IRecyclable(state.getToken(marketIds[i])).MAX_EXPIRATION_TIMESTAMP();
+                Require.that(
+                    expirationTimestamp < block.timestamp,
+                    FILE,
+                    "market is not expired",
+                    marketIds[i],
+                    expirationTimestamp
+                );
+                Require.that(
+                    expirationTimestamp < (block.timestamp + ONE_WEEK), // give the expiration timestamp a 7-day buffer
+                    FILE,
+                    "market must pass buffer",
+                    marketIds[i],
+                    expirationTimestamp
+                );
+            }
 
             delete state.markets[marketIds[i]];
             delete state.tokenToMarketId[token];

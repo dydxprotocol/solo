@@ -27,14 +27,10 @@ import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
-import { LimitOrders } from './modules/LimitOrders';
-import { StopLimitOrders } from './modules/StopLimitOrders';
-import { CanonicalOrders } from './modules/CanonicalOrders';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
-import { Api } from './modules/Api';
 import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
@@ -56,9 +52,6 @@ export class Solo {
   public web3: Web3;
   public admin: Admin;
   public getters: Getters;
-  public limitOrders: LimitOrders;
-  public stopLimitOrders: StopLimitOrders;
-  public canonicalOrders: CanonicalOrders;
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
   public liquidatorProxyWithAmm: LiquidatorProxyWithAmm;
@@ -67,7 +60,6 @@ export class Solo {
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
-  public api: Api;
   public websocket: Websocket;
   public standardActions: StandardActions;
   public walletLogin: WalletLogin;
@@ -106,17 +98,6 @@ export class Solo {
     this.weth = new Weth(this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
-    this.limitOrders = new LimitOrders(this.contracts, this.web3, networkId);
-    this.stopLimitOrders = new StopLimitOrders(
-      this.contracts,
-      this.web3,
-      networkId,
-    );
-    this.canonicalOrders = new CanonicalOrders(
-      this.contracts,
-      this.web3,
-      networkId,
-    );
     this.signedOperations = new SignedOperations(
       this.contracts,
       this.web3,
@@ -130,15 +111,7 @@ export class Solo {
     this.logs = new Logs(this.contracts, this.web3);
     this.operation = new Operation(
       this.contracts,
-      this.limitOrders,
-      this.stopLimitOrders,
-      this.canonicalOrders,
       networkId,
-    );
-    this.api = new Api(
-      this.canonicalOrders,
-      options.apiEndpoint,
-      options.apiTimeout,
     );
     this.websocket = new Websocket(
       options.wsTimeout,
@@ -342,17 +315,6 @@ export class Solo {
       index.supply.times(base),
       base,
     );
-  }
-
-  public async getMarketIndex(marketId: BigNumber): Promise<any> {
-    const result = await this.contracts.soloMargin.methods
-      .getMarketCurrentIndex(marketId.toString())
-      .send();
-
-    return {
-      borrow: new BigNumber(result.borrow),
-      supply: new BigNumber(result.supply),
-    };
   }
 
   public async getMarketWei(

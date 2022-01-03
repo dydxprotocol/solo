@@ -43,6 +43,8 @@ Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-d
 
 `npm i -s @dolomite-exchange/solo`
 
+[fast-compile](https://snyk.io/advisor/npm-package/truffle-fast-compile)
+
 ## Contracts
 
 ### Mainnet
@@ -52,20 +54,15 @@ Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-d
 |[`SoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main dYdX contract|[](https://etherscan.io/address/)|
 |[`PayableProxyForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
 |[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
-|[`Expiry`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/Expiry.sol)|Handles account expiries|[](https://etherscan.io/address/)|
 |[`ExpiryV2`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|[](https://etherscan.io/address/)|
 |[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
 |[`AdminImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|[](https://etherscan.io/address/)|
 |[`OperationImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1WithAmmForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmmForSoloMargin.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
-|[`LimitOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/LimitOrders.sol)|Contract for making limit orders using Dolomite funds|[](https://etherscan.io/address/)|
-|[`StopLimitOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/StopLimitOrders.sol)|Contract for making stop limit orders using Dolomite funds|[](https://etherscan.io/address/)|
-|[`CanonicalOrders`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/CanonicalOrders.sol)|Contract for making canonical limit and canonical stop-limit orders using Dolomite funds|[](https://etherscan.io/address/)|
 |[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
 |[`SignedOperationProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
 |[`TransferProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
-|[`Refunder`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/Refunder.sol)|Allows sending of funds to other accounts|[](https://etherscan.io/address/)|
 |[`SimpleFeeOwner`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
 |[`UniswapV2Factory`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Factory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
 |[`UniswapV2Pair`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Pair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with Solo, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|

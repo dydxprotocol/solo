@@ -28,13 +28,7 @@ import { SoloMargin } from '../../build/wrappers/SoloMargin';
 import { IERC20 as ERC20 } from '../../build/wrappers/IERC20';
 import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
-import { Expiry } from '../../build/wrappers/Expiry';
 import { ExpiryV2 } from '../../build/wrappers/ExpiryV2';
-import { Refunder } from '../../build/wrappers/Refunder';
-import { DaiMigrator } from '../../build/wrappers/DaiMigrator';
-import { LimitOrders } from '../../build/wrappers/LimitOrders';
-import { StopLimitOrders } from '../../build/wrappers/StopLimitOrders';
-import { CanonicalOrders } from '../../build/wrappers/CanonicalOrders';
 import { PayableProxyForSoloMargin as PayableProxy } from '../../build/wrappers/PayableProxyForSoloMargin';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
 import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
@@ -58,13 +52,7 @@ import soloMarginJson from '../../build/published_contracts/SoloMargin.json';
 import erc20Json from '../../build/published_contracts/IERC20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
-import expiryJson from '../../build/published_contracts/Expiry.json';
 import expiryV2Json from '../../build/published_contracts/ExpiryV2.json';
-import refunderJson from '../../build/published_contracts/Refunder.json';
-import daiMigratorJson from '../../build/published_contracts/DaiMigrator.json';
-import limitOrdersJson from '../../build/published_contracts/LimitOrders.json';
-import stopLimitOrdersJson from '../../build/published_contracts/StopLimitOrders.json';
-import canonicalOrdersJson from '../../build/published_contracts/CanonicalOrders.json';
 import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
@@ -112,13 +100,7 @@ export class Contracts {
   public erc20: ERC20;
   public interestSetter: InterestSetter;
   public priceOracle: PriceOracle;
-  public expiry: Expiry;
   public expiryV2: ExpiryV2;
-  public refunder: Refunder;
-  public daiMigrator: DaiMigrator;
-  public limitOrders: LimitOrders;
-  public stopLimitOrders: StopLimitOrders;
-  public canonicalOrders: CanonicalOrders;
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
@@ -170,21 +152,7 @@ export class Contracts {
     this.priceOracle = new this.web3.eth.Contract(
       priceOracleJson.abi,
     ) as PriceOracle;
-    this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.expiryV2 = new this.web3.eth.Contract(expiryV2Json.abi) as ExpiryV2;
-    this.refunder = new this.web3.eth.Contract(refunderJson.abi) as Refunder;
-    this.daiMigrator = new this.web3.eth.Contract(
-      daiMigratorJson.abi,
-    ) as DaiMigrator;
-    this.limitOrders = new this.web3.eth.Contract(
-      limitOrdersJson.abi,
-    ) as LimitOrders;
-    this.stopLimitOrders = new this.web3.eth.Contract(
-      stopLimitOrdersJson.abi,
-    ) as StopLimitOrders;
-    this.canonicalOrders = new this.web3.eth.Contract(
-      canonicalOrdersJson.abi,
-    ) as CanonicalOrders;
     this.payableProxy = new this.web3.eth.Contract(
       payableProxyJson.abi,
     ) as PayableProxy;
@@ -280,13 +248,7 @@ export class Contracts {
       { contract: this.erc20, json: erc20Json },
       { contract: this.interestSetter, json: interestSetterJson },
       { contract: this.priceOracle, json: priceOracleJson },
-      { contract: this.expiry, json: expiryJson },
       { contract: this.expiryV2, json: expiryV2Json },
-      { contract: this.refunder, json: refunderJson },
-      { contract: this.daiMigrator, json: daiMigratorJson },
-      { contract: this.limitOrders, json: limitOrdersJson },
-      { contract: this.stopLimitOrders, json: stopLimitOrdersJson },
-      { contract: this.canonicalOrders, json: canonicalOrdersJson },
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
@@ -350,13 +312,7 @@ export class Contracts {
     this.erc20.options.from = account;
     this.interestSetter.options.from = account;
     this.priceOracle.options.from = account;
-    this.expiry.options.from = account;
     this.expiryV2.options.from = account;
-    this.refunder.options.from = account;
-    this.daiMigrator.options.from = account;
-    this.limitOrders.options.from = account;
-    this.stopLimitOrders.options.from = account;
-    this.canonicalOrders.options.from = account;
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;

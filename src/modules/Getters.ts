@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
@@ -146,7 +148,7 @@ export class Getters {
       ),
       options,
     );
-    return this.parseIndex(result);
+    return Getters.parseIndex(result);
   }
 
   public async getMarketCurrentIndex(
@@ -159,7 +161,7 @@ export class Getters {
       ),
       options,
     );
-    return this.parseIndex(result);
+    return Getters.parseIndex(result);
   }
 
   public async getMarketPriceOracle(
@@ -318,8 +320,8 @@ export class Getters {
     );
     return {
       ...market,
-      totalPar: this.parseTotalPar(market.totalPar),
-      index: this.parseIndex(market.index),
+      totalPar: Getters.parseTotalPar(market.totalPar),
+      index: Getters.parseIndex(market.index),
       marginPremium: stringToDecimal(market.marginPremium.value),
       spreadPremium: stringToDecimal(market.spreadPremium.value),
     };
@@ -341,12 +343,12 @@ export class Getters {
     return {
       market: {
         ...market,
-        totalPar: this.parseTotalPar(market.totalPar),
-        index: this.parseIndex(market.index),
+        totalPar: Getters.parseTotalPar(market.totalPar),
+        index: Getters.parseIndex(market.index),
         marginPremium: stringToDecimal(market.marginPremium.value),
         spreadPremium: stringToDecimal(market.spreadPremium.value),
       },
-      currentIndex: this.parseIndex(currentIndex),
+      currentIndex: Getters.parseIndex(currentIndex),
       currentPrice: new BigNumber(currentPrice.value),
       currentInterestRate: stringToDecimal(currentInterestRate.value),
     };
@@ -592,7 +594,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.expiry.methods.owner(),
+      this.contracts.expiryV2.methods.owner(),
       options,
     );
   }
@@ -604,7 +606,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiry.methods.getExpiry(
+      this.contracts.expiryV2.methods.getExpiry(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -623,7 +625,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<{ heldPrice: Integer; owedPrice: Integer }> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiry.methods.getSpreadAdjustedPrices(
+      this.contracts.expiryV2.methods.getSpreadAdjustedPrices(
         heldMarketId.toFixed(0),
         owedMarketId.toFixed(0),
         expiryTimestamp.toFixed(0),
@@ -641,7 +643,7 @@ export class Getters {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiry.methods.g_expiryRampTime(),
+      this.contracts.expiryV2.methods.g_expiryRampTime(),
       options,
     );
     return new BigNumber(result);
@@ -649,7 +651,7 @@ export class Getters {
 
   // ============ Helper Functions ============
 
-  private parseIndex({
+  private static parseIndex({
     borrow,
     supply,
     lastUpdate,
@@ -665,7 +667,7 @@ export class Getters {
     };
   }
 
-  private parseTotalPar({
+  private static parseTotalPar({
     supply,
     borrow,
   }: {

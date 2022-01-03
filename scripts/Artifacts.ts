@@ -6,13 +6,7 @@ import { default as SoloMargin } from '../build/contracts/SoloMargin.json';
 import { default as IERC20 } from '../build/contracts/IERC20.json';
 import { default as IInterestSetter } from '../build/contracts/IInterestSetter.json';
 import { default as IPriceOracle } from '../build/contracts/IPriceOracle.json';
-import { default as Expiry } from '../build/contracts/Expiry.json';
 import { default as ExpiryV2 } from '../build/contracts/ExpiryV2.json';
-import { default as Refunder } from '../build/contracts/Refunder.json';
-import { default as DaiMigrator } from '../build/contracts/DaiMigrator.json';
-import { default as LimitOrders } from '../build/contracts/LimitOrders.json';
-import { default as StopLimitOrders } from '../build/contracts/StopLimitOrders.json';
-import { default as CanonicalOrders } from '../build/contracts/CanonicalOrders.json';
 import { default as PayableProxyForSoloMargin }
   from '../build/contracts/PayableProxyForSoloMargin.json';
 import { default as SignedOperationProxy }
@@ -50,13 +44,7 @@ export default {
   IERC20,
   IInterestSetter,
   IPriceOracle,
-  Expiry,
   ExpiryV2,
-  Refunder,
-  DaiMigrator,
-  LimitOrders,
-  StopLimitOrders,
-  CanonicalOrders,
   PayableProxyForSoloMargin,
   SignedOperationProxy,
   LiquidatorProxyV1ForSoloMargin,

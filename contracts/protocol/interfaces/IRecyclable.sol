@@ -30,7 +30,15 @@ import { Types } from "../lib/Types.sol";
  *
  * Interface that recyclable tokens/markets must implement
  */
-interface IRecyclable {
+contract IRecyclable {
+
+    // ============ Public State Variables ============
+
+    /**
+     * @notice The max timestamp at which tokens represented by this contract should be expired, allowing liquidators
+     *          to close margin positions involving this token, so this contract can be recycled.
+     */
+    uint public MAX_EXPIRATION_TIMESTAMP;
 
     // ============ Public Functions ============
 
@@ -38,12 +46,6 @@ interface IRecyclable {
      * @return  The token around which this recycle contract wraps.
      */
     function TOKEN() external view returns (IERC20);
-
-    /**
-     * @return  The max timestamp at which tokens represented by this contract should be expired, allowing liquidators
-     *          to close margin positions involving this token, so this contract can be recycled.
-     */
-    function EXPIRATION_TIMESTAMP() external view returns (uint);
 
     /**
      * A callback for the recyclable market that allows it to perform any cleanup logic, preventing its usage with Solo
@@ -68,4 +70,8 @@ interface IRecyclable {
      *          token's `MARKET_ID`.
      */
     function isRecycled() external view returns (bool);
+
+    function isExpired() public view returns (bool) {
+        return MAX_EXPIRATION_TIMESTAMP < block.timestamp;
+    }
 }

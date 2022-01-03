@@ -16,7 +16,7 @@ import {
 import {
   abi as recyclableABI,
   bytecode as recyclableBytecode,
-} from '../../build/contracts/TestRecyclableToken.json';
+} from '../../build/contracts/RecyclableTokenProxy.json';
 import {
   abi as customTestTokenABI,
   bytecode as customTestTokenBytecode,
@@ -47,6 +47,9 @@ let marketId: Integer;
 
 const borrowMarketId: Integer = INTEGERS.ZERO;
 const defaultPrice = new BigNumber('1e36');
+
+const expirationTimestamp = new Date().getTime() / 1000;
+const defaultIsOpen = true;
 
 describe('RecyclableTokenProxy', () => {
   let snapshotId: string;
@@ -317,17 +320,17 @@ describe('RecyclableTokenProxy', () => {
         gas: '4000000',
       };
       const accountNumber = 0;
-      const balance = 100;
+      const supplyBalance = 100;
       const borrowBalance = 20;
       await customToken.methods
         .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
         .send(tx);
-      await customToken.methods.setBalance(user, balance).send(tx);
+      await customToken.methods.setBalance(user, supplyBalance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoSolo(accountNumber, supplyBalance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
+        new BigNumber(supplyBalance),
       );
       expect(
         await getOwnerBalance(user, accountNumber, borrowMarketId),
@@ -336,15 +339,18 @@ describe('RecyclableTokenProxy', () => {
       await recyclableToken.methods
         .trade(
           accountNumber,
+          supplyBalance,
           borrowTokenAddress,
           borrowBalance,
           testTrader.options.address,
-          toBytes(balance, borrowBalance),
+          expirationTimestamp,
+          defaultIsOpen,
+          toBytes(supplyBalance, borrowBalance),
         )
         .send(tx);
 
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance + balance),
+        new BigNumber(supplyBalance + supplyBalance),
       );
       expect(
         await getOwnerBalance(user, accountNumber, borrowMarketId),
@@ -357,17 +363,20 @@ describe('RecyclableTokenProxy', () => {
         gas: '1000000',
       };
       const accountNumber = 132;
-      const balance = 100;
+      const supplyBalance = 100;
       await removeMarket(marketId, recyclableToken.options.address);
-      const borrowBalance = balance / 10;
+      const borrowBalance = supplyBalance / 10;
       await expectThrow(
         recyclableToken.methods
           .trade(
             accountNumber,
+            supplyBalance,
             borrowTokenAddress,
             borrowBalance,
             testTrader.options.address,
-            toBytes(balance, borrowBalance),
+            expirationTimestamp,
+            defaultIsOpen,
+            toBytes(supplyBalance, borrowBalance),
           )
           .send(tx),
         'RecyclableTokenProxy: cannot trade when recycled',
@@ -386,23 +395,26 @@ describe('RecyclableTokenProxy', () => {
           number: outerAccountNumber,
         })
         .call();
-      const balance = 100;
+      const supplyBalance = 100;
       const borrowBalance = 100;
       await customToken.methods
         .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
         .send(tx);
-      await customToken.methods.setBalance(user, balance).send(tx);
+      await customToken.methods.setBalance(user, supplyBalance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(outerAccountNumber, balance)
+        .depositIntoSolo(outerAccountNumber, supplyBalance)
         .send(tx);
       await expectThrow(
         recyclableToken.methods
           .trade(
             outerAccountNumber,
+            supplyBalance,
             borrowTokenAddress,
             borrowBalance,
             testTrader.options.address,
-            toBytes(balance / 10, borrowBalance),
+            expirationTimestamp,
+            defaultIsOpen,
+            toBytes(supplyBalance / 10, borrowBalance),
           )
           .send(tx),
         `OperationImpl: Undercollateralized account <${recyclableToken.options.address.toLowerCase()}, ${innerAccountNumber}>`,
@@ -417,17 +429,17 @@ describe('RecyclableTokenProxy', () => {
         gas: '4000000',
       };
       const accountNumber = 0;
-      const balance = 100;
+      const supplyBalance = 100;
       const borrowBalance = 100;
       await customToken.methods
         .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
         .send(tx);
-      await customToken.methods.setBalance(user, balance).send(tx);
+      await customToken.methods.setBalance(user, supplyBalance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoSolo(accountNumber, supplyBalance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
+        new BigNumber(supplyBalance),
       );
       expect(
         await getOwnerBalance(user, accountNumber, borrowMarketId),
@@ -436,10 +448,13 @@ describe('RecyclableTokenProxy', () => {
       await recyclableToken.methods
         .trade(
           accountNumber,
+          supplyBalance,
           borrowTokenAddress,
           borrowBalance,
           testTrader.options.address,
-          toBytes(balance, borrowBalance),
+          expirationTimestamp,
+          defaultIsOpen,
+          toBytes(supplyBalance, borrowBalance),
         )
         .send(tx);
 
@@ -502,17 +517,17 @@ describe('RecyclableTokenProxy', () => {
         gas: '4000000',
       };
       const accountNumber = 0;
-      const balance = 100;
+      const supplyBalance = 100;
       const borrowBalance = 100;
       await customToken.methods
         .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
         .send(tx);
-      await customToken.methods.setBalance(user, balance).send(tx);
+      await customToken.methods.setBalance(user, supplyBalance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoSolo(accountNumber, supplyBalance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
+        new BigNumber(supplyBalance),
       );
       expect(
         await getOwnerBalance(user, accountNumber, borrowMarketId),
@@ -521,10 +536,13 @@ describe('RecyclableTokenProxy', () => {
       await recyclableToken.methods
         .trade(
           accountNumber,
+          supplyBalance,
           borrowTokenAddress,
           borrowBalance,
           testTrader.options.address,
-          toBytes(balance, borrowBalance),
+          expirationTimestamp,
+          defaultIsOpen,
+          toBytes(supplyBalance, borrowBalance)
         )
         .send(tx);
 
@@ -583,17 +601,17 @@ describe('RecyclableTokenProxy', () => {
         gas: '4000000',
       };
       const accountNumber = 0;
-      const balance = 100;
+      const supplyBalance = 100;
       const borrowBalance = 100;
       await customToken.methods
         .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
         .send(tx);
-      await customToken.methods.setBalance(user, balance).send(tx);
+      await customToken.methods.setBalance(user, supplyBalance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoSolo(accountNumber, supplyBalance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
+        new BigNumber(supplyBalance),
       );
       expect(
         await getOwnerBalance(user, accountNumber, borrowMarketId),
@@ -602,10 +620,13 @@ describe('RecyclableTokenProxy', () => {
       await recyclableToken.methods
         .trade(
           accountNumber,
+          supplyBalance,
           borrowTokenAddress,
           borrowBalance,
           testTrader.options.address,
-          toBytes(balance, borrowBalance),
+          expirationTimestamp,
+          defaultIsOpen,
+          toBytes(supplyBalance, borrowBalance)
         )
         .send(tx);
 
@@ -698,6 +719,8 @@ describe('RecyclableTokenProxy', () => {
         arguments: [
           solo.contracts.soloMargin.options.address,
           underlyingToken.options.address,
+          solo.contracts.expiryV2.options.address,
+          (new Date().getTime() / 1000) + 86400,
         ],
       })
       .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;

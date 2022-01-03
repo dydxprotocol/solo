@@ -41,7 +41,7 @@ contract TestTrader is IExchangeWrapper, OnlySolo {
         address,
         address,
         address makerToken,
-        address takerToken,
+        address,
         uint256 requestedFillAmount,
         bytes calldata orderData
     )
