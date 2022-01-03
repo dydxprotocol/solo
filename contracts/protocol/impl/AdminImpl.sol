@@ -250,23 +250,23 @@ library AdminImpl {
                 "market has active borrows",
                 marketIds[i]
             );
-            {
-                uint expirationTimestamp = IRecyclable(state.getToken(marketIds[i])).MAX_EXPIRATION_TIMESTAMP();
-                Require.that(
-                    expirationTimestamp < block.timestamp,
-                    FILE,
-                    "market is not expired",
-                    marketIds[i],
-                    expirationTimestamp
-                );
-                Require.that(
-                    expirationTimestamp < (block.timestamp + ONE_WEEK), // give the expiration timestamp a 7-day buffer
-                    FILE,
-                    "market must pass buffer",
-                    marketIds[i],
-                    expirationTimestamp
-                );
-            }
+            uint expirationTimestamp = IRecyclable(state.getToken(marketIds[i])).MAX_EXPIRATION_TIMESTAMP();
+            Require.that(
+                expirationTimestamp < block.timestamp,
+                FILE,
+                "market is not expired",
+                marketIds[i],
+                expirationTimestamp
+            );
+            Require.that(
+                (expirationTimestamp + ONE_WEEK) < block.timestamp, // give the expiration timestamp a 7-day buffer
+                FILE,
+                "market must pass buffer",
+                marketIds[i],
+                expirationTimestamp
+            );
+
+            Token.transfer(token, salvager, state.getTotalPar(marketIds[i]).supply);
 
             delete state.markets[marketIds[i]];
             delete state.tokenToMarketId[token];
@@ -278,7 +278,6 @@ library AdminImpl {
                 state.recycledMarketIds[marketIds[i]] = previousHead;
             }
 
-            Token.transfer(token, salvager, state.getTotalPar(marketIds[i]).supply);
             IRecyclable(token).recycle();
 
             emit LogRemoveMarket(marketIds[i], token);
