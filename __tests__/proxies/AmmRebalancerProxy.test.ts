@@ -58,6 +58,12 @@ describe('AmmRebalancerProxy', () => {
         { from: owner1 },
       ),
     ]);
+
+    expect(await solo.dolomiteAmmFactory.getPairInitCodeHash())
+      .toEqual(await solo.dolomiteAmmRouterProxy.getPairInitCodeHash());
+
+    expect(await solo.testing.uniswapV2Factory.getPairInitCodeHash())
+      .toEqual(await solo.testing.uniswapV2Router.getPairInitCodeHash());
     await solo.admin.addMarket(
       solo.weth.getAddress(),
       solo.testing.priceOracle.getAddress(),

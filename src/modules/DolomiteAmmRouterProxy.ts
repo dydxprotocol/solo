@@ -15,6 +15,14 @@ export class DolomiteAmmRouterProxy {
     this.contracts = contracts;
   }
 
+  // ============ View Functions ============
+
+  public async getPairInitCodeHash(): Promise<string> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteAmmRouterProxy.methods.getPairInitCodeHash()
+    );
+  }
+
   // ============ State-Changing Functions ============
 
   public async addLiquidity(

@@ -531,7 +531,7 @@ describe('Withdraw', () => {
   });
 
   it('Fails if withdrawing more tokens than exist', async () => {
-    await expectWithdrawRevert({}, 'Token: operation failed');
+    await expectWithdrawRevert({}, 'Token: transfer failed');
   });
 });
 

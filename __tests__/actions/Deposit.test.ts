@@ -532,7 +532,7 @@ describe('Deposit', () => {
         reference: AmountReference.Delta,
       },
     };
-    await expectDepositRevert(glob, 'Token: operation failed');
+    await expectDepositRevert(glob, 'Token: transferFrom failed');
   });
 });
 

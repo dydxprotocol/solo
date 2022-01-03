@@ -114,7 +114,8 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
             "invalid path lengths"
         );
         Require.that(
-            params.dolomitePath[0] == params.otherPath[params.otherPath.length - 1] && params.dolomitePath[params.dolomitePath.length - 1] == params.otherPath[0],
+            params.dolomitePath[0] == params.otherPath[params.otherPath.length - 1] &&
+                params.dolomitePath[params.dolomitePath.length - 1] == params.otherPath[0],
             FILE,
             "invalid path alignment"
         );

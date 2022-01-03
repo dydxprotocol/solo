@@ -416,7 +416,7 @@ describe('Library', () => {
             amount,
           ),
         ),
-        'Token: operation failed',
+        'Token: transfer failed',
       );
     });
 
@@ -452,7 +452,7 @@ describe('Library', () => {
             amount,
           ),
         ),
-        'Token: operation failed',
+        'Token: transferFrom failed',
       );
     });
 

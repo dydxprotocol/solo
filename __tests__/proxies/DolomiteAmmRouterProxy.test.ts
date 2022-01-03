@@ -36,6 +36,7 @@ const prices = [
 ];
 const defaultIsClosing = false;
 const defaultIsRecyclable = false;
+const defaultDeadline = new BigNumber('123456789123');
 
 describe('DolomiteAmmRouterProxy', () => {
   beforeAll(async () => {
@@ -75,6 +76,9 @@ describe('DolomiteAmmRouterProxy', () => {
       defaultIsRecyclable,
       { from: admin },
     );
+
+    expect(await solo.dolomiteAmmFactory.getPairInitCodeHash())
+      .toEqual(await solo.dolomiteAmmRouterProxy.getPairInitCodeHash());
 
     token_ab = await getUniswapLpTokenAddress(
       solo.testing.tokenA.getAddress(),
@@ -157,7 +161,7 @@ describe('DolomiteAmmRouterProxy', () => {
             parB.times('2'),
             INTEGERS.ONE,
             INTEGERS.ONE,
-            new BigNumber('123456789123'),
+            defaultDeadline,
             { from: owner1 },
           ),
           `OperationImpl: Undercollateralized account <${owner1.toLowerCase()}, 0>`,
@@ -363,6 +367,12 @@ describe('DolomiteAmmRouterProxy', () => {
           solo.testing.tokenC.getAddress(),
         ]);
 
+        await swapExactTokensForTokens(owner1, parA.div(100), [
+          solo.testing.tokenA.getAddress(),
+          solo.testing.tokenB.getAddress(),
+          solo.testing.tokenC.getAddress(),
+        ]);
+
         let result = await solo.contracts.soloMargin.methods
           .getAccountWei(account, marketIdA)
           .call();
@@ -466,6 +476,7 @@ describe('DolomiteAmmRouterProxy', () => {
         );
 
         const accountNumber = INTEGERS.ONE;
+        const expiryTimeDelta = new BigNumber('3600');
         const txResult = await solo.dolomiteAmmRouterProxy.swapExactTokensForTokensAndModifyPosition(
           accountNumber,
           parA.div(100),
@@ -474,8 +485,8 @@ describe('DolomiteAmmRouterProxy', () => {
           solo.testing.tokenB.getAddress(),
           true,
           parB.div(10),
-          new BigNumber('3600'),
-          new BigNumber('123456789123'),
+          expiryTimeDelta,
+          defaultDeadline,
           { from: owner1 },
         );
 
@@ -535,10 +546,10 @@ async function addLiquidity(
       amountBDesired,
       INTEGERS.ONE,
       INTEGERS.ONE,
-      new BigNumber('123456789123'),
+      defaultDeadline,
       { from: walletAddress },
     )
-    .catch(reason => {
+    .catch((reason) => {
       console.log('reason ', reason);
       return { gasUsed: 0 };
     });
@@ -562,7 +573,7 @@ async function removeLiquidity(
     liquidity,
     amountAMin,
     amountBMin,
-    new BigNumber('123456789123'),
+    defaultDeadline,
     { from: walletAddress },
   );
 
@@ -584,12 +595,12 @@ async function swapExactTokensForTokens(
     amountIn,
     INTEGERS.ONE,
     path,
-    new BigNumber('123456789123'),
+    defaultDeadline,
     { from: walletAddress },
   );
 
   console.log(
-    '#swapExactTokensForTokens gas used  ',
+    `'#swapExactTokensForTokens gas used ${path.length}-path '`,
     result.gasUsed.toString(),
   );
 
@@ -609,7 +620,7 @@ async function swapTokensForExactTokens(
     INTEGERS.ONE,
     amountOut,
     path,
-    new BigNumber('123456789123'),
+    defaultDeadline,
     { from: walletAddress },
   );
 

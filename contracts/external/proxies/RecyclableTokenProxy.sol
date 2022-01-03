@@ -245,7 +245,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         uint accountNumber,
         Types.AssetAmount memory supplyAmount, // equivalent to amounts[amounts.length - 1]
         address borrowToken,
-        Types.AssetAmount memory borrowwAmount,
+        Types.AssetAmount memory borrowAmount,
         address exchangeWrapper,
         uint expirationTimestamp,
         bool isOpen,

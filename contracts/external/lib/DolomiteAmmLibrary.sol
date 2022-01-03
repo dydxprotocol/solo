@@ -10,11 +10,15 @@ import "../interfaces/IDolomiteAmmPair.sol";
 library DolomiteAmmLibrary {
     using SafeMath for uint;
 
+    function getPairInitCodeHash() internal pure returns (bytes32) {
+        return hex"4d42bdbb57bc24a95883a42f15a56479df23fd2a7e47b7587b5825020242f6c3";
+    }
+
     function getPools(
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), path);
+        return getPools(factory, getPairInitCodeHash(), path);
     }
 
     function getPools(
@@ -43,7 +47,7 @@ library DolomiteAmmLibrary {
 
     // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        return pairFor(factory, tokenA, tokenB, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()));
+        return pairFor(factory, tokenA, tokenB, getPairInitCodeHash());
     }
 
     function pairFor(
@@ -67,7 +71,7 @@ library DolomiteAmmLibrary {
         address tokenA,
         address tokenB
     ) internal view returns (uint reserveA, uint reserveB) {
-        return getReservesWei(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), tokenA, tokenB);
+        return getReservesWei(factory, getPairInitCodeHash(), tokenA, tokenB);
     }
 
     function getReserves(
@@ -185,6 +189,11 @@ library DolomiteAmmLibrary {
         uint amountOut,
         address[] memory path
     ) internal view returns (uint[] memory amounts) {
-        return getAmountsInWei(factory, keccak256(IDolomiteAmmFactory(factory).getPairInitCode()), amountOut, path);
+        return getAmountsInWei(
+            factory,
+            getPairInitCodeHash(),
+            amountOut,
+            path
+        );
     }
 }

@@ -1,11 +1,19 @@
-import { TestContracts } from '../../__tests__/modules/TestContracts';
-import { address, ContractCallOptions, Integer, TxResult } from '../types';
+import { TestContracts } from './TestContracts';
+import { address, ContractCallOptions, Integer, TxResult } from '../../src';
 
 export class UniswapV2Router {
   private contracts: TestContracts;
 
   constructor(contracts: TestContracts) {
     this.contracts = contracts;
+  }
+
+  // ============ View Functions ============
+
+  public async getPairInitCodeHash(): Promise<string> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.testUniswapV2Router.methods.getPairInitCodeHash()
+    );
   }
 
   // ============ State-Changing Functions ============

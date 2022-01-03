@@ -20,8 +20,9 @@ import {
   Index,
   Integer,
   TxResult,
-} from '../../src/types';
-import { UniswapV2Router } from '../../src/modules/UniswapV2Router';
+} from '../../src';
+import { UniswapV2Router } from './UniswapV2Router';
+import { UniswapV2Factory } from './UniswapV2Factory';
 
 export class Testing {
   public evm: EVM;
@@ -38,6 +39,7 @@ export class Testing {
   public polynomialInterestSetter: TestPolynomialInterestSetter;
   public doubleExponentInterestSetter: TestDoubleExponentInterestSetter;
   public interestSetter: TestInterestSetter;
+  public uniswapV2Factory: UniswapV2Factory;
   public uniswapV2Router: UniswapV2Router;
   private contracts: TestContracts;
 
@@ -63,6 +65,7 @@ export class Testing {
       contracts,
     );
     this.interestSetter = new TestInterestSetter(contracts);
+    this.uniswapV2Factory = new UniswapV2Factory(contracts);
     this.uniswapV2Router = new UniswapV2Router(contracts);
   }
 

@@ -38,6 +38,7 @@ import { address, EthereumAccount, Index, Networks, SoloOptions, } from './types
 import { AmmRebalancerProxy } from './modules/AmmRebalancerProxy';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
 import { LiquidatorProxyWithAmm } from './modules/LiquidatorProxyWithAmm';
+import { DolomiteAmmFactory } from './modules/DolomiteAmmFactory';
 import { BigNumber } from './index';
 import { INTEGERS } from './lib/Constants';
 import { valueToInteger } from './lib/Helpers';
@@ -55,6 +56,7 @@ export class Solo {
   public signedOperations: SignedOperations;
   public liquidatorProxy: LiquidatorProxy;
   public liquidatorProxyWithAmm: LiquidatorProxyWithAmm;
+  public dolomiteAmmFactory: DolomiteAmmFactory;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxy: AmmRebalancerProxy;
   public permissions: Permissions;
@@ -106,6 +108,7 @@ export class Solo {
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxy = new AmmRebalancerProxy(this.contracts);
+    this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);

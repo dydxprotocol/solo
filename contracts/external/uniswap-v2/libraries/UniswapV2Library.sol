@@ -6,6 +6,10 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 library UniswapV2Library {
     using SafeMath for uint;
 
+    function getPairInitCodeHash() internal pure returns (bytes32) {
+        return hex'c6886e617185523a820a1acedfa52178cfd8676542f882d59ba4a4239d084edd';
+    }
+
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
         require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
@@ -20,7 +24,7 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'3f1ec623606a60b81296cb1f9641efe6bd66fdbda6b800b9e877ca276b6bb41f'
+                getPairInitCodeHash()
             ))));
     }
 

@@ -30,6 +30,10 @@ contract UniswapV2Router02 {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
+    function getPairInitCodeHash() external pure returns (bytes32) {
+        return UniswapV2Library.getPairInitCodeHash();
+    }
+
     // **** ADD LIQUIDITY ****
     function _addLiquidity(
         address tokenA,
