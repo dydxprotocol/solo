@@ -7,19 +7,9 @@ import { setupMarkets } from './helpers/SoloHelpers';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stringToDecimal } from '../src/lib/Helpers';
 import { expectThrow } from '../src/lib/Expect';
-import {
-  address,
-  Decimal,
-  Integer,
-  MarketWithInfo,
-  RiskLimits,
-  RiskParams,
-} from '../src/types';
+import { address, Decimal, Integer, MarketWithInfo, RiskLimits, RiskParams, } from '../src/types';
 
-import {
-  abi as recyclableABI,
-  bytecode as recyclableBytecode,
-} from '../build/contracts/TestRecyclableToken.json';
+import { abi as recyclableABI, bytecode as recyclableBytecode, } from '../build/contracts/TestRecyclableToken.json';
 import {
   abi as customTestTokenABI,
   bytecode as customTestTokenBytecode,
@@ -526,6 +516,54 @@ describe('Admin', () => {
       expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
     });
 
+    it('Fails to add a recyclable token with an invalid expiration timestamp', async () => {
+      const marginPremium = new BigNumber('0.11');
+      const spreadPremium = new BigNumber('0.22');
+      const isClosing = true;
+      const isRecyclable = true;
+
+      const underlyingToken = (await new solo.web3.eth.Contract(
+        customTestTokenABI,
+      )
+        .deploy({
+          data: customTestTokenBytecode,
+          arguments: ['TestToken', 'TEST', '18'],
+        })
+        .send({ from: admin, gas: '6000000' })) as CustomTestToken;
+
+      const expirationTimestamp = Math.floor(new Date().getTime() / 1000) - 60;
+      const recyclableToken = (await new solo.web3.eth.Contract(recyclableABI)
+        .deploy({
+          data: recyclableBytecode,
+          arguments: [
+            solo.contracts.soloMargin.options.address,
+            underlyingToken.options.address,
+            solo.contracts.expiryV2.options.address,
+            expirationTimestamp,
+          ],
+        })
+        .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
+
+      await solo.testing.priceOracle.setPrice(
+        recyclableToken.options.address,
+        defaultPrice,
+      );
+
+      await expectThrow(
+        solo.admin.addMarket(
+          recyclableToken.options.address,
+          oracleAddress,
+          setterAddress,
+          marginPremium,
+          spreadPremium,
+          isClosing,
+          isRecyclable,
+          { from: admin },
+        ),
+        `RecyclableTokenProxy: invalid expiration timestamp <${expirationTimestamp}>`
+      );
+    });
+
     it('Fails to add a recyclable market that is not actually recyclable', async () => {
       await solo.testing.priceOracle.setPrice(token, defaultPrice);
       await expectThrow(
@@ -540,24 +578,6 @@ describe('Admin', () => {
           { from: admin },
         ),
         '', // reason is blank because the call to Recyclable#initialize fails
-      );
-    });
-
-    it('Fails to add a market of the same token', async () => {
-      const duplicateToken = solo.testing.tokenA.getAddress();
-      await solo.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
-      await expectThrow(
-        solo.admin.addMarket(
-          duplicateToken,
-          oracleAddress,
-          setterAddress,
-          defaultPremium,
-          defaultPremium,
-          defaultIsClosing,
-          defaultIsRecyclable,
-          { from: admin },
-        ),
-        'AdminImpl: Market exists',
       );
     });
 
@@ -879,7 +899,7 @@ describe('Admin', () => {
         solo.admin.removeMarkets([marketId], admin, {
           from: admin,
         }),
-        `AdminImpl: market must pass buffer <${marketId}, ${expirationTimestamp}>`,
+        `AdminImpl: expiration must pass buffer <${marketId}, ${expirationTimestamp}>`,
       );
     });
 

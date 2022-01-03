@@ -50,16 +50,26 @@ contract TestTrader is IExchangeWrapper, OnlySolo {
     returns (uint256) {
         // makerToken is the token being traded to (supply token after the tx is over). This contract receives
         // takerToken in exchange for makerToken
-        (uint makerAmount, uint takerAmount) = abi.decode(orderData, (uint, uint));
+        (uint makerAmount, uint takerAmount, bool isOpen) = abi.decode(orderData, (uint, uint, bool));
         require(
             takerAmount == requestedFillAmount,
             "TestTrader: invalid taker amounts"
         );
-        IERC20 underlyingToken = IRecyclable(makerToken).TOKEN();
-        if (underlyingToken.allowance(address(this), makerToken) < makerAmount) {
-            underlyingToken.approve(makerToken, uint(- 1));
+        if (isOpen) {
+            // Recyclable tokens are transferred into the recyclable contract instead of Solo, so allowances must be
+            // checked against the recyclable contract
+            IERC20 underlyingToken = IRecyclable(makerToken).TOKEN();
+            if (underlyingToken.allowance(address(this), makerToken) < makerAmount) {
+                underlyingToken.approve(makerToken, uint(- 1));
+            }
+            CustomTestToken(address(underlyingToken)).setBalance(address(this), makerAmount);
+        } else {
+            // ordinary transfers need an allowance set on Solo
+            if (IERC20(makerToken).allowance(address(this), msg.sender) < makerAmount) {
+                IERC20(makerToken).approve(msg.sender, uint(- 1));
+            }
+            CustomTestToken(makerToken).setBalance(address(this), makerAmount);
         }
-        CustomTestToken(address(underlyingToken)).setBalance(address(this), makerAmount);
         return makerAmount;
     }
 

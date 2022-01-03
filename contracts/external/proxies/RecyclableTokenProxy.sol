@@ -129,8 +129,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             MAX_EXPIRATION_TIMESTAMP >= block.timestamp,
             FILE,
             "invalid expiration timestamp",
-            MAX_EXPIRATION_TIMESTAMP,
-            block.timestamp
+            MAX_EXPIRATION_TIMESTAMP
         );
     }
 
@@ -244,18 +243,24 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
 
     function trade(
         uint accountNumber,
-        uint supplyAmount, // equivalent to amounts[amounts.length - 1]
+        Types.AssetAmount memory supplyAmount, // equivalent to amounts[amounts.length - 1]
         address borrowToken,
-        uint borrowAmount,
+        Types.AssetAmount memory borrowwAmount,
         address exchangeWrapper,
         uint expirationTimestamp,
         bool isOpen,
-        bytes calldata tradeData
-    ) external {
+        bytes memory tradeData
+    ) public {
         Require.that(
             !isRecycled,
             FILE,
             "cannot trade when recycled"
+        );
+        Require.that(
+            !isExpired(),
+            FILE,
+            "market is expired",
+            MAX_EXPIRATION_TIMESTAMP
         );
         Require.that(
             expirationTimestamp > block.timestamp,
@@ -269,12 +274,6 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             "expiration timestamp too high",
             expirationTimestamp
         );
-        Require.that(
-            !isExpired(),
-            FILE,
-            "market is expired",
-            MAX_EXPIRATION_TIMESTAMP
-        );
 
         uint marketId = MARKET_ID;
         uint borrowMarketId = SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken);
@@ -286,7 +285,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         actions[0] = Actions.ActionArgs({
         actionType: Actions.ActionType.Sell,
         accountId: 0,
-        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, isOpen ? borrowAmount : supplyAmount),
+        amount: isOpen ? borrowAmount : supplyAmount,
         primaryMarketId: isOpen ? borrowMarketId : marketId,
         secondaryMarketId: isOpen ? marketId : borrowMarketId,
         otherAddress: exchangeWrapper,

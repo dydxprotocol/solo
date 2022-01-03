@@ -107,7 +107,7 @@ export function getInterestPerSecondForDoubleExponent(
 
   const PERCENT = new BigNumber('100');
   const BASE = new BigNumber('1e18');
-  let result = new BigNumber(0);
+  let result: BigNumber;
 
   if (totals.totalBorrowed.gt(totals.totalSupply)) {
     result = BASE.times(PERCENT);

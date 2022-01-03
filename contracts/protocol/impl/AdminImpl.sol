@@ -261,7 +261,7 @@ library AdminImpl {
             Require.that(
                 (expirationTimestamp + ONE_WEEK) < block.timestamp, // give the expiration timestamp a 7-day buffer
                 FILE,
-                "market must pass buffer",
+                "expiration must pass buffer",
                 marketIds[i],
                 expirationTimestamp
             );
