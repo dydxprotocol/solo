@@ -166,7 +166,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
         await setUpBasicBalances();
 
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn1 = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn1 = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [par, par.times('105').minus(amountIn1)],
@@ -197,7 +197,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
         const path = [token1, token2];
-        const amountIn = await solo.getAmmAmountInWithPath(
+        const amountIn = await solo.getDolomiteAmmAmountInWithPath(
           par.times('100'),
           path,
         );
@@ -229,7 +229,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           price1Adj,
         );
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountInWithPath(
+        const amountIn = await solo.getDolomiteAmmAmountInWithPath(
           amount1ToLiquidate,
           path,
         );
@@ -258,7 +258,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
         const price1Adj = price1.times('105').dividedToIntegerBy('100');
         const toLiquidate1 = solo.getPartialRoundUp(par2, price2, price1Adj);
         const path1 = [token2, token1];
-        const amountSoldToken2 = await solo.getAmmAmountInWithPath(
+        const amountSoldToken2 = await solo.getDolomiteAmmAmountInWithPath(
           toLiquidate1,
           path1,
         );
@@ -267,7 +267,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
         const toLiquidate2 = par.minus(toLiquidate1);
         const solidPar3ToReceive = toLiquidate2.times('105');
         const path2 = [token3, token1];
-        const amountSoldToken3 = await solo.getAmmAmountInWithPath(
+        const amountSoldToken3 = await solo.getDolomiteAmmAmountInWithPath(
           par.minus(toLiquidate1),
           path2,
         );
@@ -322,11 +322,11 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         const path1 = [token3, token1];
-        const amountIn1 = await solo.getAmmAmountInWithPath(par, path1);
+        const amountIn1 = await solo.getDolomiteAmmAmountInWithPath(par, path1);
         const txResult1 = await liquidate(market1, market3, path1);
 
         const path2 = [token3, token1, token2];
-        const amountIn2 = await solo.getAmmAmountInWithPath(
+        const amountIn2 = await solo.getDolomiteAmmAmountInWithPath(
           par.times('50'),
           path2,
         );
@@ -402,7 +402,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ), // -$1,000,000
         ]);
         const path1 = [token3, token1, token4];
-        const amount3Sold = await solo.getAmmAmountInWithPath(
+        const amount3Sold = await solo.getDolomiteAmmAmountInWithPath(
           liquidPar4,
           path1,
         );
@@ -423,7 +423,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
         );
         const path2 = [token3, token1, token2];
         const solidPar3RewardAfterSale_2 = liquidPar3Left.minus(
-          await solo.getAmmAmountInWithPath(amount2ToLiquidate, path2),
+          await solo.getDolomiteAmmAmountInWithPath(amount2ToLiquidate, path2),
         );
         const txResult2 = await liquidate(market2, market3, path2);
 
@@ -433,7 +433,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           .times('105')
           .dividedToIntegerBy('10000');
         const path3 = [token1, token2];
-        const amount1Sold = await solo.getAmmAmountInWithPath(
+        const amount1Sold = await solo.getDolomiteAmmAmountInWithPath(
           liquidPar2.minus(amount2ToLiquidate),
           path3,
         );
@@ -489,7 +489,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [par, par.times('105').minus(amountIn)],
@@ -516,7 +516,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [zero, par.times('105').minus(amountIn), zero, par],
@@ -552,7 +552,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [negPar, par.times('605').minus(amountIn)],
@@ -589,7 +589,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [negPar.div('2'), par.times('55').minus(amountIn)],
@@ -625,7 +625,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [par.div(2), par.times('155').minus(amountIn)],
@@ -662,7 +662,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         const txResult = await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [par.div(2), par.times('5').minus(amountIn)],
@@ -694,7 +694,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
           [par, par.times('55').minus(amountIn)],
@@ -721,7 +721,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await solo.getAmmAmountIn(par, token2, token1);
+        const amountIn = await solo.getDolomiteAmmAmountIn(par, token2, token1);
 
         await solo.liquidatorProxyWithAmm.liquidate(
           owner1,
@@ -814,7 +814,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           defaultTokenPath[1],
         );
         const totalSolidHeldWei = par.times('105');
-        const amountNeededToBuyOwedAmount = await solo.getAmmAmountInWithPath(
+        const amountNeededToBuyOwedAmount = await solo.getDolomiteAmmAmountInWithPath(
           par,
           defaultTokenPath,
         );
@@ -899,7 +899,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           INTEGERS.ONE,
           priceAdj,
         );
-        const amountInWei = await solo.getAmmAmountInWithPath(
+        const amountInWei = await solo.getDolomiteAmmAmountInWithPath(
           toLiquidateWei,
           defaultTokenPath,
         );
@@ -991,7 +991,7 @@ describe('LiquidatorProxyV1WithAmmForSoloMargin', () => {
           INTEGERS.ONE,
           priceAdj,
         );
-        const amountOutWei = await solo.getAmmAmountOutWithPath(
+        const amountOutWei = await solo.getDolomiteAmmAmountOutWithPath(
           solidWei2.plus(liquidWei2),
           defaultTokenPath,
         );

@@ -3,11 +3,11 @@
 </p>
 
 <div align="center">
-  <a href="https://circleci.com/gh/dydxprotocol/workflows/solo/tree/master" style="text-decoration:none;">
-    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/solo.svg" alt='CI' />
+  <a href="https://circleci.com/gh/dolomite-exchange/dolomite-v2-protocol/tree/master" style="text-decoration:none;">
+    <img src="https://img.shields.io/circleci/project/github/dolomite-exchange/dolomite-v2-protocol.svg" alt='CI' />
   </a>
-  <a href='https://www.npmjs.com/package/@dolomite-exchange/solo' style="text-decoration:none;">
-    <img src='https://img.shields.io/npm/v/@dolomite-exchange/solo.svg' alt='NPM' />
+  <a href='https://www.npmjs.com/package/@dolomite-exchange/v2-protocol' style="text-decoration:none;">
+    <img src='https://img.shields.io/npm/v/@dolomite-exchange/v2-protocol.svg' alt='NPM' />
   </a>
   <a href='https://coveralls.io/github/dolomite-exchange/solo?branch=master'>
     <img src='https://coveralls.io/repos/github/dolomite-exchange/solo/badge.svg?branch=master' alt='Coverage Status' />
@@ -22,7 +22,7 @@
 
 > Ethereum Smart Contracts and TypeScript library used for the Dolomite Trading Protocol. Currently used by [app.dolomite.io](https://app.dolomite.io)
 
-**Full Documentation at [legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange)**
+## TODO re-write API using subgraph data!
 
 ## Table of Contents
 
@@ -35,15 +35,68 @@
  - [Contributing](#contributing)
  - [License](#license)
 
+## Changes from dYdX Solo
+
+Most of the changes made to the protocol are auxiliary and don't impact the core contracts. These core changes are
+rooted in fixing a bug with the protocol and making the process of adding a large number of markets much more gas
+efficient. Prior to the changes, adding a large number of markets, like 250+, would result in an `n` increase in gas
+consumption, since all markets needed to be read into memory. With the changes outlined below, now only the necessary
+markets are loaded into memory.
+ - Adding a `getPartialRoundHalfUp` function that's used when converting between positive wei & par. The reason for 
+this change is that there would be truncation issues when using `getPartial`, which would lead to lossy conversions
+to/from wei and par that would be off by 1.
+ - Added a `numberOfMarketsWithBorrow` field to `Account.Storage`, which makes checking collateralization for accounts
+that do not have an active borrow much more gas efficient. If `numberOfMarketsWithBorrow` is `0`, `isCollateralized`
+always returns `true`. Else, it does the normal collateralization check.
+ - Added a `marketsWithNonZeroBalanceSet` which function as an enumerable hash set. Its implementation mimics
+[Open Zeppelin's](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol)
+with adjustments made to support only the `uint256` type (for gas efficiency's sake). The purpose for this set is to
+track, in O(1) time, a user's active markets, for reading markets into memory at runtime. These markets are needed at 
+the end of each transaction for checking collateralization. It's understood that reading this user's array into memory
+can be costly gas-wise than the old algorithm, but as the number of markets listed grows to the tens or hundreds,
+the new algorithm will be much more efficient. Most importantly, it's understood that a user can inadvertently DOS
+themselves by depositing too many unique markets into a single account number (recall, user's deposits are partitioned 
+first by their `address` and second by a `uint256` account number). Through UI patterns and organizing the protocol 
+such that a lot of these markets (at scale) won't be for ordinary use by end-users, the protocol will fight against 
+these DOS attacks. Reading these markets into memory is done using initially populating a bitmap, where each index in 
+the bitmap corresponds with the market's ID. Since IDs are auto-incremented, we can store 256 in just one `uint256` 
+variable. Once populated, the Bitmap is read into an array that's pre-sorted in `O(m)`, where `m` represents the number 
+of items in the bitmap, not the total length of it (where the length equals the number of total bits). This is done by 
+reading the least significant bit, truncating it out of the bitmap, and repeating the process until the bitmap equals 0.
+The process of reading the least significant bit is done in `O(1)` time using crafty bit math. Then, since the final
+array the bitmap is read into is sorted, it can be searched in later parts of `OperationImpl` in `O(log(n))` time, and 
+iterated in its entirety in `O(m)`, where `m` represents the number of items. 
+ - Added `isRecyclable` field to the `Storage.Market` struct that denotes a market being allowed to be removed and 
+reused. The technicalities of this implementation are intricate and cautious. Recyclable markets may only interact
+with Solo through the Recyclable smart contract, expirations, and liquidations. The recyclable smart contract has logic 
+for depositing, withdrawing, withdrawing after recycling, and trading with instances of `IExchangeWrapper`. Using this 
+recyclable smart contract as a proxy, the implementation can finely control how a user interacts with Solo via this 
+market. However, there are two circumstances where control cannot be maintained, expirations and liquidations. If an 
+expiration or liquidation occurs, a check is done that ensures no collateral is held in by a user whose address is not 
+the same as the `IRecyclable` (recall, IRecyclable is the user in all other circumstances) smart contract. This ensures 
+changing the market ID in the future does not mess up the mapping of user's balances, described as 
+`user => account number => par`. Prior to removing a recyclable market, two new and important checks are
+done. The first is that there are *no* borrows for that market open, where a user has borrowed the recyclable token.
+The second is that the market has *expired* and a one-week buffer, beyond the expiration timestamp, has past. This will 
+allow for more than enough time for the liquidation bots to close out any active margin positions that were opened 
+involving the recyclable markets. All recyclable markets must be expired in order to wind down any leverage used, to
+prevent liquidations from occurring with clashing market IDs. Once the contract is expired, all control of the contract
+is confined to the IRecyclable instance itself. Presumably, no more expirations or liquidations will occur.
+ - Added `recycledMarketIds` linked list `Storage.State` that prepends all recycled/removed markets to this linked list,
+so newly-added markets can reuse the old ID upon being added.
+ - Separated liquidation and vaporization logic into another library, `LiquidateOrVaporizeImpl`, to save bytecode in
+`OperationImpl`. Otherwise, `OperationImpl` was too large and could not be deployed.
+
 ## Documentation
 
-Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange)
+Since the original codebase is a fork of dYdX's Solo, check out the original documentation at 
+[legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange).
+
+New documentation will be written
 
 ## Install
 
-`npm i -s @dolomite-exchange/solo`
-
-[fast-compile](https://snyk.io/advisor/npm-package/truffle-fast-compile)
+`npm i -s @dolomite-exchange/v2-protocol`
 
 ## Contracts
 
@@ -51,32 +104,36 @@ Check out our full documentation at [legacy-docs.dydx.exchange](https://legacy-d
 
 |Contract Name|Description|Address|
 |---|---|---|
-|[`SoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main dYdX contract|[](https://etherscan.io/address/)|
+|[`SoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
 |[`PayableProxyForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
 |[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
-|[`ExpiryV2`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expiries (version 2)|[](https://etherscan.io/address/)|
+|[`ExpiryV2`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expirations (version 2)|[](https://etherscan.io/address/)|
 |[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
 |[`AdminImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|[](https://etherscan.io/address/)|
 |[`OperationImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[](https://etherscan.io/address/)|
+|[`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)|SoloMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1WithAmmForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmmForSoloMargin.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
 |[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
 |[`SignedOperationProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
 |[`TransferProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
 |[`SimpleFeeOwner`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
-|[`UniswapV2Factory`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Factory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
-|[`UniswapV2Pair`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/UniswapV2Pair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with Solo, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
+|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
+|[`DolomiteAmmPair`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/DolomiteAmmPair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with Solo, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
 
 ## Security
 
 ### Independent Audits
 
-The smart contracts were audited independently by both
+The original Solo smart contracts were audited independently by both
 [Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
 
 **[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**
 
 **[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
+
+Some changes discussed above were audited by [SECBIT Labs](https://secbit.io/). We plan on performing at least one more 
+audit of the system before the new *Recyclable* feature is used in production.
 
 ### Code Coverage
 
@@ -110,7 +167,7 @@ disruption to production systems, and destruction of data during security testin
 * Use the identified communication channels to report vulnerability information to us.
 
 * Keep information about any vulnerabilities you’ve discovered confidential between yourself and
-dYdX until we’ve had 30 days to resolve the issue.
+Dolomite until we’ve had 30 days to resolve the issue.
 
 If you follow these guidelines when reporting an issue to us, we commit to:
 
@@ -119,6 +176,7 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 * Work with you to understand and resolve the issue quickly
 (including an initial confirmation of your report within 72 hours of submission).
 
+# TODO FIX THE BELOW LINK WITH OUR OWN BOUNTY
 * Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4).
 
 

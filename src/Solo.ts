@@ -23,7 +23,6 @@ import { Interest } from './lib/Interest';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
 import { ExpiryV2 } from './modules/ExpiryV2';
-import { Oracle } from './modules/Oracle';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
@@ -31,9 +30,9 @@ import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Logs } from './modules/Logs';
 import { SignedOperations } from './modules/SignedOperations';
 import { Permissions } from './modules/Permissions';
-import { Websocket } from './modules/Websocket';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
+import { ChainlinkPriceOracleV1 } from './modules/oracles/ChainlinkPriceOracleV1';
 import { address, EthereumAccount, Index, Networks, SoloOptions, } from './types';
 import { AmmRebalancerProxy } from './modules/AmmRebalancerProxy';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
@@ -48,7 +47,7 @@ export class Solo {
   public interest: Interest;
   public token: Token;
   public expiryV2: ExpiryV2;
-  public oracle: Oracle;
+  public chainlinkPriceOracle: ChainlinkPriceOracleV1;
   public weth: Weth;
   public web3: Web3;
   public admin: Admin;
@@ -62,7 +61,6 @@ export class Solo {
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
-  public websocket: Websocket;
   public standardActions: StandardActions;
   public walletLogin: WalletLogin;
   function;
@@ -96,7 +94,7 @@ export class Solo {
     this.interest = new Interest(networkId);
     this.token = new Token(this.contracts);
     this.expiryV2 = new ExpiryV2(this.contracts);
-    this.oracle = new Oracle(this.contracts);
+    this.chainlinkPriceOracle = new ChainlinkPriceOracleV1(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
     this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
@@ -115,11 +113,6 @@ export class Solo {
     this.operation = new Operation(
       this.contracts,
       networkId,
-    );
-    this.websocket = new Websocket(
-      options.wsTimeout,
-      options.wsEndpoint,
-      options.wsOrigin,
     );
     this.standardActions = new StandardActions(this.operation, this.contracts);
     this.walletLogin = new WalletLogin(this.web3, networkId);
@@ -175,15 +168,15 @@ export class Solo {
       .then(resultString => new BigNumber(resultString));
   }
 
-  public async getAmmAmountOut(
+  public async getDolomiteAmmAmountOut(
     amountIn: BigNumber,
     tokenIn: address,
     tokenOut: address,
   ): Promise<BigNumber> {
-    return this.getAmmAmountOutWithPath(amountIn, [tokenIn, tokenOut]);
+    return this.getDolomiteAmmAmountOutWithPath(amountIn, [tokenIn, tokenOut]);
   }
 
-  public async getAmmAmountOutWithPath(
+  public async getDolomiteAmmAmountOutWithPath(
     amountIn: BigNumber,
     path: address[],
   ): Promise<BigNumber> {
@@ -191,11 +184,11 @@ export class Solo {
     amounts[0] = amountIn;
 
     for (let i = 0; i < path.length - 1; i += 1) {
-      const { reserveIn, reserveOut } = await this.getReserves(
+      const { reserveIn, reserveOut } = await this.getDolomiteAmmReserves(
         path[i],
         path[i + 1],
       );
-      amounts[i + 1] = this.getAmmAmountOutWithReserves(
+      amounts[i + 1] = this.getDolomiteAmmAmountOutWithReserves(
         amounts[i],
         reserveIn,
         reserveOut,
@@ -205,7 +198,7 @@ export class Solo {
     return amounts[amounts.length - 1];
   }
 
-  public getAmmAmountOutWithReserves(
+  public getDolomiteAmmAmountOutWithReserves(
     amountIn: BigNumber,
     reserveIn: BigNumber,
     reserveOut: BigNumber,
@@ -216,15 +209,15 @@ export class Solo {
     return numerator.dividedToIntegerBy(denominator);
   }
 
-  public async getAmmAmountIn(
+  public async getDolomiteAmmAmountIn(
     amountOut: BigNumber,
     tokenIn: address,
     tokenOut: address,
   ): Promise<BigNumber> {
-    return this.getAmmAmountInWithPath(amountOut, [tokenIn, tokenOut]);
+    return this.getDolomiteAmmAmountInWithPath(amountOut, [tokenIn, tokenOut]);
   }
 
-  public async getAmmAmountInWithPath(
+  public async getDolomiteAmmAmountInWithPath(
     amountOut: BigNumber,
     path: address[],
   ): Promise<BigNumber> {
@@ -232,11 +225,11 @@ export class Solo {
     amounts[amounts.length - 1] = amountOut;
 
     for (let i = path.length - 1; i > 0; i -= 1) {
-      const { reserveIn, reserveOut } = await this.getReserves(
+      const { reserveIn, reserveOut } = await this.getDolomiteAmmReserves(
         path[i - 1],
         path[i],
       );
-      amounts[i - 1] = this.getAmmAmountInWithReserves(
+      amounts[i - 1] = this.getDolomiteAmmAmountInWithReserves(
         amounts[i],
         reserveIn,
         reserveOut,
@@ -246,7 +239,7 @@ export class Solo {
     return amounts[0];
   }
 
-  public getAmmAmountInWithReserves(
+  public getDolomiteAmmAmountInWithReserves(
     amountOut: BigNumber,
     reserveIn: BigNumber,
     reserveOut: BigNumber,
@@ -344,7 +337,7 @@ export class Solo {
     return new Contracts(provider, networkId, web3, options);
   }
 
-  private async getReserves(
+  private async getDolomiteAmmReserves(
     tokenIn: address,
     tokenOut: address,
   ): Promise<{ reserveIn: BigNumber; reserveOut: BigNumber }> {

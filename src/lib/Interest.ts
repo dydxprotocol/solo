@@ -83,9 +83,8 @@ export class Interest {
     const networkConstants = this.getNetworkConstants();
     const constants = networkConstants[marketId.toFixed(0)];
     if (!constants) {
-      throw new Error(
-        `No interest constants for marketId: ${marketId.toFixed(0)}`,
-      );
+      // '0' is always defined and is the fallback
+      return networkConstants['0'];
     }
     return constants;
   }

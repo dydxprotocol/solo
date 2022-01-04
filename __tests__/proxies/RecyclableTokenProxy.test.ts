@@ -765,7 +765,7 @@ describe('RecyclableTokenProxy', () => {
     )
       .deploy({
         data: customTestTokenBytecode,
-        arguments: ['TestToken', 'TEST', '18'],
+        arguments: ['TestToken', 'TST', '18'],
       })
       .send({ from: admin, gas: '6000000' })) as CustomTestToken;
 

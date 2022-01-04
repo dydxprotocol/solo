@@ -74,4 +74,37 @@ contract IRecyclable {
     function isExpired() public view returns (bool) {
         return MAX_EXPIRATION_TIMESTAMP < block.timestamp;
     }
+
+    /**
+     * @dev Deposits the underlying token into this smart contract and adds to the user's balance with Solo. The user
+     *      must set an allowance for `TOKEN`, using this contract as the `spender`.
+     */
+    function depositIntoSolo(uint accountNumber, uint amount) external;
+
+    /**
+     * @dev Withdraws a specific amount of a user's balance from the smart contract to `msg.sender`
+     */
+    function withdrawFromSolo(uint accountNumber, uint amount) external;
+
+    /**
+     * @dev Withdraws the user's remaining balance from the smart contract, after this contract has been recycled.
+     */
+    function withdrawAfterRecycle(uint accountNumber) public;
+
+    /**
+     * @dev Performs a trade between a user and the specified `IExchangeWrapper` to open or a close a margin position
+     *      involving this market. Specifying `isOpen` will change the taker amount from borrowAmount (if true) to
+     *      `supplyAmount` (if false). Keep in mind, this taker amount is passed through as `requestedFillAmount` to
+     *      `IExchangeWrapper`.
+     */
+    function trade(
+        uint accountNumber,
+        Types.AssetAmount calldata supplyAmount, // equivalent to amounts[amounts.length - 1]
+        address borrowToken,
+        Types.AssetAmount calldata borrowAmount,
+        address exchangeWrapper,
+        uint expirationTimestamp,
+        bool isOpen,
+        bytes calldata tradeData
+    ) external;
 }
