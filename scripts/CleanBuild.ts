@@ -57,7 +57,7 @@ async function clean(): Promise<void> {
       };
     }
 
-    if (contractName === 'SoloMargin' || contractName === 'TestSoloMargin') {
+    if (contractName === 'DolomiteMargin' || contractName === 'TestDolomiteMargin') {
       cleaned.abi = cleaned.abi
         .concat(getAllEvents(operationAbi))
         .concat(getAllEvents(adminAbi))

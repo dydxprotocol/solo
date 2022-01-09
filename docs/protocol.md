@@ -1,19 +1,19 @@
-# Solo Protocol
+# DolomiteMargin Protocol
 
 <br>
-<a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
-  <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+<a href='https://github.com/dolomite-exchange/dolomite-margin' style="text-decoration:none;">
+  <img src='https://img.shields.io/badge/GitHub-dolomite--exchange%2Fdolomite--margin-lightgrey' alt='GitHub'/>
 </a>
 
-The dYdX protocol (A.K.A. "Solo") consists of smart contracts that run on the Ethereum blockchain.
+The Dolomite Margin protocol (A.K.A. "DolomiteMargin") consists of smart contracts that run on the Ethereum blockchain.
 These contracts support margin trading, borrowing, and lending.
 
-Solo is used by [trade.dydx.exchange](https://trade.dydx.exchange).
+DolomiteMargin is used by [app.dolomite.io](https://app.dolomite.io).
 
 
 ## Accounts
 
-Solo is Account based. Each Account is referenced by its owner Ethereum address and an account number unique to that owner address. Accounts have balances on each asset supported by Solo, which can be either positive (indicating a net supply of the asset) or negative (indicating a net borrow of an asset). Accounts must maintain a certain level of collateralization or they will be liquidated.
+DolomiteMargin is Account based. Each Account is referenced by its owner Ethereum address and an account number unique to that owner address. Accounts have balances on each asset supported by DolomiteMargin, which can be either positive (indicating a net supply of the asset) or negative (indicating a net borrow of an asset). Accounts must maintain a certain level of collateralization or they will be liquidated.
 
 ### Example
 
@@ -27,9 +27,9 @@ This account is borrowing 10,000 DAI and 5,000 USDC. These borrows are collatera
 
 ## Markets
 
-Solo has a Market for each ERC20 token asset it supports. Each Market specifies the [Price Oracle](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/IPriceOracle.sol) used to determine the price for its asset, and the [Interest Setter](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/IInterestSetter.sol) contract which determines what the interest rates are for the Market.
+DolomiteMargin has a Market for each ERC20 token asset it supports. Each Market specifies the [Price Oracle](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/IPriceOracle.sol) used to determine the price for its asset, and the [Interest Setter](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/IInterestSetter.sol) contract which determines what the interest rates are for the Market.
 
-Markets are referenced by their numerical IDs. Currently on Mainnet Solo has the following markets, but more will be added over time:
+Markets are referenced by their numerical IDs. Currently on Mainnet DolomiteMargin has the following markets, but more will be added over time:
 
 |id|Asset|
 |---|---|
@@ -40,17 +40,17 @@ Markets are referenced by their numerical IDs. Currently on Mainnet Solo has the
 
 ## Interest
 
-Interest rates in Solo are dynamic and set per Market. Each interest rate is automatically and algorithmically set based on the the ratio of `(total borrow) / (total supply)` of that Market. Account balances either continuously earn (if positive) or pay (if negative) interest.
+Interest rates in DolomiteMargin are dynamic and set per Market. Each interest rate is automatically and algorithmically set based on the the ratio of `(total borrow) / (total supply)` of that Market. Account balances either continuously earn (if positive) or pay (if negative) interest.
 
 Interest is earned / paid continuously (down to the second). Rates on the protocol are denominated yearly in APR.
 
 ## Wei & Par
 
-There are two types of balances amounts on Solo: Wei and Par.
+There are two types of balances amounts on DolomiteMargin: Wei and Par.
 
 ### Wei
 
-Wei refers to the actual token amount of an asset held in or owed by an account. Wei amounts are constantly changing as interest accrues on the balance. For example, if Bob deposits 10 DAI to a Solo Account, its Wei balance would initially be 10. The balance would start increasing every second as Bob started earning interest on his DAI.
+Wei refers to the actual token amount of an asset held in or owed by an account. Wei amounts are constantly changing as interest accrues on the balance. For example, if Bob deposits 10 DAI to a DolomiteMargin Account, its Wei balance would initially be 10. The balance would start increasing every second as Bob started earning interest on his DAI.
 
 Likely, most times you will want to use Wei balances.
 
@@ -83,28 +83,28 @@ Later, interest has accrued for DAI on the protocol, and now the supply index fo
 
 ## Actions
 
-All state changes to accounts happen through Actions. Actions can modify the balances of 1 or more Accounts. There is no such thing as a "Borrow" action on Solo, Actions can automatically borrow funds if Account balances decrease. The following Actions are supported by Solo:
+All state changes to accounts happen through Actions. Actions can modify the balances of 1 or more Accounts. There is no such thing as a "Borrow" action on DolomiteMargin, Actions can automatically borrow funds if Account balances decrease. The following Actions are supported by DolomiteMargin:
 
 ### Deposit
-Deposit funds into an Account. Funds are moved from the sender or an approved address to Solo, and the Account's balance is incremented.
+Deposit funds into an Account. Funds are moved from the sender or an approved address to DolomiteMargin, and the Account's balance is incremented.
 
 ### Withdraw
-Withdraw funds from an Account. Funds are sent from Solo to a specified address and the Account's balance is decremented.
+Withdraw funds from an Account. Funds are sent from DolomiteMargin to a specified address and the Account's balance is decremented.
 
 ### Transfer
-Transfer funds internally between two Solo accounts.
+Transfer funds internally between two DolomiteMargin accounts.
 
 ### Buy
-Buy an asset on a decentralized exchange using another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the bought asset's balance to go up, and the asset used to do the buy's balance to go down. Example: Buy 1 WETH on eth2dai using DAI
+Buy an asset on a decentralized exchange using another asset. Uses an [Exchange Wrapper](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/IExchangeWrapper.sol) to interact with different decentralized exchanges. Causes the bought asset's balance to go up, and the asset used to do the buy's balance to go down. Example: Buy 1 WETH on Uniswap using DAI
 
 ### Sell
-Sell an asset on a decentralized exchange for another asset. Uses dYdX's [Exchange Wrappers](https://github.com/dydxprotocol/exchange-wrappers) to interact with different decentralized exchanges. Causes the sold asset's balance to go down, and the received assets balance to go up. Example: Sell 1 WETH on eth2dai for DAI
+Sell an asset on a decentralized exchange for another asset. Uses an [Exchange Wrapper](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/IExchangeWrapper.sol) to interact with different decentralized exchanges. Causes the sold asset's balance to go down, and the received assets balance to go up. Example: Sell 1 WETH on Uniswap for DAI
 
 ### Trade
-Trade assets with another account on Solo internally. No actual tokens are moved, but Account balances are updated. Uses the [`AutoTrader`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/IAutoTrader.sol) interface, which allows a smart contract to be specified which is called to determine the price of the trade.
+Trade assets with another account on DolomiteMargin internally. No actual tokens are moved, but Account balances are updated. Uses the [`AutoTrader`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/IAutoTrader.sol) interface, which allows a smart contract to be specified which is called to determine the price of the trade.
 
 ### Call
-Calls a function specified by the [`ICallee`](https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/interfaces/ICallee.sol) interface through the context of an Account. Does not modify Account balances. An example of how this can be used is for setting expiration on the [`Expiry`](https://github.com/dydxprotocol/solo/blob/master/contracts/external/traders/Expiry.sol) contract.
+Calls a function specified by the [`ICallee`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/interfaces/ICallee.sol) interface through the context of an Account. Does not modify Account balances. An example of how this can be used is for setting expiration on the [`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol) contract.
 
 ### Liquidate
 Liquidates an undercollateralized Account. Operates on two Accounts: the liquidating Account, and the undercollateralized Account. Does not transfer any tokens, but just internally updates balances of accounts. Liquidates at the price specified by Example:
@@ -123,13 +123,13 @@ Liquidating Account (L): +231.25 DAI, -1 ETH\
 Undercollateralized Account (U): +8.75 DAI
 
 ### Vaporize
-Pulls funds from the insurance fund to recollateralize an underwater account with only negative balances.
+Pulls extra funds from the insurance fund to re-collateralize an underwater account with only negative balances.
 
 ## Operations
 
 Every state changing action to the protocol occurs through an Operation. Operations contain a series of [Actions](#Actions) that each operate on an Account.
 
-Multiple Actions can be strung together in an Operation to achieve more complex interactions with the protocol. For example, taking short ETH position on Solo could be achieved with an Operation containing the following Actions:
+Multiple Actions can be strung together in an Operation to achieve more complex interactions with the protocol. For example, taking short ETH position on DolomiteMargin could be achieved with an Operation containing the following Actions:
 
 ```
 Sell ETH for DAI
@@ -140,7 +140,7 @@ Importantly collateralization is only checked at the end of an operation, so acc
 
 ## Amounts
 
-Amounts in Solo are denominated by 3 things:
+Amounts in DolomiteMargin are denominated by 3 things:
 
 - `value` the numerical value of the Amount
 - `reference` One of:
@@ -148,6 +148,6 @@ Amounts in Solo are denominated by 3 things:
   - `AmountReference.Target` Indicates an absolute amount
 - `denomination` One of:
   - `AmountDenomination.Wei` Indicates the amount is denominated in the actual units of the token being transferred (See [Wei](#Wei))
-  - `AmountDenomination.Par` Indicates the amount is denominated in principal. Solo uses these types of amounts in its internal accounting, and they do not change over time (See [Par](#Par))
+  - `AmountDenomination.Par` Indicates the amount is denominated in principal. DolomiteMargin uses these types of amounts in its internal accounting, and they do not change over time (See [Par](#Par))
 
 A very important thing to note is that amounts are always relative to how the balance of the Account being Operated on will change, not the amount of the Action occurring. So, for example you'd say [pseudocode] `withdraw(-10)`, because when you Withdraw, the balance of the Account will decrease.

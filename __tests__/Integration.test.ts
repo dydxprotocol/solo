@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
-import { setGlobalOperator, setupMarkets } from './helpers/SoloHelpers';
+import { setGlobalOperator, setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { stringToDecimal } from '../src/lib/Helpers';
@@ -20,19 +20,19 @@ const halfAmount = amount.div(2);
 const zero = new BigNumber(0);
 
 describe('Integration', () => {
-  let solo: TestSolo;
+  let dolomiteMargin: TestDolomiteMargin;
   let accounts: address[];
   let snapshotId: string;
   let who: address;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    who = solo.getDefaultAccount();
+    who = dolomiteMargin.getDefaultAccount();
     await resetEVM();
-    await setGlobalOperator(solo, accounts, solo.getDefaultAccount());
-    await setupMarkets(solo, accounts);
+    await setGlobalOperator(dolomiteMargin, accounts, dolomiteMargin.getDefaultAccount());
+    await setupMarkets(dolomiteMargin, accounts);
     snapshotId = await snapshot();
   });
 
@@ -53,8 +53,8 @@ describe('Integration', () => {
       from: who,
     };
     const actualRate = stringToDecimal('1234');
-    await solo.testing.interestSetter.setInterestRate(
-      solo.testing.tokenA.getAddress(),
+    await dolomiteMargin.testing.interestSetter.setInterestRate(
+      dolomiteMargin.testing.tokenA.getAddress(),
       actualRate,
     );
 
@@ -65,20 +65,20 @@ describe('Integration', () => {
 
     let numTries = 0;
     do {
-      await solo.testing.evm.stopMining();
-      const tx1 = solo.operation
+      await dolomiteMargin.testing.evm.stopMining();
+      const tx1 = dolomiteMargin.operation
         .initiate()
         .deposit(blob)
         .commit();
-      const tx2 = solo.operation
+      const tx2 = dolomiteMargin.operation
         .initiate()
         .deposit(blob)
         .commit();
-      await solo.testing.evm.startMining();
+      await dolomiteMargin.testing.evm.startMining();
       [result1, result2] = await Promise.all([tx1, tx2]);
       [block1, block2] = await Promise.all([
-        solo.web3.eth.getBlock(result1.blockNumber),
-        solo.web3.eth.getBlock(result2.blockNumber),
+        dolomiteMargin.web3.eth.getBlock(result1.blockNumber),
+        dolomiteMargin.web3.eth.getBlock(result2.blockNumber),
       ]);
       numTries += 1;
     } while (block1.timestamp !== block2.timestamp || numTries > 10);
@@ -91,11 +91,11 @@ describe('Integration', () => {
 
   it('Deposit then Withdraw', async () => {
     await Promise.all([
-      solo.testing.tokenA.issueTo(amount, who),
-      solo.testing.tokenA.setMaximumSoloAllowance(who),
+      dolomiteMargin.testing.tokenA.issueTo(amount, who),
+      dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(who),
     ]);
 
-    const { gasUsed } = await solo.operation
+    const { gasUsed } = await dolomiteMargin.operation
       .initiate()
       .deposit({
         primaryAccountOwner: who,
@@ -125,16 +125,16 @@ describe('Integration', () => {
 
     const [
       walletTokenBalance,
-      soloTokenBalance,
+      dolomiteMarginTokenBalance,
       accountBalances,
     ] = await Promise.all([
-      solo.testing.tokenA.getBalance(who),
-      solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(who, accountNumber),
+      dolomiteMargin.testing.tokenA.getBalance(who),
+      dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      dolomiteMargin.getters.getAccountBalances(who, accountNumber),
     ]);
 
     expect(walletTokenBalance).toEqual(halfAmount);
-    expect(soloTokenBalance).toEqual(halfAmount);
+    expect(dolomiteMarginTokenBalance).toEqual(halfAmount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -148,7 +148,7 @@ describe('Integration', () => {
   });
 
   it('Liquidate multiple times', async () => {
-    const solidOwner = solo.getDefaultAccount();
+    const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
     expect(solidOwner).not.toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
@@ -159,25 +159,25 @@ describe('Integration', () => {
     const premium = new BigNumber('1.05');
 
     await Promise.all([
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         solidOwner,
         solidNumber,
         owedMarket,
         amount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         heldMarket1,
         amount.times(premium).div(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         heldMarket2,
         amount.times(premium).div(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         owedMarket,
@@ -185,7 +185,7 @@ describe('Integration', () => {
       ),
     ]);
 
-    await solo.operation
+    await dolomiteMargin.operation
       .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
@@ -216,8 +216,8 @@ describe('Integration', () => {
       .commit();
 
     const [solidBalances, liquidBalances] = await Promise.all([
-      solo.getters.getAccountBalances(solidOwner, solidNumber),
-      solo.getters.getAccountBalances(liquidOwner, liquidNumber),
+      dolomiteMargin.getters.getAccountBalances(solidOwner, solidNumber),
+      dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
     solidBalances.forEach((balance, i) => {
@@ -236,37 +236,37 @@ describe('Integration', () => {
   });
 
   it('Liquidate => Vaporize', async () => {
-    const solidOwner = solo.getDefaultAccount();
+    const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
     expect(solidOwner).not.toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
     const heldMarket = INTEGERS.ZERO;
     const owedMarket = INTEGERS.ONE;
-    const heldToken = solo.testing.tokenA;
+    const heldToken = dolomiteMargin.testing.tokenA;
     const premium = new BigNumber('1.05');
 
     await Promise.all([
       // issue tokens
       heldToken.issueTo(
         amount.times(2),
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
 
       // set balances
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         solidOwner,
         solidNumber,
         owedMarket,
         amount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         heldMarket,
         amount.times(premium).div(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         owedMarket,
@@ -274,7 +274,7 @@ describe('Integration', () => {
       ),
     ]);
 
-    const { gasUsed } = await solo.operation
+    const { gasUsed } = await dolomiteMargin.operation
       .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
@@ -307,8 +307,8 @@ describe('Integration', () => {
     console.log(`\tLiquidate => Vaporize gas used: ${gasUsed}`);
 
     const [solidBalances, liquidBalances] = await Promise.all([
-      solo.getters.getAccountBalances(solidOwner, solidNumber),
-      solo.getters.getAccountBalances(liquidOwner, liquidNumber),
+      dolomiteMargin.getters.getAccountBalances(solidOwner, solidNumber),
+      dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
     solidBalances.forEach((balance, i) => {
@@ -328,15 +328,15 @@ describe('Integration', () => {
 
   it('Liquidate => Exchange => Withdraw', async () => {
     const amount = new BigNumber(100);
-    const solidOwner = solo.getDefaultAccount();
+    const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
     expect(solidOwner).not.toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
     const heldMarket = INTEGERS.ZERO;
     const owedMarket = INTEGERS.ONE;
-    const heldToken = solo.testing.tokenA;
-    const owedToken = solo.testing.tokenB;
+    const heldToken = dolomiteMargin.testing.tokenA;
+    const owedToken = dolomiteMargin.testing.tokenB;
     const collateralization = new BigNumber('1.1');
     const premium = new BigNumber('1.05');
 
@@ -344,18 +344,18 @@ describe('Integration', () => {
       // issue tokens
       heldToken.issueTo(
         amount.times(collateralization),
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
-      owedToken.issueTo(amount, solo.testing.exchangeWrapper.getAddress()),
+      owedToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.getAddress()),
 
       // set balances
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         heldMarket,
         amount.times(collateralization),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         owedMarket,
@@ -365,7 +365,7 @@ describe('Integration', () => {
 
     const testOrder: TestOrder = {
       type: OrderType.Test,
-      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
       originator: solidOwner,
       makerToken: owedToken.getAddress(),
       takerToken: heldToken.getAddress(),
@@ -375,7 +375,7 @@ describe('Integration', () => {
       desiredMakerAmount: amount,
     };
 
-    const { gasUsed } = await solo.operation
+    const { gasUsed } = await dolomiteMargin.operation
       .initiate()
       .liquidate({
         primaryAccountOwner: solidOwner,
@@ -422,29 +422,29 @@ describe('Integration', () => {
       ownerOwedTokenBalance,
       wrapperHeldTokenBalance,
       wrapperOwedTokenBalance,
-      soloHeldTokenBalance,
-      soloOwedTokenBalance,
+      dolomiteMarginHeldTokenBalance,
+      dolomiteMarginOwedTokenBalance,
       solidBalances,
       liquidBalances,
     ] = await Promise.all([
       heldToken.getBalance(solidOwner),
       owedToken.getBalance(solidOwner),
-      heldToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
-      owedToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
-      heldToken.getBalance(solo.contracts.soloMargin.options.address),
-      owedToken.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(solidOwner, solidNumber),
-      solo.getters.getAccountBalances(liquidOwner, liquidNumber),
+      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      dolomiteMargin.getters.getAccountBalances(solidOwner, solidNumber),
+      dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
     expect(ownerHeldTokenBalance).toEqual(amount.times(premium.minus(1)));
     expect(ownerOwedTokenBalance).toEqual(INTEGERS.ZERO);
     expect(wrapperHeldTokenBalance).toEqual(INTEGERS.ZERO);
     expect(wrapperOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(soloHeldTokenBalance).toEqual(
+    expect(dolomiteMarginHeldTokenBalance).toEqual(
       amount.times(collateralization.minus(premium)),
     );
-    expect(soloOwedTokenBalance).toEqual(amount);
+    expect(dolomiteMarginOwedTokenBalance).toEqual(amount);
 
     solidBalances.forEach((balance, _) => {
       const expected = INTEGERS.ZERO;
@@ -463,26 +463,26 @@ describe('Integration', () => {
 
   it('Opening a new short position (deposit in heldToken)', async () => {
     const amount = new BigNumber(100);
-    const owner = solo.getDefaultAccount();
+    const owner = dolomiteMargin.getDefaultAccount();
     const oneNumber = INTEGERS.ZERO;
     const twoNumber = INTEGERS.ONE;
     const heldMarket = INTEGERS.ZERO;
     const owedMarket = INTEGERS.ONE;
-    const heldToken = solo.testing.tokenA;
-    const owedToken = solo.testing.tokenB;
+    const heldToken = dolomiteMargin.testing.tokenA;
+    const owedToken = dolomiteMargin.testing.tokenB;
 
     await Promise.all([
       // issue tokens
-      owedToken.issueTo(amount, solo.contracts.soloMargin.options.address),
-      heldToken.issueTo(amount, solo.testing.exchangeWrapper.getAddress()),
+      owedToken.issueTo(amount, dolomiteMargin.contracts.dolomiteMargin.options.address),
+      heldToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.getAddress()),
 
       // set balances
-      solo.testing.setAccountBalance(owner, oneNumber, heldMarket, amount),
+      dolomiteMargin.testing.setAccountBalance(owner, oneNumber, heldMarket, amount),
     ]);
 
     const testOrder: TestOrder = {
       type: OrderType.Test,
-      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
       originator: owner,
       makerToken: heldToken.getAddress(),
       takerToken: owedToken.getAddress(),
@@ -492,7 +492,7 @@ describe('Integration', () => {
       desiredMakerAmount: amount,
     };
 
-    const { gasUsed } = await solo.operation
+    const { gasUsed } = await dolomiteMargin.operation
       .initiate()
       .transfer({
         primaryAccountOwner: owner,
@@ -525,23 +525,23 @@ describe('Integration', () => {
     const [
       wrapperHeldTokenBalance,
       wrapperOwedTokenBalance,
-      soloHeldTokenBalance,
-      soloOwedTokenBalance,
+      dolomiteMarginHeldTokenBalance,
+      dolomiteMarginOwedTokenBalance,
       oneBalances,
       twoBalances,
     ] = await Promise.all([
-      heldToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
-      owedToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
-      heldToken.getBalance(solo.contracts.soloMargin.options.address),
-      owedToken.getBalance(solo.contracts.soloMargin.options.address),
-      solo.getters.getAccountBalances(owner, oneNumber),
-      solo.getters.getAccountBalances(owner, twoNumber),
+      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      dolomiteMargin.getters.getAccountBalances(owner, oneNumber),
+      dolomiteMargin.getters.getAccountBalances(owner, twoNumber),
     ]);
 
     expect(wrapperHeldTokenBalance).toEqual(INTEGERS.ZERO);
     expect(wrapperOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(soloHeldTokenBalance).toEqual(amount);
-    expect(soloOwedTokenBalance).toEqual(INTEGERS.ZERO);
+    expect(dolomiteMarginHeldTokenBalance).toEqual(amount);
+    expect(dolomiteMarginOwedTokenBalance).toEqual(INTEGERS.ZERO);
 
     oneBalances.forEach((balance, _) => {
       const expected = INTEGERS.ZERO;
@@ -574,12 +574,12 @@ describe('Integration', () => {
       },
       from: who,
     };
-    const txResult = await solo.operation
+    const txResult = await dolomiteMargin.operation
       .initiate()
       .deposit(blob)
       .commit();
-    const noLogs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
-    const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: false });
+    const noLogs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
+    const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: false });
     expect(noLogs.length).toEqual(0);
     expect(logs.length).not.toEqual(0);
   });

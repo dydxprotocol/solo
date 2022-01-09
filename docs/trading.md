@@ -2,17 +2,11 @@
 
 ## Programmatic Trading
 
-To programmatically trade on dYdX, you can use one of the following:
+To programmatically trade on Dolomite, you can use one of the following:
 
 - TypeScript clients:
-  - [Solo](typescript.md)
-  - [Perpetual](perpetual-typescript.md)
-- [Python client](python.md)
-- [HTTP API](api.md)
-
-Also see this [basic intro guide to getting started](https://medium.com/dydxderivatives/programatic-trading-on-dydx-4c74b8e86d88).
-
-The [WebSocket API](wensocket.md) is also useful for trading.
+  - [DolomiteMargin](typescript.md)
+- [SUBGRAPH API](api.md)
 
 ## Matching Specification
 

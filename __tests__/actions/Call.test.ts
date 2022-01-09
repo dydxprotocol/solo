@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
@@ -10,7 +10,7 @@ import { AccountStatus, address, Call } from '../../src/types';
 
 let who: address;
 let operator: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const accountNumber = INTEGERS.ZERO;
 const accountData = new BigNumber(100);
@@ -21,20 +21,20 @@ describe('Call', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    who = solo.getDefaultAccount();
+    who = dolomiteMargin.getDefaultAccount();
     operator = accounts[5];
     defaultGlob = {
       primaryAccountOwner: who,
       primaryAccountId: accountNumber,
-      callee: solo.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.getAddress(),
       data: [],
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     snapshotId = await snapshot();
   });
 
@@ -51,14 +51,14 @@ describe('Call', () => {
   });
 
   it('Succeeds for events', async () => {
-    await solo.permissions.approveOperator(operator, { from: who });
+    await dolomiteMargin.permissions.approveOperator(operator, { from: who });
     const txResult = await expectCallOkay(
       { data: toBytes(accountData, senderData) },
       { from: operator },
     );
     await verifyDataIntegrity(operator);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(2);
 
     const operationLog = logs[0];
@@ -69,11 +69,11 @@ describe('Call', () => {
     expect(callLog.name).toEqual('LogCall');
     expect(callLog.args.accountOwner).toEqual(who);
     expect(callLog.args.accountNumber).toEqual(accountNumber);
-    expect(callLog.args.callee).toEqual(solo.testing.callee.getAddress());
+    expect(callLog.args.callee).toEqual(dolomiteMargin.testing.callee.getAddress());
   });
 
   it('Succeeds and sets status to Normal', async () => {
-    await solo.testing.setAccountStatus(
+    await dolomiteMargin.testing.setAccountStatus(
       who,
       accountNumber,
       AccountStatus.Liquidating,
@@ -82,12 +82,12 @@ describe('Call', () => {
       data: toBytes(accountData, senderData),
     });
     await verifyDataIntegrity(who);
-    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
     expect(status).toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
-    await solo.permissions.approveOperator(operator, { from: who });
+    await dolomiteMargin.permissions.approveOperator(operator, { from: who });
     await expectCallOkay(
       {
         data: toBytes(accountData, senderData),
@@ -98,7 +98,7 @@ describe('Call', () => {
   });
 
   it('Succeeds for global operator', async () => {
-    await solo.admin.setGlobalOperator(operator, true, { from: accounts[0] });
+    await dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] });
     await expectCallOkay(
       {
         data: toBytes(accountData, senderData),
@@ -121,7 +121,7 @@ describe('Call', () => {
   it('Fails for non-ICallee contract', async () => {
     await expectCallRevert({
       data: toBytes(accountData, senderData),
-      callee: solo.testing.priceOracle.getAddress(),
+      callee: dolomiteMargin.testing.priceOracle.getAddress(),
     });
   });
 });
@@ -130,7 +130,7 @@ describe('Call', () => {
 
 async function expectCallOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .call(combinedGlob)
     .commit(options);
@@ -146,8 +146,8 @@ async function expectCallRevert(
 
 async function verifyDataIntegrity(sender: address) {
   const [foundAccountData, foundSenderData] = await Promise.all([
-    solo.testing.callee.getAccountData(who, accountNumber),
-    solo.testing.callee.getSenderData(sender),
+    dolomiteMargin.testing.callee.getAccountData(who, accountNumber),
+    dolomiteMargin.testing.callee.getSenderData(sender),
   ]);
 
   expect(foundAccountData).toEqual(accountData.toFixed(0));

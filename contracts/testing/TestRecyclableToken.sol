@@ -27,13 +27,13 @@ contract TestRecyclableToken is RecyclableTokenProxy {
     bytes32 internal constant FILE = "TestRecyclableTokenProxy";
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address token,
         address expiry,
         uint expirationTimestamp
     )
     public
-    RecyclableTokenProxy(soloMargin, token, expiry, expirationTimestamp)
+    RecyclableTokenProxy(dolomiteMargin, token, expiry, expirationTimestamp)
     {}
 
 }

@@ -24,10 +24,10 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 
 
 /**
- * @title IExpiryV2
+ * @title IExpiry
  * @author Dolomite
  */
-contract IExpiryV2 {
+contract IExpiry {
 
     // ============ Enums ============
 

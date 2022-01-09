@@ -24,18 +24,15 @@ import { TransactionReceipt } from 'web3/types';
 import { Block, TransactionObject, Tx } from 'web3/eth/types';
 
 // Contracts
-import { SoloMargin } from '../../build/wrappers/SoloMargin';
+import { DolomiteMargin } from '../../build/wrappers/DolomiteMargin';
 import { IERC20 as ERC20 } from '../../build/wrappers/IERC20';
 import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
-import { ExpiryV2 } from '../../build/wrappers/ExpiryV2';
-import { PayableProxyForSoloMargin as PayableProxy } from '../../build/wrappers/PayableProxyForSoloMargin';
+import { Expiry } from '../../build/wrappers/Expiry';
+import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
-import { LiquidatorProxyV1ForSoloMargin as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1ForSoloMargin';
-import {
-  LiquidatorProxyV1WithAmmForSoloMargin,
-  LiquidatorProxyV1WithAmmForSoloMargin as LiquidatorProxyV1WithAmm,
-} from '../../build/wrappers/LiquidatorProxyV1WithAmmForSoloMargin';
+import { LiquidatorProxyV1 as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1';
+import { LiquidatorProxyV1WithAmm as LiquidatorProxyV1WithAmm, } from '../../build/wrappers/LiquidatorProxyV1WithAmm';
 import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
@@ -48,34 +45,27 @@ import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
 import { Weth } from '../../build/wrappers/Weth';
 
 // JSON
-import soloMarginJson from '../../build/published_contracts/SoloMargin.json';
+import dolomiteMarginJson from '../../build/published_contracts/DolomiteMargin.json';
 import erc20Json from '../../build/published_contracts/IERC20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
-import expiryV2Json from '../../build/published_contracts/ExpiryV2.json';
-import payableProxyJson from '../../build/published_contracts/PayableProxyForSoloMargin.json';
+import expiryJson from '../../build/published_contracts/Expiry.json';
+import payableProxyJson from '../../build/published_contracts/PayableProxy.json';
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
-import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1ForSoloMargin.json';
-import liquidatorV1WithAmmJson
-  from '../../build/published_contracts/LiquidatorProxyV1WithAmmForSoloMargin.json';
-import dolomiteAmmRouterProxyJson
-  from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
-import polynomialInterestSetterJson
-  from '../../build/published_contracts/PolynomialInterestSetter.json';
-import doubleExponentInterestSetterJson
-  from '../../build/published_contracts/DoubleExponentInterestSetter.json';
+import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1.json';
+import liquidatorV1WithAmmJson from '../../build/published_contracts/LiquidatorProxyV1WithAmm.json';
+import dolomiteAmmRouterProxyJson from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
+import polynomialInterestSetterJson from '../../build/published_contracts/PolynomialInterestSetter.json';
+import doubleExponentInterestSetterJson from '../../build/published_contracts/DoubleExponentInterestSetter.json';
 import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
 import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
-import chainlinkPriceOracleV1Json
-  from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
+import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
 import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
-import testnetAmmRebalancerProxyJson
-  from '../../build/published_contracts/TestnetAmmRebalancerProxy.json';
 
 import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
 import {
@@ -83,11 +73,10 @@ import {
   ConfirmationType,
   ContractCallOptions,
   ContractConstantCallOptions,
-  SoloOptions,
+  DolomiteMarginOptions,
   TxResult,
 } from '../types';
 import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
-import { TestnetAmmRebalancerProxy } from '../../build/wrappers/TestnetAmmRebalancerProxy';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
 
 interface CallableTransactionObject<T> {
@@ -96,18 +85,17 @@ interface CallableTransactionObject<T> {
 
 export class Contracts {
   // Contract instances
-  public soloMargin: SoloMargin;
+  public dolomiteMargin: DolomiteMargin;
   public erc20: ERC20;
   public interestSetter: InterestSetter;
   public priceOracle: PriceOracle;
-  public expiryV2: ExpiryV2;
+  public expiry: Expiry;
   public payableProxy: PayableProxy;
   public signedOperationProxy: SignedOperationProxy;
   public liquidatorProxyV1: LiquidatorProxyV1;
   public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxy: AmmRebalancerProxy;
-  public testnetAmmRebalancerProxy: TestnetAmmRebalancerProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public wethPriceOracle: WethPriceOracle;
@@ -130,7 +118,7 @@ export class Contracts {
     provider: Provider,
     networkId: number,
     web3: Web3,
-    options: SoloOptions,
+    options: DolomiteMarginOptions,
   ) {
     this.web3 = web3;
     this.defaultConfirmations = options.defaultConfirmations;
@@ -142,9 +130,9 @@ export class Contracts {
     this.blockGasLimit = options.blockGasLimit;
 
     // Contracts
-    this.soloMargin = new this.web3.eth.Contract(
-      soloMarginJson.abi,
-    ) as SoloMargin;
+    this.dolomiteMargin = new this.web3.eth.Contract(
+      dolomiteMarginJson.abi,
+    ) as DolomiteMargin;
     this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.interestSetter = new this.web3.eth.Contract(
       interestSetterJson.abi,
@@ -152,7 +140,7 @@ export class Contracts {
     this.priceOracle = new this.web3.eth.Contract(
       priceOracleJson.abi,
     ) as PriceOracle;
-    this.expiryV2 = new this.web3.eth.Contract(expiryV2Json.abi) as ExpiryV2;
+    this.expiry = new this.web3.eth.Contract(expiryJson.abi) as Expiry;
     this.payableProxy = new this.web3.eth.Contract(
       payableProxyJson.abi,
     ) as PayableProxy;
@@ -164,16 +152,13 @@ export class Contracts {
     ) as LiquidatorProxyV1;
     this.liquidatorProxyV1WithAmm = new this.web3.eth.Contract(
       liquidatorV1WithAmmJson.abi,
-    ) as LiquidatorProxyV1WithAmmForSoloMargin;
+    ) as LiquidatorProxyV1WithAmm;
     this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(
       dolomiteAmmRouterProxyJson.abi,
     ) as DolomiteAmmRouterProxy;
     this.ammRebalancerProxy = new this.web3.eth.Contract(
       ammRebalancerProxyJson.abi,
     ) as AmmRebalancerProxy;
-    this.testnetAmmRebalancerProxy = new this.web3.eth.Contract(
-      testnetAmmRebalancerProxyJson.abi,
-    ) as TestnetAmmRebalancerProxy;
     this.polynomialInterestSetter = new this.web3.eth.Contract(
       polynomialInterestSetterJson.abi,
     ) as PolynomialInterestSetter;
@@ -240,15 +225,15 @@ export class Contracts {
   }
 
   public setProvider(provider: Provider, networkId: number): void {
-    this.soloMargin.setProvider(provider);
+    this.dolomiteMargin.setProvider(provider);
 
     const contracts = [
       // contracts
-      { contract: this.soloMargin, json: soloMarginJson },
+      { contract: this.dolomiteMargin, json: dolomiteMarginJson },
       { contract: this.erc20, json: erc20Json },
       { contract: this.interestSetter, json: interestSetterJson },
       { contract: this.priceOracle, json: priceOracleJson },
-      { contract: this.expiryV2, json: expiryV2Json },
+      { contract: this.expiry, json: expiryJson },
       { contract: this.payableProxy, json: payableProxyJson },
       { contract: this.signedOperationProxy, json: signedOperationProxyJson },
       { contract: this.liquidatorProxyV1, json: liquidatorV1Json },
@@ -261,10 +246,6 @@ export class Contracts {
         json: dolomiteAmmRouterProxyJson,
       },
       { contract: this.ammRebalancerProxy, json: ammRebalancerProxyJson },
-      {
-        contract: this.testnetAmmRebalancerProxy,
-        json: testnetAmmRebalancerProxyJson,
-      },
       {
         contract: this.polynomialInterestSetter,
         json: polynomialInterestSetterJson,
@@ -308,18 +289,17 @@ export class Contracts {
 
   public setDefaultAccount(account: address): void {
     // Contracts
-    this.soloMargin.options.from = account;
+    this.dolomiteMargin.options.from = account;
     this.erc20.options.from = account;
     this.interestSetter.options.from = account;
     this.priceOracle.options.from = account;
-    this.expiryV2.options.from = account;
+    this.expiry.options.from = account;
     this.payableProxy.options.from = account;
     this.signedOperationProxy.options.from = account;
     this.liquidatorProxyV1.options.from = account;
     this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
     this.ammRebalancerProxy.options.from = account;
-    this.testnetAmmRebalancerProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.wethPriceOracle.options.from = account;

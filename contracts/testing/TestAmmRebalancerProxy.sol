@@ -24,38 +24,38 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "@uniswap/lib/contracts/libraries/Babylonian.sol";
 
-import "../../protocol/interfaces/IExchangeWrapper.sol";
-import "../../protocol/interfaces/ISoloMargin.sol";
+import "../protocol/interfaces/IExchangeWrapper.sol";
+import "../protocol/interfaces/IDolomiteMargin.sol";
 
-import "../../protocol/lib/Account.sol";
-import "../../protocol/lib/Actions.sol";
-import "../../protocol/lib/Require.sol";
-import "../../protocol/lib/Types.sol";
+import "../protocol/lib/Account.sol";
+import "../protocol/lib/Actions.sol";
+import "../protocol/lib/Require.sol";
+import "../protocol/lib/Types.sol";
 
-import "../lib/TypedSignature.sol";
-import "../lib/DolomiteAmmLibrary.sol";
+import "../external/lib/TypedSignature.sol";
+import "../external/lib/DolomiteAmmLibrary.sol";
 
-import "../interfaces/IDolomiteAmmFactory.sol";
-import "../interfaces/IDolomiteAmmPair.sol";
-import "../interfaces/IUniswapV2Router.sol";
+import "../external/interfaces/IDolomiteAmmFactory.sol";
+import "../external/interfaces/IDolomiteAmmPair.sol";
+import "../external/interfaces/IUniswapV2Router.sol";
 
-import "../helpers/OnlySolo.sol";
+import "../external/helpers/OnlyDolomiteMargin.sol";
 
-contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
+contract TestAmmRebalancerProxy is OnlyDolomiteMargin, Ownable {
     using SafeMath for uint;
 
-    bytes32 public constant FILE = "TestnetAmmRebalancerProxy";
+    bytes32 public constant FILE = "TestAmmRebalancerProxy";
 
     address public DOLOMITE_AMM_FACTORY;
 
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address dolomiteAmmFactory
     )
     public
-    OnlySolo(soloMargin)
+    OnlyDolomiteMargin(dolomiteMargin)
     {
         DOLOMITE_AMM_FACTORY = dolomiteAmmFactory;
     }
@@ -129,7 +129,7 @@ contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
             );
         }
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     function _computeProfitMaximizingTrade(
@@ -176,10 +176,10 @@ contract TestnetAmmRebalancerProxy is OnlySolo, Ownable {
     function _getMarketPathFromTokenPath(
         address[] memory path
     ) internal view returns (uint[] memory) {
-        SoloMargin soloMargin = SOLO_MARGIN;
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
         uint[] memory marketPath = new uint[](path.length);
         for (uint i = 0; i < path.length; i++) {
-            marketPath[i] = soloMargin.getMarketIdByTokenAddress(path[i]);
+            marketPath[i] = dolomiteMargin.getMarketIdByTokenAddress(path[i]);
         }
         return marketPath;
     }

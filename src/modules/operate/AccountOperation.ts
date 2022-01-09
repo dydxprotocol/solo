@@ -19,15 +19,15 @@ import {
   ContractCallOptions,
   Deposit,
   Exchange,
-  ExpiryV2CallFunctionType,
+  ExpiryCallFunctionType,
   Integer,
   Liquidate,
   Operation,
   OperationAuthorization,
   ProxyType,
   Sell,
-  SetApprovalForExpiryV2,
-  SetExpiryV2,
+  SetApprovalForExpiry,
+  SetExpiry,
   SignedOperation,
   Trade,
   Transfer,
@@ -158,14 +158,14 @@ export class AccountOperation {
     return this;
   }
 
-  public setApprovalForExpiryV2(
-    args: SetApprovalForExpiryV2,
+  public setApprovalForExpiry(
+    args: SetApprovalForExpiry,
   ): AccountOperation {
     this.addActionArgs(args, {
       actionType: ActionType.Call,
-      otherAddress: this.contracts.expiryV2.options.address,
+      otherAddress: this.contracts.expiry.options.address,
       data: toBytes(
-        ExpiryV2CallFunctionType.SetApproval,
+        ExpiryCallFunctionType.SetApproval,
         args.sender,
         args.minTimeDelta,
       ),
@@ -174,27 +174,27 @@ export class AccountOperation {
     return this;
   }
 
-  public setExpiryV2(args: SetExpiryV2): AccountOperation {
-    let callData = toBytes(ExpiryV2CallFunctionType.SetExpiry);
+  public setExpiry(args: SetExpiry): AccountOperation {
+    let callData = toBytes(ExpiryCallFunctionType.SetExpiry);
     callData = callData.concat(toBytes(new BigNumber(64)));
     callData = callData.concat(
-      toBytes(new BigNumber(args.expiryV2Args.length)),
+      toBytes(new BigNumber(args.expiryArgs.length)),
     );
-    for (let i = 0; i < args.expiryV2Args.length; i += 1) {
-      const expiryV2Arg = args.expiryV2Args[i];
+    for (let i = 0; i < args.expiryArgs.length; i += 1) {
+      const expiryArg = args.expiryArgs[i];
       callData = callData.concat(
         toBytes(
-          expiryV2Arg.accountOwner,
-          expiryV2Arg.accountId,
-          expiryV2Arg.marketId,
-          expiryV2Arg.timeDelta,
-          expiryV2Arg.forceUpdate,
+          expiryArg.accountOwner,
+          expiryArg.accountId,
+          expiryArg.marketId,
+          expiryArg.timeDelta,
+          expiryArg.forceUpdate,
         ),
       );
     }
     this.addActionArgs(args, {
       actionType: ActionType.Call,
-      otherAddress: this.contracts.expiryV2.options.address,
+      otherAddress: this.contracts.expiry.options.address,
       data: callData,
     });
 
@@ -235,7 +235,7 @@ export class AccountOperation {
     return this.liquidateExpiredAccountInternal(
       liquidate,
       maxExpiry || INTEGERS.ONES_31,
-      this.contracts.expiryV2.options.address,
+      this.contracts.expiry.options.address,
     );
   }
 
@@ -264,7 +264,7 @@ export class AccountOperation {
       prices,
       spreadPremiums,
       collateralPreferences,
-      this.contracts.expiryV2.options.address,
+      this.contracts.expiry.options.address,
     );
   }
 
@@ -411,7 +411,7 @@ export class AccountOperation {
 
       switch (this.proxy) {
         case ProxyType.None:
-          method = this.contracts.soloMargin.methods.operate(
+          method = this.contracts.dolomiteMargin.methods.operate(
             this.accounts,
             this.actions,
           );

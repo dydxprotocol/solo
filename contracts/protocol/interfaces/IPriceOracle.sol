@@ -26,7 +26,7 @@ import { Monetary } from "../lib/Monetary.sol";
  * @title IPriceOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement in order to report prices.
+ * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
  */
 contract IPriceOracle {
 

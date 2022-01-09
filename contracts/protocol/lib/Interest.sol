@@ -30,7 +30,7 @@ import { Types } from "./Types.sol";
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and interest indexes of Solo
+ * Library for managing the interest rate and interest indexes of DolomiteMargin
  */
 library Interest {
     using Math for uint256;

@@ -13,7 +13,7 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators(operatorArgs),
+      this.contracts.dolomiteMargin.methods.setOperators(operatorArgs),
       options,
     );
   }
@@ -23,7 +23,7 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators([
+      this.contracts.dolomiteMargin.methods.setOperators([
         {
           operator,
           trusted: true,
@@ -38,7 +38,7 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators([
+      this.contracts.dolomiteMargin.methods.setOperators([
         {
           operator,
           trusted: false,
@@ -53,7 +53,7 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetGlobalOperator(operator, false),
+      this.contracts.dolomiteMargin.methods.ownerSetGlobalOperator(operator, false),
       options,
     );
   }

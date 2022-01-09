@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import {DolomiteMargin} from "../../protocol/DolomiteMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
@@ -30,19 +30,16 @@ import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
 
 
 /**
- * @title LiquidatorProxyV1ForSoloMargin
+ * @title LiquidatorProxyV1
  * @author dYdX
  *
- * Contract for liquidating other accounts in Solo. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
  */
-contract LiquidatorProxyV1ForSoloMargin is
-    OnlySolo,
-    ReentrancyGuard
-{
+contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -50,7 +47,7 @@ contract LiquidatorProxyV1ForSoloMargin is
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "LiquidatorProxyV1ForSoloMargin";
+    bytes32 constant FILE = "LiquidatorProxyV1";
 
     // ============ Structs ============
 
@@ -86,10 +83,10 @@ contract LiquidatorProxyV1ForSoloMargin is
     // ============ Constructor ============
 
     constructor (
-        address soloMargin
+        address dolomiteMargin
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {} /* solium-disable-line no-empty-blocks */
 
     // ============ Public Functions ============
@@ -143,12 +140,12 @@ contract LiquidatorProxyV1ForSoloMargin is
                 }
 
                 // cannot liquidate non-negative markets
-                if (!SOLO_MARGIN.getAccountPar(liquidAccount, owedMarket).isNegative()) {
+                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, owedMarket).isNegative()) {
                     break;
                 }
 
                 // cannot use non-positive markets as collateral
-                if (!SOLO_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive()) {
+                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive()) {
                     continue;
                 }
 
@@ -171,7 +168,7 @@ contract LiquidatorProxyV1ForSoloMargin is
                 }
 
                 // execute the liquidations
-                SOLO_MARGIN.operate(
+                DOLOMITE_MARGIN.operate(
                     constructAccountsArray(constants),
                     constructActionsArray(cache)
                 );
@@ -315,7 +312,7 @@ contract LiquidatorProxyV1ForSoloMargin is
         // check credentials for msg.sender
         Require.that(
             constants.solidAccount.owner == msg.sender
-            || SOLO_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
+            || DOLOMITE_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
             constants.solidAccount.owner
@@ -332,11 +329,11 @@ contract LiquidatorProxyV1ForSoloMargin is
             "Liquid account no supply"
         );
         Require.that(
-            SOLO_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
+            DOLOMITE_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
             || !isCollateralized(
                 liquidSupplyValue.value,
                 liquidBorrowValue.value,
-                SOLO_MARGIN.getMarginRatio()
+                DOLOMITE_MARGIN.getMarginRatio()
             ),
             FILE,
             "Liquid account not liquidatable",
@@ -434,7 +431,7 @@ contract LiquidatorProxyV1ForSoloMargin is
         Monetary.Value memory borrowValue;
 
         for (uint256 m = 0; m < constants.markets.length; m++) {
-            Types.Par memory par = SOLO_MARGIN.getAccountPar(account, m);
+            Types.Par memory par = DOLOMITE_MARGIN.getAccountPar(account, m);
             if (par.isZero()) {
                 continue;
             }
@@ -458,12 +455,12 @@ contract LiquidatorProxyV1ForSoloMargin is
         view
         returns (MarketInfo[] memory)
     {
-        uint256 numMarkets = SOLO_MARGIN.getNumMarkets();
+        uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
         MarketInfo[] memory markets = new MarketInfo[](numMarkets);
         for (uint256 m = 0; m < numMarkets; m++) {
             markets[m] = MarketInfo({
-                price: SOLO_MARGIN.getMarketPrice(m),
-                index: SOLO_MARGIN.getMarketCurrentIndex(m)
+                price: DOLOMITE_MARGIN.getMarketPrice(m),
+                index: DOLOMITE_MARGIN.getMarketCurrentIndex(m)
             });
         }
         return markets;
@@ -489,15 +486,15 @@ contract LiquidatorProxyV1ForSoloMargin is
         uint256 heldPrice = constants.markets[heldMarket].price.value;
         uint256 owedPrice = constants.markets[owedMarket].price.value;
         Decimal.D256 memory spread =
-            SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
+            DOLOMITE_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
 
         return Cache({
             heldWei: Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
+                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
                 constants.markets[heldMarket].index
             ),
             owedWei: Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.solidAccount, owedMarket),
+                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, owedMarket),
                 constants.markets[owedMarket].index
             ),
             toLiquidate: 0,

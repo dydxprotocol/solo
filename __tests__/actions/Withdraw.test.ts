@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -15,7 +15,7 @@ import {
 } from '../../src/types';
 
 let who: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let operator: address;
 const accountNumber = INTEGERS.ZERO;
@@ -31,17 +31,17 @@ let defaultGlob: Withdraw;
 const CANNOT_WITHDRAW_POSITIVE = 'Exchange: Cannot transferOut positive';
 const cachedWeis = {
   walletWei: zero,
-  soloWei: zero,
+  dolomiteMarginWei: zero,
 };
 
 describe('Withdraw', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    who = solo.getDefaultAccount();
+    who = dolomiteMargin.getDefaultAccount();
     operator = accounts[6];
     defaultGlob = {
       primaryAccountOwner: who,
@@ -56,14 +56,14 @@ describe('Withdraw', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: wei.div(par),
         supply: wei.div(par),
       }),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         who,
         accountNumber,
         collateralMarket,
@@ -76,12 +76,12 @@ describe('Withdraw', () => {
   beforeEach(async () => {
     await resetEVM(snapshotId);
     cachedWeis.walletWei = zero;
-    cachedWeis.soloWei = zero;
+    cachedWeis.dolomiteMarginWei = zero;
   });
 
   it('Basic withdraw test', async () => {
     await Promise.all([
-      issueTokensToSolo(wei),
+      issueTokensToDolomiteMargin(wei),
       setAccountBalance(par.times(2)),
     ]);
     const txResult = await expectWithdrawOkay({});
@@ -91,9 +91,9 @@ describe('Withdraw', () => {
 
   it('Succeeds for events', async () => {
     await Promise.all([
-      issueTokensToSolo(wei),
+      issueTokensToDolomiteMargin(wei),
       setAccountBalance(par.times(2)),
-      solo.permissions.approveOperator(operator, { from: who }),
+      dolomiteMargin.permissions.approveOperator(operator, { from: who }),
     ]);
     const txResult = await expectWithdrawOkay(
       { to: operator },
@@ -101,12 +101,12 @@ describe('Withdraw', () => {
     );
 
     const [marketIndex, collateralIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(market),
-      solo.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(market),
+      dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
       expectBalances(par, wei, zero, zero, wei),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -152,33 +152,33 @@ describe('Withdraw', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([issueTokensToSolo(wei), setAccountBalance(zero)]);
+      await Promise.all([issueTokensToDolomiteMargin(wei), setAccountBalance(zero)]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar, negWei, wei, zero);
 
       // starting positive (>par)
       await Promise.all([
-        issueTokensToSolo(wei),
+        issueTokensToDolomiteMargin(wei),
         setAccountBalance(par.times(2)),
       ]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(par, wei, wei, zero);
 
       // starting positive (=par)
-      await Promise.all([issueTokensToSolo(wei), setAccountBalance(par)]);
+      await Promise.all([issueTokensToDolomiteMargin(wei), setAccountBalance(par)]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(zero, zero, wei, zero);
 
       // starting positive (<par)
       await Promise.all([
-        issueTokensToSolo(wei),
+        issueTokensToDolomiteMargin(wei),
         setAccountBalance(par.div(2)),
       ]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar.div(2), negWei.div(2), wei, zero);
 
       // starting negative
-      await Promise.all([issueTokensToSolo(wei), setAccountBalance(negPar)]);
+      await Promise.all([issueTokensToDolomiteMargin(wei), setAccountBalance(negPar)]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar.times(2), negWei.times(2), wei, zero);
     }
@@ -239,7 +239,7 @@ describe('Withdraw', () => {
       },
     ];
 
-    await issueTokensToSolo(wei);
+    await issueTokensToDolomiteMargin(wei);
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
@@ -276,14 +276,14 @@ describe('Withdraw', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([setAccountBalance(zero), issueTokensToSolo(wei)]);
+      await Promise.all([setAccountBalance(zero), issueTokensToDolomiteMargin(wei)]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar, negWei, wei, zero);
 
       // starting negative (<target)
       await Promise.all([
         setAccountBalance(negPar.div(2)),
-        issueTokensToSolo(wei.div(2)),
+        issueTokensToDolomiteMargin(wei.div(2)),
       ]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar, negWei, wei.div(2), zero);
@@ -300,7 +300,7 @@ describe('Withdraw', () => {
       // starting positive
       await Promise.all([
         setAccountBalance(par),
-        issueTokensToSolo(wei.times(2)),
+        issueTokensToDolomiteMargin(wei.times(2)),
       ]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(negPar, negWei, wei.times(2), zero);
@@ -331,7 +331,7 @@ describe('Withdraw', () => {
       await expectBalances(zero, zero, zero, zero);
 
       // starting positive
-      await Promise.all([setAccountBalance(par), issueTokensToSolo(wei)]);
+      await Promise.all([setAccountBalance(par), issueTokensToDolomiteMargin(wei)]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(zero, zero, wei, zero);
 
@@ -367,7 +367,7 @@ describe('Withdraw', () => {
       // starting positive (<target)
       await Promise.all([
         setAccountBalance(par.times(2)),
-        issueTokensToSolo(wei),
+        issueTokensToDolomiteMargin(wei),
       ]);
       await expectWithdrawOkay(globs[i]);
       await expectBalances(par, wei, wei, zero);
@@ -393,13 +393,13 @@ describe('Withdraw', () => {
       .times(supplyIndex)
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
-      issueTokensToSolo(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      issueTokensToDolomiteMargin(expectedWei),
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         supply: supplyIndex,
         borrow: INTEGERS.ONE,
       }),
-      solo.testing.setAccountBalance(who, accountNumber, market, par),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, par),
     ]);
     await expectWithdrawOkay({
       amount: {
@@ -417,13 +417,13 @@ describe('Withdraw', () => {
       .times(supplyIndex)
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
-      issueTokensToSolo(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      issueTokensToDolomiteMargin(expectedWei),
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         supply: supplyIndex,
         borrow: INTEGERS.ONE,
       }),
-      solo.testing.setAccountBalance(who, accountNumber, market, par),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, par),
     ]);
     await expectWithdrawOkay({
       amount: {
@@ -441,8 +441,8 @@ describe('Withdraw', () => {
       .times(borrowIndex)
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
-      issueTokensToSolo(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      issueTokensToDolomiteMargin(expectedWei),
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         supply: INTEGERS.ONE,
         borrow: borrowIndex,
@@ -464,8 +464,8 @@ describe('Withdraw', () => {
       .times(borrowIndex)
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
-      issueTokensToSolo(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      issueTokensToDolomiteMargin(expectedWei),
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         supply: INTEGERS.ONE,
         borrow: borrowIndex,
@@ -482,49 +482,49 @@ describe('Withdraw', () => {
   });
 
   it('Succeeds to withdraw to an external address', async () => {
-    await Promise.all([setAccountBalance(par), issueTokensToSolo(wei)]);
+    await Promise.all([setAccountBalance(par), issueTokensToDolomiteMargin(wei)]);
     await expectWithdrawOkay({ to: operator });
     await expectBalances(zero, zero, zero, zero, wei);
   });
 
-  it('Succeeds to withdraw to the SoloMargin address', async () => {
-    await Promise.all([setAccountBalance(par), issueTokensToSolo(wei)]);
-    await expectWithdrawOkay({ to: solo.contracts.soloMargin.options.address });
+  it('Succeeds to withdraw to the DolomiteMargin address', async () => {
+    await Promise.all([setAccountBalance(par), issueTokensToDolomiteMargin(wei)]);
+    await expectWithdrawOkay({ to: dolomiteMargin.contracts.dolomiteMargin.options.address });
     await expectBalances(zero, zero, zero, wei);
   });
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      issueTokensToSolo(wei),
-      solo.testing.setAccountStatus(
+      issueTokensToDolomiteMargin(wei),
+      dolomiteMargin.testing.setAccountStatus(
         who,
         accountNumber,
         AccountStatus.Liquidating,
       ),
     ]);
     await expectWithdrawOkay({});
-    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
     expect(status).toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
     await Promise.all([
-      issueTokensToSolo(wei),
-      solo.permissions.approveOperator(operator),
+      issueTokensToDolomiteMargin(wei),
+      dolomiteMargin.permissions.approveOperator(operator),
     ]);
     await expectWithdrawOkay({}, { from: operator });
   });
 
   it('Succeeds for global operator', async () => {
     await Promise.all([
-      issueTokensToSolo(wei),
-      solo.permissions.approveOperator(operator),
+      issueTokensToDolomiteMargin(wei),
+      dolomiteMargin.permissions.approveOperator(operator),
     ]);
     await expectWithdrawOkay({}, { from: operator });
   });
 
   it('Fails for non-operator', async () => {
-    await issueTokensToSolo(wei);
+    await issueTokensToDolomiteMargin(wei);
     await expectWithdrawRevert({}, 'Storage: Unpermissioned operator', {
       from: operator,
     });
@@ -538,13 +538,13 @@ describe('Withdraw', () => {
 // ============ Helper Functions ============
 
 async function setAccountBalance(amount: BigNumber) {
-  return solo.testing.setAccountBalance(who, accountNumber, market, amount);
+  return dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, amount);
 }
 
-async function issueTokensToSolo(amount: BigNumber) {
-  return solo.testing.tokenA.issueTo(
+async function issueTokensToDolomiteMargin(amount: BigNumber) {
+  return dolomiteMargin.testing.tokenA.issueTo(
     amount,
-    solo.contracts.soloMargin.options.address,
+    dolomiteMargin.contracts.dolomiteMargin.options.address,
   );
 }
 
@@ -552,19 +552,19 @@ async function expectBalances(
   expectedPar: Integer,
   expectedWei: Integer,
   walletWei: Integer,
-  soloWei: Integer,
+  dolomiteMarginWei: Integer,
   operatorWei: Integer = zero,
 ) {
   const [
     accountBalances,
-    soloTokenBalance,
+    dolomiteMarginTokenBalance,
     walletTokenBalance,
     operatorTokenBalance,
   ] = await Promise.all([
-    solo.getters.getAccountBalances(who, accountNumber),
-    solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
-    solo.testing.tokenA.getBalance(who),
-    solo.testing.tokenA.getBalance(operator),
+    dolomiteMargin.getters.getAccountBalances(who, accountNumber),
+    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    dolomiteMargin.testing.tokenA.getBalance(who),
+    dolomiteMargin.testing.tokenA.getBalance(operator),
   ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
@@ -580,15 +580,15 @@ async function expectBalances(
     expect(balance.wei).toEqual(expected.wei);
   });
   expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
-  expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
+  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei)).toEqual(dolomiteMarginWei);
   cachedWeis.walletWei = walletTokenBalance;
-  cachedWeis.soloWei = soloTokenBalance;
+  cachedWeis.dolomiteMarginWei = dolomiteMarginTokenBalance;
   expect(operatorTokenBalance).toEqual(operatorWei);
 }
 
 async function expectWithdrawOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .withdraw(combinedGlob)
     .commit(options);

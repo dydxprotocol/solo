@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -14,7 +14,7 @@ import {
   TxResult,
 } from '../../src/types';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let snapshotId: string;
 let admin: address;
@@ -36,10 +36,10 @@ const defaultTimeDelta = new BigNumber(1234);
 let defaultGlob: Trade;
 let heldGlob: Trade;
 
-describe('ExpiryV2', () => {
+describe('Expiry', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
     owner1 = accounts[2];
@@ -52,7 +52,7 @@ describe('ExpiryV2', () => {
       otherAccountId: accountNumber2,
       inputMarketId: owedMarket,
       outputMarketId: heldMarket,
-      autoTrader: solo.contracts.expiryV2.options.address,
+      autoTrader: dolomiteMargin.contracts.expiry.options.address,
       amount: {
         value: zero,
         denomination: AmountDenomination.Principal,
@@ -67,7 +67,7 @@ describe('ExpiryV2', () => {
       otherAccountId: accountNumber2,
       inputMarketId: heldMarket,
       outputMarketId: owedMarket,
-      autoTrader: solo.contracts.expiryV2.options.address,
+      autoTrader: dolomiteMargin.contracts.expiry.options.address,
       amount: {
         value: zero,
         denomination: AmountDenomination.Principal,
@@ -77,22 +77,22 @@ describe('ExpiryV2', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
         par.times(-1),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         par.times(2),
       ),
-      solo.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(owner1, accountNumber1, owedMarket, par),
+      dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         collateralMarket,
@@ -101,9 +101,9 @@ describe('ExpiryV2', () => {
     ]);
     await Promise.all([
       setExpiryForSelf(INTEGERS.ONE, true),
-      solo.expiryV2.setApproval(owner1, defaultTimeDelta, { from: owner2 }),
+      dolomiteMargin.expiry.setApproval(owner1, defaultTimeDelta, { from: owner2 }),
     ]);
-    startingExpiry = await solo.expiryV2.getExpiry(
+    startingExpiry = await dolomiteMargin.expiry.getExpiry(
       owner2,
       accountNumber2,
       owedMarket,
@@ -120,16 +120,16 @@ describe('ExpiryV2', () => {
 
   describe('setApproval', () => {
     it('Succeeds for zero', async () => {
-      const txResult = await solo.expiryV2.setApproval(owner1, zero, {
+      const txResult = await dolomiteMargin.expiry.setApproval(owner1, zero, {
         from: owner2,
       });
 
       // check storage
-      const approval = await solo.expiryV2.getApproval(owner2, owner1);
+      const approval = await dolomiteMargin.expiry.getApproval(owner2, owner1);
       expect(approval).toEqual(zero);
 
       // check logs
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogSenderApproved');
@@ -140,16 +140,16 @@ describe('ExpiryV2', () => {
 
     it('Succeeds for non-zero', async () => {
       const defaultDelay = new BigNumber(425);
-      const txResult = await solo.expiryV2.setApproval(owner1, defaultDelay, {
+      const txResult = await dolomiteMargin.expiry.setApproval(owner1, defaultDelay, {
         from: owner2,
       });
 
       // check storage
-      const approval = await solo.expiryV2.getApproval(owner2, owner1);
+      const approval = await dolomiteMargin.expiry.getApproval(owner2, owner1);
       expect(approval).toEqual(defaultDelay);
 
       // check logs
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogSenderApproved');
@@ -162,12 +162,12 @@ describe('ExpiryV2', () => {
   describe('callFunction (invalid)', () => {
     it('Fails for invalid callType', async () => {
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate()
           .call({
             primaryAccountOwner: owner1,
             primaryAccountId: accountNumber1,
-            callee: solo.contracts.expiryV2.options.address,
+            callee: dolomiteMargin.contracts.expiry.options.address,
             data: toBytes(2, 2, 2, 2),
           })
           .commit(),
@@ -176,12 +176,12 @@ describe('ExpiryV2', () => {
 
     it('Fails for zero bytes', async () => {
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate()
           .call({
             primaryAccountOwner: owner1,
             primaryAccountId: accountNumber1,
-            callee: solo.contracts.expiryV2.options.address,
+            callee: dolomiteMargin.contracts.expiry.options.address,
             data: [],
           })
           .commit(),
@@ -194,9 +194,9 @@ describe('ExpiryV2', () => {
       const minTimeDeltas = [INTEGERS.ZERO, defaultTimeDelta];
       for (let i = 0; i < minTimeDeltas.length; i += 1) {
         // make transaction
-        const txResult = await solo.operation
+        const txResult = await dolomiteMargin.operation
           .initiate()
-          .setApprovalForExpiryV2({
+          .setApprovalForExpiry({
             primaryAccountOwner: owner2,
             primaryAccountId: INTEGERS.ZERO,
             sender: owner1,
@@ -205,7 +205,7 @@ describe('ExpiryV2', () => {
           .commit({ from: owner2 });
 
         // check logs
-        const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+        const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSenderApproved');
@@ -214,7 +214,7 @@ describe('ExpiryV2', () => {
         expect(log.args.minTimeDelta).toEqual(minTimeDeltas[i]);
 
         // check approval set
-        const actualMinTimeDelta = await solo.expiryV2.getApproval(
+        const actualMinTimeDelta = await dolomiteMargin.expiry.getApproval(
           owner2,
           owner1,
         );
@@ -244,8 +244,8 @@ describe('ExpiryV2', () => {
 
     it('Skips logs when necessary', async () => {
       const txResult = await setExpiryForSelf(defaultTimeDelta, true);
-      const noLogs = solo.logs.parseLogs(txResult, { skipExpiryLogs: true });
-      const logs = solo.logs.parseLogs(txResult, { skipExpiryLogs: false });
+      const noLogs = dolomiteMargin.logs.parseLogs(txResult, { skipExpiryLogs: true });
+      const logs = dolomiteMargin.logs.parseLogs(txResult, { skipExpiryLogs: false });
       expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(
         0,
       );
@@ -255,7 +255,7 @@ describe('ExpiryV2', () => {
     });
 
     it('Sets expiry to zero even if given positive delta (non-negative balances)', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
@@ -266,7 +266,7 @@ describe('ExpiryV2', () => {
     });
 
     it('Sets expiry to zero on purpose (non-negative balances)', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
@@ -312,18 +312,18 @@ describe('ExpiryV2', () => {
     });
 
     it('Do nothing if sender not approved', async () => {
-      const timestamp1 = await solo.expiryV2.getExpiry(
+      const timestamp1 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
 
-      const txResult1 = await solo.operation
+      const txResult1 = await dolomiteMargin.operation
         .initiate()
-        .setExpiryV2({
+        .setExpiry({
           primaryAccountOwner: rando,
           primaryAccountId: accountNumber1,
-          expiryV2Args: [
+          expiryArgs: [
             {
               accountOwner: owner2,
               accountId: accountNumber2,
@@ -335,15 +335,15 @@ describe('ExpiryV2', () => {
         })
         .commit({ from: rando });
       expect(
-        solo.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
+        dolomiteMargin.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
       ).toEqual(0);
 
-      const txResult2 = await solo.operation
+      const txResult2 = await dolomiteMargin.operation
         .initiate()
-        .setExpiryV2({
+        .setExpiry({
           primaryAccountOwner: rando,
           primaryAccountId: accountNumber1,
-          expiryV2Args: [
+          expiryArgs: [
             {
               accountOwner: owner2,
               accountId: accountNumber2,
@@ -355,10 +355,10 @@ describe('ExpiryV2', () => {
         })
         .commit({ from: rando });
       expect(
-        solo.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
+        dolomiteMargin.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
       ).toEqual(0);
 
-      const timestamp2 = await solo.expiryV2.getExpiry(
+      const timestamp2 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
@@ -367,24 +367,24 @@ describe('ExpiryV2', () => {
     });
 
     it('Do nothing if sender not approved (non-negative balance)', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
         par,
       );
-      const timestamp1 = await solo.expiryV2.getExpiry(
+      const timestamp1 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
 
-      const txResult1 = await solo.operation
+      const txResult1 = await dolomiteMargin.operation
         .initiate()
-        .setExpiryV2({
+        .setExpiry({
           primaryAccountOwner: rando,
           primaryAccountId: accountNumber1,
-          expiryV2Args: [
+          expiryArgs: [
             {
               accountOwner: owner2,
               accountId: accountNumber2,
@@ -396,15 +396,15 @@ describe('ExpiryV2', () => {
         })
         .commit({ from: rando });
       expect(
-        solo.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
+        dolomiteMargin.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
       ).toEqual(0);
 
-      const txResult2 = await solo.operation
+      const txResult2 = await dolomiteMargin.operation
         .initiate()
-        .setExpiryV2({
+        .setExpiry({
           primaryAccountOwner: rando,
           primaryAccountId: accountNumber1,
-          expiryV2Args: [
+          expiryArgs: [
             {
               accountOwner: owner2,
               accountId: accountNumber2,
@@ -416,10 +416,10 @@ describe('ExpiryV2', () => {
         })
         .commit({ from: rando });
       expect(
-        solo.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
+        dolomiteMargin.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
       ).toEqual(0);
 
-      const timestamp2 = await solo.expiryV2.getExpiry(
+      const timestamp2 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
@@ -429,32 +429,32 @@ describe('ExpiryV2', () => {
 
     it('Set it for multiple', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner1,
           accountNumber1,
           owedMarket,
           par.times(-1),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner1,
           accountNumber1,
           collateralMarket,
           par.times(4),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           rando,
           accountNumber1,
           heldMarket,
           par.times(-1),
         ),
-        solo.expiryV2.setApproval(owner1, defaultTimeDelta, { from: rando }),
+        dolomiteMargin.expiry.setApproval(owner1, defaultTimeDelta, { from: rando }),
       ]);
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate()
-        .setExpiryV2({
+        .setExpiry({
           primaryAccountOwner: owner1,
           primaryAccountId: accountNumber1,
-          expiryV2Args: [
+          expiryArgs: [
             {
               accountOwner: owner2,
               accountId: accountNumber2,
@@ -495,8 +495,8 @@ describe('ExpiryV2', () => {
         .commit({ from: owner1 });
 
       // check logs
-      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
-      const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+      const { timestamp } = await dolomiteMargin.web3.eth.getBlock(txResult.blockNumber);
+      const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
       expect(logs.length).toEqual(3);
       expect(logs[0].name).toEqual('ExpirySet');
       expect(logs[1].name).toEqual('ExpirySet');
@@ -522,10 +522,10 @@ describe('ExpiryV2', () => {
 
       // check storage
       const [expiry1, expiry2, expiry3, expiry4] = await Promise.all([
-        solo.expiryV2.getExpiry(owner2, accountNumber2, owedMarket),
-        solo.expiryV2.getExpiry(owner1, accountNumber1, owedMarket),
-        solo.expiryV2.getExpiry(rando, accountNumber1, heldMarket),
-        solo.expiryV2.getExpiry(rando, accountNumber1, owedMarket),
+        dolomiteMargin.expiry.getExpiry(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.expiry.getExpiry(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.expiry.getExpiry(rando, accountNumber1, heldMarket),
+        dolomiteMargin.expiry.getExpiry(rando, accountNumber1, owedMarket),
       ]);
       expect(expiry1).toEqual(startingExpiry);
       expect(expiry2).toEqual(defaultTimeDelta.div(2).plus(timestamp));
@@ -534,7 +534,7 @@ describe('ExpiryV2', () => {
     });
 
     it('Sets expiry to zero for non-negative balances', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
@@ -549,7 +549,7 @@ describe('ExpiryV2', () => {
       await expectNoExpirySet(txResult1);
 
       // even for positive balances
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
@@ -562,7 +562,7 @@ describe('ExpiryV2', () => {
 
   describe('expire account (heldAmount)', () => {
     beforeEach(async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
@@ -573,14 +573,14 @@ describe('ExpiryV2', () => {
     it('Succeeds in expiring', async () => {
       const txResult = await expectExpireOkay(heldGlob);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(
@@ -594,7 +594,7 @@ describe('ExpiryV2', () => {
     });
 
     it('Succeeds in expiring and setting expiry back to zero', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
@@ -602,7 +602,7 @@ describe('ExpiryV2', () => {
       );
       const txResult = await expectExpireOkay(heldGlob);
 
-      const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+      const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
       expect(logs.length).toEqual(1);
       const expiryLog = logs[0];
       expect(expiryLog.name).toEqual('ExpirySet');
@@ -622,14 +622,14 @@ describe('ExpiryV2', () => {
         },
       });
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(
@@ -649,17 +649,17 @@ describe('ExpiryV2', () => {
         .times(heldPremium.plus(1))
         .plus(1);
       await Promise.all([
-        solo.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
-        solo.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
       ]);
 
       await expectExpireOkay(heldGlob);
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(
@@ -672,14 +672,14 @@ describe('ExpiryV2', () => {
 
     it('Succeeds for zero inputMarket', async () => {
       const getAllBalances = [
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ];
       const start = await Promise.all(getAllBalances);
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
@@ -692,13 +692,13 @@ describe('ExpiryV2', () => {
     });
 
     it('Fails for negative inputMarket', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         par.times(-1),
       );
-      await expectExpireRevert(heldGlob, 'ExpiryV2: inputMarket mismatch');
+      await expectExpireRevert(heldGlob, 'Expiry: inputMarket mismatch');
     });
 
     it('Fails for overusing collateral', async () => {
@@ -711,7 +711,7 @@ describe('ExpiryV2', () => {
             reference: AmountReference.Target,
           },
         },
-        'ExpiryV2: Collateral cannot be overused',
+        'Expiry: Collateral cannot be overused',
       );
     });
 
@@ -725,18 +725,18 @@ describe('ExpiryV2', () => {
             reference: AmountReference.Target,
           },
         },
-        'ExpiryV2: inputMarket mismatch',
+        'Expiry: inputMarket mismatch',
       );
     });
 
     it('Fails for a zero expiry', async () => {
       await setExpiryForSelf(zero, true);
-      await expectExpireRevert(heldGlob, 'ExpiryV2: Expiry not set');
+      await expectExpireRevert(heldGlob, 'Expiry: Expiry not set');
     });
 
     it('Fails for a future expiry', async () => {
       await setExpiryForSelf(defaultTimeDelta, true);
-      await expectExpireRevert(heldGlob, 'ExpiryV2: Borrow not yet expired');
+      await expectExpireRevert(heldGlob, 'Expiry: Borrow not yet expired');
     });
 
     it('Fails for an expiry past maxExpiry', async () => {
@@ -745,7 +745,7 @@ describe('ExpiryV2', () => {
           ...heldGlob,
           data: toBytes(owedMarket, defaultTimeDelta),
         },
-        'ExpiryV2: Expiry past maxExpiry',
+        'Expiry: Expiry past maxExpiry',
       );
     });
 
@@ -757,33 +757,33 @@ describe('ExpiryV2', () => {
     });
 
     it('Fails for zero owedMarket', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
         zero,
       );
-      await expectExpireRevert(heldGlob, 'ExpiryV2: Borrows must be negative');
+      await expectExpireRevert(heldGlob, 'Expiry: Borrows must be negative');
     });
 
     it('Fails for positive owedMarket', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
         par,
       );
-      await expectExpireRevert(heldGlob, 'ExpiryV2: Borrows must be negative');
+      await expectExpireRevert(heldGlob, 'Expiry: Borrows must be negative');
     });
 
     it('Fails for over-repaying the borrow', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         par.times(2),
       );
-      await expectExpireRevert(heldGlob, 'ExpiryV2: outputMarket too small');
+      await expectExpireRevert(heldGlob, 'Expiry: outputMarket too small');
     });
   });
 
@@ -791,7 +791,7 @@ describe('ExpiryV2', () => {
     it('Succeeds in expiring', async () => {
       const txResult = await expectExpireOkay({});
 
-      const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+      const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
       expect(logs.length).toEqual(1);
       const expiryLog = logs[0];
       expect(expiryLog.name).toEqual('ExpirySet');
@@ -801,10 +801,10 @@ describe('ExpiryV2', () => {
       expect(expiryLog.args.time).toEqual(zero);
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(zero);
@@ -824,14 +824,14 @@ describe('ExpiryV2', () => {
         },
       });
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(par.div(2));
@@ -849,17 +849,17 @@ describe('ExpiryV2', () => {
         .times(heldPremium.plus(1))
         .plus(1);
       await Promise.all([
-        solo.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
-        solo.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(owedMarket, owedPremium, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(heldMarket, heldPremium, { from: admin }),
       ]);
 
       await expectExpireOkay({});
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(zero);
@@ -868,10 +868,10 @@ describe('ExpiryV2', () => {
       expect(held2).toEqual(par.times(2).minus(held1));
     });
 
-    it('Fails for non-solo calls', async () => {
+    it('Fails for non-DolomiteMargin calls', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.expiryV2.methods.callFunction(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.expiry.methods.callFunction(
             owner1,
             {
               owner: owner1,
@@ -880,20 +880,20 @@ describe('ExpiryV2', () => {
             [],
           ),
         ),
-        'OnlySolo: Only Solo can call function',
+        'OnlyDolomiteMargin: Only Dolomite can call function',
       );
     });
 
     it('Succeeds for zero inputMarket', async () => {
       const getAllBalances = [
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ];
       const start = await Promise.all(getAllBalances);
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
@@ -906,13 +906,13 @@ describe('ExpiryV2', () => {
     });
 
     it('Fails for positive inputMarket', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         owedMarket,
         par,
       );
-      await expectExpireRevert({}, 'ExpiryV2: outputMarket mismatch');
+      await expectExpireRevert({}, 'Expiry: outputMarket mismatch');
     });
 
     it('Fails for overpaying a borrow', async () => {
@@ -924,7 +924,7 @@ describe('ExpiryV2', () => {
             reference: AmountReference.Target,
           },
         },
-        'ExpiryV2: Borrows cannot be overpaid',
+        'Expiry: Borrows cannot be overpaid',
       );
     });
 
@@ -937,18 +937,18 @@ describe('ExpiryV2', () => {
             reference: AmountReference.Target,
           },
         },
-        'ExpiryV2: outputMarket mismatch',
+        'Expiry: outputMarket mismatch',
       );
     });
 
     it('Fails for a zero expiry', async () => {
       await setExpiryForSelf(zero, true);
-      await expectExpireRevert({}, 'ExpiryV2: Expiry not set');
+      await expectExpireRevert({}, 'Expiry: Expiry not set');
     });
 
     it('Fails for a future expiry', async () => {
       await setExpiryForSelf(defaultTimeDelta, true);
-      await expectExpireRevert({}, 'ExpiryV2: Borrow not yet expired');
+      await expectExpireRevert({}, 'Expiry: Borrow not yet expired');
     });
 
     it('Fails for an expiry past maxExpiry', async () => {
@@ -956,7 +956,7 @@ describe('ExpiryV2', () => {
         {
           data: toBytes(owedMarket, defaultTimeDelta),
         },
-        'ExpiryV2: Expiry past maxExpiry',
+        'Expiry: Expiry past maxExpiry',
       );
     });
 
@@ -970,33 +970,33 @@ describe('ExpiryV2', () => {
     });
 
     it('Fails for zero collateral', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         zero,
       );
-      await expectExpireRevert({}, 'ExpiryV2: Collateral must be positive');
+      await expectExpireRevert({}, 'Expiry: Collateral must be positive');
     });
 
     it('Fails for negative collateral', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         par.times(-1),
       );
-      await expectExpireRevert({}, 'ExpiryV2: Collateral must be positive');
+      await expectExpireRevert({}, 'Expiry: Collateral must be positive');
     });
 
     it('Fails for overtaking collateral', async () => {
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         heldMarket,
         par,
       );
-      await expectExpireRevert({}, 'ExpiryV2: outputMarket too small');
+      await expectExpireRevert({}, 'Expiry: outputMarket too small');
     });
   });
 
@@ -1006,16 +1006,16 @@ describe('ExpiryV2', () => {
       const premiums = [INTEGERS.ZERO, INTEGERS.ZERO, INTEGERS.ZERO];
       const collateralPreferences = [owedMarket, heldMarket, collateralMarket];
       const weis = await Promise.all([
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      const expiryTimestamp = await solo.expiryV2.getExpiry(
+      const expiryTimestamp = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate()
         .fullyLiquidateExpiredAccountV2(
           owner1,
@@ -1033,9 +1033,9 @@ describe('ExpiryV2', () => {
         .commit({ from: owner1 });
 
       const balances = await Promise.all([
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
       expect(balances[0]).toEqual(zero);
@@ -1048,8 +1048,8 @@ describe('ExpiryV2', () => {
       const premiums = [INTEGERS.ZERO, INTEGERS.ZERO, INTEGERS.ZERO];
       const collateralPreferences = [owedMarket, heldMarket, collateralMarket];
       await Promise.all([
-        solo.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, heldMarket, par),
+        dolomiteMargin.testing.setAccountBalance(
           owner2,
           accountNumber2,
           collateralMarket,
@@ -1057,16 +1057,16 @@ describe('ExpiryV2', () => {
         ),
       ]);
       const weis = await Promise.all([
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      const expiryTimestamp = await solo.expiryV2.getExpiry(
+      const expiryTimestamp = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate()
         .fullyLiquidateExpiredAccountV2(
           owner1,
@@ -1084,9 +1084,9 @@ describe('ExpiryV2', () => {
         .commit({ from: owner1 });
 
       const balances = await Promise.all([
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
       expect(balances[0]).toEqual(zero);
@@ -1110,18 +1110,18 @@ describe('ExpiryV2', () => {
       ];
       const collateralPreferences = [owedMarket, heldMarket, collateralMarket];
       await Promise.all([
-        solo.admin.setSpreadPremium(heldMarket, premiums[0], { from: admin }),
-        solo.admin.setSpreadPremium(owedMarket, premiums[1], { from: admin }),
-        solo.admin.setSpreadPremium(collateralMarket, premiums[2], {
+        dolomiteMargin.admin.setSpreadPremium(heldMarket, premiums[0], { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(owedMarket, premiums[1], { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(collateralMarket, premiums[2], {
           from: admin,
         }),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner2,
           accountNumber2,
           heldMarket,
           par.times(premium),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner2,
           accountNumber2,
           collateralMarket,
@@ -1129,16 +1129,16 @@ describe('ExpiryV2', () => {
         ),
       ]);
       const weis = await Promise.all([
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
-        solo.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(0)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(1)),
+        dolomiteMargin.getters.getAccountWei(owner2, accountNumber2, new BigNumber(2)),
       ]);
-      const expiryTimestamp = await solo.expiryV2.getExpiry(
+      const expiryTimestamp = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate()
         .fullyLiquidateExpiredAccountV2(
           owner1,
@@ -1156,9 +1156,9 @@ describe('ExpiryV2', () => {
         .commit({ from: owner1 });
 
       const balances = await Promise.all([
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
       expect(balances[0]).toEqual(zero);
@@ -1186,11 +1186,11 @@ describe('ExpiryV2', () => {
 
   describe('#getSpreadAdjustedPrices', () => {
     it('Succeeds for recently expired positions', async () => {
-      const { timestamp } = await solo.web3.eth.getBlock(
-        await solo.web3.eth.getBlockNumber(),
+      const { timestamp } = await dolomiteMargin.web3.eth.getBlock(
+        await dolomiteMargin.web3.eth.getBlockNumber(),
       );
       await mineAvgBlock();
-      const prices = await solo.expiryV2.getPrices(
+      const prices = await dolomiteMargin.expiry.getPrices(
         heldMarket,
         owedMarket,
         new BigNumber(timestamp),
@@ -1201,7 +1201,7 @@ describe('ExpiryV2', () => {
     });
 
     it('Succeeds for very expired positions', async () => {
-      const prices = await solo.expiryV2.getPrices(
+      const prices = await dolomiteMargin.expiry.getPrices(
         heldMarket,
         owedMarket,
         INTEGERS.ONE,
@@ -1213,18 +1213,18 @@ describe('ExpiryV2', () => {
 
   describe('#ownerSetExpiryRampTime', () => {
     it('Succeeds for owner', async () => {
-      const oldValue = await solo.expiryV2.getRampTime();
+      const oldValue = await dolomiteMargin.expiry.getRampTime();
       expect(oldValue).toEqual(INTEGERS.ONE_HOUR_IN_SECONDS);
-      await solo.expiryV2.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
+      await dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
         from: admin,
       });
-      const newValue = await solo.expiryV2.getRampTime();
+      const newValue = await dolomiteMargin.expiry.getRampTime();
       expect(newValue).toEqual(INTEGERS.ONE_DAY_IN_SECONDS);
     });
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.expiryV2.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
+        dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
           from: owner1,
         }),
       );
@@ -1233,7 +1233,7 @@ describe('ExpiryV2', () => {
 
   describe('#liquidateExpiredAccount', () => {
     it('Succeeds', async () => {
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate()
         .liquidateExpiredAccountV2({
           liquidMarketId: owedMarket,
@@ -1251,10 +1251,10 @@ describe('ExpiryV2', () => {
         .commit({ from: owner1 });
 
       const [held1, owed1, held2, owed2] = await Promise.all([
-        solo.getters.getAccountPar(owner1, accountNumber1, heldMarket),
-        solo.getters.getAccountPar(owner1, accountNumber1, owedMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, heldMarket),
-        solo.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(zero);
@@ -1272,12 +1272,12 @@ async function setExpiryForSelf(
   forceUpdate: boolean,
   options?: any,
 ) {
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
-    .setExpiryV2({
+    .setExpiry({
       primaryAccountOwner: owner2,
       primaryAccountId: accountNumber2,
-      expiryV2Args: [
+      expiryArgs: [
         {
           timeDelta,
           forceUpdate,
@@ -1295,12 +1295,12 @@ async function setExpiryForOther(
   forceUpdate: boolean,
   options?: any,
 ) {
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
-    .setExpiryV2({
+    .setExpiry({
       primaryAccountOwner: owner1,
       primaryAccountId: accountNumber1,
-      expiryV2Args: [
+      expiryArgs: [
         {
           timeDelta,
           forceUpdate,
@@ -1315,7 +1315,7 @@ async function setExpiryForOther(
 
 async function expectExpireOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .trade(combinedGlob)
     .commit({ ...options, from: owner1 });
@@ -1336,12 +1336,12 @@ async function expectExpiry(
   market: BigNumber,
   timeDelta: BigNumber,
 ) {
-  const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+  const { timestamp } = await dolomiteMargin.web3.eth.getBlock(txResult.blockNumber);
   const expectedExpiryTime = timeDelta.isZero()
     ? zero
     : timeDelta.plus(timestamp);
 
-  const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+  const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
   expect(logs.length).toEqual(1);
   const expirySetLog = logs[0];
   expect(expirySetLog.name).toEqual('ExpirySet');
@@ -1350,7 +1350,7 @@ async function expectExpiry(
   expect(expirySetLog.args.marketId).toEqual(market);
   expect(expirySetLog.args.time).toEqual(expectedExpiryTime);
 
-  const expiry = await solo.expiryV2.getExpiry(
+  const expiry = await dolomiteMargin.expiry.getExpiry(
     owner2,
     accountNumber2,
     owedMarket,
@@ -1359,9 +1359,9 @@ async function expectExpiry(
 }
 
 async function expectNoExpirySet(txResult: TxResult) {
-  const logs = solo.logs.parseLogs(txResult, { skipOperationLogs: true });
+  const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
   expect(logs.length).toEqual(0);
-  const expiry = await solo.expiryV2.getExpiry(
+  const expiry = await dolomiteMargin.expiry.getExpiry(
     owner2,
     accountNumber2,
     owedMarket,

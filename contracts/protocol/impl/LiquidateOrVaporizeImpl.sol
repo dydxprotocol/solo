@@ -20,6 +20,8 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Address } from "openzeppelin-solidity/contracts/utils/Address.sol";
+import { ILiquidationCallback } from "../interfaces/ILiquidationCallback.sol";
 import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Cache } from "../lib/Cache.sol";
@@ -33,6 +35,7 @@ import { Types } from "../lib/Types.sol";
 
 
 library LiquidateOrVaporizeImpl {
+    using Address for address;
     using Cache for Cache.MarketCache;
     using SafeMath for uint256;
     using Storage for Storage.State;
@@ -42,6 +45,13 @@ library LiquidateOrVaporizeImpl {
     // ============ Constants ============
 
     bytes32 constant FILE = "LiquidateOrVaporizeImpl";
+
+    // ============ Events ============
+
+    event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
+    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber);
+
+    // ============ Account Functions ============
 
     function liquidate(
         Storage.State storage state,
@@ -102,6 +112,8 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
 
+            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+
             state.setPar(
                 args.liquidAccount,
                 args.heldMarket,
@@ -113,6 +125,8 @@ library LiquidateOrVaporizeImpl {
                 owedWei
             );
         } else {
+            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+
             state.setPar(
                 args.liquidAccount,
                 args.owedMarket,
@@ -361,6 +375,31 @@ library LiquidateOrVaporizeImpl {
         });
 
         return (cache.get(heldMarketId).price, owedPriceAdj);
+    }
+
+    function _callLiquidateCallbackIfNecessary(
+        Actions.LiquidateArgs memory args,
+        Types.Wei memory heldDeltaWei,
+        Types.Wei memory owedDeltaWei
+    ) internal {
+        if (args.liquidAccount.owner.isContract()) {
+            (bool isCallSuccessful,) = args.liquidAccount.owner.call(
+                abi.encodeWithSelector(
+                    ILiquidationCallback(args.liquidAccount.owner).onLiquidate.selector,
+                    args.liquidAccount.number,
+                    args.heldMarket,
+                    heldDeltaWei,
+                    args.owedMarket,
+                    owedDeltaWei
+                )
+            );
+
+            if (isCallSuccessful) {
+                emit LogLiquidationCallbackSuccess(args.liquidAccount.owner, args.liquidAccount.number);
+            } else {
+                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number);
+            }
+        }
     }
 
 }

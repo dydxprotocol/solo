@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -16,7 +16,7 @@ import {
 
 let who: address;
 let operator: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
@@ -31,7 +31,7 @@ let defaultGlob: Deposit;
 const CANNOT_DEPOSIT_NEGATIVE = 'Exchange: Cannot transferIn negative';
 const cachedWeis = {
   walletWei: zero,
-  soloWei: zero,
+  dolomiteMarginWei: zero,
 };
 const defaultIndex = {
   lastUpdate: INTEGERS.ZERO,
@@ -43,10 +43,10 @@ describe('Deposit', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    who = solo.getDefaultAccount();
+    who = dolomiteMargin.getDefaultAccount();
     operator = accounts[6];
     defaultGlob = {
       primaryAccountOwner: who,
@@ -61,16 +61,16 @@ describe('Deposit', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, defaultIndex),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setMarketIndex(market, defaultIndex),
+      dolomiteMargin.testing.setAccountBalance(
         who,
         accountNumber,
         collateralMarket,
         collateralAmount,
       ),
-      solo.testing.tokenA.setMaximumSoloAllowance(who),
+      dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(who),
     ]);
     snapshotId = await snapshot();
   });
@@ -78,7 +78,7 @@ describe('Deposit', () => {
   beforeEach(async () => {
     await resetEVM(snapshotId);
     cachedWeis.walletWei = zero;
-    cachedWeis.soloWei = zero;
+    cachedWeis.dolomiteMarginWei = zero;
   });
 
   it('Basic deposit test', async () => {
@@ -90,10 +90,10 @@ describe('Deposit', () => {
 
   it('Succeeds for events', async () => {
     await Promise.all([
-      solo.testing.tokenA.issueTo(wei, operator),
-      solo.testing.tokenA.setMaximumSoloAllowance(operator),
-      solo.permissions.approveOperator(operator, { from: who }),
-      solo.testing.setAccountBalance(who, accountNumber, market, par),
+      dolomiteMargin.testing.tokenA.issueTo(wei, operator),
+      dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(operator),
+      dolomiteMargin.permissions.approveOperator(operator, { from: who }),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, par),
     ]);
     const txResult = await expectDepositOkay(
       { from: operator },
@@ -101,12 +101,12 @@ describe('Deposit', () => {
     );
 
     const [marketIndex, collateralIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(market),
-      solo.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(market),
+      dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
       expectBalances(par.times(2), wei.times(2), zero, wei),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -397,7 +397,7 @@ describe('Deposit', () => {
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: INTEGERS.ONE,
         supply: supplyIndex,
@@ -420,7 +420,7 @@ describe('Deposit', () => {
       .integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: INTEGERS.ONE,
         supply: supplyIndex,
@@ -441,12 +441,12 @@ describe('Deposit', () => {
     const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: borrowIndex,
         supply: INTEGERS.ONE,
       }),
-      solo.testing.setAccountBalance(who, accountNumber, market, negPar),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, negPar),
     ]);
     await expectDepositOkay({
       amount: {
@@ -463,12 +463,12 @@ describe('Deposit', () => {
     const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: borrowIndex,
         supply: INTEGERS.ONE,
       }),
-      solo.testing.setAccountBalance(who, accountNumber, market, negPar),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, negPar),
     ]);
     await expectDepositOkay({
       amount: {
@@ -483,21 +483,21 @@ describe('Deposit', () => {
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       issueTokensToUser(wei),
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         who,
         accountNumber,
         AccountStatus.Liquidating,
       ),
     ]);
     await expectDepositOkay({});
-    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
     expect(status).toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
     await Promise.all([
       issueTokensToUser(wei),
-      solo.permissions.approveOperator(operator),
+      dolomiteMargin.permissions.approveOperator(operator),
     ]);
     await expectDepositOkay({}, { from: operator });
   });
@@ -505,7 +505,7 @@ describe('Deposit', () => {
   it('Succeeds for global operator', async () => {
     await Promise.all([
       issueTokensToUser(wei),
-      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+      dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
     ]);
     await expectDepositOkay({}, { from: operator });
   });
@@ -539,27 +539,27 @@ describe('Deposit', () => {
 // ============ Helper Functions ============
 
 async function setAccountBalance(amount: BigNumber) {
-  return solo.testing.setAccountBalance(who, accountNumber, market, amount);
+  return dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, amount);
 }
 
 async function issueTokensToUser(amount: BigNumber) {
-  return solo.testing.tokenA.issueTo(amount, who);
+  return dolomiteMargin.testing.tokenA.issueTo(amount, who);
 }
 
 async function expectBalances(
   expectedPar: Integer,
   expectedWei: Integer,
   walletWei: Integer,
-  soloWei: Integer,
+  dolomiteMarginWei: Integer,
 ) {
   const [
     accountBalances,
     walletTokenBalance,
-    soloTokenBalance,
+    dolomiteMarginTokenBalance,
   ] = await Promise.all([
-    solo.getters.getAccountBalances(who, accountNumber),
-    solo.testing.tokenA.getBalance(who),
-    solo.testing.tokenA.getBalance(solo.contracts.soloMargin.options.address),
+    dolomiteMargin.getters.getAccountBalances(who, accountNumber),
+    dolomiteMargin.testing.tokenA.getBalance(who),
+    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
   ]);
   accountBalances.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
@@ -575,14 +575,14 @@ async function expectBalances(
     expect(balance.wei).toEqual(expected.wei);
   });
   expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
-  expect(soloTokenBalance.minus(cachedWeis.soloWei)).toEqual(soloWei);
+  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei)).toEqual(dolomiteMarginWei);
   cachedWeis.walletWei = walletTokenBalance;
-  cachedWeis.soloWei = soloTokenBalance;
+  cachedWeis.dolomiteMarginWei = dolomiteMarginTokenBalance;
 }
 
 async function expectDepositOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .deposit(combinedGlob)
     .commit(options);

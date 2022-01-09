@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2019 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,9 +35,8 @@ export enum ConfirmationType {
 
 export const MarketId = {
   WETH: new BigNumber(0),
-  SAI: new BigNumber(1),
-  USDC: new BigNumber(2),
-  DAI: new BigNumber(3),
+  USDC: new BigNumber(1),
+  DAI: new BigNumber(2),
 
   // This market number does not exist on the protocol,
   // but can be used for standard actions
@@ -45,14 +44,14 @@ export const MarketId = {
 };
 
 export const Networks = {
-  MAINNET: 1,
-  KOVAN: 42,
+  MUMBAI: 80001,
+  ARBITRUM: 42161,
+  ARBITRUM_RINKEBY: 421611,
 };
 
 export enum ProxyType {
   None = 'None',
   Payable = 'Payable',
-  Sender = 'Sender', // Deprecated
   Signed = 'Sender',
 }
 
@@ -66,7 +65,7 @@ export enum SigningMethod {
   CoinbaseWallet = 'CoinbaseWallet', // ... according to latest version of EIP-712 (CoinbaseWallet)
 }
 
-export interface SoloOptions {
+export interface DolomiteMarginOptions {
   defaultAccount?: address;
   confirmationType?: ConfirmationType;
   defaultConfirmations?: number;
@@ -231,12 +230,7 @@ export interface Vaporize extends AccountAction {
   amount: Amount;
 }
 
-export interface SetExpiry extends AccountAction {
-  marketId: Integer;
-  expiryTime: Integer;
-}
-
-export interface ExpiryV2Arg {
+export interface ExpiryArg {
   accountOwner: address;
   accountId: Integer;
   marketId: Integer;
@@ -244,26 +238,8 @@ export interface ExpiryV2Arg {
   forceUpdate: boolean;
 }
 
-export interface SetExpiryV2 extends AccountAction {
-  expiryV2Args: ExpiryV2Arg[];
-}
-
-export interface Refund extends AccountAction {
-  receiverAccountOwner: address;
-  receiverAccountId: Integer;
-  refundMarketId: Integer;
-  otherMarketId: Integer;
-  wei: Integer;
-}
-
-export interface DaiMigrate extends AccountAction {
-  userAccountOwner: address;
-  userAccountId: Integer;
-  amount: Amount;
-}
-
-export interface AccountActionWithOrder extends AccountAction {
-  order: LimitOrder | StopLimitOrder | CanonicalOrder;
+export interface SetExpiry extends AccountAction {
+  expiryArgs: ExpiryArg[];
 }
 
 export interface Call extends AccountAction {
@@ -355,98 +331,14 @@ export interface BalanceUpdate {
 
 // ============ Expiry ============
 
-export interface SetExpiry extends AccountAction {
-  marketId: Integer;
-  expiryTime: Integer;
-}
-
-export interface ExpiryV2Arg {
-  accountOwner: address;
-  accountId: Integer;
-  marketId: Integer;
-  timeDelta: Integer;
-}
-
-export interface SetExpiryV2 extends AccountAction {
-  expiryV2Args: ExpiryV2Arg[];
-}
-
-export interface SetApprovalForExpiryV2 extends AccountAction {
+export interface SetApprovalForExpiry extends AccountAction {
   sender: address;
   minTimeDelta: Integer;
 }
 
-export enum ExpiryV2CallFunctionType {
+export enum ExpiryCallFunctionType {
   SetExpiry = 0,
   SetApproval = 1,
-}
-
-// ============ Limit Orders ============
-
-export interface SignableOrder {
-  makerAccountOwner: address;
-  makerAccountNumber: Integer;
-}
-
-export interface SignedOrder extends SignableOrder {
-  typedSignature: string;
-}
-
-export interface LimitOrder extends SignableOrder {
-  makerMarket: Integer;
-  takerMarket: Integer;
-  makerAmount: Integer;
-  takerAmount: Integer;
-  takerAccountOwner: address;
-  takerAccountNumber: Integer;
-  expiration: Integer;
-  salt: Integer;
-}
-
-export interface SignedLimitOrder extends LimitOrder, SignedOrder {}
-
-export interface StopLimitOrder extends LimitOrder {
-  triggerPrice: Integer;
-  decreaseOnly: boolean;
-}
-
-export interface SignedStopLimitOrder extends StopLimitOrder, SignedOrder {}
-
-export interface CanonicalOrder extends SignableOrder {
-  isBuy: boolean;
-  isDecreaseOnly: boolean;
-  baseMarket: Integer;
-  quoteMarket: Integer;
-  amount: Integer;
-  limitPrice: Decimal;
-  triggerPrice: Decimal;
-  limitFee: Decimal;
-  expiration: Integer;
-  salt: Integer;
-}
-
-export interface SignedCanonicalOrder extends CanonicalOrder, SignedOrder {}
-
-export enum LimitOrderStatus {
-  Null = 0,
-  Approved = 1,
-  Canceled = 2,
-}
-
-export interface LimitOrderState {
-  status: LimitOrderStatus;
-  totalMakerFilledAmount: Integer;
-}
-
-export interface CanonicalOrderState {
-  status: LimitOrderStatus;
-  totalFilledAmount: Integer;
-}
-
-export enum LimitOrderCallFunctionType {
-  Approve = 0,
-  Cancel = 1,
-  SetFillArgs = 2,
 }
 
 // ============ Sender Proxy ============
@@ -495,262 +387,3 @@ export interface SignedOperation extends Operation {
 
 // ============ Api ============
 
-export enum ApiOrderTypeV2 {
-  LIMIT = 'LIMIT',
-  ISOLATED_MARKET = 'ISOLATED_MARKET',
-  STOP_LIMIT = 'STOP_LIMIT',
-}
-
-export enum ApiOrderType {
-  LIMIT_V1 = 'dydexLimitV1',
-}
-
-export enum ApiOrderStatus {
-  PENDING = 'PENDING',
-  OPEN = 'OPEN',
-  FILLED = 'FILLED',
-  PARTIALLY_FILLED = 'PARTIALLY_FILLED',
-  CANCELED = 'CANCELED',
-  UNTRIGGERED = 'UNTRIGGERED',
-}
-
-export enum ApiFillStatus {
-  PENDING = 'PENDING',
-  REVERTED = 'REVERTED',
-  CONFIRMED = 'CONFIRMED',
-}
-
-export enum ApiMarketName {
-  WETH_DAI = 'WETH-DAI',
-  WETH_USDC = 'WETH-USDC',
-  DAI_USDC = 'DAI-USDC',
-}
-
-export enum ApiOrderCancelReason {
-  EXPIRED = 'EXPIRED',
-  UNDERCOLLATERALIZED = 'UNDERCOLLATERALIZED',
-  CANCELED_ON_CHAIN = 'CANCELED_ON_CHAIN',
-  USER_CANCELED = 'USER_CANCELED',
-  SELF_TRADE = 'SELF_TRADE',
-  FAILED = 'FAILED',
-  COULD_NOT_FILL = 'COULD_NOT_FILL',
-  POST_ONLY_WOULD_CROSS = 'POST_ONLY_WOULD_CROSS',
-}
-
-export interface ApiOrderQueryV2 {
-  accountOwner?: string;
-  accountNumber?: Integer | string;
-  status?: ApiOrderStatus[];
-  market?: ApiMarketName[];
-  side?: ApiSide;
-  orderType?: ApiOrderTypeV2[];
-  limit?: number;
-  startingBefore?: Date;
-}
-
-export interface ApiOrderV2 extends ApiModel {
-  uuid: string;
-  id: string;
-  status: ApiOrderStatus;
-  accountOwner: string;
-  accountNumber: string;
-  orderType: ApiOrderTypeV2;
-  fillOrKill: boolean;
-  market: ApiMarketName;
-  side: ApiSide;
-  baseAmount: string;
-  quoteAmount: string;
-  filledAmount: string;
-  price: string;
-  cancelReason: ApiOrderCancelReason;
-}
-
-export interface ApiOrder extends ApiModel {
-  id: string;
-  uuid: string;
-  rawData: string;
-  orderType: ApiOrderType;
-  pairUuid: string;
-  makerAccountOwner: string;
-  makerAccountNumber: string;
-  makerAmount: string;
-  takerAmount: string;
-  makerAmountRemaining: string;
-  takerAmountRemaining: string;
-  price: string;
-  fillOrKill: boolean;
-  postOnly: boolean;
-  status: ApiOrderStatus;
-  expiresAt?: string;
-  unfillableReason?: string;
-  unfillableAt?: string;
-  pair: ApiPair;
-}
-
-export interface ApiPair extends ApiModel {
-  name: string;
-  makerCurrencyUuid: string;
-  takerCurrencyUuid: string;
-  makerCurrency: ApiCurrency;
-  takerCurrency: ApiCurrency;
-}
-
-export interface ApiCurrency extends ApiModel {
-  symbol: string;
-  contractAddress: string;
-  decimals: number;
-  soloMarket: number;
-}
-
-export interface ApiAccount extends ApiModel {
-  owner: string;
-  number: string;
-  balances: {
-    [marketNumber: string]: {
-      par: string;
-      wei: string;
-      expiresAt?: string;
-      expiryAddress?: string;
-    };
-  };
-}
-
-export interface ApiOrderOnOrderbook {
-  id: string;
-  uuid: string;
-  amount: string;
-  price: string;
-}
-
-export interface ApiFillQueryV2 {
-  orderId?: string;
-  side?: ApiSide;
-  market?: Market[];
-  transactionHash?: string;
-  accountOwner?: string;
-  accountNumber?: Integer | string;
-  startingBefore?: Date;
-  limit?: number;
-}
-
-export enum ApiLiquidity {
-  TAKER = 'TAKER',
-  MAKER = 'MAKER',
-}
-
-export interface ApiFillV2 extends ApiModel {
-  transactionHash: string;
-  status: ApiFillStatus;
-  market: ApiMarketName;
-  side: ApiSide;
-  price: string;
-  amount: string;
-  orderId: string;
-  accountOwner: string;
-  accountNumber: string;
-  liquidity: ApiLiquidity;
-}
-
-export interface ApiTradeQueryV2 {
-  orderId?: string;
-  side?: ApiSide;
-  market?: ApiMarketName[];
-  transactionHash?: string;
-  accountOwner?: string;
-  accountNumber?: Integer | string;
-  startingBefore?: Date;
-  limit?: number;
-}
-
-export interface ApiTradeV2 extends ApiModel {
-  transactionHash: string;
-  status: ApiFillStatus;
-  market: ApiMarketName;
-  side: ApiSide;
-  price: string;
-  amount: string;
-  makerOrderId: string;
-  makerAccountOwner: string;
-  makerAccountNumber: string;
-  takerOrderId: string;
-  takerAccountOwner: string;
-  takerAccountNumber: string;
-}
-
-export interface ApiMarket {
-  id: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  name: string;
-  symbol: string;
-  supplyIndex: string;
-  borrowIndex: string;
-  totalSupplyPar: string;
-  totalBorrowPar: string;
-  lastIndexUpdateSeconds: string;
-  oraclePrice: string;
-  collateralRatio: string;
-  marginPremium: string;
-  spreadPremium: string;
-  currencyUuid: string;
-  currency: ApiCurrency;
-  totalSupplyAPR: string;
-  totalBorrowAPR: string;
-  totalSupplyAPY: string;
-  totalBorrowAPY: string;
-  totalSupplyWei: string;
-  totalBorrowWei: string;
-}
-
-interface ApiModel {
-  uuid: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-}
-
-export enum OrderType {
-  DYDX = 'dydexLimitV1',
-  ETH_2_DAI = 'OasisV3',
-  ZERO_EX = '0x-V2',
-}
-
-export enum ApiOrderUpdateType {
-  NEW = 'NEW',
-  REMOVED = 'REMOVED',
-  UPDATED = 'UPDATED',
-}
-
-export enum ApiSide {
-  BUY = 'BUY',
-  SELL = 'SELL',
-}
-
-export interface ApiOrderbookUpdate {
-  type: ApiOrderUpdateType;
-  id: string;
-  side: ApiSide;
-  amount?: string;
-  price?: string;
-}
-
-export interface ApiMarketMessageV2 {
-  name: Market;
-  baseCurrency: {
-    currency: ApiCurrency;
-    decimals: number;
-    soloMarketId: number;
-  };
-  quoteCurrency: {
-    currency: ApiCurrency;
-    decimals: number;
-    soloMarketId: number;
-  };
-  minimumTickSize: BigNumber;
-  minimumOrderSize: BigNumber;
-  smallOrderThreshold: BigNumber;
-  makerFee: BigNumber;
-  largeTakerFee: BigNumber;
-  smallTakerFee: BigNumber;
-}

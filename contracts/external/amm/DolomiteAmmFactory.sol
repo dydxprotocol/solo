@@ -14,7 +14,7 @@ import "../../protocol/Permission.sol";
 contract DolomiteAmmFactory is IDolomiteAmmFactory {
     address public feeTo;
     address public feeToSetter;
-    address public soloMargin;
+    address public dolomiteMargin;
     address public transferProxy;
 
     mapping(address => mapping(address => address)) public getPair;
@@ -25,11 +25,11 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
 
     constructor(
         address _feeToSetter,
-        address _soloMargin,
+        address _dolomiteMargin,
         address _transferProxy
     ) public {
         feeToSetter = _feeToSetter;
-        soloMargin = _soloMargin;
+        dolomiteMargin = _dolomiteMargin;
         transferProxy = _transferProxy;
     }
 

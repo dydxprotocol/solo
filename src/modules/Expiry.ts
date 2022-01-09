@@ -8,7 +8,7 @@ import {
   TxResult,
 } from '../../src/types';
 
-export class ExpiryV2 {
+export class Expiry {
   private contracts: Contracts;
 
   // ============ Constructor ============
@@ -23,7 +23,7 @@ export class ExpiryV2 {
     options?: ContractConstantCallOptions,
   ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.expiryV2.methods.owner(),
+      this.contracts.expiry.methods.owner(),
       options,
     );
   }
@@ -35,7 +35,7 @@ export class ExpiryV2 {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiryV2.methods.getExpiry(
+      this.contracts.expiry.methods.getExpiry(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -53,7 +53,7 @@ export class ExpiryV2 {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiryV2.methods.g_approvedSender(approver, sender),
+      this.contracts.expiry.methods.g_approvedSender(approver, sender),
       options,
     );
     return new BigNumber(result);
@@ -66,7 +66,7 @@ export class ExpiryV2 {
     options?: ContractConstantCallOptions,
   ): Promise<{ heldPrice: Integer; owedPrice: Integer }> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiryV2.methods.getSpreadAdjustedPrices(
+      this.contracts.expiry.methods.getSpreadAdjustedPrices(
         heldMarketId.toFixed(0),
         owedMarketId.toFixed(0),
         expiryTimestamp.toFixed(0),
@@ -84,7 +84,7 @@ export class ExpiryV2 {
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.expiryV2.methods.g_expiryRampTime(),
+      this.contracts.expiry.methods.g_expiryRampTime(),
       options,
     );
     return new BigNumber(result);
@@ -98,7 +98,7 @@ export class ExpiryV2 {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiryV2.methods.approveSender(
+      this.contracts.expiry.methods.approveSender(
         sender,
         minTimeDelta.toFixed(0),
       ),
@@ -113,7 +113,7 @@ export class ExpiryV2 {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiryV2.methods.ownerSetExpiryRampTime(
+      this.contracts.expiry.methods.ownerSetExpiryRampTime(
         newExpiryRampTime.toFixed(0),
       ),
       options,

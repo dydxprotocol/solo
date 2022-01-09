@@ -40,7 +40,7 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
  * @title Storage
  * @author dYdX
  *
- * Functions for reading, writing, and verifying state in Solo
+ * Functions for reading, writing, and verifying state in DolomiteMargin
  */
 library Storage {
     using Cache for Cache.MarketCache;
@@ -129,7 +129,7 @@ library Storage {
         uint128 minBorrowedValueMax;
     }
 
-    // The entire storage state of Solo
+    // The entire storage state of DolomiteMargin
     struct State {
         // number of markets
         uint256 numMarkets;

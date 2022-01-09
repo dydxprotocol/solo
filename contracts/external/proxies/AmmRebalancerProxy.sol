@@ -28,7 +28,7 @@ import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "@uniswap/lib/contracts/libraries/Babylonian.sol";
 
 import "../../protocol/interfaces/IExchangeWrapper.sol";
-import "../../protocol/interfaces/ISoloMargin.sol";
+import "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import "../../protocol/lib/Account.sol";
 import "../../protocol/lib/Actions.sol";
@@ -42,9 +42,9 @@ import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
 import "../interfaces/IUniswapV2Router.sol";
 
-import "../helpers/OnlySolo.sol";
+import "../helpers/OnlyDolomiteMargin.sol";
 
-contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
+contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint;
 
@@ -66,13 +66,13 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address dolomiteAmmFactory,
         address[] memory routers,
         bytes32[] memory initCodeHashes
     )
     public
-    OnlySolo(soloMargin)
+    OnlyDolomiteMargin(dolomiteMargin)
     {
         DOLOMITE_AMM_FACTORY = dolomiteAmmFactory;
 
@@ -233,7 +233,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
             dolomiteMarketPath[dolomiteMarketPath.length - 1]
         );
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     function exchange(
@@ -245,7 +245,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
         bytes calldata orderData
     )
     external
-    onlySolo(msg.sender)
+    onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         (
         address router,
@@ -398,10 +398,10 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlySolo, Ownable {
     function _getMarketPathFromTokenPath(
         address[] memory path
     ) internal view returns (uint[] memory) {
-        SoloMargin soloMargin = SOLO_MARGIN;
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
         uint[] memory marketPath = new uint[](path.length);
         for (uint i = 0; i < path.length; i++) {
-            marketPath[i] = soloMargin.getMarketIdByTokenAddress(path[i]);
+            marketPath[i] = dolomiteMargin.getMarketIdByTokenAddress(path[i]);
         }
         return marketPath;
     }

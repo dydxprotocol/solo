@@ -81,7 +81,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.testSoloMargin.methods.setAccountBalance(
+      this.contracts.testDolomiteMargin.methods.setAccountBalance(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -103,7 +103,7 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.testSoloMargin.methods.setAccountStatus(
+      this.contracts.testDolomiteMargin.methods.setAccountStatus(
         {
           owner: accountOwner,
           number: accountNumber.toFixed(0),
@@ -120,14 +120,14 @@ export class Testing {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     if (index.lastUpdate.isZero()) {
-      const currentIndex = await this.contracts.testSoloMargin.methods
+      const currentIndex = await this.contracts.testDolomiteMargin.methods
         .getMarketCachedIndex(marketId.toFixed(0))
         .call();
       index.lastUpdate = new BigNumber(currentIndex.lastUpdate);
     }
 
     return this.contracts.callContractFunction(
-      this.contracts.testSoloMargin.methods.setMarketIndex(
+      this.contracts.testDolomiteMargin.methods.setMarketIndex(
         marketId.toFixed(0),
         {
           borrow: decimalToString(index.borrow),

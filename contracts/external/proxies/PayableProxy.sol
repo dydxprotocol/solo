@@ -21,26 +21,22 @@ pragma experimental ABIEncoderV2;
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 
 /**
- * @title PayableProxyForSoloMargin
+ * @title PayableProxy
  * @author dYdX
  *
- * Contract for wrapping/unwrapping ETH before/after interacting with Solo
+ * Contract for wrapping/unwrapping ETH before/after interacting with DolomiteMargin
  */
-contract PayableProxyForSoloMargin is
-    OnlySolo,
-    ReentrancyGuard
-{
+contract PayableProxy is OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Constants ============
 
-    bytes32 constant FILE = "PayableProxyForSoloMargin";
+    bytes32 constant FILE = "PayableProxy";
 
     // ============ Storage ============
 
@@ -49,14 +45,14 @@ contract PayableProxyForSoloMargin is
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address payable weth
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {
         WETH = WETH9(weth);
-        WETH.approve(soloMargin, uint256(-1));
+        WETH.approve(dolomiteMargin, uint256(-1));
     }
 
     // ============ Public Functions ============
@@ -116,7 +112,7 @@ contract PayableProxyForSoloMargin is
             }
         }
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
 
         // return all remaining WETH to the sendEthTo as ETH
         uint256 remainingWeth = weth.balanceOf(address(this));

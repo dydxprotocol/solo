@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
-import { ISoloMargin } from "../../protocol/interfaces/ISoloMargin.sol";
+import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
@@ -33,20 +33,18 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 
-import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 
 import { DolomiteAmmRouterProxy } from "./DolomiteAmmRouterProxy.sol";
 
 
 /**
- * @title LiquidatorProxyV1ForSoloMargin
+ * @title LiquidatorProxyV1WithAmm
  * @author dYdX
  *
- * Contract for liquidating other accounts in Solo. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
  */
-contract LiquidatorProxyV1WithAmmForSoloMargin is
-ReentrancyGuard
-{
+contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
     using Math for uint256;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -54,7 +52,7 @@ ReentrancyGuard
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "LiquidatorV1WithAmmForSoloMargin";
+    bytes32 constant FILE = "LiquidatorProxyV1WithAmm";
 
     // ============ Structs ============
 
@@ -62,7 +60,7 @@ ReentrancyGuard
         Account.Info solidAccount;
         Account.Info liquidAccount;
         MarketInfo[] markets;
-        IExpiryV2 EXPIRY_PROXY;
+        IExpiry EXPIRY_PROXY;
         uint32 expiry;
     }
 
@@ -90,22 +88,22 @@ ReentrancyGuard
 
     // ============ Storage ============
 
-    ISoloMargin SOLO_MARGIN;
+    IDolomiteMargin DOLOMITE_MARGIN;
     DolomiteAmmRouterProxy ROUTER_PROXY;
-    IExpiryV2 EXPIRY_PROXY;
+    IExpiry EXPIRY_PROXY;
 
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address dolomiteAmmRouterProxy,
         address expiryProxy
     )
     public
     {
-        SOLO_MARGIN = ISoloMargin(soloMargin);
+        DOLOMITE_MARGIN = IDolomiteMargin(dolomiteMargin);
         ROUTER_PROXY = DolomiteAmmRouterProxy(dolomiteAmmRouterProxy);
-        EXPIRY_PROXY = IExpiryV2(expiryProxy);
+        EXPIRY_PROXY = IExpiry(expiryProxy);
     }
 
     // ============ Public Functions ============
@@ -147,28 +145,28 @@ ReentrancyGuard
         );
 
         Require.that(
-            !SOLO_MARGIN.getAccountPar(liquidAccount, owedMarket).isPositive(),
+            !DOLOMITE_MARGIN.getAccountPar(liquidAccount, owedMarket).isPositive(),
             FILE,
             "owed market cannot be positive",
             owedMarket
         );
 
         Require.that(
-            SOLO_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive(),
+            DOLOMITE_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive(),
             FILE,
             "held market cannot be negative",
             heldMarket
         );
 
         Require.that(
-            SOLO_MARGIN.getMarketIdByTokenAddress(tokenPath[0]) == heldMarket,
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(tokenPath[0]) == heldMarket,
             FILE,
             "0-index token path incorrect",
             tokenPath[0]
         );
 
         Require.that(
-            SOLO_MARGIN.getMarketIdByTokenAddress(tokenPath[tokenPath.length - 1]) == owedMarket,
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(tokenPath[tokenPath.length - 1]) == owedMarket,
             FILE,
             "last-index token path incorrect",
             tokenPath[tokenPath.length - 1]
@@ -186,7 +184,7 @@ ReentrancyGuard
         solidAccount : solidAccount,
         liquidAccount : liquidAccount,
         markets : getMarketsInfo(),
-        EXPIRY_PROXY: expiry > 0 ? EXPIRY_PROXY : IExpiryV2(address(0)),
+        EXPIRY_PROXY: expiry > 0 ? EXPIRY_PROXY : IExpiry(address(0)),
         expiry: uint32(expiry)
         });
 
@@ -247,7 +245,7 @@ ReentrancyGuard
         accounts = constructAccountsArray(constants, accounts);
 
         // execute the liquidations
-        SOLO_MARGIN.operate(
+        DOLOMITE_MARGIN.operate(
             accounts,
             constructActionsArray(constants, cache, accounts, actions)
         );
@@ -295,7 +293,7 @@ ReentrancyGuard
         // check credentials for msg.sender
         Require.that(
             constants.solidAccount.owner == msg.sender
-            || SOLO_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
+            || DOLOMITE_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
             constants.solidAccount.owner
@@ -312,8 +310,8 @@ ReentrancyGuard
             "Liquid account no supply"
         );
         Require.that(
-            SOLO_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
-            !isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, SOLO_MARGIN.getMarginRatio()),
+            DOLOMITE_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+            !isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, DOLOMITE_MARGIN.getMarginRatio()),
             FILE,
             "Liquid account not liquidatable"
         );
@@ -356,7 +354,7 @@ ReentrancyGuard
         Monetary.Value memory borrowValue;
 
         for (uint256 m = 0; m < constants.markets.length; m++) {
-            Types.Par memory par = SOLO_MARGIN.getAccountPar(account, m);
+            Types.Par memory par = DOLOMITE_MARGIN.getAccountPar(account, m);
             if (par.isZero()) {
                 continue;
             }
@@ -380,12 +378,12 @@ ReentrancyGuard
     view
     returns (MarketInfo[] memory)
     {
-        uint256 numMarkets = SOLO_MARGIN.getNumMarkets();
+        uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
         MarketInfo[] memory markets = new MarketInfo[](numMarkets);
         for (uint256 m = 0; m < numMarkets; m++) {
             markets[m] = MarketInfo({
-            price : SOLO_MARGIN.getMarketPrice(m),
-            index : SOLO_MARGIN.getMarketCurrentIndex(m)
+            price : DOLOMITE_MARGIN.getMarketPrice(m),
+            index : DOLOMITE_MARGIN.getMarketCurrentIndex(m)
             });
         }
         return markets;
@@ -417,7 +415,7 @@ ReentrancyGuard
         } else {
             owedPriceAdj = Decimal.mul(
                 owedPrice,
-                Decimal.onePlus(SOLO_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket))
+                Decimal.onePlus(DOLOMITE_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket))
             );
         }
 
@@ -425,15 +423,15 @@ ReentrancyGuard
         toLiquidate : 0,
         solidHeldUpdateWithReward : 0,
         solidHeldWei : Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
+                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
                 constants.markets[heldMarket].index
             ),
         liquidHeldWei : Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
+                DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
                 constants.markets[heldMarket].index
             ),
         liquidOwedWei : Interest.parToWei(
-                SOLO_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
+                DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
                 constants.markets[owedMarket].index
             ),
         heldMarket : heldMarket,

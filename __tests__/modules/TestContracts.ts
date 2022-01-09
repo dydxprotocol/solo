@@ -20,7 +20,7 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 
 // Contracts
-import { TestSoloMargin } from '../../build/testing_wrappers/TestSoloMargin';
+import { TestDolomiteMargin } from '../../build/testing_wrappers/TestDolomiteMargin';
 import { TestToken } from '../../build/testing_wrappers/TestToken';
 import { TestLib } from '../../build/testing_wrappers/TestLib';
 import { TestAutoTrader } from '../../build/testing_wrappers/TestAutoTrader';
@@ -35,7 +35,7 @@ import { TestPolynomialInterestSetter } from '../../build/testing_wrappers/TestP
 import { TestDoubleExponentInterestSetter } from '../../build/testing_wrappers/TestDoubleExponentInterestSetter';
 
 // JSON
-import testSoloMarginJson from '../../build/testing_contracts/TestSoloMargin.json';
+import testDolomiteMarginJson from '../../build/testing_contracts/TestDolomiteMargin.json';
 import tokenAJson from '../../build/testing_contracts/TokenA.json';
 import tokenBJson from '../../build/testing_contracts/TokenB.json';
 import tokenCJson from '../../build/testing_contracts/TokenC.json';
@@ -60,19 +60,21 @@ import testInterestSetterJson from '../../build/testing_contracts/TestInterestSe
 import testUniswapV2PairJson from '../../build/testing_contracts/UniswapV2Pair.json';
 import testUniswapV2RouterJson from '../../build/testing_contracts/UniswapV2Router02.json';
 import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Factory.json';
+import testAmmRebalancerProxyJson from '../../build/testing_contracts/TestAmmRebalancerProxy.json';
 
-import { address, SoloOptions } from '../../src/types';
+import { address, DolomiteMarginOptions } from '../../src/types';
 import { Contracts } from '../../src/lib/Contracts';
 import { UniswapV2Factory } from '../../build/testing_wrappers/UniswapV2Factory';
 import { UniswapV2Router02 } from '../../build/testing_wrappers/UniswapV2Router02';
 import { UniswapV2Pair } from '../../build/testing_wrappers/UniswapV2Pair';
+import { TestAmmRebalancerProxy } from '../../build/testing_wrappers/TestAmmRebalancerProxy';
 
 export class TestContracts extends Contracts {
   // Contract instances
-  public soloMargin: TestSoloMargin;
+  public dolomiteMargin: TestDolomiteMargin;
 
   // Testing contract instances
-  public testSoloMargin: TestSoloMargin;
+  public testDolomiteMargin: TestDolomiteMargin;
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
@@ -81,6 +83,7 @@ export class TestContracts extends Contracts {
   public tokenF: TestToken;
   public erroringToken: TestToken;
   public omiseToken: TestToken;
+  public testAmmRebalancerProxy: TestAmmRebalancerProxy;
   public testLib: TestLib;
   public testAutoTrader: TestAutoTrader;
   public testCallee: TestCallee;
@@ -99,15 +102,15 @@ export class TestContracts extends Contracts {
     provider: Provider,
     networkId: number,
     web3: Web3,
-    options: SoloOptions,
+    options: DolomiteMarginOptions,
   ) {
     super(provider, networkId, web3, options);
 
     // Testing Contracts
-    this.testSoloMargin = new this.web3.eth.Contract(
-      testSoloMarginJson.abi,
-    ) as TestSoloMargin;
-    this.soloMargin = this.testSoloMargin;
+    this.testDolomiteMargin = new this.web3.eth.Contract(
+      testDolomiteMarginJson.abi,
+    ) as TestDolomiteMargin;
+    this.dolomiteMargin = this.testDolomiteMargin;
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
@@ -120,6 +123,9 @@ export class TestContracts extends Contracts {
     this.omiseToken = new this.web3.eth.Contract(
       omiseTokenJson.abi,
     ) as TestToken;
+    this.testAmmRebalancerProxy = new this.web3.eth.Contract(
+      testAmmRebalancerProxyJson.abi,
+    ) as TestAmmRebalancerProxy;
     this.testLib = new this.web3.eth.Contract(testLibJson.abi) as TestLib;
     this.testAutoTrader = new this.web3.eth.Contract(
       testAutoTraderJson.abi,
@@ -185,11 +191,11 @@ export class TestContracts extends Contracts {
       return;
     }
 
-    this.soloMargin.setProvider(provider);
+    this.dolomiteMargin.setProvider(provider);
 
     const contracts = [
       // test contracts
-      { contract: this.testSoloMargin, json: testSoloMarginJson },
+      { contract: this.testDolomiteMargin, json: testDolomiteMarginJson },
       { contract: this.tokenA, json: tokenAJson },
       { contract: this.tokenB, json: tokenBJson },
       { contract: this.tokenC, json: tokenCJson },
@@ -198,6 +204,7 @@ export class TestContracts extends Contracts {
       { contract: this.tokenF, json: tokenFJson },
       { contract: this.erroringToken, json: erroringTokenJson },
       { contract: this.omiseToken, json: omiseTokenJson },
+      { contract: this.testAmmRebalancerProxy, json: testAmmRebalancerProxyJson, },
       { contract: this.testLib, json: testLibJson },
       { contract: this.testAutoTrader, json: testAutoTraderJson },
       { contract: this.testCallee, json: testCalleeJson },
@@ -247,6 +254,7 @@ export class TestContracts extends Contracts {
     this.tokenF.options.from = account;
     this.erroringToken.options.from = account;
     this.omiseToken.options.from = account;
+    this.testAmmRebalancerProxy.options.from = account;
     this.testLib.options.from = account;
     this.testAutoTrader.options.from = account;
     this.testCallee.options.from = account;

@@ -2,7 +2,7 @@ pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
 import "../../protocol/interfaces/IAutoTrader.sol";
-import "../../protocol/interfaces/ISoloMargin.sol";
+import "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
@@ -23,8 +23,8 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public factory;
-    address public soloMargin;
-    address public soloMarginTransferProxy;
+    address public dolomiteMargin;
+    address public dolomiteMarginTransferProxy;
     address public token0;
     address public token1;
 
@@ -48,7 +48,7 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     }
 
     struct Cache {
-        ISoloMargin soloMargin;
+        IDolomiteMargin dolomiteMargin;
         uint marketId0;
         uint marketId1;
         uint balance0Wei;
@@ -67,11 +67,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         // sufficient check
         token0 = _token0;
         token1 = _token1;
-        soloMargin = IDolomiteAmmFactory(msg.sender).soloMargin();
-        soloMarginTransferProxy = _transferProxy;
+        dolomiteMargin = IDolomiteAmmFactory(msg.sender).dolomiteMargin();
+        dolomiteMarginTransferProxy = _transferProxy;
 
-        marketId0 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token0));
-        marketId1 = uint128(ISoloMargin(soloMargin).getMarketIdByTokenAddress(token1));
+        marketId0 = uint128(IDolomiteMargin(dolomiteMargin).getMarketIdByTokenAddress(token0));
+        marketId1 = uint128(IDolomiteMargin(dolomiteMargin).getMarketIdByTokenAddress(token1));
     }
 
     function token0Symbol() public view returns (string memory) {
@@ -93,10 +93,10 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     }
 
     function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
 
-        uint reserve0InterestIndex = _soloMargin.getMarketCurrentIndex(marketId0).supply;
-        uint reserve1InterestIndex = _soloMargin.getMarketCurrentIndex(marketId1).supply;
+        uint reserve0InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId0).supply;
+        uint reserve1InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId1).supply;
 
         _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
         _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
@@ -107,9 +107,9 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     function mint(address to) external lock returns (uint liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
-        uint balance0 = _getTokenBalancePar(_soloMargin, marketId0);
-        uint balance1 = _getTokenBalancePar(_soloMargin, marketId1);
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
+        uint balance0 = _getTokenBalancePar(_dolomiteMargin, marketId0);
+        uint balance1 = _getTokenBalancePar(_dolomiteMargin, marketId1);
         uint amount0 = balance0.sub(_reserve0);
         uint amount1 = balance1.sub(_reserve1);
 
@@ -150,22 +150,22 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     function burn(address to, uint toAccountNumber) external lock returns (uint amount0Wei, uint amount1Wei) {
         (uint112 _reserve0, uint112 _reserve1,) = getReservesPar();
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
         uint[] memory markets = new uint[](2);
         markets[0] = marketId0;
         markets[1] = marketId1;
 
         // gas savings
-        uint balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
-        uint balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
+        uint balance0 = _getTokenBalancePar(_dolomiteMargin, markets[0]);
+        uint balance1 = _getTokenBalancePar(_dolomiteMargin, markets[1]);
 
         bool feeOn;
         // new scope to prevent stack-too-deep issues
         {
             uint liquidity = balanceOf[address(this)];
 
-            uint token0Index = _soloMargin.getMarketCurrentIndex(markets[0]).supply;
-            uint token1Index = _soloMargin.getMarketCurrentIndex(markets[1]).supply;
+            uint token0Index = _dolomiteMargin.getMarketCurrentIndex(markets[0]).supply;
+            uint token1Index = _dolomiteMargin.getMarketCurrentIndex(markets[1]).supply;
 
             feeOn = _mintFee(_reserve0, _reserve1);
             uint _totalSupply = totalSupply;
@@ -185,7 +185,7 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         amounts[0] = amount0Wei;
         amounts[1] = amount1Wei;
 
-        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+        ITransferProxy(dolomiteMarginTransferProxy).transferMultipleWithMarkets(
             0,
             to,
             toAccountNumber,
@@ -193,8 +193,8 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             amounts
         );
 
-        balance0 = _getTokenBalancePar(_soloMargin, markets[0]);
-        balance1 = _getTokenBalancePar(_soloMargin, markets[1]);
+        balance0 = _getTokenBalancePar(_dolomiteMargin, markets[0]);
+        balance1 = _getTokenBalancePar(_dolomiteMargin, markets[1]);
 
         _update(balance0, balance1, _reserve0, _reserve1);
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
@@ -235,20 +235,20 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     returns (Types.AssetAmount memory) {
         Cache memory cache;
         {
-            ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+            IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
             cache = Cache({
-            soloMargin : _soloMargin,
+            dolomiteMargin : _dolomiteMargin,
             marketId0 : marketId0,
             marketId1 : marketId1,
-            balance0Wei : _getTokenBalanceWei(_soloMargin, marketId0),
-            balance1Wei : _getTokenBalanceWei(_soloMargin, marketId1),
-            index0 : _soloMargin.getMarketCurrentIndex(marketId0),
-            index1 : _soloMargin.getMarketCurrentIndex(marketId1)
+            balance0Wei : _getTokenBalanceWei(_dolomiteMargin, marketId0),
+            balance1Wei : _getTokenBalanceWei(_dolomiteMargin, marketId1),
+            index0 : _dolomiteMargin.getMarketCurrentIndex(marketId0),
+            index1 : _dolomiteMargin.getMarketCurrentIndex(marketId1)
             });
         }
 
         require(
-            msg.sender == address(cache.soloMargin),
+            msg.sender == address(cache.dolomiteMargin),
             "DLP: INVALID_SENDER"
         );
         require(
@@ -351,20 +351,20 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     // force balances to match reserves
     function skim(address to, uint toAccountNumber) external lock {
         // gas savings
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
 
         uint[] memory markets = new uint[](2);
         markets[0] = marketId0;
         markets[1] = marketId1;
 
-        uint amount0 = _getTokenBalancePar(_soloMargin, markets[0]).sub(reserve0Par);
-        uint amount1 = _getTokenBalancePar(_soloMargin, markets[1]).sub(reserve1Par);
+        uint amount0 = _getTokenBalancePar(_dolomiteMargin, markets[0]).sub(reserve0Par);
+        uint amount1 = _getTokenBalancePar(_dolomiteMargin, markets[1]).sub(reserve1Par);
 
         uint[] memory amounts = new uint[](2);
         amounts[0] = amount0;
         amounts[1] = amount1;
 
-        ITransferProxy(soloMarginTransferProxy).transferMultipleWithMarkets(
+        ITransferProxy(dolomiteMarginTransferProxy).transferMultipleWithMarkets(
             0,
             to,
             toAccountNumber,
@@ -375,10 +375,10 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
     // force reserves to match balances
     function sync() external lock {
-        ISoloMargin _soloMargin = ISoloMargin(soloMargin);
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
         _update(
-            _getTokenBalancePar(_soloMargin, marketId0),
-            _getTokenBalancePar(_soloMargin, marketId1),
+            _getTokenBalancePar(_dolomiteMargin, marketId0),
+            _getTokenBalancePar(_dolomiteMargin, marketId1),
             reserve0Par,
             reserve1Par
         );
@@ -441,17 +441,17 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     }
 
     function _getTokenBalancePar(
-        ISoloMargin _soloMargin,
+        IDolomiteMargin _dolomiteMargin,
         uint marketId
     ) internal view returns (uint) {
-        return _soloMargin.getAccountPar(Account.Info(address(this), 0), marketId).value;
+        return _dolomiteMargin.getAccountPar(Account.Info(address(this), 0), marketId).value;
     }
 
     function _getTokenBalanceWei(
-        ISoloMargin _soloMargin,
+        IDolomiteMargin _dolomiteMargin,
         uint marketId
     ) internal view returns (uint) {
-        return _soloMargin.getAccountWei(Account.Info(address(this), 0), marketId).value;
+        return _dolomiteMargin.getAccountWei(Account.Info(address(this), 0), marketId).value;
     }
 
 }

@@ -48,13 +48,13 @@ contract IRecyclable {
     function TOKEN() external view returns (IERC20);
 
     /**
-     * A callback for the recyclable market that allows it to perform any cleanup logic, preventing its usage with Solo
-     * once this transaction completes. #isRecycled  should return `true` after this function is called.
+     * A callback for the recyclable market that allows it to perform any cleanup logic, preventing its usage with
+     * DolomiteMargin once this transaction completes. #isRecycled  should return `true` after this function is called.
      */
     function recycle() external;
 
     /**
-     * Called when the market is initialized in Solo
+     * Called when the market is initialized in DolomiteMargin
      */
     function initialize() external;
 
@@ -66,7 +66,7 @@ contract IRecyclable {
     function getAccountPar(Account.Info calldata account) external view returns (Types.Par memory);
 
     /**
-     * @return  True if this contract is recycled, disallowing further deposits/interactions with Solo and freeing this
+     * @return  True if this contract is recycled, disallowing further deposits/interactions with DolomiteMargin and freeing this
      *          token's `MARKET_ID`.
      */
     function isRecycled() external view returns (bool);
@@ -76,15 +76,15 @@ contract IRecyclable {
     }
 
     /**
-     * @dev Deposits the underlying token into this smart contract and adds to the user's balance with Solo. The user
+     * @dev Deposits the underlying token into this smart contract and adds to the user's balance with DolomiteMargin. The user
      *      must set an allowance for `TOKEN`, using this contract as the `spender`.
      */
-    function depositIntoSolo(uint accountNumber, uint amount) external;
+    function depositIntoDolomiteMargin(uint accountNumber, uint amount) external;
 
     /**
      * @dev Withdraws a specific amount of a user's balance from the smart contract to `msg.sender`
      */
-    function withdrawFromSolo(uint accountNumber, uint amount) external;
+    function withdrawFromDolomiteMargin(uint accountNumber, uint amount) external;
 
     /**
      * @dev Withdraws the user's remaining balance from the smart contract, after this contract has been recycled.

@@ -64,7 +64,7 @@ library Actions {
     // ============ Structs ============
 
     /*
-     * Arguments that are passed to Solo in an ordered list as part of a single operation.
+     * Arguments that are passed to DolomiteMargin in an ordered list as part of a single operation.
      * Each ActionArgs has an actionType which specifies which action struct that this data will be
      * parsed into before being processed.
      */
@@ -82,7 +82,7 @@ library Actions {
     // ============ Action Types ============
 
     /*
-     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
+     * Moves tokens from an address to DolomiteMargin. Can either repay a borrow or provide additional supply.
      */
     struct DepositArgs {
         Types.AssetAmount amount;
@@ -92,7 +92,7 @@ library Actions {
     }
 
     /*
-     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
+     * Moves tokens from DolomiteMargin to another address. Can either borrow tokens or reduce the amount
      * previously supplied.
      */
     struct WithdrawArgs {
@@ -105,7 +105,7 @@ library Actions {
     /*
      * Transfers balance between two accounts. The msg.sender must be an operator for both accounts.
      * The amount field applies to accountOne.
-     * This action does not require any token movement since the trade is done internally to Solo.
+     * This action does not require any token movement since the trade is done internally to DolomiteMargin.
      */
     struct TransferArgs {
         Types.AssetAmount amount;
@@ -148,7 +148,7 @@ library Actions {
      * which it is trading on-behalf-of). The amount field applies to the makerAccount and the
      * inputMarket. This proposed change to the makerAccount is passed to the AutoTrader which will
      * quote a change for the makerAccount in the outputMarket (or will disallow the trade).
-     * This action does not require any token movement since the trade is done internally to Solo.
+     * This action does not require any token movement since the trade is done internally to DolomiteMargin.
      */
     struct TradeArgs {
         Types.AssetAmount amount;
@@ -182,10 +182,10 @@ library Actions {
     }
 
     /*
-     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances
-     * remaining. The arbitrageur pays back the negative asset (owedMarket) of the vaporAccount in
-     * exchange for a collateral asset (heldMarket) at a favorable spread. However, since the
-     * liquidAccount has no collateral assets, the collateral must come from Solo's excess tokens.
+     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances remaining. The arbitrageur
+     * pays back the negative asset (owedMarket) of the vaporAccount in exchange for a collateral asset (heldMarket) at
+     * a favorable spread. However, since the liquidAccount has no collateral assets, the collateral must come from
+     * DolomiteMargin's excess tokens.
      */
     struct VaporizeArgs {
         Types.AssetAmount amount;

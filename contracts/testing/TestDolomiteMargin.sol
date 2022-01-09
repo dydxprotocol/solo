@@ -19,16 +19,14 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SoloMargin } from "../protocol/SoloMargin.sol";
+import { DolomiteMargin } from "../protocol/DolomiteMargin.sol";
 import { Account } from "../protocol/lib/Account.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
 import { Types } from "../protocol/lib/Types.sol";
 
 
-contract TestSoloMargin is
-    SoloMargin
-{
+contract TestDolomiteMargin is DolomiteMargin {
     using Storage for Storage.State;
 
     // ============ Constructor ============
@@ -38,7 +36,7 @@ contract TestSoloMargin is
         Storage.RiskLimits memory rl
     )
         public
-        SoloMargin(rp, rl)
+        DolomiteMargin(rp, rl)
     {}
 
     // ============ Testing Functions ============

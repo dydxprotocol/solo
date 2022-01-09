@@ -4,15 +4,15 @@
 
 <div align="center">
   <a href="https://circleci.com/gh/dolomite-exchange/dolomite-v2-protocol/tree/master" style="text-decoration:none;">
-    <img src="https://img.shields.io/circleci/project/github/dolomite-exchange/dolomite-v2-protocol.svg" alt='CI' />
+    <img src="https://img.shields.io/circleci/project/github/dolomite--exchange/dolomite--margin.svg" alt='CI' />
   </a>
-  <a href='https://www.npmjs.com/package/@dolomite-exchange/v2-protocol' style="text-decoration:none;">
-    <img src='https://img.shields.io/npm/v/@dolomite-exchange/v2-protocol.svg' alt='NPM' />
+  <a href='https://www.npmjs.com/package/@dolomite-exchange/dolomite-margin' style="text-decoration:none;">
+    <img src='https://img.shields.io/npm/v/@dolomite-exchange/dolomite-margin.svg' alt='NPM' />
   </a>
-  <a href='https://coveralls.io/github/dolomite-exchange/solo?branch=master'>
-    <img src='https://coveralls.io/repos/github/dolomite-exchange/solo/badge.svg?branch=master' alt='Coverage Status' />
+  <a href='https://coveralls.io/github/dolomite-exchange/dolomite-margin?branch=master'>
+    <img src='https://coveralls.io/repos/github/dolomite-exchange/dolomite-margin/badge.svg?branch=master' alt='Coverage Status' />
   </a>
-  <a href='https://github.com/dolomite-exchange/solo/blob/master/LICENSE' style="text-decoration:none;">
+  <a href='https://github.com/dolomite-exchange/dolomite-margin/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/Apache--2.0-llicense-red?longCache=true' alt='License' />
   </a>
   <a href='https://t.me/dolomite_official' style="text-decoration:none;">
@@ -35,7 +35,7 @@
  - [Contributing](#contributing)
  - [License](#license)
 
-## Changes from dYdX Solo
+## Changes from dYdX's deployment
 
 Most of the changes made to the protocol are auxiliary and don't impact the core contracts. These core changes are
 rooted in fixing a bug with the protocol and making the process of adding a large number of markets much more gas
@@ -68,9 +68,9 @@ array the bitmap is read into is sorted, it can be searched in later parts of `O
 iterated in its entirety in `O(m)`, where `m` represents the number of items. 
  - Added `isRecyclable` field to the `Storage.Market` struct that denotes a market being allowed to be removed and 
 reused. The technicalities of this implementation are intricate and cautious. Recyclable markets may only interact
-with Solo through the Recyclable smart contract, expirations, and liquidations. The recyclable smart contract has logic 
+with DolomiteMargin through the Recyclable smart contract, expirations, and liquidations. The recyclable smart contract has logic 
 for depositing, withdrawing, withdrawing after recycling, and trading with instances of `IExchangeWrapper`. Using this 
-recyclable smart contract as a proxy, the implementation can finely control how a user interacts with Solo via this 
+recyclable smart contract as a proxy, the implementation can finely control how a user interacts with DolomiteMargin via this 
 market. However, there are two circumstances where control cannot be maintained, expirations and liquidations. If an 
 expiration or liquidation occurs, a check is done that ensures no collateral is held in by a user whose address is not 
 the same as the `IRecyclable` (recall, IRecyclable is the user in all other circumstances) smart contract. This ensures 
@@ -89,14 +89,14 @@ so newly-added markets can reuse the old ID upon being added.
 
 ## Documentation
 
-Since the original codebase is a fork of dYdX's Solo, check out the original documentation at 
+Since the original codebase is a fork of dYdX's DolomiteMargin, check out the original documentation at 
 [legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange).
 
 New documentation will be written
 
 ## Install
 
-`npm i -s @dolomite-exchange/v2-protocol`
+`npm i -s @dolomite-exchange/dolomite-margin`
 
 ## Contracts
 
@@ -104,28 +104,28 @@ New documentation will be written
 
 |Contract Name|Description|Address|
 |---|---|---|
-|[`SoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/SoloMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
-|[`PayableProxyForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
-|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
-|[`ExpiryV2`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/ExpiryV2.sol)|Handles account expirations (version 2)|[](https://etherscan.io/address/)|
-|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
-|[`AdminImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/AdminImpl.sol)|SoloMargin library containing admin functions|[](https://etherscan.io/address/)|
-|[`OperationImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/OperationImpl.sol)|SoloMargin library containing operation functions|[](https://etherscan.io/address/)|
-|[`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/solo/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)|SoloMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`|[](https://etherscan.io/address/)|
-|[`LiquidatorProxyV1ForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1ForSoloMargin.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
-|[`LiquidatorProxyV1WithAmmForSoloMargin`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmmForSoloMargin.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
-|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
-|[`SignedOperationProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
-|[`TransferProxy`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
-|[`SimpleFeeOwner`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
-|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
-|[`DolomiteAmmPair`](https://github.com/dolomite-exchange/solo/blob/master/contracts/external/amm/DolomiteAmmPair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with Solo, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
+|[`DolomiteMargin`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/DolomiteMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
+|[`PayableProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
+|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
+|[`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol)|Handles account expirations|[](https://etherscan.io/address/)|
+|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
+|[`AdminImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/AdminImpl.sol)|DolomiteMargin library containing admin functions|[](https://etherscan.io/address/)|
+|[`OperationImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/OperationImpl.sol)|DolomiteMargin library containing operation functions|[](https://etherscan.io/address/)|
+|[`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)|DolomiteMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`|[](https://etherscan.io/address/)|
+|[`LiquidatorProxyV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
+|[`LiquidatorProxyV1WithAmm`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmm.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
+|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
+|[`SignedOperationProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
+|[`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
+|[`SimpleFeeOwner`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
+|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
+|[`DolomiteAmmPair`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmPair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with DolomiteMargin, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
 
 ## Security
 
 ### Independent Audits
 
-The original Solo smart contracts were audited independently by both
+The original DolomiteMargin smart contracts were audited independently by both
 [Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
 
 **[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**

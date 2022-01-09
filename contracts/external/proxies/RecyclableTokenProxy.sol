@@ -23,7 +23,7 @@ import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20
 import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import {DolomiteMargin} from "../../protocol/DolomiteMargin.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
@@ -31,36 +31,36 @@ import { Types } from "../../protocol/lib/Types.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IRecyclable } from "../../protocol/interfaces/IRecyclable.sol";
 
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IERC20Detailed } from "../interfaces/IERC20Detailed.sol";
 
-import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
+import {IExpiry} from "../interfaces/IExpiry.sol";
 
 
 /**
  * @title RecyclableTokenProxy
  * @author Dolomite
  *
- * Contract for wrapping around tokens to control how they are deposited into Solo, to be combined with "market
+ * Contract for wrapping around tokens to control how they are deposited into DolomiteMargin, to be combined with "market
  * recycling" so "throwaway tokens" like options contracts that are represented as tokens can be used with the protocol
  * and their market IDs can be safely reclaimed.
  *
- * This contract works by serving as a proxy account for a user. Meaning, a user deposits funds into Solo using this
+ * This contract works by serving as a proxy account for a user. Meaning, a user deposits funds into DolomiteMargin using this
  * contract's address as the `owner` and the user's address (converted to a uint) as the `number`. As a consequence and
  * tradeoff, users can only have one margin position open per instance of this contract (per option token).
  *
  * The reason why this contract works well with a recycling strategy is because all usages of the instance's
  * `marketId` are confined to this address as the `owner`. So, if the `marketId` is reused, it doesn't impact the user's
  * balance, since a new instance of `RecyclableTokenProxy` will be deployed for the recycled marketId. Then, the new
- * instance of `RecyclableTokenProxy` would serve as the new address for the user to interact with Solo, masking/hiding
+ * instance of `RecyclableTokenProxy` would serve as the new address for the user to interact with DolomiteMargin, masking/hiding
  * the user's old (potentially) non-zero balance for that `marketId`. As a visualization, balances are mapped like so:
  *
  * `owner` --> `accountNumber` --> `marketId`
  *
  * `owner` corresponds with `address(this)`, `accountNumber` is the user's address, and `marketId` is recycled.
  *
- * Since `owner` constantly chances, the value of the mapping is able to reset, each time Solo recycles a market.
+ * Since `owner` constantly chances, the value of the mapping is able to reset, each time DolomiteMargin recycles a market.
  *
  * NOTE: Contracts that reference this token and implement IExchangeWrapper must set an allowance for this contract to
  * spend `TOKEN` on the IExchangeWrapper implementor (TOKEN.approve(RecyclableTokenProxy, uint(-1)); call from
@@ -70,13 +70,13 @@ import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
  * only be held in `address(this)` owner address / Account.Info. The only time this marketId may reside in an `owner`
  * that is NOT this contract is after a liquidation. This should not matter though, since the liquidator will withdraw
  * the token to sell all of it for the owed collateral. So, after the liquidation transaction is over, the liquidator
- * should have a zero balance anyway. Keeping the this token in the liquidators Solo account, would cause catastrophic
+ * should have a zero balance anyway. Keeping the this token in the liquidators DolomiteMargin account, would cause catastrophic
  * issues for the protocol when the `marketId` is recycled, since the liquidator's balance would be dirty upon reuse of
  * the `marketId`. To mitigate this issue, a special liquidation contract should be created that purposely performs a
  * withdrawal (down to zero) of this recyclable token's underlying `TOKEN`. Even if an implementing liquidation contract
  * messes this up, there is a check done in `OperationImpl._verifyFinalState` that prevents this from happening.
  */
-contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, ReentrancyGuard {
+contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomiteMargin, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -86,7 +86,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     // ============ Public Variables ============
 
     IERC20 public TOKEN;
-    IExpiryV2 public EXPIRY;
+    IExpiry public EXPIRY;
     uint256 public MARKET_ID;
     bool public isRecycled;
     mapping(address => mapping (uint256 => bool)) public userToAccountNumberHasWithdrawnAfterRecycle;
@@ -94,33 +94,33 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         address token,
         address expiry,
         uint maxExpirationTimestamp
     )
     public
-    OnlySolo(soloMargin)
+    OnlyDolomiteMargin(dolomiteMargin)
     {
         TOKEN = IERC20(token);
-        EXPIRY = IExpiryV2(expiry);
+        EXPIRY = IExpiry(expiry);
         MAX_EXPIRATION_TIMESTAMP = maxExpirationTimestamp;
         isRecycled = false;
     }
 
     // ============ Public Functions ============
 
-    function initialize() external onlySolo(msg.sender) {
+    function initialize() external onlyDolomiteMargin(msg.sender) {
         Require.that(
             MARKET_ID == 0,
             FILE,
             "already initialized"
         );
 
-        MARKET_ID = SOLO_MARGIN.getMarketIdByTokenAddress(address(this));
+        MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(this));
 
         Require.that(
-            SOLO_MARGIN.getMarketIsClosing(MARKET_ID),
+            DOLOMITE_MARGIN.getMarketIsClosing(MARKET_ID),
             FILE,
             "market cannot allow borrowing"
         );
@@ -133,9 +133,9 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         );
     }
 
-    function recycle() external onlySolo(msg.sender) {
+    function recycle() external onlyDolomiteMargin(msg.sender) {
         Require.that(
-            SOLO_MARGIN.getRecyclableMarkets(1)[0] == MARKET_ID,
+            DOLOMITE_MARGIN.getRecyclableMarkets(1)[0] == MARKET_ID,
             FILE,
             "not recyclable"
         );
@@ -155,14 +155,14 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         if (userToAccountNumberHasWithdrawnAfterRecycle[account.owner][account.number]) {
             return Types.zeroPar();
         } else {
-            return SOLO_MARGIN.getAccountParNoMarketCheck(
+            return DOLOMITE_MARGIN.getAccountParNoMarketCheck(
                 Account.Info(address(this), getAccountNumber(account)),
                 MARKET_ID
             );
         }
     }
 
-    function depositIntoSolo(uint accountNumber, uint amount) public nonReentrant {
+    function depositIntoDolomiteMargin(uint accountNumber, uint amount) public nonReentrant {
         Require.that(
             !isRecycled,
             FILE,
@@ -192,10 +192,10 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         data: bytes("")
         });
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
-    function withdrawFromSolo(uint accountNumber, uint amount) public nonReentrant {
+    function withdrawFromDolomiteMargin(uint accountNumber, uint amount) public nonReentrant {
         Require.that(
             !isRecycled,
             FILE,
@@ -217,7 +217,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         data: bytes("")
         });
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     function withdrawAfterRecycle(uint accountNumber) public {
@@ -234,7 +234,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         userToAccountNumberHasWithdrawnAfterRecycle[msg.sender][accountNumber] = true;
         TOKEN.safeTransfer(
             msg.sender,
-            SOLO_MARGIN.getAccountParNoMarketCheck(
+            DOLOMITE_MARGIN.getAccountParNoMarketCheck(
                 Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber)),
                 MARKET_ID
             ).value
@@ -276,7 +276,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         );
 
         uint marketId = MARKET_ID;
-        uint borrowMarketId = SOLO_MARGIN.getMarketIdByTokenAddress(borrowToken);
+        uint borrowMarketId = DOLOMITE_MARGIN.getMarketIdByTokenAddress(borrowToken);
 
         Account.Info[] memory accounts = new Account.Info[](1);
         accounts[0] = Account.Info(address(this), _getAccountNumber(msg.sender, accountNumber));
@@ -302,12 +302,12 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         otherAddress : address(EXPIRY),
         otherAccountId : 0,
         data : abi.encode(
-                IExpiryV2.CallFunctionType.SetExpiry,
+                IExpiry.CallFunctionType.SetExpiry,
                 _getExpiryArgs(accounts[0], borrowMarketId, isOpen ? expirationTimestamp : 0)
             )
         });
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     // ============ ERC20 Functions ============
@@ -329,8 +329,8 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
     }
 
     function balanceOf(address account) public view returns (uint256) {
-        if (account == address(SOLO_MARGIN)) {
-            // The effective balance of Solo is the balance held of the underlying token in this contract
+        if (account == address(DOLOMITE_MARGIN)) {
+            // The effective balance of DolomiteMargin is the balance held of the underlying token in this contract
             return TOKEN.balanceOf(address(this));
         }
 
@@ -342,10 +342,10 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         }
     }
 
-    function transfer(address recipient, uint256 amount) external onlySolo(msg.sender) returns (bool) {
-        // This condition fails when the market is recycled but Solo attempts to call this contract still
+    function transfer(address recipient, uint256 amount) external onlyDolomiteMargin(msg.sender) returns (bool) {
+        // This condition fails when the market is recycled but DolomiteMargin attempts to call this contract still
         Require.that(
-            SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
+            DOLOMITE_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
             FILE,
             "invalid state"
         );
@@ -372,10 +372,10 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         address from,
         address to,
         uint256 amount
-    ) external onlySolo(msg.sender) returns (bool) {
-        // transferFrom should always send tokens to SOLO_MARGIN
+    ) external onlyDolomiteMargin(msg.sender) returns (bool) {
+        // transferFrom should always send tokens to DOLOMITE_MARGIN
         Require.that(
-            to == address(msg.sender), // msg.sender eq SOLO_MARGIN
+            to == address(msg.sender), // msg.sender eq DOLOMITE_MARGIN
             FILE,
             "invalid recipient"
         );
@@ -384,20 +384,20 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             FILE,
             "cannot transfer while recycled"
         );
-        // This condition fails when the market is recycled but Solo attempts to call this contract anyway
+        // This condition fails when the market is recycled but DolomiteMargin attempts to call this contract anyway
         Require.that(
-            SOLO_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
+            DOLOMITE_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
             FILE,
             "invalid state"
         );
 
         if (from == address(this)) {
-            // token is being transferred from here to Solo, for a deposit. The market's total par was already updated
+            // token is being transferred from here to DolomiteMargin, for a deposit. The market's total par was already updated
             // before the call to `transferFrom`. Make sure enough was transferred in.
             // This implementation allows the user to "steal" funds from users that blindly send TOKEN into this
             // contract, without calling properly calling the `deposit` function to set their balances.
             Require.that(
-                TOKEN.balanceOf(address(this)) >= SOLO_MARGIN.getMarketTotalPar(MARKET_ID).supply,
+                TOKEN.balanceOf(address(this)) >= DOLOMITE_MARGIN.getMarketTotalPar(MARKET_ID).supply,
                 FILE,
                 "insufficient balance for deposit"
             );
@@ -410,7 +410,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
             // transferred in. This implementation allows the user to "steal" funds from users that blindly send TOKEN
             // into this contract, without calling properly calling the `deposit` function to set their balances.
             Require.that(
-                TOKEN.balanceOf(address(this)) >= SOLO_MARGIN.getMarketTotalPar(MARKET_ID).supply,
+                TOKEN.balanceOf(address(this)) >= DOLOMITE_MARGIN.getMarketTotalPar(MARKET_ID).supply,
                 FILE,
                 "insufficient balance for deposit"
             );
@@ -432,9 +432,9 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlySolo, 
         Account.Info memory account,
         uint marketId,
         uint expirationTimestamp
-    ) private view returns (IExpiryV2.SetExpiryArg[] memory) {
-        IExpiryV2.SetExpiryArg[] memory expiryArgs = new IExpiryV2.SetExpiryArg[](1);
-        expiryArgs[0] = IExpiryV2.SetExpiryArg({
+    ) private view returns (IExpiry.SetExpiryArg[] memory) {
+        IExpiry.SetExpiryArg[] memory expiryArgs = new IExpiry.SetExpiryArg[](1);
+        expiryArgs[0] = IExpiry.SetExpiryArg({
         account : account,
         marketId : marketId,
         timeDelta : expirationTimestamp == 0 ? 0 : uint32(expirationTimestamp - block.timestamp),

@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { expectThrow } from '../../src/lib/Expect';
@@ -18,7 +18,7 @@ import {
 
 let who: address;
 let operator: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const accountNumber = INTEGERS.ZERO;
 const makerMarket = INTEGERS.ZERO;
@@ -40,17 +40,17 @@ describe('Buy', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
-    EXCHANGE_ADDRESS = solo.testing.exchangeWrapper.getExchangeAddress();
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
+    EXCHANGE_ADDRESS = dolomiteMargin.testing.exchangeWrapper.getExchangeAddress();
     accounts = r.accounts;
-    who = solo.getDefaultAccount();
+    who = dolomiteMargin.getDefaultAccount();
     operator = accounts[6];
-    makerToken = solo.testing.tokenA;
-    takerToken = solo.testing.tokenB;
+    makerToken = dolomiteMargin.testing.tokenA;
+    takerToken = dolomiteMargin.testing.tokenB;
     testOrder = {
       type: OrderType.Test,
-      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
       originator: who,
       makerToken: makerToken.getAddress(),
       takerToken: takerToken.getAddress(),
@@ -73,16 +73,16 @@ describe('Buy', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     const defaultIndex = {
       lastUpdate: INTEGERS.ZERO,
       borrow: takerWei.div(takerPar),
       supply: takerWei.div(takerPar),
     };
     await Promise.all([
-      solo.testing.setMarketIndex(makerMarket, defaultIndex),
-      solo.testing.setMarketIndex(takerMarket, defaultIndex),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setMarketIndex(makerMarket, defaultIndex),
+      dolomiteMargin.testing.setMarketIndex(takerMarket, defaultIndex),
+      dolomiteMargin.testing.setAccountBalance(
         who,
         accountNumber,
         collateralMarket,
@@ -99,14 +99,14 @@ describe('Buy', () => {
   it('Basic buy test', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
     ]);
     const txResult = await expectBuyOkay({});
     console.log(`\tBuy gas used: ${txResult.gasUsed}`);
     await Promise.all([
       await expectPars(makerPar, zero),
-      await expectSoloBalances(makerWei, zero),
+      await expectDolomiteMarginBalances(makerWei, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, takerWei),
     ]);
@@ -114,23 +114,23 @@ describe('Buy', () => {
 
   it('Succeeds for events', async () => {
     await Promise.all([
-      solo.permissions.approveOperator(operator, { from: who }),
+      dolomiteMargin.permissions.approveOperator(operator, { from: who }),
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
     ]);
     const txResult = await expectBuyOkay({}, { from: operator });
     const [makerIndex, takerIndex, collateralIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(makerMarket),
-      solo.getters.getMarketCachedIndex(takerMarket),
-      solo.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(makerMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(takerMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
       expectPars(makerPar, zero),
-      expectSoloBalances(makerWei, zero),
+      expectDolomiteMarginBalances(makerWei, zero),
       expectWrapperBalances(zero, zero),
       expectExchangeBalances(zero, takerWei),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(5);
 
     const operationLog = logs[0];
@@ -167,13 +167,13 @@ describe('Buy', () => {
       deltaWei: makerWei,
     });
     expect(buyLog.args.exchangeWrapper).toEqual(
-      solo.testing.exchangeWrapper.getAddress(),
+      dolomiteMargin.testing.exchangeWrapper.getAddress(),
     );
   });
 
   it('Succeeds for zero makerAmount', async () => {
     await Promise.all([
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
     ]);
     await expectBuyOkay({
@@ -191,7 +191,7 @@ describe('Buy', () => {
 
     await Promise.all([
       await expectPars(zero, zero),
-      await expectSoloBalances(zero, zero),
+      await expectDolomiteMarginBalances(zero, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, takerWei),
     ]);
@@ -212,7 +212,7 @@ describe('Buy', () => {
 
     await Promise.all([
       await expectPars(makerPar, takerPar),
-      await expectSoloBalances(makerWei, zero),
+      await expectDolomiteMarginBalances(makerWei, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, zero),
     ]);
@@ -221,31 +221,31 @@ describe('Buy', () => {
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         who,
         accountNumber,
         AccountStatus.Liquidating,
       ),
     ]);
     await expectBuyOkay({});
-    const status = await solo.getters.getAccountStatus(who, accountNumber);
+    const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
     expect(status).toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
-      solo.permissions.approveOperator(operator, { from: who }),
+      dolomiteMargin.permissions.approveOperator(operator, { from: who }),
     ]);
     await expectBuyOkay({}, { from: operator });
 
     await Promise.all([
       await expectPars(makerPar, zero),
-      await expectSoloBalances(makerWei, zero),
+      await expectDolomiteMarginBalances(makerWei, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, takerWei),
     ]);
@@ -254,15 +254,15 @@ describe('Buy', () => {
   it('Succeeds for global operator', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
-      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+      dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
     ]);
     await expectBuyOkay({}, { from: operator });
 
     await Promise.all([
       await expectPars(makerPar, zero),
-      await expectSoloBalances(makerWei, zero),
+      await expectDolomiteMarginBalances(makerWei, zero),
       await expectWrapperBalances(zero, zero),
       await expectExchangeBalances(zero, takerWei),
     ]);
@@ -300,10 +300,10 @@ describe('Buy', () => {
     );
   });
 
-  it('Fails for Solo without enough tokens', async () => {
+  it('Fails for DolomiteMargin without enough tokens', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei),
-      issueTakerTokenToSolo(takerWei.div(2)),
+      issueTakerTokenToDolomiteMargin(takerWei.div(2)),
       setTakerBalance(takerPar),
     ]);
     await expectBuyRevert({}, 'Token: transfer failed');
@@ -312,7 +312,7 @@ describe('Buy', () => {
   it('Fails for exchangeWrapper without enough tokens', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei.div(2)),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
     ]);
     await expectBuyRevert({}, 'Token: transferFrom failed');
@@ -321,7 +321,7 @@ describe('Buy', () => {
   it('Fails for non-truthful exchangeWrapper', async () => {
     await Promise.all([
       issueMakerTokenToWrapper(makerWei.div(2)),
-      issueTakerTokenToSolo(takerWei),
+      issueTakerTokenToDolomiteMargin(takerWei),
       setTakerBalance(takerPar),
     ]);
     await expectBuyRevert(
@@ -343,8 +343,8 @@ async function expectPars(
   expectedTakerPar: Integer,
 ) {
   const [makerBalance, balances] = await Promise.all([
-    makerToken.getBalance(solo.contracts.soloMargin.options.address),
-    solo.getters.getAccountBalances(who, accountNumber),
+    makerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    dolomiteMargin.getters.getAccountBalances(who, accountNumber),
   ]);
   expect(makerBalance).toEqual(expectedMakerPar.times(makerWei).div(makerPar));
   balances.forEach((balance, i) => {
@@ -365,8 +365,8 @@ async function expectWrapperBalances(
   expectedTakerWei: Integer,
 ) {
   const [makerWei, takerWei] = await Promise.all([
-    makerToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
-    takerToken.getBalance(solo.testing.exchangeWrapper.getAddress()),
+    makerToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+    takerToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
   ]);
   expect(makerWei).toEqual(expectedMakerWei);
   expect(takerWei).toEqual(expectedTakerWei);
@@ -384,33 +384,33 @@ async function expectExchangeBalances(
   expect(takerWei).toEqual(expectedTakerWei);
 }
 
-async function expectSoloBalances(
+async function expectDolomiteMarginBalances(
   expectedMakerWei: Integer,
   expectedTakerWei: Integer,
 ) {
   const [makerWei, takerWei] = await Promise.all([
-    makerToken.getBalance(solo.contracts.soloMargin.options.address),
-    takerToken.getBalance(solo.contracts.soloMargin.options.address),
+    makerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    takerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
   ]);
   expect(makerWei).toEqual(expectedMakerWei);
   expect(takerWei).toEqual(expectedTakerWei);
 }
 
 async function issueMakerTokenToWrapper(amount: Integer) {
-  return makerToken.issueTo(amount, solo.testing.exchangeWrapper.getAddress());
+  return makerToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.getAddress());
 }
 
-async function issueTakerTokenToSolo(amount: Integer) {
-  return takerToken.issueTo(amount, solo.contracts.soloMargin.options.address);
+async function issueTakerTokenToDolomiteMargin(amount: Integer) {
+  return takerToken.issueTo(amount, dolomiteMargin.contracts.dolomiteMargin.options.address);
 }
 
 async function setTakerBalance(par: Integer) {
-  return solo.testing.setAccountBalance(who, accountNumber, takerMarket, par);
+  return dolomiteMargin.testing.setAccountBalance(who, accountNumber, takerMarket, par);
 }
 
 async function expectBuyOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .buy(combinedGlob)
     .commit(options);

@@ -48,11 +48,13 @@ contract UniswapV2Factory is IUniswapV2Factory {
         feeToSetter = _feeToSetter;
     }
 
-    function getPairInitCode() public view returns (bytes memory) {
+    function getPairInitCode() public pure returns (bytes memory) {
+        // This function is not in the IUniswapV2Factory interface because it does not exist in production
         return type(UniswapV2Pair).creationCode;
     }
 
-    function getPairInitCodeHash() external view returns (bytes32) {
+    function getPairInitCodeHash() external pure returns (bytes32) {
+        // This function is not in the IUniswapV2Factory interface because it does not exist in production
         return keccak256(getPairInitCode());
     }
 }

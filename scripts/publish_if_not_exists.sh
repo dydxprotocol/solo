@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION=$(cat package.json | jq -r '.version')
-NAME=@dydxprotocol/solo
+NAME=@dolomite-exchange/dolomite-margin
 
 test -z "$(npm info $NAME@$VERSION)"
 if [ $? -eq 0 ]
@@ -11,7 +11,7 @@ then
     mkdir -p ~/.ssh
     touch ~/.ssh/known_hosts
     ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-    git config --global user.email "ci@dydx.exchange"
+    git config --global user.email "ci@dolomite.exchange"
     git config --global user.name "circle_ci"
 
     # Get version and tag

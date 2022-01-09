@@ -21,14 +21,14 @@ pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
 
@@ -39,7 +39,7 @@ import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
  *
  * Contract for sending internal balances within Dolomite to other users/margin accounts easily
  */
-contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
+contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Constants ============
 
     bytes32 constant FILE = "TransferProxy";
@@ -47,10 +47,10 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
     // ============ Constructor ============
 
     constructor (
-        address soloMargin
+        address dolomiteMargin
     )
     public
-    OnlySolo(soloMargin)
+    OnlyDolomiteMargin(dolomiteMargin)
     {}
 
     // ============ Public Functions ============
@@ -66,7 +66,7 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
     nonReentrant
     {
         uint[] memory markets = new uint[](1);
-        markets[0] = SOLO_MARGIN.getMarketIdByTokenAddress(token);
+        markets[0] = DOLOMITE_MARGIN.getMarketIdByTokenAddress(token);
 
         uint[] memory amounts = new uint[](1);
         amounts[0] = amount;
@@ -90,10 +90,10 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
     external
     nonReentrant
     {
-        SoloMargin soloMargin = SOLO_MARGIN;
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
         uint[] memory markets = new uint[](tokens.length);
         for (uint i = 0; i < markets.length; i++) {
-            markets[i] = soloMargin.getMarketIdByTokenAddress(tokens[i]);
+            markets[i] = dolomiteMargin.getMarketIdByTokenAddress(tokens[i]);
         }
 
         _transferMultiple(
@@ -163,6 +163,6 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
             });
         }
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 }

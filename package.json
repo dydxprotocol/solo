@@ -1,6 +1,6 @@
 {
-  "name": "@dolomite-exchange/v2-protocol",
-  "version": "1.0.11",
+  "name": "@dolomite-exchange/dolomite-margin",
+  "version": "0.1.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the Dolomite Margin Trading Protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -21,8 +21,8 @@
     "copy_uniswap_periphery": "cp -u node_modules/@uniswap/v2-periphery/build/UniswapV2Router02.json ./build/contracts/",
     "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
     "compile": "truffle compile",
-    "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/published_contracts/*[^(Impl)].json'",
-    "build:test_wrappers": "typechain --target=web3-1.0.0 --outDir=build/testing_wrappers/ './build/testing_contracts/*[^(Impl)].json'",
+    "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/published_contracts/*.json'",
+    "build:test_wrappers": "typechain --target=web3-1.0.0 --outDir=build/testing_wrappers/ './build/testing_contracts/*.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "console": "truffle console",
@@ -69,9 +69,9 @@
   "author": "Dolomite",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/dolomite-exchange/solo/issues"
+    "url": "https://github.com/dolomite-exchange/dolomite-v2-protocol/issues"
   },
-  "homepage": "https://github.com/dolomite-exchange/solo#readme",
+  "homepage": "https://github.com/dolomite-exchange/dolomite-v2-protocol#readme",
   "dependencies": {
     "@dydxprotocol/exchange-wrappers": "0.5.3",
     "@truffle/hdwallet-provider": "^1.2.6",

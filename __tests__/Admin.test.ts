@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import { EVM } from './modules/EVM';
-import { TestSolo } from './modules/TestSolo';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
+import { setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stringToDecimal } from '../src/lib/Helpers';
 import { expectThrow } from '../src/lib/Expect';
@@ -19,14 +19,14 @@ import { CustomTestToken } from '../build/testing_wrappers/CustomTestToken';
 import { TestRecyclableToken } from '../build/testing_wrappers/TestRecyclableToken';
 
 let txr: any;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let admin: address;
 let nonAdmin: address;
 let operator: address;
 let riskLimits: RiskLimits;
 let riskParams: RiskParams;
-let soloAddress: address;
+let dolomiteMarginAddress: address;
 let oracleAddress: address;
 let setterAddress: address;
 const smallestDecimal = stringToDecimal('1');
@@ -45,8 +45,8 @@ describe('Admin', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
     nonAdmin = accounts[2];
@@ -56,14 +56,14 @@ describe('Admin', () => {
     await resetEVM();
 
     [riskLimits, riskParams] = await Promise.all([
-      solo.getters.getRiskLimits(),
-      solo.getters.getRiskParams(),
-      setupMarkets(solo, accounts, 2),
+      dolomiteMargin.getters.getRiskLimits(),
+      dolomiteMargin.getters.getRiskParams(),
+      setupMarkets(dolomiteMargin, accounts, 2),
     ]);
 
-    soloAddress = solo.contracts.soloMargin.options.address;
-    oracleAddress = solo.testing.priceOracle.getAddress();
-    setterAddress = solo.testing.interestSetter.getAddress();
+    dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
+    oracleAddress = dolomiteMargin.testing.priceOracle.getAddress();
+    setterAddress = dolomiteMargin.testing.interestSetter.getAddress();
 
     snapshotId = await snapshot();
   });
@@ -85,24 +85,24 @@ describe('Admin', () => {
     it('Succeeds even if has more tokens than enough', async () => {
       // has 2X tokens but has X excess
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account1,
           market,
           amount.times(2),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account2,
           market,
           amount.times(-1),
         ),
-        solo.testing.tokenA.issueTo(amount.times(2), soloAddress),
+        dolomiteMargin.testing.tokenA.issueTo(amount.times(2), dolomiteMarginAddress),
       ]);
-      const excess = await solo.getters.getNumExcessTokens(market);
+      const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+      txr = await dolomiteMargin.admin.withdrawExcessTokens(market, recipient, {
         from: admin,
       });
       await expectBalances(txr, amount, amount);
@@ -111,24 +111,24 @@ describe('Admin', () => {
     it('Succeeds even if existing tokens arent enough', async () => {
       // has X tokens but has 3X excess
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account1,
           market,
           amount.times(-3),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account2,
           market,
           amount.times(1),
         ),
-        solo.testing.tokenA.issueTo(amount, soloAddress),
+        dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
-      const excess = await solo.getters.getNumExcessTokens(market);
+      const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount.times(3));
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+      txr = await dolomiteMargin.admin.withdrawExcessTokens(market, recipient, {
         from: admin,
       });
       await expectBalances(txr, INTEGERS.ZERO, amount);
@@ -136,23 +136,23 @@ describe('Admin', () => {
 
     it('Succeeds for zero available', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account1,
           market,
           amount.times(-2),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account2,
           market,
           amount.times(1),
         ),
       ]);
-      const excess = await solo.getters.getNumExcessTokens(market);
+      const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
 
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+      txr = await dolomiteMargin.admin.withdrawExcessTokens(market, recipient, {
         from: admin,
       });
       await expectBalances(txr, INTEGERS.ZERO, INTEGERS.ZERO);
@@ -160,23 +160,23 @@ describe('Admin', () => {
 
     it('Succeeds for zero excess', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account1,
           market,
           amount.times(-1),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account2,
           market,
           amount.times(2),
         ),
-        solo.testing.tokenA.issueTo(amount, soloAddress),
+        dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
-      const excess = await solo.getters.getNumExcessTokens(market);
+      const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(INTEGERS.ZERO);
-      txr = await solo.admin.withdrawExcessTokens(market, recipient, {
+      txr = await dolomiteMargin.admin.withdrawExcessTokens(market, recipient, {
         from: admin,
       });
       await expectBalances(txr, amount, INTEGERS.ZERO);
@@ -184,32 +184,32 @@ describe('Admin', () => {
 
     it('Fails for negative excess', async () => {
       await Promise.all([
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account1,
           market,
           amount.times(-1),
         ),
-        solo.testing.setAccountBalance(
+        dolomiteMargin.testing.setAccountBalance(
           owner,
           account2,
           market,
           amount.times(3),
         ),
-        solo.testing.tokenA.issueTo(amount, soloAddress),
+        dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
-      const excess = await solo.getters.getNumExcessTokens(market);
+      const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount.times(-1));
 
       await expectThrow(
-        solo.admin.withdrawExcessTokens(market, recipient, { from: admin }),
+        dolomiteMargin.admin.withdrawExcessTokens(market, recipient, { from: admin }),
         'AdminImpl: Negative excess',
       );
     });
 
     it('Fails for non-existent market', async () => {
       await expectThrow(
-        solo.admin.withdrawExcessTokens(invalidMarket, recipient, {
+        dolomiteMargin.admin.withdrawExcessTokens(invalidMarket, recipient, {
           from: nonAdmin,
         }),
       );
@@ -217,29 +217,29 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.withdrawExcessTokens(market, recipient, { from: nonAdmin }),
+        dolomiteMargin.admin.withdrawExcessTokens(market, recipient, { from: nonAdmin }),
       );
     });
 
     async function expectBalances(
       txResult: any,
-      expectedSolo: Integer,
+      expectedDolomiteMargin: Integer,
       expectedRecipient: Integer,
     ) {
       if (txResult) {
-        const token = solo.testing.tokenA.getAddress();
-        const logs = solo.logs.parseLogs(txResult);
+        const token = dolomiteMargin.testing.tokenA.getAddress();
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogWithdrawExcessTokens');
         expect(log.args.token).toEqual(token);
         expect(log.args.amount).toEqual(expectedRecipient);
       }
-      const [soloBalance, recipientBalance] = await Promise.all([
-        solo.testing.tokenA.getBalance(soloAddress),
-        solo.testing.tokenA.getBalance(recipient),
+      const [dolomiteMarginBalance, recipientBalance] = await Promise.all([
+        dolomiteMargin.testing.tokenA.getBalance(dolomiteMarginAddress),
+        dolomiteMargin.testing.tokenA.getBalance(recipient),
       ]);
-      expect(soloBalance).toEqual(expectedSolo);
+      expect(dolomiteMarginBalance).toEqual(expectedDolomiteMargin);
       expect(recipientBalance).toEqual(expectedRecipient);
     }
   });
@@ -249,10 +249,10 @@ describe('Admin', () => {
 
     it('Succeeds', async () => {
       const amount = new BigNumber(100);
-      await solo.testing.tokenC.issueTo(amount, soloAddress);
+      await dolomiteMargin.testing.tokenC.issueTo(amount, dolomiteMarginAddress);
       await expectBalances(null, amount, INTEGERS.ZERO);
-      txr = await solo.admin.withdrawUnsupportedTokens(
-        solo.testing.tokenC.getAddress(),
+      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
+        dolomiteMargin.testing.tokenC.getAddress(),
         recipient,
         { from: admin },
       );
@@ -260,8 +260,8 @@ describe('Admin', () => {
     });
 
     it('Succeeds for zero tokens', async () => {
-      txr = await solo.admin.withdrawUnsupportedTokens(
-        solo.testing.tokenC.getAddress(),
+      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
+        dolomiteMargin.testing.tokenC.getAddress(),
         recipient,
         { from: admin },
       );
@@ -270,8 +270,8 @@ describe('Admin', () => {
 
     it('Fails for token with existing market', async () => {
       await expectThrow(
-        solo.admin.withdrawUnsupportedTokens(
-          solo.testing.tokenA.getAddress(),
+        dolomiteMargin.admin.withdrawUnsupportedTokens(
+          dolomiteMargin.testing.tokenA.getAddress(),
           recipient,
           { from: admin },
         ),
@@ -281,7 +281,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.withdrawUnsupportedTokens(ADDRESSES.TEST[1], recipient, {
+        dolomiteMargin.admin.withdrawUnsupportedTokens(ADDRESSES.TEST[1], recipient, {
           from: nonAdmin,
         }),
       );
@@ -289,23 +289,23 @@ describe('Admin', () => {
 
     async function expectBalances(
       txResult: any,
-      expectedSolo: Integer,
+      expectedDolomiteMargin: Integer,
       expectedRecipient: Integer,
     ) {
       if (txResult) {
-        const token = solo.testing.tokenC.getAddress();
-        const logs = solo.logs.parseLogs(txResult);
+        const token = dolomiteMargin.testing.tokenC.getAddress();
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogWithdrawUnsupportedTokens');
         expect(log.args.token).toEqual(token);
         expect(log.args.amount).toEqual(expectedRecipient);
       }
-      const [soloBalance, recipientBalance] = await Promise.all([
-        solo.testing.tokenC.getBalance(soloAddress),
-        solo.testing.tokenC.getBalance(recipient),
+      const [dolomiteMarginBalance, recipientBalance] = await Promise.all([
+        dolomiteMargin.testing.tokenC.getBalance(dolomiteMarginAddress),
+        dolomiteMargin.testing.tokenC.getBalance(recipient),
       ]);
-      expect(soloBalance).toEqual(expectedSolo);
+      expect(dolomiteMarginBalance).toEqual(expectedDolomiteMargin);
       expect(recipientBalance).toEqual(expectedRecipient);
     }
   });
@@ -316,12 +316,12 @@ describe('Admin', () => {
     const token = ADDRESSES.TEST[2];
 
     it('Successfully adds a market', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice);
 
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
 
-      const txResult = await solo.admin.addMarket(
+      const txResult = await dolomiteMargin.admin.addMarket(
         token,
         oracleAddress,
         setterAddress,
@@ -332,11 +332,11 @@ describe('Admin', () => {
         { from: admin },
       );
 
-      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+      const { timestamp } = await dolomiteMargin.web3.eth.getBlock(txResult.blockNumber);
 
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(
+      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(
         marketId,
       );
 
@@ -361,7 +361,7 @@ describe('Admin', () => {
         new BigNumber(timestamp),
       );
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(5);
 
       const addLog = logs[0];
@@ -396,7 +396,7 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new solo.web3.eth.Contract(
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
         customTestTokenABI,
       )
         .deploy({
@@ -407,24 +407,24 @@ describe('Admin', () => {
 
       const expirationTimestamp =
         Math.floor(new Date().getTime() / 1000) + 3600;
-      const recyclableToken = (await new solo.web3.eth.Contract(recyclableABI)
+      const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            solo.contracts.soloMargin.options.address,
+            dolomiteMargin.contracts.dolomiteMargin.options.address,
             underlyingToken.options.address,
-            solo.contracts.expiryV2.options.address,
+            dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,
           ],
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await solo.testing.priceOracle.setPrice(
+      await dolomiteMargin.testing.priceOracle.setPrice(
         recyclableToken.options.address,
         defaultPrice,
       );
 
-      const txResult = await solo.admin.addMarket(
+      const txResult = await dolomiteMargin.admin.addMarket(
         recyclableToken.options.address,
         oracleAddress,
         setterAddress,
@@ -443,15 +443,15 @@ describe('Admin', () => {
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
 
-      const { timestamp } = await solo.web3.eth.getBlock(txResult.blockNumber);
+      const { timestamp } = await dolomiteMargin.web3.eth.getBlock(txResult.blockNumber);
 
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await solo.getters.getMarketWithInfo(
+      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(
         marketId,
       );
-      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+      const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
         marketId,
       );
 
@@ -480,7 +480,7 @@ describe('Admin', () => {
       expect(isClosingResult).toEqual(isClosing);
       expect(isRecyclableResult).toEqual(isRecyclable);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(6);
 
       const addLog = logs[0];
@@ -522,7 +522,7 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new solo.web3.eth.Contract(
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
         customTestTokenABI,
       )
         .deploy({
@@ -532,25 +532,25 @@ describe('Admin', () => {
         .send({ from: admin, gas: '6000000' })) as CustomTestToken;
 
       const expirationTimestamp = Math.floor(new Date().getTime() / 1000) - 60;
-      const recyclableToken = (await new solo.web3.eth.Contract(recyclableABI)
+      const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            solo.contracts.soloMargin.options.address,
+            dolomiteMargin.contracts.dolomiteMargin.options.address,
             underlyingToken.options.address,
-            solo.contracts.expiryV2.options.address,
+            dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,
           ],
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await solo.testing.priceOracle.setPrice(
+      await dolomiteMargin.testing.priceOracle.setPrice(
         recyclableToken.options.address,
         defaultPrice,
       );
 
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           recyclableToken.options.address,
           oracleAddress,
           setterAddress,
@@ -565,9 +565,9 @@ describe('Admin', () => {
     });
 
     it('Fails to add a recyclable market that is not actually recyclable', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           token,
           oracleAddress,
           setterAddress,
@@ -582,10 +582,10 @@ describe('Admin', () => {
     });
 
     it('Fails to add a market of the same token', async () => {
-      const duplicateToken = solo.testing.tokenA.getAddress();
-      await solo.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
+      const duplicateToken = dolomiteMargin.testing.tokenA.getAddress();
+      await dolomiteMargin.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           duplicateToken,
           oracleAddress,
           setterAddress,
@@ -600,9 +600,9 @@ describe('Admin', () => {
     });
 
     it('Fails for broken price', async () => {
-      await solo.testing.priceOracle.setPrice(token, invalidPrice);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, invalidPrice);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           token,
           oracleAddress,
           setterAddress,
@@ -618,11 +618,11 @@ describe('Admin', () => {
 
     it('Fails for broken marginPremium', async () => {
       await Promise.all([
-        solo.testing.priceOracle.setPrice(token, defaultPrice),
-        solo.testing.interestSetter.setInterestRate(token, defaultRate),
+        dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice),
+        dolomiteMargin.testing.interestSetter.setInterestRate(token, defaultRate),
       ]);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           token,
           oracleAddress,
           setterAddress,
@@ -638,11 +638,11 @@ describe('Admin', () => {
 
     it('Fails for broken spreadPremium', async () => {
       await Promise.all([
-        solo.testing.priceOracle.setPrice(token, defaultPrice),
-        solo.testing.interestSetter.setInterestRate(token, defaultRate),
+        dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice),
+        dolomiteMargin.testing.interestSetter.setInterestRate(token, defaultRate),
       ]);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           token,
           oracleAddress,
           setterAddress,
@@ -658,11 +658,11 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await Promise.all([
-        solo.testing.priceOracle.setPrice(token, defaultPrice),
-        solo.testing.interestSetter.setInterestRate(token, defaultRate),
+        dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice),
+        dolomiteMargin.testing.interestSetter.setInterestRate(token, defaultRate),
       ]);
       await expectThrow(
-        solo.admin.addMarket(
+        dolomiteMargin.admin.addMarket(
           token,
           oracleAddress,
           setterAddress,
@@ -688,7 +688,7 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new solo.web3.eth.Contract(
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
         customTestTokenABI,
       )
         .deploy({
@@ -699,24 +699,24 @@ describe('Admin', () => {
 
       const expirationTimestamp =
         Math.floor(new Date().getTime() / 1000) + 3600;
-      const recyclableToken = (await new solo.web3.eth.Contract(recyclableABI)
+      const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            solo.contracts.soloMargin.options.address,
+            dolomiteMargin.contracts.dolomiteMargin.options.address,
             underlyingToken.options.address,
-            solo.contracts.expiryV2.options.address,
+            dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,
           ],
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await solo.testing.priceOracle.setPrice(
+      await dolomiteMargin.testing.priceOracle.setPrice(
         recyclableToken.options.address,
         defaultPrice,
       );
 
-      await solo.admin.addMarket(
+      await dolomiteMargin.admin.addMarket(
         recyclableToken.options.address,
         oracleAddress,
         setterAddress,
@@ -742,17 +742,17 @@ describe('Admin', () => {
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
 
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(2);
-      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+      const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
         marketId,
       );
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         recyclableToken.options.address,
         INTEGERS.ZERO,
         marketId,
@@ -762,12 +762,12 @@ describe('Admin', () => {
         .setBalance(recyclableToken.options.address, INTEGERS.ONE.toFixed())
         .send({ from: admin });
 
-      await new EVM(solo.web3.currentProvider).callJsonrpcMethod(
+      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
         'evm_increaseTime',
         [3601 + 86400 * 7], // 3600 is the expiration; 86400 * 7 is the buffer time
       );
 
-      const txResult = await solo.admin.removeMarkets(
+      const txResult = await dolomiteMargin.admin.removeMarkets(
         [marketId, marketId.plus(1)],
         admin,
         {
@@ -775,18 +775,18 @@ describe('Admin', () => {
         },
       );
 
-      expect(await solo.getters.getNumMarkets()).toEqual(numMarkets);
+      expect(await dolomiteMargin.getters.getNumMarkets()).toEqual(numMarkets);
       expect(await recyclableToken.methods.isRecycled().call()).toEqual(true);
       expect(await underlyingToken.methods.balanceOf(admin).call()).toEqual(
         INTEGERS.ONE.toFixed(),
       );
 
       await expectThrow(
-        solo.contracts.soloMargin.methods.getMarket(marketId.toFixed()).call(),
+        dolomiteMargin.contracts.dolomiteMargin.methods.getMarket(marketId.toFixed()).call(),
         'Getters: Invalid market',
       );
 
-      const recyclableMarkets = await solo.getters.getRecyclableMarkets(
+      const recyclableMarkets = await dolomiteMargin.getters.getRecyclableMarkets(
         new BigNumber('10'),
       );
       expect(recyclableMarkets.length).toEqual(10);
@@ -798,7 +798,7 @@ describe('Admin', () => {
         expect(recyclableMarkets[i]).toEqual(INTEGERS.ZERO);
       }
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(2);
 
       const removeLog_0 = logs[0];
@@ -828,30 +828,30 @@ describe('Admin', () => {
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
 
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+      const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
         marketId,
       );
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         recyclableToken.options.address,
         INTEGERS.ZERO,
         marketId,
         INTEGERS.ONE,
       );
 
-      await new EVM(solo.web3.currentProvider).callJsonrpcMethod(
+      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
         'evm_increaseTime',
         [100],
       );
 
       await expectThrow(
-        solo.admin.removeMarkets([marketId], admin, {
+        dolomiteMargin.admin.removeMarkets([marketId], admin, {
           from: admin,
         }),
         `AdminImpl: market is not expired <${marketId}, ${expirationTimestamp}>`,
@@ -873,30 +873,30 @@ describe('Admin', () => {
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
 
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const isClosingResult = await solo.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await solo.getters.getMarketIsRecyclable(
+      const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
         marketId,
       );
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         recyclableToken.options.address,
         INTEGERS.ZERO,
         marketId,
         INTEGERS.ONE,
       );
 
-      await new EVM(solo.web3.currentProvider).callJsonrpcMethod(
+      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
         'evm_increaseTime',
         [3600 + 1],
       );
 
       await expectThrow(
-        solo.admin.removeMarkets([marketId], admin, {
+        dolomiteMargin.admin.removeMarkets([marketId], admin, {
           from: admin,
         }),
         `AdminImpl: expiration must pass buffer <${marketId}, ${expirationTimestamp}>`,
@@ -904,17 +904,17 @@ describe('Admin', () => {
     });
 
     it('Fails to remove a non-recyclable market', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice);
       await expectThrow(
-        solo.admin.removeMarkets([INTEGERS.ZERO], admin, { from: admin }),
+        dolomiteMargin.admin.removeMarkets([INTEGERS.ZERO], admin, { from: admin }),
         'AdminImpl: market is not recyclable <0>',
       );
     });
 
     it('Fails to remove an invalid market', async () => {
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice);
       await expectThrow(
-        solo.admin.removeMarkets([new BigNumber('9999999')], admin, {
+        dolomiteMargin.admin.removeMarkets([new BigNumber('9999999')], admin, {
           from: admin,
         }),
         'AdminImpl: market does not exist <9999999>',
@@ -923,7 +923,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.removeMarkets([INTEGERS.ZERO], admin, { from: nonAdmin }),
+        dolomiteMargin.admin.removeMarkets([INTEGERS.ZERO], admin, { from: nonAdmin }),
         'Ownable: caller is not the owner',
       );
     });
@@ -934,21 +934,21 @@ describe('Admin', () => {
       await expectIsClosing(null, false);
 
       // set to false again
-      txr = await solo.admin.setIsClosing(defaultMarket, false, {
+      txr = await dolomiteMargin.admin.setIsClosing(defaultMarket, false, {
         from: admin,
       });
       await expectIsClosing(txr, false);
 
       // set to true
-      txr = await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
+      txr = await dolomiteMargin.admin.setIsClosing(defaultMarket, true, { from: admin });
       await expectIsClosing(txr, true);
 
       // set to true again
-      txr = await solo.admin.setIsClosing(defaultMarket, true, { from: admin });
+      txr = await dolomiteMargin.admin.setIsClosing(defaultMarket, true, { from: admin });
       await expectIsClosing(txr, true);
 
       // set to false
-      txr = await solo.admin.setIsClosing(defaultMarket, false, {
+      txr = await dolomiteMargin.admin.setIsClosing(defaultMarket, false, {
         from: admin,
       });
       await expectIsClosing(txr, false);
@@ -956,39 +956,39 @@ describe('Admin', () => {
 
     it('Fails for invalid market', async () => {
       await expectThrow(
-        solo.admin.setIsClosing(invalidMarket, true, { from: admin }),
+        dolomiteMargin.admin.setIsClosing(invalidMarket, true, { from: admin }),
         `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setIsClosing(defaultMarket, true, { from: nonAdmin }),
+        dolomiteMargin.admin.setIsClosing(defaultMarket, true, { from: nonAdmin }),
       );
     });
 
     async function expectIsClosing(txResult: any, b: boolean) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetIsClosing');
         expect(log.args.marketId).toEqual(defaultMarket);
         expect(log.args.isClosing).toEqual(b);
       }
-      const isClosing = await solo.getters.getMarketIsClosing(defaultMarket);
+      const isClosing = await dolomiteMargin.getters.getMarketIsClosing(defaultMarket);
       expect(isClosing).toEqual(b);
     }
   });
 
   describe('#ownerSetPriceOracle', () => {
     it('Succeeds', async () => {
-      const token = await solo.getters.getMarketTokenAddress(defaultMarket);
-      await solo.testing.priceOracle.setPrice(token, defaultPrice);
-      txr = await solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+      const token = await dolomiteMargin.getters.getMarketTokenAddress(defaultMarket);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, defaultPrice);
+      txr = await dolomiteMargin.admin.setPriceOracle(defaultMarket, oracleAddress, {
         from: admin,
       });
-      const logs = solo.logs.parseLogs(txr);
+      const logs = dolomiteMargin.logs.parseLogs(txr);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogSetPriceOracle');
@@ -997,10 +997,10 @@ describe('Admin', () => {
     });
 
     it('Fails for broken price', async () => {
-      const token = await solo.getters.getMarketTokenAddress(defaultMarket);
-      await solo.testing.priceOracle.setPrice(token, invalidPrice);
+      const token = await dolomiteMargin.getters.getMarketTokenAddress(defaultMarket);
+      await dolomiteMargin.testing.priceOracle.setPrice(token, invalidPrice);
       await expectThrow(
-        solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+        dolomiteMargin.admin.setPriceOracle(defaultMarket, oracleAddress, {
           from: admin,
         }),
         'AdminImpl: Invalid oracle price',
@@ -1009,23 +1009,23 @@ describe('Admin', () => {
 
     it('Fails for contract without proper function', async () => {
       await expectThrow(
-        solo.admin.setPriceOracle(defaultMarket, setterAddress, {
+        dolomiteMargin.admin.setPriceOracle(defaultMarket, setterAddress, {
           from: admin,
         }),
       );
     });
 
     it('Fails for invalid market', async () => {
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       await expectThrow(
-        solo.admin.setPriceOracle(numMarkets, setterAddress, { from: admin }),
+        dolomiteMargin.admin.setPriceOracle(numMarkets, setterAddress, { from: admin }),
         `AdminImpl: Invalid market <${numMarkets.toFixed()}>`,
       );
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setPriceOracle(defaultMarket, oracleAddress, {
+        dolomiteMargin.admin.setPriceOracle(defaultMarket, oracleAddress, {
           from: nonAdmin,
         }),
       );
@@ -1034,12 +1034,12 @@ describe('Admin', () => {
 
   describe('#ownerSetInterestSetter', () => {
     it('Succeeds', async () => {
-      const token = await solo.getters.getMarketTokenAddress(defaultMarket);
-      await solo.testing.interestSetter.setInterestRate(token, defaultRate);
-      txr = await solo.admin.setInterestSetter(defaultMarket, setterAddress, {
+      const token = await dolomiteMargin.getters.getMarketTokenAddress(defaultMarket);
+      await dolomiteMargin.testing.interestSetter.setInterestRate(token, defaultRate);
+      txr = await dolomiteMargin.admin.setInterestSetter(defaultMarket, setterAddress, {
         from: admin,
       });
-      const logs = solo.logs.parseLogs(txr);
+      const logs = dolomiteMargin.logs.parseLogs(txr);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogSetInterestSetter');
@@ -1049,16 +1049,16 @@ describe('Admin', () => {
 
     it('Fails for contract without proper function', async () => {
       await expectThrow(
-        solo.admin.setInterestSetter(defaultMarket, oracleAddress, {
+        dolomiteMargin.admin.setInterestSetter(defaultMarket, oracleAddress, {
           from: admin,
         }),
       );
     });
 
     it('Fails for invalid market', async () => {
-      const numMarkets = await solo.getters.getNumMarkets();
+      const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       await expectThrow(
-        solo.admin.setInterestSetter(numMarkets, setterAddress, {
+        dolomiteMargin.admin.setInterestSetter(numMarkets, setterAddress, {
           from: admin,
         }),
         `AdminImpl: Invalid market <${numMarkets.toFixed()}>`,
@@ -1067,7 +1067,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setInterestSetter(defaultMarket, setterAddress, {
+        dolomiteMargin.admin.setInterestSetter(defaultMarket, setterAddress, {
           from: nonAdmin,
         }),
       );
@@ -1079,25 +1079,25 @@ describe('Admin', () => {
       await expectMarginPremium(null, defaultPremium);
 
       // set to default
-      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, {
+      txr = await dolomiteMargin.admin.setMarginPremium(defaultMarket, defaultPremium, {
         from: admin,
       });
       await expectMarginPremium(txr, defaultPremium);
 
       // set risky
-      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, {
+      txr = await dolomiteMargin.admin.setMarginPremium(defaultMarket, highPremium, {
         from: admin,
       });
       await expectMarginPremium(txr, highPremium);
 
       // set to risky again
-      txr = await solo.admin.setMarginPremium(defaultMarket, highPremium, {
+      txr = await dolomiteMargin.admin.setMarginPremium(defaultMarket, highPremium, {
         from: admin,
       });
       await expectMarginPremium(txr, highPremium);
 
       // set back to default
-      txr = await solo.admin.setMarginPremium(defaultMarket, defaultPremium, {
+      txr = await dolomiteMargin.admin.setMarginPremium(defaultMarket, defaultPremium, {
         from: admin,
       });
       await expectMarginPremium(txr, defaultPremium);
@@ -1105,7 +1105,7 @@ describe('Admin', () => {
 
     it('Fails for invalid market', async () => {
       await expectThrow(
-        solo.admin.setMarginPremium(invalidMarket, highPremium, {
+        dolomiteMargin.admin.setMarginPremium(invalidMarket, highPremium, {
           from: admin,
         }),
         `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
@@ -1114,7 +1114,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setMarginPremium(defaultMarket, highPremium, {
+        dolomiteMargin.admin.setMarginPremium(defaultMarket, highPremium, {
           from: nonAdmin,
         }),
       );
@@ -1122,7 +1122,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setMarginPremium(
+        dolomiteMargin.admin.setMarginPremium(
           defaultMarket,
           riskLimits.marginPremiumMax.plus(smallestDecimal),
           { from: admin },
@@ -1133,13 +1133,13 @@ describe('Admin', () => {
 
     async function expectMarginPremium(txResult: any, e: Decimal) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetMarginPremium');
         expect(log.args.marginPremium).toEqual(e);
       }
-      const premium = await solo.getters.getMarketMarginPremium(defaultMarket);
+      const premium = await dolomiteMargin.getters.getMarketMarginPremium(defaultMarket);
       expect(premium).toEqual(e);
     }
   });
@@ -1149,25 +1149,25 @@ describe('Admin', () => {
       await expectSpreadPremium(null, defaultPremium);
 
       // set to default
-      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, {
+      txr = await dolomiteMargin.admin.setSpreadPremium(defaultMarket, defaultPremium, {
         from: admin,
       });
       await expectSpreadPremium(txr, defaultPremium);
 
       // set risky
-      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+      txr = await dolomiteMargin.admin.setSpreadPremium(defaultMarket, highPremium, {
         from: admin,
       });
       await expectSpreadPremium(txr, highPremium);
 
       // set to risky again
-      txr = await solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+      txr = await dolomiteMargin.admin.setSpreadPremium(defaultMarket, highPremium, {
         from: admin,
       });
       await expectSpreadPremium(txr, highPremium);
 
       // set back to default
-      txr = await solo.admin.setSpreadPremium(defaultMarket, defaultPremium, {
+      txr = await dolomiteMargin.admin.setSpreadPremium(defaultMarket, defaultPremium, {
         from: admin,
       });
       await expectSpreadPremium(txr, defaultPremium);
@@ -1178,11 +1178,11 @@ describe('Admin', () => {
       const premium2 = new BigNumber('0.3');
 
       await Promise.all([
-        solo.admin.setSpreadPremium(defaultMarket, premium1, { from: admin }),
-        solo.admin.setSpreadPremium(secondaryMarket, premium2, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(defaultMarket, premium1, { from: admin }),
+        dolomiteMargin.admin.setSpreadPremium(secondaryMarket, premium2, { from: admin }),
       ]);
 
-      const result = await solo.getters.getLiquidationSpreadForPair(
+      const result = await dolomiteMargin.getters.getLiquidationSpreadForPair(
         defaultMarket,
         secondaryMarket,
       );
@@ -1195,7 +1195,7 @@ describe('Admin', () => {
 
     it('Fails for invalid market', async () => {
       await expectThrow(
-        solo.admin.setSpreadPremium(invalidMarket, highPremium, {
+        dolomiteMargin.admin.setSpreadPremium(invalidMarket, highPremium, {
           from: admin,
         }),
         `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
@@ -1204,7 +1204,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setSpreadPremium(defaultMarket, highPremium, {
+        dolomiteMargin.admin.setSpreadPremium(defaultMarket, highPremium, {
           from: nonAdmin,
         }),
       );
@@ -1212,7 +1212,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setSpreadPremium(
+        dolomiteMargin.admin.setSpreadPremium(
           defaultMarket,
           riskLimits.spreadPremiumMax.plus(smallestDecimal),
           { from: admin },
@@ -1223,13 +1223,13 @@ describe('Admin', () => {
 
     async function expectSpreadPremium(txResult: any, e: Decimal) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetSpreadPremium');
         expect(log.args.spreadPremium).toEqual(e);
       }
-      const premium = await solo.getters.getMarketSpreadPremium(defaultMarket);
+      const premium = await dolomiteMargin.getters.getMarketSpreadPremium(defaultMarket);
       expect(premium).toEqual(e);
     }
   });
@@ -1241,19 +1241,19 @@ describe('Admin', () => {
       await expectMarginRatio(null, riskParams.marginRatio);
 
       // keep same
-      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, {
+      txr = await dolomiteMargin.admin.setMarginRatio(riskParams.marginRatio, {
         from: admin,
       });
       await expectMarginRatio(txr, riskParams.marginRatio);
 
       // set to max
-      txr = await solo.admin.setMarginRatio(riskLimits.marginRatioMax, {
+      txr = await dolomiteMargin.admin.setMarginRatio(riskLimits.marginRatioMax, {
         from: admin,
       });
       await expectMarginRatio(txr, riskLimits.marginRatioMax);
 
       // set back to original
-      txr = await solo.admin.setMarginRatio(riskParams.marginRatio, {
+      txr = await dolomiteMargin.admin.setMarginRatio(riskParams.marginRatio, {
         from: admin,
       });
       await expectMarginRatio(txr, riskParams.marginRatio);
@@ -1263,10 +1263,10 @@ describe('Admin', () => {
       // setup
       const error = 'AdminImpl: Ratio cannot be <= spread';
       const liquidationSpread = smallestDecimal.times(10);
-      await solo.admin.setLiquidationSpread(liquidationSpread, { from: admin });
+      await dolomiteMargin.admin.setLiquidationSpread(liquidationSpread, { from: admin });
 
       // passes when above the spread
-      txr = await solo.admin.setMarginRatio(
+      txr = await dolomiteMargin.admin.setMarginRatio(
         liquidationSpread.plus(smallestDecimal),
         { from: admin },
       );
@@ -1274,13 +1274,13 @@ describe('Admin', () => {
 
       // revert when equal to the spread
       await expectThrow(
-        solo.admin.setMarginRatio(liquidationSpread, { from: admin }),
+        dolomiteMargin.admin.setMarginRatio(liquidationSpread, { from: admin }),
         error,
       );
 
       // revert when below the spread
       await expectThrow(
-        solo.admin.setMarginRatio(liquidationSpread.minus(smallestDecimal), {
+        dolomiteMargin.admin.setMarginRatio(liquidationSpread.minus(smallestDecimal), {
           from: admin,
         }),
         error,
@@ -1289,7 +1289,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setMarginRatio(
+        dolomiteMargin.admin.setMarginRatio(
           riskLimits.marginRatioMax.plus(smallestDecimal),
           { from: admin },
         ),
@@ -1299,19 +1299,19 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setMarginRatio(riskParams.marginRatio, { from: nonAdmin }),
+        dolomiteMargin.admin.setMarginRatio(riskParams.marginRatio, { from: nonAdmin }),
       );
     });
 
     async function expectMarginRatio(txResult: any, e: Integer) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetMarginRatio');
         expect(log.args.marginRatio).toEqual(e);
       }
-      const result = await solo.getters.getMarginRatio();
+      const result = await dolomiteMargin.getters.getMarginRatio();
       expect(result).toEqual(e);
     }
   });
@@ -1319,27 +1319,27 @@ describe('Admin', () => {
   describe('#ownerSetLiquidationSpread', () => {
     it('Succeeds', async () => {
       // setup
-      await solo.admin.setMarginRatio(riskLimits.marginRatioMax, {
+      await dolomiteMargin.admin.setMarginRatio(riskLimits.marginRatioMax, {
         from: admin,
       });
       await expectLiquidationSpread(null, riskParams.liquidationSpread);
 
       // keep same
-      txr = await solo.admin.setLiquidationSpread(
+      txr = await dolomiteMargin.admin.setLiquidationSpread(
         riskParams.liquidationSpread,
         { from: admin },
       );
       await expectLiquidationSpread(txr, riskParams.liquidationSpread);
 
       // set to max
-      txr = await solo.admin.setLiquidationSpread(
+      txr = await dolomiteMargin.admin.setLiquidationSpread(
         riskLimits.liquidationSpreadMax,
         { from: admin },
       );
       await expectLiquidationSpread(txr, riskLimits.liquidationSpreadMax);
 
       // set back to original
-      txr = await solo.admin.setLiquidationSpread(
+      txr = await dolomiteMargin.admin.setLiquidationSpread(
         riskParams.liquidationSpread,
         { from: admin },
       );
@@ -1350,10 +1350,10 @@ describe('Admin', () => {
       // setup
       const error = 'AdminImpl: Spread cannot be >= ratio';
       const marginRatio = new BigNumber('0.1');
-      await solo.admin.setMarginRatio(marginRatio, { from: admin });
+      await dolomiteMargin.admin.setMarginRatio(marginRatio, { from: admin });
 
       // passes when below the ratio
-      txr = await solo.admin.setLiquidationSpread(
+      txr = await dolomiteMargin.admin.setLiquidationSpread(
         marginRatio.minus(smallestDecimal),
         { from: admin },
       );
@@ -1361,13 +1361,13 @@ describe('Admin', () => {
 
       // reverts when equal to the ratio
       await expectThrow(
-        solo.admin.setLiquidationSpread(marginRatio, { from: admin }),
+        dolomiteMargin.admin.setLiquidationSpread(marginRatio, { from: admin }),
         error,
       );
 
       // reverts when above the ratio
       await expectThrow(
-        solo.admin.setLiquidationSpread(marginRatio.plus(smallestDecimal), {
+        dolomiteMargin.admin.setLiquidationSpread(marginRatio.plus(smallestDecimal), {
           from: admin,
         }),
         error,
@@ -1376,7 +1376,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setLiquidationSpread(
+        dolomiteMargin.admin.setLiquidationSpread(
           riskLimits.liquidationSpreadMax.plus(smallestDecimal),
           { from: admin },
         ),
@@ -1386,7 +1386,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setLiquidationSpread(riskParams.liquidationSpread, {
+        dolomiteMargin.admin.setLiquidationSpread(riskParams.liquidationSpread, {
           from: nonAdmin,
         }),
       );
@@ -1394,13 +1394,13 @@ describe('Admin', () => {
 
     async function expectLiquidationSpread(txResult: any, e: Integer) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetLiquidationSpread');
         expect(log.args.liquidationSpread).toEqual(e);
       }
-      const result = await solo.getters.getLiquidationSpread();
+      const result = await dolomiteMargin.getters.getLiquidationSpread();
       expect(result).toEqual(e);
     }
   });
@@ -1410,19 +1410,19 @@ describe('Admin', () => {
       await expectEarningsRate(null, riskParams.earningsRate);
 
       // keep same
-      txr = await solo.admin.setEarningsRate(riskParams.earningsRate, {
+      txr = await dolomiteMargin.admin.setEarningsRate(riskParams.earningsRate, {
         from: admin,
       });
       await expectEarningsRate(txr, riskParams.earningsRate);
 
       // set to max
-      txr = await solo.admin.setEarningsRate(riskLimits.earningsRateMax, {
+      txr = await dolomiteMargin.admin.setEarningsRate(riskLimits.earningsRateMax, {
         from: admin,
       });
       await expectEarningsRate(txr, riskLimits.earningsRateMax);
 
       // set back to original
-      txr = await solo.admin.setEarningsRate(riskParams.earningsRate, {
+      txr = await dolomiteMargin.admin.setEarningsRate(riskParams.earningsRate, {
         from: admin,
       });
       await expectEarningsRate(txr, riskParams.earningsRate);
@@ -1430,7 +1430,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setEarningsRate(
+        dolomiteMargin.admin.setEarningsRate(
           riskLimits.earningsRateMax.plus(tenToNeg18),
           { from: admin },
         ),
@@ -1440,7 +1440,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setEarningsRate(riskParams.earningsRate, { from: nonAdmin }),
+        dolomiteMargin.admin.setEarningsRate(riskParams.earningsRate, { from: nonAdmin }),
       );
     });
 
@@ -1448,13 +1448,13 @@ describe('Admin', () => {
 
     async function expectEarningsRate(txResult: any, e: Decimal) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetEarningsRate');
         expect(log.args.earningsRate).toEqual(e);
       }
-      const result = await solo.getters.getEarningsRate();
+      const result = await dolomiteMargin.getters.getEarningsRate();
       expect(result).toEqual(e);
     }
   });
@@ -1464,20 +1464,20 @@ describe('Admin', () => {
       await expectMinBorrowedValue(null, riskParams.minBorrowedValue);
 
       // keep same
-      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+      txr = await dolomiteMargin.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
         from: admin,
       });
       await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
 
       // set to max
-      txr = await solo.admin.setMinBorrowedValue(
+      txr = await dolomiteMargin.admin.setMinBorrowedValue(
         riskLimits.minBorrowedValueMax,
         { from: admin },
       );
       await expectMinBorrowedValue(txr, riskLimits.minBorrowedValueMax);
 
       // set back to original
-      txr = await solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+      txr = await dolomiteMargin.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
         from: admin,
       });
       await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
@@ -1485,7 +1485,7 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        solo.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax.plus(1), {
+        dolomiteMargin.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax.plus(1), {
           from: admin,
         }),
         'AdminImpl: Value too high',
@@ -1494,7 +1494,7 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
+        dolomiteMargin.admin.setMinBorrowedValue(riskParams.minBorrowedValue, {
           from: nonAdmin,
         }),
       );
@@ -1502,13 +1502,13 @@ describe('Admin', () => {
 
     async function expectMinBorrowedValue(txResult: any, e: Integer) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetMinBorrowedValue');
         expect(log.args.minBorrowedValue).toEqual(e);
       }
-      const result = await solo.getters.getMinBorrowedValue();
+      const result = await dolomiteMargin.getters.getMinBorrowedValue();
       expect(result).toEqual(e);
     }
   });
@@ -1518,15 +1518,15 @@ describe('Admin', () => {
   describe('#ownerSetGlobalOperator', () => {
     it('Succeeds', async () => {
       await expectGlobalOperatorToBe(null, false);
-      txr = await solo.admin.setGlobalOperator(operator, false, {
+      txr = await dolomiteMargin.admin.setGlobalOperator(operator, false, {
         from: admin,
       });
       await expectGlobalOperatorToBe(txr, false);
-      txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
+      txr = await dolomiteMargin.admin.setGlobalOperator(operator, true, { from: admin });
       await expectGlobalOperatorToBe(txr, true);
-      txr = await solo.admin.setGlobalOperator(operator, true, { from: admin });
+      txr = await dolomiteMargin.admin.setGlobalOperator(operator, true, { from: admin });
       await expectGlobalOperatorToBe(txr, true);
-      txr = await solo.admin.setGlobalOperator(operator, false, {
+      txr = await dolomiteMargin.admin.setGlobalOperator(operator, false, {
         from: admin,
       });
       await expectGlobalOperatorToBe(txr, false);
@@ -1534,20 +1534,20 @@ describe('Admin', () => {
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        solo.admin.setGlobalOperator(operator, true, { from: nonAdmin }),
+        dolomiteMargin.admin.setGlobalOperator(operator, true, { from: nonAdmin }),
       );
     });
 
     async function expectGlobalOperatorToBe(txResult: any, b: boolean) {
       if (txResult) {
-        const logs = solo.logs.parseLogs(txResult);
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
         expect(log.name).toEqual('LogSetGlobalOperator');
         expect(log.args.operator).toEqual(operator);
         expect(log.args.approved).toEqual(b);
       }
-      const result = await solo.getters.getIsGlobalOperator(operator);
+      const result = await dolomiteMargin.getters.getIsGlobalOperator(operator);
       expect(result).toEqual(b);
     }
   });
@@ -1556,10 +1556,10 @@ describe('Admin', () => {
 
   describe('Logs', () => {
     it('Skips logs when necessary', async () => {
-      txr = await solo.admin.setGlobalOperator(operator, false, {
+      txr = await dolomiteMargin.admin.setGlobalOperator(operator, false, {
         from: admin,
       });
-      const logs = solo.logs.parseLogs(txr, { skipAdminLogs: true });
+      const logs = dolomiteMargin.logs.parseLogs(txr, { skipAdminLogs: true });
       expect(logs.length).toEqual(0);
     });
   });

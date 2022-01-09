@@ -35,7 +35,7 @@ import { Token } from "./lib/Token.sol";
  * @title Admin
  * @author dYdX
  *
- * Public functions that allow the privileged owner address to manage Solo
+ * Public functions that allow the privileged owner address to manage DolomiteMargin
  */
 contract Admin is
     State,
@@ -47,8 +47,8 @@ contract Admin is
     /**
      * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be
      * withdrawn. The number of excess tokens is calculated by taking the current number of tokens
-     * held in Solo, adding the number of tokens owed to Solo by borrowers, and subtracting the
-     * number of tokens owed to suppliers by Solo.
+     * held in DolomiteMargin, adding the number of tokens owed to DolomiteMargin by borrowers, and subtracting the
+     * number of tokens owed to suppliers by DolomiteMargin.
      */
     function ownerWithdrawExcessTokens(
         uint256 marketId,
@@ -88,7 +88,7 @@ contract Admin is
     // ============ Market Functions ============
 
     /**
-     * Add a new market to Solo. Must be for a previously-unsupported ERC20 token.
+     * Add a new market to DolomiteMargin. Must be for a previously-unsupported ERC20 token.
      */
     function ownerAddMarket(
         address token,
@@ -116,7 +116,7 @@ contract Admin is
     }
 
     /**
-     * Removes a market from Solo, sends any remaining tokens in this contract to `salvager` and invokes the recyclable
+     * Removes a market from DolomiteMargin, sends any remaining tokens in this contract to `salvager` and invokes the recyclable
      * callback
      */
     function ownerRemoveMarkets(
@@ -281,7 +281,7 @@ contract Admin is
     }
 
     /**
-     * Set the global minimum-borrow value which is the minimum value of any new borrow on Solo.
+     * Set the global minimum-borrow value which is the minimum value of any new borrow on DolomiteMargin.
      */
     function ownerSetMinBorrowedValue(
         Monetary.Value memory minBorrowedValue
@@ -300,7 +300,7 @@ contract Admin is
 
     /**
      * Approve (or disapprove) an address that is permissioned to be an operator for all accounts in
-     * Solo. Intended only to approve smart-contracts.
+     * DolomiteMargin. Intended only to approve smart-contracts.
      */
     function ownerSetGlobalOperator(
         address operator,

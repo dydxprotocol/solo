@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -20,7 +20,7 @@ let admin: address;
 let operator: address;
 const accountNumber1 = new BigNumber(133);
 const accountNumber2 = new BigNumber(244);
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const market = INTEGERS.ZERO;
 const collateralMarket = new BigNumber(2);
@@ -36,13 +36,13 @@ describe('Transfer', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
     owner1 = accounts[5];
     owner2 = accounts[6];
-    operator = solo.getDefaultAccount();
+    operator = dolomiteMargin.getDefaultAccount();
     defaultGlob = {
       primaryAccountOwner: owner1,
       primaryAccountId: accountNumber1,
@@ -57,22 +57,22 @@ describe('Transfer', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: new BigNumber(1.5),
         supply: new BigNumber(1.5),
       }),
-      solo.permissions.approveOperator(operator, { from: owner1 }),
-      solo.permissions.approveOperator(operator, { from: owner2 }),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.permissions.approveOperator(operator, { from: owner1 }),
+      dolomiteMargin.permissions.approveOperator(operator, { from: owner2 }),
+      dolomiteMargin.testing.setAccountBalance(
         owner1,
         accountNumber1,
         collateralMarket,
         collateralAmount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         collateralMarket,
@@ -91,18 +91,18 @@ describe('Transfer', () => {
     const halfAmount = new BigNumber(50);
 
     await Promise.all([
-      solo.testing.setMarketIndex(market, {
+      dolomiteMargin.testing.setMarketIndex(market, {
         lastUpdate: INTEGERS.ZERO,
         borrow: INTEGERS.ONE,
         supply: INTEGERS.ONE,
       }),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner1,
         accountNumber1,
         market,
         fullAmount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner2,
         accountNumber2,
         market,
@@ -129,7 +129,7 @@ describe('Transfer', () => {
   });
 
   it('Succeeds for events', async () => {
-    await solo.admin.setGlobalOperator(operator, true, { from: admin });
+    await dolomiteMargin.admin.setGlobalOperator(operator, true, { from: admin });
 
     const txResult = await expectTransferOkay(
       {
@@ -143,12 +143,12 @@ describe('Transfer', () => {
     );
 
     const [marketIndex, collateralIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(market),
-      solo.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(market),
+      dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
       expectBalances(par, wei, negPar, negWei),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -437,12 +437,12 @@ describe('Transfer', () => {
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         owner1,
         accountNumber1,
         AccountStatus.Liquidating,
       ),
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         owner2,
         accountNumber2,
         AccountStatus.Liquidating,
@@ -450,8 +450,8 @@ describe('Transfer', () => {
     ]);
     await expectTransferOkay({});
     const [status1, status2] = await Promise.all([
-      solo.getters.getAccountStatus(owner1, accountNumber1),
-      solo.getters.getAccountStatus(owner2, accountNumber2),
+      dolomiteMargin.getters.getAccountStatus(owner1, accountNumber1),
+      dolomiteMargin.getters.getAccountStatus(owner2, accountNumber2),
     ]);
     expect(status1).toEqual(AccountStatus.Normal);
     expect(status2).toEqual(AccountStatus.Normal);
@@ -459,9 +459,9 @@ describe('Transfer', () => {
 
   it('Succeeds for global operator', async () => {
     await Promise.all([
-      solo.permissions.disapproveOperator(operator, { from: owner1 }),
-      solo.permissions.disapproveOperator(operator, { from: owner2 }),
-      solo.admin.setGlobalOperator(operator, true, { from: admin }),
+      dolomiteMargin.permissions.disapproveOperator(operator, { from: owner1 }),
+      dolomiteMargin.permissions.disapproveOperator(operator, { from: owner2 }),
+      dolomiteMargin.admin.setGlobalOperator(operator, true, { from: admin }),
     ]);
     await expectTransferOkay({});
   });
@@ -473,7 +473,7 @@ describe('Transfer', () => {
   });
 
   it('Fails for non-operator on first account', async () => {
-    await solo.permissions.disapproveOperator(operator, { from: owner1 });
+    await dolomiteMargin.permissions.disapproveOperator(operator, { from: owner1 });
     await expectTransferRevert(
       {
         amount: {
@@ -487,7 +487,7 @@ describe('Transfer', () => {
   });
 
   it('Fails for non-operator on second account', async () => {
-    await solo.permissions.disapproveOperator(operator, { from: owner2 });
+    await dolomiteMargin.permissions.disapproveOperator(operator, { from: owner2 });
     await expectTransferRevert(
       {
         amount: {
@@ -515,8 +515,8 @@ describe('Transfer', () => {
 
 async function setAccountBalances(amount1: BigNumber, amount2: BigNumber) {
   await Promise.all([
-    solo.testing.setAccountBalance(owner1, accountNumber1, market, amount1),
-    solo.testing.setAccountBalance(owner2, accountNumber2, market, amount2),
+    dolomiteMargin.testing.setAccountBalance(owner1, accountNumber1, market, amount1),
+    dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, market, amount2),
   ]);
 }
 
@@ -527,8 +527,8 @@ async function expectBalances(
   wei2: Integer,
 ) {
   const [accountBalances1, accountBalances2] = await Promise.all([
-    solo.getters.getAccountBalances(owner1, accountNumber1),
-    solo.getters.getAccountBalances(owner2, accountNumber2),
+    dolomiteMargin.getters.getAccountBalances(owner1, accountNumber1),
+    dolomiteMargin.getters.getAccountBalances(owner2, accountNumber2),
   ]);
   accountBalances1.forEach((balance, i) => {
     let expected = { par: zero, wei: zero };
@@ -554,7 +554,7 @@ async function expectBalances(
 
 async function expectTransferOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .transfer(combinedGlob)
     .commit(options);

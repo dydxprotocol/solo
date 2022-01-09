@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { address, Amount, AmountDenomination, AmountReference, Integer, TxResult, } from '../../src/types';
 
@@ -20,7 +20,7 @@ import { expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { EVM } from '../modules/EVM';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let admin: address;
 let user: address;
@@ -45,8 +45,8 @@ describe('RecyclableTokenProxy', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
     user = accounts[2];
@@ -55,10 +55,10 @@ describe('RecyclableTokenProxy', () => {
 
     await resetEVM();
 
-    await Promise.all([setupMarkets(solo, accounts, 3)]);
+    await Promise.all([setupMarkets(dolomiteMargin, accounts, 3)]);
 
-    oracleAddress = solo.testing.priceOracle.getAddress();
-    setterAddress = solo.testing.interestSetter.getAddress();
+    oracleAddress = dolomiteMargin.testing.priceOracle.getAddress();
+    setterAddress = dolomiteMargin.testing.interestSetter.getAddress();
 
     const {
       recyclableToken: _recyclableToken,
@@ -67,28 +67,28 @@ describe('RecyclableTokenProxy', () => {
     recyclableToken = _recyclableToken;
     customToken = _customToken;
     marketId = new BigNumber(await recyclableToken.methods.MARKET_ID().call());
-    borrowTokenAddress = await solo.getters.getMarketTokenAddress(
+    borrowTokenAddress = await dolomiteMargin.getters.getMarketTokenAddress(
       borrowMarketId,
     );
 
-    const borrowToken = new solo.web3.eth.Contract(
+    const borrowToken = new dolomiteMargin.web3.eth.Contract(
       customTestTokenABI,
       borrowTokenAddress,
     ) as CustomTestToken;
     await borrowToken.methods
-      .setBalance(solo.contracts.soloMargin.options.address, '1000000')
+      .setBalance(dolomiteMargin.contracts.dolomiteMargin.options.address, '1000000')
       .send({
         from: admin,
         gas: '100000',
       });
 
     // set the price to be 100 times less than the recyclable price.
-    await solo.testing.priceOracle.setPrice(borrowTokenAddress, defaultPrice);
+    await dolomiteMargin.testing.priceOracle.setPrice(borrowTokenAddress, defaultPrice);
 
-    testTrader = (await new solo.web3.eth.Contract(testTraderABI)
+    testTrader = (await new dolomiteMargin.web3.eth.Contract(testTraderABI)
       .deploy({
         data: testTraderBytecode,
-        arguments: [solo.contracts.soloMargin.options.address],
+        arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address],
       })
       .send({ from: admin, gas: '6000000' })) as TestTrader;
 
@@ -102,24 +102,24 @@ describe('RecyclableTokenProxy', () => {
   // ============ Token Functions ============
 
   describe('#getAccountNumber', () => {
-    it('Successfully deposits into Solo', async () => {
+    it('Successfully deposits into DolomiteMargin', async () => {
       const _number = 1;
       const account = { owner: user, number: _number };
       const accountNumber = await recyclableToken.methods
         .getAccountNumber(account)
         .call();
-      const created = solo.web3.utils.keccak256(
-        solo.web3.eth.abi.encodeParameters(
+      const created = dolomiteMargin.web3.utils.keccak256(
+        dolomiteMargin.web3.eth.abi.encodeParameters(
           ['address', 'uint256'],
           [user, _number],
         ),
       );
-      expect(accountNumber).toEqual(solo.web3.utils.hexToNumberString(created));
+      expect(accountNumber).toEqual(dolomiteMargin.web3.utils.hexToNumberString(created));
     });
   });
 
-  describe('#depositIntoSolo', () => {
-    it('Successfully deposits into Solo', async () => {
+  describe('#depositIntoDolomiteMargin', () => {
+    it('Successfully deposits into DolomiteMargin', async () => {
       const tx = {
         from: user,
         gas: '1000000',
@@ -131,14 +131,14 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(balance),
       );
     });
 
-    it('Successfully deposits into Solo with random account number', async () => {
+    it('Successfully deposits into DolomiteMargin with random account number', async () => {
       const tx = {
         from: user,
         gas: '1000000',
@@ -150,7 +150,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(balance),
@@ -162,7 +162,7 @@ describe('RecyclableTokenProxy', () => {
       const balance = 100;
       await expireMarket();
       await expectThrow(
-        recyclableToken.methods.depositIntoSolo(accountNumber, balance).send({
+        recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send({
           from: user,
           gas: '1000000',
         }),
@@ -175,7 +175,7 @@ describe('RecyclableTokenProxy', () => {
       const balance = 100;
       await removeMarket(marketId, recyclableToken.options.address);
       await expectThrow(
-        recyclableToken.methods.depositIntoSolo(accountNumber, balance).send({
+        recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send({
           from: user,
           gas: '1000000',
         }),
@@ -193,15 +193,15 @@ describe('RecyclableTokenProxy', () => {
       await customToken.methods.setBalance(user, balance).send(tx);
       await expectThrow(
         recyclableToken.methods
-          .depositIntoSolo(accountNumber, balance)
+          .depositIntoDolomiteMargin(accountNumber, balance)
           .send(tx),
         'SafeERC20: low-level call failed',
       );
     });
   });
 
-  describe('#withdrawFromSolo', () => {
-    it('Successfully withdraws from Solo', async () => {
+  describe('#withdrawFromDolomiteMargin', () => {
+    it('Successfully withdraws from DolomiteMargin', async () => {
       const tx = {
         from: user,
         gas: '1000000',
@@ -213,10 +213,10 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       await recyclableToken.methods
-        .withdrawFromSolo(accountNumber, balance - 10)
+        .withdrawFromDolomiteMargin(accountNumber, balance - 10)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(10),
@@ -238,12 +238,12 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       await expectThrow(
         recyclableToken.methods
-          .withdrawFromSolo(accountNumber, balance)
+          .withdrawFromDolomiteMargin(accountNumber, balance)
           .send(tx),
         'RecyclableTokenProxy: cannot withdraw when recycled',
       );
@@ -263,7 +263,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       expect(await customToken.methods.balanceOf(user).call()).toEqual('0');
@@ -287,7 +287,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, balance)
+        .depositIntoDolomiteMargin(accountNumber, balance)
         .send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       expect(await customToken.methods.balanceOf(user).call()).toEqual('0');
@@ -330,7 +330,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, supplyBalancePar)
+        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar),
@@ -365,7 +365,7 @@ describe('RecyclableTokenProxy', () => {
         })
         .call();
       expect(
-        await solo.expiryV2.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
+        await dolomiteMargin.expiry.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
       ).toEqual(new BigNumber(defaultExpirationTimestamp));
     });
 
@@ -382,7 +382,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, supplyBalancePar)
+        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar),
@@ -417,7 +417,7 @@ describe('RecyclableTokenProxy', () => {
         })
         .call();
       expect(
-        await solo.expiryV2.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
+        await dolomiteMargin.expiry.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
       ).toEqual(new BigNumber(defaultExpirationTimestamp));
 
       await recyclableToken.methods
@@ -555,7 +555,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(outerAccountNumber, supplyBalancePar)
+        .depositIntoDolomiteMargin(outerAccountNumber, supplyBalancePar)
         .send(tx);
       await expectThrow(
         recyclableToken.methods
@@ -589,7 +589,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, supplyBalancePar)
+        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar),
@@ -611,12 +611,12 @@ describe('RecyclableTokenProxy', () => {
         )
         .send(tx);
 
-      await solo.testing.priceOracle.setPrice(
+      await dolomiteMargin.testing.priceOracle.setPrice(
         borrowTokenAddress,
         new BigNumber('1740000000000000000000000000000000000'),
       );
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         liquidator,
         INTEGERS.ZERO,
         borrowMarketId,
@@ -638,12 +638,12 @@ describe('RecyclableTokenProxy', () => {
       };
 
       // Only global operators can be liquidators
-      await solo.admin.setGlobalOperator(liquidator, true, {
+      await dolomiteMargin.admin.setGlobalOperator(liquidator, true, {
         from: admin,
         gas: '1000000',
       });
 
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate()
         .liquidate({
           primaryAccountOwner: liquidator,
@@ -664,7 +664,7 @@ describe('RecyclableTokenProxy', () => {
         .commit({ from: liquidator, gas: '4000000' });
     });
 
-    it('Fails to liquidate if the liquidator keeps the collateral in Solo', async () => {
+    it('Fails to liquidate if the liquidator keeps the collateral in DolomiteMargin', async () => {
       const tx = {
         from: user,
         gas: '4000000',
@@ -677,7 +677,7 @@ describe('RecyclableTokenProxy', () => {
         .send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
       await recyclableToken.methods
-        .depositIntoSolo(accountNumber, supplyBalancePar)
+        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
         .send(tx);
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar),
@@ -699,12 +699,12 @@ describe('RecyclableTokenProxy', () => {
         )
         .send(tx);
 
-      await solo.testing.priceOracle.setPrice(
+      await dolomiteMargin.testing.priceOracle.setPrice(
         borrowTokenAddress,
         new BigNumber('1740000000000000000000000000000000000'),
       );
 
-      await solo.testing.setAccountBalance(
+      await dolomiteMargin.testing.setAccountBalance(
         liquidator,
         INTEGERS.ZERO,
         borrowMarketId,
@@ -726,13 +726,13 @@ describe('RecyclableTokenProxy', () => {
       };
 
       // Only global operators can be liquidators
-      await solo.admin.setGlobalOperator(liquidator, true, {
+      await dolomiteMargin.admin.setGlobalOperator(liquidator, true, {
         from: admin,
         gas: '1000000',
       });
 
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate()
           .liquidate({
             primaryAccountOwner: liquidator,
@@ -760,7 +760,7 @@ describe('RecyclableTokenProxy', () => {
     const isClosing = true;
     const isRecyclable = true;
 
-    const underlyingToken = (await new solo.web3.eth.Contract(
+    const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
       customTestTokenABI,
     )
       .deploy({
@@ -769,24 +769,24 @@ describe('RecyclableTokenProxy', () => {
       })
       .send({ from: admin, gas: '6000000' })) as CustomTestToken;
 
-    const recyclableToken = (await new solo.web3.eth.Contract(recyclableABI)
+    const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
       .deploy({
         data: recyclableBytecode,
         arguments: [
-          solo.contracts.soloMargin.options.address,
+          dolomiteMargin.contracts.dolomiteMargin.options.address,
           underlyingToken.options.address,
-          solo.contracts.expiryV2.options.address,
+          dolomiteMargin.contracts.expiry.options.address,
           maxExpirationTimestamp,
         ],
       })
       .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-    await solo.testing.priceOracle.setPrice(
+    await dolomiteMargin.testing.priceOracle.setPrice(
       recyclableToken.options.address,
       defaultPrice,
     );
 
-    await solo.admin.addMarket(
+    await dolomiteMargin.admin.addMarket(
       recyclableToken.options.address,
       oracleAddress,
       setterAddress,
@@ -805,7 +805,7 @@ describe('RecyclableTokenProxy', () => {
     recycler: address,
   ): Promise<TxResult> {
     await expireMarket();
-    return solo.admin.removeMarkets([marketId], recycler, { from: admin });
+    return dolomiteMargin.admin.removeMarkets([marketId], recycler, { from: admin });
   }
 
   async function getOwnerBalance(
@@ -819,7 +819,7 @@ describe('RecyclableTokenProxy', () => {
         number: accountNumber,
       })
       .call();
-    return await solo.getters.getAccountPar(
+    return await dolomiteMargin.getters.getAccountPar(
       recyclableToken.options.address,
       new BigNumber(recyclableAccount),
       market,
@@ -827,7 +827,7 @@ describe('RecyclableTokenProxy', () => {
   }
 
   async function expireMarket(): Promise<void> {
-    await new EVM(solo.web3.currentProvider).callJsonrpcMethod(
+    await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
       'evm_increaseTime',
       [(maxExpirationTimestamp - currentTimestamp + 1) + 86400 * 7], // 86400 * 7 is the buffer time; add 1 second as an additional buffer
     );

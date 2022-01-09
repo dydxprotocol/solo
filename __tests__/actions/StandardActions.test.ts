@@ -1,65 +1,65 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { address, Integer, MarketId } from '../../src/types';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let tokens: address[];
 let accountOwner: address;
 const amount = new BigNumber(123456);
 const accountNumber = INTEGERS.ZERO;
-const markets = [MarketId.ETH, MarketId.WETH, MarketId.SAI, MarketId.USDC];
+const markets = [MarketId.ETH, MarketId.WETH, MarketId.USDC];
 
 describe('StandardActions', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accountOwner = r.accounts[5];
     await resetEVM();
-    const soloAddress = solo.contracts.testSoloMargin.options.address;
+    const dolomiteMarginAddress = dolomiteMargin.contracts.testDolomiteMargin.options.address;
 
     // setup markets
-    await solo.testing.priceOracle.setPrice(
-      solo.weth.getAddress(),
+    await dolomiteMargin.testing.priceOracle.setPrice(
+      dolomiteMargin.weth.getAddress(),
       new BigNumber('1e40'),
     );
-    await solo.admin.addMarket(
-      solo.weth.getAddress(),
-      solo.testing.priceOracle.getAddress(),
-      solo.testing.interestSetter.getAddress(),
+    await dolomiteMargin.admin.addMarket(
+      dolomiteMargin.weth.getAddress(),
+      dolomiteMargin.testing.priceOracle.getAddress(),
+      dolomiteMargin.testing.interestSetter.getAddress(),
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       false,
       false,
       { from: r.accounts[0] },
     );
-    await setupMarkets(solo, r.accounts, 2);
+    await setupMarkets(dolomiteMargin, r.accounts, 2);
     tokens = await Promise.all([
-      solo.getters.getMarketTokenAddress(new BigNumber(0)),
-      solo.getters.getMarketTokenAddress(new BigNumber(1)),
-      solo.getters.getMarketTokenAddress(new BigNumber(2)),
+      dolomiteMargin.getters.getMarketTokenAddress(new BigNumber(0)),
+      dolomiteMargin.getters.getMarketTokenAddress(new BigNumber(1)),
+      dolomiteMargin.getters.getMarketTokenAddress(new BigNumber(2)),
     ]);
 
     // set balances
     await Promise.all([
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         accountOwner,
         accountNumber,
         new BigNumber(0),
         amount.times(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         accountOwner,
         accountNumber,
         new BigNumber(1),
         amount.times(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         accountOwner,
         accountNumber,
         new BigNumber(2),
@@ -69,19 +69,19 @@ describe('StandardActions', () => {
 
     // give tokens
     await Promise.all([
-      solo.weth.wrap(accountOwner, amount.times(3)),
-      solo.testing.tokenA.issueTo(amount, accountOwner),
-      solo.testing.tokenB.issueTo(amount, accountOwner),
-      solo.testing.tokenA.issueTo(amount.times(2), soloAddress),
-      solo.testing.tokenB.issueTo(amount.times(2), soloAddress),
+      dolomiteMargin.weth.wrap(accountOwner, amount.times(3)),
+      dolomiteMargin.testing.tokenA.issueTo(amount, accountOwner),
+      dolomiteMargin.testing.tokenB.issueTo(amount, accountOwner),
+      dolomiteMargin.testing.tokenA.issueTo(amount.times(2), dolomiteMarginAddress),
+      dolomiteMargin.testing.tokenB.issueTo(amount.times(2), dolomiteMarginAddress),
     ]);
-    await solo.weth.transfer(accountOwner, soloAddress, amount.times(2));
+    await dolomiteMargin.weth.transfer(accountOwner, dolomiteMarginAddress, amount.times(2));
 
     // set allowances
     await Promise.all([
-      solo.weth.setMaximumSoloAllowance(accountOwner),
-      solo.testing.tokenA.setMaximumSoloAllowance(accountOwner),
-      solo.testing.tokenB.setMaximumSoloAllowance(accountOwner),
+      dolomiteMargin.weth.setMaximumDolomiteMarginAllowance(accountOwner),
+      dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(accountOwner),
+      dolomiteMargin.testing.tokenB.setMaximumDolomiteMarginAllowance(accountOwner),
     ]);
 
     snapshotId = await snapshot();
@@ -97,7 +97,7 @@ describe('StandardActions', () => {
         await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
-        await solo.standardActions.deposit({
+        await dolomiteMargin.standardActions.deposit({
           accountNumber,
           accountOwner,
           amount,
@@ -121,7 +121,7 @@ describe('StandardActions', () => {
         await resetEVM(snapshotId);
         const balance0 = await getBalance();
         const marketId = markets[i];
-        await solo.standardActions.withdraw({
+        await dolomiteMargin.standardActions.withdraw({
           accountNumber,
           accountOwner,
           amount,
@@ -146,14 +146,14 @@ describe('StandardActions', () => {
         const balance0 = await getBalance();
         const marketId = markets[i];
         if (!marketId.eq(MarketId.ETH)) {
-          await solo.testing.setAccountBalance(
+          await dolomiteMargin.testing.setAccountBalance(
             accountOwner,
             accountNumber,
             marketId,
             amount.times(2),
           );
         }
-        await solo.standardActions.withdrawToZero({
+        await dolomiteMargin.standardActions.withdrawToZero({
           accountNumber,
           accountOwner,
           marketId,
@@ -176,11 +176,11 @@ function realify(marketId: Integer): Integer {
 }
 
 async function getBalance() {
-  return new BigNumber(await solo.web3.eth.getBalance(accountOwner));
+  return new BigNumber(await dolomiteMargin.web3.eth.getBalance(accountOwner));
 }
 
 async function expectAccountWei(marketId: Integer, expectedWei: Integer) {
-  const accountWei = await solo.getters.getAccountWei(
+  const accountWei = await dolomiteMargin.getters.getAccountWei(
     accountOwner,
     accountNumber,
     realify(marketId),
@@ -189,7 +189,7 @@ async function expectAccountWei(marketId: Integer, expectedWei: Integer) {
 }
 
 async function expectTokens(marketId: Integer, amount: Integer) {
-  const accountTokens = await solo.token.getBalance(
+  const accountTokens = await dolomiteMargin.token.getBalance(
     tokens[marketId.toNumber()],
     accountOwner,
   );

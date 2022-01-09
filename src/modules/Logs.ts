@@ -15,7 +15,7 @@ import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 import { abi as operationAbi } from '../../build/published_contracts/Events.json';
 import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
-import { abi as expiryV2Abi } from '../../build/published_contracts/ExpiryV2.json';
+import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
 import { abi as signedOperationProxyAbi } from '../../build/published_contracts/SignedOperationProxy.json';
 
 export class Logs {
@@ -46,7 +46,7 @@ export class Logs {
     }
     if (options.skipExpiryLogs) {
       logs = logs.filter(
-        (log: any) => !this.logIsFrom(log, expiryV2Abi),
+        (log: any) => !this.logIsFrom(log, expiryAbi),
       );
     }
 
@@ -97,11 +97,11 @@ export class Logs {
 
   private parseLog(log: Log) {
     switch (log.address.toLowerCase()) {
-      case this.contracts.soloMargin.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.soloMargin, log);
+      case this.contracts.dolomiteMargin.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.dolomiteMargin, log);
       }
-      case this.contracts.expiryV2.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.expiryV2, log);
+      case this.contracts.expiry.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.expiry, log);
       }
       // case this.contracts.refunder.options.address.toLowerCase(): {
       //   return this.parseLogWithContract(this.contracts.refunder, log);

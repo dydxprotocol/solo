@@ -39,10 +39,10 @@ const {
 // ============ Contracts ============
 
 // Base Protocol
-const SoloMargin = artifacts.require('SoloMargin');
+const DolomiteMargin = artifacts.require('DolomiteMargin');
 
 // Test Contracts
-const TestSoloMargin = artifacts.require('TestSoloMargin');
+const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenD = artifacts.require('TokenD');
@@ -77,12 +77,12 @@ async function setupProtocol(deployer, network, accounts) {
   }
 
   const [
-    soloMargin,
+    dolomiteMargin,
     tokens,
     oracles,
     setters,
   ] = await Promise.all([
-    getSoloMargin(network),
+    getDolomiteMargin(network),
     getTokens(network),
     getOracles(network),
     getSetters(network),
@@ -116,7 +116,7 @@ async function setupProtocol(deployer, network, accounts) {
   }
 
   await addMarkets(
-    soloMargin,
+    dolomiteMargin,
     tokens,
     oracles,
     setters,
@@ -124,7 +124,7 @@ async function setupProtocol(deployer, network, accounts) {
 }
 
 async function addMarkets(
-  soloMargin,
+  dolomiteMargin,
   tokens,
   priceOracles,
   interestSetters,
@@ -135,7 +135,7 @@ async function addMarkets(
 
   for (let i = 0; i < tokens.length; i += 1) {
     // eslint-disable-next-line no-await-in-loop
-    await soloMargin.ownerAddMarket(
+    await dolomiteMargin.ownerAddMarket(
       tokens[i].address,
       priceOracles[i].address,
       interestSetters[i].address,
@@ -148,11 +148,11 @@ async function addMarkets(
 
 // ============ Network Getter Functions ============
 
-async function getSoloMargin(network) {
+async function getDolomiteMargin(network) {
   if (isDevNetwork(network)) {
-    return TestSoloMargin.deployed();
+    return TestDolomiteMargin.deployed();
   }
-  return SoloMargin.deployed();
+  return DolomiteMargin.deployed();
 }
 
 function getTokens(network) {

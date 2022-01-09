@@ -22,7 +22,7 @@ import { Contracts } from './lib/Contracts';
 import { Interest } from './lib/Interest';
 import { Operation } from './modules/operate/Operation';
 import { Token } from './modules/Token';
-import { ExpiryV2 } from './modules/ExpiryV2';
+import { Expiry } from './modules/Expiry';
 import { Weth } from './modules/Weth';
 import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
@@ -33,20 +33,22 @@ import { Permissions } from './modules/Permissions';
 import { StandardActions } from './modules/StandardActions';
 import { WalletLogin } from './modules/WalletLogin';
 import { ChainlinkPriceOracleV1 } from './modules/oracles/ChainlinkPriceOracleV1';
-import { address, EthereumAccount, Index, Networks, SoloOptions, } from './types';
 import { AmmRebalancerProxy } from './modules/AmmRebalancerProxy';
+import { DolomiteAmmFactory } from './modules/DolomiteAmmFactory';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
 import { LiquidatorProxyWithAmm } from './modules/LiquidatorProxyWithAmm';
-import { DolomiteAmmFactory } from './modules/DolomiteAmmFactory';
+import { SubgraphAPI } from './modules/SubgraphAPI';
 import { BigNumber } from './index';
+import { address, EthereumAccount, Index, Networks, DolomiteMarginOptions, } from './types';
 import { INTEGERS } from './lib/Constants';
 import { valueToInteger } from './lib/Helpers';
 
-export class Solo {
+export class DolomiteMargin {
   public contracts: Contracts;
+  public api: SubgraphAPI;
   public interest: Interest;
   public token: Token;
-  public expiryV2: ExpiryV2;
+  public expiry: Expiry;
   public chainlinkPriceOracle: ChainlinkPriceOracleV1;
   public weth: Weth;
   public web3: Web3;
@@ -67,8 +69,8 @@ export class Solo {
 
   constructor(
     provider: Provider | string,
-    networkId: number = Networks.MAINNET,
-    options: SoloOptions = {},
+    networkId: number = Networks.MUMBAI,
+    options: DolomiteMarginOptions = {},
   ) {
     let realProvider: Provider;
     if (typeof provider === 'string') {
@@ -93,7 +95,7 @@ export class Solo {
     );
     this.interest = new Interest(networkId);
     this.token = new Token(this.contracts);
-    this.expiryV2 = new ExpiryV2(this.contracts);
+    this.expiry = new Expiry(this.contracts);
     this.chainlinkPriceOracle = new ChainlinkPriceOracleV1(this.contracts);
     this.weth = new Weth(this.contracts, this.token);
     this.admin = new Admin(this.contracts);
@@ -156,13 +158,13 @@ export class Solo {
   }
 
   public getMarketTokenAddress(marketId: BigNumber): Promise<address> {
-    return this.contracts.soloMargin.methods
+    return this.contracts.dolomiteMargin.methods
       .getMarketTokenAddress(marketId.toFixed(0))
       .call();
   }
 
   public getMarketIdByTokenAddress(tokenAddress: address): Promise<BigNumber> {
-    return this.contracts.soloMargin.methods
+    return this.contracts.dolomiteMargin.methods
       .getMarketIdByTokenAddress(tokenAddress)
       .call()
       .then(resultString => new BigNumber(resultString));
@@ -256,8 +258,8 @@ export class Solo {
   ): BigNumber {
     const value = target.abs().times(numerator);
     const halfUp = value.mod(denominator).gte(denominator.minus(1).dividedToIntegerBy(2).plus(1))
-    ? 1
-    : 0;
+      ? 1
+      : 0;
     const result = value.dividedToIntegerBy(denominator).plus(halfUp);
 
     if (target.lt(INTEGERS.ZERO)) {
@@ -318,7 +320,7 @@ export class Solo {
     accountNumber: BigNumber,
     marketId: BigNumber,
   ): Promise<BigNumber> {
-    const result = await this.contracts.soloMargin.methods
+    const result = await this.contracts.dolomiteMargin.methods
       .getAccountWei(
         { owner, number: accountNumber.toFixed() },
         marketId.toFixed(),
@@ -332,7 +334,7 @@ export class Solo {
     provider: Provider,
     networkId: number,
     web3: Web3,
-    options: SoloOptions,
+    options: DolomiteMarginOptions,
   ): any {
     return new Contracts(provider, networkId, web3, options);
   }

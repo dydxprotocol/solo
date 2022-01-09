@@ -27,7 +27,7 @@ import { Math } from "./Math.sol";
  * @title Types
  * @author dYdX
  *
- * Library for interacting with the basic structs used in Solo
+ * Library for interacting with the basic structs used in DolomiteMargin
  */
 library Types {
     using Math for uint256;

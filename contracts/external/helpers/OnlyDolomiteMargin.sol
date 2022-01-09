@@ -19,43 +19,43 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
- * @title OnlySolo
+ * @title onlyDolomiteMargin
  * @author dYdX
  *
- * Inheritable contract that restricts the calling of certain functions to Solo only
+ * Inheritable contract that restricts the calling of certain functions to DolomiteMargin only
  */
-contract OnlySolo {
+contract OnlyDolomiteMargin {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "OnlySolo";
+    bytes32 constant FILE = "OnlyDolomiteMargin";
 
     // ============ Storage ============
 
-    SoloMargin public SOLO_MARGIN;
+    IDolomiteMargin public DOLOMITE_MARGIN;
 
     // ============ Constructor ============
 
     constructor (
-        address soloMargin
+        address dolomiteMargin
     )
         public
     {
-        SOLO_MARGIN = SoloMargin(soloMargin);
+        DOLOMITE_MARGIN = IDolomiteMargin(dolomiteMargin);
     }
 
     // ============ Modifiers ============
 
-    modifier onlySolo(address from) {
+    modifier onlyDolomiteMargin(address from) {
         Require.that(
-            from == address(SOLO_MARGIN),
+            from == address(DOLOMITE_MARGIN),
             FILE,
-            "Only Solo can call function",
+            "Only Dolomite can call function",
             from
         );
         _;

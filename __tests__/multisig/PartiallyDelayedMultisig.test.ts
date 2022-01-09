@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { deployContract } from '../helpers/Deploy';
-import { TestSolo } from '../modules/TestSolo';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { fastForward, resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -12,7 +12,7 @@ import TestCounterJson from '../../build/contracts/TestCounter.json';
 let multiSig: any;
 let testCounterA: any;
 let testCounterB: any;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let owner1: address;
 let owner2: address;
@@ -29,8 +29,8 @@ describe('PartiallyDelayedMultiSig', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     owner1 = accounts[1];
     owner2 = accounts[2];
@@ -41,12 +41,12 @@ describe('PartiallyDelayedMultiSig', () => {
 
     // deploy contracts
     [testCounterA, testCounterB] = await Promise.all([
-      deployContract(solo, TestCounterJson),
-      deployContract(solo, TestCounterJson),
+      deployContract(dolomiteMargin, TestCounterJson),
+      deployContract(dolomiteMargin, TestCounterJson),
     ]);
     counterAAddress = testCounterA.options.address;
     counterBAddress = testCounterB.options.address;
-    multiSig = await deployContract(solo, MultiSigJson, [
+    multiSig = await deployContract(dolomiteMargin, MultiSigJson, [
       [owner1, owner2, owner3],
       '2',
       '120',
@@ -87,17 +87,17 @@ describe('PartiallyDelayedMultiSig', () => {
 
   describe('#constructor', () => {
     it('Succeeds', async () => {
-      const owners = await solo.contracts.callConstantContractFunction(
+      const owners = await dolomiteMargin.contracts.callConstantContractFunction(
         multiSig.methods.getOwners(),
       );
       expect(owners).toEqual([owner1, owner2, owner3]);
 
-      const required = await solo.contracts.callConstantContractFunction(
+      const required = await dolomiteMargin.contracts.callConstantContractFunction(
         multiSig.methods.required(),
       );
       expect(required).toEqual('2');
 
-      const secondsTimeLocked = await solo.contracts.callConstantContractFunction(
+      const secondsTimeLocked = await dolomiteMargin.contracts.callConstantContractFunction(
         multiSig.methods.secondsTimeLocked(),
       );
       expect(secondsTimeLocked).toEqual('120');
@@ -120,7 +120,7 @@ describe('PartiallyDelayedMultiSig', () => {
 
     it('Fails for array mismatch', async () => {
       await expectThrow(
-        deployContract(solo, MultiSigJson, [
+        deployContract(dolomiteMargin, MultiSigJson, [
           [owner1, owner2, owner3],
           '2',
           '120',
@@ -159,7 +159,7 @@ describe('PartiallyDelayedMultiSig', () => {
 
     it('Fails for external sender', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
+        dolomiteMargin.contracts.callContractFunction(
           multiSig.methods.setSelector(ADDRESSES.ZERO, '0x00000000', true),
         ),
       );
@@ -217,7 +217,7 @@ describe('PartiallyDelayedMultiSig', () => {
 // ============ Helper Functions ============
 
 async function submitTransaction(destination: address, data: number[][]) {
-  return solo.contracts.callContractFunction(
+  return dolomiteMargin.contracts.callContractFunction(
     multiSig.methods.submitTransaction(
       destination,
       '0', // value
@@ -228,7 +228,7 @@ async function submitTransaction(destination: address, data: number[][]) {
 }
 
 async function confirmTransaction(n: number) {
-  return solo.contracts.callContractFunction(
+  return dolomiteMargin.contracts.callContractFunction(
     multiSig.methods.confirmTransaction(n.toString()),
     { from: owner2 },
   );
@@ -271,7 +271,7 @@ function hexToBytes(hex: string) {
 }
 
 async function executeTransaction(n: number, from?: address) {
-  const txResult = await solo.contracts.callContractFunction(
+  const txResult = await dolomiteMargin.contracts.callContractFunction(
     multiSig.methods.executeTransaction(n.toString()),
     {
       from: from || owner3,
@@ -279,7 +279,7 @@ async function executeTransaction(n: number, from?: address) {
     },
   );
 
-  const transaction: any = await solo.contracts.callConstantContractFunction(
+  const transaction: any = await dolomiteMargin.contracts.callConstantContractFunction(
     multiSig.methods.transactions(n.toString()),
   );
   expect(transaction.executed).toEqual(true);
@@ -292,7 +292,7 @@ async function expectInstantData(
   selector: string,
   expected: boolean,
 ) {
-  const result = await solo.contracts.callConstantContractFunction(
+  const result = await dolomiteMargin.contracts.callConstantContractFunction(
     multiSig.methods.instantData(dest, selector),
   );
   expect(result).toEqual(expected);

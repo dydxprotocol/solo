@@ -30,7 +30,7 @@ import { Actions } from "./lib/Actions.sol";
  * @title Operation
  * @author dYdX
  *
- * Primary public function for allowing users and contracts to manage accounts within Solo
+ * Primary public function for allowing users and contracts to manage accounts within DolomiteMargin
  */
 contract Operation is
     State,
@@ -39,7 +39,7 @@ contract Operation is
     // ============ Public Functions ============
 
     /**
-     * The main entry-point to Solo that allows users and contracts to manage accounts.
+     * The main entry-point to DolomiteMargin that allows users and contracts to manage accounts.
      * Take one or more actions on one or more accounts. The msg.sender must be the owner or
      * operator of all accounts except for those being liquidated, vaporized, or traded with.
      * One call to operate() is considered a singular "operation". Account collateralization is

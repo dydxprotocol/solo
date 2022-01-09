@@ -25,15 +25,17 @@ import { Operation } from "./Operation.sol";
 import { Permission } from "./Permission.sol";
 import { State } from "./State.sol";
 import { Storage } from "./lib/Storage.sol";
+import { IDolomiteMargin } from "./interfaces/IDolomiteMargin.sol";
 
 
 /**
- * @title SoloMargin
+ * @title DolomiteMargin
  * @author dYdX
  *
  * Main contract that inherits from other contracts
  */
-contract SoloMargin is
+contract DolomiteMargin is
+    IDolomiteMargin,
     State,
     Admin,
     Getters,

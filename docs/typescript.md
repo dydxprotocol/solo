@@ -2,32 +2,32 @@
 
 <br>
 <div style="display:flex;">
-  <a href='https://github.com/dydxprotocol/solo' style="text-decoration:none;">
-    <img src='https://img.shields.io/badge/GitHub-dydxprotocol%2Fsolo-lightgrey' alt='GitHub'/>
+  <a href='https://github.com/dolomite-exchange/dolomite-margin' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/GitHub-dolomite--exchange%2Fdolomite--margin-lightgrey' alt='GitHub'/>
   </a>
   <br>
-  <a href='https://www.npmjs.com/package/@dydxprotocol/solo' style="text-decoration:none;padding-left:5px;">
-    <img src='https://img.shields.io/npm/v/@dydxprotocol/solo.svg' alt='NPM Package'/>
+  <a href='https://www.npmjs.com/package/@dolomite-exchange/dolomite' style="text-decoration:none;padding-left:5px;">
+    <img src='https://img.shields.io/npm/v/@dolomite-exchange/dolomite.svg' alt='NPM Package'/>
   </a>
 </div>
 
-TypeScript library for interacting with the dYdX Solo smart contracts and HTTP API.
+TypeScript library for interacting with the dYdX DolomiteMargin smart contracts and HTTP API.
 
 ### Install
 
 ```
-npm i -s @dydxprotocol/solo
+npm i -s @dolomite-exchange/dolomite
 ```
 
 ### Initialize
 
-You will need to initialize Solo using a [Web3 provider](https://web3js.readthedocs.io/en/v1.2.1/web3.html#providers) / Ethereum node endpoint and Network.
+You will need to initialize DolomiteMargin using a [Web3 provider](https://web3js.readthedocs.io/en/v1.2.1/web3.html#providers) / Ethereum node endpoint and Network.
 
 ```javascript
-import { Solo, Networks } from '@dydxprotocol/solo';
+import { DolomiteMargin, Networks } from '@dolomite-exchange/dolomite-margin';
 
 // --- Initialize with Web3 provider ---
-const solo = new Solo(
+const dolomiteMargin = new DolomiteMargin(
   provider,  // Valid web3 provider
   Networks.MAINNET,
   {
@@ -42,7 +42,7 @@ const solo = new Solo(
 );
 
 // --- OR Initialize with Ethereum node endpoint ---
-const solo = new Solo(
+const dolomiteMargin = new DolomiteMargin(
   'https://mainnet.infura.io/v3/YOUR-PROJECT-ID',
   Networks.MAINNET,
   {
@@ -58,17 +58,17 @@ const solo = new Solo(
 ```
 
 ### Standard Actions
-Solo exposes a number of "standard" actions for interacting with the protocol. These are a subset of what is possible with [Operations](#operations), but are simpler to use.
+DolomiteMargin exposes a number of "standard" actions for interacting with the protocol. These are a subset of what is possible with [Operations](#operations), but are simpler to use.
 
 #### Deposit
 Deposit funds to dYdX
 
 ```javascript
-import { MarketId, BigNumber } from '@dydxprotocol/solo';
+import { MarketId, BigNumber } from '@dolomite-exchange/dolomite-margin';
 
 // Deposits a certain amount of tokens for some asset.
 // By default resolves when transaction is received by the node - not when mined
-const result = await solo.standardActions.deposit({
+const result = await dolomiteMargin.standardActions.deposit({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
   marketId: MarketId.ETH,
 
@@ -85,11 +85,11 @@ const result = await solo.standardActions.deposit({
 Withdraw funds from dYdX
 
 ```javascript
-import { MarketId, BigNumber } from '@dydxprotocol/solo';
+import { MarketId, BigNumber } from '@dolomite-exchange/dolomite-margin';
 
 // Withdraws a certain amount of tokens for some asset.
 // By default resolves when transaction is received by the node - not when mined
-const result = await solo.standardActions.withdraw({
+const result = await dolomiteMargin.standardActions.withdraw({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
   marketId: MarketId.ETH,
 
@@ -100,7 +100,7 @@ const result = await solo.standardActions.withdraw({
 
 // Withdraws all of your tokens for some asset.
 // By default resolves when transaction is received by the node - not when mined
-const result = await solo.standardActions.withdrawToZero({
+const result = await dolomiteMargin.standardActions.withdrawToZero({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
   marketId: MarketId.ETH,
 });
@@ -108,20 +108,20 @@ const result = await solo.standardActions.withdrawToZero({
 - `MarketId.ETH` will withdraw as ETH whereas `MarketId.WETH` will withdraw as WETH. Both are the same market on the protocol
 
 ### Operations
-The main way to interact with Solo is through Operations. See [Operations](protocol.md#operations)
+The main way to interact with DolomiteMargin is through Operations. See [Operations](protocol.md#operations)
 
 #### Initialize
 
 To initialize an Operation:
 
 ```javascript
-const operation = solo.operation.initiate();
+const operation = dolomiteMargin.operation.initiate();
 ```
 
-Solo also provides a [Payable Proxy](https://github.com/dydxprotocol/solo/blob/master/contracts/external/proxies/PayableProxyForSoloMargin.sol) contract that will automatically wrap and unwrap ETH <-> WETH, so that users can interact with Solo using only ETH. You can use it by:
+DolomiteMargin also provides a [Payable Proxy](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol) contract that will automatically wrap and unwrap ETH <-> WETH, so that users can interact with DolomiteMargin using only ETH. You can use it by:
 
 ```javascript
-const operation = solo.operation.initiate({ proxy: ProxyType.Payable });
+const operation = dolomiteMargin.operation.initiate({ proxy: ProxyType.Payable });
 ```
 
 #### Add Actions
@@ -131,7 +131,7 @@ Once an operation is initialized, Actions can be added to it. Action functions m
 
 In this example 1 ETH is being withdrawn from an account, and then 200 DAI are being deposited into it:
 ```javascript
-import { MarketId } from '@dydxprotocol/solo';
+import { MarketId } from '@dolomite-exchange/dolomite-margin';
 
 operation.withdraw({
     primaryAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
@@ -157,7 +157,7 @@ operation.withdraw({
   });
 ```
 
-See [AccountOperation](https://github.com/dydxprotocol/solo/blob/master/src/modules/operate/AccountOperation.ts) for the full list of Actions available to add to an Operation.
+See [AccountOperation](https://github.com/dolomite-exchange/dolomite-margin/blob/master/src/modules/operate/AccountOperation.ts) for the full list of Actions available to add to an Operation.
 
 #### Commit
 
@@ -172,51 +172,52 @@ const response = await operation.commit({
 ```
 
 ### Getters
-Solo provides a number of read-only getter functions which read information off the smart contracts on the blockchain. You can find them [here](https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts).
+DolomiteMargin provides a number of read-only getter functions which read information off the smart contracts on the blockchain. You can find them [here](https://github.com/dolomite-exchange/dolomite-margin/blob/master/src/modules/Getters.ts).
 
 Example of getting the balances of an Account:
 ```javascript
-const balances = await solo.getters.getAccountBalances(
+const balances = await dolomiteMargin.getters.getAccountBalances(
   '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', // Account Owner
   new BigNumber('11'), // Account Number
 );
 ```
 
 ### Logs
-Solo provides a helper to parse Solo-specific logs from a transaction.
+DolomiteMargin provides a helper to parse DolomiteMargin-specific logs from a transaction.
 
 ```javascript
-const soloLogs = solo.logs.parseLogs(transactionReceipt);
+const dolomiteMarginLogs = dolomiteMargin.logs.parseLogs(transactionReceipt);
 ```
 
 ### Tokens
-Solo provides helper functions to help with interacting with ERC20 tokens. You can find them all [here](https://github.com/dydxprotocol/solo/blob/master/src/modules/Token.ts).
+DolomiteMargin provides helper functions to help with interacting with ERC20 tokens. You can find them all [here](https://github.com/dolomite-exchange/dolomite-margin/blob/master/src/modules/Token.ts).
 
-Example of setting DAI token allowance on Solo:
+Example of setting DAI token allowance on DolomiteMargin:
+
 ```javascript
-await solo.token.setMaximumSoloAllowance(
+await dolomiteMargin.token.setMaximumDolomiteMarginAllowance(
   '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359', // DAI Contract Address
   '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // My Address
   { from: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5' }, // My Address
 );
 ```
 
-### Api
-Solo provides an easy way to interact with dYdX http API endpoints. This is especially useful for placing & canceling orders.
+### SubgraphAPI
+DolomiteMargin provides an easy way to interact with dYdX http API endpoints. This is especially useful for placing & canceling orders.
 
 
 #### Place Order(v2)
 ```javascript
-import { ApiSide, ApiMarketName, BigNumber } from '@dydxprotocol/solo';
+import { ApiSide, ApiMarketName, BigNumber } from '@dolomite-exchange/dolomite-margin';
 
 // order has type ApiOrder
-const { order } = await solo.api.placeCanonicalOrder({
+const { order } = await dolomiteMargin.api.placeCanonicalOrder({
   order: {
     //Side your order is being placed on
-    side: ApiSide.BUY
+    side: ApiSide.BUY,
 
     //Market the trade is in
-    market: ApiMarketName.WETH_DAI
+    market: ApiMarketName.WETH_DAI,
 
     // denominated in base units. i.e. 1 ETH = 1e18
     amount: new BigNumber('1e18'),
@@ -224,7 +225,7 @@ const { order } = await solo.api.placeCanonicalOrder({
     // denominated in base/quote. Since ETH and DAI have 18 decimals and are represented in e-18 while USDC has 6 decimals and is e-6, USDC prices are represented in e-12
     price: '230.1',
 
-    // Your address. Account must be loaded onto Solo with private key for signing
+    // Your address. Account must be loaded onto DolomiteMargin with private key for signing
     makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
 
     // OPTIONAL: number of seconds until the order expires.
@@ -235,7 +236,7 @@ const { order } = await solo.api.placeCanonicalOrder({
     //Makers will pay 0% fees. Takers with greater than or equal to .5Eth in the transaction will pay .15% of ETH-DAI and ETH-USDC transactions and .05% for DAI-USDC transactions.
     //For transactions below .5Eth they will pay .50% fees.
     limitFee: '0.0015'
-  }
+  },
 
   // OPTIONAL: defaults to false
   fillOrKill: false,
@@ -259,7 +260,7 @@ const { order } = await solo.api.placeCanonicalOrder({
 const { id } = existingOrder;
 
 // order has type ApiOrder
-const { order } = await solo.api.cancelOrderV2({
+const { order } = await dolomiteMargin.api.cancelOrderV2({
   orderId: id,
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
 });
@@ -269,19 +270,19 @@ const { order } = await solo.api.cancelOrderV2({
 ```typescript
 const { id } = existingOrder;
 // O
-const { order }: { order: ApiOrderV2 } = await solo.api.getOrderV2({ id });
+const { order }: { order: ApiOrderV2 } = await dolomiteMargin.api.getOrderV2({ id });
 ```
 
 #### Get Orders
 ```typescript
-const { orders }: { orders: ApiOrderV2[] } = await solo.api.getOrdersV2({
+const { orders }: { orders: ApiOrderV2[] } = await dolomiteMargin.api.getOrdersV2({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
   accountNumber: '0', // OPTIONAL
   side: 'BUY', // OPTIONAL
   market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
   status: ['OPEN', 'FILLED'], // OPTIONAL
   orderType: ['LIMIT', 'ISOLATED_MARKET'], // OPTIONAL
-  limit: 40 // OPTIONAL, max: 100
+  limit: 40, // OPTIONAL, max: 100
   startingBefore: new Date() // OPTIONAL
 })
 ```
@@ -290,14 +291,14 @@ const { orders }: { orders: ApiOrderV2[] } = await solo.api.getOrdersV2({
 ```typescript
 const { id } = existingOrder;
 
-const { fills }: { fills: ApiFillV2[] } = await solo.api.getFillsV2({
+const { fills }: { fills: ApiFillV2[] } = await dolomiteMargin.api.getFillsV2({
   orderId: id, // OPTIONAL
   side: 'BUY', // OPTIONAL
   market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
-  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba' // OPTIONAL
+  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba', // OPTIONAL
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
   accountNumber: '0', // OPTIONAL
-  startingBefore: new Date() // OPTIONAL
+  startingBefore: new Date(), // OPTIONAL
   limit: 40 // OPTIONAL, max: 100
 })
 ```
@@ -306,24 +307,24 @@ const { fills }: { fills: ApiFillV2[] } = await solo.api.getFillsV2({
 ```typescript
 const { id } = existingOrder;
 // order has type ApiTradeV2
-const { trades }: { trades: ApiTradeV2[] } = await solo.api.getTradesV2({
+const { trades }: { trades: ApiTradeV2[] } = await dolomiteMargin.api.getTradesV2({
   orderId: id, // OPTIONAL
   side: 'BUY', // OPTIONAL
   market: ['WETH-USDC', 'DAI-USDC'], // OPTIONAL
-  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba' // OPTIONAL
+  transactionHash: '0xb6f6a4e9c513882353aeedd18b1843e6c451ed6bee2075487d5e013c6b0eeaba', // OPTIONAL
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // OPTIONAL
   accountNumber: '0', // OPTIONAL
-  startingBefore: new Date() // OPTIONAL
+  startingBefore: new Date(), // OPTIONAL
   limit: 40 // OPTIONAL, max: 100
 })
 ```
 
 #### Get Orderbook
 ```javascript
-import { ApiMarketName } from '@dydxprotocol/solo';
+import { ApiMarketName } from '@dolomite-exchange/dolomite-margin';
 
 // bids / asks have type ApiOrderOnOrderbook[]
-const { bids, asks } = await solo.api.getOrderbookV2({
+const { bids, asks } = await dolomiteMargin.api.getOrderbookV2({
   market: ApiMarketName.WETH_DAI,
 });
 ```
@@ -331,7 +332,7 @@ const { bids, asks } = await solo.api.getOrderbookV2({
 #### Get Account Balances
 ```javascript
 // account has type ApiAccount
-const account = await solo.api.getAccountBalances({
+const account = await dolomiteMargin.api.getAccountBalances({
   accountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
   accountNumber: new BigNumber(0), // OPTIONAL: defaults to 0
 });
@@ -341,14 +342,14 @@ const account = await solo.api.getAccountBalances({
 Get the markets that exist on the protocol. There is one market per asset (e.g. id 0 = ETH, id 1 = DAI, id 2 = USDC)
 
 ```javascript
-const { markets } = await solo.api.getMarkets();
+const { markets } = await dolomiteMargin.api.getMarkets();
 ```
 
 #### Get Market(v2)
 Get v2 Market object by Pair
 
 ```javascript
-const { market } = await solo.api.getMarketV2({
+const { market } = await dolomiteMargin.api.getMarketV2({
   // market pair (e.g. WETH-DAI, WETH-USDC, DAI-USDC)
   market: string
 });
@@ -358,18 +359,18 @@ const { market } = await solo.api.getMarketV2({
 Get all v2 Market objects
 
 ```javascript
-const { markets } = await solo.api.getMarketsV2();
+const { markets } = await dolomiteMargin.api.getMarketsV2();
 ```
 
 #### Deprecated Functions
 
 #### Place Order(v1) [DEPRECATED]
 ```javascript
-import { MarketId, BigNumber } from '@dydxprotocol/solo';
+import { MarketId, BigNumber } from '@dolomite-exchange/dolomite-margin';
 
 // order has type ApiOrder
-const { order } = await solo.api.placeOrder({
-  // Your address. Account must be loaded onto Solo with private key for signing
+const { order } = await dolomiteMargin.api.placeOrder({
+  // Your address. Account must be loaded onto DolomiteMargin with private key for signing
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
   makerMarket: MarketId.WETH,
   takerMarket: MarketId.DAI,
@@ -417,7 +418,7 @@ const { order } = await solo.api.placeOrder({
 const { id } = existingOrder;
 
 // order has type ApiOrder
-const { order } = await solo.api.cancelOrder({
+const { order } = await dolomiteMargin.api.cancelOrder({
   orderId: id,
   makerAccountOwner: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', // Your address
 });
@@ -428,14 +429,14 @@ const { order } = await solo.api.cancelOrder({
 const { id } = existingOrder;
 
 // order has type ApiOrder
-const { order } = await solo.api.replaceOrder({
+const { order } = await dolomiteMargin.api.replaceOrder({
   ...order, // Same as arguments to placeOrder
   cancelId: id,
 });
 ```
 
 ### Types
-You can import types from Solo as:
+You can import types from DolomiteMargin as:
 
 ```javascript
 import {
@@ -443,15 +444,15 @@ import {
   AmountDenomination,
   AmountReference,
   ConfirmationType,
-} from '@dydxprotocol/solo';
+} from '@dolomite-exchange/dolomite-margin';
 ```
 
 ### Web3
-Solo uses [Web3 1.2.X](https://web3js.readthedocs.io) under the hood. You can access it through `solo.web3`
+DolomiteMargin uses [Web3 1.2.X](https://web3js.readthedocs.io) under the hood. You can access it through `dolomiteMargin.web3`
 
 ### BigNumber
-Solo uses [BigNumber 8.X](http://mikemcl.github.io/bignumber.js/). You can import this from Solo as:
+DolomiteMargin uses [BigNumber 8.X](http://mikemcl.github.io/bignumber.js/). You can import this from DolomiteMargin as:
 
 ```javascript
-import { BigNumber } from '@dydxprotocol/solo';
+import { BigNumber } from '@dolomite-exchange/dolomite-margin';
 ```

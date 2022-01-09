@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { mineAvgBlock, resetEVM } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
@@ -14,7 +14,7 @@ import {
 } from '../src/lib/SignatureHelper';
 import { address } from '../src/types';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let owner: address;
 const zero = '0';
 const amount = '100';
@@ -22,9 +22,9 @@ const addr = ADDRESSES.TEST[0];
 
 describe('Library', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
-    owner = solo.getDefaultAccount();
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
+    owner = dolomiteMargin.getDefaultAccount();
     await resetEVM();
   });
 
@@ -36,8 +36,8 @@ describe('Library', () => {
     const signature = `${r}${stripHexPrefix(s)}${stripHexPrefix(v)}`;
 
     async function recover(hashString: string, typedSignature: string) {
-      return solo.contracts.callConstantContractFunction(
-        solo.contracts.testLib.methods.TypedSignatureRecover(
+      return dolomiteMargin.contracts.callConstantContractFunction(
+        dolomiteMargin.contracts.testLib.methods.TypedSignatureRecover(
           Web3.utils.hexToBytes(hashString),
           Web3.utils.hexToBytes(typedSignature).map(x => [x]),
         ),
@@ -64,7 +64,7 @@ describe('Library', () => {
       });
 
       it('succeeds for no prepend', async () => {
-        const signer = solo.web3.eth.accounts.recover({
+        const signer = dolomiteMargin.web3.eth.accounts.recover({
           r,
           s,
           v,
@@ -82,7 +82,7 @@ describe('Library', () => {
           { t: 'string', v: PREPEND_DEC },
           { t: 'bytes32', v: hash },
         );
-        const signer = solo.web3.eth.accounts.recover({
+        const signer = dolomiteMargin.web3.eth.accounts.recover({
           r,
           s,
           v,
@@ -100,7 +100,7 @@ describe('Library', () => {
           { t: 'string', v: PREPEND_HEX },
           { t: 'bytes32', v: hash },
         );
-        const signer = solo.web3.eth.accounts.recover({
+        const signer = dolomiteMargin.web3.eth.accounts.recover({
           r,
           s,
           v,
@@ -137,7 +137,7 @@ describe('Library', () => {
 
     it('getPartial', async () => {
       const results = await Promise.all(
-        tests.map(args => solo.contracts.testLib.methods
+        tests.map(args => dolomiteMargin.contracts.testLib.methods
           .MathGetPartial(args[0], args[1], args[2])
           .call()),
       );
@@ -151,16 +151,16 @@ describe('Library', () => {
 
     it('getPartial reverts', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartial(1, 1, 0).call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartial(1, 1, 0).call(),
       );
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartial(largeNumber, largeNumber, 1).call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartial(largeNumber, largeNumber, 1).call(),
       );
     });
 
     it('getPartialRoundUp', async () => {
       const results = await Promise.all(
-        tests.map(args => solo.contracts.testLib.methods
+        tests.map(args => dolomiteMargin.contracts.testLib.methods
           .MathGetPartialRoundUp(args[0], args[1], args[2])
           .call()),
       );
@@ -174,7 +174,7 @@ describe('Library', () => {
 
     it('getPartialRoundHalfUp', async () => {
       const results = await Promise.all(
-        tests.map(args => solo.contracts.testLib.methods
+        tests.map(args => dolomiteMargin.contracts.testLib.methods
           .MathGetPartialRoundHalfUp(args[0], args[1], args[2])
           .call()),
       );
@@ -188,10 +188,10 @@ describe('Library', () => {
 
     it('getPartialRoundUp reverts', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call(),
       );
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .MathGetPartialRoundUp(largeNumber, largeNumber, 1)
           .call(),
       );
@@ -199,10 +199,10 @@ describe('Library', () => {
 
     it('getPartialRoundHalfUp reverts', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call(),
       );
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .MathGetPartialRoundHalfUp(largeNumber, largeNumber, 1)
           .call(),
       );
@@ -211,31 +211,31 @@ describe('Library', () => {
     it('to128', async () => {
       const large = '340282366920938463463374607431768211456'; // 2^128
       const small = '340282366920938463463374607431768211455'; // 2^128 - 1
-      const result = await solo.contracts.testLib.methods
+      const result = await dolomiteMargin.contracts.testLib.methods
         .MathTo128(small)
         .call();
       expect(result).toEqual(small);
-      await expectThrow(solo.contracts.testLib.methods.MathTo128(large).call());
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo128(large).call());
     });
 
     it('to96', async () => {
       const large = '79228162514264337593543950336'; // 2^96
       const small = '79228162514264337593543950335'; // 2^96 - 1
-      const result = await solo.contracts.testLib.methods
+      const result = await dolomiteMargin.contracts.testLib.methods
         .MathTo96(small)
         .call();
       expect(result).toEqual(small);
-      await expectThrow(solo.contracts.testLib.methods.MathTo96(large).call());
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo96(large).call());
     });
 
     it('to32', async () => {
       const large = '4294967296'; // 2^32
       const small = '4294967295'; // 2^32 - 1
-      const result = await solo.contracts.testLib.methods
+      const result = await dolomiteMargin.contracts.testLib.methods
         .MathTo32(small)
         .call();
       expect(result).toEqual(small);
-      await expectThrow(solo.contracts.testLib.methods.MathTo32(large).call());
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo32(large).call());
     });
   });
 
@@ -252,42 +252,42 @@ describe('Library', () => {
 
     it('that (emptyString)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat1(emptyReason, arg1).call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThat1(emptyReason, arg1).call(),
         `TestLib:  <${arg1}>`,
       );
     });
 
     it('that (0 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat0(reason1).call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThat0(reason1).call(),
         `TestLib: ${reasonString1}`,
       );
     });
 
     it('that (1 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat1(reason2, arg1).call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThat1(reason2, arg1).call(),
         `TestLib: ${reasonString2} <${arg1}>`,
       );
     });
 
     it('that (2 args)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThat2(reason1, arg2, arg3).call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThat2(reason1, arg2, arg3).call(),
         `TestLib: ${reasonString1} <${arg2}, ${arg3}>`,
       );
     });
 
     it('that (address arg)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods.RequireThatA0(reason2, addr).call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThatA0(reason2, addr).call(),
         `TestLib: ${reasonString2} <${addr}>`,
       );
     });
 
     it('that (1 address, 1 number)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .RequireThatA1(reason2, addr, arg1)
           .call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}>`,
@@ -296,7 +296,7 @@ describe('Library', () => {
 
     it('that (1 address, 2 numbers)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .RequireThatA2(reason2, addr, arg1, arg3)
           .call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}, ${arg3}>`,
@@ -305,7 +305,7 @@ describe('Library', () => {
 
     it('that (bytes32 arg)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .RequireThatB0(reason1, bytes32Hex)
           .call(),
         `TestLib: ${reasonString1} <${bytes32Hex}>`,
@@ -314,7 +314,7 @@ describe('Library', () => {
 
     it('that (1 bytes32, 2 numbers)', async () => {
       await expectThrow(
-        solo.contracts.testLib.methods
+        dolomiteMargin.contracts.testLib.methods
           .RequireThatB2(reason2, bytes32Hex, arg1, arg3)
           .call(),
         `TestLib: ${reasonString2} <${bytes32Hex}, ${arg1}, ${arg3}>`,
@@ -325,13 +325,13 @@ describe('Library', () => {
   describe('Time', () => {
     it('currentTime', async () => {
       const [block1, time1] = await Promise.all([
-        solo.web3.eth.getBlock('latest'),
-        solo.contracts.testLib.methods.TimeCurrentTime().call(),
+        dolomiteMargin.web3.eth.getBlock('latest'),
+        dolomiteMargin.contracts.testLib.methods.TimeCurrentTime().call(),
       ]);
       await mineAvgBlock();
       const [block2, time2] = await Promise.all([
-        solo.web3.eth.getBlock('latest'),
-        solo.contracts.testLib.methods.TimeCurrentTime().call(),
+        dolomiteMargin.web3.eth.getBlock('latest'),
+        dolomiteMargin.contracts.testLib.methods.TimeCurrentTime().call(),
       ]);
       expect(new BigNumber(time1).toNumber()).toBeGreaterThanOrEqual(
         block1.timestamp,
@@ -351,57 +351,57 @@ describe('Library', () => {
     let libAddr: address;
 
     beforeAll(async () => {
-      token = solo.contracts.tokenA.options.address;
-      errorToken = solo.contracts.erroringToken.options.address;
-      omise = solo.contracts.omiseToken.options.address;
-      libAddr = solo.contracts.testLib.options.address;
+      token = dolomiteMargin.contracts.tokenA.options.address;
+      errorToken = dolomiteMargin.contracts.erroringToken.options.address;
+      omise = dolomiteMargin.contracts.omiseToken.options.address;
+      libAddr = dolomiteMargin.contracts.testLib.options.address;
     });
 
     it('balanceOf (normal)', async () => {
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(token, addr)
         .call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
-        solo.contracts.tokenA.methods.issueTo(addr, amount),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.tokenA.methods.issueTo(addr, amount),
       );
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(token, addr)
         .call();
       expect(result).toEqual(amount);
     });
 
     it('balanceOf (omise)', async () => {
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(omise, addr)
         .call();
       expect(result).toEqual(zero);
-      await solo.contracts.callContractFunction(
-        solo.contracts.omiseToken.methods.issueTo(addr, amount),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.omiseToken.methods.issueTo(addr, amount),
       );
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(omise, addr)
         .call();
       expect(result).toEqual(amount);
     });
 
     it('transfer (normal)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.tokenA.methods.issueTo(libAddr, amount),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.tokenA.methods.issueTo(libAddr, amount),
       );
-      await solo.contracts.testLib.methods.TokenTransfer(token, addr, amount);
-      result = await solo.contracts.testLib.methods
+      await dolomiteMargin.contracts.testLib.methods.TokenTransfer(token, addr, amount);
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(token, addr)
         .call();
       expect(result).toEqual(amount);
     });
 
     it('transfer (omise)', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.omiseToken.methods.issueTo(libAddr, amount),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.omiseToken.methods.issueTo(libAddr, amount),
       );
-      await solo.contracts.testLib.methods.TokenTransfer(omise, addr, amount);
-      result = await solo.contracts.testLib.methods
+      await dolomiteMargin.contracts.testLib.methods.TokenTransfer(omise, addr, amount);
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(omise, addr)
         .call();
       expect(result).toEqual(amount);
@@ -409,8 +409,8 @@ describe('Library', () => {
 
     it('transfer (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenTransfer(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.testLib.methods.TokenTransfer(
             errorToken,
             addr,
             amount,
@@ -422,21 +422,21 @@ describe('Library', () => {
 
     it('transferFrom (normal)', async () => {
       await Promise.all([
-        solo.contracts.callContractFunction(
-          solo.contracts.tokenA.methods.issueTo(owner, amount),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.tokenA.methods.issueTo(owner, amount),
         ),
-        solo.contracts.callContractFunction(
-          solo.contracts.tokenA.methods.approve(libAddr, amount),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.tokenA.methods.approve(libAddr, amount),
           { from: owner },
         ),
       ]);
-      await solo.contracts.testLib.methods.TokenTransferFrom(
+      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
         token,
         owner,
         addr,
         amount,
       );
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(token, addr)
         .call();
       expect(result).toEqual(amount);
@@ -444,8 +444,8 @@ describe('Library', () => {
 
     it('transferFrom (error)', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.testLib.methods.TokenTransferFrom(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
             errorToken,
             owner,
             addr,
@@ -458,21 +458,21 @@ describe('Library', () => {
 
     it('transferFrom (omise)', async () => {
       await Promise.all([
-        solo.contracts.callContractFunction(
-          solo.contracts.omiseToken.methods.issueTo(owner, amount),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.omiseToken.methods.issueTo(owner, amount),
         ),
-        solo.contracts.callContractFunction(
-          solo.contracts.omiseToken.methods.approve(libAddr, amount),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.omiseToken.methods.approve(libAddr, amount),
           { from: owner },
         ),
       ]);
-      await solo.contracts.testLib.methods.TokenTransferFrom(
+      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
         omise,
         owner,
         addr,
         amount,
       );
-      result = await solo.contracts.testLib.methods
+      result = await dolomiteMargin.contracts.testLib.methods
         .TokenBalanceOf(omise, addr)
         .call();
       expect(result).toEqual(amount);
@@ -490,7 +490,7 @@ describe('Library', () => {
     const posHi = { sign: true, value: hi };
 
     it('zeroPar', async () => {
-      const result = await solo.contracts.testLib.methods.TypesZeroPar().call();
+      const result = await dolomiteMargin.contracts.testLib.methods.TypesZeroPar().call();
       expect(result.sign).toStrictEqual(false);
       expect(result.value).toEqual(zero);
     });
@@ -499,14 +499,14 @@ describe('Library', () => {
       let results: any[];
       // sub zero
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParSub(posLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posLo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, negZo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -521,12 +521,12 @@ describe('Library', () => {
 
       // sub positive
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParSub(posLo, posHi).call(),
-        solo.contracts.testLib.methods.TypesParSub(posLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, posLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negLo,
@@ -539,12 +539,12 @@ describe('Library', () => {
 
       // sub negative
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParSub(negLo, negHi).call(),
-        solo.contracts.testLib.methods.TypesParSub(negLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(negHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesParSub(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(negHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, negLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -560,14 +560,14 @@ describe('Library', () => {
       let results: any[];
       // add zero
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParAdd(posLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posLo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, negZo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -582,12 +582,12 @@ describe('Library', () => {
 
       // add positive
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParAdd(negLo, posHi).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, posLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -600,12 +600,12 @@ describe('Library', () => {
 
       // add negative
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParAdd(posLo, negHi).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(posHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesParAdd(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(posHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, negLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negLo,
@@ -619,35 +619,35 @@ describe('Library', () => {
 
     it('parEquals', async () => {
       const trues = await Promise.all([
-        solo.contracts.testLib.methods.TypesParEquals(posHi, posHi).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negHi, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posHi, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negHi, negHi).call(),
       ]);
       expect(trues).toEqual([true, true, true, true, true, true, true]);
       const falses = await Promise.all([
-        solo.contracts.testLib.methods.TypesParEquals(posHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posHi, negHi).call(),
-        solo.contracts.testLib.methods.TypesParEquals(posZo, negHi).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesParEquals(negLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posHi, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(posZo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParEquals(negLo, posHi).call(),
       ]);
       expect(falses).toEqual([false, false, false, false, false, false, false]);
     });
 
     it('parNegative', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParNegative(posHi).call(),
-        solo.contracts.testLib.methods.TypesParNegative(posLo).call(),
-        solo.contracts.testLib.methods.TypesParNegative(posZo).call(),
-        solo.contracts.testLib.methods.TypesParNegative(negZo).call(),
-        solo.contracts.testLib.methods.TypesParNegative(negLo).call(),
-        solo.contracts.testLib.methods.TypesParNegative(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParNegative(negHi).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negHi,
@@ -661,42 +661,42 @@ describe('Library', () => {
 
     it('parIsNegative', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParIsNegative(posHi).call(),
-        solo.contracts.testLib.methods.TypesParIsNegative(posLo).call(),
-        solo.contracts.testLib.methods.TypesParIsNegative(posZo).call(),
-        solo.contracts.testLib.methods.TypesParIsNegative(negZo).call(),
-        solo.contracts.testLib.methods.TypesParIsNegative(negLo).call(),
-        solo.contracts.testLib.methods.TypesParIsNegative(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsNegative(negHi).call(),
       ]);
       expect(results).toEqual([false, false, false, false, true, true]);
     });
 
     it('parIsPositive', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParIsPositive(posHi).call(),
-        solo.contracts.testLib.methods.TypesParIsPositive(posLo).call(),
-        solo.contracts.testLib.methods.TypesParIsPositive(posZo).call(),
-        solo.contracts.testLib.methods.TypesParIsPositive(negZo).call(),
-        solo.contracts.testLib.methods.TypesParIsPositive(negLo).call(),
-        solo.contracts.testLib.methods.TypesParIsPositive(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsPositive(negHi).call(),
       ]);
       expect(results).toEqual([true, true, false, false, false, false]);
     });
 
     it('parIsZero', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesParIsZero(posHi).call(),
-        solo.contracts.testLib.methods.TypesParIsZero(posLo).call(),
-        solo.contracts.testLib.methods.TypesParIsZero(posZo).call(),
-        solo.contracts.testLib.methods.TypesParIsZero(negZo).call(),
-        solo.contracts.testLib.methods.TypesParIsZero(negLo).call(),
-        solo.contracts.testLib.methods.TypesParIsZero(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesParIsZero(negHi).call(),
       ]);
       expect(results).toEqual([false, false, true, true, false, false]);
     });
 
     it('zeroWei', async () => {
-      const result = await solo.contracts.testLib.methods.TypesZeroWei().call();
+      const result = await dolomiteMargin.contracts.testLib.methods.TypesZeroWei().call();
       expect(result.sign).toStrictEqual(false);
       expect(result.value).toEqual(zero);
     });
@@ -705,14 +705,14 @@ describe('Library', () => {
       let results: any[];
       // sub zero
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiSub(posLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posLo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, negZo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -727,12 +727,12 @@ describe('Library', () => {
 
       // sub positive
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiSub(posLo, posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, posLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negLo,
@@ -745,12 +745,12 @@ describe('Library', () => {
 
       // sub negative
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiSub(negLo, negHi).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(negHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiSub(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, negLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -766,14 +766,14 @@ describe('Library', () => {
       let results: any[];
       // add zero
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiAdd(posLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posLo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negLo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, negZo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -788,12 +788,12 @@ describe('Library', () => {
 
       // add positive
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiAdd(negLo, posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posZo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posZo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, posLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         posLo,
@@ -806,12 +806,12 @@ describe('Library', () => {
 
       // add negative
       results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiAdd(posLo, negHi).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negZo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(posHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiAdd(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negZo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, negLo).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negLo,
@@ -825,35 +825,35 @@ describe('Library', () => {
 
     it('weiEquals', async () => {
       const trues = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiEquals(posHi, posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posZo, posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negZo, negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negHi, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posHi, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posZo, posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negZo, negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negHi, negHi).call(),
       ]);
       expect(trues).toEqual([true, true, true, true, true, true, true]);
       const falses = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiEquals(posHi, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posLo, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posHi, negHi).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(posZo, negHi).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negHi, negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negLo, posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiEquals(negLo, posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posHi, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posLo, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posHi, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(posZo, negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negHi, negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negLo, posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiEquals(negLo, posHi).call(),
       ]);
       expect(falses).toEqual([false, false, false, false, false, false, false]);
     });
 
     it('weiNegative', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiNegative(posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiNegative(posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiNegative(posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiNegative(negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiNegative(negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiNegative(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(negHi).call(),
       ]);
       expect(results.map(parse)).toEqual([
         negHi,
@@ -867,36 +867,36 @@ describe('Library', () => {
 
     it('weiIsNegative', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiIsNegative(posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiIsNegative(posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsNegative(posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsNegative(negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsNegative(negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsNegative(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsNegative(negHi).call(),
       ]);
       expect(results).toEqual([false, false, false, false, true, true]);
     });
 
     it('weiIsPositive', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiIsPositive(posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiIsPositive(posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsPositive(posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsPositive(negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsPositive(negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsPositive(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsPositive(negHi).call(),
       ]);
       expect(results).toEqual([true, true, false, false, false, false]);
     });
 
     it('weiIsZero', async () => {
       const results = await Promise.all([
-        solo.contracts.testLib.methods.TypesWeiIsZero(posHi).call(),
-        solo.contracts.testLib.methods.TypesWeiIsZero(posLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsZero(posZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsZero(negZo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsZero(negLo).call(),
-        solo.contracts.testLib.methods.TypesWeiIsZero(negHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(posHi).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(posLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(posZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(negZo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(negLo).call(),
+        dolomiteMargin.contracts.testLib.methods.TypesWeiIsZero(negHi).call(),
       ]);
       expect(results).toEqual([false, false, true, true, false, false]);
     });

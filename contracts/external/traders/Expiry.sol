@@ -30,20 +30,20 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
-import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
+import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
+import {IExpiry} from "../interfaces/IExpiry.sol";
 
 
 /**
- * @title ExpiryV2
+ * @title Expiry
  * @author dYdX
  *
  * Expiry contract that also allows approved senders to set expiry to be 28 days in the future.
  */
-contract ExpiryV2 is
+contract Expiry is
     Ownable,
-    OnlySolo,
-    IExpiryV2,
+    OnlyDolomiteMargin,
+    IExpiry,
     ICallee,
     IAutoTrader
 {
@@ -55,7 +55,7 @@ contract ExpiryV2 is
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "ExpiryV2";
+    bytes32 constant FILE = "Expiry";
 
     // ============ Events ============
 
@@ -90,11 +90,11 @@ contract ExpiryV2 is
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         uint256 expiryRampTime
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {
         g_expiryRampTime = expiryRampTime;
     }
@@ -122,7 +122,7 @@ contract ExpiryV2 is
         setApproval(msg.sender, sender, minTimeDelta);
     }
 
-    // ============ Only-Solo Functions ============
+    // ============ Only-DolomiteMargin Functions ============
 
     function callFunction(
         address /* sender */,
@@ -130,7 +130,7 @@ contract ExpiryV2 is
         bytes memory data
     )
         public
-        onlySolo(msg.sender)
+        onlyDolomiteMargin(msg.sender)
     {
         CallFunctionType callType = abi.decode(data, (CallFunctionType));
         if (callType == CallFunctionType.SetExpiry) {
@@ -151,7 +151,7 @@ contract ExpiryV2 is
         bytes memory data
     )
         public
-        onlySolo(msg.sender)
+        onlyDolomiteMargin(msg.sender)
         returns (Types.AssetAmount memory)
     {
         // return zero if input amount is zero
@@ -227,7 +227,7 @@ contract ExpiryV2 is
             Monetary.Price memory
         )
     {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+        Decimal.D256 memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
             heldMarketId,
             owedMarketId
         );
@@ -238,8 +238,8 @@ contract ExpiryV2 is
             spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
         }
 
-        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
-        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
+        Monetary.Price memory heldPrice = DOLOMITE_MARGIN.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = DOLOMITE_MARGIN.getMarketPrice(owedMarketId);
         owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
 
         return (heldPrice, owedPrice);
@@ -273,7 +273,7 @@ contract ExpiryV2 is
             // if timeDelta is zero, interpret it as unset expiry
             if (
                 exp.timeDelta != 0 &&
-                SOLO_MARGIN.getAccountPar(exp.account, exp.marketId).isNegative()
+                DOLOMITE_MARGIN.getAccountPar(exp.account, exp.marketId).isNegative()
             ) {
                 // only change non-zero values if forceUpdate is true
                 if (exp.forceUpdate || getExpiry(exp.account, exp.marketId) == 0) {
@@ -315,7 +315,7 @@ contract ExpiryV2 is
         returns (Types.AssetAmount memory)
     {
         Types.AssetAmount memory output;
-        Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
+        Types.Wei memory maxOutputWei = DOLOMITE_MARGIN.getAccountWei(makerAccount, outputMarketId);
 
         if (inputWei.isPositive()) {
             Require.that(
