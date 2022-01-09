@@ -11,12 +11,7 @@ The DolomiteMargin smart contracts were audited independently by both
 
 **[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
 
-### Perpetual
-
-The Perpetual smart contracts were audited independently by
-[Zeppelin Solutions](https://zeppelin.solutions/) at commit [`c5e2b0e`](https://github.com/dydxprotocol/perpetual/tree/c5e2b0e58aaf532d2c8b1f658d1df2f6a3385318/contracts), excluding [`P1Orders.sol`](https://github.com/dydxprotocol/perpetual/tree/c5e2b0e58aaf532d2c8b1f658d1df2f6a3385318/contracts/protocol/v1/traders/P1Orders.sol).
-
-**[Zeppelin Solutions Audit Report](https://blog.openzeppelin.com/dydx-perpetual-audit/)**
+**[SECBIT Labs Audit Report](https://raw.githubusercontent.com/dolomite-exchange/dolomite-margin/master/docs/Dolomite_Protocol_V2_Report_EN.pdf)**
 
 ## Code Coverage
 
@@ -59,4 +54,5 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 * Work with you to understand and resolve the issue quickly
 (including an initial confirmation of your report within 72 hours of submission).
 
+TODO replace link
 * Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4).
