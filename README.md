@@ -35,7 +35,7 @@
  - [Contributing](#contributing)
  - [License](#license)
 
-## Changes from dYdX's deployment
+## Changes from dYdX's original deployment
 
 Most of the changes made to the protocol are auxiliary and don't impact the core contracts. These core changes are
 rooted in fixing a bug with the protocol and making the process of adding a large number of markets much more gas
@@ -89,10 +89,7 @@ so newly-added markets can reuse the old ID upon being added.
 
 ## Documentation
 
-Since the original codebase is a fork of dYdX's DolomiteMargin, check out the original documentation at 
-[legacy-docs.dydx.exchange](https://legacy-docs.dydx.exchange).
-
-New documentation will be written
+Documentation can be found at [docs.dolomite.io](https://docs.dolomite.io).
 
 ## Install
 

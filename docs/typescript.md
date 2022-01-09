@@ -11,7 +11,7 @@
   </a>
 </div>
 
-TypeScript library for interacting with the dYdX DolomiteMargin smart contracts and HTTP API.
+TypeScript library for interacting with the DolomiteMargin smart contracts and HTTP API.
 
 ### Install
 
@@ -61,7 +61,7 @@ const dolomiteMargin = new DolomiteMargin(
 DolomiteMargin exposes a number of "standard" actions for interacting with the protocol. These are a subset of what is possible with [Operations](#operations), but are simpler to use.
 
 #### Deposit
-Deposit funds to dYdX
+Deposit funds to DolomiteMargin
 
 ```javascript
 import { MarketId, BigNumber } from '@dolomite-exchange/dolomite-margin';
@@ -82,7 +82,7 @@ const result = await dolomiteMargin.standardActions.deposit({
 - For all markets except `MarketId.ETH`, you will first need to set allowance on that token. See [Tokens](#tokens)
 
 #### Withdraw
-Withdraw funds from dYdX
+Withdraw funds from DolomiteMargin
 
 ```javascript
 import { MarketId, BigNumber } from '@dolomite-exchange/dolomite-margin';
@@ -202,8 +202,8 @@ await dolomiteMargin.token.setMaximumDolomiteMarginAllowance(
 );
 ```
 
-### SubgraphAPI
-DolomiteMargin provides an easy way to interact with dYdX http API endpoints. This is especially useful for placing & canceling orders.
+### Subgraph
+DolomiteMargin provides an easy way to read data that's indexed from the smart contracts.
 
 
 #### Place Order(v2)
@@ -383,7 +383,7 @@ const { order } = await dolomiteMargin.api.placeOrder({
   takerAmount: new BigNumber('100e18'),
 
   // OPTIONAL: defaults to 0 (0 is the account number that displays
-  // on trade.dydx.exchange/balances)
+  // on app.dolomite.io)
   makerAccountNumber: new BigNumber(0),
 
   // OPTIONAL: number of seconds until the order expires.
