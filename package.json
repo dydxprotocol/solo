@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -8,8 +8,8 @@
     "dist/build/published_contracts/",
     "dist/build/wrappers/",
     "dist/src/",
-    "build/contracts",
-    "contracts/protocol",
+    "build/contracts/",
+    "contracts/protocol/",
     "LICENSE",
     "README.md"
   ],
