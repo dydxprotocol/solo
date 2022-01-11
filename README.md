@@ -39,53 +39,60 @@
 
 Most of the changes made to the protocol are auxiliary and don't impact the core contracts. These core changes are
 rooted in fixing a bug with the protocol and making the process of adding a large number of markets much more gas
-efficient. Prior to the changes, adding a large number of markets, like 250+, would result in an `n` increase in gas
+efficient. Prior to the changes, adding a large number of markets, around 10+, would result in an `n` increase in gas
 consumption, since all markets needed to be read into memory. With the changes outlined below, now only the necessary
-markets are loaded into memory.
- - Adding a `getPartialRoundHalfUp` function that's used when converting between positive wei & par. The reason for 
+markets are loaded into memory. This allows the protocol to support potentially hundreds of markets in the same deployment,
+which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-partitioned markets) 
+margin systems in DeFi. The detailed changes are outlined below:
+
+ - Added a `getPartialRoundHalfUp` function that's used when converting between positive `Wei` & `Par` values. The reason for 
 this change is that there would be truncation issues when using `getPartial`, which would lead to lossy conversions
-to/from wei and par that would be off by 1.
+to and from `Wei` and `Par` that would be off by 1.
  - Added a `numberOfMarketsWithBorrow` field to `Account.Storage`, which makes checking collateralization for accounts
-that do not have an active borrow much more gas efficient. If `numberOfMarketsWithBorrow` is `0`, `isCollateralized`
+that do not have an active borrow much more gas efficient. If `numberOfMarketsWithBorrow` is `0`, `state.isCollateralized(...)`
 always returns `true`. Else, it does the normal collateralization check.
  - Added a `marketsWithNonZeroBalanceSet` which function as an enumerable hash set. Its implementation mimics
 [Open Zeppelin's](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol)
 with adjustments made to support only the `uint256` type (for gas efficiency's sake). The purpose for this set is to
-track, in O(1) time, a user's active markets, for reading markets into memory at runtime. These markets are needed at 
-the end of each transaction for checking collateralization. It's understood that reading this user's array into memory
-can be costly gas-wise than the old algorithm, but as the number of markets listed grows to the tens or hundreds,
+track, in O(1) time, a user's active markets, for reading markets into memory in `OperationImpl`. These markets are needed at 
+the end of each transaction for checking the user's collateralization. It's understood that reading this user's array into memory
+can be more costly gas-wise than the old algorithm, but as the number of markets listed grows to the tens or hundreds,
 the new algorithm will be much more efficient. Most importantly, it's understood that a user can inadvertently DOS
 themselves by depositing too many unique markets into a single account number (recall, user's deposits are partitioned 
 first by their `address` and second by a `uint256` account number). Through UI patterns and organizing the protocol 
 such that a lot of these markets (at scale) won't be for ordinary use by end-users, the protocol will fight against 
 these DOS attacks. Reading these markets into memory is done using initially populating a bitmap, where each index in 
 the bitmap corresponds with the market's ID. Since IDs are auto-incremented, we can store 256 in just one `uint256` 
-variable. Once populated, the Bitmap is read into an array that's pre-sorted in `O(m)`, where `m` represents the number 
-of items in the bitmap, not the total length of it (where the length equals the number of total bits). This is done by 
+variable. Once populated, the bitmap is read into an array that's pre-sorted in `O(m)`, where `m` represents the number 
+of items in the bitmap, not the total length of it (where the length equals the number of total bits, 256). This is done by 
 reading the least significant bit, truncating it out of the bitmap, and repeating the process until the bitmap equals 0.
 The process of reading the least significant bit is done in `O(1)` time using crafty bit math. Then, since the final
-array the bitmap is read into is sorted, it can be searched in later parts of `OperationImpl` in `O(log(n))` time, and 
+array that the bitmap is read into is sorted, it can be searched in later parts of `OperationImpl` in `O(log(n))` time, and 
 iterated in its entirety in `O(m)`, where `m` represents the number of items. 
- - Added `isRecyclable` field to the `Storage.Market` struct that denotes a market being allowed to be removed and 
-reused. The technicalities of this implementation are intricate and cautious. Recyclable markets may only interact
-with DolomiteMargin through the Recyclable smart contract, expirations, and liquidations. The recyclable smart contract has logic 
+ - Added `isRecyclable` field to `Storage.Market` that denotes whether or not a market can be removed and reused. The 
+technicalities of this implementation are intricate and cautious. Recyclable markets may only interact with DolomiteMargin
+through the Recyclable smart contract itself, expirations, and liquidations. User accounts are partitioned by account number 
+and thus are considered "sub accounts" under the contract itself. The recyclable smart contract contains logic 
 for depositing, withdrawing, withdrawing after recycling, and trading with instances of `IExchangeWrapper`. Using this 
 recyclable smart contract as a proxy, the implementation can finely control how a user interacts with DolomiteMargin via this 
-market. However, there are two circumstances where control cannot be maintained, expirations and liquidations. If an 
+market. However, there are two circumstances where control cannot be siloed - expirations and liquidations. If an 
 expiration or liquidation occurs, a check is done that ensures no collateral is held in by a user whose address is not 
-the same as the `IRecyclable` (recall, IRecyclable is the user in all other circumstances) smart contract. This ensures 
+the same as the `IRecyclable` (recall, IRecyclable is the "user" in all other circumstances) smart contract. This ensures 
 changing the market ID in the future does not mess up the mapping of user's balances, described as 
 `user => account number => par`. Prior to removing a recyclable market, two new and important checks are
-done. The first is that there are *no* borrows for that market open, where a user has borrowed the recyclable token.
-The second is that the market has *expired* and a one-week buffer, beyond the expiration timestamp, has past. This will 
+done. The first is that there are *no* active borrows for that market, where a user has borrowed the recyclable token.
+The second is that the market has *expired* and a one-week buffer, beyond the expiration timestamp, has passed. This will 
 allow for more than enough time for the liquidation bots to close out any active margin positions that were opened 
 involving the recyclable markets. All recyclable markets must be expired in order to wind down any leverage used, to
 prevent liquidations from occurring with clashing market IDs. Once the contract is expired, all control of the contract
-is confined to the IRecyclable instance itself. Presumably, no more expirations or liquidations will occur.
- - Added `recycledMarketIds` linked list `Storage.State` that prepends all recycled/removed markets to this linked list,
-so newly-added markets can reuse the old ID upon being added.
- - Separated liquidation and vaporization logic into another library, `LiquidateOrVaporizeImpl`, to save bytecode in
-`OperationImpl`. Otherwise, `OperationImpl` was too large and could not be deployed.
+is confined to the IRecyclable instance itself. Presumably, no more expirations or liquidations will occur. Lastly, there
+is nothing forcing a market to be recycled as soon as the one-week buffer passes, after expiration. The protocol 
+administrators may choose to recycle the market at any time after the buffer has passed.
+ - Added a `recycledMarketIds` linked list to `Storage.State` that prepends all recycled/removed markets to this linked list.
+This allows newly-added markets to reuse an old ID upon being added. IDs are reused by popping off the first value from the 
+head of the linked list.
+ - Separated liquidation and vaporization logic into another library, `LiquidateOrVaporizeImpl`, to save bytecode (compilation 
+size) in `OperationImpl`. Otherwise, the `OperationImpl` bytecode was too large and could not be deployed.
 
 ## Documentation
 
@@ -96,7 +103,7 @@ New documentation will be written
 
 ## Install
 
-`npm i -s @dolomite-exchange/dolomite-margin`
+`npm i @dolomite-exchange/dolomite-margin`
 
 ## Contracts
 
@@ -135,13 +142,15 @@ The original DolomiteMargin smart contracts were audited independently by both
 Some changes discussed above were audited by [SECBIT Labs](https://secbit.io/). We plan on performing at least one more 
 audit of the system before the new *Recyclable* feature is used in production.
 
+**[TODO add SECBIT audit link](https://)**
+
 ### Code Coverage
 
 All production smart contracts are tested and have 100% line and branch coverage.
 
 ### Vulnerability Disclosure Policy
 
-The disclosure of security vulnerabilities helps us ensure the security of our users.
+The disclosure of security vulnerabilities helps us ensure the security of all DolomiteMargin users.
 
 **How to report a security vulnerability?**
 
