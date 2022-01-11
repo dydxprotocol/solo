@@ -49,7 +49,7 @@ library LiquidateOrVaporizeImpl {
     // ============ Events ============
 
     event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
-    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber);
+    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Account Functions ============
 
@@ -383,7 +383,8 @@ library LiquidateOrVaporizeImpl {
         Types.Wei memory owedDeltaWei
     ) internal {
         if (args.liquidAccount.owner.isContract()) {
-            (bool isCallSuccessful,) = args.liquidAccount.owner.call(
+            // solium-disable-next-line security/no-low-level-calls
+            (bool isCallSuccessful, bytes memory result) = args.liquidAccount.owner.call(
                 abi.encodeWithSelector(
                     ILiquidationCallback(args.liquidAccount.owner).onLiquidate.selector,
                     args.liquidAccount.number,
@@ -397,7 +398,16 @@ library LiquidateOrVaporizeImpl {
             if (isCallSuccessful) {
                 emit LogLiquidationCallbackSuccess(args.liquidAccount.owner, args.liquidAccount.number);
             } else {
-                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number);
+                if (result.length < 68) {
+                    result = bytes("");
+                } else {
+                    // solium-disable-next-line security/no-inline-assembly
+                    assembly {
+                        result := add(result, 0x04)
+                    }
+                    result = bytes(abi.decode(result, (string)));
+                }
+                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number, string(result));
             }
         }
     }

@@ -1,4 +1,5 @@
 import { Contracts } from '../lib/Contracts';
+import { toBytesNoPadding } from '../lib/BytesHelper';
 import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
 export class AmmRebalancerProxy {
@@ -20,9 +21,9 @@ export class AmmRebalancerProxy {
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.ammRebalancerProxy.methods.performRebalance({
-        dolomitePath,
         otherRouter,
-        otherPath,
+        dolomitePath: toBytesNoPadding(...dolomitePath),
+        otherPath: toBytesNoPadding(...otherPath),
         truePriceTokenA: truePriceTokenA.toFixed(0),
         truePriceTokenB: truePriceTokenB.toFixed(0),
       }),

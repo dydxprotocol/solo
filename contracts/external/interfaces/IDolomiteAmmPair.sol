@@ -27,9 +27,9 @@ interface IDolomiteAmmPair {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
-    function name() external pure returns (string memory);
+    function name() external view returns (string memory);
 
-    function symbol() external pure returns (string memory);
+    function symbol() external view returns (string memory);
 
     function decimals() external pure returns (uint8);
 
@@ -51,7 +51,15 @@ interface IDolomiteAmmPair {
 
     function nonces(address owner) external view returns (uint);
 
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+    function permit(
+        address owner,
+        address spender,
+        uint value,
+        uint deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
 
     event Mint(address indexed sender, uint amount0Wei, uint amount1Wei);
     event Burn(address indexed sender, uint amount0Wei, uint amount1Wei, address indexed to);

@@ -2,7 +2,7 @@ import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/DolomiteMarginHelpers';
-import { address } from '../src/types';
+import { address } from '../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];

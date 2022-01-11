@@ -425,6 +425,7 @@ contract Getters is
         public
         view
         returns (
+            uint[] memory,
             address[] memory,
             Types.Par[] memory,
             Types.Wei[] memory
@@ -442,6 +443,7 @@ contract Getters is
         }
 
         return (
+            markets,
             tokens,
             pars,
             weis

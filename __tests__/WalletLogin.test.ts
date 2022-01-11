@@ -1,4 +1,4 @@
-import { address, SigningMethod } from '../src/types';
+import { address, SigningMethod } from '../src';
 import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 

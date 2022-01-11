@@ -12,7 +12,7 @@ import {
   AmountReference,
   Trade,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];

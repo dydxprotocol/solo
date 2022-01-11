@@ -7,7 +7,7 @@ import {
   ContractConstantCallOptions,
   Integer,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 
 export class TestToken {
   private contracts: TestContracts;
@@ -24,7 +24,7 @@ export class TestToken {
     this.testTokenContract = testTokenContract;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.testTokenContract.options.address;
   }
 

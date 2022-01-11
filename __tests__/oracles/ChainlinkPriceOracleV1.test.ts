@@ -3,7 +3,7 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
-import { address } from '../../src/types';
+import { address } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -69,12 +69,12 @@ describe('ChainlinkPriceOracleV1', () => {
     const pricePromise = dolomiteMargin.contracts.callConstantContractFunction(
       chainlinkOracle().getPrice(ADDRESSES.ZERO),
     );
-    await expectThrow(pricePromise, 'ChainlinkPriceOracleV1::getPrice: INVALID_TOKEN');
+    await expectThrow(pricePromise, `ChainlinkPriceOracleV1: invalid token <${ADDRESSES.ZERO}>`);
   });
 
   it('Can be set as the oracle for a market', async () => {
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.testing.tokenA.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
       dolomiteMargin.contracts.chainlinkPriceOracleV1.options.address,
       dolomiteMargin.contracts.testInterestSetter.options.address,
       INTEGERS.ZERO,

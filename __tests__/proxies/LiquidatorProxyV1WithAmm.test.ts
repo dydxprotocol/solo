@@ -1,11 +1,24 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from '../helpers/DolomiteMargin';
-import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
-import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
-import { setGlobalOperator, setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import {
+  AccountStatus,
+  address,
+  Index,
+} from '../../src';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { AccountStatus, address, Index } from '../../src';
+import DolomiteMarginMath from '../../src/modules/DolomiteMarginMath';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import {
+  setGlobalOperator,
+  setupMarkets,
+} from '../helpers/DolomiteMarginHelpers';
+import {
+  fastForward,
+  mineAvgBlock,
+  resetEVM,
+  snapshot,
+} from '../helpers/EVM';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -64,18 +77,18 @@ describe('LiquidatorProxyV1WithAmm', () => {
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenA.getAddress(),
+        dolomiteMargin.testing.tokenA.address,
         prices[0],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.getAddress(),
+        dolomiteMargin.testing.tokenB.address,
         prices[1],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         prices[2],
       ),
-      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.getAddress(), prices[3]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       dolomiteMargin.permissions.approveOperator(operator, { from: owner1 }),
       dolomiteMargin.permissions.approveOperator(
         dolomiteMargin.contracts.liquidatorProxyV1WithAmm.options.address,
@@ -83,9 +96,9 @@ describe('LiquidatorProxyV1WithAmm', () => {
       ),
     ]);
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.weth.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.interestSetter.getAddress(),
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
@@ -96,17 +109,23 @@ describe('LiquidatorProxyV1WithAmm', () => {
     // market1 is the owed market
     // market2 is the held market
     // we need to repay the owed market, so the owed market goes last
-    defaultTokenPath.push(await dolomiteMargin.getMarketTokenAddress(market2));
-    defaultTokenPath.push(await dolomiteMargin.getMarketTokenAddress(market1));
+    defaultTokenPath.push(await dolomiteMargin.getters.getMarketTokenAddress(market2));
+    defaultTokenPath.push(await dolomiteMargin.getters.getMarketTokenAddress(market1));
 
-    token1 = await dolomiteMargin.getMarketTokenAddress(market1);
-    token2 = await dolomiteMargin.getMarketTokenAddress(market2);
-    token3 = await dolomiteMargin.getMarketTokenAddress(market3);
-    token4 = await dolomiteMargin.getMarketTokenAddress(market4);
+    token1 = await dolomiteMargin.getters.getMarketTokenAddress(market1);
+    token2 = await dolomiteMargin.getters.getMarketTokenAddress(market2);
+    token3 = await dolomiteMargin.getters.getMarketTokenAddress(market3);
+    token4 = await dolomiteMargin.getters.getMarketTokenAddress(market4);
 
-    await deployUniswapLpTokens(token1, token2);
-    await deployUniswapLpTokens(token1, token3);
-    await deployUniswapLpTokens(token1, token4);
+    await dolomiteMargin.dolomiteAmmFactory.createPair(token1, token2);
+    await dolomiteMargin.dolomiteAmmFactory.createPair(token1, token3);
+    await dolomiteMargin.dolomiteAmmFactory.createPair(token1, token4);
+
+    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
+      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+
+    expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
+      .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());
 
     const oneEthInWei = new BigNumber('1e18');
     const numberOfUnits = new BigNumber('100000000');
@@ -166,10 +185,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
         await setUpBasicBalances();
 
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn1 = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn1 = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [par, par.times('105').minus(amountIn1)],
+          [par, par.times('105')
+            .minus(amountIn1)],
           [zero, par.times('5')],
         );
       });
@@ -197,13 +217,14 @@ describe('LiquidatorProxyV1WithAmm', () => {
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
         const path = [token1, token2];
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           par.times('100'),
           path,
         );
         await liquidate(market2, market1, path);
         await expectBalances(
-          [par.times('1.05').minus(amountIn), par.times('100')],
+          [par.times('1.05')
+            .minus(amountIn), par.times('100')],
           [par.times('.05'), zero],
         );
       });
@@ -222,21 +243,23 @@ describe('LiquidatorProxyV1WithAmm', () => {
         ]);
 
         const path = [token2, token1];
-        const price1Adj = price1.times('105').dividedToIntegerBy('100');
-        const amount1ToLiquidate = dolomiteMargin.getPartialRoundUp(
+        const price1Adj = price1.times('105')
+          .dividedToIntegerBy('100');
+        const amount1ToLiquidate = DolomiteMarginMath.getPartialRoundUp(
           par2,
           price2,
           price1Adj,
         );
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           amount1ToLiquidate,
           path,
         );
         await liquidate(market1, market2, path);
         await expectBalances(
           [par, par2.minus(amountIn)],
-          [par.minus(amount1ToLiquidate).negated(), zero],
+          [par.minus(amount1ToLiquidate)
+            .negated(), zero],
         );
       });
 
@@ -255,10 +278,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, market2, par2),
           dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, market3, par3),
         ]);
-        const price1Adj = price1.times('105').dividedToIntegerBy('100');
-        const toLiquidate1 = dolomiteMargin.getPartialRoundUp(par2, price2, price1Adj);
+        const price1Adj = price1.times('105')
+          .dividedToIntegerBy('100');
+        const toLiquidate1 = DolomiteMarginMath.getPartialRoundUp(par2, price2, price1Adj);
         const path1 = [token2, token1];
-        const amountSoldToken2 = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountSoldToken2 = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           toLiquidate1,
           path1,
         );
@@ -267,7 +291,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         const toLiquidate2 = par.minus(toLiquidate1);
         const solidPar3ToReceive = toLiquidate2.times('105');
         const path2 = [token3, token1];
-        const amountSoldToken3 = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountSoldToken3 = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           par.minus(toLiquidate1),
           path2,
         );
@@ -322,11 +346,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         const path1 = [token3, token1];
-        const amountIn1 = await dolomiteMargin.getDolomiteAmmAmountInWithPath(par, path1);
+        const amountIn1 = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(par, path1);
         const txResult1 = await liquidate(market1, market3, path1);
 
         const path2 = [token3, token1, token2];
-        const amountIn2 = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountIn2 = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           par.times('50'),
           path2,
         );
@@ -402,12 +426,13 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ), // -$1,000,000
         ]);
         const path1 = [token3, token1, token4];
-        const amount3Sold = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amount3Sold = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           liquidPar4,
           path1,
         );
         const txResult1 = await liquidate(market4, market3, path1);
-        const solidPar3RewardAfterSale_1 = par.times('105').minus(amount3Sold);
+        const solidPar3RewardAfterSale_1 = par.times('105')
+          .minus(amount3Sold);
         const liquidPar3Left = liquidPar3.minus(liquidPar4.times('1050')); // 1050 is a derived priceAdj
 
         await expectBalances(
@@ -415,15 +440,16 @@ describe('LiquidatorProxyV1WithAmm', () => {
           [liquidPar1, liquidPar2.negated(), liquidPar3Left, zero],
         );
 
-        const price2Adj = price2.times('105').dividedToIntegerBy('100');
-        const amount2ToLiquidate = dolomiteMargin.getPartialRoundUp(
+        const price2Adj = price2.times('105')
+          .dividedToIntegerBy('100');
+        const amount2ToLiquidate = DolomiteMarginMath.getPartialRoundUp(
           liquidPar3Left,
           price3,
           price2Adj,
         );
         const path2 = [token3, token1, token2];
         const solidPar3RewardAfterSale_2 = liquidPar3Left.minus(
-          await dolomiteMargin.getDolomiteAmmAmountInWithPath(amount2ToLiquidate, path2),
+          await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(amount2ToLiquidate, path2),
         );
         const txResult2 = await liquidate(market2, market3, path2);
 
@@ -433,7 +459,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
           .times('105')
           .dividedToIntegerBy('10000');
         const path3 = [token1, token2];
-        const amount1Sold = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amount1Sold = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           liquidPar2.minus(amount2ToLiquidate),
           path3,
         );
@@ -489,10 +515,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [par, par.times('105').minus(amountIn)],
+          [par, par.times('105')
+            .minus(amountIn)],
           [zero, par.times('45')],
         );
       });
@@ -516,10 +543,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [zero, par.times('105').minus(amountIn), zero, par],
+          [zero, par.times('105')
+            .minus(amountIn), zero, par],
           [zero, par.times('5')],
         );
       });
@@ -552,10 +580,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [negPar, par.times('605').minus(amountIn)],
+          [negPar, par.times('605')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
       });
@@ -589,10 +618,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [negPar.div('2'), par.times('55').minus(amountIn)],
+          [negPar.div('2'), par.times('55')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
       });
@@ -625,10 +655,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [par.div(2), par.times('155').minus(amountIn)],
+          [par.div(2), par.times('155')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
       });
@@ -662,10 +693,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         const txResult = await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [par.div(2), par.times('5').minus(amountIn)],
+          [par.div(2), par.times('5')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
         console.log(`\tLiquidatorProxyWithAmmV1 gas used: ${txResult.gasUsed}`);
@@ -694,10 +726,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
         await liquidate(market1, market2, defaultTokenPath);
         await expectBalances(
-          [par, par.times('55').minus(amountIn)],
+          [par, par.times('55')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
       });
@@ -721,7 +754,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
         // amountIn is the quantity of heldAmount needed to repay the debt
-        const amountIn = await dolomiteMargin.getDolomiteAmmAmountIn(par, token2, token1);
+        const amountIn = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountIn(par, token2, token1);
 
         await dolomiteMargin.liquidatorProxyWithAmm.liquidate(
           owner1,
@@ -736,7 +769,8 @@ describe('LiquidatorProxyV1WithAmm', () => {
           { from: operator },
         );
         await expectBalances(
-          [par, par.times('105').minus(amountIn)],
+          [par, par.times('105')
+            .minus(amountIn)],
           [zero, par.times('5')],
         );
       });
@@ -750,15 +784,16 @@ describe('LiquidatorProxyV1WithAmm', () => {
         ]);
         await expectThrow(
           liquidate(market1, market2, defaultTokenPath),
-          'LiquidatorV1WithAmm: Sender not operator',
+          'LiquidatorProxyV1WithAmm: Sender not operator',
         );
       });
 
       it('Fails for proxy is non-operator', async () => {
         await Promise.all([
           setUpBasicBalances(),
-          dolomiteMargin.permissions.disapproveGlobalOperator(
+          dolomiteMargin.admin.setGlobalOperator(
             dolomiteMargin.contracts.liquidatorProxyV1WithAmm.options.address,
+            false,
             { from: admin },
           ),
         ]);
@@ -772,7 +807,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         await setUpBasicBalances();
         await expectThrow(
           liquidate(market1, market2, [token3, token1]),
-          `LiquidatorV1WithAmm: 0-index token path incorrect <${token3.toLowerCase()}>`,
+          `LiquidatorProxyV1WithAmm: 0-index token path incorrect <${token3.toLowerCase()}>`,
         );
       });
 
@@ -780,7 +815,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         await setUpBasicBalances();
         await expectThrow(
           liquidate(market1, market2, [token2, token3]),
-          `LiquidatorV1WithAmm: last-index token path incorrect <${token3.toLowerCase()}>`,
+          `LiquidatorProxyV1WithAmm: last-index token path incorrect <${token3.toLowerCase()}>`,
         );
       });
 
@@ -788,7 +823,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         await setUpBasicBalances();
         await expectThrow(
           liquidate(market1, market1, defaultTokenPath),
-          'LiquidatorV1WithAmm: owedMarket equals heldMarket <0, 0>',
+          'LiquidatorProxyV1WithAmm: owedMarket equals heldMarket <0, 0>',
         );
       });
 
@@ -802,7 +837,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         );
         await expectThrow(
           liquidate(market1, market2, defaultTokenPath),
-          'LiquidatorV1WithAmm: held market cannot be negative <1>',
+          'LiquidatorProxyV1WithAmm: held market cannot be negative <1>',
         );
       });
 
@@ -814,13 +849,13 @@ describe('LiquidatorProxyV1WithAmm', () => {
           defaultTokenPath[1],
         );
         const totalSolidHeldWei = par.times('105');
-        const amountNeededToBuyOwedAmount = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountNeededToBuyOwedAmount = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           par,
           defaultTokenPath,
         );
         await expectThrow(
           liquidate(market1, market2, defaultTokenPath, true),
-          `LiquidatorV1WithAmm: totalSolidHeldWei is too small <${totalSolidHeldWei}, ${amountNeededToBuyOwedAmount}>`,
+          `LiquidatorProxyV1WithAmm: totalSolidHeldWei is too small <${totalSolidHeldWei}, ${amountNeededToBuyOwedAmount}>`,
         );
       });
 
@@ -834,7 +869,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
         );
         await expectThrow(
           liquidate(market1, market2, defaultTokenPath),
-          'LiquidatorV1WithAmm: Liquid account not liquidatable',
+          'LiquidatorProxyV1WithAmm: Liquid account not liquidatable',
         );
       });
     });
@@ -857,13 +892,17 @@ describe('LiquidatorProxyV1WithAmm', () => {
         await fastForward(1);
 
         const solidPar1 = par.div('2'); // 5,000 par --> 5,500 wei --> $550,000
-        const solidPar2 = par.negated().times('30'); // -300,000 par --> -360,000 wei --> -$360,000
+        const solidPar2 = par.negated()
+          .times('30'); // -300,000 par --> -360,000 wei --> -$360,000
         const liquidPar1 = par.negated(); // -10,000 par --> -12,000 wei --> -$1,200,000
         const liquidPar2 = par.times('110'); // 1,100,000 par --> 1,210,000 wei --> $1,210,000
 
-        const solidWei2 = solidPar2.times('12').dividedToIntegerBy('10');
-        const liquidWei1 = liquidPar1.times('12').dividedToIntegerBy('10');
-        const liquidWei2 = liquidPar2.times('11').dividedToIntegerBy('10');
+        const solidWei2 = solidPar2.times('12')
+          .dividedToIntegerBy('10');
+        const liquidWei1 = liquidPar1.times('12')
+          .dividedToIntegerBy('10');
+        const liquidWei2 = liquidPar2.times('11')
+          .dividedToIntegerBy('10');
 
         await Promise.all([
           dolomiteMargin.testing.setAccountBalance(
@@ -894,25 +933,25 @@ describe('LiquidatorProxyV1WithAmm', () => {
         ]);
 
         const priceAdj = new BigNumber('105'); // 1.05 * $100; price of market1 is $100
-        const toLiquidateWei = dolomiteMargin.getPartialRoundUp(
+        const toLiquidateWei = DolomiteMarginMath.getPartialRoundUp(
           liquidWei2,
           INTEGERS.ONE,
           priceAdj,
         );
-        const amountInWei = await dolomiteMargin.getDolomiteAmmAmountInWithPath(
+        const amountInWei = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountInWithPath(
           toLiquidateWei,
           defaultTokenPath,
         );
 
         // These operations cannot be consolidated, which would result in off-by-1 errors (due to rounding)
-        const solidNewPar2_1 = dolomiteMargin.weiToPar(solidWei2.plus(liquidWei2), index);
-        const solidNewWei2_1 = dolomiteMargin.parToWei(solidNewPar2_1, index);
-        const solidNewPar2_2 = dolomiteMargin.weiToPar(
+        const solidNewPar2_1 = DolomiteMarginMath.weiToPar(solidWei2.plus(liquidWei2), index);
+        const solidNewWei2_1 = DolomiteMarginMath.parToWei(solidNewPar2_1, index);
+        const solidNewPar2_2 = DolomiteMarginMath.weiToPar(
           solidNewWei2_1.minus(amountInWei),
           index,
         );
 
-        const liquidNewPar1_1 = dolomiteMargin.weiToPar(
+        const liquidNewPar1_1 = DolomiteMarginMath.weiToPar(
           liquidWei1.plus(toLiquidateWei),
           index,
         );
@@ -952,10 +991,10 @@ describe('LiquidatorProxyV1WithAmm', () => {
         const liquidPar1 = par.negated(); // -10,000 par --> -14,000 wei --> -$1,400,000
         const liquidPar2 = par.times('110'); // 1,100,000 par --> 1,210,000 wei --> $1,430,000
 
-        const solidWei1 = dolomiteMargin.parToWei(solidPar1, index1);
-        const solidWei2 = dolomiteMargin.parToWei(solidPar2, index2);
-        const liquidWei1 = dolomiteMargin.parToWei(liquidPar1, index1);
-        const liquidWei2 = dolomiteMargin.parToWei(liquidPar2, index2);
+        const solidWei1 = DolomiteMarginMath.parToWei(solidPar1, index1);
+        const solidWei2 = DolomiteMarginMath.parToWei(solidPar2, index2);
+        const liquidWei1 = DolomiteMarginMath.parToWei(liquidPar1, index1);
+        const liquidWei2 = DolomiteMarginMath.parToWei(liquidPar2, index2);
 
         await Promise.all([
           dolomiteMargin.testing.setAccountBalance(
@@ -986,28 +1025,28 @@ describe('LiquidatorProxyV1WithAmm', () => {
         ]);
 
         const priceAdj = new BigNumber('105'); // 1.05 * $100; price of market1 is $100
-        const toLiquidateWei = dolomiteMargin.getPartialRoundUp(
+        const toLiquidateWei = DolomiteMarginMath.getPartialRoundUp(
           liquidWei2,
           INTEGERS.ONE,
           priceAdj,
         );
-        const amountOutWei = await dolomiteMargin.getDolomiteAmmAmountOutWithPath(
+        const amountOutWei = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountOutWithPath(
           solidWei2.plus(liquidWei2),
           defaultTokenPath,
         );
 
         // These operations cannot be consolidated, because it would result in off-by-1 errors (due to rounding)
-        const solidNewPar1_1 = dolomiteMargin.weiToPar(
+        const solidNewPar1_1 = DolomiteMarginMath.weiToPar(
           solidWei1.minus(toLiquidateWei),
           index1,
         );
-        const solidNewWei1_1 = dolomiteMargin.parToWei(solidNewPar1_1, index1);
-        const solidNewPar1_2 = dolomiteMargin.weiToPar(
+        const solidNewWei1_1 = DolomiteMarginMath.parToWei(solidNewPar1_1, index1);
+        const solidNewPar1_2 = DolomiteMarginMath.weiToPar(
           solidNewWei1_1.plus(amountOutWei),
           index1,
         );
 
-        const liquidNewPar1_1 = dolomiteMargin.weiToPar(
+        const liquidNewPar1_1 = DolomiteMarginMath.weiToPar(
           liquidWei1.plus(toLiquidateWei),
           index1,
         );
@@ -1079,10 +1118,12 @@ async function expectBalances(
   ]);
 
   for (let i = 0; i < solidBalances.length; i += 1) {
-    expect(bal1[i]).toEqual(solidBalances[i]);
+    expect(bal1[i])
+      .toEqual(solidBalances[i]);
   }
   for (let i = 0; i < liquidBalances.length; i += 1) {
-    expect(bal2[i]).toEqual(liquidBalances[i]);
+    expect(bal2[i])
+      .toEqual(liquidBalances[i]);
   }
 }
 
@@ -1093,8 +1134,8 @@ async function addLiquidity(
   tokenA: address,
   tokenB: address,
 ) {
-  const marketIdA = await dolomiteMargin.getMarketIdByTokenAddress(tokenA);
-  const marketIdB = await dolomiteMargin.getMarketIdByTokenAddress(tokenB);
+  const marketIdA = await dolomiteMargin.getters.getMarketIdByTokenAddress(tokenA);
+  const marketIdB = await dolomiteMargin.getters.getMarketIdByTokenAddress(tokenB);
   const accountNumber = INTEGERS.ZERO;
   await Promise.all([
     dolomiteMargin.testing.setAccountBalance(
@@ -1148,18 +1189,11 @@ async function removeAlmostAllLiquidity(
     INTEGERS.ZERO,
     tokenA,
     tokenB,
-    liquidityProviderBalance.times('9').dividedToIntegerBy('10'),
+    liquidityProviderBalance.times('9')
+      .dividedToIntegerBy('10'),
     INTEGERS.ONE,
     INTEGERS.ONE,
     new BigNumber('123456789123'),
     { from: walletAddress },
   );
-}
-
-async function deployUniswapLpTokens(tokenA: address, tokenB: address) {
-  const callObject = dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
-    tokenA,
-    tokenB,
-  );
-  await dolomiteMargin.contracts.callContractFunction(callObject);
 }

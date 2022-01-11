@@ -24,10 +24,10 @@ import { Account } from "../protocol/lib/Account.sol";
 import { Interest } from "../protocol/lib/Interest.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
 import { Types } from "../protocol/lib/Types.sol";
+import { TestOperationImpl } from "./TestOperationImpl.sol";
 
 
 contract TestDolomiteMargin is DolomiteMargin {
-    using Storage for Storage.State;
 
     // ============ Constructor ============
 
@@ -49,7 +49,7 @@ contract TestDolomiteMargin is DolomiteMargin {
         public
     {
         _requireValidMarket(market);
-        g_state.setPar(account, market, newPar);
+        TestOperationImpl.setPar(g_state, account, market, newPar);
     }
 
     function setAccountStatus(

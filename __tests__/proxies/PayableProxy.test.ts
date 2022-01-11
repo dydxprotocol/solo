@@ -1,18 +1,28 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from '../helpers/DolomiteMargin';
-import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
-import { expectThrow } from '../../src/lib/Expect';
-import { toBytes } from '../../src/lib/BytesHelper';
-import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import {
   address,
   Amount,
   AmountDenomination,
   AmountReference,
-} from '../../src/types';
+} from '../../src';
+import { toBytes } from '../../src/lib/BytesHelper';
+import {
+  ADDRESSES,
+  INTEGERS,
+} from '../../src/lib/Constants';
+import { expectThrow } from '../../src/lib/Expect';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import {
+  resetEVM,
+  snapshot,
+} from '../helpers/EVM';
+import {
+  TestExchangeWrapperOrder,
+  TestOrder,
+  TestOrderType,
+} from '../helpers/types';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -58,16 +68,16 @@ describe('PayableProxy', () => {
     owner2 = accounts[3];
     operator = accounts[6];
     testOrder = {
-      type: OrderType.Test,
-      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
+      type: TestOrderType.Test,
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.address,
       originator: operator,
-      makerToken: dolomiteMargin.testing.tokenA.getAddress(),
-      takerToken: dolomiteMargin.testing.tokenB.getAddress(),
+      makerToken: dolomiteMargin.testing.tokenA.address,
+      takerToken: dolomiteMargin.testing.tokenB.address,
       makerAmount: zero,
       takerAmount: zero,
       allegedTakerAmount: zero,
       desiredMakerAmount: zero,
-    };
+    } as TestExchangeWrapperOrder;
     bigBlob = {
       amount: amountBlob,
 
@@ -96,23 +106,23 @@ describe('PayableProxy', () => {
       from: owner1,
       to: owner1,
       order: testOrder,
-      autoTrader: dolomiteMargin.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
-      callee: dolomiteMargin.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.address,
     };
     await resetEVM();
     await Promise.all([
       setupMarkets(dolomiteMargin, accounts),
       dolomiteMargin.testing.autoTrader.setData(tradeId, amountBlob),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.weth.getAddress(),
+        dolomiteMargin.weth.address,
         new BigNumber('1e40'),
       ),
     ]);
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.weth.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.interestSetter.getAddress(),
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
@@ -241,7 +251,7 @@ describe('PayableProxy', () => {
 
   it('Succeeds for other accounts', async () => {
     await Promise.all([
-      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.getAddress(), {
+      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.address, {
         from: owner1,
       }),
       dolomiteMargin.testing.tokenB.issueTo(
@@ -368,7 +378,10 @@ describe('PayableProxy', () => {
         marketId: wethMarket,
         from: dolomiteMargin.contracts.payableProxy.options.address,
       })
-      .commit({ from: owner1, value: amount.times(2).toNumber() });
+      .commit({ from: owner1,
+        value: amount.times(2)
+          .toNumber(),
+      });
   });
 });
 

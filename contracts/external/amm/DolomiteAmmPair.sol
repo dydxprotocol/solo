@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../protocol/interfaces/IAutoTrader.sol";
 import "../../protocol/interfaces/IDolomiteMargin.sol";
+import "../../protocol/lib/Require.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
@@ -12,12 +13,14 @@ import "../lib/UQ112x112.sol";
 
 import "../interfaces/ITransferProxy.sol";
 
-
 import "./DolomiteAmmERC20.sol";
+
 
 contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
+
+    bytes32 internal constant FILE = "DolomiteAmmPair";
 
     uint public constant INTEREST_INDEX_BASE = 1e18;
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
@@ -41,7 +44,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
     uint private unlocked = 1;
     modifier lock() {
-        require(unlocked == 1, "DLP: LOCKED");
+        Require.that(
+            unlocked == 1,
+            FILE,
+            "locked"
+        );
         unlocked = 0;
         _;
         unlocked = 1;
@@ -63,7 +70,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1, address _transferProxy) external {
-        require(msg.sender == factory, "DLP: FORBIDDEN");
+        Require.that(
+            msg.sender == factory,
+            FILE,
+            "forbidden"
+        );
         // sufficient check
         token0 = _token0;
         token1 = _token1;
@@ -72,35 +83,6 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
         marketId0 = uint128(IDolomiteMargin(dolomiteMargin).getMarketIdByTokenAddress(token0));
         marketId1 = uint128(IDolomiteMargin(dolomiteMargin).getMarketIdByTokenAddress(token1));
-    }
-
-    function token0Symbol() public view returns (string memory) {
-        return IERC20(token0).symbol();
-    }
-
-    function token1Symbol() public view returns (string memory) {
-        return IERC20(token1).symbol();
-    }
-
-    function pairName() external view returns (string memory) {
-        return string(abi.encodePacked(token0Symbol(), "-", token1Symbol()));
-    }
-
-    function getReservesPar() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        _reserve0 = reserve0Par;
-        _reserve1 = reserve1Par;
-        _blockTimestampLast = blockTimestampLast;
-    }
-
-    function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
-        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
-
-        uint reserve0InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId0).supply;
-        uint reserve1InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId1).supply;
-
-        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
-        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
-        _blockTimestampLast = blockTimestampLast;
     }
 
     // this low-level function should be called from a contract which performs important safety checks
@@ -113,13 +95,15 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         uint amount0 = balance0.sub(_reserve0);
         uint amount1 = balance1.sub(_reserve1);
 
-        require(
+        Require.that(
             amount0 > 0,
-            "DLP: INVALID_MINT_AMOUNT_0"
+            FILE,
+            "invalid mint amount 0"
         );
-        require(
+        Require.that(
             amount1 > 0,
-            "DLP: INVALID_MINT_AMOUNT_1"
+            FILE,
+            "invalid mint amount 1"
         );
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
@@ -133,14 +117,20 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
         }
 
-        require(
+        Require.that(
             liquidity > 0,
-            "DLP: INSUFFICIENT_LIQUIDITY_MINTED"
+            FILE,
+            "insufficient liquidity minted"
         );
 
         _mint(to, liquidity);
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(
+            balance0,
+            balance1,
+            _reserve0,
+            _reserve1
+        );
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
         // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
@@ -160,8 +150,9 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         uint balance1 = _getTokenBalancePar(_dolomiteMargin, markets[1]);
 
         bool feeOn;
-        // new scope to prevent stack-too-deep issues
+        /* solium-disable indentation */
         {
+            // new scope to prevent stack-too-deep issues
             uint liquidity = balanceOf[address(this)];
 
             uint token0Index = _dolomiteMargin.getMarketCurrentIndex(markets[0]).supply;
@@ -173,13 +164,15 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             amount0Wei = (liquidity.mul(balance0) / _totalSupply).mul(token0Index).div(INTEREST_INDEX_BASE);
             // using balances ensures pro-rata distribution
             amount1Wei = (liquidity.mul(balance1) / _totalSupply).mul(token1Index).div(INTEREST_INDEX_BASE);
-            require(
+            Require.that(
                 amount0Wei > 0 && amount1Wei > 0,
-                "DLP: INSUFFICIENT_LIQUIDITY_BURNED"
+                FILE,
+                "insufficient liquidity burned"
             );
 
             _burn(address(this), liquidity);
         }
+        /* solium-enable indentation */
 
         uint[] memory amounts = new uint[](2);
         amounts[0] = amount0Wei;
@@ -196,156 +189,20 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         balance0 = _getTokenBalancePar(_dolomiteMargin, markets[0]);
         balance1 = _getTokenBalancePar(_dolomiteMargin, markets[1]);
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(
+            balance0,
+            balance1,
+            _reserve0,
+            _reserve1
+        );
         if (feeOn) kLast = uint(reserve0Par).mul(reserve1Par);
 
         // reserve0 and reserve1 are up-to-date
-        emit Burn(msg.sender, amount0Wei, amount1Wei, to);
-    }
-
-    function _encodeTransferAction(
-        uint fromAccountIndex,
-        uint toAccountIndex,
-        uint marketId,
-        uint amount
-    ) internal pure returns (Actions.ActionArgs memory) {
-        return Actions.ActionArgs({
-        actionType : Actions.ActionType.Transfer,
-        accountId : fromAccountIndex,
-        amount : Types.AssetAmount(false, Types.AssetDenomination.Par, Types.AssetReference.Delta, amount),
-        primaryMarketId : marketId,
-        secondaryMarketId : uint(- 1),
-        otherAddress : address(0),
-        otherAccountId : toAccountIndex,
-        data : bytes("")
-        });
-    }
-
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info memory makerAccount,
-        Account.Info memory takerAccount,
-        Types.Par memory,
-        Types.Par memory,
-        Types.Wei memory inputWei,
-        bytes memory data
-    )
-    public
-    returns (Types.AssetAmount memory) {
-        Cache memory cache;
-        {
-            IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
-            cache = Cache({
-            dolomiteMargin : _dolomiteMargin,
-            marketId0 : marketId0,
-            marketId1 : marketId1,
-            balance0Wei : _getTokenBalanceWei(_dolomiteMargin, marketId0),
-            balance1Wei : _getTokenBalanceWei(_dolomiteMargin, marketId1),
-            index0 : _dolomiteMargin.getMarketCurrentIndex(marketId0),
-            index1 : _dolomiteMargin.getMarketCurrentIndex(marketId1)
-            });
-        }
-
-        require(
-            msg.sender == address(cache.dolomiteMargin),
-            "DLP: INVALID_SENDER"
+        emit Burn(
+            msg.sender,
+            amount0Wei,
+            amount1Wei, to
         );
-        require(
-            makerAccount.owner == address(this),
-            "DLP: INVALID_MAKER_ACCOUNT_OWNER"
-        );
-        require(
-            makerAccount.number == 0,
-            "DLP: INVALID_MAKER_ACCOUNT_NUMBER"
-        );
-
-        require(
-            token0 != takerAccount.owner && token1 != takerAccount.owner,
-            "DLP: INVALID_TO"
-        );
-
-        uint amount0OutWei;
-        uint amount1OutWei;
-        {
-            require(
-                inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
-                "DLP: INVALID_INPUT_TOKEN"
-            );
-            require(
-                outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
-                "DLP: INVALID_INPUT_TOKEN"
-            );
-            require(
-                inputWei.sign,
-                "DLP: INPUT_WEI_MUST_BE_POSITIVE"
-            );
-
-            (uint amountOutWei) = abi.decode(data, ((uint)));
-
-            require(
-                amountOutWei > 0,
-                "DLP: INSUFFICIENT_OUTPUT_AMOUNT"
-            );
-
-            if (inputMarketId == cache.marketId0) {
-                cache.balance0Wei = cache.balance0Wei.add(inputWei.value);
-                cache.balance1Wei = cache.balance1Wei.sub(amountOutWei);
-
-                amount0OutWei = 0;
-                amount1OutWei = amountOutWei;
-            } else {
-                assert(inputMarketId == cache.marketId1);
-
-                cache.balance1Wei = cache.balance1Wei.add(inputWei.value);
-                cache.balance0Wei = cache.balance0Wei.sub(amountOutWei);
-
-                amount0OutWei = amountOutWei;
-                amount1OutWei = 0;
-            }
-        }
-
-        uint amount0InWei;
-        uint amount1InWei;
-        {
-            // gas savings
-            (uint112 _reserve0, uint112 _reserve1,) = getReservesWei();
-            require(
-                amount0OutWei < _reserve0 && amount1OutWei < _reserve1,
-                "DLP: INSUFFICIENT_LIQUIDITY"
-            );
-
-            amount0InWei = cache.balance0Wei > (_reserve0 - amount0OutWei) ? cache.balance0Wei - (_reserve0 - amount0OutWei) : 0;
-            amount1InWei = cache.balance1Wei > (_reserve1 - amount1OutWei) ? cache.balance1Wei - (_reserve1 - amount1OutWei) : 0;
-            require(
-                amount0InWei > 0 || amount1InWei > 0,
-                "DLP: INSUFFICIENT_INPUT_AMOUNT"
-            );
-
-            uint balance0Adjusted = cache.balance0Wei.mul(1000).sub(amount0InWei.mul(3));
-            uint balance1Adjusted = cache.balance1Wei.mul(1000).sub(amount1InWei.mul(3));
-            require(
-                balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000 ** 2),
-                "DLP: K"
-            );
-
-            // convert the numbers from wei to par
-            _update(
-                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
-                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
-                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
-                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
-            );
-        }
-
-        emit Swap(msg.sender, amount0InWei, amount1InWei, amount0OutWei, amount1OutWei, takerAccount.owner);
-
-        return Types.AssetAmount({
-        sign : false,
-        denomination : Types.AssetDenomination.Wei,
-        ref : Types.AssetReference.Delta,
-        value : amount0OutWei > 0 ? amount0OutWei : amount1OutWei
-        });
     }
 
     // force balances to match reserves
@@ -384,20 +241,253 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         );
     }
 
-    // *************************
-    // ***** Internal Functions
-    // *************************
+    function token0Symbol() public view returns (string memory) {
+        address _token0 = token0;
+        return _callOptionalReturn(_token0, abi.encodePacked(IERC20(_token0).symbol.selector));
+    }
 
-    /// @notice Updates reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
+    function token1Symbol() public view returns (string memory) {
+        address _token1 = token1;
+        return _callOptionalReturn(_token1, abi.encodePacked(IERC20(_token1).symbol.selector));
+    }
+
+    function name() public view returns (string memory) {
+        /* solium-disable-next-line arg-overflow */
+        return string(abi.encodePacked("Dolomite LP Token: ", token0Symbol(), "_", token1Symbol()));
+    }
+
+    function symbol() public view returns (string memory) {
+        /* solium-disable-next-line arg-overflow */
+        return string(abi.encodePacked("DLP_", token0Symbol(), "_", token1Symbol()));
+    }
+
+    function decimals() public pure returns (uint8) {
+        return 18;
+    }
+
+    function getReservesPar() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
+        _reserve0 = reserve0Par;
+        _reserve1 = reserve1Par;
+        _blockTimestampLast = blockTimestampLast;
+    }
+
+    function getReservesWei() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
+        IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
+
+        uint reserve0InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId0).supply;
+        uint reserve1InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId1).supply;
+
+        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
+        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
+        _blockTimestampLast = blockTimestampLast;
+    }
+
+    function getTradeCost(
+        uint256 inputMarketId,
+        uint256 outputMarketId,
+        Account.Info memory makerAccount,
+        Account.Info memory takerAccount,
+        Types.Par memory,
+        Types.Par memory,
+        Types.Wei memory inputWei,
+        bytes memory data
+    )
+    public
+    returns (Types.AssetAmount memory) {
+        Cache memory cache;
+        /* solium-disable indentation */
+        {
+            IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
+            cache = Cache({
+                dolomiteMargin : _dolomiteMargin,
+                marketId0 : marketId0,
+                marketId1 : marketId1,
+                balance0Wei : _getTokenBalanceWei(_dolomiteMargin, marketId0),
+                balance1Wei : _getTokenBalanceWei(_dolomiteMargin, marketId1),
+                index0 : _dolomiteMargin.getMarketCurrentIndex(marketId0),
+                index1 : _dolomiteMargin.getMarketCurrentIndex(marketId1)
+            });
+        }
+        /* solium-enable indentation */
+
+        Require.that(
+            msg.sender == address(cache.dolomiteMargin),
+            FILE,
+            "invalid sender"
+        );
+        Require.that(
+            makerAccount.owner == address(this),
+            FILE,
+            "invalid maker account owner"
+        );
+        Require.that(
+            makerAccount.number == 0,
+            FILE,
+            "invalid maker account number"
+        );
+        Require.that(
+            token0 != takerAccount.owner && token1 != takerAccount.owner && address(this) != takerAccount.owner,
+            FILE,
+            "invalid taker account owner"
+        );
+
+        uint amount0OutWei;
+        uint amount1OutWei;
+        /* solium-disable indentation */
+        {
+            Require.that(
+                inputMarketId == cache.marketId0 || inputMarketId == cache.marketId1,
+                FILE,
+                "invalid input market"
+            );
+            Require.that(
+                outputMarketId == cache.marketId0 || outputMarketId == cache.marketId1,
+                FILE,
+                "invalid output market"
+            );
+            Require.that(
+                inputWei.sign,
+                FILE,
+                "input wei must be positive"
+            );
+
+            (uint amountOutWei) = abi.decode(data, ((uint)));
+
+            Require.that(
+                amountOutWei > 0,
+                FILE,
+                "insufficient output amount"
+            );
+
+            if (inputMarketId == cache.marketId0) {
+                cache.balance0Wei = cache.balance0Wei.add(inputWei.value);
+                cache.balance1Wei = cache.balance1Wei.sub(amountOutWei);
+
+                amount0OutWei = 0;
+                amount1OutWei = amountOutWei;
+            } else {
+                assert(inputMarketId == cache.marketId1);
+
+                cache.balance1Wei = cache.balance1Wei.add(inputWei.value);
+                cache.balance0Wei = cache.balance0Wei.sub(amountOutWei);
+
+                amount0OutWei = amountOutWei;
+                amount1OutWei = 0;
+            }
+        }
+        /* solium-enable indentation */
+
+        uint amount0InWei;
+        uint amount1InWei;
+        /* solium-disable indentation */
+        {
+            // gas savings
+            (uint112 _reserve0, uint112 _reserve1,) = getReservesWei();
+            Require.that(
+                amount0OutWei < _reserve0 && amount1OutWei < _reserve1,
+                FILE,
+                "insufficient liquidity"
+            );
+
+            amount0InWei = cache.balance0Wei > (_reserve0 - amount0OutWei)
+            ? cache.balance0Wei - (_reserve0 - amount0OutWei) : 0;
+
+            amount1InWei = cache.balance1Wei > (_reserve1 - amount1OutWei)
+            ? cache.balance1Wei - (_reserve1 - amount1OutWei) : 0;
+
+            Require.that(
+                amount0InWei > 0 || amount1InWei > 0,
+                FILE,
+                "insufficient input amount"
+            );
+
+            uint balance0Adjusted = cache.balance0Wei.mul(1000).sub(amount0InWei.mul(3));
+            uint balance1Adjusted = cache.balance1Wei.mul(1000).sub(amount1InWei.mul(3));
+            Require.that(
+                balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000 ** 2),
+                FILE,
+                "K"
+            );
+
+            // convert the numbers from wei to par
+            _update(
+                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
+                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
+                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
+                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
+            );
+        }
+        /* solium-enable indentation */
+
+        emit Swap(
+            msg.sender,
+            amount0InWei,
+            amount1InWei,
+            amount0OutWei,
+            amount1OutWei,
+            takerAccount.owner
+        );
+
+        return Types.AssetAmount({
+        sign : false,
+        denomination : Types.AssetDenomination.Wei,
+        ref : Types.AssetReference.Delta,
+        value : amount0OutWei > 0 ? amount0OutWei : amount1OutWei
+        });
+    }
+
+    // ============ Internal Functions ============
+
+    function _callOptionalReturn(address token, bytes memory data) internal view returns (string memory) {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
+
+        // A Solidity high level call has three parts:
+        // 1. The target address is checked to contain contract code. Not needed since tokens are manually added
+        // 2. The call itself is made, and success asserted
+        // 3. The return value is decoded, which in turn checks the size of the returned data.
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returnData) = token.staticcall(data);
+
+        if (success && returnData.length > 0) {
+            // Return data is optional
+            return abi.decode(returnData, (string));
+        } else {
+            return "";
+        }
+    }
+
+    function _encodeTransferAction(
+        uint fromAccountIndex,
+        uint toAccountIndex,
+        uint marketId,
+        uint amount
+    ) internal pure returns (Actions.ActionArgs memory) {
+        return Actions.ActionArgs({
+        actionType : Actions.ActionType.Transfer,
+        accountId : fromAccountIndex,
+        /* solium-disable-next-line arg-overflow */
+        amount : Types.AssetAmount(false, Types.AssetDenomination.Par, Types.AssetReference.Delta, amount),
+        primaryMarketId : marketId,
+        secondaryMarketId : uint(- 1),
+        otherAddress : address(0),
+        otherAccountId : toAccountIndex,
+        data : bytes("")
+        });
+    }
+
+    /// @dev Updates reserves and, on the first call per block, price accumulators. THESE SHOULD ALL BE IN PAR
     function _update(
         uint balance0,
         uint balance1,
         uint112 reserve0,
         uint112 reserve1
     ) internal {
-        require(
+        Require.that(
             balance0 <= uint112(- 1) && balance1 <= uint112(- 1),
-            "DLP: OVERFLOW"
+            FILE,
+            "balance overflow"
         );
 
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
@@ -418,7 +508,7 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     function _mintFee(
         uint112 reserve0,
         uint112 reserve1
-    ) private returns (bool feeOn) {
+    ) internal returns (bool feeOn) {
         address feeTo = IDolomiteAmmFactory(factory).feeTo();
         // gas savings
         feeOn = feeTo != address(0);
@@ -429,8 +519,9 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
                 uint rootK = AdvancedMath.sqrt(uint(reserve0).mul(reserve1));
                 uint rootKLast = AdvancedMath.sqrt(_kLast);
                 if (rootK > rootKLast) {
+                    // Fee is 1/3 of the trading fee of 0.3%, which is 0.1% or 0.001
                     uint numerator = totalSupply.mul(rootK.sub(rootKLast));
-                    uint denominator = rootK.mul(5).add(rootKLast);
+                    uint denominator = rootK.mul(2).add(rootKLast);
                     uint liquidity = numerator / denominator;
                     if (liquidity > 0) _mint(feeTo, liquidity);
                 }

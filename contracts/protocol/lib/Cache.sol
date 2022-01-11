@@ -111,7 +111,12 @@ library Cache {
             FILE,
             "not initialized"
         );
-        return getInternal(cache.markets, 0, cache.marketsLength, marketId);
+        return _getInternal(
+            cache.markets,
+            0,
+            cache.marketsLength,
+            marketId
+        );
     }
 
     function set(
@@ -153,6 +158,7 @@ library Cache {
         return cache.markets[index];
     }
 
+    // solium-disable security/no-assign-params
     function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
         // gas usage peaks at 350 per call
 
@@ -204,12 +210,13 @@ library Cache {
             lsb -= 1;
         }
 
+        // solium-enable security/no-assign-params
         return lsb;
     }
 
     // ============ Private Functions ============
 
-    function getInternal(
+    function _getInternal(
         MarketInfo[] memory data,
         uint beginInclusive,
         uint endExclusive,
@@ -223,9 +230,19 @@ library Cache {
         uint mid = beginInclusive + len / 2;
         uint midMarketId = data[mid].marketId;
         if (marketId < midMarketId) {
-            return getInternal(data, beginInclusive, mid, marketId);
+            return _getInternal(
+                data,
+                beginInclusive,
+                mid,
+                marketId
+            );
         } else if (marketId > midMarketId) {
-            return getInternal(data, mid + 1, endExclusive, marketId);
+            return _getInternal(
+                data,
+                mid + 1,
+                endExclusive,
+                marketId
+            );
         } else {
             return data[mid];
         }

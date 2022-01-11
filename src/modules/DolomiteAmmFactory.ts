@@ -1,5 +1,11 @@
 import { Contracts } from '../lib/Contracts';
-import { address, Integer } from '../types';
+import {
+  address,
+  ContractCallOptions,
+  ContractConstantCallOptions,
+  Integer,
+  TxResult,
+} from '../types';
 import BigNumber from 'bignumber.js';
 
 export class DolomiteAmmFactory {
@@ -11,21 +17,31 @@ export class DolomiteAmmFactory {
 
   // ============ View Functions ============
 
-  public async getPairInitCodeHash(): Promise<string> {
+  public async getPairInitCodeHash(
+    options: ContractConstantCallOptions = {},
+  ): Promise<string> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.getPairInitCodeHash()
+      this.contracts.dolomiteAmmFactory.methods.getPairInitCodeHash(),
+      options,
     );
   }
 
-  public async allPairs(index: number): Promise<address> {
+  public async allPairs(
+    index: number,
+    options: ContractConstantCallOptions = {},
+  ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.allPairs(index)
+      this.contracts.dolomiteAmmFactory.methods.allPairs(index),
+      options,
     );
   }
 
-  public async allPairsLength(): Promise<Integer> {
+  public async allPairsLength(
+    options: ContractConstantCallOptions = {},
+  ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.allPairsLength()
+      this.contracts.dolomiteAmmFactory.methods.allPairsLength(),
+      options,
     );
     return new BigNumber(result);
   }
@@ -33,21 +49,42 @@ export class DolomiteAmmFactory {
   public async getPair(
     tokenA: address,
     tokenB: address,
+    options: ContractConstantCallOptions = {},
   ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.getPair(tokenA, tokenB)
+      this.contracts.dolomiteAmmFactory.methods.getPair(tokenA, tokenB),
+      options,
     );
   }
 
-  public async feeTo(): Promise<address> {
+  public async feeTo(
+    options: ContractConstantCallOptions = {},
+  ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.feeTo()
+      this.contracts.dolomiteAmmFactory.methods.feeTo(),
+      options,
     );
   }
 
-  public async feeToSetter(): Promise<address> {
+  public async feeToSetter(
+    options: ContractConstantCallOptions = {},
+  ): Promise<address> {
     return this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteAmmFactory.methods.feeToSetter()
+      this.contracts.dolomiteAmmFactory.methods.feeToSetter(),
+      options,
+    );
+  }
+
+  // ============ Write Functions ============
+
+  public async createPair(
+    tokenA: address,
+    tokenB: address,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteAmmFactory.methods.createPair(tokenA, tokenB),
+      options,
     );
   }
 

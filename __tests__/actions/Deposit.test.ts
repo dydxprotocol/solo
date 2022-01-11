@@ -1,10 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from '../helpers/DolomiteMargin';
-import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
-import { expectThrow } from '../../src/lib/Expect';
 import {
   AccountStatus,
   address,
@@ -12,7 +6,16 @@ import {
   AmountReference,
   Deposit,
   Integer,
-} from '../../src/types';
+} from '../../src';
+import { INTEGERS } from '../../src/lib/Constants';
+import { expectThrow } from '../../src/lib/Expect';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import {
+  resetEVM,
+  snapshot,
+} from '../helpers/EVM';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let who: address;
 let operator: address;
@@ -107,32 +110,47 @@ describe('Deposit', () => {
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length)
+      .toEqual(4);
 
     const operationLog = logs[0];
-    expect(operationLog.name).toEqual('LogOperation');
-    expect(operationLog.args.sender).toEqual(operator);
+    expect(operationLog.name)
+      .toEqual('LogOperation');
+    expect(operationLog.args.sender)
+      .toEqual(operator);
 
     const marketIndexLog = logs[1];
-    expect(marketIndexLog.name).toEqual('LogIndexUpdate');
-    expect(marketIndexLog.args.market).toEqual(market);
-    expect(marketIndexLog.args.index).toEqual(marketIndex);
+    expect(marketIndexLog.name)
+      .toEqual('LogIndexUpdate');
+    expect(marketIndexLog.args.market)
+      .toEqual(market);
+    expect(marketIndexLog.args.index)
+      .toEqual(marketIndex);
 
     const collateralIndexLog = logs[2];
-    expect(collateralIndexLog.name).toEqual('LogIndexUpdate');
-    expect(collateralIndexLog.args.market).toEqual(collateralMarket);
-    expect(collateralIndexLog.args.index).toEqual(collateralIndex);
+    expect(collateralIndexLog.name)
+      .toEqual('LogIndexUpdate');
+    expect(collateralIndexLog.args.market)
+      .toEqual(collateralMarket);
+    expect(collateralIndexLog.args.index)
+      .toEqual(collateralIndex);
 
     const depositLog = logs[3];
-    expect(depositLog.name).toEqual('LogDeposit');
-    expect(depositLog.args.accountOwner).toEqual(who);
-    expect(depositLog.args.accountNumber).toEqual(accountNumber);
-    expect(depositLog.args.market).toEqual(market);
-    expect(depositLog.args.update).toEqual({
-      newPar: par.times(2),
-      deltaWei: wei,
-    });
-    expect(depositLog.args.from).toEqual(operator);
+    expect(depositLog.name)
+      .toEqual('LogDeposit');
+    expect(depositLog.args.accountOwner)
+      .toEqual(who);
+    expect(depositLog.args.accountNumber)
+      .toEqual(accountNumber);
+    expect(depositLog.args.market)
+      .toEqual(market);
+    expect(depositLog.args.update)
+      .toEqual({
+        newPar: par.times(2),
+        deltaWei: wei,
+      });
+    expect(depositLog.args.from)
+      .toEqual(operator);
   });
 
   it('Succeeds for positive delta par/wei', async () => {
@@ -330,12 +348,13 @@ describe('Deposit', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await setAccountBalance(zero), await expectDepositOkay(globs[i]);
+      await setAccountBalance(zero);
+      await expectDepositOkay(globs[i]);
       await expectBalances(zero, zero, zero, zero);
 
       // starting positive
-      await setAccountBalance(par),
-        await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
+      await setAccountBalance(par);
+      await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
 
       // starting negative
       await Promise.all([setAccountBalance(negPar), issueTokensToUser(wei)]);
@@ -438,7 +457,8 @@ describe('Deposit', () => {
 
   it('Succeeds for repaying in par', async () => {
     const borrowIndex = new BigNumber('1.99');
-    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
+    const expectedWei = par.times(borrowIndex)
+      .integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -460,7 +480,8 @@ describe('Deposit', () => {
 
   it('Succeeds for repaying in wei', async () => {
     const borrowIndex = new BigNumber('1.99');
-    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
+    const expectedWei = par.times(borrowIndex)
+      .integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -491,7 +512,8 @@ describe('Deposit', () => {
     ]);
     await expectDepositOkay({});
     const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
-    expect(status).toEqual(AccountStatus.Normal);
+    expect(status)
+      .toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
@@ -561,21 +583,25 @@ async function expectBalances(
     dolomiteMargin.testing.tokenA.getBalance(who),
     dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
   ]);
-  accountBalances.forEach((balance, i) => {
+  accountBalances.forEach((balance) => {
     let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
+    if (balance.marketId.eq(market)) {
       expected = { par: expectedPar, wei: expectedWei };
-    } else if (i === collateralMarket.toNumber()) {
+    } else if (balance.marketId.eq(collateralMarket)) {
       expected = {
         par: collateralAmount,
         wei: collateralAmount,
       };
     }
-    expect(balance.par).toEqual(expected.par);
-    expect(balance.wei).toEqual(expected.wei);
+    expect(balance.par)
+      .toEqual(expected.par);
+    expect(balance.wei)
+      .toEqual(expected.wei);
   });
-  expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
-  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei)).toEqual(dolomiteMarginWei);
+  expect(walletTokenBalance.minus(cachedWeis.walletWei))
+    .toEqual(walletWei);
+  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei))
+    .toEqual(dolomiteMarginWei);
   cachedWeis.walletWei = walletTokenBalance;
   cachedWeis.dolomiteMarginWei = dolomiteMarginTokenBalance;
 }

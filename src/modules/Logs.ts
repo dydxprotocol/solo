@@ -168,8 +168,10 @@ export class Logs {
         val = new BigNumber(eventArgs[input.name]);
       } else if (input.type === 'tuple') {
         val = Logs.parseTuple(input, eventArgs);
+      } else if (input.type === 'string') {
+        val = eventArgs[input.name];
       } else {
-        throw new Error(`Unknown evnt arg type ${input.type}`);
+        throw new Error(`Unknown event arg type ${input.type}`);
       }
       parsed[input.name] = val;
 

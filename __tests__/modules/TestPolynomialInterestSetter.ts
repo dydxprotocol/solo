@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { ContractCallOptions, Integer, TxResult } from '../../src/types';
+import { ContractCallOptions, Integer, TxResult } from '../../src';
 
 export class TestPolynomialInterestSetter {
   private contracts: TestContracts;
@@ -8,7 +8,7 @@ export class TestPolynomialInterestSetter {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testPolynomialInterestSetter.options.address;
   }
 

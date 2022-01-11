@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
-import {OnlyDolomiteMargin} from "../external/helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMargin } from "../external/helpers/OnlyDolomiteMargin.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IExchangeWrapper } from "../protocol/interfaces/IExchangeWrapper.sol";
 import { IRecyclable } from "../protocol/interfaces/IRecyclable.sol";

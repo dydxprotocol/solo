@@ -32,7 +32,7 @@ export class EVM {
   /**
    * Attempts to reset the EVM to its initial state. Useful for testing suites
    *
-   * @param provider a valid web3 provider
+   * @param resetSnapshotId a valid snapshot to which the evm will be reverted
    * @returns null
    */
   public async resetEVM(resetSnapshotId: string = '0x1'): Promise<void> {

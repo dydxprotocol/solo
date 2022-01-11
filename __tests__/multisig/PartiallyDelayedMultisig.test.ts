@@ -5,7 +5,7 @@ import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { fastForward, resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { address } from '../../src/types';
+import { address } from '../../src';
 import MultiSigJson from '../../build/contracts/PartiallyDelayedMultiSig.json';
 import TestCounterJson from '../../build/contracts/TestCounter.json';
 

@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { address, ContractConstantCallOptions, Integer } from '../../src/types';
+import { address, ContractConstantCallOptions, Integer } from '../../src';
 
 export class TestCallee {
   private contracts: TestContracts;
@@ -8,7 +8,7 @@ export class TestCallee {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testCallee.options.address;
   }
 

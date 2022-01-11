@@ -17,57 +17,63 @@
 */
 
 import BigNumber from 'bignumber.js';
-import { Provider } from 'web3/providers';
 import Web3 from 'web3';
+import {
+  Block,
+  TransactionObject,
+  Tx,
+} from 'web3/eth/types';
 import PromiEvent from 'web3/promiEvent';
+import { Provider } from 'web3/providers';
 import { TransactionReceipt } from 'web3/types';
-import { Block, TransactionObject, Tx } from 'web3/eth/types';
-
-// Contracts
-import { DolomiteMargin } from '../../build/wrappers/DolomiteMargin';
-import { IERC20 as ERC20 } from '../../build/wrappers/IERC20';
-import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
-import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
-import { Expiry } from '../../build/wrappers/Expiry';
-import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy';
-import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
-import { LiquidatorProxyV1 as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1';
-import { LiquidatorProxyV1WithAmm as LiquidatorProxyV1WithAmm, } from '../../build/wrappers/LiquidatorProxyV1WithAmm';
-import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
-import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
-import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
-import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
-import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
-import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
-import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
-import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
-import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
-import { Weth } from '../../build/wrappers/Weth';
+import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
+import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
+import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
+import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
+import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
+import dolomiteAmmRouterProxyJson from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
 
 // JSON
 import dolomiteMarginJson from '../../build/published_contracts/DolomiteMargin.json';
+import doubleExponentInterestSetterJson from '../../build/published_contracts/DoubleExponentInterestSetter.json';
+import expiryJson from '../../build/published_contracts/Expiry.json';
 import erc20Json from '../../build/published_contracts/IERC20.json';
 import interestSetterJson from '../../build/published_contracts/IInterestSetter.json';
 import priceOracleJson from '../../build/published_contracts/IPriceOracle.json';
-import expiryJson from '../../build/published_contracts/Expiry.json';
-import payableProxyJson from '../../build/published_contracts/PayableProxy.json';
-import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import liquidatorV1Json from '../../build/published_contracts/LiquidatorProxyV1.json';
 import liquidatorV1WithAmmJson from '../../build/published_contracts/LiquidatorProxyV1WithAmm.json';
-import dolomiteAmmRouterProxyJson from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
+import payableProxyJson from '../../build/published_contracts/PayableProxy.json';
 import polynomialInterestSetterJson from '../../build/published_contracts/PolynomialInterestSetter.json';
-import doubleExponentInterestSetterJson from '../../build/published_contracts/DoubleExponentInterestSetter.json';
-import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
-import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
-import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
-import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
-import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
+import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
-import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
+import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
+import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import wethJson from '../../build/published_contracts/Weth.json';
-import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
+import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
+import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
+import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
+import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
+import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
+import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
+import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
 
-import { ADDRESSES, SUBTRACT_GAS_LIMIT } from './Constants';
+// Contracts
+import { DolomiteMargin } from '../../build/wrappers/DolomiteMargin';
+import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
+import { Expiry } from '../../build/wrappers/Expiry';
+import { IERC20 as ERC20 } from '../../build/wrappers/IERC20';
+import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInterestSetter';
+import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
+import { LiquidatorProxyV1 as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1';
+import { LiquidatorProxyV1WithAmm as LiquidatorProxyV1WithAmm } from '../../build/wrappers/LiquidatorProxyV1WithAmm';
+import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy';
+import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
+import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
+import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
+import { TransferProxy } from '../../build/wrappers/TransferProxy';
+import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
+import { Weth } from '../../build/wrappers/Weth';
+import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import {
   address,
   ConfirmationType,
@@ -76,8 +82,11 @@ import {
   DolomiteMarginOptions,
   TxResult,
 } from '../types';
-import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
-import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
+
+import {
+  ADDRESSES,
+  SUBTRACT_GAS_LIMIT,
+} from './Constants';
 
 interface CallableTransactionObject<T> {
   call(tx?: Tx, blockNumber?: number): Promise<T>;
@@ -106,13 +115,14 @@ export class Contracts {
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public simpleFeeOwner: SimpleFeeOwner;
   public weth: Weth;
+  public transferProxy: TransferProxy;
   protected web3: Web3;
   private blockGasLimit: number;
-  private autoGasMultiplier: number;
-  private defaultConfirmations: number;
-  private confirmationType: ConfirmationType;
-  private defaultGas: string | number;
-  private defaultGasPrice: string | number;
+  private readonly autoGasMultiplier: number;
+  private readonly defaultConfirmations: number;
+  private readonly confirmationType: ConfirmationType;
+  private readonly defaultGas: string | number;
+  private readonly defaultGasPrice: string | number;
 
   constructor(
     provider: Provider,
@@ -187,6 +197,7 @@ export class Contracts {
       simpleFeeOwnerJson.abi,
     ) as SimpleFeeOwner;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
+    this.transferProxy = new this.web3.eth.Contract(transferProxyJson.abi) as TransferProxy;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -196,7 +207,8 @@ export class Contracts {
     tokenA: address,
     tokenB: address,
   ): Promise<string> {
-    return this.dolomiteAmmFactory.methods.getPair(tokenA, tokenB).call();
+    return this.dolomiteAmmFactory.methods.getPair(tokenA, tokenB)
+      .call();
   }
 
   public async getDolomiteAmmPairFromTokens(
@@ -274,6 +286,7 @@ export class Contracts {
         json: chainlinkPriceOracleV1Json,
       },
       { contract: this.weth, json: wethJson },
+      { contract: this.transferProxy, json: transferProxyJson },
     ];
 
     contracts.forEach(contract =>
@@ -310,6 +323,7 @@ export class Contracts {
     this.dolomiteAmmFactory.options.from = account;
     this.simpleFeeOwner.options.from = account;
     this.weth.options.from = account;
+    this.transferProxy.options.from = account;
   }
 
   public async callContractFunction<T>(
@@ -378,7 +392,8 @@ export class Contracts {
     const t =
       confirmationType !== undefined ? confirmationType : this.confirmationType;
 
-    if (!Object.values(ConfirmationType).includes(t)) {
+    if (!Object.values(ConfirmationType)
+      .includes(t)) {
       throw new Error(`Invalid confirmation type: ${t}`);
     }
 

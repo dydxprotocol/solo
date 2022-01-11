@@ -3,6 +3,10 @@
 import { BigNumber } from 'bignumber.js';
 import { Contracts } from '../lib/Contracts';
 import {
+  stringToDecimal,
+  valueToInteger,
+} from '../lib/Helpers';
+import {
   AccountStatus,
   address,
   Balance,
@@ -17,7 +21,7 @@ import {
   TotalPar,
   Values,
 } from '../types';
-import { stringToDecimal, valueToInteger } from '../lib/Helpers';
+import DolomiteMarginMath from './DolomiteMarginMath';
 
 export class Getters {
   private contracts: Contracts;
@@ -27,6 +31,39 @@ export class Getters {
   }
 
   // ============ Getters for Risk ============
+
+  private static parseIndex(
+    {
+      borrow,
+      supply,
+      lastUpdate,
+    }: {
+      borrow: string;
+      supply: string;
+      lastUpdate: string;
+    },
+  ): Index {
+    return {
+      borrow: stringToDecimal(borrow),
+      supply: stringToDecimal(supply),
+      lastUpdate: new BigNumber(lastUpdate),
+    };
+  }
+
+  private static parseTotalPar(
+    {
+      supply,
+      borrow,
+    }: {
+      supply: string;
+      borrow: string;
+    },
+  ): TotalPar {
+    return {
+      borrow: new BigNumber(borrow),
+      supply: new BigNumber(supply),
+    };
+  }
 
   public async getMarginRatio(
     options?: ContractConstantCallOptions,
@@ -68,6 +105,8 @@ export class Getters {
     return new BigNumber(result.value);
   }
 
+  // ============ Getters for Markets ============
+
   public async getRiskParams(
     options?: ContractConstantCallOptions,
   ): Promise<RiskParams> {
@@ -100,8 +139,6 @@ export class Getters {
     };
   }
 
-  // ============ Getters for Markets ============
-
   public async getNumMarkets(
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
@@ -122,6 +159,17 @@ export class Getters {
       ),
       options,
     );
+  }
+
+  public async getMarketIdByTokenAddress(
+    token: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteMargin.methods.getMarketIdByTokenAddress(token),
+      options,
+    );
+    return new BigNumber(result);
   }
 
   public async getMarketTotalPar(
@@ -292,7 +340,8 @@ export class Getters {
       this.getMarketInterestRate(marketId, options),
       this.getMarketUtilization(marketId, options),
     ]);
-    return borrowInterestRate.times(earningsRate).times(utilization);
+    return borrowInterestRate.times(earningsRate)
+      .times(utilization);
   }
 
   public async getLiquidationSpreadForPair(
@@ -354,6 +403,22 @@ export class Getters {
     };
   }
 
+  // ============ Getters for Accounts ============
+
+  public async getMarketTotalWei(
+    marketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<{ borrow: Integer, supply: Integer }> {
+    const { borrow, supply } = await this.getMarketTotalPar(marketId, options);
+    const marketIndex = await this.getMarketCurrentIndex(marketId, options);
+
+    return {
+      borrow: DolomiteMarginMath.parToWei(borrow.negated(), marketIndex)
+        .negated(),
+      supply: DolomiteMarginMath.parToWei(supply, marketIndex),
+    };
+  }
+
   public async getNumExcessTokens(
     marketId: Integer,
     options?: ContractConstantCallOptions,
@@ -364,8 +429,6 @@ export class Getters {
     );
     return valueToInteger(numExcessTokens);
   }
-
-  // ============ Getters for Accounts ============
 
   public async getAccountPar(
     accountOwner: address,
@@ -495,6 +558,8 @@ export class Getters {
     };
   }
 
+  // ============ Getters for Permissions ============
+
   public async getAccountBalances(
     accountOwner: address,
     accountNumber: Integer,
@@ -507,13 +572,15 @@ export class Getters {
       }),
       options,
     );
-    const tokens = balances[0];
-    const pars = balances[1];
-    const weis = balances[2];
+    const marketIds = balances[0];
+    const tokens = balances[1];
+    const pars = balances[2];
+    const weis = balances[3];
 
-    const result = [];
+    const result: Balance[] = [];
     for (let i = 0; i < tokens.length; i += 1) {
       result.push({
+        marketId: new BigNumber(marketIds[i]),
         tokenAddress: tokens[i],
         par: valueToInteger(pars[i]),
         wei: valueToInteger(weis[i]),
@@ -554,7 +621,7 @@ export class Getters {
     );
   }
 
-  // ============ Getters for Permissions ============
+  // ============ Getters for Admin ============
 
   public async getIsLocalOperator(
     owner: address,
@@ -567,6 +634,8 @@ export class Getters {
     );
   }
 
+  // ============ Getters for Expiry ============
+
   public async getIsGlobalOperator(
     operator: address,
     options?: ContractConstantCallOptions,
@@ -577,8 +646,6 @@ export class Getters {
     );
   }
 
-  // ============ Getters for Admin ============
-
   public async getAdmin(
     options?: ContractConstantCallOptions,
   ): Promise<address> {
@@ -587,8 +654,6 @@ export class Getters {
       options,
     );
   }
-
-  // ============ Getters for Expiry ============
 
   public async getExpiryAdmin(
     options?: ContractConstantCallOptions,
@@ -617,6 +682,8 @@ export class Getters {
     );
     return new BigNumber(result);
   }
+
+  // ============ Helper Functions ============
 
   public async getExpiryPrices(
     heldMarketId: Integer,
@@ -647,36 +714,5 @@ export class Getters {
       options,
     );
     return new BigNumber(result);
-  }
-
-  // ============ Helper Functions ============
-
-  private static parseIndex({
-    borrow,
-    supply,
-    lastUpdate,
-  }: {
-    borrow: string;
-    supply: string;
-    lastUpdate: string;
-  }): Index {
-    return {
-      borrow: stringToDecimal(borrow),
-      supply: stringToDecimal(supply),
-      lastUpdate: new BigNumber(lastUpdate),
-    };
-  }
-
-  private static parseTotalPar({
-    supply,
-    borrow,
-  }: {
-    supply: string;
-    borrow: string;
-  }): TotalPar {
-    return {
-      borrow: new BigNumber(borrow),
-      supply: new BigNumber(supply),
-    };
   }
 }

@@ -17,9 +17,13 @@
 */
 
 import BigNumber from 'bignumber.js';
-import { Order } from '@dydxprotocol/exchange-wrappers';
+import BN from 'bn.js';
 import { Tx } from 'web3/eth/types';
-import { EventLog, Log, TransactionReceipt } from 'web3/types';
+import {
+  EventLog,
+  Log,
+  TransactionReceipt,
+} from 'web3/types';
 
 export type address = string;
 export type Integer = BigNumber;
@@ -193,6 +197,24 @@ export interface Transfer extends AccountAction {
   amount: Amount;
 }
 
+export enum OrderType {
+}
+
+export interface Order {
+  type: OrderType | string; // the "| string" needs to be here to allow it to be overridden in the Test module
+  exchangeWrapperAddress: string;
+}
+
+export interface TestOrder extends Order {
+  originator: string;
+  makerToken: string;
+  takerToken: string;
+  makerAmount: BigNumber | BN;
+  takerAmount: BigNumber | BN;
+  allegedTakerAmount: BigNumber | BN;
+  desiredMakerAmount: BigNumber | BN;
+}
+
 export interface Exchange extends AccountAction {
   takerMarketId: Integer;
   makerMarketId: Integer;
@@ -200,9 +222,11 @@ export interface Exchange extends AccountAction {
   amount: Amount;
 }
 
-export interface Buy extends Exchange {}
+export interface Buy extends Exchange {
+}
 
-export interface Sell extends Exchange {}
+export interface Sell extends Exchange {
+}
 
 export interface Trade extends AccountAction {
   autoTrader: address;
@@ -314,6 +338,7 @@ export interface RiskParams {
 }
 
 export interface Balance {
+  marketId: Integer;
   tokenAddress: address;
   par: Integer;
   wei: Integer;
@@ -384,6 +409,3 @@ export interface Operation {
 export interface SignedOperation extends Operation {
   typedSignature: string;
 }
-
-// ============ Api ============
-

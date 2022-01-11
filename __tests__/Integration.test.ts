@@ -1,17 +1,26 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from './helpers/DolomiteMargin';
-import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from './helpers/EVM';
-import { setGlobalOperator, setupMarkets } from './helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../src/lib/Constants';
-import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
-import { stringToDecimal } from '../src/lib/Helpers';
 import {
   address,
   AmountDenomination,
   AmountReference,
   TxResult,
-} from '../src/types';
+} from '../src';
+import { INTEGERS } from '../src/lib/Constants';
+import { stringToDecimal } from '../src/lib/Helpers';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import {
+  setGlobalOperator,
+  setupMarkets,
+} from './helpers/DolomiteMarginHelpers';
+import {
+  resetEVM,
+  snapshot,
+} from './helpers/EVM';
+import {
+  TestExchangeWrapperOrder,
+  TestOrderType,
+} from './helpers/types';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
@@ -54,7 +63,7 @@ describe('Integration', () => {
     };
     const actualRate = stringToDecimal('1234');
     await dolomiteMargin.testing.interestSetter.setInterestRate(
-      dolomiteMargin.testing.tokenA.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
       actualRate,
     );
 
@@ -83,10 +92,12 @@ describe('Integration', () => {
       numTries += 1;
     } while (block1.timestamp !== block2.timestamp || numTries > 10);
 
-    expect(block1.timestamp).toEqual(block2.timestamp);
-    expect(result1.events.LogIndexUpdate.returnValues).toEqual(
-      result2.events.LogIndexUpdate.returnValues,
-    );
+    expect(block1.timestamp)
+      .toEqual(block2.timestamp);
+    expect(result1.events.LogIndexUpdate.returnValues)
+      .toEqual(
+        result2.events.LogIndexUpdate.returnValues,
+      );
   });
 
   it('Deposit then Withdraw', async () => {
@@ -133,8 +144,10 @@ describe('Integration', () => {
       dolomiteMargin.getters.getAccountBalances(who, accountNumber),
     ]);
 
-    expect(walletTokenBalance).toEqual(halfAmount);
-    expect(dolomiteMarginTokenBalance).toEqual(halfAmount);
+    expect(walletTokenBalance)
+      .toEqual(halfAmount);
+    expect(dolomiteMarginTokenBalance)
+      .toEqual(halfAmount);
 
     accountBalances.forEach((balance, i) => {
       let expected = INTEGERS.ZERO;
@@ -142,15 +155,19 @@ describe('Integration', () => {
         expected = halfAmount;
       }
 
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
   });
 
   it('Liquidate multiple times', async () => {
     const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
-    expect(solidOwner).not.toEqual(liquidOwner);
+    expect(solidOwner)
+      .not
+      .toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
     const heldMarket1 = INTEGERS.ZERO;
@@ -169,13 +186,15 @@ describe('Integration', () => {
         liquidOwner,
         liquidNumber,
         heldMarket1,
-        amount.times(premium).div(2),
+        amount.times(premium)
+          .div(2),
       ),
       dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
         liquidNumber,
         heldMarket2,
-        amount.times(premium).div(2),
+        amount.times(premium)
+          .div(2),
       ),
       dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
@@ -220,25 +239,32 @@ describe('Integration', () => {
       dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
-    solidBalances.forEach((balance, i) => {
+    solidBalances.forEach((balance) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMarket1.toNumber() || i === heldMarket2.toNumber()) {
-        expected = amount.times(premium).div(2);
+      if (balance.marketId.eq(heldMarket1) || balance.marketId.eq(heldMarket2)) {
+        expected = amount.times(premium)
+          .div(2);
       }
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
-    liquidBalances.forEach((balance, _) => {
+    liquidBalances.forEach((balance) => {
       const expected = INTEGERS.ZERO;
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
   });
 
   it('Liquidate => Vaporize', async () => {
     const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
-    expect(solidOwner).not.toEqual(liquidOwner);
+    expect(solidOwner)
+      .not
+      .toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
     const heldMarket = INTEGERS.ZERO;
@@ -264,7 +290,8 @@ describe('Integration', () => {
         liquidOwner,
         liquidNumber,
         heldMarket,
-        amount.times(premium).div(2),
+        amount.times(premium)
+          .div(2),
       ),
       dolomiteMargin.testing.setAccountBalance(
         liquidOwner,
@@ -311,18 +338,22 @@ describe('Integration', () => {
       dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
-    solidBalances.forEach((balance, i) => {
+    solidBalances.forEach((balance) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMarket.toNumber()) {
+      if (balance.marketId.eq(heldMarket)) {
         expected = amount.times(premium);
       }
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
-    liquidBalances.forEach((balance, _) => {
+    liquidBalances.forEach((balance) => {
       const expected = INTEGERS.ZERO;
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
   });
 
@@ -330,7 +361,9 @@ describe('Integration', () => {
     const amount = new BigNumber(100);
     const solidOwner = dolomiteMargin.getDefaultAccount();
     const liquidOwner = accounts[2];
-    expect(solidOwner).not.toEqual(liquidOwner);
+    expect(solidOwner)
+      .not
+      .toEqual(liquidOwner);
     const solidNumber = INTEGERS.ZERO;
     const liquidNumber = INTEGERS.ONE;
     const heldMarket = INTEGERS.ZERO;
@@ -346,7 +379,7 @@ describe('Integration', () => {
         amount.times(collateralization),
         dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
-      owedToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      owedToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.address),
 
       // set balances
       dolomiteMargin.testing.setAccountBalance(
@@ -363,12 +396,12 @@ describe('Integration', () => {
       ),
     ]);
 
-    const testOrder: TestOrder = {
-      type: OrderType.Test,
-      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
+    const testOrder: TestExchangeWrapperOrder = {
+      type: TestOrderType.Test,
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.address,
       originator: solidOwner,
-      makerToken: owedToken.getAddress(),
-      takerToken: heldToken.getAddress(),
+      makerToken: owedToken.address,
+      takerToken: heldToken.address,
       makerAmount: amount,
       takerAmount: amount,
       allegedTakerAmount: amount,
@@ -429,35 +462,45 @@ describe('Integration', () => {
     ] = await Promise.all([
       heldToken.getBalance(solidOwner),
       owedToken.getBalance(solidOwner),
-      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
-      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
+      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
       heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
       owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
       dolomiteMargin.getters.getAccountBalances(solidOwner, solidNumber),
       dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
 
-    expect(ownerHeldTokenBalance).toEqual(amount.times(premium.minus(1)));
-    expect(ownerOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(wrapperHeldTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(wrapperOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(dolomiteMarginHeldTokenBalance).toEqual(
-      amount.times(collateralization.minus(premium)),
-    );
-    expect(dolomiteMarginOwedTokenBalance).toEqual(amount);
+    expect(ownerHeldTokenBalance)
+      .toEqual(amount.times(premium.minus(1)));
+    expect(ownerOwedTokenBalance)
+      .toEqual(INTEGERS.ZERO);
+    expect(wrapperHeldTokenBalance)
+      .toEqual(INTEGERS.ZERO);
+    expect(wrapperOwedTokenBalance)
+      .toEqual(INTEGERS.ZERO);
+    expect(dolomiteMarginHeldTokenBalance)
+      .toEqual(
+        amount.times(collateralization.minus(premium)),
+      );
+    expect(dolomiteMarginOwedTokenBalance)
+      .toEqual(amount);
 
-    solidBalances.forEach((balance, _) => {
+    solidBalances.forEach((balance) => {
       const expected = INTEGERS.ZERO;
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
-    liquidBalances.forEach((balance, i) => {
+    liquidBalances.forEach((balance) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMarket.toNumber()) {
+      if (balance.marketId.eq(heldMarket)) {
         expected = amount.times(collateralization.minus(premium));
       }
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
   });
 
@@ -474,18 +517,18 @@ describe('Integration', () => {
     await Promise.all([
       // issue tokens
       owedToken.issueTo(amount, dolomiteMargin.contracts.dolomiteMargin.options.address),
-      heldToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      heldToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.address),
 
       // set balances
       dolomiteMargin.testing.setAccountBalance(owner, oneNumber, heldMarket, amount),
     ]);
 
-    const testOrder: TestOrder = {
-      type: OrderType.Test,
-      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.getAddress(),
+    const testOrder: TestExchangeWrapperOrder = {
+      type: TestOrderType.Test,
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.address,
       originator: owner,
-      makerToken: heldToken.getAddress(),
-      takerToken: owedToken.getAddress(),
+      makerToken: heldToken.address,
+      takerToken: owedToken.address,
       makerAmount: amount,
       takerAmount: amount,
       allegedTakerAmount: amount,
@@ -530,35 +573,43 @@ describe('Integration', () => {
       oneBalances,
       twoBalances,
     ] = await Promise.all([
-      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
-      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.getAddress()),
+      heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
+      owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
       heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
       owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
       dolomiteMargin.getters.getAccountBalances(owner, oneNumber),
       dolomiteMargin.getters.getAccountBalances(owner, twoNumber),
     ]);
 
-    expect(wrapperHeldTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(wrapperOwedTokenBalance).toEqual(INTEGERS.ZERO);
-    expect(dolomiteMarginHeldTokenBalance).toEqual(amount);
-    expect(dolomiteMarginOwedTokenBalance).toEqual(INTEGERS.ZERO);
+    expect(wrapperHeldTokenBalance)
+      .toEqual(INTEGERS.ZERO);
+    expect(wrapperOwedTokenBalance)
+      .toEqual(INTEGERS.ZERO);
+    expect(dolomiteMarginHeldTokenBalance)
+      .toEqual(amount);
+    expect(dolomiteMarginOwedTokenBalance)
+      .toEqual(INTEGERS.ZERO);
 
-    oneBalances.forEach((balance, _) => {
+    oneBalances.forEach((balance) => {
       const expected = INTEGERS.ZERO;
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
 
-    twoBalances.forEach((balance, i) => {
+    twoBalances.forEach((balance) => {
       let expected = INTEGERS.ZERO;
-      if (i === heldMarket.toNumber()) {
+      if (balance.marketId.eq(heldMarket)) {
         expected = amount.times(2);
       }
-      if (i === owedMarket.toNumber()) {
+      if (balance.marketId.eq(owedMarket)) {
         expected = amount.times(-1);
       }
-      expect(balance.par).toEqual(expected);
-      expect(balance.wei).toEqual(expected);
+      expect(balance.par)
+        .toEqual(expected);
+      expect(balance.wei)
+        .toEqual(expected);
     });
   });
 
@@ -580,8 +631,11 @@ describe('Integration', () => {
       .commit();
     const noLogs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
     const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: false });
-    expect(noLogs.length).toEqual(0);
-    expect(logs.length).not.toEqual(0);
+    expect(noLogs.length)
+      .toEqual(0);
+    expect(logs.length)
+      .not
+      .toEqual(0);
   });
 });
 

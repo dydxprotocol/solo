@@ -11,7 +11,7 @@ import {
   address,
   AmountDenomination,
   AmountReference,
-} from '../src/types';
+} from '../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -159,7 +159,7 @@ describe('Invalid', () => {
     await Promise.all([
       dolomiteMargin.testing.tokenA.issueTo(wei, owner1),
       dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(owner1),
-      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.getAddress(), zero),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.address, zero),
     ]);
     await expectThrow(
       operate([account1], [zeroAction]),
@@ -184,11 +184,11 @@ describe('Invalid', () => {
         dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.getAddress(),
+        dolomiteMargin.testing.tokenB.address,
         INTEGERS.ONE,
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         INTEGERS.ONE,
       ),
     ]);

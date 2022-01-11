@@ -1,3 +1,6 @@
 node_modules
 contracts/testing
 contracts/Migrations.sol
+
+# skipped because it doesn't know how to parse abi.decode(<array-type>)
+contracts/external/traders/Expiry.sol

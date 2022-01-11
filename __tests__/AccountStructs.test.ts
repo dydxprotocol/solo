@@ -4,7 +4,7 @@ import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../src/lib/Constants';
-import { address, Integer } from '../src/types';
+import { address, Integer } from '../src';
 
 let owner: address;
 let dolomiteMargin: TestDolomiteMargin;

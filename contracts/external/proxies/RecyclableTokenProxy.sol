@@ -184,6 +184,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         actions[0] = Actions.ActionArgs({
         actionType: Actions.ActionType.Deposit,
         accountId: 0,
+        // solium-disable-next-line arg-overflow
         amount: Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
         primaryMarketId: MARKET_ID,
         secondaryMarketId: uint(-1),
@@ -209,6 +210,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         actions[0] = Actions.ActionArgs({
         actionType: Actions.ActionType.Withdraw,
         accountId: 0,
+        // solium-disable-next-line arg-overflow
         amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
         primaryMarketId: MARKET_ID,
         secondaryMarketId: uint(-1),
@@ -296,6 +298,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         actions[1] = Actions.ActionArgs({
         actionType : Actions.ActionType.Call,
         accountId : 0,
+        // solium-disable-next-line arg-overflow
         amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
         primaryMarketId : 0,
         secondaryMarketId : 0,
@@ -312,19 +315,19 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
 
     // ============ ERC20 Functions ============
 
-    function name() external view returns (string memory) {
+    function name() public view returns (string memory) {
         return string(abi.encodePacked("Recyclable: ", IERC20Detailed(address(TOKEN)).name()));
     }
 
-    function symbol() external view returns (string memory) {
+    function symbol() public view returns (string memory) {
         return string(abi.encodePacked("r", IERC20Detailed(address(TOKEN)).symbol()));
     }
 
-    function decimals() external view returns (uint8) {
+    function decimals() public view returns (uint8) {
         return IERC20Detailed(address(TOKEN)).decimals();
     }
 
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return TOKEN.totalSupply();
     }
 
@@ -342,7 +345,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         }
     }
 
-    function transfer(address recipient, uint256 amount) external onlyDolomiteMargin(msg.sender) returns (bool) {
+    function transfer(address recipient, uint256 amount) public onlyDolomiteMargin(msg.sender) returns (bool) {
         // This condition fails when the market is recycled but DolomiteMargin attempts to call this contract still
         Require.that(
             DOLOMITE_MARGIN.getMarketTokenAddress(MARKET_ID) == address(this),
@@ -360,11 +363,11 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         return true;
     }
 
-    function allowance(address, address) external view returns (uint256) {
+    function allowance(address, address) public view returns (uint256) {
         return 0;
     }
 
-    function approve(address, uint256) external returns (bool) {
+    function approve(address, uint256) public returns (bool) {
         return false;
     }
 
@@ -372,7 +375,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
         address from,
         address to,
         uint256 amount
-    ) external onlyDolomiteMargin(msg.sender) returns (bool) {
+    ) public onlyDolomiteMargin(msg.sender) returns (bool) {
         // transferFrom should always send tokens to DOLOMITE_MARGIN
         Require.that(
             to == address(msg.sender), // msg.sender eq DOLOMITE_MARGIN

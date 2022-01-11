@@ -19,8 +19,8 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { Account } from "../../protocol/lib/Account.sol";
-import { Monetary } from "../../protocol/lib/Monetary.sol";
+import {Account} from "../../protocol/lib/Account.sol";
+import {Monetary} from "../../protocol/lib/Monetary.sol";
 
 
 /**
@@ -55,11 +55,8 @@ contract IExpiry {
         uint256 owedMarketId,
         uint32 expiry
     )
-    public
-    view
-    returns (
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPriceAdj
-    );
+        public
+        view
+        returns (Monetary.Price memory heldPrice, Monetary.Price memory owedPriceAdj);
 
 }

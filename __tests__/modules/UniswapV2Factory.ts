@@ -1,5 +1,5 @@
 import { TestContracts } from './TestContracts';
-import { address } from "../../src";
+import { address } from '../../src';
 
 export class UniswapV2Factory {
   private contracts: TestContracts;

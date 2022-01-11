@@ -3,7 +3,7 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { ADDRESSES } from '../../src/lib/Constants';
-import { address } from '../../src/types';
+import { address } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   coefficientsToString,
@@ -35,13 +35,13 @@ describe('DoubleExponentInterestSetter', () => {
     admin = r.accounts[0];
     await resetEVM();
     await dolomiteMargin.testing.priceOracle.setPrice(
-      dolomiteMargin.testing.tokenA.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
       defaultPrice,
     );
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.testing.tokenA.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.doubleExponentInterestSetter.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.doubleExponentInterestSetter.address,
       zero,
       zero,
       defaultIsClosing,

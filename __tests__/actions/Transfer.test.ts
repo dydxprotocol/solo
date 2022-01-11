@@ -12,7 +12,7 @@ import {
   AmountReference,
   Integer,
   Transfer,
-} from '../../src/types';
+} from '../../src';
 
 let owner1: address;
 let owner2: address;
@@ -530,21 +530,21 @@ async function expectBalances(
     dolomiteMargin.getters.getAccountBalances(owner1, accountNumber1),
     dolomiteMargin.getters.getAccountBalances(owner2, accountNumber2),
   ]);
-  accountBalances1.forEach((balance, i) => {
+  accountBalances1.forEach((balance) => {
     let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
+    if (balance.marketId.eq(market)) {
       expected = { par: par1, wei: wei1 };
-    } else if (i === collateralMarket.toNumber()) {
+    } else if (balance.marketId.eq(collateralMarket)) {
       expected = { par: collateralAmount, wei: collateralAmount };
     }
     expect(balance.par).toEqual(expected.par);
     expect(balance.wei).toEqual(expected.wei);
   });
-  accountBalances2.forEach((balance, i) => {
+  accountBalances2.forEach((balance) => {
     let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
+    if (balance.marketId.eq(market)) {
       expected = { par: par2, wei: wei2 };
-    } else if (i === collateralMarket.toNumber()) {
+    } else if (balance.marketId.eq(collateralMarket)) {
       expected = { par: collateralAmount, wei: collateralAmount };
     }
     expect(balance.par).toEqual(expected.par);

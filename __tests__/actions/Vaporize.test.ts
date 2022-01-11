@@ -12,7 +12,7 @@ import {
   AmountReference,
   Integer,
   Vaporize,
-} from '../../src/types';
+} from '../../src';
 
 let vaporOwner: address;
 let solidOwner: address;
@@ -559,10 +559,10 @@ async function expectSolidPars(
     solidOwner,
     solidAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);
@@ -578,10 +578,10 @@ async function expectVaporPars(
     vaporOwner,
     vaporAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);

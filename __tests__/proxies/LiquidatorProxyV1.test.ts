@@ -53,18 +53,18 @@ describe('LiquidatorProxyV1', () => {
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenA.getAddress(),
+        dolomiteMargin.testing.tokenA.address,
         prices[0],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.getAddress(),
+        dolomiteMargin.testing.tokenB.address,
         prices[1],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         prices[2],
       ),
-      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.getAddress(), prices[3]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       dolomiteMargin.permissions.approveOperator(operator, { from: owner1 }),
       dolomiteMargin.permissions.approveOperator(
         dolomiteMargin.contracts.liquidatorProxyV1.options.address,
@@ -72,9 +72,9 @@ describe('LiquidatorProxyV1', () => {
       ),
     ]);
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.weth.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.interestSetter.getAddress(),
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
@@ -931,8 +931,9 @@ describe('LiquidatorProxyV1', () => {
       it('Fails for proxy is non-operator', async () => {
         await Promise.all([
           setUpBasicBalances(),
-          dolomiteMargin.permissions.disapproveGlobalOperator(
+          dolomiteMargin.admin.setGlobalOperator(
             dolomiteMargin.contracts.liquidatorProxyV1.options.address,
+            false,
             { from: accounts[0] },
           ),
         ]);
@@ -976,11 +977,11 @@ describe('LiquidatorProxyV1', () => {
         const rate = new BigNumber(1).div(INTEGERS.ONE_YEAR_IN_SECONDS);
         await Promise.all([
           dolomiteMargin.testing.interestSetter.setInterestRate(
-            dolomiteMargin.testing.tokenA.getAddress(),
+            dolomiteMargin.testing.tokenA.address,
             rate,
           ),
           dolomiteMargin.testing.interestSetter.setInterestRate(
-            dolomiteMargin.testing.tokenB.getAddress(),
+            dolomiteMargin.testing.tokenB.address,
             rate,
           ),
           dolomiteMargin.testing.setMarketIndex(market1, {

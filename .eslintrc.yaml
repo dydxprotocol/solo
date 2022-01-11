@@ -1,4 +1,7 @@
-extends: airbnb-base
+extends:
+  - airbnb-base
+  - eslint:recommended
+
 parser: babel-eslint
 
 env:

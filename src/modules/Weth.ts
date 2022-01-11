@@ -20,7 +20,7 @@ export class Weth {
     this.weth = contracts.weth;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.weth.options.address;
   }
 

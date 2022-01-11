@@ -5,14 +5,12 @@ import { resetEVM, snapshot } from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
+import { AccountStatus, address, AmountDenomination, AmountReference, Integer, Liquidate, } from '../../src';
+import { TestLiquidateCallback } from '../../build/testing_wrappers/TestLiquidateCallback';
 import {
-  AccountStatus,
-  address,
-  AmountDenomination,
-  AmountReference,
-  Integer,
-  Liquidate,
-} from '../../src/types';
+  abi as testLiquidateCallbackABI,
+  bytecode as testLiquidateCallbackBytecode,
+} from '../../build/contracts/TestLiquidateCallback.json';
 
 let liquidOwner: address;
 let solidOwner: address;
@@ -176,6 +174,127 @@ describe('Liquidate', () => {
     ]);
   });
 
+  it('Succeeds when liquidating a contract with callback', async () => {
+    const shouldRevert = false;
+    const shouldRevertWithMessage = false;
+    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        owedMarket,
+        negPar,
+      ),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      )
+    ]);
+    const txResult = await expectLiquidateOkay({
+      liquidAccountOwner: liquidContract.options.address,
+      amount: {
+        liquidAccountOwner: liquidContract.options.address,
+        value: par.times(2),
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackSuccess');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+  });
+
+  it('Succeeds when liquidating a contract with callback fails', async () => {
+    const shouldRevert = true;
+    const shouldRevertWithMessage = true;
+    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        owedMarket,
+        negPar,
+      ),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      )
+    ]);
+    const txResult = await expectLiquidateOkay({
+      liquidAccountOwner: liquidContract.options.address,
+      amount: {
+        liquidAccountOwner: liquidContract.options.address,
+        value: par.times(2),
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(log.args.reason).toEqual('TestLiquidateCallback: purposeful reversion');
+  });
+
+  it('Succeeds when liquidating a contract with callback fails with no message', async () => {
+    const shouldRevert = true;
+    const shouldRevertWithMessage = false;
+    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        owedMarket,
+        negPar,
+      ),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      )
+    ]);
+    const txResult = await expectLiquidateOkay({
+      liquidAccountOwner: liquidContract.options.address,
+      amount: {
+        value: par.times(2),
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(log.args.reason).toEqual('');
+  });
+
   it('Succeeds when bound by owedToken', async () => {
     await expectLiquidateOkay({
       amount: {
@@ -236,7 +355,7 @@ describe('Liquidate', () => {
         AccountStatus.Liquidating,
       ),
     ]);
-    await await dolomiteMargin.operation
+    await dolomiteMargin.operation
       .initiate()
       .liquidate({
         ...defaultGlob,
@@ -451,9 +570,25 @@ describe('Liquidate', () => {
 
 // ============ Helper Functions ============
 
-async function expectLiquidationFlagSet() {
+async function deployCallbackContract(
+  shouldRevert: boolean,
+  shouldRevertWithMessage: boolean,
+): Promise<TestLiquidateCallback> {
+  return (
+    await new dolomiteMargin.web3.eth.Contract(
+      testLiquidateCallbackABI,
+    )
+      .deploy({
+        data: testLiquidateCallbackBytecode,
+        arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
+      })
+      .send({ from: accounts[0], gas: '6000000' })
+  ) as TestLiquidateCallback;
+}
+
+async function expectLiquidationFlagSet(liquidAddress: address = liquidOwner) {
   const status = await dolomiteMargin.getters.getAccountStatus(
-    liquidOwner,
+    liquidAddress,
     liquidAccountNumber,
   );
   expect(status).toEqual(AccountStatus.Liquidating);
@@ -465,7 +600,7 @@ async function expectLiquidateOkay(glob: Object, options?: Object) {
     .initiate()
     .liquidate(combinedGlob)
     .commit(options);
-  await expectLiquidationFlagSet();
+  await expectLiquidationFlagSet(combinedGlob.liquidAccountOwner);
   return txResult;
 }
 
@@ -485,10 +620,10 @@ async function expectSolidPars(
     solidOwner,
     solidAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);
@@ -499,15 +634,16 @@ async function expectSolidPars(
 async function expectLiquidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
+  liquidAddress: address = liquidOwner
 ) {
   const balances = await dolomiteMargin.getters.getAccountBalances(
-    liquidOwner,
+    liquidAddress,
     liquidAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);

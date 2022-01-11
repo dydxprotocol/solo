@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
-import { address } from '../src/types';
+import { address } from '../src';
 import { resetEVM } from './helpers/EVM';
 
 describe('EVM', () => {

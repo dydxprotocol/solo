@@ -40,6 +40,7 @@ import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
  * Contract for sending internal balances within Dolomite to other users/margin accounts easily
  */
 contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
+
     // ============ Constants ============
 
     bytes32 constant FILE = "TransferProxy";
@@ -62,7 +63,7 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         address token,
         uint amount
     )
-    public
+    external
     nonReentrant
     {
         uint[] memory markets = new uint[](1);
@@ -131,11 +132,12 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         uint[] memory markets,
         uint[] memory amounts
     )
-    internal
+        internal
     {
-        require(
+        Require.that(
             markets.length == amounts.length,
-            "TransferProxy::_transferMultiple: INVALID_PARAMS_LENGTH"
+            FILE,
+            "invalid params length"
         );
 
         Account.Info[] memory accounts = new Account.Info[](2);
@@ -146,9 +148,19 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         for (uint i = 0; i < markets.length; i++) {
             Types.AssetAmount memory assetAmount;
             if (amounts[i] == uint(- 1)) {
-                assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
+                assetAmount = Types.AssetAmount(
+                    true,
+                    Types.AssetDenomination.Wei,
+                    Types.AssetReference.Target,
+                    0
+                );
             } else {
-                assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amounts[i]);
+                assetAmount = Types.AssetAmount(
+                    false,
+                    Types.AssetDenomination.Wei,
+                    Types.AssetReference.Delta,
+                    amounts[i]
+                );
             }
 
             actions[i] = Actions.ActionArgs({

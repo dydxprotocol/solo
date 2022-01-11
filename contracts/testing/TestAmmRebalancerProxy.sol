@@ -111,7 +111,11 @@ contract TestAmmRebalancerProxy is OnlyDolomiteMargin, Ownable {
         // trades are dolomitePools.length
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](dolomitePools.length);
 
-        uint[] memory dolomiteAmountsOut = DolomiteAmmLibrary.getAmountsOutWei(dolomiteFactory, dolomiteAmountIn, dolomitePath);
+        uint[] memory dolomiteAmountsOut = DolomiteAmmLibrary.getAmountsOutWei(
+            dolomiteFactory,
+            dolomiteAmountIn,
+            dolomitePath
+        );
         for (uint i = 0; i < dolomitePools.length; i++) {
             Require.that(
                 accounts[i + 1].owner == dolomitePools[i],
@@ -162,14 +166,14 @@ contract TestAmmRebalancerProxy is OnlyDolomiteMargin, Ownable {
         uint amountOutWei
     ) internal pure returns (Actions.ActionArgs memory) {
         return Actions.ActionArgs({
-        actionType : Actions.ActionType.Trade,
-        accountId : fromAccountIndex,
-        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
-        primaryMarketId : primaryMarketId,
-        secondaryMarketId : secondaryMarketId,
-        otherAddress : traderAddress,
-        otherAccountId : toAccountIndex,
-        data : abi.encode(amountOutWei)
+            actionType : Actions.ActionType.Trade,
+            accountId : fromAccountIndex,
+            amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+            primaryMarketId : primaryMarketId,
+            secondaryMarketId : secondaryMarketId,
+            otherAddress : traderAddress,
+            otherAccountId : toAccountIndex,
+            data : abi.encode(amountOutWei)
         });
     }
 

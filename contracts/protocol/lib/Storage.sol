@@ -761,11 +761,12 @@ library Storage {
                     price: state.fetchPrice(marketId, token)
                     });
                 } else {
+                    // don't need the borrowPar if the market is not closing
                     cache.markets[counter++] = Cache.MarketInfo({
                     marketId: marketId,
                     token: token,
                     isClosing: false,
-                    borrowPar: 0, // don't need the borrowPar if the market is not closing
+                    borrowPar: 0,
                     price: state.fetchPrice(marketId, token)
                     });
                 }

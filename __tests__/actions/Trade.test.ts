@@ -14,7 +14,7 @@ import {
   Balance,
   Integer,
   Trade,
-} from '../../src/types';
+} from '../../src';
 
 let who1: address;
 let who2: address;
@@ -65,7 +65,7 @@ describe('Trade', () => {
       otherAccountId: accountNumber2,
       inputMarketId: inputMkt,
       outputMarketId: outputMkt,
-      autoTrader: dolomiteMargin.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
       amount: {
         value: negWei,
@@ -177,7 +177,7 @@ describe('Trade', () => {
       deltaWei: wei,
     });
     expect(tradeLog.args.autoTrader).toEqual(
-      dolomiteMargin.testing.autoTrader.getAddress(),
+      dolomiteMargin.testing.autoTrader.address,
     );
   });
 
@@ -958,7 +958,7 @@ describe('Trade', () => {
   });
 
   it('Fails for wrong-contract autoTrader', async () => {
-    const otherContract = dolomiteMargin.testing.exchangeWrapper.getAddress();
+    const otherContract = dolomiteMargin.testing.exchangeWrapper.address;
     await dolomiteMargin.permissions.approveOperator(otherContract, { from: who1 });
     await expectTradeRevert({ autoTrader: otherContract });
   });
@@ -1021,12 +1021,12 @@ function expectBalances(
   expectedInputPar: Integer,
   expectedOutputPar: Integer,
 ) {
-  balances.forEach((balance, i) => {
-    if (i === inputMkt.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(inputMkt)) {
       expect(balance.par).toEqual(expectedInputPar);
-    } else if (i === outputMkt.toNumber()) {
+    } else if (balance.marketId.eq(outputMkt)) {
       expect(balance.par).toEqual(expectedOutputPar);
-    } else if (i === collateralMkt.toNumber()) {
+    } else if (balance.marketId.eq(collateralMkt)) {
       expect(balance.par).toEqual(collateralAmount);
     } else {
       expect(balance.par).toEqual(zero);
@@ -1036,7 +1036,7 @@ function expectBalances(
 
 async function approveTrader() {
   return dolomiteMargin.permissions.approveOperator(
-    dolomiteMargin.testing.autoTrader.getAddress(),
+    dolomiteMargin.testing.autoTrader.address,
     { from: who2 },
   );
 }

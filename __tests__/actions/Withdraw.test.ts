@@ -12,7 +12,7 @@ import {
   AmountReference,
   Integer,
   Withdraw,
-} from '../../src/types';
+} from '../../src';
 
 let who: address;
 let dolomiteMargin: TestDolomiteMargin;
@@ -327,7 +327,8 @@ describe('Withdraw', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await setAccountBalance(zero), await expectWithdrawOkay(globs[i]);
+      await setAccountBalance(zero);
+      await expectWithdrawOkay(globs[i]);
       await expectBalances(zero, zero, zero, zero);
 
       // starting positive
@@ -336,8 +337,8 @@ describe('Withdraw', () => {
       await expectBalances(zero, zero, wei, zero);
 
       // starting negative
-      await setAccountBalance(negPar),
-        await expectWithdrawRevert(globs[i], CANNOT_WITHDRAW_POSITIVE);
+      await setAccountBalance(negPar);
+      await expectWithdrawRevert(globs[i], CANNOT_WITHDRAW_POSITIVE);
     }
   });
 
@@ -566,11 +567,11 @@ async function expectBalances(
     dolomiteMargin.testing.tokenA.getBalance(who),
     dolomiteMargin.testing.tokenA.getBalance(operator),
   ]);
-  accountBalances.forEach((balance, i) => {
+  accountBalances.forEach((balance) => {
     let expected = { par: zero, wei: zero };
-    if (i === market.toNumber()) {
+    if (balance.marketId.eq(market)) {
       expected = { par: expectedPar, wei: expectedWei };
-    } else if (i === collateralMarket.toNumber()) {
+    } else if (balance.marketId.eq(collateralMarket)) {
       expected = {
         par: collateralAmount,
         wei: collateralAmount,

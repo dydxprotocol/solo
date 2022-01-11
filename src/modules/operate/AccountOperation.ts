@@ -1,7 +1,19 @@
+import { OrderMapper } from '../OrderMapper';
 import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
-import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
+import {
+  addressesAreEqual,
+  bytesToHexString,
+  hexStringToBytes,
+  toBytes,
+} from '../../lib/BytesHelper';
+import {
+  ADDRESSES,
+  INTEGERS,
+} from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
+import expiryConstants from '../../lib/expiry-constants.json';
+import { toNumber } from '../../lib/Helpers';
 import {
   AccountAction,
   AccountInfo,
@@ -35,10 +47,6 @@ import {
   Vaporize,
   Withdraw,
 } from '../../types';
-import { addressesAreEqual, bytesToHexString, hexStringToBytes, toBytes, } from '../../lib/BytesHelper';
-import { toNumber } from '../../lib/Helpers';
-import { ADDRESSES, INTEGERS } from '../../lib/Constants';
-import expiryConstants from '../../lib/expiry-constants.json';
 
 interface OptionalActionArgs {
   actionType: number | string;
@@ -511,14 +519,16 @@ export class AccountOperation {
 
       // get the relative value of each market
       const rampAdjustment = BigNumber.min(
-        blockTimestamp.minus(expiryTimestamp).div(expiryRampTime),
+        blockTimestamp.minus(expiryTimestamp)
+          .div(expiryRampTime),
         INTEGERS.ONE,
       );
       const spread = defaultSpread
         .times(heldSpreadMult)
         .times(owedSpreadMult)
         .plus(1);
-      const heldValue = heldWei.times(heldPrice).abs();
+      const heldValue = heldWei.times(heldPrice)
+        .abs();
       const owedValue = owedWei
         .times(owedPrice)
         .times(rampAdjustment)
@@ -618,7 +628,8 @@ export class AccountOperation {
         sign: !args.amount.value.isNegative(),
         denomination: args.amount.denomination,
         ref: args.amount.reference,
-        value: args.amount.value.abs().toFixed(0),
+        value: args.amount.value.abs()
+          .toFixed(0),
       }
       : {
         sign: false,
@@ -700,7 +711,8 @@ export class AccountOperation {
       if (auth.startIndex.gt(actionIndex)) {
         result.push({
           ...emptyAuth,
-          numActions: auth.startIndex.minus(actionIndex).toFixed(0),
+          numActions: auth.startIndex.minus(actionIndex)
+            .toFixed(0),
         });
       }
 

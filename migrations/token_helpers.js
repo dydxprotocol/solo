@@ -23,6 +23,9 @@ function getDaiAddress(network, TokenB) {
   if (isKovan(network)) {
     return '0x4448d5F172FC3073C458d72C8Ee97A81cd824962';
   }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find DAI for Arbitrum');
+  }
   throw new Error('Cannot find DAI');
 }
 
@@ -42,6 +45,9 @@ function getLinkAddress(network, TokenE) {
   if (isMaticTest(network)) {
     return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find LINK for Arbitrum');
+  }
   throw new Error('Cannot find LINK');
 }
 
@@ -57,6 +63,9 @@ function getLrcAddress(network, TokenF) {
   }
   if (isMaticTest(network)) {
     return '0xd64cD7A5Cd54C90be14B601dEe83b87546f975c7';
+  }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find LRC for Arbitrum');
   }
   throw new Error('Cannot find LRC');
 }
@@ -77,6 +86,9 @@ function getMaticAddress(network, artifact) {
   if (isKovan(network)) {
     return '';
   }
+  if (isArbitrum(network)) {
+    throw new Error('MATIC is not supported on Arbitrum');
+  }
   throw new Error('Cannot find MATIC');
 }
 
@@ -95,6 +107,9 @@ function getUsdcAddress(network, TokenA) {
   }
   if (isKovan(network)) {
     return '0xfb5755567e071663F2DA276aC1D6167B093f00f4';
+  }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find USDC for Arbitrum');
   }
   throw new Error('Cannot find USDC');
 }
@@ -115,6 +130,9 @@ function getWbtcAddress(network, TokenD) {
   if (isMatic(network)) {
     return '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6';
   }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find WBTC for Arbitrum');
+  }
   throw new Error('Cannot find WBTC');
 }
 
@@ -133,6 +151,9 @@ function getWethAddress(network, WETH9) {
   }
   if (isKovan(network)) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find WETH for Arbitrum');
   }
   throw new Error('Cannot find WETH');
 }

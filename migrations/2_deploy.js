@@ -42,7 +42,6 @@ const {
   getWethAddress,
 } = require('./token_helpers');
 const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV2Pair.json');
-const { ADDRESSES } = require('../src/lib/Constants');
 
 
 // ============ Contracts ============
@@ -51,6 +50,7 @@ const { ADDRESSES } = require('../src/lib/Constants');
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
 const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
+const TestOperationImpl = artifacts.require('TestOperationImpl');
 const DolomiteMargin = artifacts.require('DolomiteMargin');
 
 // Test Contracts
@@ -91,7 +91,7 @@ const LiquidatorProxyV1WithAmm = artifacts.require('LiquidatorProxyV1WithAmm');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
-const TestnetAmmRebalancerProxy = artifacts.require('TestnetAmmRebalancerProxy');
+const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
@@ -164,6 +164,7 @@ async function deployBaseProtocol(deployer, network) {
 
   let dolomiteMargin;
   if (isDevNetwork(network)) {
+    await deployer.deploy(TestOperationImpl);
     dolomiteMargin = TestDolomiteMargin;
   } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network)) {
     dolomiteMargin = DolomiteMargin;
@@ -177,6 +178,9 @@ async function deployBaseProtocol(deployer, network) {
     dolomiteMargin.link('AdminImpl', AdminImpl.address),
     dolomiteMargin.link('OperationImpl', OperationImpl.address),
   ]);
+  if (isDevNetwork(network)) {
+    await dolomiteMargin.link('TestOperationImpl', TestOperationImpl.address);
+  }
   await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
 }
 
@@ -302,7 +306,7 @@ async function deploySecondLayer(deployer, network, accounts) {
 
   if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
     await deployer.deploy(
-      TestnetAmmRebalancerProxy,
+      TestAmmRebalancerProxy,
       dolomiteMargin.address,
       dolomiteAmmFactory.address,
     );
@@ -368,45 +372,4 @@ async function getDolomiteMargin(network) {
     return TestDolomiteMargin.deployed();
   }
   return DolomiteMargin.deployed();
-}
-
-// ============ Address Helper Functions ============
-
-function getMedianizerAddress(network) {
-  if (isDevNetwork(network)) {
-    return TestMakerOracle.address;
-  }
-  if (isMainNet(network)) {
-    return '0x729D19f657BD0614b4985Cf1D82531c67569197B';
-  }
-  if (isKovan(network)) {
-    return '0xa5aA4e07F5255E14F02B385b1f04b35cC50bdb66';
-  }
-  throw new Error('Cannot find Medianizer');
-}
-
-function getOasisAddress(network) {
-  if (isDevNetwork(network)) {
-    return TestOasisDex.address;
-  }
-  if (isMainNet(network)) {
-    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
-  }
-  if (isKovan(network)) {
-    return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
-  }
-  throw new Error('Cannot find OasisDex');
-}
-
-function getDaiUniswapAddress(network) {
-  if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP;
-  }
-  if (isMainNet(network)) {
-    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
-  }
-  if (isKovan(network)) {
-    return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
-  }
-  throw new Error('Cannot find Uniswap for Dai');
 }

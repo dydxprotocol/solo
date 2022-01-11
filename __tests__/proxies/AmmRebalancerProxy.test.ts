@@ -38,18 +38,18 @@ describe('AmmRebalancerProxy', () => {
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenA.getAddress(),
+        dolomiteMargin.testing.tokenA.address,
         prices[0],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.getAddress(),
+        dolomiteMargin.testing.tokenB.address,
         prices[1],
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         prices[2],
       ),
-      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.getAddress(), prices[3]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       setUpBasicBalances(),
       deployDolomiteLpTokens(),
       deployUniswapLpTokens(),
@@ -64,10 +64,11 @@ describe('AmmRebalancerProxy', () => {
 
     expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
       .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());
+
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.weth.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.interestSetter.getAddress(),
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
@@ -92,16 +93,16 @@ describe('AmmRebalancerProxy', () => {
           owner1,
           parA.div(10), // 10
           parB.div(11), // 18.1818
-          dolomiteMargin.testing.tokenA.getAddress(),
-          dolomiteMargin.testing.tokenB.getAddress(),
+          dolomiteMargin.testing.tokenA.address,
+          dolomiteMargin.testing.tokenB.address,
         );
         // price is 0.5
         await addUniswapLiquidity(
           owner1,
           parA.times(1000000), // 10
           parB.times(1000000), // 20
-          dolomiteMargin.testing.tokenA.getAddress(),
-          dolomiteMargin.testing.tokenB.getAddress(),
+          dolomiteMargin.testing.tokenA.address,
+          dolomiteMargin.testing.tokenB.address,
         );
 
         const accountWeiA = await dolomiteMargin.getters.getAccountWei(
@@ -118,11 +119,11 @@ describe('AmmRebalancerProxy', () => {
         // converge the prices of the two on ~0.5025 (0.5% away from the "real" price of 0.5)
         // true price needs to be calculated assuming the correct number of decimals, per asset
         const txResult = await dolomiteMargin.ammRebalancerProxy.performRebalance(
-          [dolomiteMargin.testing.tokenB.getAddress(), dolomiteMargin.testing.tokenA.getAddress()],
+          [dolomiteMargin.testing.tokenB.address, dolomiteMargin.testing.tokenA.address],
           new BigNumber('1990049'),
           new BigNumber('1000000000000000000'),
           dolomiteMargin.contracts.testUniswapV2Router.options.address,
-          [dolomiteMargin.testing.tokenA.getAddress(), dolomiteMargin.testing.tokenB.getAddress()],
+          [dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address],
           { from: owner1 },
         );
         console.log('performRebalance gas used', txResult.gasUsed.toString());
@@ -222,7 +223,7 @@ async function addUniswapLiquidity(
 
 async function getMarketId(token: TestToken): Promise<string> {
   return dolomiteMargin.contracts.dolomiteMargin.methods
-    .getMarketIdByTokenAddress(token.getAddress())
+    .getMarketIdByTokenAddress(token.address)
     .call();
 }
 
@@ -245,14 +246,14 @@ async function setUpBasicBalances() {
 async function deployDolomiteLpTokens() {
   await dolomiteMargin.contracts.callContractFunction(
     dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
-      dolomiteMargin.testing.tokenA.getAddress(),
-      dolomiteMargin.testing.tokenB.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
+      dolomiteMargin.testing.tokenB.address,
     ),
   );
   await dolomiteMargin.contracts.callContractFunction(
     dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
-      dolomiteMargin.testing.tokenB.getAddress(),
-      dolomiteMargin.testing.tokenC.getAddress(),
+      dolomiteMargin.testing.tokenB.address,
+      dolomiteMargin.testing.tokenC.address,
     ),
   );
 }
@@ -260,14 +261,14 @@ async function deployDolomiteLpTokens() {
 async function deployUniswapLpTokens() {
   await dolomiteMargin.contracts.callContractFunction(
     dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
-      dolomiteMargin.testing.tokenA.getAddress(),
-      dolomiteMargin.testing.tokenB.getAddress(),
+      dolomiteMargin.testing.tokenA.address,
+      dolomiteMargin.testing.tokenB.address,
     ),
   );
   await dolomiteMargin.contracts.callContractFunction(
     dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
-      dolomiteMargin.testing.tokenB.getAddress(),
-      dolomiteMargin.testing.tokenC.getAddress(),
+      dolomiteMargin.testing.tokenB.address,
+      dolomiteMargin.testing.tokenC.address,
     ),
   );
 }

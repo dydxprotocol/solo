@@ -18,6 +18,9 @@ function getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90';
   }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find BTC-USD for Arbitrum');
+  }
   throw new Error('Cannot find Weth');
 }
 
@@ -27,6 +30,9 @@ function getDaiUsdAggregatorAddress(network) {
   }
   if (isMatic(network)) {
     return '0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D';
+  }
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find DAI-USD for Arbitrum');
   }
   throw new Error('Cannot find DAI/USD aggregator');
 }
@@ -41,7 +47,7 @@ function getDaiEthAggregatorAddress(network, TestDaiUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90';
   }
-  throw new Error('Cannot find DAI/ETH aggregator');
+  throw new Error('Cannot find DAI-ETH aggregator');
 }
 
 function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
@@ -60,7 +66,10 @@ function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0xD21912D8762078598283B14cbA40Cb4bFCb87581';
   }
-  throw new Error('Cannot find ETH/USD aggregator');
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find ETH-USD for Arbitrum');
+  }
+  throw new Error('Cannot find ETH-USD aggregator');
 }
 
 function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
@@ -76,7 +85,10 @@ function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
   if (isKovan(network)) {
     return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
-  throw new Error('Cannot find LINK/USD aggregator');
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find LINK-USD for Arbitrum');
+  }
+  throw new Error('Cannot find LINK-USD aggregator');
 }
 
 function getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator) {
@@ -90,7 +102,7 @@ function getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator) {
     // This really is KNC/ETH. Chainlink doesn't support LRC on Kovan so we're spoofing it.
     return '0x0893AaF58f62279909F9F6FF2E5642f53342e77F';
   }
-  throw new Error('Cannot find LrcUsdAggregatorAddress');
+  throw new Error('Cannot find LRC-USD aggregator');
 }
 
 function getMaticUsdAggregatorAddress(network) {
@@ -101,7 +113,7 @@ function getMaticUsdAggregatorAddress(network) {
     return '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada';
   }
 
-  throw new Error('Cannot find MATIC/USD aggregator');
+  throw new Error('Cannot find MATIC-USD aggregator');
 }
 
 function getUsdcUsdAggregatorAddress(network) {
@@ -111,7 +123,10 @@ function getUsdcUsdAggregatorAddress(network) {
   if (isMaticTest(network)) {
     return '0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0';
   }
-  throw new Error('Cannot find USDC/USD aggregator');
+  if (isArbitrum(network)) {
+    throw new Error('Cannot find USDC-USD for Arbitrum');
+  }
+  throw new Error('Cannot find USDC-USD aggregator');
 }
 
 function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
@@ -124,7 +139,7 @@ function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
   if (isKovan(network)) {
     return '0x672c1C0d1130912D83664011E7960a42E8cA05D5';
   }
-  throw new Error('Cannot find USDC/ETH aggregator');
+  throw new Error('Cannot find USDC-ETH aggregator');
 }
 
 function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
@@ -145,7 +160,9 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
     ]);
   }
-  // TODO arbitrum
+  if (isArbitrum(network)) {
+    throw new Error('Cannot get Chainlink params for Arbitrum');
+  }
 
   if (isDevNetwork(network)) {
     const {

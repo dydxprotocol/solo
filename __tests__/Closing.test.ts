@@ -5,7 +5,7 @@ import { resetEVM, snapshot } from './helpers/EVM';
 import { setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
-import { address, AmountDenomination, AmountReference } from '../src/types';
+import { address, AmountDenomination, AmountReference } from '../src';
 
 let owner: address;
 let admin: address;

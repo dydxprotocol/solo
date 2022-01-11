@@ -75,8 +75,6 @@ library EnumerableSet {
 
             // Delete the slot where the moved value was stored, which is the last index
             set._values.pop();
-//            delete set._values[lastIndex];
-//            set._values.length--;
 
             // Delete the index for the deleted slot
             delete set._valueToIndexMap[value];
@@ -86,7 +84,6 @@ library EnumerableSet {
             return false;
         }
     }
-
 
     /**
      * @dev Returns true if the value is in the set. O(1).
@@ -101,7 +98,6 @@ library EnumerableSet {
     function length(Set storage set) internal view returns (uint256) {
         return set._values.length;
     }
-
 
     /**
      * @dev Return the entire set in an array

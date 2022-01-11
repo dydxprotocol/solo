@@ -4,7 +4,7 @@ import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
-import { address, Amount, AmountDenomination, AmountReference, Integer, TxResult, } from '../../src/types';
+import { address, Amount, AmountDenomination, AmountReference, Integer, TxResult, } from '../../src';
 
 import { abi as recyclableABI, bytecode as recyclableBytecode, } from '../../build/contracts/RecyclableTokenProxy.json';
 import {
@@ -57,8 +57,8 @@ describe('RecyclableTokenProxy', () => {
 
     await Promise.all([setupMarkets(dolomiteMargin, accounts, 3)]);
 
-    oracleAddress = dolomiteMargin.testing.priceOracle.getAddress();
-    setterAddress = dolomiteMargin.testing.interestSetter.getAddress();
+    oracleAddress = dolomiteMargin.testing.priceOracle.address;
+    setterAddress = dolomiteMargin.testing.interestSetter.address;
 
     const {
       recyclableToken: _recyclableToken,

@@ -31,5 +31,5 @@ export const getDolomiteMargin = async (): Promise<{
     defaultAccountSet = true;
   }
 
-  return { dolomiteMargin: dolomiteMargin, accounts };
+  return { dolomiteMargin, accounts };
 };

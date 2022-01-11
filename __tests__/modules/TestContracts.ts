@@ -62,7 +62,7 @@ import testUniswapV2RouterJson from '../../build/testing_contracts/UniswapV2Rout
 import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Factory.json';
 import testAmmRebalancerProxyJson from '../../build/testing_contracts/TestAmmRebalancerProxy.json';
 
-import { address, DolomiteMarginOptions } from '../../src/types';
+import { address, DolomiteMarginOptions } from '../../src';
 import { Contracts } from '../../src/lib/Contracts';
 import { UniswapV2Factory } from '../../build/testing_wrappers/UniswapV2Factory';
 import { UniswapV2Router02 } from '../../build/testing_wrappers/UniswapV2Router02';
@@ -268,14 +268,5 @@ export class TestContracts extends Contracts {
     this.testInterestSetter.options.from = account;
     this.testUniswapV2Factory.options.from = account;
     this.testUniswapV2Router.options.from = account;
-  }
-
-  public getUniswapV2Pair(contractAddress: address): UniswapV2Pair {
-    const pair = new this.web3.eth.Contract(
-      testUniswapV2PairJson.abi,
-      contractAddress,
-    ) as UniswapV2Pair;
-    pair.options.from = this.testUniswapV2Factory.options.from;
-    return pair;
   }
 }

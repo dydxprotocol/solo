@@ -4,7 +4,7 @@ import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
-import { address, Integer, MarketId } from '../../src/types';
+import { address, Integer, MarketId } from '../../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let tokens: address[];
@@ -25,13 +25,13 @@ describe('StandardActions', () => {
 
     // setup markets
     await dolomiteMargin.testing.priceOracle.setPrice(
-      dolomiteMargin.weth.getAddress(),
+      dolomiteMargin.weth.address,
       new BigNumber('1e40'),
     );
     await dolomiteMargin.admin.addMarket(
-      dolomiteMargin.weth.getAddress(),
-      dolomiteMargin.testing.priceOracle.getAddress(),
-      dolomiteMargin.testing.interestSetter.getAddress(),
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       false,

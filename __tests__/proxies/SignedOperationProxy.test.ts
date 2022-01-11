@@ -1,6 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import {
+  TestExchangeWrapperOrder,
+  TestOrderType,
+} from '../helpers/types';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
@@ -15,7 +18,7 @@ import {
   SignedOperation,
   SigningMethod,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectAssertFailure, expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
@@ -77,11 +80,11 @@ describe('SignedOperationProxy', () => {
     await resetEVM();
     await setupMarkets(dolomiteMargin, accounts);
 
-    const exchangeWrapperAddress = dolomiteMargin.testing.exchangeWrapper.getAddress();
+    const exchangeWrapperAddress = dolomiteMargin.testing.exchangeWrapper.address;
 
-    const testOrder: TestOrder = {
+    const testOrder: TestExchangeWrapperOrder = {
       exchangeWrapperAddress,
-      type: OrderType.Test,
+      type: TestOrderType.Test,
       originator: defaultSigner,
       makerToken: await dolomiteMargin.getters.getMarketTokenAddress(makerMarket),
       takerToken: await dolomiteMargin.getters.getMarketTokenAddress(takerMarket),
@@ -94,7 +97,7 @@ describe('SignedOperationProxy', () => {
     await Promise.all([
       dolomiteMargin.testing.autoTrader.setData(tradeId, defaultAssetAmount),
       dolomiteMargin.permissions.approveOperator(exchangeWrapperAddress, { from: rando }),
-      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.getAddress(), {
+      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.address, {
         from: rando,
       }),
       dolomiteMargin.testing.setAccountBalance(
@@ -164,14 +167,14 @@ describe('SignedOperationProxy', () => {
       otherAccountId: randoNumber,
       inputMarketId: takerMarket,
       outputMarketId: makerMarket,
-      autoTrader: dolomiteMargin.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
       amount: defaultAssetAmount,
     });
     signedCallOperation = await createSignedOperation('call', {
       primaryAccountId: defaultSignerNumber,
       primaryAccountOwner: defaultSigner,
-      callee: dolomiteMargin.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.address,
       data: toBytes(33, 44),
     });
     signedLiquidateOperation = await createSignedOperation('liquidate', {
@@ -530,7 +533,7 @@ describe('SignedOperationProxy', () => {
       const signedCallShortOperation = await createSignedOperation('call', {
         primaryAccountId: defaultSignerNumber,
         primaryAccountOwner: defaultSigner,
-        callee: dolomiteMargin.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: [[1], [2], [3]],
       });
       const txResult = await dolomiteMargin.operation
@@ -545,7 +548,7 @@ describe('SignedOperationProxy', () => {
       const signedCallOddOperation = await createSignedOperation('call', {
         primaryAccountId: defaultSignerNumber,
         primaryAccountOwner: defaultSigner,
-        callee: dolomiteMargin.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: toBytes(1234).concat([[1], [2], [3]]),
       });
       const txResult = await dolomiteMargin.operation
@@ -1201,7 +1204,7 @@ describe('SignedOperationProxy', () => {
       const callData = {
         primaryAccountOwner: defaultSender,
         primaryAccountId: defaultSenderNumber,
-        callee: dolomiteMargin.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: [[1], [255]],
       };
 

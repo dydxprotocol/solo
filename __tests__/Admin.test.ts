@@ -7,7 +7,7 @@ import { setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stringToDecimal } from '../src/lib/Helpers';
 import { expectThrow } from '../src/lib/Expect';
-import { address, Decimal, Integer, MarketWithInfo, RiskLimits, RiskParams, } from '../src/types';
+import { address, Decimal, Integer, MarketWithInfo, RiskLimits, RiskParams, } from '../src';
 
 import { abi as recyclableABI, bytecode as recyclableBytecode, } from '../build/contracts/TestRecyclableToken.json';
 import {
@@ -62,8 +62,8 @@ describe('Admin', () => {
     ]);
 
     dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
-    oracleAddress = dolomiteMargin.testing.priceOracle.getAddress();
-    setterAddress = dolomiteMargin.testing.interestSetter.getAddress();
+    oracleAddress = dolomiteMargin.testing.priceOracle.address;
+    setterAddress = dolomiteMargin.testing.interestSetter.address;
 
     snapshotId = await snapshot();
   });
@@ -227,7 +227,7 @@ describe('Admin', () => {
       expectedRecipient: Integer,
     ) {
       if (txResult) {
-        const token = dolomiteMargin.testing.tokenA.getAddress();
+        const token = dolomiteMargin.testing.tokenA.address;
         const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
@@ -252,7 +252,7 @@ describe('Admin', () => {
       await dolomiteMargin.testing.tokenC.issueTo(amount, dolomiteMarginAddress);
       await expectBalances(null, amount, INTEGERS.ZERO);
       txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         recipient,
         { from: admin },
       );
@@ -261,7 +261,7 @@ describe('Admin', () => {
 
     it('Succeeds for zero tokens', async () => {
       txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
-        dolomiteMargin.testing.tokenC.getAddress(),
+        dolomiteMargin.testing.tokenC.address,
         recipient,
         { from: admin },
       );
@@ -271,7 +271,7 @@ describe('Admin', () => {
     it('Fails for token with existing market', async () => {
       await expectThrow(
         dolomiteMargin.admin.withdrawUnsupportedTokens(
-          dolomiteMargin.testing.tokenA.getAddress(),
+          dolomiteMargin.testing.tokenA.address,
           recipient,
           { from: admin },
         ),
@@ -293,7 +293,7 @@ describe('Admin', () => {
       expectedRecipient: Integer,
     ) {
       if (txResult) {
-        const token = dolomiteMargin.testing.tokenC.getAddress();
+        const token = dolomiteMargin.testing.tokenC.address;
         const logs = dolomiteMargin.logs.parseLogs(txResult);
         expect(logs.length).toEqual(1);
         const log = logs[0];
@@ -582,7 +582,7 @@ describe('Admin', () => {
     });
 
     it('Fails to add a market of the same token', async () => {
-      const duplicateToken = dolomiteMargin.testing.tokenA.getAddress();
+      const duplicateToken = dolomiteMargin.testing.tokenA.address;
       await dolomiteMargin.testing.priceOracle.setPrice(duplicateToken, defaultPrice);
       await expectThrow(
         dolomiteMargin.admin.addMarket(

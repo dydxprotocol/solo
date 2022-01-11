@@ -11,8 +11,8 @@ import "../../protocol/lib/Actions.sol";
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
 
-contract SimpleFeeOwner is Ownable {
 
+contract SimpleFeeOwner is Ownable {
     using SafeERC20 for IERC20;
 
     event OwnershipChanged(address indexed newOwner, address indexed oldOwner);
@@ -94,6 +94,7 @@ contract SimpleFeeOwner is Ownable {
         return Actions.ActionArgs({
         actionType : Actions.ActionType.Withdraw,
         accountId : 0,
+        /* solium-disable-next-line arg-overflow */
         amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0),
         primaryMarketId : marketId,
         secondaryMarketId : uint(- 1),

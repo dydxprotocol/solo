@@ -80,32 +80,28 @@ contract MultiSig {
     // ============ Modifiers ============
 
     modifier onlyWallet() {
-        /* solium-disable-next-line error-reason */
-        require(msg.sender == address(this));
+        require(msg.sender == address(this), "ONLY_WALLET");
         _;
     }
 
     modifier ownerDoesNotExist(
         address owner
     ) {
-        /* solium-disable-next-line error-reason */
-        require(!isOwner[owner]);
+        require(!isOwner[owner], "OWNER_EXISTS");
         _;
     }
 
     modifier ownerExists(
         address owner
     ) {
-        /* solium-disable-next-line error-reason */
-        require(isOwner[owner]);
+        require(isOwner[owner], "OWNER_DOES_NOT_EXIST");
         _;
     }
 
     modifier transactionExists(
         uint256 transactionId
     ) {
-        /* solium-disable-next-line error-reason */
-        require(transactions[transactionId].destination != ADDRESS_ZERO);
+        require(transactions[transactionId].destination != ADDRESS_ZERO, "TRANSACTION_DOES_NOT_EXIST");
         _;
     }
 
@@ -113,8 +109,7 @@ contract MultiSig {
         uint256 transactionId,
         address owner
     ) {
-        /* solium-disable-next-line error-reason */
-        require(confirmations[transactionId][owner]);
+        require(confirmations[transactionId][owner], "TRANSACTION_NOT_CONFIRMED");
         _;
     }
 
@@ -122,24 +117,21 @@ contract MultiSig {
         uint256 transactionId,
         address owner
     ) {
-        /* solium-disable-next-line error-reason */
-        require(!confirmations[transactionId][owner]);
+        require(!confirmations[transactionId][owner], "TRANSACTION_ALREADY_CONFIRMED");
         _;
     }
 
     modifier notExecuted(
         uint256 transactionId
     ) {
-        /* solium-disable-next-line error-reason */
-        require(!transactions[transactionId].executed);
+        require(!transactions[transactionId].executed, "TRANSACTION_ALREADY_EXECUTED");
         _;
     }
 
     modifier notNull(
         address _address
     ) {
-        /* solium-disable-next-line error-reason */
-        require(_address != ADDRESS_ZERO);
+        require(_address != ADDRESS_ZERO, "ADDRESS_IS_NULL");
         _;
     }
 
@@ -147,12 +139,12 @@ contract MultiSig {
         uint256 ownerCount,
         uint256 _required
     ) {
-        /* solium-disable-next-line error-reason */
         require(
             ownerCount <= MAX_OWNER_COUNT
             && _required <= ownerCount
             && _required != 0
-            && ownerCount != 0
+            && ownerCount != 0,
+            "NO_REQUIREMENTS"
         );
         _;
     }
@@ -173,8 +165,7 @@ contract MultiSig {
         validRequirement(_owners.length, _required)
     {
         for (uint256 i = 0; i < _owners.length; i++) {
-            /* solium-disable-next-line error-reason */
-            require(!isOwner[_owners[i]] && _owners[i] != ADDRESS_ZERO);
+            require(!isOwner[_owners[i]] && _owners[i] != ADDRESS_ZERO, "ALREADY_OWNER");
             isOwner[_owners[i]] = true;
         }
         owners = _owners;

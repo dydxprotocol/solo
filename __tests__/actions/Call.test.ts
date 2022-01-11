@@ -1,12 +1,19 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from '../helpers/DolomiteMargin';
-import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
 import { toBytes } from '../../src/lib/BytesHelper';
+import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { AccountStatus, address, Call } from '../../src/types';
+import {
+  AccountStatus,
+  address,
+  Call,
+} from '../../src';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import {
+  resetEVM,
+  snapshot,
+} from '../helpers/EVM';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let who: address;
 let operator: address;
@@ -29,7 +36,7 @@ describe('Call', () => {
     defaultGlob = {
       primaryAccountOwner: who,
       primaryAccountId: accountNumber,
-      callee: dolomiteMargin.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.address,
       data: [],
     };
 
@@ -59,17 +66,24 @@ describe('Call', () => {
     await verifyDataIntegrity(operator);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(2);
+    expect(logs.length)
+      .toEqual(2);
 
     const operationLog = logs[0];
-    expect(operationLog.name).toEqual('LogOperation');
-    expect(operationLog.args.sender).toEqual(operator);
+    expect(operationLog.name)
+      .toEqual('LogOperation');
+    expect(operationLog.args.sender)
+      .toEqual(operator);
 
     const callLog = logs[1];
-    expect(callLog.name).toEqual('LogCall');
-    expect(callLog.args.accountOwner).toEqual(who);
-    expect(callLog.args.accountNumber).toEqual(accountNumber);
-    expect(callLog.args.callee).toEqual(dolomiteMargin.testing.callee.getAddress());
+    expect(callLog.name)
+      .toEqual('LogCall');
+    expect(callLog.args.accountOwner)
+      .toEqual(who);
+    expect(callLog.args.accountNumber)
+      .toEqual(accountNumber);
+    expect(callLog.args.callee)
+      .toEqual(dolomiteMargin.testing.callee.address);
   });
 
   it('Succeeds and sets status to Normal', async () => {
@@ -83,7 +97,8 @@ describe('Call', () => {
     });
     await verifyDataIntegrity(who);
     const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
-    expect(status).toEqual(AccountStatus.Normal);
+    expect(status)
+      .toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
@@ -121,7 +136,7 @@ describe('Call', () => {
   it('Fails for non-ICallee contract', async () => {
     await expectCallRevert({
       data: toBytes(accountData, senderData),
-      callee: dolomiteMargin.testing.priceOracle.getAddress(),
+      callee: dolomiteMargin.testing.priceOracle.address,
     });
   });
 });
@@ -150,6 +165,8 @@ async function verifyDataIntegrity(sender: address) {
     dolomiteMargin.testing.callee.getSenderData(sender),
   ]);
 
-  expect(foundAccountData).toEqual(accountData.toFixed(0));
-  expect(foundSenderData).toEqual(senderData.toFixed(0));
+  expect(foundAccountData)
+    .toEqual(accountData.toFixed(0));
+  expect(foundSenderData)
+    .toEqual(senderData.toFixed(0));
 }

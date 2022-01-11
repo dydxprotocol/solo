@@ -64,11 +64,13 @@ library Token {
             return;
         }
 
+        // solium-disable arg-overflow
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
             "Token: transferFrom failed"
         );
+        // solium-enable arg-overflow
     }
 
     // ============ Private Functions ============
@@ -82,7 +84,7 @@ library Token {
         // 2. The call itself is made, and success asserted
         // 3. The return value is decoded, which in turn checks the size of the returned data.
 
-        // solhint-disable-next-line avoid-low-level-calls
+        // solium-disable-next-line security/no-low-level-calls
         (bool success, bytes memory returnData) = token.call(data);
         require(success, error);
 

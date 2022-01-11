@@ -3,16 +3,17 @@ pragma solidity ^0.5.16;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../../protocol/interfaces/IERC20.sol";
+import "../../protocol/lib/Require.sol";
 
-import "../interfaces/IUniswapV2ERC20.sol";
+import "../interfaces/IDolomiteAmmERC20.sol";
 
-contract DolomiteAmmERC20 is IUniswapV2ERC20 {
+
+contract DolomiteAmmERC20 is IDolomiteAmmERC20 {
     using SafeMath for uint;
 
-    string public constant name = 'Dolomite LP Token';
-    string public constant symbol = 'DLP';
-    uint8 public constant decimals = 18;
-    uint  public totalSupply;
+    bytes32 private constant FILE = "DolomiteAmmERC20";
+
+    uint public totalSupply;
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
@@ -26,18 +27,69 @@ contract DolomiteAmmERC20 is IUniswapV2ERC20 {
 
     constructor() public {
         uint chainId;
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             chainId := chainid
         }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(name)),
-                keccak256(bytes('1')),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(name())),
+                keccak256(bytes("1")),
                 chainId,
                 address(this)
             )
         );
+    }
+
+    function approve(address spender, uint value) external returns (bool) {
+        _approve(msg.sender, spender, value);
+        return true;
+    }
+
+    function transfer(address to, uint value) external returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint value) external returns (bool) {
+        if (allowance[from][msg.sender] != uint(-1)) {
+            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
+        }
+        _transfer(from, to, value);
+        return true;
+    }
+
+    function permit(
+        address owner,
+        address spender,
+        uint value,
+        uint deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        Require.that(
+            deadline >= block.timestamp,
+            FILE,
+            "expired"
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                /* solium-disable-next-line arg-overflow */
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+            )
+        );
+        /* solium-disable-next-line arg-overflow */
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        Require.that(
+            recoveredAddress != address(0) && recoveredAddress == owner,
+            FILE,
+            "invalid signature"
+        );
+        _approve(owner, spender, value);
     }
 
     function _mint(address to, uint value) internal {
@@ -61,37 +113,5 @@ contract DolomiteAmmERC20 is IUniswapV2ERC20 {
         balanceOf[from] = balanceOf[from].sub(value);
         balanceOf[to] = balanceOf[to].add(value);
         emit Transfer(from, to, value);
-    }
-
-    function approve(address spender, uint value) external returns (bool) {
-        _approve(msg.sender, spender, value);
-        return true;
-    }
-
-    function transfer(address to, uint value) external returns (bool) {
-        _transfer(msg.sender, to, value);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint value) external returns (bool) {
-        if (allowance[from][msg.sender] != uint(-1)) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
-        }
-        _transfer(from, to, value);
-        return true;
-    }
-
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-        require(deadline >= block.timestamp, 'DLP: EXPIRED');
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DLP: INVALID_SIGNATURE');
-        _approve(owner, spender, value);
     }
 }

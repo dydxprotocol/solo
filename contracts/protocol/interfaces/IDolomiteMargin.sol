@@ -334,13 +334,14 @@ interface IDolomiteMargin {
      *
      * @param  account  The account to query
      * @return          The following values:
+     *                   - The market IDs for each market
      *                   - The ERC20 token address for each market
      *                   - The account's principal value for each market
      *                   - The account's (supplied or borrowed) number of tokens for each market
      */
     function getAccountBalances(
         Account.Info calldata account
-    ) external view returns (address[] memory, Types.Par[] memory, Types.Wei[] memory);
+    ) external view returns (uint[] memory, address[] memory, Types.Par[] memory, Types.Wei[] memory);
 
     // ============ Getters for Account Permissions ============
 

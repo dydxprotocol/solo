@@ -12,7 +12,7 @@ import {
   PREPEND_HEX,
   SIGNATURE_TYPES,
 } from '../src/lib/SignatureHelper';
-import { address } from '../src/types';
+import { address } from '../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let owner: address;

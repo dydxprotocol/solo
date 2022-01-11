@@ -16,6 +16,7 @@ export class SubgraphAPI {
     this.timeout = timeout;
   }
 
+  // TODO
   async foo(): Promise<string> {
     return axios.request({
       url: this.endpoint,
@@ -23,5 +24,4 @@ export class SubgraphAPI {
       method: defaultMethod,
     });
   }
-
 }

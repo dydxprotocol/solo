@@ -1,17 +1,17 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
-import "../../protocol/lib/Account.sol";
-import "../../protocol/lib/Actions.sol";
+import "../../protocol/lib/Require.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 
 import "./DolomiteAmmPair.sol";
-import "../../protocol/Permission.sol";
-import "../../protocol/Permission.sol";
-import "../../protocol/Permission.sol";
+
 
 contract DolomiteAmmFactory is IDolomiteAmmFactory {
+
+    bytes32 internal constant FILE = "DolomiteAmmFactory";
+
     address public feeTo;
     address public feeToSetter;
     address public dolomiteMargin;
@@ -37,22 +37,27 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
         return allPairs.length;
     }
 
-    function getPairInitCode() public pure returns (bytes memory) {
-        return type(DolomiteAmmPair).creationCode;
-    }
-
-    function getPairInitCodeHash() public pure returns (bytes32) {
-        return keccak256(getPairInitCode());
-    }
-
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, "DolomiteAmm: IDENTICAL_ADDRESSES");
+        Require.that(
+            tokenA != tokenB,
+            FILE,
+            "identical address"
+        );
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), "DolomiteAmm: ZERO_ADDRESS");
-        require(getPair[token0][token1] == address(0), "DolomiteAmm: PAIR_EXISTS");
+        Require.that(
+            token0 != address(0) && token1 != address(0),
+            FILE,
+            "zero address"
+        );
+        Require.that(
+            getPair[token0][token1] == address(0),
+            FILE,
+            "pair already exists"
+        );
         // single check is sufficient
         bytes memory bytecode = getPairInitCode();
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
@@ -62,16 +67,37 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
         isPairCreated[pair] = true;
         // populate mapping in the reverse direction
         allPairs.push(pair);
-        emit PairCreated(token0, token1, pair, allPairs.length);
+        emit PairCreated(
+            token0,
+            token1,
+            pair,
+            allPairs.length
+        );
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, "DolomiteAmm: FORBIDDEN");
+        Require.that(
+            msg.sender == feeToSetter,
+            FILE,
+            "forbidden"
+        );
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, "DolomiteAmm: FORBIDDEN");
+        Require.that(
+            msg.sender == feeToSetter,
+            FILE,
+            "forbidden"
+        );
         feeToSetter = _feeToSetter;
+    }
+
+    function getPairInitCode() public pure returns (bytes memory) {
+        return type(DolomiteAmmPair).creationCode;
+    }
+
+    function getPairInitCodeHash() public pure returns (bytes32) {
+        return keccak256(getPairInitCode());
     }
 }

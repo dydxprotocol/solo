@@ -1,7 +1,7 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
   "version": "0.1.0",
-  "description": "Ethereum Smart Contracts and TypeScript library used for the Dolomite Margin Trading Protocol",
+  "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "files": [
@@ -12,30 +12,31 @@
     "LICENSE",
     "README.md"
   ],
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
   "scripts": {
     "test": "npm run deploy_test && npm run test_only",
     "build": "npm run compile -- --all && npm run copy_all && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers && npm run build:js",
-    "copy_all": "npm run copy_tew",
-    "copy_tew": "cp node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
-    "copy_uniswap_core": "cp -u node_modules/@uniswap/v2-core/build/UniswapV2Factory.json ./build/contracts/ && cp -u node_modules/@uniswap/v2-core/build/UniswapV2Pair.json ./build/contracts/",
-    "copy_uniswap_periphery": "cp -u node_modules/@uniswap/v2-periphery/build/UniswapV2Router02.json ./build/contracts/",
-    "copy_tew_cov": "cp ./node_modules/@dydxprotocol/exchange-wrappers/build/contracts/TestExchangeWrapper.json ./build/contracts/",
+    "copy_all": "echo 'copied'",
     "compile": "truffle compile",
     "build:wrappers": "typechain --target=web3-1.0.0 --outDir=build/wrappers/ './build/published_contracts/*.json'",
     "build:test_wrappers": "typechain --target=web3-1.0.0 --outDir=build/testing_wrappers/ './build/testing_contracts/*.json'",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "console": "truffle console",
-    "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dydx",
+    "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dolomite-margin",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' '__tests__/**/*.ts'",
     "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
-    "lint:sol": "solium -d contracts/",
-    "lint:dydx": "python util/lintcontracts.py",
+    "lint:sol": "solium --debug --fix -d contracts/",
+    "lint:dolomite-margin": "python util/lintcontracts.py",
     "coverage": "node scripts/coverage.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
     "build:js": "rm -rf dist/ && node --max-old-space-size=8192 node_modules/.bin/tsc && cp -r build/wrappers dist/build",
-    "build:cov": "npm run copy_tew && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
+    "build:cov": "npm run copy_all && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
@@ -47,7 +48,7 @@
     "deploy_coverage": "RPC_NODE_URI=http://127.0.0.1:8555 npm run reset_test_evm && COVERAGE=true npm run migrate -- --network coverage && RPC_NODE_URI=http://127.0.0.1:8555 npm run snapshot_test_evm && npm run clean_contract_json",
     "deploy_test_ci": "RPC_NODE_URI=http://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && RPC_NODE_URI=http://0.0.0.0:8545 npm run snapshot_test_evm && npm run clean_contract_json",
     "test_only": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand",
-    "test_only_specific": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand -t 'DolomiteAmmRouterProxy'",
+    "test_only_specific": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand -t 'ChainlinkPriceOracleV1'",
     "test_cov": "npm run deploy_coverage && NETWORK_ID=1002 COVERAGE=true RPC_NODE_URI=http://127.0.0.1:8555 npm run test_only -- --forceExit",
     "ci_test": "NODE_ENV=test RPC_NODE_URI=http://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "reset_test_evm": "node scripts/reset-test-evm.js",
@@ -58,10 +59,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dolomite-exchange/dolomite-v2-protocol"
+    "url": "https://github.com/dolomite-exchange/dolomite-margin"
   },
   "keywords": [
     "dolomite",
+    "defi",
     "dydx",
     "uniswap",
     "ethereum"
@@ -69,15 +71,13 @@
   "author": "Dolomite",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/dolomite-exchange/dolomite-v2-protocol/issues"
+    "url": "https://github.com/dolomite-exchange/dolomite-margin/issues"
   },
-  "homepage": "https://github.com/dolomite-exchange/dolomite-v2-protocol#readme",
+  "homepage": "https://github.com/dolomite-exchange/dolomite-margin#readme",
   "dependencies": {
-    "@dydxprotocol/exchange-wrappers": "0.5.3",
     "@truffle/hdwallet-provider": "^1.2.6",
     "@types/web3": "1.0.18",
-    "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/lib": "^4.0.1-alpha",
     "axios": "^0.19.0",
     "bignumber.js": "^8.1.1",
     "canonical-weth": "^1.4.0",
@@ -95,7 +95,6 @@
     "@types/es6-promisify": "^6.0.0",
     "@types/jest": "^24.0.9",
     "@types/node": "^10.12.30",
-    "@uniswap/lib": "^4.0.1-alpha",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^10.0.1",
     "chai": "^4.1.2",
@@ -105,7 +104,7 @@
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
-    "ethlint": "^1.2.4",
+    "ethlint": "^1.2.5",
     "ganache-cli": "6.9.0",
     "jest": "^27.4.5",
     "mocha-junit-reporter": "^1.18.0",

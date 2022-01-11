@@ -24,6 +24,7 @@ import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import { Account } from "../lib/Account.sol";
 import { Types } from "../lib/Types.sol";
 
+
 /**
  * @title IRecyclable
  * @author Dolomite
@@ -71,10 +72,6 @@ contract IRecyclable {
      */
     function isRecycled() external view returns (bool);
 
-    function isExpired() public view returns (bool) {
-        return MAX_EXPIRATION_TIMESTAMP < block.timestamp;
-    }
-
     /**
      * @dev Deposits the underlying token into this smart contract and adds to the user's balance with DolomiteMargin. The user
      *      must set an allowance for `TOKEN`, using this contract as the `spender`.
@@ -89,7 +86,7 @@ contract IRecyclable {
     /**
      * @dev Withdraws the user's remaining balance from the smart contract, after this contract has been recycled.
      */
-    function withdrawAfterRecycle(uint accountNumber) public;
+    function withdrawAfterRecycle(uint accountNumber) external;
 
     /**
      * @dev Performs a trade between a user and the specified `IExchangeWrapper` to open or a close a margin position
@@ -106,5 +103,13 @@ contract IRecyclable {
         uint expirationTimestamp,
         bool isOpen,
         bytes calldata tradeData
-    ) external;
+    )
+        external;
+
+    /**
+     * @return  true if this recyclable contract is expired, or false if it's not yet.
+     */
+    function isExpired() public view returns (bool) {
+        return MAX_EXPIRATION_TIMESTAMP < block.timestamp;
+    }
 }

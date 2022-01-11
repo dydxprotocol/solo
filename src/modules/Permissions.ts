@@ -22,6 +22,9 @@ export class Permissions {
     operator: address,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    if (!operator) {
+      console.error('cannot find operator!');
+    }
     return this.contracts.callContractFunction(
       this.contracts.dolomiteMargin.methods.setOperators([
         {
@@ -44,16 +47,6 @@ export class Permissions {
           trusted: false,
         },
       ]),
-      options,
-    );
-  }
-
-  public async disapproveGlobalOperator(
-    operator: address,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetGlobalOperator(operator, false),
       options,
     );
   }

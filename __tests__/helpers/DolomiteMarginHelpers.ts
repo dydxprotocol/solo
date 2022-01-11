@@ -19,8 +19,8 @@ export async function setupMarkets(
   accounts: address[],
   numMarkets: number = 3,
 ): Promise<void> {
-  const priceOracle = dolomiteMargin.testing.priceOracle.getAddress();
-  const interestSetter = dolomiteMargin.testing.interestSetter.getAddress();
+  const priceOracle = dolomiteMargin.testing.priceOracle.address;
+  const interestSetter = dolomiteMargin.testing.interestSetter.address;
   const price = new BigNumber('1e40'); // large to prevent hitting minBorrowValue check
   const marginPremium = new BigNumber(0);
   const spreadPremium = new BigNumber(0);
@@ -28,16 +28,16 @@ export async function setupMarkets(
   const isRecyclable = false;
 
   await Promise.all([
-    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.getAddress(), price),
-    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenB.getAddress(), price),
-    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenC.getAddress(), price),
+    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.address, price),
+    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenB.address, price),
+    dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenC.address, price),
     dolomiteMargin.testing.priceOracle.setPrice(ADDRESSES.ZERO, price),
   ]);
 
   const tokens = [
-    dolomiteMargin.testing.tokenA.getAddress(),
-    dolomiteMargin.testing.tokenB.getAddress(),
-    dolomiteMargin.testing.tokenC.getAddress(),
+    dolomiteMargin.testing.tokenA.address,
+    dolomiteMargin.testing.tokenB.address,
+    dolomiteMargin.testing.tokenC.address,
     ADDRESSES.ZERO,
   ];
 
