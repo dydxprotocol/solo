@@ -108,22 +108,21 @@ Documentation can be found at [docs.dolomite.io](https://docs.dolomite.io).
 
 |Contract Name|Description|Address|
 |---|---|---|
-|[`DolomiteMargin`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/DolomiteMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
-|[`PayableProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
-|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
-|[`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol)|Handles account expirations|[](https://etherscan.io/address/)|
-|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
 |[`AdminImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/AdminImpl.sol)|DolomiteMargin library containing admin functions|[](https://etherscan.io/address/)|
-|[`OperationImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/OperationImpl.sol)|DolomiteMargin library containing operation functions|[](https://etherscan.io/address/)|
+|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|Factory for creating templated AMM pools. These AMM pools allow users to trade with on-chain liquidity. They also are natively integrated with DolomiteMargin, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
+|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
+|[`DolomiteMargin`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/DolomiteMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
+|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
+|[`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol)|Handles account expirations|[](https://etherscan.io/address/)|
 |[`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)|DolomiteMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
 |[`LiquidatorProxyV1WithAmm`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmm.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
-|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
+|[`OperationImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/OperationImpl.sol)|DolomiteMargin library containing operation functions|[](https://etherscan.io/address/)|
+|[`PayableProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
+|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
 |[`SignedOperationProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
-|[`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
 |[`SimpleFeeOwner`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
-|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|The factory responsible for deploying new AMM pools|[](https://etherscan.io/address/)|
-|[`DolomiteAmmPair`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmPair.sol)|A templated AMM pool that allows users to trade with on-chain liquidity. These pools are natively integrated with DolomiteMargin, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
+|[`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
 
 ## Security
 
