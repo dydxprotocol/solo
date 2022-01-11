@@ -2,6 +2,7 @@ import { Contracts } from '../lib/Contracts';
 import {
   address,
   ContractCallOptions,
+  ContractConstantCallOptions,
   Integer,
   TxResult,
 } from '../types';
@@ -21,7 +22,33 @@ export class TransferProxy {
     );
   }
 
+  public async isCallerTrusted(
+    caller: address,
+    options: ContractConstantCallOptions = {},
+  ): Promise<boolean> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.transferProxy.methods.isCallerTrusted(
+        caller,
+      ),
+      options,
+    );
+  }
+
   // ============ Write Functions ============
+
+  public async setIsCallerTrusted(
+    caller: address,
+    isTrusted: boolean,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.transferProxy.methods.setIsCallerTrusted(
+        caller,
+        isTrusted,
+      ),
+      options,
+    );
+  }
 
   public async transfer(
     fromAccountIndex: Integer,

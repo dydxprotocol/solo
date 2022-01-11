@@ -61,6 +61,7 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
+        ITransferProxy(transferProxy).setIsCallerTrusted(pair, true);
         IDolomiteAmmPair(pair).initialize(token0, token1, transferProxy);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;

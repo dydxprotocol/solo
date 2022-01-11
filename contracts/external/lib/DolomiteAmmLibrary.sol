@@ -16,7 +16,7 @@ library DolomiteAmmLibrary {
     bytes32 private constant FILE = "DolomiteAmmLibrary";
 
     function getPairInitCodeHash() internal pure returns (bytes32) {
-        return hex"429cadd64d4a3bcff407025d98951017a498b8e3fea1059d7a4aad10924bb338";
+        return hex"8fc216cabf9a7127c7fdd850d98b029e2823b21ec4649f00e156a834aa35d43b";
     }
 
     function getPools(

@@ -38,6 +38,7 @@ import { SignedOperations } from './modules/SignedOperations';
 import { StandardActions } from './modules/StandardActions';
 import { SubgraphAPI } from './modules/SubgraphAPI';
 import { Token } from './modules/Token';
+import { TransferProxy } from './modules/TransferProxy';
 import { WalletLogin } from './modules/WalletLogin';
 import { Weth } from './modules/Weth';
 import {
@@ -64,6 +65,7 @@ export class DolomiteMargin {
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxy: AmmRebalancerProxy;
+  public transferProxy: TransferProxy;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -111,6 +113,7 @@ export class DolomiteMargin {
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxy = new AmmRebalancerProxy(this.contracts);
+    this.transferProxy = new TransferProxy(this.contracts);
     this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);

@@ -45,6 +45,21 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
 
     bytes32 constant FILE = "TransferProxy";
 
+    // ============ State Variables ============
+
+    mapping(address => bool) public isCallerTrusted;
+
+    // ============ Modifiers ============
+
+    modifier isAuthorized(address sender) {
+        Require.that(
+            isCallerTrusted[sender],
+            FILE,
+            "unauthorized"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor (
@@ -54,7 +69,16 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
     OnlyDolomiteMargin(dolomiteMargin)
     {}
 
-    // ============ Public Functions ============
+    // ============ External Functions ============
+
+    function setIsCallerTrusted(address caller, bool isTrusted) external {
+        Require.that(
+            DOLOMITE_MARGIN.getIsGlobalOperator(msg.sender),
+            FILE,
+            "unauthorized"
+        );
+        isCallerTrusted[caller] = isTrusted;
+    }
 
     function transfer(
         uint fromAccountIndex,
@@ -63,8 +87,9 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         address token,
         uint amount
     )
-    external
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
         uint[] memory markets = new uint[](1);
         markets[0] = DOLOMITE_MARGIN.getMarketIdByTokenAddress(token);
@@ -88,8 +113,9 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         address[] calldata tokens,
         uint[] calldata amounts
     )
-    external
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
         uint[] memory markets = new uint[](tokens.length);
@@ -113,8 +139,9 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
         uint[] calldata markets,
         uint[] calldata amounts
     )
-    external
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
         _transferMultiple(
             fromAccountIndex,
@@ -164,14 +191,14 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
             }
 
             actions[i] = Actions.ActionArgs({
-            actionType : Actions.ActionType.Transfer,
-            accountId : 0,
-            amount : assetAmount,
-            primaryMarketId : markets[i],
-            secondaryMarketId : uint(- 1),
-            otherAddress : address(0),
-            otherAccountId : 1,
-            data : bytes("")
+                actionType : Actions.ActionType.Transfer,
+                accountId : 0,
+                amount : assetAmount,
+                primaryMarketId : markets[i],
+                secondaryMarketId : uint(- 1),
+                otherAddress : address(0),
+                otherAccountId : 1,
+                data : bytes("")
             });
         }
 

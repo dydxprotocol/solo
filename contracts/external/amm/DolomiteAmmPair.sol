@@ -75,6 +75,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             FILE,
             "forbidden"
         );
+        Require.that(
+            ITransferProxy(_transferProxy).isCallerTrusted(address(this)),
+            FILE,
+            "transfer proxy not enabled"
+        );
         // sufficient check
         token0 = _token0;
         token1 = _token1;

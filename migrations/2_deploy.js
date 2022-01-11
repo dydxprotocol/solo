@@ -353,6 +353,10 @@ async function deploySecondLayer(deployer, network, accounts) {
       true,
     ),
     dolomiteMargin.ownerSetGlobalOperator(
+      DolomiteAmmFactory.address,
+      true,
+    ),
+    dolomiteMargin.ownerSetGlobalOperator(
       TransferProxy.address,
       true,
     ),
