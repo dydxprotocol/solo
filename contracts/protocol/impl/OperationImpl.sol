@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";

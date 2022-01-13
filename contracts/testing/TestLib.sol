@@ -20,7 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { TypedSignature } from "../external/lib/TypedSignature.sol";
-import { IERC20 } from "../protocol/interfaces/IERC20.sol";
+import {IERC20Detailed} from "../protocol/interfaces/IERC20Detailed.sol";
 import { Math } from "../protocol/lib/Math.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
@@ -273,7 +273,7 @@ contract TestLib {
         view
         returns (uint256)
     {
-        return IERC20(token).balanceOf(owner);
+        return IERC20Detailed(token).balanceOf(owner);
     }
 
     function TokenTransfer(

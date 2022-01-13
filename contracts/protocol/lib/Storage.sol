@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
 import { Cache } from "./Cache.sol";
 import { Decimal } from "./Decimal.sol";
@@ -31,7 +31,7 @@ import { Require } from "./Require.sol";
 import { Time } from "./Time.sol";
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
-import { IERC20 } from "../interfaces/IERC20.sol";
+import {IERC20Detailed} from "../interfaces/IERC20Detailed.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 
@@ -205,7 +205,7 @@ library Storage {
 
         Types.Wei memory balanceWei = Types.Wei({
             sign: true,
-            value: IERC20(token).balanceOf(address(this))
+            value: IERC20Detailed(token).balanceOf(address(this))
         });
 
         (

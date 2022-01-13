@@ -19,11 +19,11 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {IERC20} from "../protocol/interfaces/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20Detailed} from "../protocol/interfaces/IERC20Detailed.sol";
 
 
-contract TestToken is IERC20 {
+contract TestToken is IERC20Detailed {
     using SafeMath for uint256;
 
     uint256 supply;

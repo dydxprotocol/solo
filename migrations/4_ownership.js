@@ -19,16 +19,12 @@
 const {
   isDevNetwork,
   getMultisigAddress,
-  isMatic,
-  isMaticTest,
-  isArbitrum,
 } = require('./helpers');
 
 // ============ Contracts ============
 
 const DolomiteMargin = artifacts.require('DolomiteMargin');
 const Expiry = artifacts.require('Expiry');
-const DaiPriceOracle = artifacts.require('DaiPriceOracle');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
 const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
@@ -66,10 +62,6 @@ const migration = async (deployer, network) => {
       dolomiteAmmFactory.setFeeToSetter(deployedSimpleFeeOwner.address),
     ]);
 
-    if (!isMatic(network) && !isMaticTest(network) && !isArbitrum(network)) {
-      const deployedDaiPriceOracle = await DaiPriceOracle.deployed();
-      deployedDaiPriceOracle.transferOwnership(multisig);
-    }
     if (isDevNetwork(network)) {
       const uniswapV2Factory = await UniswapV2Factory.deployed();
       await uniswapV2Factory.setFeeToSetter(multisig);

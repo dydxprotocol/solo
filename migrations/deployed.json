@@ -9,13 +9,6 @@
             "transactionHash": "0x1512f7ca092cd8c5ea00ab8a61cfddd75031cd8844ccdfe2bf1d8b41c5080685"
         }
     },
-    "Expiry": {
-        "80001": {
-            "links": {},
-            "address": "0xB149A173295a156F668359DBb92c80681815DB5A",
-            "transactionHash": "0x8175f98f4351c256e108fd9ed7ef0d28e70736887a79b0cf70140213af8bdddb"
-        }
-    },
     "DaiMigrator": {
         "80001": {
             "links": {},

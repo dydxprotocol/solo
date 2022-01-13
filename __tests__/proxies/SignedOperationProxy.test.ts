@@ -80,6 +80,9 @@ describe('SignedOperationProxy', () => {
     await resetEVM();
     await setupMarkets(dolomiteMargin, accounts);
 
+    expect(dolomiteMargin.signedOperations.getDomainHash())
+      .toEqual(await dolomiteMargin.signedOperations.getNetworkDomainHash());
+
     const exchangeWrapperAddress = dolomiteMargin.testing.exchangeWrapper.address;
 
     const testOrder: TestExchangeWrapperOrder = {

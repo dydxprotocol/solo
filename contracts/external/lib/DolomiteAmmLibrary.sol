@@ -1,6 +1,24 @@
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
 pragma solidity >=0.5.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "../../protocol/lib/Require.sol";
 
@@ -14,16 +32,17 @@ library DolomiteAmmLibrary {
     using SafeMath for uint;
 
     bytes32 private constant FILE = "DolomiteAmmLibrary";
+    bytes32 private constant PAIR_INIT_CODE_HASH = 0x112eb5146fef1a2cefdb3018a26bc4daac5b84e16aca447ae3a7ed20b28eb831;
 
     function getPairInitCodeHash() internal pure returns (bytes32) {
-        return hex"8fc216cabf9a7127c7fdd850d98b029e2823b21ec4649f00e156a834aa35d43b";
+        return PAIR_INIT_CODE_HASH;
     }
 
     function getPools(
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, getPairInitCodeHash(), path);
+        return getPools(factory, PAIR_INIT_CODE_HASH, path);
     }
 
     function getPools(
@@ -70,7 +89,7 @@ library DolomiteAmmLibrary {
             factory,
             tokenA,
             tokenB,
-            getPairInitCodeHash()
+            PAIR_INIT_CODE_HASH
         );
     }
 
@@ -103,7 +122,7 @@ library DolomiteAmmLibrary {
     ) internal view returns (uint reserveA, uint reserveB) {
         return getReservesWei(
             factory,
-            getPairInitCodeHash(),
+            PAIR_INIT_CODE_HASH,
             tokenA,
             tokenB
         );
@@ -296,7 +315,7 @@ library DolomiteAmmLibrary {
     ) internal view returns (uint[] memory amounts) {
         return getAmountsInWei(
             factory,
-            getPairInitCodeHash(),
+            PAIR_INIT_CODE_HASH,
             amountOut,
             path
         );

@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 contract UniswapV2ERC20 {
@@ -28,7 +28,7 @@ contract UniswapV2ERC20 {
         uint chainId;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            chainId := chainid
+            chainId := chainid()
         }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(

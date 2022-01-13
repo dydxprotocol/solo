@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { IERC20 } from "../interfaces/IERC20.sol";
+import {IERC20Detailed} from "../interfaces/IERC20Detailed.sol";
 
 
 /**
@@ -47,7 +47,7 @@ library Token {
 
         _callOptionalReturn(
             token,
-            abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount),
+            abi.encodeWithSelector(IERC20Detailed(token).transfer.selector, to, amount),
             "Token: transfer failed"
         );
     }
@@ -67,7 +67,7 @@ library Token {
         // solium-disable arg-overflow
         _callOptionalReturn(
             token,
-            abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
+            abi.encodeWithSelector(IERC20Detailed(token).transferFrom.selector, from, to, amount),
             "Token: transferFrom failed"
         );
         // solium-enable arg-overflow

@@ -19,8 +19,8 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Address } from "openzeppelin-solidity/contracts/utils/Address.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ILiquidationCallback } from "../interfaces/ILiquidationCallback.sol";
 import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";

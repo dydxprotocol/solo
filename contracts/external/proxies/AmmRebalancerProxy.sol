@@ -19,11 +19,11 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "@uniswap/lib/contracts/libraries/Babylonian.sol";
 
@@ -35,8 +35,8 @@ import "../../protocol/lib/Actions.sol";
 import "../../protocol/lib/Require.sol";
 import "../../protocol/lib/Types.sol";
 
-import "../lib/TypedSignature.sol";
 import "../lib/DolomiteAmmLibrary.sol";
+import "../lib/TypedSignature.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
@@ -393,15 +393,15 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
         uint amountOutWei
     ) internal view returns (Actions.ActionArgs memory) {
         return Actions.ActionArgs({
-        actionType : Actions.ActionType.Sell,
-        accountId : fromAccountIndex,
-        // solium-disable-next-line arg-overflow
-        amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
-        primaryMarketId : primaryMarketId,
-        secondaryMarketId : secondaryMarketId,
-        otherAddress : address(this),
-        otherAccountId : uint(- 1),
-        data : abi.encode(router, amountOutWei, path)
+            actionType : Actions.ActionType.Sell,
+            accountId : fromAccountIndex,
+            // solium-disable-next-line arg-overflow
+            amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+            primaryMarketId : primaryMarketId,
+            secondaryMarketId : secondaryMarketId,
+            otherAddress : address(this),
+            otherAccountId : uint(- 1),
+            data : abi.encode(router, amountOutWei, path)
         });
     }
 
@@ -415,15 +415,15 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
         uint amountOutWei
     ) internal pure returns (Actions.ActionArgs memory) {
         return Actions.ActionArgs({
-        actionType : Actions.ActionType.Trade,
-        accountId : fromAccountIndex,
-        // solium-disable-next-line arg-overflow
-        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
-        primaryMarketId : primaryMarketId,
-        secondaryMarketId : secondaryMarketId,
-        otherAddress : traderAddress,
-        otherAccountId : toAccountIndex,
-        data : abi.encode(amountOutWei)
+            actionType : Actions.ActionType.Trade,
+            accountId : fromAccountIndex,
+            // solium-disable-next-line arg-overflow
+            amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+            primaryMarketId : primaryMarketId,
+            secondaryMarketId : secondaryMarketId,
+            otherAddress : traderAddress,
+            otherAccountId : toAccountIndex,
+            data : abi.encode(amountOutWei)
         });
     }
 
@@ -433,15 +433,15 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
         uint marketId
     ) internal pure returns (Actions.ActionArgs memory) {
         return Actions.ActionArgs({
-        actionType : Actions.ActionType.Transfer,
-        accountId : fromAccountIndex,
-        // solium-disable-next-line arg-overflow
-        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0),
-        primaryMarketId : marketId,
-        secondaryMarketId : uint(- 1),
-        otherAddress : address(0),
-        otherAccountId : toAccountIndex,
-        data : bytes("")
+            actionType : Actions.ActionType.Transfer,
+            accountId : fromAccountIndex,
+            // solium-disable-next-line arg-overflow
+            amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0),
+            primaryMarketId : marketId,
+            secondaryMarketId : uint(- 1),
+            otherAddress : address(0),
+            otherAccountId : toAccountIndex,
+            data : bytes("")
         });
     }
 

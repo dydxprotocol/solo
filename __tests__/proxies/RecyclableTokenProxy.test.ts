@@ -75,6 +75,7 @@ describe('RecyclableTokenProxy', () => {
       customTestTokenABI,
       borrowTokenAddress,
     ) as CustomTestToken;
+
     await borrowToken.methods
       .setBalance(dolomiteMargin.contracts.dolomiteMargin.options.address, '1000000')
       .send({
@@ -102,7 +103,7 @@ describe('RecyclableTokenProxy', () => {
   // ============ Token Functions ============
 
   describe('#getAccountNumber', () => {
-    it('Successfully deposits into DolomiteMargin', async () => {
+    it('Successfully gets the account number', async () => {
       const _number = 1;
       const account = { owner: user, number: _number };
       const accountNumber = await recyclableToken.methods

@@ -1,15 +1,18 @@
 pragma solidity >=0.5.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IUniswapV2Pair.sol";
 
 
 library UniswapV2Library {
     using SafeMath for uint;
 
+    bytes32 private constant PAIR_INIT_CODE_HASH = 0x5a9f5c3574970dea87031a97b794f46fbe4a0f2c3bf2d6e322a3edfb9ff6d0b5;
+
     function getPairInitCodeHash() internal pure returns (bytes32) {
-        return hex"7a85df33ee1ffa5a0bf221400b8276ddac9f2c58af8b323c511d040b4e63da31";
+        return PAIR_INIT_CODE_HASH;
     }
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
@@ -29,7 +32,7 @@ library UniswapV2Library {
                         hex"ff",
                         factory,
                         keccak256(abi.encodePacked(token0, token1)),
-                        getPairInitCodeHash()
+                        PAIR_INIT_CODE_HASH
                     )
                 )
             )

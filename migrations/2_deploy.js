@@ -159,7 +159,7 @@ async function deployBaseProtocol(deployer, network) {
 
   await Promise.all([
     deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl, { gas: 6600000 }),
+    deployer.deploy(OperationImpl),
   ]);
 
   let dolomiteMargin;

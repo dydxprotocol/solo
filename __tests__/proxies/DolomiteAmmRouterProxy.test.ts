@@ -68,8 +68,11 @@ describe('DolomiteAmmRouterProxy', () => {
         prices[3],
       ),
       setUpBasicBalances(),
-      deployDolomiteLpTokens(),
     ]);
+
+    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
+      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+
     // Needs to be done once the balances are set up
     await Promise.all([
       addLiquidity(
@@ -87,6 +90,7 @@ describe('DolomiteAmmRouterProxy', () => {
         dolomiteMargin.testing.tokenC.address
       ),
     ]);
+    console.log('added liquidity...');
     await dolomiteMargin.admin.addMarket(
       dolomiteMargin.weth.address,
       dolomiteMargin.testing.priceOracle.address,
@@ -97,9 +101,6 @@ describe('DolomiteAmmRouterProxy', () => {
       defaultIsRecyclable,
       { from: admin },
     );
-
-    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
-      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
 
     token_ab = await dolomiteMargin.dolomiteAmmFactory.getPair(
       dolomiteMargin.testing.tokenA.address,
@@ -545,6 +546,7 @@ async function addLiquidity(
   amountBDesired: BigNumber,
   tokenA: address,
   tokenB: address,
+  skipGasCheck: boolean = false,
 ) {
   const result = await dolomiteMargin.dolomiteAmmRouterProxy
     .addLiquidity(
@@ -564,7 +566,9 @@ async function addLiquidity(
       return { gasUsed: 0 };
     });
 
-  console.log('#addLiquidity gas used  ', result.gasUsed.toString());
+  if (skipGasCheck) {
+    console.log('#addLiquidity gas used  ', result.gasUsed.toString());
+  }
 
   return result;
 }
@@ -639,9 +643,15 @@ async function swapTokensForExactTokens(
 }
 
 async function setUpBasicBalances() {
-  const marketA = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenA.address);
-  const marketB = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenB.address);
-  const marketC = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenC.address);
+  const marketA = await dolomiteMargin.getters.getMarketIdByTokenAddress(
+    dolomiteMargin.testing.tokenA.address
+  );
+  const marketB = await dolomiteMargin.getters.getMarketIdByTokenAddress(
+    dolomiteMargin.testing.tokenB.address
+  );
+  const marketC = await dolomiteMargin.getters.getMarketIdByTokenAddress(
+    dolomiteMargin.testing.tokenC.address
+  );
 
   return Promise.all([
     dolomiteMargin.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),
@@ -649,21 +659,5 @@ async function setUpBasicBalances() {
     dolomiteMargin.testing.setAccountBalance(owner2, INTEGERS.ZERO, marketA, parA),
     dolomiteMargin.testing.setAccountBalance(owner2, INTEGERS.ZERO, marketB, parB),
     dolomiteMargin.testing.setAccountBalance(owner2, INTEGERS.ZERO, marketC, parC),
-  ]);
-}
-
-async function deployDolomiteLpTokens() {
-  const options = { from: admin, gas: 6500000 };
-  await Promise.all([
-    dolomiteMargin.dolomiteAmmFactory.createPair(
-      dolomiteMargin.testing.tokenA.address,
-      dolomiteMargin.testing.tokenB.address,
-      options,
-    ),
-    dolomiteMargin.dolomiteAmmFactory.createPair(
-      dolomiteMargin.testing.tokenB.address,
-      dolomiteMargin.testing.tokenC.address,
-      options,
-    ),
   ]);
 }

@@ -19,8 +19,8 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { State } from "./State.sol";
 import { AdminImpl } from "./impl/AdminImpl.sol";
 import { IInterestSetter } from "./interfaces/IInterestSetter.sol";

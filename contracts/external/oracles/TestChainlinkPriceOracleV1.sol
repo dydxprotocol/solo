@@ -54,8 +54,8 @@ contract TestChainlinkPriceOracleV1 is ChainlinkPriceOracleV1 {
         uint8[] memory aggregatorDecimals
     )
     public
-    /* solium-disable-next-line no-empty-blocks */
     ChainlinkPriceOracleV1(tokens, chainlinkAggregators, tokenDecimals, tokenPairs, aggregatorDecimals) {
+        // solium-disable-line no-empty-blocks
     }
 
     // ============ Admin Functions ============

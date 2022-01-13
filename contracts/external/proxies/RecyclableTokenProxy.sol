@@ -19,23 +19,22 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeERC20 } from "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
-import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-
-import {DolomiteMargin} from "../../protocol/DolomiteMargin.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IERC20Detailed } from "../../protocol/interfaces/IERC20Detailed.sol";
 import { IRecyclable } from "../../protocol/interfaces/IRecyclable.sol";
 
-import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { IERC20Detailed } from "../interfaces/IERC20Detailed.sol";
 
-import {IExpiry} from "../interfaces/IExpiry.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 
 
 /**
@@ -76,8 +75,8 @@ import {IExpiry} from "../interfaces/IExpiry.sol";
  * withdrawal (down to zero) of this recyclable token's underlying `TOKEN`. Even if an implementing liquidation contract
  * messes this up, there is a check done in `OperationImpl._verifyFinalState` that prevents this from happening.
  */
-contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomiteMargin, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+contract RecyclableTokenProxy is IERC20Detailed, IRecyclable, OnlyDolomiteMargin, ReentrancyGuard {
+    using SafeERC20 for IERC20Detailed;
 
     // ============ Constants ============
 
@@ -85,7 +84,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
 
     // ============ Public Variables ============
 
-    IERC20 public TOKEN;
+    IERC20Detailed public TOKEN;
     IExpiry public EXPIRY;
     uint256 public MARKET_ID;
     bool public isRecycled;
@@ -102,7 +101,7 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
     public
     OnlyDolomiteMargin(dolomiteMargin)
     {
-        TOKEN = IERC20(token);
+        TOKEN = IERC20Detailed(token);
         EXPIRY = IExpiry(expiry);
         MAX_EXPIRATION_TIMESTAMP = maxExpirationTimestamp;
         isRecycled = false;
@@ -182,15 +181,15 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
-        actionType: Actions.ActionType.Deposit,
-        accountId: 0,
-        // solium-disable-next-line arg-overflow
-        amount: Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
-        primaryMarketId: MARKET_ID,
-        secondaryMarketId: uint(-1),
-        otherAddress: address(this),
-        otherAccountId: uint(-1),
-        data: bytes("")
+            actionType: Actions.ActionType.Deposit,
+            accountId: 0,
+            // solium-disable-next-line arg-overflow
+            amount: Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
+            primaryMarketId: MARKET_ID,
+            secondaryMarketId: uint(-1),
+            otherAddress: address(this),
+            otherAccountId: uint(-1),
+            data: bytes("")
         });
 
         DOLOMITE_MARGIN.operate(accounts, actions);
@@ -208,15 +207,15 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
-        actionType: Actions.ActionType.Withdraw,
-        accountId: 0,
-        // solium-disable-next-line arg-overflow
-        amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
-        primaryMarketId: MARKET_ID,
-        secondaryMarketId: uint(-1),
-        otherAddress: msg.sender,
-        otherAccountId: uint(-1),
-        data: bytes("")
+            actionType: Actions.ActionType.Withdraw,
+            accountId: 0,
+            // solium-disable-next-line arg-overflow
+            amount: Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amount),
+            primaryMarketId: MARKET_ID,
+            secondaryMarketId: uint(-1),
+            otherAddress: msg.sender,
+            otherAccountId: uint(-1),
+            data: bytes("")
         });
 
         DOLOMITE_MARGIN.operate(accounts, actions);
@@ -285,29 +284,29 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](2);
         actions[0] = Actions.ActionArgs({
-        actionType: Actions.ActionType.Sell,
-        accountId: 0,
-        amount: isOpen ? borrowAmount : supplyAmount,
-        primaryMarketId: isOpen ? borrowMarketId : marketId,
-        secondaryMarketId: isOpen ? marketId : borrowMarketId,
-        otherAddress: exchangeWrapper,
-        otherAccountId: 0,
-        data: tradeData
+            actionType: Actions.ActionType.Sell,
+            accountId: 0,
+            amount: isOpen ? borrowAmount : supplyAmount,
+            primaryMarketId: isOpen ? borrowMarketId : marketId,
+            secondaryMarketId: isOpen ? marketId : borrowMarketId,
+            otherAddress: exchangeWrapper,
+            otherAccountId: 0,
+            data: tradeData
         });
 
         actions[1] = Actions.ActionArgs({
-        actionType : Actions.ActionType.Call,
-        accountId : 0,
-        // solium-disable-next-line arg-overflow
-        amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
-        primaryMarketId : 0,
-        secondaryMarketId : 0,
-        otherAddress : address(EXPIRY),
-        otherAccountId : 0,
-        data : abi.encode(
-                IExpiry.CallFunctionType.SetExpiry,
-                _getExpiryArgs(accounts[0], borrowMarketId, isOpen ? expirationTimestamp : 0)
-            )
+            actionType : Actions.ActionType.Call,
+            accountId : 0,
+            // solium-disable-next-line arg-overflow
+            amount : Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
+            primaryMarketId : 0,
+            secondaryMarketId : 0,
+            otherAddress : address(EXPIRY),
+            otherAccountId : 0,
+            data : abi.encode(
+                    IExpiry.CallFunctionType.SetExpiry,
+                    _getExpiryArgs(accounts[0], borrowMarketId, isOpen ? expirationTimestamp : 0)
+                )
         });
 
         DOLOMITE_MARGIN.operate(accounts, actions);
@@ -316,15 +315,30 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
     // ============ ERC20 Functions ============
 
     function name() public view returns (string memory) {
-        return string(abi.encodePacked("Recyclable: ", IERC20Detailed(address(TOKEN)).name()));
+        (bool isSuccess, bytes memory data) = address(TOKEN).staticcall(abi.encodePacked(TOKEN.name.selector));
+        if (isSuccess && data.length > 0) {
+            return string(abi.encodePacked("Recyclable: ", abi.decode(data, (string))));
+        } else {
+            return "Recyclable: Dolomite Token";
+        }
     }
 
     function symbol() public view returns (string memory) {
-        return string(abi.encodePacked("r", IERC20Detailed(address(TOKEN)).symbol()));
+        (bool isSuccess, bytes memory data) = address(TOKEN).staticcall(abi.encodePacked(TOKEN.symbol.selector));
+        if (isSuccess && data.length > 0) {
+            return string(abi.encodePacked("r", abi.decode(data, (string))));
+        } else {
+            return "rDOLO_TOKEN";
+        }
     }
 
     function decimals() public view returns (uint8) {
-        return IERC20Detailed(address(TOKEN)).decimals();
+        (bool isSuccess, bytes memory data) = address(TOKEN).staticcall(abi.encodePacked(TOKEN.decimals.selector));
+        if (isSuccess && data.length > 0) {
+            return abi.decode(data, (uint8));
+        } else {
+            return 18;
+        }
     }
 
     function totalSupply() public view returns (uint256) {
@@ -438,10 +452,10 @@ contract RecyclableTokenProxy is IERC20, IERC20Detailed, IRecyclable, OnlyDolomi
     ) private view returns (IExpiry.SetExpiryArg[] memory) {
         IExpiry.SetExpiryArg[] memory expiryArgs = new IExpiry.SetExpiryArg[](1);
         expiryArgs[0] = IExpiry.SetExpiryArg({
-        account : account,
-        marketId : marketId,
-        timeDelta : expirationTimestamp == 0 ? 0 : uint32(expirationTimestamp - block.timestamp),
-        forceUpdate : true
+            account : account,
+            marketId : marketId,
+            timeDelta : expirationTimestamp == 0 ? 0 : uint32(expirationTimestamp - block.timestamp),
+            forceUpdate : true
         });
         return expiryArgs;
     }

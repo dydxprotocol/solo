@@ -16,7 +16,6 @@ import { default as TestCallee } from '../build/contracts/TestCallee.json';
 import { default as TestSimpleCallee } from '../build/contracts/TestSimpleCallee.json';
 import { default as TestExchangeWrapper } from '../build/contracts/TestExchangeWrapper.json';
 import { default as TestPriceOracle } from '../build/contracts/TestPriceOracle.json';
-import { default as TestMakerOracle } from '../build/contracts/TestMakerOracle.json';
 import { default as TestOasisDex } from '../build/contracts/TestOasisDex.json';
 import { default as TestPolynomialInterestSetter }
   from '../build/contracts/TestPolynomialInterestSetter.json';
@@ -47,7 +46,6 @@ export default {
   TestLib,
   TestLiquidateCallback,
   TestPriceOracle,
-  TestMakerOracle,
   TestOasisDex,
   TestPolynomialInterestSetter,
   TestDoubleExponentInterestSetter,

@@ -518,6 +518,10 @@ export class SignedOperations extends Signer {
     );
   }
 
+  public getNetworkDomainHash(): Promise<string> {
+    return this.contracts.signedOperationProxy.methods.EIP712_DOMAIN_HASH().call();
+  }
+
   /**
    * Returns a signable EIP712 Hash of a struct
    */

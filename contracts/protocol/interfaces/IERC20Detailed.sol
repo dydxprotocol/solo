@@ -19,34 +19,22 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { IPriceOracle } from "../../protocol/interfaces/IPriceOracle.sol";
-import { Monetary } from "../../protocol/lib/Monetary.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title UsdcPriceOracle
+ * @title IERC20
  * @author dYdX
  *
- * PriceOracle that returns the price of USDC in USD
+ * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
+ * that we don't automatically revert when calling non-compliant tokens that have no return value for
+ * transfer(), transferFrom(), or approve().
  */
-contract UsdcPriceOracle is
-    IPriceOracle
-{
-    // ============ Constants ============
+contract IERC20Detailed is IERC20 {
 
-    uint256 constant DECIMALS = 6;
+    function name() external view returns (string memory);
 
-    uint256 constant EXPECTED_PRICE = ONE_DOLLAR / (10 ** DECIMALS);
+    function symbol() external view returns (string memory);
 
-    // ============ IPriceOracle Functions =============
-
-    function getPrice(
-        address /* token */
-    )
-        public
-        view
-        returns (Monetary.Price memory)
-    {
-        return Monetary.Price({ value: EXPECTED_PRICE });
-    }
+    function decimals() external view returns (uint8);
 }

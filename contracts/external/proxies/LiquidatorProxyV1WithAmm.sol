@@ -19,10 +19,10 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {ReentrancyGuard} from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import {Account} from "../../protocol/lib/Account.sol";
 import {Actions} from "../../protocol/lib/Actions.sol";
@@ -33,7 +33,7 @@ import {Monetary} from "../../protocol/lib/Monetary.sol";
 import {Require} from "../../protocol/lib/Require.sol";
 import {Types} from "../../protocol/lib/Types.sol";
 
-import {IExpiry} from "../interfaces/IExpiry.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 
 import {DolomiteAmmRouterProxy} from "./DolomiteAmmRouterProxy.sol";
 

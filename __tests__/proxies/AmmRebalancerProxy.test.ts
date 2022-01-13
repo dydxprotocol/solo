@@ -59,8 +59,8 @@ describe('AmmRebalancerProxy', () => {
       ),
     ]);
 
-    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
-      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+    // expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
+    //   .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
 
     expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
       .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());

@@ -142,7 +142,7 @@ audit of the system before the new *Recyclable* feature is used in production.
 
 ### Code Coverage
 
-All production smart contracts are tested and have 100% line and branch coverage.
+All production smart contracts are tested and have the vast majority of line and branch coverage.
 
 ### Vulnerability Disclosure Policy
 

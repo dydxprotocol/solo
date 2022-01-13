@@ -28,7 +28,6 @@ import { Provider } from 'web3/providers';
 import { TransactionReceipt } from 'web3/types';
 import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
 import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
-import daiPriceOracleJson from '../../build/published_contracts/DaiPriceOracle.json';
 import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
 import dolomiteAmmRouterProxyJson from '../../build/published_contracts/DolomiteAmmRouterProxy.json';
@@ -47,12 +46,9 @@ import polynomialInterestSetterJson from '../../build/published_contracts/Polyno
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
 import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
-import usdcPriceOracleJson from '../../build/published_contracts/UsdcPriceOracle.json';
 import wethJson from '../../build/published_contracts/Weth.json';
-import wethPriceOracleJson from '../../build/published_contracts/WethPriceOracle.json';
 import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
 import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
-import { DaiPriceOracle } from '../../build/wrappers/DaiPriceOracle';
 import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
 import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
@@ -71,9 +67,7 @@ import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInteres
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
 import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
 import { TransferProxy } from '../../build/wrappers/TransferProxy';
-import { UsdcPriceOracle } from '../../build/wrappers/UsdcPriceOracle';
 import { Weth } from '../../build/wrappers/Weth';
-import { WethPriceOracle } from '../../build/wrappers/WethPriceOracle';
 import {
   address,
   ConfirmationType,
@@ -84,7 +78,6 @@ import {
 } from '../types';
 
 import {
-  ADDRESSES,
   SUBTRACT_GAS_LIMIT,
 } from './Constants';
 
@@ -107,10 +100,6 @@ export class Contracts {
   public ammRebalancerProxy: AmmRebalancerProxy;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
-  public wethPriceOracle: WethPriceOracle;
-  public daiPriceOracle: DaiPriceOracle;
-  public saiPriceOracle: DaiPriceOracle;
-  public usdcPriceOracle: UsdcPriceOracle;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public simpleFeeOwner: SimpleFeeOwner;
@@ -175,18 +164,6 @@ export class Contracts {
     this.doubleExponentInterestSetter = new this.web3.eth.Contract(
       doubleExponentInterestSetterJson.abi,
     ) as DoubleExponentInterestSetter;
-    this.wethPriceOracle = new this.web3.eth.Contract(
-      wethPriceOracleJson.abi,
-    ) as WethPriceOracle;
-    this.daiPriceOracle = new this.web3.eth.Contract(
-      daiPriceOracleJson.abi,
-    ) as DaiPriceOracle;
-    this.saiPriceOracle = new this.web3.eth.Contract(
-      daiPriceOracleJson.abi,
-    ) as DaiPriceOracle;
-    this.usdcPriceOracle = new this.web3.eth.Contract(
-      usdcPriceOracleJson.abi,
-    ) as UsdcPriceOracle;
     this.chainlinkPriceOracleV1 = new this.web3.eth.Contract(
       chainlinkPriceOracleV1Json.abi,
     ) as ChainlinkPriceOracleV1;
@@ -266,19 +243,6 @@ export class Contracts {
         contract: this.doubleExponentInterestSetter,
         json: doubleExponentInterestSetterJson,
       },
-      { contract: this.wethPriceOracle, json: wethPriceOracleJson },
-      { contract: this.daiPriceOracle, json: daiPriceOracleJson },
-      {
-        contract: this.saiPriceOracle,
-        json: daiPriceOracleJson,
-        overrides: {
-          1: '0x787F552BDC17332c98aA360748884513e3cB401a',
-          42: '0x8a6629fEba4196E0A61B8E8C94D4905e525bc055',
-          1001: ADDRESSES.TEST_SAI_PRICE_ORACLE,
-          1002: ADDRESSES.TEST_SAI_PRICE_ORACLE,
-        },
-      },
-      { contract: this.usdcPriceOracle, json: usdcPriceOracleJson },
       { contract: this.dolomiteAmmFactory, json: dolomiteAmmFactoryJson },
       { contract: this.simpleFeeOwner, json: simpleFeeOwnerJson },
       {
@@ -295,7 +259,7 @@ export class Contracts {
         contract.json,
         provider,
         networkId,
-        contract.overrides,
+        {},
       ),
     );
   }
@@ -315,10 +279,6 @@ export class Contracts {
     this.ammRebalancerProxy.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
-    this.wethPriceOracle.options.from = account;
-    this.daiPriceOracle.options.from = account;
-    this.saiPriceOracle.options.from = account;
-    this.usdcPriceOracle.options.from = account;
     this.chainlinkPriceOracleV1.options.from = account;
     this.dolomiteAmmFactory.options.from = account;
     this.simpleFeeOwner.options.from = account;
