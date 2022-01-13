@@ -1,13 +1,21 @@
+import { OrderMapper } from '../OrderMapper';
 import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
-import { OrderMapper } from '@dydxprotocol/exchange-wrappers';
-import { LimitOrders } from '../LimitOrders';
-import { StopLimitOrders } from '../StopLimitOrders';
-import { CanonicalOrders } from '../CanonicalOrders';
+import {
+  addressesAreEqual,
+  bytesToHexString,
+  hexStringToBytes,
+  toBytes,
+} from '../../lib/BytesHelper';
+import {
+  ADDRESSES,
+  INTEGERS,
+} from '../../lib/Constants';
 import { Contracts } from '../../lib/Contracts';
+import expiryConstants from '../../lib/expiry-constants.json';
+import { toNumber } from '../../lib/Helpers';
 import {
   AccountAction,
-  AccountActionWithOrder,
   AccountInfo,
   AccountOperationOptions,
   Action,
@@ -19,46 +27,26 @@ import {
   AmountReference,
   Buy,
   Call,
-  CanonicalOrder,
   ConfirmationType,
   ContractCallOptions,
-  DaiMigrate,
-  Decimal,
   Deposit,
   Exchange,
-  ExpiryV2CallFunctionType,
+  ExpiryCallFunctionType,
   Integer,
-  LimitOrder,
-  LimitOrderCallFunctionType,
   Liquidate,
   Operation,
   OperationAuthorization,
   ProxyType,
-  Refund,
   Sell,
-  SetApprovalForExpiryV2,
+  SetApprovalForExpiry,
   SetExpiry,
-  SetExpiryV2,
-  SignedCanonicalOrder,
-  SignedLimitOrder,
   SignedOperation,
-  SignedStopLimitOrder,
-  StopLimitOrder,
   Trade,
   Transfer,
   TxResult,
   Vaporize,
   Withdraw,
 } from '../../types';
-import {
-  addressesAreEqual,
-  bytesToHexString,
-  hexStringToBytes,
-  toBytes,
-} from '../../lib/BytesHelper';
-import { toNumber } from '../../lib/Helpers';
-import { ADDRESSES, INTEGERS } from '../../lib/Constants';
-import expiryConstants from '../../lib/expiry-constants.json';
 
 interface OptionalActionArgs {
   actionType: number | string;
@@ -75,9 +63,6 @@ export class AccountOperation {
   private actions: ActionArgs[];
   private committed: boolean;
   private orderMapper: OrderMapper;
-  private limitOrders: LimitOrders;
-  private stopLimitOrders: StopLimitOrders;
-  private canonicalOrders: CanonicalOrders;
   private accounts: AccountInfo[];
   private proxy: ProxyType;
   private sendEthTo: address;
@@ -87,9 +72,6 @@ export class AccountOperation {
   constructor(
     contracts: Contracts,
     orderMapper: OrderMapper,
-    limitOrders: LimitOrders,
-    stopLimitOrders: StopLimitOrders,
-    canonicalOrders: CanonicalOrders,
     networkId: number,
     options: AccountOperationOptions,
   ) {
@@ -103,9 +85,6 @@ export class AccountOperation {
     this.actions = [];
     this.committed = false;
     this.orderMapper = orderMapper;
-    this.limitOrders = limitOrders;
-    this.stopLimitOrders = stopLimitOrders;
-    this.canonicalOrders = canonicalOrders;
     this.accounts = [];
     this.proxy = proxy;
     this.sendEthTo = options.sendEthTo;
@@ -187,24 +166,14 @@ export class AccountOperation {
     return this;
   }
 
-  public setExpiry(args: SetExpiry): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.expiry.options.address,
-      data: toBytes(args.marketId, args.expiryTime),
-    });
-
-    return this;
-  }
-
-  public setApprovalForExpiryV2(
-    args: SetApprovalForExpiryV2,
+  public setApprovalForExpiry(
+    args: SetApprovalForExpiry,
   ): AccountOperation {
     this.addActionArgs(args, {
       actionType: ActionType.Call,
-      otherAddress: this.contracts.expiryV2.options.address,
+      otherAddress: this.contracts.expiry.options.address,
       data: toBytes(
-        ExpiryV2CallFunctionType.SetApproval,
+        ExpiryCallFunctionType.SetApproval,
         args.sender,
         args.minTimeDelta,
       ),
@@ -213,128 +182,30 @@ export class AccountOperation {
     return this;
   }
 
-  public setExpiryV2(args: SetExpiryV2): AccountOperation {
-    const callType = toBytes(ExpiryV2CallFunctionType.SetExpiry);
-    let callData = callType;
+  public setExpiry(args: SetExpiry): AccountOperation {
+    let callData = toBytes(ExpiryCallFunctionType.SetExpiry);
     callData = callData.concat(toBytes(new BigNumber(64)));
     callData = callData.concat(
-      toBytes(new BigNumber(args.expiryV2Args.length)),
+      toBytes(new BigNumber(args.expiryArgs.length)),
     );
-    for (let i = 0; i < args.expiryV2Args.length; i += 1) {
-      const expiryV2Arg = args.expiryV2Args[i];
+    for (let i = 0; i < args.expiryArgs.length; i += 1) {
+      const expiryArg = args.expiryArgs[i];
       callData = callData.concat(
         toBytes(
-          expiryV2Arg.accountOwner,
-          expiryV2Arg.accountId,
-          expiryV2Arg.marketId,
-          expiryV2Arg.timeDelta,
-          expiryV2Arg.forceUpdate,
+          expiryArg.accountOwner,
+          expiryArg.accountId,
+          expiryArg.marketId,
+          expiryArg.timeDelta,
+          expiryArg.forceUpdate,
         ),
       );
     }
     this.addActionArgs(args, {
       actionType: ActionType.Call,
-      otherAddress: this.contracts.expiryV2.options.address,
+      otherAddress: this.contracts.expiry.options.address,
       data: callData,
     });
 
-    return this;
-  }
-
-  public approveLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.limitOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Approve,
-        this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
-      ),
-    });
-    return this;
-  }
-
-  public cancelLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.limitOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Cancel,
-        this.limitOrders.unsignedOrderToBytes(args.order as LimitOrder),
-      ),
-    });
-    return this;
-  }
-
-  public approveStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.stopLimitOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Approve,
-        this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
-      ),
-    });
-    return this;
-  }
-
-  public cancelStopLimitOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.stopLimitOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Cancel,
-        this.stopLimitOrders.unsignedOrderToBytes(args.order as StopLimitOrder),
-      ),
-    });
-    return this;
-  }
-
-  public approveCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.canonicalOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Approve,
-        this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
-      ),
-    });
-    return this;
-  }
-
-  public cancelCanonicalOrder(args: AccountActionWithOrder): AccountOperation {
-    this.addActionArgs(args, {
-      actionType: ActionType.Call,
-      otherAddress: this.contracts.canonicalOrders.options.address,
-      data: toBytes(
-        LimitOrderCallFunctionType.Cancel,
-        this.canonicalOrders.orderToBytes(args.order as CanonicalOrder),
-      ),
-    });
-    return this;
-  }
-
-  public setCanonicalOrderFillArgs(
-    primaryAccountOwner: address,
-    primaryAccountId: Integer,
-    price: Decimal,
-    fee: Decimal,
-  ): AccountOperation {
-    this.addActionArgs(
-      {
-        primaryAccountOwner,
-        primaryAccountId,
-      },
-      {
-        actionType: ActionType.Call,
-        otherAddress: this.contracts.canonicalOrders.options.address,
-        data: toBytes(
-          LimitOrderCallFunctionType.SetFillArgs,
-          this.canonicalOrders.toSolidity(price),
-          this.canonicalOrders.toSolidity(fee.abs()),
-          fee.isNegative(),
-        ),
-      },
-    );
     return this;
   }
 
@@ -365,203 +236,6 @@ export class AccountOperation {
     return this;
   }
 
-  public fillSignedLimitOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: SignedLimitOrder,
-    weiAmount: Integer,
-    denotedInMakerAmount: boolean = false,
-  ): AccountOperation {
-    return this.fillLimitOrderInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      order,
-      weiAmount,
-      denotedInMakerAmount,
-      true,
-    );
-  }
-
-  public fillPreApprovedLimitOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: LimitOrder,
-    weiAmount: Integer,
-    denotedInMakerAmount: boolean = false,
-  ): AccountOperation {
-    return this.fillLimitOrderInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      order,
-      weiAmount,
-      denotedInMakerAmount,
-      false,
-    );
-  }
-
-  public fillSignedDecreaseOnlyStopLimitOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: SignedStopLimitOrder,
-    denotedInMakerAmount: boolean = false,
-  ): AccountOperation {
-    const amount: Amount = {
-      denomination: AmountDenomination.Par,
-      reference: AmountReference.Target,
-      value: INTEGERS.ZERO,
-    };
-    return this.fillStopLimitOrderInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      order,
-      amount,
-      denotedInMakerAmount,
-      true,
-    );
-  }
-
-  public fillSignedStopLimitOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: SignedStopLimitOrder,
-    weiAmount: Integer,
-    denotedInMakerAmount: boolean = false,
-  ): AccountOperation {
-    const amount: Amount = {
-      denomination: AmountDenomination.Wei,
-      reference: AmountReference.Delta,
-      value: weiAmount.abs().times(denotedInMakerAmount ? -1 : 1),
-    };
-    return this.fillStopLimitOrderInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      order,
-      amount,
-      denotedInMakerAmount,
-      true,
-    );
-  }
-
-  public fillPreApprovedStopLimitOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: StopLimitOrder,
-    weiAmount: Integer,
-    denotedInMakerAmount: boolean = false,
-  ): AccountOperation {
-    const amount: Amount = {
-      denomination: AmountDenomination.Wei,
-      reference: AmountReference.Delta,
-      value: weiAmount.abs().times(denotedInMakerAmount ? -1 : 1),
-    };
-    return this.fillStopLimitOrderInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      order,
-      amount,
-      denotedInMakerAmount,
-      false,
-    );
-  }
-
-  public fillCanonicalOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: CanonicalOrder | SignedCanonicalOrder,
-    amount: Integer,
-    price: Decimal,
-    fee: Decimal,
-  ): AccountOperation {
-    return this.trade({
-      primaryAccountOwner,
-      primaryAccountId: primaryAccountNumber,
-      autoTrader: this.contracts.canonicalOrders.options.address,
-      inputMarketId: order.baseMarket,
-      outputMarketId: order.quoteMarket,
-      otherAccountOwner: order.makerAccountOwner,
-      otherAccountId: order.makerAccountNumber,
-      data: hexStringToBytes(
-        this.canonicalOrders.orderToBytes(order, price, fee),
-      ),
-      amount: {
-        denomination: AmountDenomination.Wei,
-        reference: AmountReference.Delta,
-        value: order.isBuy ? amount : amount.negated(),
-      },
-    });
-  }
-
-  public fillDecreaseOnlyCanonicalOrder(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: CanonicalOrder | SignedCanonicalOrder,
-    price: Decimal,
-    fee: Decimal,
-  ): AccountOperation {
-    return this.trade({
-      primaryAccountOwner,
-      primaryAccountId: primaryAccountNumber,
-      autoTrader: this.contracts.canonicalOrders.options.address,
-      inputMarketId: order.isBuy ? order.baseMarket : order.quoteMarket,
-      outputMarketId: order.isBuy ? order.quoteMarket : order.baseMarket,
-      otherAccountOwner: order.makerAccountOwner,
-      otherAccountId: order.makerAccountNumber,
-      data: hexStringToBytes(
-        this.canonicalOrders.orderToBytes(order, price, fee),
-      ),
-      amount: {
-        denomination: AmountDenomination.Par,
-        reference: AmountReference.Target,
-        value: INTEGERS.ZERO,
-      },
-    });
-  }
-
-  public refund(refundArgs: Refund): AccountOperation {
-    return this.trade({
-      primaryAccountOwner: refundArgs.primaryAccountOwner,
-      primaryAccountId: refundArgs.primaryAccountId,
-      inputMarketId: refundArgs.refundMarketId,
-      outputMarketId: refundArgs.otherMarketId,
-      otherAccountOwner: refundArgs.receiverAccountOwner,
-      otherAccountId: refundArgs.receiverAccountId,
-      amount: {
-        value: refundArgs.wei,
-        denomination: AmountDenomination.Actual,
-        reference: AmountReference.Delta,
-      },
-      data: [],
-      autoTrader: this.contracts.refunder.options.address,
-    });
-  }
-
-  public daiMigrate(migrateArgs: DaiMigrate): AccountOperation {
-    const saiMarket = new BigNumber(1);
-    const daiMarket = new BigNumber(3);
-    return this.trade({
-      primaryAccountOwner: migrateArgs.primaryAccountOwner,
-      primaryAccountId: migrateArgs.primaryAccountId,
-      inputMarketId: saiMarket,
-      outputMarketId: daiMarket,
-      otherAccountOwner: migrateArgs.userAccountOwner,
-      otherAccountId: migrateArgs.userAccountId,
-      amount: migrateArgs.amount,
-      data: [],
-      autoTrader: this.contracts.daiMigrator.options.address,
-    });
-  }
-
-  public liquidateExpiredAccount(
-    liquidate: Liquidate,
-    maxExpiry?: Integer,
-  ): AccountOperation {
-    return this.liquidateExpiredAccountInternal(
-      liquidate,
-      maxExpiry || INTEGERS.ONES_31,
-      this.contracts.expiry.options.address,
-    );
-  }
-
   public liquidateExpiredAccountV2(
     liquidate: Liquidate,
     maxExpiry?: Integer,
@@ -569,35 +243,6 @@ export class AccountOperation {
     return this.liquidateExpiredAccountInternal(
       liquidate,
       maxExpiry || INTEGERS.ONES_31,
-      this.contracts.expiryV2.options.address,
-    );
-  }
-
-  public fullyLiquidateExpiredAccount(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    expiredAccountOwner: address,
-    expiredAccountNumber: Integer,
-    expiredMarket: Integer,
-    expiryTimestamp: Integer,
-    blockTimestamp: Integer,
-    weis: Integer[],
-    prices: Integer[],
-    spreadPremiums: Integer[],
-    collateralPreferences: Integer[],
-  ): AccountOperation {
-    return this.fullyLiquidateExpiredAccountInternal(
-      primaryAccountOwner,
-      primaryAccountNumber,
-      expiredAccountOwner,
-      expiredAccountNumber,
-      expiredMarket,
-      expiryTimestamp,
-      blockTimestamp,
-      weis,
-      prices,
-      spreadPremiums,
-      collateralPreferences,
       this.contracts.expiry.options.address,
     );
   }
@@ -627,7 +272,7 @@ export class AccountOperation {
       prices,
       spreadPremiums,
       collateralPreferences,
-      this.contracts.expiryV2.options.address,
+      this.contracts.expiry.options.address,
     );
   }
 
@@ -664,9 +309,9 @@ export class AccountOperation {
         action.secondaryAccountOwner === ADDRESSES.ZERO
           ? 0
           : this.getAccountId(
-              action.secondaryAccountOwner,
-              action.secondaryAccountNumber,
-            );
+            action.secondaryAccountOwner,
+            action.secondaryAccountNumber,
+          );
 
       this.addActionArgs(
         {
@@ -713,7 +358,7 @@ export class AccountOperation {
       );
     }
 
-    function actionArgsToAction(action: ActionArgs): Action {
+    const actionArgsToAction = (action: ActionArgs): Action => {
       const secondaryAccount: AccountInfo =
         action.actionType === ActionType.Transfer ||
         action.actionType === ActionType.Trade ||
@@ -741,7 +386,7 @@ export class AccountOperation {
         otherAddress: action.otherAddress,
         data: bytesToHexString(action.data),
       };
-    }
+    };
 
     const actions: Action[] = this.actions.map(actionArgsToAction.bind(this));
 
@@ -774,7 +419,7 @@ export class AccountOperation {
 
       switch (this.proxy) {
         case ProxyType.None:
-          method = this.contracts.soloMargin.methods.operate(
+          method = this.contracts.dolomiteMargin.methods.operate(
             this.accounts,
             this.actions,
           );
@@ -784,8 +429,8 @@ export class AccountOperation {
             this.accounts,
             this.actions,
             this.sendEthTo ||
-              (options && options.from) ||
-              this.contracts.payableProxy.options.from,
+            (options && options.from) ||
+            this.contracts.payableProxy.options.from,
           );
           break;
         case ProxyType.Signed:
@@ -796,6 +441,7 @@ export class AccountOperation {
           );
           break;
         default:
+          // noinspection ExceptionCaughtLocallyJS
           throw new Error(`Invalid proxy type: ${this.proxy}`);
       }
 
@@ -873,14 +519,16 @@ export class AccountOperation {
 
       // get the relative value of each market
       const rampAdjustment = BigNumber.min(
-        blockTimestamp.minus(expiryTimestamp).div(expiryRampTime),
+        blockTimestamp.minus(expiryTimestamp)
+          .div(expiryRampTime),
         INTEGERS.ONE,
       );
       const spread = defaultSpread
         .times(heldSpreadMult)
         .times(owedSpreadMult)
         .plus(1);
-      const heldValue = heldWei.times(heldPrice).abs();
+      const heldValue = heldWei.times(heldPrice)
+        .abs();
       const owedValue = owedWei
         .times(owedPrice)
         .times(rampAdjustment)
@@ -939,73 +587,6 @@ export class AccountOperation {
 
   // ============ Private Helper Functions ============
 
-  /**
-   * Internal logic for filling limit orders (either signed or pre-approved orders)
-   */
-  private fillLimitOrderInternal(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: LimitOrder,
-    weiAmount: Integer,
-    denotedInMakerAmount: boolean,
-    isSignedOrder: boolean,
-  ): AccountOperation {
-    const dataString = isSignedOrder
-      ? this.limitOrders.signedOrderToBytes(order as SignedLimitOrder)
-      : this.limitOrders.unsignedOrderToBytes(order);
-    const amount = weiAmount.abs().times(denotedInMakerAmount ? -1 : 1);
-    return this.trade({
-      primaryAccountOwner,
-      primaryAccountId: primaryAccountNumber,
-      autoTrader: this.contracts.limitOrders.options.address,
-      inputMarketId: denotedInMakerAmount
-        ? order.makerMarket
-        : order.takerMarket,
-      outputMarketId: denotedInMakerAmount
-        ? order.takerMarket
-        : order.makerMarket,
-      otherAccountOwner: order.makerAccountOwner,
-      otherAccountId: order.makerAccountNumber,
-      amount: {
-        denomination: AmountDenomination.Wei,
-        reference: AmountReference.Delta,
-        value: amount,
-      },
-      data: hexStringToBytes(dataString),
-    });
-  }
-
-  /**
-   * Internal logic for filling stop-limit orders (either signed or pre-approved orders)
-   */
-  private fillStopLimitOrderInternal(
-    primaryAccountOwner: address,
-    primaryAccountNumber: Integer,
-    order: StopLimitOrder,
-    amount: Amount,
-    denotedInMakerAmount: boolean,
-    isSignedOrder: boolean,
-  ): AccountOperation {
-    const dataString = isSignedOrder
-      ? this.stopLimitOrders.signedOrderToBytes(order as SignedStopLimitOrder)
-      : this.stopLimitOrders.unsignedOrderToBytes(order);
-    return this.trade({
-      amount,
-      primaryAccountOwner,
-      primaryAccountId: primaryAccountNumber,
-      autoTrader: this.contracts.stopLimitOrders.options.address,
-      inputMarketId: denotedInMakerAmount
-        ? order.makerMarket
-        : order.takerMarket,
-      outputMarketId: denotedInMakerAmount
-        ? order.takerMarket
-        : order.makerMarket,
-      otherAccountOwner: order.makerAccountOwner,
-      otherAccountId: order.makerAccountNumber,
-      data: hexStringToBytes(dataString),
-    });
-  }
-
   private exchange(
     exchange: Exchange,
     actionType: ActionType,
@@ -1044,17 +625,18 @@ export class AccountOperation {
 
     const amount = args.amount
       ? {
-          sign: !args.amount.value.isNegative(),
-          denomination: args.amount.denomination,
-          ref: args.amount.reference,
-          value: args.amount.value.abs().toFixed(0),
-        }
+        sign: !args.amount.value.isNegative(),
+        denomination: args.amount.denomination,
+        ref: args.amount.reference,
+        value: args.amount.value.abs()
+          .toFixed(0),
+      }
       : {
-          sign: false,
-          denomination: 0,
-          ref: 0,
-          value: 0,
-        };
+        sign: false,
+        denomination: 0,
+        ref: 0,
+        value: 0,
+      };
 
     const actionArgs: ActionArgs = {
       amount,
@@ -1129,7 +711,8 @@ export class AccountOperation {
       if (auth.startIndex.gt(actionIndex)) {
         result.push({
           ...emptyAuth,
-          numActions: auth.startIndex.minus(actionIndex).toFixed(0),
+          numActions: auth.startIndex.minus(actionIndex)
+            .toFixed(0),
         });
       }
 

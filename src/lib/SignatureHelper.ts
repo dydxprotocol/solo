@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import Web3 from 'web3';
 import { stripHexPrefix } from './BytesHelper';
-import { address } from '../../src/types';
+import { address } from '../types';
 
 export enum SIGNATURE_TYPES {
   NO_PREPEND = 0,

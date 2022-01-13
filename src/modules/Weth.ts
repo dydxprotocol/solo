@@ -20,7 +20,7 @@ export class Weth {
     this.weth = contracts.weth;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.weth.options.address;
   }
 
@@ -96,11 +96,11 @@ export class Weth {
     return this.token.getDecimals(this.weth.options.address, options);
   }
 
-  public async getSoloAllowance(
+  public async getDolomiteMarginAllowance(
     ownerAddress: address,
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    return this.token.getSoloAllowance(
+    return this.token.getDolomiteMarginAllowance(
       this.weth.options.address,
       ownerAddress,
       options,
@@ -122,12 +122,12 @@ export class Weth {
     );
   }
 
-  public async setSolollowance(
+  public async setDolomiteMarginAllowance(
     ownerAddress: address,
     amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.setSolollowance(
+    return this.token.setDolomiteMarginllowance(
       this.weth.options.address,
       ownerAddress,
       amount,
@@ -148,22 +148,22 @@ export class Weth {
     );
   }
 
-  public async setMaximumSoloAllowance(
+  public async setMaximumDolomiteMarginAllowance(
     ownerAddress: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.setMaximumSoloAllowance(
+    return this.token.setMaximumDolomiteMarginAllowance(
       this.weth.options.address,
       ownerAddress,
       options,
     );
   }
 
-  public async unsetSoloAllowance(
+  public async unsetDolomiteMarginAllowance(
     ownerAddress: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.unsetSoloAllowance(
+    return this.token.unsetDolomiteMarginAllowance(
       this.weth.options.address,
       ownerAddress,
       options,

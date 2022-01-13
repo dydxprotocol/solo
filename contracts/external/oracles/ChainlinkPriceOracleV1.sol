@@ -19,10 +19,13 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+
 import "../../protocol/interfaces/IPriceOracle.sol";
 import "../../protocol/lib/Monetary.sol";
+import "../../protocol/lib/Require.sol";
+
 import "../interfaces/IChainlinkAggregator.sol";
 
 
@@ -33,8 +36,9 @@ import "../interfaces/IChainlinkAggregator.sol";
  * An implementation of the dYdX IPriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
 contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
-
     using SafeMath for uint;
+
+    bytes32 private constant FILE = "ChainlinkPriceOracleV1";
 
     event TokenInsertedOrUpdated(
         address indexed token,
@@ -71,21 +75,22 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         address[] memory tokenPairs,
         uint8[] memory aggregatorDecimals
     ) public {
+        // can't use Require.that because it causes the compiler to hang for some reason
         require(
             tokens.length == chainlinkAggregators.length,
-            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_AGGREGATORS"
+            "ChainlinkPriceOracleV1: invalid aggregators length"
         );
         require(
             chainlinkAggregators.length == tokenDecimals.length,
-            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_TOKEN_DECIMALS"
+            "ChainlinkPriceOracleV1: invalid token decimals length"
         );
         require(
             tokenDecimals.length == tokenPairs.length,
-            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_TOKEN_PAIRS"
+            "ChainlinkPriceOracleV1: invalid token pairs length"
         );
         require(
             tokenPairs.length == aggregatorDecimals.length,
-            "ChainlinkPriceOracleV1::constructor: INVALID_LENGTH_AGGREGATOR_DECIMALS"
+            "ChainlinkPriceOracleV1: invalid aggregator decimals length"
         );
 
         for (uint i = 0; i < tokens.length; i++) {
@@ -108,25 +113,13 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         uint8 aggregatorDecimals,
         address tokenPair
     ) public onlyOwner {
-        _insertOrUpdateOracleToken(token, tokenDecimals, chainlinkAggregator, aggregatorDecimals, tokenPair);
-    }
-
-    function _insertOrUpdateOracleToken(
-        address token,
-        uint8 tokenDecimals,
-        address chainlinkAggregator,
-        uint8 aggregatorDecimals,
-        address tokenPair
-    ) internal {
-        tokenToAggregatorMap[token] = IChainlinkAggregator(chainlinkAggregator);
-        tokenToDecimalsMap[token] = tokenDecimals;
-        if (tokenPair != address(0)) {
-            // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
-            // # of decimals the aggregator's price has.
-            tokenToPairingMap[token] = tokenPair;
-            tokenToAggregatorDecimalsMap[token] = aggregatorDecimals;
-        }
-        emit TokenInsertedOrUpdated(token, chainlinkAggregator, tokenPair);
+        _insertOrUpdateOracleToken(
+            token,
+            tokenDecimals,
+            chainlinkAggregator,
+            aggregatorDecimals,
+            tokenPair
+        );
     }
 
     // ============ Public Functions ============
@@ -137,9 +130,11 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     public
     view
     returns (Monetary.Price memory) {
-        require(
+        Require.that(
             address(tokenToAggregatorMap[token]) != address(0),
-            "ChainlinkPriceOracleV1::getPrice: INVALID_TOKEN"
+            FILE,
+            "invalid token",
+            token
         );
 
         uint rawChainlinkPrice = uint(tokenToAggregatorMap[token].latestAnswer());
@@ -180,4 +175,23 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         return value.mul(priceFactor).div(valueFactor);
     }
 
+    // ============ Internal Functions ============
+
+    function _insertOrUpdateOracleToken(
+        address token,
+        uint8 tokenDecimals,
+        address chainlinkAggregator,
+        uint8 aggregatorDecimals,
+        address tokenPair
+    ) internal {
+        tokenToAggregatorMap[token] = IChainlinkAggregator(chainlinkAggregator);
+        tokenToDecimalsMap[token] = tokenDecimals;
+        if (tokenPair != address(0)) {
+            // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
+            // # of decimals the aggregator's price has.
+            tokenToPairingMap[token] = tokenPair;
+            tokenToAggregatorDecimalsMap[token] = aggregatorDecimals;
+        }
+        emit TokenInsertedOrUpdated(token, chainlinkAggregator, tokenPair);
+    }
 }

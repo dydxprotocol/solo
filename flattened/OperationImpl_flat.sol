@@ -1,35 +1,122 @@
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
 /**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
  */
 library SafeMath {
     /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b);
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
         return c;
     }
 
     /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     *
+     * _Available since v2.4.0._
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
+        require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
@@ -37,31 +124,35 @@ library SafeMath {
     }
 
     /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
-
-        return c;
-    }
-
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
         return a % b;
     }
 }
@@ -556,6 +647,25 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    function getPartialRoundHalfUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (target == 0 || numerator == 0) {
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
+        }
+        uint result = target.mul(numerator);
+        // round the denominator comparator up to ensure a fair comparison is done on the `result`'s modulo.
+        // For example, 51 / 103 == 0; 51 % 103 == 51; ((103 - 1) / 2) + 1 == 52; 51 < 52, therefore no round up
+        return result.div(denominator).add(result.mod(denominator) >= denominator.sub(1).div(2).add(1) ? 1 : 0);
+    }
+
     function to128(
         uint256 number
     )
@@ -567,7 +677,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint128"
+            "Unsafe cast to uint128",
+            number
         );
         return result;
     }
@@ -583,7 +694,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint96"
+            "Unsafe cast to uint96",
+            number
         );
         return result;
     }
@@ -599,7 +711,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint32"
+            "Unsafe cast to uint32",
+            number
         );
         return result;
     }
@@ -656,7 +769,7 @@ pragma solidity ^0.5.7;
  * @title Types
  * @author dYdX
  *
- * Library for interacting with the basic structs used in Solo
+ * Library for interacting with the basic structs used in DolomiteMargin
  */
 library Types {
     using Math for uint256;
@@ -807,6 +920,26 @@ library Types {
         return a.value == 0;
     }
 
+    function isLessThanZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value > 0 && !a.sign;
+    }
+
+    function isGreaterThanOrEqualToZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return isZero(a) || a.sign;
+    }
+
     // ============ Wei (Token Amount) ============
 
     // Individual token amount for an account
@@ -922,6 +1055,122 @@ library Types {
     }
 }
 
+// File: contracts/protocol/lib/EnumerableSet.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+library EnumerableSet {
+
+    struct Set {
+        // Storage of set values
+        uint256[] _values;
+        // Value to the index in `_values` array, plus 1 because index 0 means a value is not in the set.
+        mapping(uint256 => uint256) _valueToIndexMap;
+    }
+
+    /**
+    * @dev Add a value to a set. O(1).
+     *
+     * @return true if the value was added to the set, that is if it was not already present.
+     */
+    function add(Set storage set, uint256 value) internal returns (bool) {
+        if (!contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._valueToIndexMap[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * @return true if the value was removed from the set, that is if it was present.
+     */
+    function remove(Set storage set, uint256 value) internal returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._valueToIndexMap[value];
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                uint256 lastValue = set._values[lastIndex];
+
+                // Move the last value to the index where the value to delete is
+                set._values[toDeleteIndex] = lastValue;
+                // Update the index for the moved value
+                set._valueToIndexMap[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
+            }
+
+            // Delete the slot where the moved value was stored, which is the last index
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._valueToIndexMap[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(Set storage set, uint256 value) internal view returns (bool) {
+        return set._valueToIndexMap[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(Set storage set) internal view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(Set storage set) internal view returns (uint256[] memory) {
+        return set._values;
+    }
+
+}
+
 // File: contracts/protocol/lib/Account.sol
 
 /*
@@ -943,6 +1192,7 @@ library Types {
 */
 
 pragma solidity ^0.5.7;
+
 
 
 
@@ -980,8 +1230,10 @@ library Account {
 
     // The complete storage for any account
     struct Storage {
-        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
         Status status;
+        uint32 numberOfMarketsWithBorrow;
+        EnumerableSet.Set marketsWithNonZeroBalanceSet;
+        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
     }
 
     // ============ Library Functions ============
@@ -1027,7 +1279,7 @@ pragma solidity ^0.5.7;
  * @title IAutoTrader
  * @author dYdX
  *
- * Interface that Auto-Traders for Solo must implement in order to approve trades.
+ * Interface that Auto-Traders for DolomiteMargin must implement in order to approve trades.
  */
 contract IAutoTrader {
 
@@ -1090,7 +1342,7 @@ pragma solidity ^0.5.7;
  * @title ICallee
  * @author dYdX
  *
- * Interface that Callees for Solo must implement in order to ingest data.
+ * Interface that Callees for DolomiteMargin must implement in order to ingest data.
  */
 contract ICallee {
 
@@ -1099,7 +1351,7 @@ contract ICallee {
     /**
      * Allows users to send this contract arbitrary data.
      *
-     * @param  sender       The msg.sender to Solo
+     * @param  sender       The msg.sender to DolomiteMargin
      * @param  accountInfo  The account from which the data is being sent
      * @param  data         Arbitrary data given by the sender
      */
@@ -1177,7 +1429,7 @@ library Actions {
     // ============ Structs ============
 
     /*
-     * Arguments that are passed to Solo in an ordered list as part of a single operation.
+     * Arguments that are passed to DolomiteMargin in an ordered list as part of a single operation.
      * Each ActionArgs has an actionType which specifies which action struct that this data will be
      * parsed into before being processed.
      */
@@ -1195,7 +1447,7 @@ library Actions {
     // ============ Action Types ============
 
     /*
-     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
+     * Moves tokens from an address to DolomiteMargin. Can either repay a borrow or provide additional supply.
      */
     struct DepositArgs {
         Types.AssetAmount amount;
@@ -1205,7 +1457,7 @@ library Actions {
     }
 
     /*
-     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
+     * Moves tokens from DolomiteMargin to another address. Can either borrow tokens or reduce the amount
      * previously supplied.
      */
     struct WithdrawArgs {
@@ -1218,7 +1470,7 @@ library Actions {
     /*
      * Transfers balance between two accounts. The msg.sender must be an operator for both accounts.
      * The amount field applies to accountOne.
-     * This action does not require any token movement since the trade is done internally to Solo.
+     * This action does not require any token movement since the trade is done internally to DolomiteMargin.
      */
     struct TransferArgs {
         Types.AssetAmount amount;
@@ -1261,7 +1513,7 @@ library Actions {
      * which it is trading on-behalf-of). The amount field applies to the makerAccount and the
      * inputMarket. This proposed change to the makerAccount is passed to the AutoTrader which will
      * quote a change for the makerAccount in the outputMarket (or will disallow the trade).
-     * This action does not require any token movement since the trade is done internally to Solo.
+     * This action does not require any token movement since the trade is done internally to DolomiteMargin.
      */
     struct TradeArgs {
         Types.AssetAmount amount;
@@ -1295,10 +1547,10 @@ library Actions {
     }
 
     /*
-     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances
-     * remaining. The arbitrageur pays back the negative asset (owedMarket) of the vaporAccount in
-     * exchange for a collateral asset (heldMarket) at a favorable spread. However, since the
-     * liquidAccount has no collateral assets, the collateral must come from Solo's excess tokens.
+     * Similar to liquidate, but vaporAccounts are accounts that have only negative balances remaining. The arbitrageur
+     * pays back the negative asset (owedMarket) of the vaporAccount in exchange for a collateral asset (heldMarket) at
+     * a favorable spread. However, since the liquidAccount has no collateral assets, the collateral must come from
+     * DolomiteMargin's excess tokens.
      */
     struct VaporizeArgs {
         Types.AssetAmount amount;
@@ -1374,7 +1626,6 @@ library Actions {
         pure
         returns (DepositArgs memory)
     {
-        assert(args.actionType == ActionType.Deposit);
         return DepositArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -1391,7 +1642,6 @@ library Actions {
         pure
         returns (WithdrawArgs memory)
     {
-        assert(args.actionType == ActionType.Withdraw);
         return WithdrawArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -1408,7 +1658,6 @@ library Actions {
         pure
         returns (TransferArgs memory)
     {
-        assert(args.actionType == ActionType.Transfer);
         return TransferArgs({
             amount: args.amount,
             accountOne: accounts[args.accountId],
@@ -1425,7 +1674,6 @@ library Actions {
         pure
         returns (BuyArgs memory)
     {
-        assert(args.actionType == ActionType.Buy);
         return BuyArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -1444,7 +1692,6 @@ library Actions {
         pure
         returns (SellArgs memory)
     {
-        assert(args.actionType == ActionType.Sell);
         return SellArgs({
             amount: args.amount,
             account: accounts[args.accountId],
@@ -1463,7 +1710,6 @@ library Actions {
         pure
         returns (TradeArgs memory)
     {
-        assert(args.actionType == ActionType.Trade);
         return TradeArgs({
             amount: args.amount,
             takerAccount: accounts[args.accountId],
@@ -1483,7 +1729,6 @@ library Actions {
         pure
         returns (LiquidateArgs memory)
     {
-        assert(args.actionType == ActionType.Liquidate);
         return LiquidateArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
@@ -1501,7 +1746,6 @@ library Actions {
         pure
         returns (VaporizeArgs memory)
     {
-        assert(args.actionType == ActionType.Vaporize);
         return VaporizeArgs({
             amount: args.amount,
             solidAccount: accounts[args.accountId],
@@ -1519,7 +1763,6 @@ library Actions {
         pure
         returns (CallArgs memory)
     {
-        assert(args.actionType == ActionType.Call);
         return CallArgs({
             account: accounts[args.accountId],
             callee: args.otherAddress,
@@ -1598,6 +1841,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Cache
  * @author dYdX
@@ -1605,11 +1849,18 @@ pragma solidity ^0.5.7;
  * Library for caching information about markets
  */
 library Cache {
-    using Cache for MarketCache;
+
+    // ============ Constants ============
+
+    bytes32 internal constant FILE = "Cache";
+    uint internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
     struct MarketInfo {
+        uint marketId;
+        address token;
         bool isClosing;
         uint128 borrowPar;
         Monetary.Price price;
@@ -1617,6 +1868,8 @@ library Cache {
 
     struct MarketCache {
         MarketInfo[] markets;
+        uint256[] marketBitmaps;
+        uint256 marketsLength;
     }
 
     // ============ Setter Functions ============
@@ -1632,7 +1885,9 @@ library Cache {
         returns (MarketCache memory)
     {
         return MarketCache({
-            markets: new MarketInfo[](numMarkets)
+            markets: new MarketInfo[](0),
+            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
+            marketsLength: 0
         });
     }
 
@@ -1656,41 +1911,162 @@ library Cache {
         pure
         returns (bool)
     {
-        return cache.markets[marketId].price.value != 0;
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
+        return bit > 0;
     }
 
-    function getIsClosing(
+    function get(
         MarketCache memory cache,
         uint256 marketId
     )
         internal
         pure
-        returns (bool)
+        returns (MarketInfo memory)
     {
-        return cache.markets[marketId].isClosing;
+        Require.that(
+            cache.markets.length > 0,
+            FILE,
+            "not initialized"
+        );
+        return _getInternal(
+            cache.markets,
+            0,
+            cache.marketsLength,
+            marketId
+        );
     }
 
-    function getPrice(
+    function set(
         MarketCache memory cache,
         uint256 marketId
     )
         internal
         pure
-        returns (Monetary.Price memory)
     {
-        return cache.markets[marketId].price;
+        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
+        Require.that(
+            cache.markets.length == 0,
+            FILE,
+            "already initialized"
+        );
+
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
+
+        cache.marketsLength += 1;
     }
 
-    function getBorrowPar(
+    function getAtIndex(
         MarketCache memory cache,
-        uint256 marketId
+        uint256 index
     )
         internal
         pure
-        returns (uint128)
+        returns (MarketInfo memory)
     {
-        return cache.markets[marketId].borrowPar;
+        Require.that(
+            index < cache.markets.length,
+            FILE,
+            "invalid index",
+            index,
+            cache.markets.length
+        );
+        return cache.markets[index];
     }
+
+    // solium-disable security/no-assign-params
+    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
+        // gas usage peaks at 350 per call
+
+        uint lsb = 255;
+
+        if (x & uint128(-1) > 0) {
+            lsb -= 128;
+        } else {
+            x >>= 128;
+        }
+
+        if (x & uint64(-1) > 0) {
+            lsb -= 64;
+        } else {
+            x >>= 64;
+        }
+
+        if (x & uint32(-1) > 0) {
+            lsb -= 32;
+        } else {
+            x >>= 32;
+        }
+
+        if (x & uint16(-1) > 0) {
+            lsb -= 16;
+        } else {
+            x >>= 16;
+        }
+
+        if (x & uint8(-1) > 0) {
+            lsb -= 8;
+        } else {
+            x >>= 8;
+        }
+
+        if (x & 0xf > 0) {
+            lsb -= 4;
+        } else {
+            x >>= 4;
+        }
+
+        if (x & 0x3 > 0) {
+            lsb -= 2;
+        } else {
+            x >>= 2;
+        }
+
+        if (x & 0x1 > 0) {
+            lsb -= 1;
+        }
+
+        // solium-enable security/no-assign-params
+        return lsb;
+    }
+
+    // ============ Private Functions ============
+
+    function _getInternal(
+        MarketInfo[] memory data,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
+            revert("Cache: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = data[mid].marketId;
+        if (marketId < midMarketId) {
+            return _getInternal(
+                data,
+                beginInclusive,
+                mid,
+                marketId
+            );
+        } else if (marketId > midMarketId) {
+            return _getInternal(
+                data,
+                mid + 1,
+                endExclusive,
+                marketId
+            );
+        } else {
+            return data[mid];
+        }
+    }
+
 }
 
 // File: contracts/protocol/lib/Decimal.sol
@@ -1855,7 +2231,7 @@ pragma solidity ^0.5.7;
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and interest indexes of Solo
+ * Library for managing the interest rate and interest indexes of DolomiteMargin
  */
 library Interest {
     using Math for uint256;
@@ -1958,7 +2334,7 @@ library Interest {
         if (input.sign) {
             return Types.Wei({
                 sign: true,
-                value: inputValue.getPartial(index.supply, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.supply, BASE)
             });
         } else {
             return Types.Wei({
@@ -1982,7 +2358,7 @@ library Interest {
         if (input.sign) {
             return Types.Par({
                 sign: true,
-                value: input.value.getPartial(BASE, index.supply).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.supply).to128()
             });
         } else {
             return Types.Par({
@@ -2018,7 +2394,86 @@ library Interest {
     }
 }
 
-// File: contracts/protocol/interfaces/IERC20.sol
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// File: contracts/protocol/interfaces/IERC20Detailed.sol
 
 /*
 
@@ -2040,6 +2495,8 @@ library Interest {
 
 pragma solidity ^0.5.7;
 
+
+
 /**
  * @title IERC20
  * @author dYdX
@@ -2048,76 +2505,13 @@ pragma solidity ^0.5.7;
  * that we don't automatically revert when calling non-compliant tokens that have no return value for
  * transfer(), transferFrom(), or approve().
  */
-interface IERC20 {
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 value
-    );
+contract IERC20Detailed is IERC20 {
 
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    function name() external view returns (string memory);
 
-    function totalSupply(
-    )
-    external
-    view
-    returns (uint256);
+    function symbol() external view returns (string memory);
 
-    function balanceOf(
-        address who
-    )
-    external
-    view
-    returns (uint256);
-
-    function allowance(
-        address owner,
-        address spender
-    )
-    external
-    view
-    returns (uint256);
-
-    function transfer(
-        address to,
-        uint256 value
-    )
-    external
-    returns (bool);
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    )
-    external
-    returns (bool);
-
-    function approve(
-        address spender,
-        uint256 value
-    )
-    external
-    returns (bool);
-
-    function name()
-    external
-    view
-    returns (string memory);
-
-    function symbol()
-    external
-    view
-    returns (string memory);
-
-    function decimals()
-    external
-    view
-    returns (uint8);
+    function decimals() external view returns (uint8);
 }
 
 // File: contracts/protocol/lib/Token.sol
@@ -2144,7 +2538,6 @@ pragma solidity ^0.5.7;
 
 
 
-
 /**
  * @title Token
  * @author dYdX
@@ -2155,63 +2548,7 @@ pragma solidity ^0.5.7;
  */
 library Token {
 
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Token";
-
     // ============ Library Functions ============
-
-    function balanceOf(
-        address token,
-        address owner
-    )
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(token).balanceOf(owner);
-    }
-
-    function allowance(
-        address token,
-        address owner,
-        address spender
-    )
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(token).allowance(owner, spender);
-    }
-
-    function approve(
-        address token,
-        address spender,
-        uint256 amount
-    )
-        internal
-    {
-        IERC20(token).approve(spender, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "Approve failed"
-        );
-    }
-
-    function approveMax(
-        address token,
-        address spender
-    )
-        internal
-    {
-        approve(
-            token,
-            spender,
-            uint256(-1)
-        );
-    }
 
     function transfer(
         address token,
@@ -2224,12 +2561,10 @@ library Token {
             return;
         }
 
-        IERC20(token).transfer(to, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "Transfer failed"
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20Detailed(token).transfer.selector, to, amount),
+            "Token: transfer failed"
         );
     }
 
@@ -2245,54 +2580,36 @@ library Token {
             return;
         }
 
-        IERC20(token).transferFrom(from, to, amount);
-
-        Require.that(
-            checkSuccess(),
-            FILE,
-            "TransferFrom failed"
+        // solium-disable arg-overflow
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20Detailed(token).transferFrom.selector, from, to, amount),
+            "Token: transferFrom failed"
         );
+        // solium-enable arg-overflow
     }
 
     // ============ Private Functions ============
 
-    /**
-     * Check the return value of the previous function up to 32 bytes. Return true if the previous
-     * function returned 0 bytes or 32 bytes that are not all-zero.
-     */
-    function checkSuccess(
-    )
-        private
-        pure
-        returns (bool)
-    {
-        uint256 returnValue = 0;
+    function _callOptionalReturn(address token, bytes memory data, string memory error) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
 
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            // check number of bytes returned from last function call
-            switch returndatasize
+        // A Solidity high level call has three parts:
+        // 1. The target address is checked to contain contract code. Not needed since tokens are manually added
+        // 2. The call itself is made, and success asserted
+        // 3. The return value is decoded, which in turn checks the size of the returned data.
 
-            // no bytes returned: assume success
-            case 0x0 {
-                returnValue := 1
-            }
+        // solium-disable-next-line security/no-low-level-calls
+        (bool success, bytes memory returnData) = token.call(data);
+        require(success, error);
 
-            // 32 bytes returned: check if non-zero
-            case 0x20 {
-                // copy 32 bytes into scratch space
-                returndatacopy(0x0, 0x0, 0x20)
-
-                // load those bytes into returnValue
-                returnValue := mload(0x0)
-            }
-
-            // not sure what was returned: don't mark as success
-            default { }
+        if (returnData.length > 0) {
+            // Return data is optional
+            require(abi.decode(returnData, (bool)), error);
         }
-
-        return returnValue != 0;
     }
+
 }
 
 // File: contracts/protocol/interfaces/IInterestSetter.sol
@@ -2323,7 +2640,7 @@ pragma solidity ^0.5.7;
  * @title IInterestSetter
  * @author dYdX
  *
- * Interface that Interest Setters for Solo must implement in order to report interest rates.
+ * Interface that Interest Setters for DolomiteMargin must implement in order to report interest rates.
  */
 interface IInterestSetter {
 
@@ -2375,7 +2692,7 @@ pragma solidity ^0.5.7;
  * @title IPriceOracle
  * @author dYdX
  *
- * Interface that Price Oracles for Solo must implement in order to report prices.
+ * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
  */
 contract IPriceOracle {
 
@@ -2438,11 +2755,13 @@ pragma solidity ^0.5.7;
 
 
 
+
+
 /**
  * @title Storage
  * @author dYdX
  *
- * Functions for reading, writing, and verifying state in Solo
+ * Functions for reading, writing, and verifying state in DolomiteMargin
  */
 library Storage {
     using Cache for Cache.MarketCache;
@@ -2451,10 +2770,13 @@ library Storage {
     using Types for Types.Par;
     using Types for Types.Wei;
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.Set;
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "Storage";
+    bytes32 internal constant FILE = "Storage";
+    uint256 internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -2462,6 +2784,12 @@ library Storage {
     struct Market {
         // Contract address of the associated ERC20 token
         address token;
+
+        // Whether additional borrows are allowed for this market
+        bool isClosing;
+
+        // Whether this market can be removed and its ID can be recycled and reused
+        bool isRecyclable;
 
         // Total aggregated supply and borrow amount of the entire market
         Types.TotalPar totalPar;
@@ -2489,9 +2817,6 @@ library Storage {
         // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
         // (when performing a liquidation between two markets)
         Decimal.D256 spreadPremium;
-
-        // Whether additional borrows are allowed for this market
-        bool isClosing;
     }
 
     // The global risk parameters that govern the health and security of the system
@@ -2525,7 +2850,7 @@ library Storage {
         uint128 minBorrowedValueMax;
     }
 
-    // The entire storage state of Solo
+    // The entire storage state of DolomiteMargin
     struct State {
         // number of markets
         uint256 numMarkets;
@@ -2533,6 +2858,7 @@ library Storage {
         // marketId => Market
         mapping (uint256 => Market) markets;
         mapping (address => uint256) tokenToMarketId;
+        mapping(uint256 => uint256) recycledMarketIds;
 
         // owner => account number => Account
         mapping (address => mapping (uint256 => Account.Storage)) accounts;
@@ -2600,7 +2926,7 @@ library Storage {
 
         Types.Wei memory balanceWei = Types.Wei({
             sign: true,
-            value: Token.balanceOf(token, address(this))
+            value: IERC20Detailed(token).balanceOf(address(this))
         });
 
         (
@@ -2652,6 +2978,39 @@ library Storage {
 
         Interest.Index memory index = state.getIndex(marketId);
         return Interest.parToWei(par, index);
+    }
+
+    function getMarketsWithBalancesSet(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (EnumerableSet.Set storage)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet;
+    }
+
+    function getMarketsWithBalances(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256[] memory)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
+    }
+
+    function getNumberOfMarketsWithBorrow(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256)
+    {
+        return state.accounts[account.owner][account.number].numberOfMarketsWithBorrow;
     }
 
     function getLiquidationSpreadForPair(
@@ -2716,14 +3075,15 @@ library Storage {
 
     function fetchPrice(
         Storage.State storage state,
-        uint256 marketId
+        uint256 marketId,
+        address token
     )
         internal
         view
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(token);
         Require.that(
             price.value != 0,
             FILE,
@@ -2747,21 +3107,17 @@ library Storage {
         Monetary.Value memory borrowValue;
 
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-
-            Types.Wei memory userWei = state.getWei(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Wei memory userWei = state.getWei(account, cache.getAtIndex(i).marketId);
 
             if (userWei.isZero()) {
                 continue;
             }
 
-            uint256 assetValue = userWei.value.mul(cache.getPrice(m).value);
+            uint256 assetValue = userWei.value.mul(cache.getAtIndex(i).price.value);
             Decimal.D256 memory adjust = Decimal.one();
             if (adjustForLiquidity) {
-                adjust = Decimal.onePlus(state.markets[m].marginPremium);
+                adjust = Decimal.onePlus(state.markets[cache.getAtIndex(i).marketId].marginPremium);
             }
 
             if (userWei.sign) {
@@ -2784,6 +3140,11 @@ library Storage {
         view
         returns (bool)
     {
+        if (state.getNumberOfMarketsWithBorrow(account) == 0) {
+            // The user does not have a balance with a borrow amount, so they must be collateralized
+            return true;
+        }
+
         // get account values (adjusted for liquidity)
         (
             Monetary.Value memory supplyValue,
@@ -2800,8 +3161,7 @@ library Storage {
                 FILE,
                 "Borrow value too low",
                 account.owner,
-                account.number,
-                borrowValue.value
+                account.number
             );
         }
 
@@ -2936,8 +3296,7 @@ library Storage {
             FILE,
             "Owed balance cannot be positive",
             account.owner,
-            account.number,
-            marketId
+            account.number
         );
 
         (
@@ -2960,8 +3319,7 @@ library Storage {
             FILE,
             "Owed balance cannot increase",
             account.owner,
-            account.number,
-            marketId
+            account.number
         );
 
         // if not paying back enough wei to repay any par, then bound wei to zero
@@ -2983,11 +3341,8 @@ library Storage {
     {
         bool hasNegative = false;
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-            Types.Par memory par = state.getPar(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Par memory par = state.getPar(account, cache.getAtIndex(i).marketId);
             if (par.isZero()) {
                 continue;
             } else if (par.sign) {
@@ -3036,6 +3391,7 @@ library Storage {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
         if (Types.equals(oldPar, newPar)) {
+            // GUARD statement
             return;
         }
 
@@ -3054,6 +3410,22 @@ library Storage {
             totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
         } else {
             totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
+        }
+
+        if (oldPar.isLessThanZero() && newPar.isGreaterThanOrEqualToZero()) {
+            // user went from borrowing to repaying or positive
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow -= 1;
+        } else if (oldPar.isGreaterThanOrEqualToZero() && newPar.isLessThanZero()) {
+            // user went from zero or positive to borrowing
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
+        }
+
+        if (newPar.isZero() && (!oldPar.isZero())) {
+            // User went from a non-zero balance to zero. Remove the market from the set.
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.remove(marketId);
+        } else if ((!newPar.isZero()) && oldPar.isZero()) {
+            // User went from zero to non-zero. Add the market to the set.
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.add(marketId);
         }
 
         state.markets[marketId].totalPar = totalPar;
@@ -3082,6 +3454,58 @@ library Storage {
             account,
             marketId,
             newPar
+        );
+    }
+
+    function initializeCache(
+        Storage.State storage state,
+        Cache.MarketCache memory cache
+    ) internal view {
+        cache.markets = new Cache.MarketInfo[](cache.marketsLength);
+        uint counter = 0;
+
+        // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
+        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
+        // Meaning, this function call is O(n) where `n` is the number of markets in the cache
+        for (uint i = 0; i < cache.marketBitmaps.length; i++) {
+            uint bitmap = cache.marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
+                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                address token = state.getToken(marketId);
+                if (state.markets[marketId].isClosing) {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: true,
+                    borrowPar: state.getTotalPar(marketId).borrow,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                } else {
+                    // don't need the borrowPar if the market is not closing
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: false,
+                    borrowPar: 0,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                }
+
+                // unset the set bit
+                bitmap = bitmap - (ONE << nextSetBit);
+            }
+            if (counter == cache.marketsLength) {
+                break;
+            }
+        }
+
+        Require.that(
+            cache.marketsLength == counter,
+            FILE,
+            "cache initialized improperly",
+            cache.marketsLength,
+            cache.markets.length
         );
     }
 }
@@ -3577,7 +4001,7 @@ pragma solidity ^0.5.7;
  * @title IExchangeWrapper
  * @author dYdX
  *
- * Interface that Exchange Wrappers for Solo must implement in order to trade ERC20 tokens.
+ * Interface that Exchange Wrappers for DolomiteMargin must implement in order to trade ERC20 tokens.
  */
 interface IExchangeWrapper {
 
@@ -3590,8 +4014,8 @@ interface IExchangeWrapper {
      *                              cannot always be trusted as it is set at the discretion of the
      *                              msg.sender)
      * @param  receiver             Address to set allowance on once the trade has completed
-     * @param  makerToken           Address of makerToken, the token to receive
-     * @param  takerToken           Address of takerToken, the token to pay
+     * @param  makerToken           Address of makerToken, the token to receive (target asset; IE path[path.length - 1])
+     * @param  takerToken           Address of takerToken, the token to pay (originator asset; IE path[0])
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
@@ -3782,7 +4206,127 @@ library Exchange {
     }
 }
 
-// File: contracts/protocol/lib/MarketCachePersister.sol
+// File: @openzeppelin/contracts/utils/Address.sol
+
+pragma solidity ^0.5.5;
+
+/**
+ * @dev Collection of functions related to the address type
+ */
+library Address {
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
+    }
+
+    /**
+     * @dev Converts an `address` into `address payable`. Note that this is
+     * simply a type cast: the actual underlying value is not changed.
+     *
+     * _Available since v2.4.0._
+     */
+    function toPayable(address account) internal pure returns (address payable) {
+        return address(uint160(account));
+    }
+
+    /**
+     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
+     * `recipient`, forwarding all available gas and reverting on errors.
+     *
+     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
+     * of certain opcodes, possibly making contracts go over the 2300 gas limit
+     * imposed by `transfer`, making them unable to receive funds via
+     * `transfer`. {sendValue} removes this limitation.
+     *
+     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].
+     *
+     * IMPORTANT: because control is transferred to `recipient`, care must be
+     * taken to not create reentrancy vulnerabilities. Consider using
+     * {ReentrancyGuard} or the
+     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
+     *
+     * _Available since v2.4.0._
+     */
+    function sendValue(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+
+        // solhint-disable-next-line avoid-call-value
+        (bool success, ) = recipient.call.value(amount)("");
+        require(success, "Address: unable to send value, recipient may have reverted");
+    }
+}
+
+// File: contracts/protocol/interfaces/ILiquidationCallback.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity >=0.5.0;
+
+
+interface ILiquidationCallback {
+
+    /**
+     * A callback function to notify the smart contract that it is being liquidated. This function is called before the
+     * new balances are set in state, so calling `getAccountPar/Wei` will return this liquidated account's balance
+     * before `heldDeltaWei` or `owedDeltaWei` are applied.
+     *
+     * @param accountNumber The account number being liquidated
+     * @param heldMarketId  The market that was positive for this account, whose collateral is being seized
+     * @param heldDeltaWei  The amount of seized collateral; always negative or 0
+     * @param owedMarketId  The borrowed balance that is being forcefully repaid
+     * @param owedDeltaWei  The amount of borrowed assets to be repaid. Always 0 or positive, since the user's balance
+     *                      is going from negative to 0.
+     */
+    function onLiquidate(
+        uint accountNumber,
+        uint heldMarketId,
+        Types.Wei calldata heldDeltaWei,
+        uint owedMarketId,
+        Types.Wei calldata owedDeltaWei
+    ) external;
+
+}
+
+// File: contracts/protocol/impl/LiquidateOrVaporizeImpl.sol
 
 /*
 
@@ -3806,32 +4350,394 @@ pragma solidity ^0.5.7;
 
 
 
-library MarketCachePersister {
+
+
+
+
+
+
+
+
+
+
+
+
+library LiquidateOrVaporizeImpl {
+    using Address for address;
     using Cache for Cache.MarketCache;
+    using SafeMath for uint256;
     using Storage for Storage.State;
+    using Types for Types.Par;
+    using Types for Types.Wei;
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "LiquidateOrVaporizeImpl";
+
+    // ============ Events ============
+
+    event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
+    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
+
+    // ============ Account Functions ============
+
+    function liquidate(
+        Storage.State storage state,
+        Actions.LiquidateArgs memory args,
+        Cache.MarketCache memory cache
+    )
+    public
+    {
+        state.requireIsGlobalOperator(msg.sender);
+
+        // verify liquidatable
+        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
+            Require.that(
+                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
+                FILE,
+                "Unliquidatable account",
+                args.liquidAccount.owner,
+                args.liquidAccount.number
+            );
+            state.setStatus(args.liquidAccount, Account.Status.Liquid);
+        }
+
+        Types.Wei memory maxHeldWei = state.getWei(
+            args.liquidAccount,
+            args.heldMarket
+        );
+
+        Require.that(
+            !maxHeldWei.isNegative(),
+            FILE,
+            "Collateral cannot be negative",
+            args.heldMarket
+        );
+
+        (
+        Types.Par memory owedPar,
+        Types.Wei memory owedWei
+        ) = state.getNewParAndDeltaWeiForLiquidation(
+            args.liquidAccount,
+            args.owedMarket,
+            args.amount
+        );
+
+        (
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPriceAdj
+        ) = _getLiquidationPrices(
+            state,
+            cache,
+            args.heldMarket,
+            args.owedMarket
+        );
+
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
+
+        // if attempting to over-borrow the held asset, bound it by the maximum
+        if (heldWei.value > maxHeldWei.value) {
+            heldWei = maxHeldWei.negative();
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
+
+            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+
+            state.setPar(
+                args.liquidAccount,
+                args.heldMarket,
+                Types.zeroPar()
+            );
+            state.setParFromDeltaWei(
+                args.liquidAccount,
+                args.owedMarket,
+                owedWei
+            );
+        } else {
+            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+
+            state.setPar(
+                args.liquidAccount,
+                args.owedMarket,
+                owedPar
+            );
+            state.setParFromDeltaWei(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei
+            );
+        }
+
+        // set the balances for the solid account
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+
+        Events.logLiquidate(
+            state,
+            args,
+            heldWei,
+            owedWei
+        );
+    }
+
+    function vaporize(
+        Storage.State storage state,
+        Actions.VaporizeArgs memory args,
+        Cache.MarketCache memory cache
+    )
+    public
+    {
+        state.requireIsOperator(args.solidAccount, msg.sender);
+
+        // verify vaporizable
+        if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
+            Require.that(
+                state.isVaporizable(args.vaporAccount, cache),
+                FILE,
+                "Unvaporizable account",
+                args.vaporAccount.owner,
+                args.vaporAccount.number
+            );
+            state.setStatus(args.vaporAccount, Account.Status.Vapor);
+        }
+
+        // First, attempt to refund using the same token
+        (
+        bool fullyRepaid,
+        Types.Wei memory excessWei
+        ) = _vaporizeUsingExcess(state, args);
+        if (fullyRepaid) {
+            Events.logVaporize(
+                state,
+                args,
+                Types.zeroWei(),
+                Types.zeroWei(),
+                excessWei
+            );
+            return;
+        }
+
+        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMarket);
+
+        Require.that(
+            !maxHeldWei.isNegative(),
+            FILE,
+            "Excess cannot be negative",
+            args.heldMarket
+        );
+
+        (
+        Types.Par memory owedPar,
+        Types.Wei memory owedWei
+        ) = state.getNewParAndDeltaWeiForLiquidation(
+            args.vaporAccount,
+            args.owedMarket,
+            args.amount
+        );
+
+        (
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
+        ) = _getLiquidationPrices(
+            state,
+            cache,
+            args.heldMarket,
+            args.owedMarket
+        );
+
+        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
+
+        // if attempting to over-borrow the held asset, bound it by the maximum
+        if (heldWei.value > maxHeldWei.value) {
+            heldWei = maxHeldWei.negative();
+            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
+
+            state.setParFromDeltaWei(
+                args.vaporAccount,
+                args.owedMarket,
+                owedWei
+            );
+        } else {
+            state.setPar(
+                args.vaporAccount,
+                args.owedMarket,
+                owedPar
+            );
+        }
+
+        // set the balances for the solid account
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        state.setParFromDeltaWei(
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+
+        Events.logVaporize(
+            state,
+            args,
+            heldWei,
+            owedWei,
+            excessWei
+        );
+    }
 
     /**
-     * Add market information (price and total borrowed par if the market is closing) to the cache.
-     * Return true if the market information did not previously exist in the cache.
+     * Attempt to vaporize an account's balance using the excess tokens in the protocol. Return a
+     * bool and a wei value. The boolean is true if and only if the balance was fully vaporized. The
+     * Wei value is how many excess tokens were used to partially or fully vaporize the account's
+     * negative balance.
      */
-    function addMarket(
-        Cache.MarketCache memory cache,
+    function _vaporizeUsingExcess(
         Storage.State storage state,
-        uint256 marketId
+        Actions.VaporizeArgs memory args
+    )
+    internal
+    returns (bool, Types.Wei memory)
+    {
+        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMarket);
+
+        // There are no excess funds, return zero
+        if (!excessWei.isPositive()) {
+            return (false, Types.zeroWei());
+        }
+
+        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
+        maxRefundWei.sign = true;
+
+        // The account is fully vaporizable using excess funds
+        if (excessWei.value >= maxRefundWei.value) {
+            state.setPar(
+                args.vaporAccount,
+                args.owedMarket,
+                Types.zeroPar()
+            );
+            return (true, maxRefundWei);
+        }
+
+        // The account is only partially vaporizable using excess funds
+        else {
+            state.setParFromDeltaWei(
+                args.vaporAccount,
+                args.owedMarket,
+                excessWei
+            );
+            return (false, excessWei);
+        }
+    }
+
+    /**
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of owedWei
+     * given heldWei and the (spread-adjusted) prices of each asset.
+     */
+    function _heldWeiToOwedWei(
+        Types.Wei memory heldWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
+    )
+    internal
+    pure
+    returns (Types.Wei memory)
+    {
+        return Types.Wei({
+        sign: true,
+        value: Math.getPartialRoundUp(heldWei.value, heldPrice.value, owedPrice.value)
+        });
+    }
+
+    /**
+     * For the purposes of liquidation or vaporization, get the value-equivalent amount of heldWei
+     * given owedWei and the (spread-adjusted) prices of each asset.
+     */
+    function _owedWeiToHeldWei(
+        Types.Wei memory owedWei,
+        Monetary.Price memory heldPrice,
+        Monetary.Price memory owedPrice
+    )
+    internal
+    pure
+    returns (Types.Wei memory)
+    {
+        return Types.Wei({
+        sign: false,
+        value: Math.getPartial(owedWei.value, owedPrice.value, heldPrice.value)
+        });
+    }
+
+    /**
+     * Return the (spread-adjusted) prices of two assets for the purposes of liquidation or
+     * vaporization.
+     */
+    function _getLiquidationPrices(
+        Storage.State storage state,
+        Cache.MarketCache memory cache,
+        uint256 heldMarketId,
+        uint256 owedMarketId
     )
     internal
     view
-    returns (bool)
+    returns (
+        Monetary.Price memory,
+        Monetary.Price memory
+    )
     {
-        if (cache.hasMarket(marketId)) {
-            return false;
+        uint256 owedPrice = cache.get(owedMarketId).price.value;
+        Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
+            heldMarketId,
+            owedMarketId
+        );
+
+        Monetary.Price memory owedPriceAdj = Monetary.Price({
+        value: owedPrice.add(Decimal.mul(owedPrice, spread))
+        });
+
+        return (cache.get(heldMarketId).price, owedPriceAdj);
+    }
+
+    function _callLiquidateCallbackIfNecessary(
+        Actions.LiquidateArgs memory args,
+        Types.Wei memory heldDeltaWei,
+        Types.Wei memory owedDeltaWei
+    ) internal {
+        if (args.liquidAccount.owner.isContract()) {
+            // solium-disable-next-line security/no-low-level-calls
+            (bool isCallSuccessful, bytes memory result) = args.liquidAccount.owner.call(
+                abi.encodeWithSelector(
+                    ILiquidationCallback(args.liquidAccount.owner).onLiquidate.selector,
+                    args.liquidAccount.number,
+                    args.heldMarket,
+                    heldDeltaWei,
+                    args.owedMarket,
+                    owedDeltaWei
+                )
+            );
+
+            if (isCallSuccessful) {
+                emit LogLiquidationCallbackSuccess(args.liquidAccount.owner, args.liquidAccount.number);
+            } else {
+                if (result.length < 68) {
+                    result = bytes("");
+                } else {
+                    // solium-disable-next-line security/no-inline-assembly
+                    assembly {
+                        result := add(result, 0x04)
+                    }
+                    result = bytes(abi.decode(result, (string)));
+                }
+                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number, string(result));
+            }
         }
-        cache.markets[marketId].price = state.fetchPrice(marketId);
-        if (state.markets[marketId].isClosing) {
-            cache.markets[marketId].isClosing = true;
-            cache.markets[marketId].borrowPar = state.getTotalPar(marketId).borrow;
-        }
-        return true;
     }
 
 }
@@ -3874,6 +4780,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title OperationImpl
  * @author dYdX
@@ -3882,7 +4789,7 @@ pragma solidity ^0.5.7;
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
-    using MarketCachePersister for Cache.MarketCache;
+    using EnumerableSet for EnumerableSet.Set;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
@@ -3939,15 +4846,14 @@ library OperationImpl {
         pure
     {
         Require.that(
-            actions.length != 0,
-            FILE,
-            "Cannot have zero actions"
-        );
-
-        Require.that(
             accounts.length != 0,
             FILE,
             "Cannot have zero accounts"
+        );
+        Require.that(
+            actions.length != 0,
+            FILE,
+            "Cannot have zero actions"
         );
 
         for (uint256 a = 0; a < accounts.length; a++) {
@@ -3956,8 +4862,8 @@ library OperationImpl {
                     !Account.equals(accounts[a], accounts[b]),
                     FILE,
                     "Cannot duplicate accounts",
-                    a,
-                    b
+                    accounts[a].owner,
+                    accounts[a].number
                 );
             }
         }
@@ -3996,7 +4902,7 @@ library OperationImpl {
                 if (accountLayout == Actions.AccountLayout.TwoPrimary) {
                     primaryAccounts[arg.otherAccountId] = true;
                 } else {
-                    assert(accountLayout == Actions.AccountLayout.PrimaryAndSecondary);
+                    // accountLayout == Actions.AccountLayout.PrimaryAndSecondary
                     Require.that(
                         !primaryAccounts[arg.otherAccountId],
                         FILE,
@@ -4019,23 +4925,18 @@ library OperationImpl {
                 );
                 _updateMarket(state, cache, arg.primaryMarketId);
                 _updateMarket(state, cache, arg.secondaryMarketId);
-            } else {
-                assert(marketLayout == Actions.MarketLayout.ZeroMarkets);
             }
         }
 
         // get any other markets for which an account has a balance
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.hasMarket(m)) {
-                continue;
-            }
-            for (uint256 a = 0; a < accounts.length; a++) {
-                if (!state.getPar(accounts[a], m).isZero()) {
-                    _updateMarket(state, cache, m);
-                    break;
-                }
+        for (uint256 a = 0; a < accounts.length; a++) {
+            uint[] memory marketIdsWithBalance = state.getMarketsWithBalances(accounts[a]);
+            for (uint256 i = 0; i < marketIdsWithBalance.length; i++) {
+                _updateMarket(state, cache, marketIdsWithBalance[i]);
             }
         }
+
+        state.initializeCache(cache);
 
         return (primaryAccounts, cache);
     }
@@ -4047,8 +4948,8 @@ library OperationImpl {
     )
         private
     {
-        bool updated = cache.addMarket(state, marketId);
-        if (updated) {
+        if (!cache.hasMarket(marketId)) {
+            cache.set(marketId);
             Events.logIndexUpdate(marketId, state.updateIndex(marketId));
         }
     }
@@ -4064,6 +4965,7 @@ library OperationImpl {
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory action = actions[i];
             Actions.ActionType actionType = action.actionType;
+
 
             if (actionType == Actions.ActionType.Deposit) {
                 _deposit(state, Actions.parseDepositArgs(accounts, action));
@@ -4084,13 +4986,13 @@ library OperationImpl {
                 _trade(state, Actions.parseTradeArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
+                // use the library to save space since this function is rarely ever called
+                LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
-            else  {
-                assert(actionType == Actions.ActionType.Call);
+            else if (actionType == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, action));
             }
         }
@@ -4106,14 +5008,32 @@ library OperationImpl {
     {
         // verify no increase in borrowPar for closing markets
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.getIsClosing(m)) {
+        for (uint256 i = 0; i < numMarkets; i++) {
+            uint256 marketId = cache.getAtIndex(i).marketId;
+            if (cache.getAtIndex(i).isClosing) {
                 Require.that(
-                    state.getTotalPar(m).borrow <= cache.getBorrowPar(m),
+                    state.getTotalPar(marketId).borrow <= cache.getAtIndex(i).borrowPar,
                     FILE,
                     "Market is closing",
-                    m
+                    marketId
                 );
+            }
+            if (state.markets[marketId].isRecyclable) {
+                // This market is recyclable. Check that only the `token` is the owner
+                for (uint256 a = 0; a < accounts.length; a++) {
+                    if (accounts[a].owner != cache.getAtIndex(i).token) {
+                        // If the owner of the recyclable token isn't the TokenProxy,
+                        // THEN check that the account doesn't have a balance for this recyclable `marketId`
+                        Require.that(
+                            !state.getMarketsWithBalancesSet(accounts[a]).contains(marketId),
+                            FILE,
+                            "invalid recyclable owner",
+                            accounts[a].owner,
+                            accounts[a].number,
+                            marketId
+                        );
+                    }
+                }
             }
         }
 
@@ -4306,8 +5226,7 @@ library OperationImpl {
             tokensReceived.value >= makerWei.value,
             FILE,
             "Buy amount less than promised",
-            tokensReceived.value,
-            makerWei.value
+            tokensReceived.value
         );
 
         state.setPar(
@@ -4424,7 +5343,8 @@ library OperationImpl {
         Require.that(
             outputWei.isZero() || inputWei.isZero() || outputWei.sign != inputWei.sign,
             FILE,
-            "Trades cannot be one-sided"
+            "Trades cannot be one-sided",
+            args.autoTrader
         );
 
         // set the balance for the maker
@@ -4459,216 +5379,6 @@ library OperationImpl {
         );
     }
 
-    function _liquidate(
-        Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Cache.MarketCache memory cache
-    )
-        private
-    {
-        state.requireIsGlobalOperator(msg.sender);
-
-        // verify liquidatable
-        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
-            Require.that(
-                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
-                FILE,
-                "Unliquidatable account",
-                args.liquidAccount.owner,
-                args.liquidAccount.number
-            );
-            state.setStatus(args.liquidAccount, Account.Status.Liquid);
-        }
-
-        Types.Wei memory maxHeldWei = state.getWei(
-            args.liquidAccount,
-            args.heldMarket
-        );
-
-        Require.that(
-            !maxHeldWei.isNegative(),
-            FILE,
-            "Collateral cannot be negative",
-            args.liquidAccount.owner,
-            args.liquidAccount.number,
-            args.heldMarket
-        );
-
-        (
-            Types.Par memory owedPar,
-            Types.Wei memory owedWei
-        ) = state.getNewParAndDeltaWeiForLiquidation(
-            args.liquidAccount,
-            args.owedMarket,
-            args.amount
-        );
-
-        (
-            Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPriceAdj
-        ) = _getLiquidationPrices(
-            state,
-            cache,
-            args.heldMarket,
-            args.owedMarket
-        );
-
-        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
-
-        // if attempting to over-borrow the held asset, bound it by the maximum
-        if (heldWei.value > maxHeldWei.value) {
-            heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
-
-            state.setPar(
-                args.liquidAccount,
-                args.heldMarket,
-                Types.zeroPar()
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.owedMarket,
-                owedWei
-            );
-        } else {
-            state.setPar(
-                args.liquidAccount,
-                args.owedMarket,
-                owedPar
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.heldMarket,
-                heldWei
-            );
-        }
-
-        // set the balances for the solid account
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-
-        Events.logLiquidate(
-            state,
-            args,
-            heldWei,
-            owedWei
-        );
-    }
-
-    function _vaporize(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args,
-        Cache.MarketCache memory cache
-    )
-        private
-    {
-        state.requireIsOperator(args.solidAccount, msg.sender);
-
-        // verify vaporizable
-        if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
-            Require.that(
-                state.isVaporizable(args.vaporAccount, cache),
-                FILE,
-                "Unvaporizable account",
-                args.vaporAccount.owner,
-                args.vaporAccount.number
-            );
-            state.setStatus(args.vaporAccount, Account.Status.Vapor);
-        }
-
-        // First, attempt to refund using the same token
-        (
-            bool fullyRepaid,
-            Types.Wei memory excessWei
-        ) = _vaporizeUsingExcess(state, args);
-        if (fullyRepaid) {
-            Events.logVaporize(
-                state,
-                args,
-                Types.zeroWei(),
-                Types.zeroWei(),
-                excessWei
-            );
-            return;
-        }
-
-        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMarket);
-
-        Require.that(
-            !maxHeldWei.isNegative(),
-            FILE,
-            "Excess cannot be negative",
-            args.heldMarket
-        );
-
-        (
-            Types.Par memory owedPar,
-            Types.Wei memory owedWei
-        ) = state.getNewParAndDeltaWeiForLiquidation(
-            args.vaporAccount,
-            args.owedMarket,
-            args.amount
-        );
-
-        (
-            Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPrice
-        ) = _getLiquidationPrices(
-            state,
-            cache,
-            args.heldMarket,
-            args.owedMarket
-        );
-
-        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
-
-        // if attempting to over-borrow the held asset, bound it by the maximum
-        if (heldWei.value > maxHeldWei.value) {
-            heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
-
-            state.setParFromDeltaWei(
-                args.vaporAccount,
-                args.owedMarket,
-                owedWei
-            );
-        } else {
-            state.setPar(
-                args.vaporAccount,
-                args.owedMarket,
-                owedPar
-            );
-        }
-
-        // set the balances for the solid account
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-
-        Events.logVaporize(
-            state,
-            args,
-            heldWei,
-            owedWei,
-            excessWei
-        );
-    }
-
     function _call(
         Storage.State storage state,
         Actions.CallArgs memory args
@@ -4686,117 +5396,4 @@ library OperationImpl {
         Events.logCall(args);
     }
 
-    // ============ Private Functions ============
-
-    /**
-     * For the purposes of liquidation or vaporization, get the value-equivalent amount of heldWei
-     * given owedWei and the (spread-adjusted) prices of each asset.
-     */
-    function _owedWeiToHeldWei(
-        Types.Wei memory owedWei,
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPrice
-    )
-        private
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: false,
-            value: Math.getPartial(owedWei.value, owedPrice.value, heldPrice.value)
-        });
-    }
-
-    /**
-     * For the purposes of liquidation or vaporization, get the value-equivalent amount of owedWei
-     * given heldWei and the (spread-adjusted) prices of each asset.
-     */
-    function _heldWeiToOwedWei(
-        Types.Wei memory heldWei,
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPrice
-    )
-        private
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: true,
-            value: Math.getPartialRoundUp(heldWei.value, heldPrice.value, owedPrice.value)
-        });
-    }
-
-    /**
-     * Attempt to vaporize an account's balance using the excess tokens in the protocol. Return a
-     * bool and a wei value. The boolean is true if and only if the balance was fully vaporized. The
-     * Wei value is how many excess tokens were used to partially or fully vaporize the account's
-     * negative balance.
-     */
-    function _vaporizeUsingExcess(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args
-    )
-        internal
-        returns (bool, Types.Wei memory)
-    {
-        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMarket);
-
-        // There are no excess funds, return zero
-        if (!excessWei.isPositive()) {
-            return (false, Types.zeroWei());
-        }
-
-        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
-        maxRefundWei.sign = true;
-
-        // The account is fully vaporizable using excess funds
-        if (excessWei.value >= maxRefundWei.value) {
-            state.setPar(
-                args.vaporAccount,
-                args.owedMarket,
-                Types.zeroPar()
-            );
-            return (true, maxRefundWei);
-        }
-
-        // The account is only partially vaporizable using excess funds
-        else {
-            state.setParFromDeltaWei(
-                args.vaporAccount,
-                args.owedMarket,
-                excessWei
-            );
-            return (false, excessWei);
-        }
-    }
-
-    /**
-     * Return the (spread-adjusted) prices of two assets for the purposes of liquidation or
-     * vaporization.
-     */
-    function _getLiquidationPrices(
-        Storage.State storage state,
-        Cache.MarketCache memory cache,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        uint256 owedPrice = cache.getPrice(owedMarketId).value;
-        Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
-            heldMarketId,
-            owedMarketId
-        );
-
-        Monetary.Price memory owedPriceAdj = Monetary.Price({
-            value: owedPrice.add(Decimal.mul(owedPrice, spread))
-        });
-
-        return (cache.getPrice(heldMarketId), owedPriceAdj);
-    }
 }

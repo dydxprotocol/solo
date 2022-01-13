@@ -1,10 +1,10 @@
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
-import { address } from '../src/types';
+import { setupMarkets } from './helpers/DolomiteMarginHelpers';
+import { address } from '../src';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let operator1: address;
 let operator2: address;
@@ -15,14 +15,14 @@ describe('Permission', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
 
-    owner = solo.getDefaultAccount();
+    owner = dolomiteMargin.getDefaultAccount();
     operator1 = accounts[6];
     operator2 = accounts[7];
     operator3 = accounts[8];
@@ -39,12 +39,12 @@ describe('Permission', () => {
   describe('setOperators', () => {
     it('Succeeds for single approve', async () => {
       await expectOperator(operator1, false);
-      const txResult = await solo.permissions.approveOperator(operator1, {
+      const txResult = await dolomiteMargin.permissions.approveOperator(operator1, {
         from: owner,
       });
       await expectOperator(operator1, true);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogOperatorSet');
@@ -54,14 +54,14 @@ describe('Permission', () => {
     });
 
     it('Succeeds for single disapprove', async () => {
-      await solo.permissions.approveOperator(operator1, { from: owner });
+      await dolomiteMargin.permissions.approveOperator(operator1, { from: owner });
       await expectOperator(operator1, true);
-      const txResult = await solo.permissions.disapproveOperator(operator1, {
+      const txResult = await dolomiteMargin.permissions.disapproveOperator(operator1, {
         from: owner,
       });
       await expectOperator(operator1, false);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
       const log = logs[0];
       expect(log.name).toEqual('LogOperatorSet');
@@ -71,7 +71,7 @@ describe('Permission', () => {
     });
 
     it('Succeeds for multiple approve/disapprove', async () => {
-      const txResult = await solo.permissions.setOperators([
+      const txResult = await dolomiteMargin.permissions.setOperators([
         { operator: operator1, trusted: true },
         {
           operator: operator2,
@@ -80,7 +80,7 @@ describe('Permission', () => {
         { operator: operator3, trusted: true },
       ]);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(3);
 
       const [log1, log2, log3] = logs;
@@ -105,7 +105,7 @@ describe('Permission', () => {
     });
 
     it('Succeeds for multiple repeated approve/disapprove', async () => {
-      const txResult = await solo.permissions.setOperators([
+      const txResult = await dolomiteMargin.permissions.setOperators([
         { operator: operator1, trusted: true },
         {
           operator: operator1,
@@ -115,7 +115,7 @@ describe('Permission', () => {
         { operator: operator2, trusted: true },
       ]);
 
-      const logs = solo.logs.parseLogs(txResult);
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(4);
 
       const [log1, log2, log3, log4] = logs;
@@ -143,16 +143,16 @@ describe('Permission', () => {
     });
 
     it('Skips logs when necessary', async () => {
-      const txResult = await solo.permissions.approveOperator(operator1, {
+      const txResult = await dolomiteMargin.permissions.approveOperator(operator1, {
         from: owner,
       });
-      const logs = solo.logs.parseLogs(txResult, { skipPermissionLogs: true });
+      const logs = dolomiteMargin.logs.parseLogs(txResult, { skipPermissionLogs: true });
       expect(logs.length).toEqual(0);
     });
   });
 });
 
 async function expectOperator(operator: address, b: boolean) {
-  const result = await solo.getters.getIsLocalOperator(owner, operator);
+  const result = await dolomiteMargin.getters.getIsLocalOperator(owner, operator);
   expect(result).toEqual(b);
 }

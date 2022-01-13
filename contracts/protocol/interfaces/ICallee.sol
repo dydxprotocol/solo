@@ -26,7 +26,7 @@ import { Account } from "../lib/Account.sol";
  * @title ICallee
  * @author dYdX
  *
- * Interface that Callees for Solo must implement in order to ingest data.
+ * Interface that Callees for DolomiteMargin must implement in order to ingest data.
  */
 contract ICallee {
 
@@ -35,7 +35,7 @@ contract ICallee {
     /**
      * Allows users to send this contract arbitrary data.
      *
-     * @param  sender       The msg.sender to Solo
+     * @param  sender       The msg.sender to DolomiteMargin
      * @param  accountInfo  The account from which the data is being sent
      * @param  data         Arbitrary data given by the sender
      */

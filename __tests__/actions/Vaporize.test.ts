@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -12,12 +12,12 @@ import {
   AmountReference,
   Integer,
   Vaporize,
-} from '../../src/types';
+} from '../../src';
 
 let vaporOwner: address;
 let solidOwner: address;
 let operator: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const vaporAccountNumber = INTEGERS.ZERO;
 const solidAccountNumber = INTEGERS.ONE;
@@ -36,10 +36,10 @@ describe('Vaporize', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    solidOwner = solo.getDefaultAccount();
+    solidOwner = dolomiteMargin.getDefaultAccount();
     vaporOwner = accounts[6];
     operator = accounts[7];
     defaultGlob = {
@@ -57,22 +57,22 @@ describe('Vaporize', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     const defaultIndex = {
       lastUpdate: INTEGERS.ZERO,
       borrow: wei.div(par),
       supply: wei.div(par),
     };
     await Promise.all([
-      solo.testing.setMarketIndex(owedMarket, defaultIndex),
-      solo.testing.setMarketIndex(heldMarket, defaultIndex),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setMarketIndex(owedMarket, defaultIndex),
+      dolomiteMargin.testing.setMarketIndex(heldMarket, defaultIndex),
+      dolomiteMargin.testing.setAccountBalance(
         vaporOwner,
         vaporAccountNumber,
         owedMarket,
         negPar,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         solidOwner,
         solidAccountNumber,
         owedMarket,
@@ -87,7 +87,7 @@ describe('Vaporize', () => {
   });
 
   it('Basic vaporize test', async () => {
-    await issueHeldTokensToSolo(wei.times(premium));
+    await issueHeldTokensToDolomiteMargin(wei.times(premium));
     await expectExcessHeldToken(wei.times(premium));
     const txResult = await expectVaporizeOkay({});
     console.log(`\tVaporize gas used: ${txResult.gasUsed}`);
@@ -100,19 +100,19 @@ describe('Vaporize', () => {
 
   it('Succeeds for events', async () => {
     await Promise.all([
-      issueHeldTokensToSolo(wei.times(premium)),
-      solo.permissions.approveOperator(operator, { from: solidOwner }),
+      issueHeldTokensToDolomiteMargin(wei.times(premium)),
+      dolomiteMargin.permissions.approveOperator(operator, { from: solidOwner }),
     ]);
     const txResult = await expectVaporizeOkay({}, { from: operator });
     const [heldIndex, owedIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(heldMarket),
-      solo.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
       expectExcessHeldToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(par.times(premium), zero),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -152,30 +152,30 @@ describe('Vaporize', () => {
   });
 
   it('Fails for unvaporizable account', async () => {
-    await solo.testing.setAccountBalance(
+    await dolomiteMargin.testing.setAccountBalance(
       vaporOwner,
       vaporAccountNumber,
       heldMarket,
       par,
     );
-    await expectVaporizeRevert({}, 'OperationImpl: Unvaporizable account');
+    await expectVaporizeRevert({}, 'LiquidateOrVaporizeImpl: Unvaporizable account');
   });
 
   it('Succeeds if enough excess owedTokens', async () => {
-    await issueOwedTokensToSolo(wei);
+    await issueOwedTokensToDolomiteMargin(wei);
     await expectExcessOwedToken(wei);
 
     const txResult = await expectVaporizeOkay({});
 
     const [heldIndex, owedIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(heldMarket),
-      solo.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(zero, par),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -217,22 +217,22 @@ describe('Vaporize', () => {
   it('Succeeds if half excess owedTokens', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      issueOwedTokensToSolo(wei.div(2)),
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      issueOwedTokensToDolomiteMargin(wei.div(2)),
     ]);
 
     const txResult = await expectVaporizeOkay({});
 
     const [heldIndex, owedIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(heldMarket),
-      solo.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
+      dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
       expectExcessHeldToken(payoutAmount.div(2)),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(par.times(premium).div(2), par.div(2)),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(4);
 
     const operationLog = logs[0];
@@ -273,7 +273,7 @@ describe('Vaporize', () => {
 
   it('Succeeds when bound by owedToken', async () => {
     const payoutAmount = wei.times(premium);
-    await issueHeldTokensToSolo(payoutAmount.times(2));
+    await issueHeldTokensToDolomiteMargin(payoutAmount.times(2));
 
     await expectVaporizeOkay({
       amount: {
@@ -292,7 +292,7 @@ describe('Vaporize', () => {
 
   it('Succeeds when bound by heldToken', async () => {
     const payoutAmount = wei.times(premium).div(2);
-    await issueHeldTokensToSolo(payoutAmount);
+    await issueHeldTokensToDolomiteMargin(payoutAmount);
 
     await expectVaporizeOkay({});
 
@@ -306,8 +306,8 @@ describe('Vaporize', () => {
   it('Succeeds for account already marked with liquidating flag', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.testing.setAccountStatus(
         vaporOwner,
         vaporAccountNumber,
         AccountStatus.Liquidating,
@@ -326,8 +326,8 @@ describe('Vaporize', () => {
   it('Succeeds for account already marked with vaporizing flag', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.testing.setAccountStatus(
         vaporOwner,
         vaporAccountNumber,
         AccountStatus.Vaporizing,
@@ -346,15 +346,15 @@ describe('Vaporize', () => {
   it('Succeeds for solid account that takes on a negative balance', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountBalance(
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.testing.setAccountBalance(
         solidOwner,
         solidAccountNumber,
         owedMarket,
         par.div(2),
       ),
       // need another positive balance so there is zero (or negative) excess owedToken
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         operator,
         solidAccountNumber,
         owedMarket,
@@ -372,15 +372,15 @@ describe('Vaporize', () => {
   it('Succeeds and sets status to Normal', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.testing.setAccountStatus(
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.testing.setAccountStatus(
         solidOwner,
         solidAccountNumber,
         AccountStatus.Liquidating,
       ),
     ]);
     await expectVaporizeOkay({});
-    const status = await solo.getters.getAccountStatus(
+    const status = await dolomiteMargin.getters.getAccountStatus(
       solidOwner,
       solidAccountNumber,
     );
@@ -390,8 +390,8 @@ describe('Vaporize', () => {
   it('Succeeds for local operator', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.permissions.approveOperator(operator, { from: solidOwner }),
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.permissions.approveOperator(operator, { from: solidOwner }),
     ]);
     await expectVaporizeOkay({}, { from: operator });
     await Promise.all([
@@ -404,8 +404,8 @@ describe('Vaporize', () => {
   it('Succeeds for global operator', async () => {
     const payoutAmount = wei.times(premium);
     await Promise.all([
-      issueHeldTokensToSolo(payoutAmount),
-      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+      issueHeldTokensToDolomiteMargin(payoutAmount),
+      dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
     ]);
     await expectVaporizeOkay({}, { from: operator });
     await Promise.all([
@@ -427,7 +427,7 @@ describe('Vaporize', () => {
 
   it('Succeeds (without effect) for zero borrow', async () => {
     const payoutAmount = wei.times(premium);
-    await issueHeldTokensToSolo(payoutAmount);
+    await issueHeldTokensToDolomiteMargin(payoutAmount);
     await expectVaporizeOkay({
       vaporMarketId: otherMarket,
     });
@@ -440,15 +440,15 @@ describe('Vaporize', () => {
 
   it('Fails for non-operator', async () => {
     const payoutAmount = wei.times(premium);
-    await issueHeldTokensToSolo(payoutAmount);
+    await issueHeldTokensToDolomiteMargin(payoutAmount);
     await expectVaporizeRevert({}, 'Storage: Unpermissioned operator', {
       from: operator,
     });
   });
 
   it('Fails if vaporizing after account used as primary', async () => {
-    await solo.permissions.approveOperator(solidOwner, { from: vaporOwner });
-    const operation = solo.operation.initiate();
+    await dolomiteMargin.permissions.approveOperator(solidOwner, { from: vaporOwner });
+    const operation = dolomiteMargin.operation.initiate();
     operation.deposit({
       primaryAccountOwner: vaporOwner,
       primaryAccountId: vaporAccountNumber,
@@ -473,7 +473,7 @@ describe('Vaporize', () => {
         vaporAccountOwner: operator,
         vaporAccountId: zero,
       },
-      'OperationImpl: Unvaporizable account',
+      'LiquidateOrVaporizeImpl: Unvaporizable account',
     );
   });
 
@@ -485,14 +485,14 @@ describe('Vaporize', () => {
   });
 
   it('Fails for negative excess heldTokens', async () => {
-    await solo.testing.setAccountBalance(
+    await dolomiteMargin.testing.setAccountBalance(
       solidOwner,
       solidAccountNumber,
       heldMarket,
       par,
     );
     await expectExcessHeldToken(negWei);
-    await expectVaporizeRevert({}, 'OperationImpl: Excess cannot be negative');
+    await expectVaporizeRevert({}, 'LiquidateOrVaporizeImpl: Excess cannot be negative');
   });
 
   it('Fails for a negative delta', async () => {
@@ -521,23 +521,23 @@ describe('Vaporize', () => {
 
 // ============ Helper Functions ============
 
-async function issueHeldTokensToSolo(amount: BigNumber) {
-  return solo.testing.tokenB.issueTo(
+async function issueHeldTokensToDolomiteMargin(amount: BigNumber) {
+  return dolomiteMargin.testing.tokenB.issueTo(
     amount,
-    solo.contracts.soloMargin.options.address,
+    dolomiteMargin.contracts.dolomiteMargin.options.address,
   );
 }
 
-async function issueOwedTokensToSolo(amount: BigNumber) {
-  return solo.testing.tokenA.issueTo(
+async function issueOwedTokensToDolomiteMargin(amount: BigNumber) {
+  return dolomiteMargin.testing.tokenA.issueTo(
     amount,
-    solo.contracts.soloMargin.options.address,
+    dolomiteMargin.contracts.dolomiteMargin.options.address,
   );
 }
 
 async function expectVaporizeOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .vaporize(combinedGlob)
     .commit(options);
@@ -555,14 +555,14 @@ async function expectSolidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(
+  const balances = await dolomiteMargin.getters.getAccountBalances(
     solidOwner,
     solidAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);
@@ -574,14 +574,14 @@ async function expectVaporPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(
+  const balances = await dolomiteMargin.getters.getAccountBalances(
     vaporOwner,
     vaporAccountNumber,
   );
-  balances.forEach((balance, i) => {
-    if (i === heldMarket.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
-    } else if (i === owedMarket.toNumber()) {
+    } else if (balance.marketId.eq(owedMarket)) {
       expect(balance.par).toEqual(expectedOwedPar);
     } else {
       expect(balance.par).toEqual(zero);
@@ -590,11 +590,11 @@ async function expectVaporPars(
 }
 
 async function expectExcessHeldToken(expected: Integer) {
-  const actual = await solo.getters.getNumExcessTokens(heldMarket);
+  const actual = await dolomiteMargin.getters.getNumExcessTokens(heldMarket);
   expect(actual).toEqual(expected);
 }
 
 async function expectExcessOwedToken(expected: Integer) {
-  const actual = await solo.getters.getNumExcessTokens(owedMarket);
+  const actual = await dolomiteMargin.getters.getNumExcessTokens(owedMarket);
   expect(actual).toEqual(expected);
 }

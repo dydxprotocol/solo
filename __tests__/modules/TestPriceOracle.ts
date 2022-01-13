@@ -5,7 +5,7 @@ import {
   ContractCallOptions,
   Integer,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 
 export class TestPriceOracle {
   private contracts: TestContracts;
@@ -14,7 +14,7 @@ export class TestPriceOracle {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testPriceOracle.options.address;
   }
 

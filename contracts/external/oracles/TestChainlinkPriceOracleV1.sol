@@ -52,7 +52,10 @@ contract TestChainlinkPriceOracleV1 is ChainlinkPriceOracleV1 {
         uint8[] memory tokenDecimals,
         address[] memory tokenPairs,
         uint8[] memory aggregatorDecimals
-    ) public ChainlinkPriceOracleV1(tokens, chainlinkAggregators, tokenDecimals, tokenPairs, aggregatorDecimals) {
+    )
+    public
+    ChainlinkPriceOracleV1(tokens, chainlinkAggregators, tokenDecimals, tokenPairs, aggregatorDecimals) {
+        // solium-disable-line no-empty-blocks
     }
 
     // ============ Admin Functions ============

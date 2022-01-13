@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../external/interfaces/IChainlinkAggregator.sol";
 
 contract TestPriceAggregator is IChainlinkAggregator, Ownable {

@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Types } from "./Types.sol";
+import { EnumerableSet } from "./EnumerableSet.sol";
 
 
 /**
@@ -56,8 +57,10 @@ library Account {
 
     // The complete storage for any account
     struct Storage {
-        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
         Status status;
+        uint32 numberOfMarketsWithBorrow;
+        EnumerableSet.Set marketsWithNonZeroBalanceSet;
+        mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
     }
 
     // ============ Library Functions ============

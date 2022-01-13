@@ -1,14 +1,14 @@
 /* eslint-disable */
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src';
 import { TestToken } from '../modules/TestToken';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let snapshotId: string;
 let admin: address;
@@ -24,46 +24,55 @@ const prices = [
   new BigNumber('1e21'),
 ];
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
 describe('AmmRebalancerProxy', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
-    owner1 = solo.getDefaultAccount();
+    owner1 = dolomiteMargin.getDefaultAccount();
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.testing.priceOracle.setPrice(
-        solo.testing.tokenA.getAddress(),
+      dolomiteMargin.testing.priceOracle.setPrice(
+        dolomiteMargin.testing.tokenA.address,
         prices[0],
       ),
-      solo.testing.priceOracle.setPrice(
-        solo.testing.tokenB.getAddress(),
+      dolomiteMargin.testing.priceOracle.setPrice(
+        dolomiteMargin.testing.tokenB.address,
         prices[1],
       ),
-      solo.testing.priceOracle.setPrice(
-        solo.testing.tokenC.getAddress(),
+      dolomiteMargin.testing.priceOracle.setPrice(
+        dolomiteMargin.testing.tokenC.address,
         prices[2],
       ),
-      solo.testing.priceOracle.setPrice(solo.weth.getAddress(), prices[3]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       setUpBasicBalances(),
       deployDolomiteLpTokens(),
       deployUniswapLpTokens(),
-      solo.permissions.approveOperator(
-        solo.contracts.ammRebalancerProxy.options.address,
+      dolomiteMargin.permissions.approveOperator(
+        dolomiteMargin.contracts.ammRebalancerProxy.options.address,
         { from: owner1 },
       ),
     ]);
-    await solo.admin.addMarket(
-      solo.weth.getAddress(),
-      solo.testing.priceOracle.getAddress(),
-      solo.testing.interestSetter.getAddress(),
+
+    // expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
+    //   .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+
+    expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
+      .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());
+
+    await dolomiteMargin.admin.addMarket(
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
 
@@ -84,64 +93,52 @@ describe('AmmRebalancerProxy', () => {
           owner1,
           parA.div(10), // 10
           parB.div(11), // 18.1818
-          solo.testing.tokenA.getAddress(),
-          solo.testing.tokenB.getAddress(),
+          dolomiteMargin.testing.tokenA.address,
+          dolomiteMargin.testing.tokenB.address,
         );
         // price is 0.5
         await addUniswapLiquidity(
           owner1,
           parA.times(1000000), // 10
           parB.times(1000000), // 20
-          solo.testing.tokenA.getAddress(),
-          solo.testing.tokenB.getAddress(),
+          dolomiteMargin.testing.tokenA.address,
+          dolomiteMargin.testing.tokenB.address,
         );
 
-        // const pair = await solo.contracts.getDolomiteAmmPairFromTokens(
-        //   solo.testing.tokenA.getAddress(),
-        //   solo.testing.tokenB.getAddress(),
-        // );
-        //
-        // const pairWeiA = await solo.getters.getAccountWei(
-        //   pair.options.address,
-        //   INTEGERS.ZERO,
-        //   new BigNumber(await getMarketId(solo.testing.tokenA)),
-        // );
-        // console.log('pairWeiA', pairWeiA.toFixed());
-
-        const accountWeiA = await solo.getters.getAccountWei(
+        const accountWeiA = await dolomiteMargin.getters.getAccountWei(
           owner1,
           INTEGERS.ZERO,
-          new BigNumber(await getMarketId(solo.testing.tokenA)),
+          new BigNumber(await getMarketId(dolomiteMargin.testing.tokenA)),
         );
-        const accountWeiB = await solo.getters.getAccountWei(
+        const accountWeiB = await dolomiteMargin.getters.getAccountWei(
           owner1,
           INTEGERS.ZERO,
-          new BigNumber(await getMarketId(solo.testing.tokenB)),
+          new BigNumber(await getMarketId(dolomiteMargin.testing.tokenB)),
         );
 
         // converge the prices of the two on ~0.5025 (0.5% away from the "real" price of 0.5)
         // true price needs to be calculated assuming the correct number of decimals, per asset
-        const txResult = await solo.ammRebalancerProxy.performRebalance(
-          [solo.testing.tokenB.getAddress(), solo.testing.tokenA.getAddress()],
+        const txResult = await dolomiteMargin.ammRebalancerProxy.performRebalance(
+          [dolomiteMargin.testing.tokenB.address, dolomiteMargin.testing.tokenA.address],
           new BigNumber('1990049'),
           new BigNumber('1000000000000000000'),
-          solo.contracts.testUniswapV2Router.options.address,
-          [solo.testing.tokenA.getAddress(), solo.testing.tokenB.getAddress()],
+          dolomiteMargin.contracts.testUniswapV2Router.options.address,
+          [dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address],
           { from: owner1 },
         );
         console.log('performRebalance gas used', txResult.gasUsed.toString());
 
-        const accountWeiANew = await solo.getters.getAccountWei(
+        const accountWeiANew = await dolomiteMargin.getters.getAccountWei(
           owner1,
           INTEGERS.ZERO,
-          new BigNumber(await getMarketId(solo.testing.tokenA)),
+          new BigNumber(await getMarketId(dolomiteMargin.testing.tokenA)),
         );
         expect(accountWeiA.lt(accountWeiANew)).toEqual(true);
         expect(accountWeiB).toEqual(
-          await solo.getters.getAccountWei(
+          await dolomiteMargin.getters.getAccountWei(
             owner1,
             INTEGERS.ZERO,
-            new BigNumber(await getMarketId(solo.testing.tokenB)),
+            new BigNumber(await getMarketId(dolomiteMargin.testing.tokenB)),
           ),
         );
 
@@ -161,7 +158,7 @@ async function addDolomiteLiquidity(
   tokenA: address,
   tokenB: address,
 ) {
-  const result = await solo.dolomiteAmmRouterProxy
+  const result = await dolomiteMargin.dolomiteAmmRouterProxy
     .addLiquidity(
       walletAddress,
       INTEGERS.ZERO,
@@ -191,18 +188,18 @@ async function addUniswapLiquidity(
   tokenA: address,
   tokenB: address,
 ) {
-  await solo.testing.tokenA.approve(
-    solo.contracts.testUniswapV2Router.options.address,
+  await dolomiteMargin.testing.tokenA.approve(
+    dolomiteMargin.contracts.testUniswapV2Router.options.address,
     INTEGERS.MAX_UINT,
     { from: walletAddress },
   );
-  await solo.testing.tokenB.approve(
-    solo.contracts.testUniswapV2Router.options.address,
+  await dolomiteMargin.testing.tokenB.approve(
+    dolomiteMargin.contracts.testUniswapV2Router.options.address,
     INTEGERS.MAX_UINT,
     { from: walletAddress },
   );
 
-  const result = await solo.testing.uniswapV2Router
+  const result = await dolomiteMargin.testing.uniswapV2Router
     .addLiquidity(
       tokenA,
       tokenB,
@@ -225,53 +222,53 @@ async function addUniswapLiquidity(
 }
 
 async function getMarketId(token: TestToken): Promise<string> {
-  return solo.contracts.soloMargin.methods
-    .getMarketIdByTokenAddress(token.getAddress())
+  return dolomiteMargin.contracts.dolomiteMargin.methods
+    .getMarketIdByTokenAddress(token.address)
     .call();
 }
 
 async function setUpBasicBalances() {
-  const marketA = new BigNumber(await getMarketId(solo.testing.tokenA));
-  const marketB = new BigNumber(await getMarketId(solo.testing.tokenB));
+  const marketA = new BigNumber(await getMarketId(dolomiteMargin.testing.tokenA));
+  const marketB = new BigNumber(await getMarketId(dolomiteMargin.testing.tokenB));
 
-  const soloMarginAddress = solo.contracts.soloMargin.options.address;
+  const dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
 
   return Promise.all([
-    solo.testing.tokenA.setBalance(owner1, parA.times(10000000)),
-    solo.testing.tokenB.setBalance(owner1, parB.times(10000000)),
-    solo.testing.tokenA.setBalance(soloMarginAddress, parA, { from: owner1 }),
-    solo.testing.tokenB.setBalance(soloMarginAddress, parB, { from: owner1 }),
-    solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),
-    solo.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketB, parB),
+    dolomiteMargin.testing.tokenA.setBalance(owner1, parA.times(10000000)),
+    dolomiteMargin.testing.tokenB.setBalance(owner1, parB.times(10000000)),
+    dolomiteMargin.testing.tokenA.setBalance(dolomiteMarginAddress, parA, { from: owner1 }),
+    dolomiteMargin.testing.tokenB.setBalance(dolomiteMarginAddress, parB, { from: owner1 }),
+    dolomiteMargin.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),
+    dolomiteMargin.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketB, parB),
   ]);
 }
 
 async function deployDolomiteLpTokens() {
-  await solo.contracts.callContractFunction(
-    solo.contracts.dolomiteAmmFactory.methods.createPair(
-      solo.testing.tokenA.getAddress(),
-      solo.testing.tokenB.getAddress(),
+  await dolomiteMargin.contracts.callContractFunction(
+    dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
+      dolomiteMargin.testing.tokenA.address,
+      dolomiteMargin.testing.tokenB.address,
     ),
   );
-  await solo.contracts.callContractFunction(
-    solo.contracts.dolomiteAmmFactory.methods.createPair(
-      solo.testing.tokenB.getAddress(),
-      solo.testing.tokenC.getAddress(),
+  await dolomiteMargin.contracts.callContractFunction(
+    dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
+      dolomiteMargin.testing.tokenB.address,
+      dolomiteMargin.testing.tokenC.address,
     ),
   );
 }
 
 async function deployUniswapLpTokens() {
-  await solo.contracts.callContractFunction(
-    solo.contracts.testUniswapV2Factory.methods.createPair(
-      solo.testing.tokenA.getAddress(),
-      solo.testing.tokenB.getAddress(),
+  await dolomiteMargin.contracts.callContractFunction(
+    dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
+      dolomiteMargin.testing.tokenA.address,
+      dolomiteMargin.testing.tokenB.address,
     ),
   );
-  await solo.contracts.callContractFunction(
-    solo.contracts.testUniswapV2Factory.methods.createPair(
-      solo.testing.tokenB.getAddress(),
-      solo.testing.tokenC.getAddress(),
+  await dolomiteMargin.contracts.callContractFunction(
+    dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
+      dolomiteMargin.testing.tokenB.address,
+      dolomiteMargin.testing.tokenC.address,
     ),
   );
 }

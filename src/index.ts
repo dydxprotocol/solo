@@ -24,6 +24,6 @@ BigNumber.config({
   DECIMAL_PLACES: 80,
 });
 
-export { Solo } from './Solo';
+export { DolomiteMargin } from './DolomiteMargin';
 export { Web3, BigNumber };
 export * from './types';

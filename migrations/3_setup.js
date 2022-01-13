@@ -39,10 +39,10 @@ const {
 // ============ Contracts ============
 
 // Base Protocol
-const SoloMargin = artifacts.require('SoloMargin');
+const DolomiteMargin = artifacts.require('DolomiteMargin');
 
 // Test Contracts
-const TestSoloMargin = artifacts.require('TestSoloMargin');
+const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenD = artifacts.require('TokenD');
@@ -77,12 +77,12 @@ async function setupProtocol(deployer, network, accounts) {
   }
 
   const [
-    soloMargin,
+    dolomiteMargin,
     tokens,
     oracles,
     setters,
   ] = await Promise.all([
-    getSoloMargin(network),
+    getDolomiteMargin(network),
     getTokens(network),
     getOracles(network),
     getSetters(network),
@@ -116,7 +116,7 @@ async function setupProtocol(deployer, network, accounts) {
   }
 
   await addMarkets(
-    soloMargin,
+    dolomiteMargin,
     tokens,
     oracles,
     setters,
@@ -124,7 +124,7 @@ async function setupProtocol(deployer, network, accounts) {
 }
 
 async function addMarkets(
-  soloMargin,
+  dolomiteMargin,
   tokens,
   priceOracles,
   interestSetters,
@@ -132,50 +132,53 @@ async function addMarkets(
   const marginPremium = { value: '0' };
   const spreadPremium = { value: '0' };
   const isClosed = false;
+  const isRecyclable = false;
 
   for (let i = 0; i < tokens.length; i += 1) {
     // eslint-disable-next-line no-await-in-loop
-    await soloMargin.ownerAddMarket(
+    await dolomiteMargin.ownerAddMarket(
       tokens[i].address,
       priceOracles[i].address,
       interestSetters[i].address,
       marginPremium,
       spreadPremium,
       isClosed,
+      isRecyclable,
     );
   }
 }
 
 // ============ Network Getter Functions ============
 
-async function getSoloMargin(network) {
+async function getDolomiteMargin(network) {
   if (isDevNetwork(network)) {
-    return TestSoloMargin.deployed();
+    return TestDolomiteMargin.deployed();
   }
-  return SoloMargin.deployed();
+  return DolomiteMargin.deployed();
 }
 
 function getTokens(network) {
   if (isMatic(network)) {
     return [
+      { address: getWethAddress(network, WETH9) },
       { address: getDaiAddress(network, TokenB) },
       { address: getMaticAddress(network, TokenD) },
       { address: getUsdcAddress(network, TokenA) },
-      { address: getWethAddress(network, WETH9) },
       { address: getLinkAddress(network, TokenF) },
     ];
-  }
-  if (isArbitrum(network)) {
+  } else if (isMaticTest(network)) {
+    return [
+      { address: getWethAddress(network, WETH9) },
+      { address: getDaiAddress(network, TokenB) },
+      { address: getMaticAddress(network, TokenD) },
+      { address: getUsdcAddress(network, TokenA) },
+    ];
+  } else if (isArbitrum(network)) {
     // TODO
     throw new Error('TODO: add tokens');
   }
 
-  return [
-    { address: getDaiAddress(network, TokenB) },
-    { address: getMaticAddress(network, TokenD) },
-    { address: getUsdcAddress(network, TokenA) },
-    { address: getWethAddress(network, WETH9) },
-  ];
+  throw new Error('unknown network');
 }
 
 async function getOracles(network) {

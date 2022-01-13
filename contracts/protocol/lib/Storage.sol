@@ -19,18 +19,19 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
 import { Cache } from "./Cache.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
+import { EnumerableSet } from "./EnumerableSet.sol";
 import { Math } from "./Math.sol";
 import { Monetary } from "./Monetary.sol";
 import { Require } from "./Require.sol";
 import { Time } from "./Time.sol";
 import { Token } from "./Token.sol";
 import { Types } from "./Types.sol";
-import { IERC20 } from "../interfaces/IERC20.sol";
+import {IERC20Detailed} from "../interfaces/IERC20Detailed.sol";
 import { IInterestSetter } from "../interfaces/IInterestSetter.sol";
 import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 
@@ -39,7 +40,7 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
  * @title Storage
  * @author dYdX
  *
- * Functions for reading, writing, and verifying state in Solo
+ * Functions for reading, writing, and verifying state in DolomiteMargin
  */
 library Storage {
     using Cache for Cache.MarketCache;
@@ -48,10 +49,13 @@ library Storage {
     using Types for Types.Par;
     using Types for Types.Wei;
     using SafeMath for uint256;
+    using EnumerableSet for EnumerableSet.Set;
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "Storage";
+    bytes32 internal constant FILE = "Storage";
+    uint256 internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -59,6 +63,12 @@ library Storage {
     struct Market {
         // Contract address of the associated ERC20 token
         address token;
+
+        // Whether additional borrows are allowed for this market
+        bool isClosing;
+
+        // Whether this market can be removed and its ID can be recycled and reused
+        bool isRecyclable;
 
         // Total aggregated supply and borrow amount of the entire market
         Types.TotalPar totalPar;
@@ -86,9 +96,6 @@ library Storage {
         // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
         // (when performing a liquidation between two markets)
         Decimal.D256 spreadPremium;
-
-        // Whether additional borrows are allowed for this market
-        bool isClosing;
     }
 
     // The global risk parameters that govern the health and security of the system
@@ -122,7 +129,7 @@ library Storage {
         uint128 minBorrowedValueMax;
     }
 
-    // The entire storage state of Solo
+    // The entire storage state of DolomiteMargin
     struct State {
         // number of markets
         uint256 numMarkets;
@@ -130,6 +137,7 @@ library Storage {
         // marketId => Market
         mapping (uint256 => Market) markets;
         mapping (address => uint256) tokenToMarketId;
+        mapping(uint256 => uint256) recycledMarketIds;
 
         // owner => account number => Account
         mapping (address => mapping (uint256 => Account.Storage)) accounts;
@@ -197,7 +205,7 @@ library Storage {
 
         Types.Wei memory balanceWei = Types.Wei({
             sign: true,
-            value: IERC20(token).balanceOf(address(this))
+            value: IERC20Detailed(token).balanceOf(address(this))
         });
 
         (
@@ -249,6 +257,39 @@ library Storage {
 
         Interest.Index memory index = state.getIndex(marketId);
         return Interest.parToWei(par, index);
+    }
+
+    function getMarketsWithBalancesSet(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (EnumerableSet.Set storage)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet;
+    }
+
+    function getMarketsWithBalances(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256[] memory)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
+    }
+
+    function getNumberOfMarketsWithBorrow(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256)
+    {
+        return state.accounts[account.owner][account.number].numberOfMarketsWithBorrow;
     }
 
     function getLiquidationSpreadForPair(
@@ -313,14 +354,15 @@ library Storage {
 
     function fetchPrice(
         Storage.State storage state,
-        uint256 marketId
+        uint256 marketId,
+        address token
     )
         internal
         view
         returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
-        Monetary.Price memory price = oracle.getPrice(state.getToken(marketId));
+        Monetary.Price memory price = oracle.getPrice(token);
         Require.that(
             price.value != 0,
             FILE,
@@ -344,21 +386,17 @@ library Storage {
         Monetary.Value memory borrowValue;
 
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-
-            Types.Wei memory userWei = state.getWei(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Wei memory userWei = state.getWei(account, cache.getAtIndex(i).marketId);
 
             if (userWei.isZero()) {
                 continue;
             }
 
-            uint256 assetValue = userWei.value.mul(cache.getPrice(m).value);
+            uint256 assetValue = userWei.value.mul(cache.getAtIndex(i).price.value);
             Decimal.D256 memory adjust = Decimal.one();
             if (adjustForLiquidity) {
-                adjust = Decimal.onePlus(state.markets[m].marginPremium);
+                adjust = Decimal.onePlus(state.markets[cache.getAtIndex(i).marketId].marginPremium);
             }
 
             if (userWei.sign) {
@@ -381,6 +419,11 @@ library Storage {
         view
         returns (bool)
     {
+        if (state.getNumberOfMarketsWithBorrow(account) == 0) {
+            // The user does not have a balance with a borrow amount, so they must be collateralized
+            return true;
+        }
+
         // get account values (adjusted for liquidity)
         (
             Monetary.Value memory supplyValue,
@@ -577,11 +620,8 @@ library Storage {
     {
         bool hasNegative = false;
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (!cache.hasMarket(m)) {
-                continue;
-            }
-            Types.Par memory par = state.getPar(account, m);
+        for (uint256 i = 0; i < numMarkets; i++) {
+            Types.Par memory par = state.getPar(account, cache.getAtIndex(i).marketId);
             if (par.isZero()) {
                 continue;
             } else if (par.sign) {
@@ -630,6 +670,7 @@ library Storage {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
         if (Types.equals(oldPar, newPar)) {
+            // GUARD statement
             return;
         }
 
@@ -648,6 +689,22 @@ library Storage {
             totalPar.supply = uint256(totalPar.supply).add(newPar.value).to128();
         } else {
             totalPar.borrow = uint256(totalPar.borrow).add(newPar.value).to128();
+        }
+
+        if (oldPar.isLessThanZero() && newPar.isGreaterThanOrEqualToZero()) {
+            // user went from borrowing to repaying or positive
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow -= 1;
+        } else if (oldPar.isGreaterThanOrEqualToZero() && newPar.isLessThanZero()) {
+            // user went from zero or positive to borrowing
+            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
+        }
+
+        if (newPar.isZero() && (!oldPar.isZero())) {
+            // User went from a non-zero balance to zero. Remove the market from the set.
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.remove(marketId);
+        } else if ((!newPar.isZero()) && oldPar.isZero()) {
+            // User went from zero to non-zero. Add the market to the set.
+            state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.add(marketId);
         }
 
         state.markets[marketId].totalPar = totalPar;
@@ -676,6 +733,58 @@ library Storage {
             account,
             marketId,
             newPar
+        );
+    }
+
+    function initializeCache(
+        Storage.State storage state,
+        Cache.MarketCache memory cache
+    ) internal view {
+        cache.markets = new Cache.MarketInfo[](cache.marketsLength);
+        uint counter = 0;
+
+        // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
+        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
+        // Meaning, this function call is O(n) where `n` is the number of markets in the cache
+        for (uint i = 0; i < cache.marketBitmaps.length; i++) {
+            uint bitmap = cache.marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
+                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                address token = state.getToken(marketId);
+                if (state.markets[marketId].isClosing) {
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: true,
+                    borrowPar: state.getTotalPar(marketId).borrow,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                } else {
+                    // don't need the borrowPar if the market is not closing
+                    cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: false,
+                    borrowPar: 0,
+                    price: state.fetchPrice(marketId, token)
+                    });
+                }
+
+                // unset the set bit
+                bitmap = bitmap - (ONE << nextSetBit);
+            }
+            if (counter == cache.marketsLength) {
+                break;
+            }
+        }
+
+        Require.that(
+            cache.marketsLength == counter,
+            FILE,
+            "cache initialized improperly",
+            cache.marketsLength,
+            cache.markets.length
         );
     }
 }

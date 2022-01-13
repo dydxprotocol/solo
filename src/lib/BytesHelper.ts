@@ -18,14 +18,26 @@ export function toBytes(
   ...args: (string | number | Integer | boolean)[]
 ): number[][] {
   const result = args.reduce(
-    (acc: number[], val: string | number | Integer | boolean): number[] =>
-      acc.concat(argToBytes(val)),
+    (acc: number[], val: string | number | Integer | boolean): number[] => acc.concat(argToBytes(val)),
     [],
   );
   return result.map((a: number): number[] => [a]);
 }
 
-export function argToBytes(val: string | number | Integer | boolean): number[] {
+export function toBytesNoPadding(
+  ...args: (string | number | Integer | boolean)[]
+): number[][] {
+  const result = args.reduce(
+    (acc: number[], val: string | number | Integer | boolean): number[] => acc.concat(argToBytes(val, false)),
+    [],
+  );
+  return result.map((a: number): number[] => [a]);
+}
+
+export function argToBytes(
+  val: string | number | Integer | boolean,
+  shouldPad: boolean = true
+): number[] {
   let v: any = val;
   if (typeof val === 'boolean') {
     v = val ? '1' : '0';
@@ -38,7 +50,7 @@ export function argToBytes(val: string | number | Integer | boolean): number[] {
   }
 
   return Web3.utils.hexToBytes(
-    Web3.utils.padLeft(Web3.utils.toHex(v), 64, '0'),
+    shouldPad ? Web3.utils.padLeft(Web3.utils.toHex(v), 64, '0') : Web3.utils.toHex(v),
   );
 }
 
@@ -74,9 +86,9 @@ export function addressesAreEqual(
   addressTwo: string,
 ): boolean {
   return (
-    addressOne &&
-    addressTwo &&
-    stripHexPrefix(addressOne).toLowerCase() ===
-      stripHexPrefix(addressTwo).toLowerCase()
+    addressOne
+    && addressTwo
+    && stripHexPrefix(addressOne).toLowerCase()
+      === stripHexPrefix(addressTwo).toLowerCase()
   );
 }

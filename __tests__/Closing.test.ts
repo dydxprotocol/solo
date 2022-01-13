@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/SoloHelpers';
+import { setupMarkets } from './helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../src/lib/Constants';
 import { expectThrow } from '../src/lib/Expect';
-import { address, AmountDenomination, AmountReference } from '../src/types';
+import { address, AmountDenomination, AmountReference } from '../src';
 
 let owner: address;
 let admin: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const accountOne = new BigNumber(111);
 const accountTwo = new BigNumber(222);
@@ -22,34 +22,34 @@ describe('Closing', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
-    owner = solo.getDefaultAccount();
+    owner = dolomiteMargin.getDefaultAccount();
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      solo.admin.setIsClosing(market, true, { from: admin }),
-      solo.testing.setAccountBalance(owner, accountOne, market, amount),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.admin.setIsClosing(market, true, { from: admin }),
+      dolomiteMargin.testing.setAccountBalance(owner, accountOne, market, amount),
+      dolomiteMargin.testing.setAccountBalance(
         owner,
         accountOne,
         collateralMarket,
         amount.times(2),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner,
         accountTwo,
         collateralMarket,
         amount.times(2),
       ),
-      solo.testing.tokenA.issueTo(
+      dolomiteMargin.testing.tokenA.issueTo(
         amount,
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
-      solo.testing.tokenA.setMaximumSoloAllowance(owner),
+      dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(owner),
     ]);
     snapshotId = await snapshot();
   });
@@ -59,7 +59,7 @@ describe('Closing', () => {
   });
 
   it('Succeeds for withdraw when closing', async () => {
-    await solo.operation
+    await dolomiteMargin.operation
       .initiate()
       .withdraw({
         primaryAccountOwner: owner,
@@ -76,7 +76,7 @@ describe('Closing', () => {
   });
 
   it('Succeeds for borrow if totalPar doesnt increase', async () => {
-    await solo.operation
+    await dolomiteMargin.operation
       .initiate()
       .transfer({
         primaryAccountOwner: owner,
@@ -95,7 +95,7 @@ describe('Closing', () => {
 
   it('Fails for borrowing when closing', async () => {
     await expectThrow(
-      solo.operation
+      dolomiteMargin.operation
         .initiate()
         .withdraw({
           primaryAccountOwner: owner,

@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
@@ -14,12 +14,12 @@ import {
   Balance,
   Integer,
   Trade,
-} from '../../src/types';
+} from '../../src';
 
 let who1: address;
 let who2: address;
 let operator: address;
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 const accountNumber1 = new BigNumber(111);
 const accountNumber2 = new BigNumber(222);
@@ -52,10 +52,10 @@ describe('Trade', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
-    who1 = solo.getDefaultAccount();
+    who1 = dolomiteMargin.getDefaultAccount();
     who2 = accounts[5];
     operator = accounts[6];
     defaultGlob = {
@@ -65,7 +65,7 @@ describe('Trade', () => {
       otherAccountId: accountNumber2,
       inputMarketId: inputMkt,
       outputMarketId: outputMkt,
-      autoTrader: solo.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
       amount: {
         value: negWei,
@@ -75,22 +75,22 @@ describe('Trade', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
     const defaultIndex = {
       lastUpdate: INTEGERS.ZERO,
       borrow: wei.div(par),
       supply: wei.div(par),
     };
     await Promise.all([
-      solo.testing.setMarketIndex(inputMkt, defaultIndex),
-      solo.testing.setMarketIndex(outputMkt, defaultIndex),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setMarketIndex(inputMkt, defaultIndex),
+      dolomiteMargin.testing.setMarketIndex(outputMkt, defaultIndex),
+      dolomiteMargin.testing.setAccountBalance(
         who1,
         accountNumber1,
         collateralMkt,
         collateralAmount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         who2,
         accountNumber2,
         collateralMkt,
@@ -116,21 +116,21 @@ describe('Trade', () => {
 
   it('Succeeds for events', async () => {
     await Promise.all([
-      solo.permissions.approveOperator(operator, { from: who1 }),
+      dolomiteMargin.permissions.approveOperator(operator, { from: who1 }),
       approveTrader(),
       setTradeData(),
     ]);
     const txResult = await expectTradeOkay({}, { from: operator });
 
     const [inputIndex, outputIndex, collateralIndex] = await Promise.all([
-      solo.getters.getMarketCachedIndex(inputMkt),
-      solo.getters.getMarketCachedIndex(outputMkt),
-      solo.getters.getMarketCachedIndex(collateralMkt),
+      dolomiteMargin.getters.getMarketCachedIndex(inputMkt),
+      dolomiteMargin.getters.getMarketCachedIndex(outputMkt),
+      dolomiteMargin.getters.getMarketCachedIndex(collateralMkt),
       expectBalances1(par, negPar),
       expectBalances2(negPar, par),
     ]);
 
-    const logs = solo.logs.parseLogs(txResult);
+    const logs = dolomiteMargin.logs.parseLogs(txResult);
     expect(logs.length).toEqual(5);
 
     const operationLog = logs[0];
@@ -177,7 +177,7 @@ describe('Trade', () => {
       deltaWei: wei,
     });
     expect(tradeLog.args.autoTrader).toEqual(
-      solo.testing.autoTrader.getAddress(),
+      dolomiteMargin.testing.autoTrader.address,
     );
   });
 
@@ -807,12 +807,12 @@ describe('Trade', () => {
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         who1,
         accountNumber1,
         AccountStatus.Liquidating,
       ),
-      solo.testing.setAccountStatus(
+      dolomiteMargin.testing.setAccountStatus(
         who2,
         accountNumber2,
         AccountStatus.Liquidating,
@@ -822,8 +822,8 @@ describe('Trade', () => {
     ]);
     await expectTradeOkay({});
     const [status1, status2] = await Promise.all([
-      solo.getters.getAccountStatus(who1, accountNumber1),
-      solo.getters.getAccountStatus(who2, accountNumber2),
+      dolomiteMargin.getters.getAccountStatus(who1, accountNumber1),
+      dolomiteMargin.getters.getAccountStatus(who2, accountNumber2),
     ]);
     expect(status1).toEqual(AccountStatus.Normal);
     expect(status2).toEqual(AccountStatus.Normal);
@@ -841,7 +841,7 @@ describe('Trade', () => {
   it('Succeeds for global operator sender', async () => {
     await Promise.all([
       approveTrader(),
-      solo.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
+      dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] }),
       setTradeData(),
     ]);
     await expectTradeOkay({}, { from: operator });
@@ -855,10 +855,10 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireInputMarketId(outputMkt),
+      dolomiteMargin.testing.autoTrader.setRequireInputMarketId(outputMkt),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: input market mismatch');
-    await solo.testing.autoTrader.setRequireInputMarketId(inputMkt);
+    await dolomiteMargin.testing.autoTrader.setRequireInputMarketId(inputMkt);
     await expectTradeOkay({});
   });
 
@@ -866,10 +866,10 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireOutputMarketId(inputMkt),
+      dolomiteMargin.testing.autoTrader.setRequireOutputMarketId(inputMkt),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: output market mismatch');
-    await solo.testing.autoTrader.setRequireOutputMarketId(outputMkt);
+    await dolomiteMargin.testing.autoTrader.setRequireOutputMarketId(outputMkt);
     await expectTradeOkay({});
   });
 
@@ -877,15 +877,15 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireMakerAccount(who1, accountNumber2),
+      dolomiteMargin.testing.autoTrader.setRequireMakerAccount(who1, accountNumber2),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: maker account owner mismatch');
-    await solo.testing.autoTrader.setRequireMakerAccount(who2, accountNumber1);
+    await dolomiteMargin.testing.autoTrader.setRequireMakerAccount(who2, accountNumber1);
     await expectTradeRevert(
       {},
       'TestAutoTrader: maker account number mismatch',
     );
-    await solo.testing.autoTrader.setRequireMakerAccount(who2, accountNumber2);
+    await dolomiteMargin.testing.autoTrader.setRequireMakerAccount(who2, accountNumber2);
     await expectTradeOkay({});
   });
 
@@ -893,15 +893,15 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireTakerAccount(who2, accountNumber1),
+      dolomiteMargin.testing.autoTrader.setRequireTakerAccount(who2, accountNumber1),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: taker account owner mismatch');
-    await solo.testing.autoTrader.setRequireTakerAccount(who1, accountNumber2);
+    await dolomiteMargin.testing.autoTrader.setRequireTakerAccount(who1, accountNumber2);
     await expectTradeRevert(
       {},
       'TestAutoTrader: taker account number mismatch',
     );
-    await solo.testing.autoTrader.setRequireTakerAccount(who1, accountNumber1);
+    await dolomiteMargin.testing.autoTrader.setRequireTakerAccount(who1, accountNumber1);
     await expectTradeOkay({});
   });
 
@@ -910,12 +910,12 @@ describe('Trade', () => {
       approveTrader(),
       setTradeData(),
       setBalances2(par, zero),
-      solo.testing.autoTrader.setRequireOldInputPar(par.times(-1)),
+      dolomiteMargin.testing.autoTrader.setRequireOldInputPar(par.times(-1)),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: oldInputPar sign mismatch');
-    await solo.testing.autoTrader.setRequireOldInputPar(par.times(2));
+    await dolomiteMargin.testing.autoTrader.setRequireOldInputPar(par.times(2));
     await expectTradeRevert({}, 'TestAutoTrader: oldInputPar value mismatch');
-    await solo.testing.autoTrader.setRequireOldInputPar(par);
+    await dolomiteMargin.testing.autoTrader.setRequireOldInputPar(par);
     await expectTradeOkay({});
   });
 
@@ -923,12 +923,12 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireNewInputPar(negPar.times(-1)),
+      dolomiteMargin.testing.autoTrader.setRequireNewInputPar(negPar.times(-1)),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: newInputPar sign mismatch');
-    await solo.testing.autoTrader.setRequireNewInputPar(negPar.times(2));
+    await dolomiteMargin.testing.autoTrader.setRequireNewInputPar(negPar.times(2));
     await expectTradeRevert({}, 'TestAutoTrader: newInputPar value mismatch');
-    await solo.testing.autoTrader.setRequireNewInputPar(negPar);
+    await dolomiteMargin.testing.autoTrader.setRequireNewInputPar(negPar);
     await expectTradeOkay({});
   });
 
@@ -936,12 +936,12 @@ describe('Trade', () => {
     await Promise.all([
       approveTrader(),
       setTradeData(),
-      solo.testing.autoTrader.setRequireInputWei(negWei.times(-1)),
+      dolomiteMargin.testing.autoTrader.setRequireInputWei(negWei.times(-1)),
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: inputWei sign mismatch');
-    await solo.testing.autoTrader.setRequireInputWei(negWei.times(2));
+    await dolomiteMargin.testing.autoTrader.setRequireInputWei(negWei.times(2));
     await expectTradeRevert({}, 'TestAutoTrader: inputWei value mismatch');
-    await solo.testing.autoTrader.setRequireInputWei(negWei);
+    await dolomiteMargin.testing.autoTrader.setRequireInputWei(negWei);
     await expectTradeOkay({});
   });
 
@@ -958,8 +958,8 @@ describe('Trade', () => {
   });
 
   it('Fails for wrong-contract autoTrader', async () => {
-    const otherContract = solo.testing.exchangeWrapper.getAddress();
-    await solo.permissions.approveOperator(otherContract, { from: who1 });
+    const otherContract = dolomiteMargin.testing.exchangeWrapper.address;
+    await dolomiteMargin.permissions.approveOperator(otherContract, { from: who1 });
     await expectTradeRevert({ autoTrader: otherContract });
   });
 
@@ -983,28 +983,28 @@ describe('Trade', () => {
 
 async function setBalances1(inputPar: Integer, outputPar: Integer) {
   return Promise.all([
-    solo.testing.setAccountBalance(who1, accountNumber1, inputMkt, inputPar),
-    solo.testing.setAccountBalance(who1, accountNumber1, outputMkt, outputPar),
+    dolomiteMargin.testing.setAccountBalance(who1, accountNumber1, inputMkt, inputPar),
+    dolomiteMargin.testing.setAccountBalance(who1, accountNumber1, outputMkt, outputPar),
   ]);
 }
 
 async function setBalances2(inputPar: Integer, outputPar: Integer) {
   return Promise.all([
-    solo.testing.setAccountBalance(who2, accountNumber2, inputMkt, inputPar),
-    solo.testing.setAccountBalance(who2, accountNumber2, outputMkt, outputPar),
+    dolomiteMargin.testing.setAccountBalance(who2, accountNumber2, inputMkt, inputPar),
+    dolomiteMargin.testing.setAccountBalance(who2, accountNumber2, outputMkt, outputPar),
   ]);
 }
 
 async function setTradeData(data?: object) {
   const combinedData = { ...defaultData, ...data };
-  return solo.testing.autoTrader.setData(tradeId, combinedData);
+  return dolomiteMargin.testing.autoTrader.setData(tradeId, combinedData);
 }
 
 async function expectBalances1(
   expectedInputPar: Integer,
   expectedOutputPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(who1, accountNumber1);
+  const balances = await dolomiteMargin.getters.getAccountBalances(who1, accountNumber1);
   expectBalances(balances, expectedInputPar, expectedOutputPar);
 }
 
@@ -1012,7 +1012,7 @@ async function expectBalances2(
   expectedInputPar: Integer,
   expectedOutputPar: Integer,
 ) {
-  const balances = await solo.getters.getAccountBalances(who2, accountNumber2);
+  const balances = await dolomiteMargin.getters.getAccountBalances(who2, accountNumber2);
   expectBalances(balances, expectedInputPar, expectedOutputPar);
 }
 
@@ -1021,12 +1021,12 @@ function expectBalances(
   expectedInputPar: Integer,
   expectedOutputPar: Integer,
 ) {
-  balances.forEach((balance, i) => {
-    if (i === inputMkt.toNumber()) {
+  balances.forEach((balance) => {
+    if (balance.marketId.eq(inputMkt)) {
       expect(balance.par).toEqual(expectedInputPar);
-    } else if (i === outputMkt.toNumber()) {
+    } else if (balance.marketId.eq(outputMkt)) {
       expect(balance.par).toEqual(expectedOutputPar);
-    } else if (i === collateralMkt.toNumber()) {
+    } else if (balance.marketId.eq(collateralMkt)) {
       expect(balance.par).toEqual(collateralAmount);
     } else {
       expect(balance.par).toEqual(zero);
@@ -1035,19 +1035,19 @@ function expectBalances(
 }
 
 async function approveTrader() {
-  return solo.permissions.approveOperator(
-    solo.testing.autoTrader.getAddress(),
+  return dolomiteMargin.permissions.approveOperator(
+    dolomiteMargin.testing.autoTrader.address,
     { from: who2 },
   );
 }
 
 async function approveOperator() {
-  return solo.permissions.approveOperator(operator, { from: who1 });
+  return dolomiteMargin.permissions.approveOperator(operator, { from: who1 });
 }
 
 async function expectTradeOkay(glob: Object, options?: Object) {
   const combinedGlob = { ...defaultGlob, ...glob };
-  return solo.operation
+  return dolomiteMargin.operation
     .initiate()
     .trade(combinedGlob)
     .commit(options);

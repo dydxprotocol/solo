@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Decimal } from "./Decimal.sol";
 import { Math } from "./Math.sol";
 import { Time } from "./Time.sol";
@@ -30,7 +30,7 @@ import { Types } from "./Types.sol";
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and interest indexes of Solo
+ * Library for managing the interest rate and interest indexes of DolomiteMargin
  */
 library Interest {
     using Math for uint256;

@@ -1,9 +1,12 @@
 import BigNumber from 'bignumber.js';
-import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import {
+  TestExchangeWrapperOrder,
+  TestOrderType,
+} from '../helpers/types';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import {
   Action,
   ActionType,
@@ -15,12 +18,12 @@ import {
   SignedOperation,
   SigningMethod,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectAssertFailure, expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let snapshotId: string;
 let defaultSender: address;
@@ -56,8 +59,8 @@ let signedVaporizeOperation: SignedOperation;
 
 describe('SignedOperationProxy', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
 
     admin = accounts[0];
@@ -75,16 +78,19 @@ describe('SignedOperationProxy', () => {
     };
 
     await resetEVM();
-    await setupMarkets(solo, accounts);
+    await setupMarkets(dolomiteMargin, accounts);
 
-    const exchangeWrapperAddress = solo.testing.exchangeWrapper.getAddress();
+    expect(dolomiteMargin.signedOperations.getDomainHash())
+      .toEqual(await dolomiteMargin.signedOperations.getNetworkDomainHash());
 
-    const testOrder: TestOrder = {
+    const exchangeWrapperAddress = dolomiteMargin.testing.exchangeWrapper.address;
+
+    const testOrder: TestExchangeWrapperOrder = {
       exchangeWrapperAddress,
-      type: OrderType.Test,
+      type: TestOrderType.Test,
       originator: defaultSigner,
-      makerToken: await solo.getters.getMarketTokenAddress(makerMarket),
-      takerToken: await solo.getters.getMarketTokenAddress(takerMarket),
+      makerToken: await dolomiteMargin.getters.getMarketTokenAddress(makerMarket),
+      takerToken: await dolomiteMargin.getters.getMarketTokenAddress(takerMarket),
       makerAmount: INTEGERS.ZERO,
       takerAmount: INTEGERS.ZERO,
       desiredMakerAmount: INTEGERS.ZERO,
@@ -92,24 +98,24 @@ describe('SignedOperationProxy', () => {
     };
 
     await Promise.all([
-      solo.testing.autoTrader.setData(tradeId, defaultAssetAmount),
-      solo.permissions.approveOperator(exchangeWrapperAddress, { from: rando }),
-      solo.permissions.approveOperator(solo.testing.autoTrader.getAddress(), {
+      dolomiteMargin.testing.autoTrader.setData(tradeId, defaultAssetAmount),
+      dolomiteMargin.permissions.approveOperator(exchangeWrapperAddress, { from: rando }),
+      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.address, {
         from: rando,
       }),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         vaporizableAccount.owner,
         vaporizableAccount.number,
         takerMarket,
         par.times(-1),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidatableAccount.owner,
         liquidatableAccount.number,
         takerMarket,
         par.times(-1),
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         liquidatableAccount.owner,
         liquidatableAccount.number,
         makerMarket,
@@ -164,14 +170,14 @@ describe('SignedOperationProxy', () => {
       otherAccountId: randoNumber,
       inputMarketId: takerMarket,
       outputMarketId: makerMarket,
-      autoTrader: solo.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
       amount: defaultAssetAmount,
     });
     signedCallOperation = await createSignedOperation('call', {
       primaryAccountId: defaultSignerNumber,
       primaryAccountOwner: defaultSigner,
-      callee: solo.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.address,
       data: toBytes(33, 44),
     });
     signedLiquidateOperation = await createSignedOperation('liquidate', {
@@ -201,22 +207,22 @@ describe('SignedOperationProxy', () => {
   describe('Signing Operations', () => {
     it('Succeeds for eth.sign', async () => {
       const operation = { ...signedTradeOperation };
-      operation.typedSignature = await solo.signedOperations.signOperation(
+      operation.typedSignature = await dolomiteMargin.signedOperations.signOperation(
         operation,
         SigningMethod.Hash,
       );
-      expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(
+      expect(dolomiteMargin.signedOperations.operationHasValidSignature(operation)).toBe(
         true,
       );
     });
 
     it('Succeeds for eth_signTypedData', async () => {
       const operation = { ...signedTradeOperation };
-      operation.typedSignature = await solo.signedOperations.signOperation(
+      operation.typedSignature = await dolomiteMargin.signedOperations.signOperation(
         operation,
         SigningMethod.TypedData,
       );
-      expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(
+      expect(dolomiteMargin.signedOperations.operationHasValidSignature(operation)).toBe(
         true,
       );
     });
@@ -224,7 +230,7 @@ describe('SignedOperationProxy', () => {
     it('Recognizes a bad signature', async () => {
       const operation = { ...signedTradeOperation };
       operation.typedSignature = `0x${'1b'.repeat(65)}00`;
-      expect(solo.signedOperations.operationHasValidSignature(operation)).toBe(
+      expect(dolomiteMargin.signedOperations.operationHasValidSignature(operation)).toBe(
         false,
       );
     });
@@ -233,12 +239,12 @@ describe('SignedOperationProxy', () => {
   describe('Signing Cancel Operations', () => {
     it('Succeeds for eth.sign', async () => {
       const operation = { ...signedTradeOperation };
-      const cancelSig = await solo.signedOperations.signCancelOperation(
+      const cancelSig = await dolomiteMargin.signedOperations.signCancelOperation(
         operation,
         SigningMethod.Hash,
       );
       expect(
-        solo.signedOperations.cancelOperationHasValidSignature(
+        dolomiteMargin.signedOperations.cancelOperationHasValidSignature(
           operation,
           cancelSig,
         ),
@@ -247,12 +253,12 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for eth_signTypedData', async () => {
       const operation = { ...signedTradeOperation };
-      const cancelSig = await solo.signedOperations.signCancelOperation(
+      const cancelSig = await dolomiteMargin.signedOperations.signCancelOperation(
         operation,
         SigningMethod.TypedData,
       );
       expect(
-        solo.signedOperations.cancelOperationHasValidSignature(
+        dolomiteMargin.signedOperations.cancelOperationHasValidSignature(
           operation,
           cancelSig,
         ),
@@ -263,7 +269,7 @@ describe('SignedOperationProxy', () => {
       const operation = { ...signedTradeOperation };
       const cancelSig = `0x${'1b'.repeat(65)}00`;
       expect(
-        solo.signedOperations.cancelOperationHasValidSignature(
+        dolomiteMargin.signedOperations.cancelOperationHasValidSignature(
           operation,
           cancelSig,
         ),
@@ -273,31 +279,31 @@ describe('SignedOperationProxy', () => {
 
   describe('shutDown', () => {
     it('Succeeds', async () => {
-      expect(await solo.signedOperations.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.shutDown(),
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(true);
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(false);
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(false);
     });
 
     it('Succeeds when it is already shutDown', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.shutDown(),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.shutDown(),
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(false);
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(false);
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(false);
     });
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.signedOperationProxy.methods.shutDown(),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
           { from: rando },
         ),
       );
@@ -306,31 +312,31 @@ describe('SignedOperationProxy', () => {
 
   describe('startUp', () => {
     it('Succeeds after being shutDown', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.shutDown(),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(false);
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.startUp(),
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(false);
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.startUp(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(true);
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(true);
     });
 
     it('Succeeds when it is already operational', async () => {
-      expect(await solo.signedOperations.isOperational()).toBe(true);
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.startUp(),
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(true);
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.startUp(),
         { from: admin },
       );
-      expect(await solo.signedOperations.isOperational()).toBe(true);
+      expect(await dolomiteMargin.signedOperations.isOperational()).toBe(true);
     });
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.signedOperationProxy.methods.startUp(),
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.signedOperationProxy.methods.startUp(),
           { from: rando },
         ),
       );
@@ -340,55 +346,55 @@ describe('SignedOperationProxy', () => {
   describe('cancel', () => {
     it('Succeeds', async () => {
       await expectValid([signedWithdrawOperation]);
-      const txResult1 = await solo.signedOperations.cancelOperation(
+      const txResult1 = await dolomiteMargin.signedOperations.cancelOperation(
         signedWithdrawOperation,
       );
       await expectInvalid([signedWithdrawOperation]);
-      const txResult2 = await solo.signedOperations.cancelOperation(
+      const txResult2 = await dolomiteMargin.signedOperations.cancelOperation(
         signedWithdrawOperation,
       );
       await expectInvalid([signedWithdrawOperation]);
 
-      const logs1 = solo.logs.parseLogs(txResult1);
+      const logs1 = dolomiteMargin.logs.parseLogs(txResult1);
       expect(logs1[0].name).toEqual('LogOperationCanceled');
       expect(logs1[0].args).toEqual({
         canceler: signedWithdrawOperation.signer,
-        operationHash: solo.signedOperations.getOperationHash(
+        operationHash: dolomiteMargin.signedOperations.getOperationHash(
           signedWithdrawOperation,
         ),
       });
-      const logs2 = solo.logs.parseLogs(txResult2);
+      const logs2 = dolomiteMargin.logs.parseLogs(txResult2);
       expect(logs2[0].name).toEqual(logs1[0].name);
       expect(logs2[0].args).toEqual(logs1[0].args);
     });
 
     it('Succeeds for two-account operations', async () => {
       await expectValid([signedTransferOperation]);
-      const txResult1 = await solo.signedOperations.cancelOperation(
+      const txResult1 = await dolomiteMargin.signedOperations.cancelOperation(
         signedTransferOperation,
       );
       await expectInvalid([signedTransferOperation]);
-      const txResult2 = await solo.signedOperations.cancelOperation(
+      const txResult2 = await dolomiteMargin.signedOperations.cancelOperation(
         signedTransferOperation,
       );
       await expectInvalid([signedTransferOperation]);
 
-      const logs1 = solo.logs.parseLogs(txResult1);
+      const logs1 = dolomiteMargin.logs.parseLogs(txResult1);
       expect(logs1[0].name).toEqual('LogOperationCanceled');
       expect(logs1[0].args).toEqual({
         canceler: signedTransferOperation.signer,
-        operationHash: solo.signedOperations.getOperationHash(
+        operationHash: dolomiteMargin.signedOperations.getOperationHash(
           signedTransferOperation,
         ),
       });
-      const logs2 = solo.logs.parseLogs(txResult2);
+      const logs2 = dolomiteMargin.logs.parseLogs(txResult2);
       expect(logs2[0].name).toEqual(logs1[0].name);
       expect(logs2[0].args).toEqual(logs1[0].args);
     });
 
     it('Fails for non-signer', async () => {
       await expectThrow(
-        solo.signedOperations.cancelOperation(signedTransferOperation, {
+        dolomiteMargin.signedOperations.cancelOperation(signedTransferOperation, {
           from: rando,
         }),
         'SignedOperationProxy: Canceler must be signer',
@@ -424,7 +430,7 @@ describe('SignedOperationProxy', () => {
         sender: defaultSender,
         signer: defaultSigner,
       };
-      const typedSignature = await solo.signedOperations.signOperation(
+      const typedSignature = await dolomiteMargin.signedOperations.signOperation(
         operation,
         SigningMethod.Hash,
       );
@@ -433,7 +439,7 @@ describe('SignedOperationProxy', () => {
         typedSignature,
       };
       await expectValid([signedOperation]);
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedOperation)
         .commit({ from: defaultSender });
@@ -448,7 +454,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for deposit', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedDepositOperation)
         .commit({ from: defaultSender });
@@ -461,7 +467,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for withdraw', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .commit({ from: defaultSender });
@@ -474,7 +480,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for transfer', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedTransferOperation)
         .commit({ from: defaultSender });
@@ -487,7 +493,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for buy', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedBuyOperation)
         .commit({ from: defaultSender });
@@ -496,7 +502,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for sell', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedSellOperation)
         .commit({ from: defaultSender });
@@ -505,7 +511,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for trade', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedTradeOperation)
         .commit({ from: defaultSender });
@@ -518,7 +524,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for call (0 bytes)', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOperation)
         .commit({ from: defaultSender });
@@ -530,10 +536,10 @@ describe('SignedOperationProxy', () => {
       const signedCallShortOperation = await createSignedOperation('call', {
         primaryAccountId: defaultSignerNumber,
         primaryAccountOwner: defaultSigner,
-        callee: solo.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: [[1], [2], [3]],
       });
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallShortOperation)
         .commit({ from: defaultSender });
@@ -545,10 +551,10 @@ describe('SignedOperationProxy', () => {
       const signedCallOddOperation = await createSignedOperation('call', {
         primaryAccountId: defaultSignerNumber,
         primaryAccountOwner: defaultSigner,
-        callee: solo.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: toBytes(1234).concat([[1], [2], [3]]),
       });
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOddOperation)
         .commit({ from: defaultSender });
@@ -557,7 +563,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for liquidate', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedLiquidateOperation)
         .commit({ from: defaultSender });
@@ -570,7 +576,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for vaporize', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedVaporizeOperation)
         .commit({ from: defaultSender });
@@ -593,7 +599,7 @@ describe('SignedOperationProxy', () => {
         ...signedOperation.actions[0],
         primaryAccountOwner: rando,
       };
-      randoifiedOperation.typedSignature = await solo.signedOperations.signOperation(
+      randoifiedOperation.typedSignature = await dolomiteMargin.signedOperations.signOperation(
         randoifiedOperation,
         SigningMethod.Hash,
       );
@@ -605,7 +611,7 @@ describe('SignedOperationProxy', () => {
         signedDepositOperation,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -618,7 +624,7 @@ describe('SignedOperationProxy', () => {
         signedWithdrawOperation,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -631,7 +637,7 @@ describe('SignedOperationProxy', () => {
         signedTransferOperation,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -642,7 +648,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for buy', async () => {
       const badOperation = await randoifySignedOperation(signedBuyOperation);
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -653,7 +659,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for sell', async () => {
       const badOperation = await randoifySignedOperation(signedSellOperation);
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -664,7 +670,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for trade', async () => {
       const badOperation = await randoifySignedOperation(signedTradeOperation);
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -675,7 +681,7 @@ describe('SignedOperationProxy', () => {
     it('Fails for call (0 bytes)', async () => {
       const badOperation = await randoifySignedOperation(signedCallOperation);
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -688,7 +694,7 @@ describe('SignedOperationProxy', () => {
         signedLiquidateOperation,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -701,7 +707,7 @@ describe('SignedOperationProxy', () => {
         signedVaporizeOperation,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(badOperation)
           .commit({ from: defaultSender }),
@@ -716,12 +722,12 @@ describe('SignedOperationProxy', () => {
         ...signedDepositOperation,
         expiration: INTEGERS.ONE,
       };
-      expiredOperation.typedSignature = await solo.signedOperations.signOperation(
+      expiredOperation.typedSignature = await dolomiteMargin.signedOperations.signOperation(
         expiredOperation,
         SigningMethod.Hash,
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(expiredOperation)
           .commit({ from: defaultSender }),
@@ -731,7 +737,7 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for msg.sender mismatch', async () => {
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedDepositOperation)
           .commit({ from: rando }),
@@ -740,12 +746,12 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Fails for hash already used', async () => {
-      await solo.operation
+      await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .commit({ from: defaultSender });
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedWithdrawOperation)
           .commit({ from: defaultSender }),
@@ -754,9 +760,9 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Fails for hash canceled', async () => {
-      await solo.signedOperations.cancelOperation(signedWithdrawOperation);
+      await dolomiteMargin.signedOperations.cancelOperation(signedWithdrawOperation);
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedWithdrawOperation)
           .commit({ from: defaultSender }),
@@ -766,8 +772,8 @@ describe('SignedOperationProxy', () => {
 
     it('Fails for authorization that overflows', async () => {
       await expectAssertFailure(
-        solo.contracts.callContractFunction(
-          solo.contracts.signedOperationProxy.methods.operate(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.signedOperationProxy.methods.operate(
             [
               {
                 owner: defaultSigner,
@@ -812,8 +818,8 @@ describe('SignedOperationProxy', () => {
     it('Fails for authorization past end-of-actions', async () => {
       const depositAction = signedDepositOperation.actions[0];
       await expectAssertFailure(
-        solo.contracts.callContractFunction(
-          solo.contracts.signedOperationProxy.methods.operate(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.signedOperationProxy.methods.operate(
             [
               {
                 owner: defaultSigner,
@@ -864,8 +870,8 @@ describe('SignedOperationProxy', () => {
 
     it('Fails if not all actions are signed', async () => {
       await expectThrow(
-        solo.contracts.callContractFunction(
-          solo.contracts.signedOperationProxy.methods.operate(
+        dolomiteMargin.contracts.callContractFunction(
+          dolomiteMargin.contracts.signedOperationProxy.methods.operate(
             [
               {
                 owner: defaultSigner,
@@ -903,7 +909,7 @@ describe('SignedOperationProxy', () => {
         salt: new BigNumber(999),
       };
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(invalidSigOperation)
           .commit({ from: defaultSender }),
@@ -912,12 +918,12 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Fails if non-operational', async () => {
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.shutDown(),
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.shutDown(),
         { from: admin },
       );
       await expectThrow(
-        solo.operation
+        dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(signedDepositOperation)
           .commit({ from: defaultSender }),
@@ -962,7 +968,7 @@ describe('SignedOperationProxy', () => {
       ];
       for (const o in allOperations) {
         const operation = allOperations[o];
-        const txResult = await solo.operation
+        const txResult = await dolomiteMargin.operation
           .initiate({ proxy: ProxyType.Signed })
           .addSignedOperation(operation)
           .commit({ from: defaultSender });
@@ -1016,7 +1022,7 @@ describe('SignedOperationProxy', () => {
       for (const o in allOperations) {
         const operation = allOperations[o];
         await expectThrow(
-          solo.operation
+          dolomiteMargin.operation
             .initiate({ proxy: ProxyType.Signed })
             .addSignedOperation(operation)
             .commit({ from: defaultSender }),
@@ -1026,7 +1032,7 @@ describe('SignedOperationProxy', () => {
     });
 
     it('Succeeds for data with less than 32 bytes', async () => {
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedCallOperation)
         .commit({ from: defaultSender });
@@ -1046,12 +1052,12 @@ describe('SignedOperationProxy', () => {
       multiActionOperation.actions = multiActionOperation.actions.concat(
         signedCallOperation.actions,
       );
-      multiActionOperation.typedSignature = await solo.signedOperations.signOperation(
+      multiActionOperation.typedSignature = await dolomiteMargin.signedOperations.signOperation(
         multiActionOperation,
         SigningMethod.Hash,
       );
 
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(multiActionOperation)
         .commit({ from: defaultSender });
@@ -1072,7 +1078,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for multiple signed operations from different signers', async () => {
       // create second signed operation
-      const operation2: Operation = solo.operation
+      const operation2: Operation = dolomiteMargin.operation
         .initiate()
         .deposit({
           primaryAccountOwner: rando,
@@ -1087,14 +1093,14 @@ describe('SignedOperationProxy', () => {
         });
       const signedOperation2: SignedOperation = {
         ...operation2,
-        typedSignature: await solo.signedOperations.signOperation(
+        typedSignature: await dolomiteMargin.signedOperations.signOperation(
           operation2,
           SigningMethod.Hash,
         ),
       };
 
       // commit the operations
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .addSignedOperation(signedWithdrawOperation)
         .addSignedOperation(signedOperation2)
@@ -1117,8 +1123,8 @@ describe('SignedOperationProxy', () => {
         sender: ADDRESSES.ZERO,
         signer: defaultSender,
       };
-      await solo.contracts.callContractFunction(
-        solo.contracts.signedOperationProxy.methods.operate(
+      await dolomiteMargin.contracts.callContractFunction(
+        dolomiteMargin.contracts.signedOperationProxy.methods.operate(
           [
             {
               owner: defaultSender,
@@ -1152,7 +1158,7 @@ describe('SignedOperationProxy', () => {
                 signer: defaultSender,
               },
               signature: toBytes(
-                await solo.signedOperations.signOperation(
+                await dolomiteMargin.signedOperations.signOperation(
                   emptyOperation,
                   SigningMethod.Hash,
                 ),
@@ -1176,7 +1182,7 @@ describe('SignedOperationProxy', () => {
 
     it('Succeeds for multiple signed operations from different signers interleaved', async () => {
       // create second signed operation
-      const operation2: Operation = solo.operation
+      const operation2: Operation = dolomiteMargin.operation
         .initiate()
         .deposit({
           primaryAccountOwner: rando,
@@ -1191,7 +1197,7 @@ describe('SignedOperationProxy', () => {
         });
       const signedOperation2: SignedOperation = {
         ...operation2,
-        typedSignature: await solo.signedOperations.signOperation(
+        typedSignature: await dolomiteMargin.signedOperations.signOperation(
           operation2,
           SigningMethod.Hash,
         ),
@@ -1201,12 +1207,12 @@ describe('SignedOperationProxy', () => {
       const callData = {
         primaryAccountOwner: defaultSender,
         primaryAccountId: defaultSenderNumber,
-        callee: solo.testing.simpleCallee.getAddress(),
+        callee: dolomiteMargin.testing.simpleCallee.address,
         data: [[1], [255]],
       };
 
       // commit the operations interleaved with others
-      const txResult = await solo.operation
+      const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
         .call(callData)
         .addSignedOperation(signedWithdrawOperation)
@@ -1235,7 +1241,7 @@ async function createSignedOperation(
   actionType: string,
   action: any,
 ): Promise<SignedOperation> {
-  const operation: Operation = solo.operation
+  const operation: Operation = dolomiteMargin.operation
     .initiate()
     [actionType](action)
     .createSignableOperation({
@@ -1244,7 +1250,7 @@ async function createSignedOperation(
     });
   return {
     ...operation,
-    typedSignature: await solo.signedOperations.signOperation(
+    typedSignature: await dolomiteMargin.signedOperations.signOperation(
       operation,
       SigningMethod.Hash,
     ),
@@ -1252,7 +1258,7 @@ async function createSignedOperation(
 }
 
 function expectLogs(txResult: TxResult, logTitles: string[]) {
-  const logs = solo.logs.parseLogs(txResult);
+  const logs = dolomiteMargin.logs.parseLogs(txResult);
   const actualTitles = logs
     .map((x: any) => x.name)
     .filter((x: string) => x !== 'LogIndexUpdate');
@@ -1261,12 +1267,12 @@ function expectLogs(txResult: TxResult, logTitles: string[]) {
 
 async function expectInvalid(operations: SignedOperation[]) {
   expect(
-    await solo.signedOperations.getOperationsAreInvalid(operations),
+    await dolomiteMargin.signedOperations.getOperationsAreInvalid(operations),
   ).toEqual(Array(operations.length).fill(true));
 }
 
 async function expectValid(operations: SignedOperation[]) {
   expect(
-    await solo.signedOperations.getOperationsAreInvalid(operations),
+    await dolomiteMargin.signedOperations.getOperationsAreInvalid(operations),
   ).toEqual(Array(operations.length).fill(false));
 }

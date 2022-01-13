@@ -1,8 +1,9 @@
 pragma solidity ^0.5.16;
 
-import './interfaces/IUniswapV2Factory.sol';
+import "./interfaces/IUniswapV2Factory.sol";
 
-import './UniswapV2Pair.sol';
+import "./UniswapV2Pair.sol";
+
 
 contract UniswapV2Factory is IUniswapV2Factory {
     address public feeTo;
@@ -22,12 +23,13 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, 'UniswapV2: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, "UniswapV2: IDENTICAL_ADDRESSES");
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'UniswapV2: ZERO_ADDRESS');
-        require(getPair[token0][token1] == address(0), 'UniswapV2: PAIR_EXISTS'); // single check is sufficient
+        require(token0 != address(0), "UniswapV2: ZERO_ADDRESS");
+        require(getPair[token0][token1] == address(0), "UniswapV2: PAIR_EXISTS"); // single check is sufficient
         bytes memory bytecode = type(UniswapV2Pair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+        // solium-disable security/no-inline-assembly
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
@@ -35,16 +37,31 @@ contract UniswapV2Factory is IUniswapV2Factory {
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
-        emit PairCreated(token0, token1, pair, allPairs.length);
+        emit PairCreated(
+            token0,
+            token1,
+            pair,
+            allPairs.length
+        );
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+        require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
         feeToSetter = _feeToSetter;
+    }
+
+    function getPairInitCodeHash() external pure returns (bytes32) {
+        // This function is not in the IUniswapV2Factory interface because it does not exist in production
+        return keccak256(getPairInitCode());
+    }
+
+    function getPairInitCode() public pure returns (bytes memory) {
+        // This function is not in the IUniswapV2Factory interface because it does not exist in production
+        return type(UniswapV2Pair).creationCode;
     }
 }

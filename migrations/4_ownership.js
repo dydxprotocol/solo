@@ -19,19 +19,18 @@
 const {
   isDevNetwork,
   getMultisigAddress,
-  isMatic,
-  isMaticTest,
-  isArbitrum,
 } = require('./helpers');
+
+const {
+  getChainlinkPriceOracleContract,
+} = require('./oracle_helpers');
 
 // ============ Contracts ============
 
-const SoloMargin = artifacts.require('SoloMargin');
-const ExpiryV2 = artifacts.require('ExpiryV2');
-const DaiPriceOracle = artifacts.require('DaiPriceOracle');
+const DolomiteMargin = artifacts.require('DolomiteMargin');
+const Expiry = artifacts.require('Expiry');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
-const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
 const UniswapV2Factory = artifacts.require('UniswapV2Factory');
 
@@ -42,34 +41,30 @@ const migration = async (deployer, network) => {
     const multisig = getMultisigAddress(network);
 
     const [
-      deployedSoloMargin,
-      deployedExpiryV2,
+      deployedDolomiteMargin,
+      deployedExpiry,
       deployedSignedOperationProxy,
       deployedSimpleFeeOwner,
       deployedChainlinkPriceOracleV1,
       dolomiteAmmFactory,
     ] = await Promise.all([
-      SoloMargin.deployed(),
-      ExpiryV2.deployed(),
+      DolomiteMargin.deployed(),
+      Expiry.deployed(),
       SignedOperationProxy.deployed(),
       SimpleFeeOwner.deployed(),
-      ChainlinkPriceOracleV1.deployed(),
+      getChainlinkPriceOracleContract(network, artifacts).deployed(),
       DolomiteAmmFactory.deployed(),
     ]);
 
     await Promise.all([
-      deployedSoloMargin.transferOwnership(multisig),
-      deployedExpiryV2.transferOwnership(multisig),
+      deployedDolomiteMargin.transferOwnership(multisig),
+      deployedExpiry.transferOwnership(multisig),
       deployedSignedOperationProxy.transferOwnership(multisig),
       deployedSimpleFeeOwner.transferOwnership(multisig),
       deployedChainlinkPriceOracleV1.transferOwnership(multisig),
       dolomiteAmmFactory.setFeeToSetter(deployedSimpleFeeOwner.address),
     ]);
 
-    if (!isMatic(network) && !isMaticTest(network) && !isArbitrum(network)) {
-      const deployedDaiPriceOracle = await DaiPriceOracle.deployed();
-      deployedDaiPriceOracle.transferOwnership(multisig);
-    }
     if (isDevNetwork(network)) {
       const uniswapV2Factory = await UniswapV2Factory.deployed();
       await uniswapV2Factory.setFeeToSetter(multisig);

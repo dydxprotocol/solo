@@ -1,7 +1,7 @@
 pragma solidity ^0.5.16;
 
-// a library for performing various math operations
 
+/// A library for performing various math operations
 library AdvancedMath {
     function min(uint x, uint y) internal pure returns (uint z) {
         z = x < y ? x : y;

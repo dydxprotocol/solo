@@ -1,35 +1,122 @@
-// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
 
 /**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
  */
 library SafeMath {
     /**
-    * @dev Multiplies two unsigned integers, reverts on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b);
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
 
         return c;
     }
 
     /**
-    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
-    */
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     *
+     * _Available since v2.4.0._
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         // Solidity only automatically asserts when dividing by 0
-        require(b > 0);
+        require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
@@ -37,31 +124,35 @@ library SafeMath {
     }
 
     /**
-    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-    */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-    * @dev Adds two unsigned integers, reverts on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a);
-
-        return c;
-    }
-
-    /**
-    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-    * reverts when dividing by zero.
-    */
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0);
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     *
+     * _Available since v2.4.0._
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
         return a % b;
     }
 }
@@ -556,6 +647,25 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    function getPartialRoundHalfUp(
+        uint256 target,
+        uint256 numerator,
+        uint256 denominator
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (target == 0 || numerator == 0) {
+            // SafeMath will check for zero denominator
+            return SafeMath.div(0, denominator);
+        }
+        uint result = target.mul(numerator);
+        // round the denominator comparator up to ensure a fair comparison is done on the `result`'s modulo.
+        // For example, 51 / 103 == 0; 51 % 103 == 51; ((103 - 1) / 2) + 1 == 52; 51 < 52, therefore no round up
+        return result.div(denominator).add(result.mod(denominator) >= denominator.sub(1).div(2).add(1) ? 1 : 0);
+    }
+
     function to128(
         uint256 number
     )
@@ -567,7 +677,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint128"
+            "Unsafe cast to uint128",
+            number
         );
         return result;
     }
@@ -583,7 +694,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint96"
+            "Unsafe cast to uint96",
+            number
         );
         return result;
     }
@@ -599,7 +711,8 @@ library Math {
         Require.that(
             result == number,
             FILE,
-            "Unsafe cast to uint32"
+            "Unsafe cast to uint32",
+            number
         );
         return result;
     }
@@ -786,7 +899,7 @@ pragma solidity ^0.5.7;
  * @title Types
  * @author dYdX
  *
- * Library for interacting with the basic structs used in Solo
+ * Library for interacting with the basic structs used in DolomiteMargin
  */
 library Types {
     using Math for uint256;
@@ -937,6 +1050,26 @@ library Types {
         return a.value == 0;
     }
 
+    function isLessThanZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value > 0 && !a.sign;
+    }
+
+    function isGreaterThanOrEqualToZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return isZero(a) || a.sign;
+    }
+
     // ============ Wei (Token Amount) ============
 
     // Individual token amount for an account
@@ -1084,7 +1217,7 @@ pragma solidity ^0.5.7;
  * @title Interest
  * @author dYdX
  *
- * Library for managing the interest rate and interest indexes of Solo
+ * Library for managing the interest rate and interest indexes of DolomiteMargin
  */
 library Interest {
     using Math for uint256;
@@ -1187,7 +1320,7 @@ library Interest {
         if (input.sign) {
             return Types.Wei({
                 sign: true,
-                value: inputValue.getPartial(index.supply, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.supply, BASE)
             });
         } else {
             return Types.Wei({
@@ -1211,7 +1344,7 @@ library Interest {
         if (input.sign) {
             return Types.Par({
                 sign: true,
-                value: input.value.getPartial(BASE, index.supply).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.supply).to128()
             });
         } else {
             return Types.Par({
@@ -1275,7 +1408,7 @@ pragma solidity ^0.5.7;
  * @title IInterestSetter
  * @author dYdX
  *
- * Interface that Interest Setters for Solo must implement in order to report interest rates.
+ * Interface that Interest Setters for DolomiteMargin must implement in order to report interest rates.
  */
 interface IInterestSetter {
 

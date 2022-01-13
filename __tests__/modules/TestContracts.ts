@@ -20,7 +20,7 @@ import { Provider } from 'web3/providers';
 import Web3 from 'web3';
 
 // Contracts
-import { TestSoloMargin } from '../../build/testing_wrappers/TestSoloMargin';
+import { TestDolomiteMargin } from '../../build/testing_wrappers/TestDolomiteMargin';
 import { TestToken } from '../../build/testing_wrappers/TestToken';
 import { TestLib } from '../../build/testing_wrappers/TestLib';
 import { TestAutoTrader } from '../../build/testing_wrappers/TestAutoTrader';
@@ -28,14 +28,13 @@ import { TestCallee } from '../../build/testing_wrappers/TestCallee';
 import { TestSimpleCallee } from '../../build/testing_wrappers/TestSimpleCallee';
 import { TestExchangeWrapper } from '../../build/testing_wrappers/TestExchangeWrapper';
 import { TestPriceOracle } from '../../build/testing_wrappers/TestPriceOracle';
-import { TestMakerOracle } from '../../build/testing_wrappers/TestMakerOracle';
 import { TestOasisDex } from '../../build/testing_wrappers/TestOasisDex';
 import { TestInterestSetter } from '../../build/testing_wrappers/TestInterestSetter';
 import { TestPolynomialInterestSetter } from '../../build/testing_wrappers/TestPolynomialInterestSetter';
 import { TestDoubleExponentInterestSetter } from '../../build/testing_wrappers/TestDoubleExponentInterestSetter';
 
 // JSON
-import testSoloMarginJson from '../../build/testing_contracts/TestSoloMargin.json';
+import testDolomiteMarginJson from '../../build/testing_contracts/TestDolomiteMargin.json';
 import tokenAJson from '../../build/testing_contracts/TokenA.json';
 import tokenBJson from '../../build/testing_contracts/TokenB.json';
 import tokenCJson from '../../build/testing_contracts/TokenC.json';
@@ -50,7 +49,6 @@ import testCalleeJson from '../../build/testing_contracts/TestCallee.json';
 import testSimpleCalleeJson from '../../build/testing_contracts/TestSimpleCallee.json';
 import testExchangeWrapperJson from '../../build/testing_contracts/TestExchangeWrapper.json';
 import testPriceOracleJson from '../../build/testing_contracts/TestPriceOracle.json';
-import testMakerOracleJson from '../../build/testing_contracts/TestMakerOracle.json';
 import testOasisDexJson from '../../build/testing_contracts/TestOasisDex.json';
 import testPolynomialInterestSetterJson
   from '../../build/testing_contracts/TestPolynomialInterestSetter.json';
@@ -60,19 +58,21 @@ import testInterestSetterJson from '../../build/testing_contracts/TestInterestSe
 import testUniswapV2PairJson from '../../build/testing_contracts/UniswapV2Pair.json';
 import testUniswapV2RouterJson from '../../build/testing_contracts/UniswapV2Router02.json';
 import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Factory.json';
+import testAmmRebalancerProxyJson from '../../build/testing_contracts/TestAmmRebalancerProxy.json';
 
-import { address, SoloOptions } from '../../src/types';
+import { address, DolomiteMarginOptions } from '../../src';
 import { Contracts } from '../../src/lib/Contracts';
 import { UniswapV2Factory } from '../../build/testing_wrappers/UniswapV2Factory';
 import { UniswapV2Router02 } from '../../build/testing_wrappers/UniswapV2Router02';
 import { UniswapV2Pair } from '../../build/testing_wrappers/UniswapV2Pair';
+import { TestAmmRebalancerProxy } from '../../build/testing_wrappers/TestAmmRebalancerProxy';
 
 export class TestContracts extends Contracts {
   // Contract instances
-  public soloMargin: TestSoloMargin;
+  public dolomiteMargin: TestDolomiteMargin;
 
   // Testing contract instances
-  public testSoloMargin: TestSoloMargin;
+  public testDolomiteMargin: TestDolomiteMargin;
   public tokenA: TestToken;
   public tokenB: TestToken;
   public tokenC: TestToken;
@@ -81,13 +81,13 @@ export class TestContracts extends Contracts {
   public tokenF: TestToken;
   public erroringToken: TestToken;
   public omiseToken: TestToken;
+  public testAmmRebalancerProxy: TestAmmRebalancerProxy;
   public testLib: TestLib;
   public testAutoTrader: TestAutoTrader;
   public testCallee: TestCallee;
   public testSimpleCallee: TestSimpleCallee;
   public testExchangeWrapper: TestExchangeWrapper;
   public testPriceOracle: TestPriceOracle;
-  public testMakerOracle: TestMakerOracle;
   public testOasisDex: TestOasisDex;
   public testPolynomialInterestSetter: TestPolynomialInterestSetter;
   public testDoubleExponentInterestSetter: TestDoubleExponentInterestSetter;
@@ -99,15 +99,15 @@ export class TestContracts extends Contracts {
     provider: Provider,
     networkId: number,
     web3: Web3,
-    options: SoloOptions,
+    options: DolomiteMarginOptions,
   ) {
     super(provider, networkId, web3, options);
 
     // Testing Contracts
-    this.testSoloMargin = new this.web3.eth.Contract(
-      testSoloMarginJson.abi,
-    ) as TestSoloMargin;
-    this.soloMargin = this.testSoloMargin;
+    this.testDolomiteMargin = new this.web3.eth.Contract(
+      testDolomiteMarginJson.abi,
+    ) as TestDolomiteMargin;
+    this.dolomiteMargin = this.testDolomiteMargin;
     this.tokenA = new this.web3.eth.Contract(tokenAJson.abi) as TestToken;
     this.tokenB = new this.web3.eth.Contract(tokenBJson.abi) as TestToken;
     this.tokenC = new this.web3.eth.Contract(tokenCJson.abi) as TestToken;
@@ -120,6 +120,9 @@ export class TestContracts extends Contracts {
     this.omiseToken = new this.web3.eth.Contract(
       omiseTokenJson.abi,
     ) as TestToken;
+    this.testAmmRebalancerProxy = new this.web3.eth.Contract(
+      testAmmRebalancerProxyJson.abi,
+    ) as TestAmmRebalancerProxy;
     this.testLib = new this.web3.eth.Contract(testLibJson.abi) as TestLib;
     this.testAutoTrader = new this.web3.eth.Contract(
       testAutoTraderJson.abi,
@@ -136,9 +139,6 @@ export class TestContracts extends Contracts {
     this.testPriceOracle = new this.web3.eth.Contract(
       testPriceOracleJson.abi,
     ) as TestPriceOracle;
-    this.testMakerOracle = new this.web3.eth.Contract(
-      testMakerOracleJson.abi,
-    ) as TestMakerOracle;
     this.testOasisDex = new this.web3.eth.Contract(
       testOasisDexJson.abi,
     ) as TestOasisDex;
@@ -185,11 +185,11 @@ export class TestContracts extends Contracts {
       return;
     }
 
-    this.soloMargin.setProvider(provider);
+    this.dolomiteMargin.setProvider(provider);
 
     const contracts = [
       // test contracts
-      { contract: this.testSoloMargin, json: testSoloMarginJson },
+      { contract: this.testDolomiteMargin, json: testDolomiteMarginJson },
       { contract: this.tokenA, json: tokenAJson },
       { contract: this.tokenB, json: tokenBJson },
       { contract: this.tokenC, json: tokenCJson },
@@ -198,13 +198,13 @@ export class TestContracts extends Contracts {
       { contract: this.tokenF, json: tokenFJson },
       { contract: this.erroringToken, json: erroringTokenJson },
       { contract: this.omiseToken, json: omiseTokenJson },
+      { contract: this.testAmmRebalancerProxy, json: testAmmRebalancerProxyJson, },
       { contract: this.testLib, json: testLibJson },
       { contract: this.testAutoTrader, json: testAutoTraderJson },
       { contract: this.testCallee, json: testCalleeJson },
       { contract: this.testSimpleCallee, json: testSimpleCalleeJson },
       { contract: this.testExchangeWrapper, json: testExchangeWrapperJson },
       { contract: this.testPriceOracle, json: testPriceOracleJson },
-      { contract: this.testMakerOracle, json: testMakerOracleJson },
       { contract: this.testOasisDex, json: testOasisDexJson },
       {
         contract: this.testPolynomialInterestSetter,
@@ -247,27 +247,18 @@ export class TestContracts extends Contracts {
     this.tokenF.options.from = account;
     this.erroringToken.options.from = account;
     this.omiseToken.options.from = account;
+    this.testAmmRebalancerProxy.options.from = account;
     this.testLib.options.from = account;
     this.testAutoTrader.options.from = account;
     this.testCallee.options.from = account;
     this.testSimpleCallee.options.from = account;
     this.testExchangeWrapper.options.from = account;
     this.testPriceOracle.options.from = account;
-    this.testMakerOracle.options.from = account;
     this.testOasisDex.options.from = account;
     this.testPolynomialInterestSetter.options.from = account;
     this.testDoubleExponentInterestSetter.options.from = account;
     this.testInterestSetter.options.from = account;
     this.testUniswapV2Factory.options.from = account;
     this.testUniswapV2Router.options.from = account;
-  }
-
-  public getUniswapV2Pair(contractAddress: address): UniswapV2Pair {
-    const pair = new this.web3.eth.Contract(
-      testUniswapV2PairJson.abi,
-      contractAddress,
-    ) as UniswapV2Pair;
-    pair.options.from = this.testUniswapV2Factory.options.from;
-    return pair;
   }
 }

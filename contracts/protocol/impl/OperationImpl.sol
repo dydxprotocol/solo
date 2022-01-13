@@ -19,13 +19,14 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 import { ICallee } from "../interfaces/ICallee.sol";
 import { Account } from "../lib/Account.sol";
 import { Actions } from "../lib/Actions.sol";
 import { Cache } from "../lib/Cache.sol";
 import { Decimal } from "../lib/Decimal.sol";
+import { EnumerableSet } from "../lib/EnumerableSet.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
 import { Math } from "../lib/Math.sol";
@@ -33,6 +34,7 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
+import { LiquidateOrVaporizeImpl } from "./LiquidateOrVaporizeImpl.sol";
 
 
 /**
@@ -43,6 +45,7 @@ import { Types } from "../lib/Types.sol";
  */
 library OperationImpl {
     using Cache for Cache.MarketCache;
+    using EnumerableSet for EnumerableSet.Set;
     using SafeMath for uint256;
     using Storage for Storage.State;
     using Types for Types.Par;
@@ -182,17 +185,14 @@ library OperationImpl {
         }
 
         // get any other markets for which an account has a balance
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.hasMarket(m)) {
-                continue;
-            }
-            for (uint256 a = 0; a < accounts.length; a++) {
-                if (!state.getPar(accounts[a], m).isZero()) {
-                    _updateMarket(state, cache, m);
-                    break;
-                }
+        for (uint256 a = 0; a < accounts.length; a++) {
+            uint[] memory marketIdsWithBalance = state.getMarketsWithBalances(accounts[a]);
+            for (uint256 i = 0; i < marketIdsWithBalance.length; i++) {
+                _updateMarket(state, cache, marketIdsWithBalance[i]);
             }
         }
+
+        state.initializeCache(cache);
 
         return (primaryAccounts, cache);
     }
@@ -205,12 +205,7 @@ library OperationImpl {
         private
     {
         if (!cache.hasMarket(marketId)) {
-            cache.markets[marketId].price = state.fetchPrice(marketId);
-            if (state.markets[marketId].isClosing) {
-                cache.markets[marketId].isClosing = true;
-                cache.markets[marketId].borrowPar = state.getTotalPar(marketId).borrow;
-            }
-
+            cache.set(marketId);
             Events.logIndexUpdate(marketId, state.updateIndex(marketId));
         }
     }
@@ -226,6 +221,7 @@ library OperationImpl {
         for (uint256 i = 0; i < actions.length; i++) {
             Actions.ActionArgs memory action = actions[i];
             Actions.ActionType actionType = action.actionType;
+
 
             if (actionType == Actions.ActionType.Deposit) {
                 _deposit(state, Actions.parseDepositArgs(accounts, action));
@@ -246,10 +242,11 @@ library OperationImpl {
                 _trade(state, Actions.parseTradeArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Liquidate) {
-                _liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Vaporize) {
-                _vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
+                // use the library to save space since this function is rarely ever called
+                LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Call) {
                 _call(state, Actions.parseCallArgs(accounts, action));
@@ -267,14 +264,32 @@ library OperationImpl {
     {
         // verify no increase in borrowPar for closing markets
         uint256 numMarkets = cache.getNumMarkets();
-        for (uint256 m = 0; m < numMarkets; m++) {
-            if (cache.getIsClosing(m)) {
+        for (uint256 i = 0; i < numMarkets; i++) {
+            uint256 marketId = cache.getAtIndex(i).marketId;
+            if (cache.getAtIndex(i).isClosing) {
                 Require.that(
-                    state.getTotalPar(m).borrow <= cache.getBorrowPar(m),
+                    state.getTotalPar(marketId).borrow <= cache.getAtIndex(i).borrowPar,
                     FILE,
                     "Market is closing",
-                    m
+                    marketId
                 );
+            }
+            if (state.markets[marketId].isRecyclable) {
+                // This market is recyclable. Check that only the `token` is the owner
+                for (uint256 a = 0; a < accounts.length; a++) {
+                    if (accounts[a].owner != cache.getAtIndex(i).token) {
+                        // If the owner of the recyclable token isn't the TokenProxy,
+                        // THEN check that the account doesn't have a balance for this recyclable `marketId`
+                        Require.that(
+                            !state.getMarketsWithBalancesSet(accounts[a]).contains(marketId),
+                            FILE,
+                            "invalid recyclable owner",
+                            accounts[a].owner,
+                            accounts[a].number,
+                            marketId
+                        );
+                    }
+                }
             }
         }
 
@@ -620,214 +635,6 @@ library OperationImpl {
         );
     }
 
-    function _liquidate(
-        Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Cache.MarketCache memory cache
-    )
-        private
-    {
-        state.requireIsGlobalOperator(msg.sender);
-
-        // verify liquidatable
-        if (Account.Status.Liquid != state.getStatus(args.liquidAccount)) {
-            Require.that(
-                !state.isCollateralized(args.liquidAccount, cache, /* requireMinBorrow = */ false),
-                FILE,
-                "Unliquidatable account",
-                args.liquidAccount.owner,
-                args.liquidAccount.number
-            );
-            state.setStatus(args.liquidAccount, Account.Status.Liquid);
-        }
-
-        Types.Wei memory maxHeldWei = state.getWei(
-            args.liquidAccount,
-            args.heldMarket
-        );
-
-        Require.that(
-            !maxHeldWei.isNegative(),
-            FILE,
-            "Collateral cannot be negative",
-            args.heldMarket
-        );
-
-        (
-            Types.Par memory owedPar,
-            Types.Wei memory owedWei
-        ) = state.getNewParAndDeltaWeiForLiquidation(
-            args.liquidAccount,
-            args.owedMarket,
-            args.amount
-        );
-
-        (
-            Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPriceAdj
-        ) = _getLiquidationPrices(
-            state,
-            cache,
-            args.heldMarket,
-            args.owedMarket
-        );
-
-        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPriceAdj);
-
-        // if attempting to over-borrow the held asset, bound it by the maximum
-        if (heldWei.value > maxHeldWei.value) {
-            heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
-
-            state.setPar(
-                args.liquidAccount,
-                args.heldMarket,
-                Types.zeroPar()
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.owedMarket,
-                owedWei
-            );
-        } else {
-            state.setPar(
-                args.liquidAccount,
-                args.owedMarket,
-                owedPar
-            );
-            state.setParFromDeltaWei(
-                args.liquidAccount,
-                args.heldMarket,
-                heldWei
-            );
-        }
-
-        // set the balances for the solid account
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-
-        Events.logLiquidate(
-            state,
-            args,
-            heldWei,
-            owedWei
-        );
-    }
-
-    function _vaporize(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args,
-        Cache.MarketCache memory cache
-    )
-        private
-    {
-        state.requireIsOperator(args.solidAccount, msg.sender);
-
-        // verify vaporizable
-        if (Account.Status.Vapor != state.getStatus(args.vaporAccount)) {
-            Require.that(
-                state.isVaporizable(args.vaporAccount, cache),
-                FILE,
-                "Unvaporizable account",
-                args.vaporAccount.owner,
-                args.vaporAccount.number
-            );
-            state.setStatus(args.vaporAccount, Account.Status.Vapor);
-        }
-
-        // First, attempt to refund using the same token
-        (
-            bool fullyRepaid,
-            Types.Wei memory excessWei
-        ) = _vaporizeUsingExcess(state, args);
-        if (fullyRepaid) {
-            Events.logVaporize(
-                state,
-                args,
-                Types.zeroWei(),
-                Types.zeroWei(),
-                excessWei
-            );
-            return;
-        }
-
-        Types.Wei memory maxHeldWei = state.getNumExcessTokens(args.heldMarket);
-
-        Require.that(
-            !maxHeldWei.isNegative(),
-            FILE,
-            "Excess cannot be negative",
-            args.heldMarket
-        );
-
-        (
-            Types.Par memory owedPar,
-            Types.Wei memory owedWei
-        ) = state.getNewParAndDeltaWeiForLiquidation(
-            args.vaporAccount,
-            args.owedMarket,
-            args.amount
-        );
-
-        (
-            Monetary.Price memory heldPrice,
-            Monetary.Price memory owedPrice
-        ) = _getLiquidationPrices(
-            state,
-            cache,
-            args.heldMarket,
-            args.owedMarket
-        );
-
-        Types.Wei memory heldWei = _owedWeiToHeldWei(owedWei, heldPrice, owedPrice);
-
-        // if attempting to over-borrow the held asset, bound it by the maximum
-        if (heldWei.value > maxHeldWei.value) {
-            heldWei = maxHeldWei.negative();
-            owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
-
-            state.setParFromDeltaWei(
-                args.vaporAccount,
-                args.owedMarket,
-                owedWei
-            );
-        } else {
-            state.setPar(
-                args.vaporAccount,
-                args.owedMarket,
-                owedPar
-            );
-        }
-
-        // set the balances for the solid account
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-
-        Events.logVaporize(
-            state,
-            args,
-            heldWei,
-            owedWei,
-            excessWei
-        );
-    }
-
     function _call(
         Storage.State storage state,
         Actions.CallArgs memory args
@@ -845,117 +652,4 @@ library OperationImpl {
         Events.logCall(args);
     }
 
-    // ============ Private Functions ============
-
-    /**
-     * For the purposes of liquidation or vaporization, get the value-equivalent amount of heldWei
-     * given owedWei and the (spread-adjusted) prices of each asset.
-     */
-    function _owedWeiToHeldWei(
-        Types.Wei memory owedWei,
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPrice
-    )
-        private
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: false,
-            value: Math.getPartial(owedWei.value, owedPrice.value, heldPrice.value)
-        });
-    }
-
-    /**
-     * For the purposes of liquidation or vaporization, get the value-equivalent amount of owedWei
-     * given heldWei and the (spread-adjusted) prices of each asset.
-     */
-    function _heldWeiToOwedWei(
-        Types.Wei memory heldWei,
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPrice
-    )
-        private
-        pure
-        returns (Types.Wei memory)
-    {
-        return Types.Wei({
-            sign: true,
-            value: Math.getPartialRoundUp(heldWei.value, heldPrice.value, owedPrice.value)
-        });
-    }
-
-    /**
-     * Attempt to vaporize an account's balance using the excess tokens in the protocol. Return a
-     * bool and a wei value. The boolean is true if and only if the balance was fully vaporized. The
-     * Wei value is how many excess tokens were used to partially or fully vaporize the account's
-     * negative balance.
-     */
-    function _vaporizeUsingExcess(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args
-    )
-        internal
-        returns (bool, Types.Wei memory)
-    {
-        Types.Wei memory excessWei = state.getNumExcessTokens(args.owedMarket);
-
-        // There are no excess funds, return zero
-        if (!excessWei.isPositive()) {
-            return (false, Types.zeroWei());
-        }
-
-        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
-        maxRefundWei.sign = true;
-
-        // The account is fully vaporizable using excess funds
-        if (excessWei.value >= maxRefundWei.value) {
-            state.setPar(
-                args.vaporAccount,
-                args.owedMarket,
-                Types.zeroPar()
-            );
-            return (true, maxRefundWei);
-        }
-
-        // The account is only partially vaporizable using excess funds
-        else {
-            state.setParFromDeltaWei(
-                args.vaporAccount,
-                args.owedMarket,
-                excessWei
-            );
-            return (false, excessWei);
-        }
-    }
-
-    /**
-     * Return the (spread-adjusted) prices of two assets for the purposes of liquidation or
-     * vaporization.
-     */
-    function _getLiquidationPrices(
-        Storage.State storage state,
-        Cache.MarketCache memory cache,
-        uint256 heldMarketId,
-        uint256 owedMarketId
-    )
-        internal
-        view
-        returns (
-            Monetary.Price memory,
-            Monetary.Price memory
-        )
-    {
-        uint256 owedPrice = cache.getPrice(owedMarketId).value;
-        Decimal.D256 memory spread = state.getLiquidationSpreadForPair(
-            heldMarketId,
-            owedMarketId
-        );
-
-        Monetary.Price memory owedPriceAdj = Monetary.Price({
-            value: owedPrice.add(Decimal.mul(owedPrice, spread))
-        });
-
-        return (cache.getPrice(heldMarketId), owedPriceAdj);
-    }
 }

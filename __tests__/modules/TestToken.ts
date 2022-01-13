@@ -7,7 +7,7 @@ import {
   ContractConstantCallOptions,
   Integer,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 
 export class TestToken {
   private contracts: TestContracts;
@@ -24,7 +24,7 @@ export class TestToken {
     this.testTokenContract = testTokenContract;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.testTokenContract.options.address;
   }
 
@@ -116,11 +116,11 @@ export class TestToken {
     );
   }
 
-  public async getSoloAllowance(
+  public async getDolomiteMarginAllowance(
     ownerAddress: address,
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
-    return this.token.getSoloAllowance(
+    return this.token.getDolomiteMarginAllowance(
       this.testTokenContract.options.address,
       ownerAddress,
       options,
@@ -141,12 +141,12 @@ export class TestToken {
     );
   }
 
-  public async setSolollowance(
+  public async setDolomiteMarginAllowance(
     ownerAddress: address,
     amount: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.setSolollowance(
+    return this.token.setDolomiteMarginllowance(
       this.testTokenContract.options.address,
       ownerAddress,
       amount,
@@ -167,22 +167,22 @@ export class TestToken {
     );
   }
 
-  public async setMaximumSoloAllowance(
+  public async setMaximumDolomiteMarginAllowance(
     ownerAddress: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.setMaximumSoloAllowance(
+    return this.token.setMaximumDolomiteMarginAllowance(
       this.testTokenContract.options.address,
       ownerAddress,
       options,
     );
   }
 
-  public async unsetSoloAllowance(
+  public async unsetDolomiteMarginAllowance(
     ownerAddress: address,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
-    return this.token.unsetSoloAllowance(
+    return this.token.unsetDolomiteMarginAllowance(
       this.testTokenContract.options.address,
       ownerAddress,
       options,

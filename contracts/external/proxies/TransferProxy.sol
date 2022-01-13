@@ -19,16 +19,16 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { SoloMargin } from "../../protocol/SoloMargin.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
 
@@ -39,21 +39,46 @@ import { ITransferProxy } from "../interfaces/ITransferProxy.sol";
  *
  * Contract for sending internal balances within Dolomite to other users/margin accounts easily
  */
-contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
+contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
+
     // ============ Constants ============
 
     bytes32 constant FILE = "TransferProxy";
 
+    // ============ State Variables ============
+
+    mapping(address => bool) public isCallerTrusted;
+
+    // ============ Modifiers ============
+
+    modifier isAuthorized(address sender) {
+        Require.that(
+            isCallerTrusted[sender],
+            FILE,
+            "unauthorized"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor (
-        address soloMargin
+        address dolomiteMargin
     )
     public
-    OnlySolo(soloMargin)
+    OnlyDolomiteMargin(dolomiteMargin)
     {}
 
-    // ============ Public Functions ============
+    // ============ External Functions ============
+
+    function setIsCallerTrusted(address caller, bool isTrusted) external {
+        Require.that(
+            DOLOMITE_MARGIN.getIsGlobalOperator(msg.sender),
+            FILE,
+            "unauthorized"
+        );
+        isCallerTrusted[caller] = isTrusted;
+    }
 
     function transfer(
         uint fromAccountIndex,
@@ -62,11 +87,12 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
         address token,
         uint amount
     )
-    public
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
         uint[] memory markets = new uint[](1);
-        markets[0] = SOLO_MARGIN.getMarketIdByTokenAddress(token);
+        markets[0] = DOLOMITE_MARGIN.getMarketIdByTokenAddress(token);
 
         uint[] memory amounts = new uint[](1);
         amounts[0] = amount;
@@ -87,13 +113,14 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
         address[] calldata tokens,
         uint[] calldata amounts
     )
-    external
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
-        SoloMargin soloMargin = SOLO_MARGIN;
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
         uint[] memory markets = new uint[](tokens.length);
         for (uint i = 0; i < markets.length; i++) {
-            markets[i] = soloMargin.getMarketIdByTokenAddress(tokens[i]);
+            markets[i] = dolomiteMargin.getMarketIdByTokenAddress(tokens[i]);
         }
 
         _transferMultiple(
@@ -112,8 +139,9 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
         uint[] calldata markets,
         uint[] calldata amounts
     )
-    external
-    nonReentrant
+        external
+        nonReentrant
+        isAuthorized(msg.sender)
     {
         _transferMultiple(
             fromAccountIndex,
@@ -131,11 +159,12 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
         uint[] memory markets,
         uint[] memory amounts
     )
-    internal
+        internal
     {
-        require(
+        Require.that(
             markets.length == amounts.length,
-            "TransferProxy::_transferMultiple: INVALID_PARAMS_LENGTH"
+            FILE,
+            "invalid params length"
         );
 
         Account.Info[] memory accounts = new Account.Info[](2);
@@ -146,23 +175,33 @@ contract TransferProxy is ITransferProxy, OnlySolo, ReentrancyGuard {
         for (uint i = 0; i < markets.length; i++) {
             Types.AssetAmount memory assetAmount;
             if (amounts[i] == uint(- 1)) {
-                assetAmount = Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Target, 0);
+                assetAmount = Types.AssetAmount(
+                    true,
+                    Types.AssetDenomination.Wei,
+                    Types.AssetReference.Target,
+                    0
+                );
             } else {
-                assetAmount = Types.AssetAmount(false, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amounts[i]);
+                assetAmount = Types.AssetAmount(
+                    false,
+                    Types.AssetDenomination.Wei,
+                    Types.AssetReference.Delta,
+                    amounts[i]
+                );
             }
 
             actions[i] = Actions.ActionArgs({
-            actionType : Actions.ActionType.Transfer,
-            accountId : 0,
-            amount : assetAmount,
-            primaryMarketId : markets[i],
-            secondaryMarketId : uint(- 1),
-            otherAddress : address(0),
-            otherAccountId : 1,
-            data : bytes("")
+                actionType : Actions.ActionType.Transfer,
+                accountId : 0,
+                amount : assetAmount,
+                primaryMarketId : markets[i],
+                secondaryMarketId : uint(- 1),
+                otherAddress : address(0),
+                otherAccountId : 1,
+                data : bytes("")
             });
         }
 
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 }

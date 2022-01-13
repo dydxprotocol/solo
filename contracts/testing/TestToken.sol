@@ -19,11 +19,11 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {SafeMath} from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import {IERC20} from "../protocol/interfaces/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20Detailed} from "../protocol/interfaces/IERC20Detailed.sol";
 
 
-contract TestToken is IERC20 {
+contract TestToken is IERC20Detailed {
     using SafeMath for uint256;
 
     uint256 supply;
@@ -98,7 +98,7 @@ contract TestToken is IERC20 {
     }
 
     function transferFrom(address from, address to, uint256 value) public returns (bool) {
-        require(balances[from] >= value, "Token: TransferFrom failed");
+        require(balances[from] >= value, "#transferFrom: INSUFFICIENT_BALANCE");
         require(allowed[from][msg.sender] >= value, "#transferFrom: INSUFFICIENT_ALLOWANCE");
 
         balances[to] = balances[to].add(value);

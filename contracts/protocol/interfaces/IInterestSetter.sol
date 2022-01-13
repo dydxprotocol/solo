@@ -26,7 +26,7 @@ import { Interest } from "../lib/Interest.sol";
  * @title IInterestSetter
  * @author dYdX
  *
- * Interface that Interest Setters for Solo must implement in order to report interest rates.
+ * Interface that Interest Setters for DolomiteMargin must implement in order to report interest rates.
  */
 interface IInterestSetter {
 

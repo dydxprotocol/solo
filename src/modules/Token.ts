@@ -97,7 +97,7 @@ export class Token {
     return new BigNumber(decStr);
   }
 
-  public async getSoloAllowance(
+  public async getDolomiteMarginAllowance(
     tokenAddress: address,
     ownerAddress: address,
     options?: ContractConstantCallOptions,
@@ -105,7 +105,7 @@ export class Token {
     return this.getAllowance(
       tokenAddress,
       ownerAddress,
-      this.contracts.soloMargin.options.address,
+      this.contracts.dolomiteMargin.options.address,
       options,
     );
   }
@@ -125,7 +125,7 @@ export class Token {
     );
   }
 
-  public async setSolollowance(
+  public async setDolomiteMarginllowance(
     tokenAddress: address,
     ownerAddress: address,
     amount: Integer,
@@ -134,7 +134,7 @@ export class Token {
     return this.setAllowance(
       tokenAddress,
       ownerAddress,
-      this.contracts.soloMargin.options.address,
+      this.contracts.dolomiteMargin.options.address,
       amount,
       options,
     );
@@ -155,7 +155,7 @@ export class Token {
     );
   }
 
-  public async setMaximumSoloAllowance(
+  public async setMaximumDolomiteMarginAllowance(
     tokenAddress: address,
     ownerAddress: address,
     options: ContractCallOptions = {},
@@ -163,13 +163,13 @@ export class Token {
     return this.setAllowance(
       tokenAddress,
       ownerAddress,
-      this.contracts.soloMargin.options.address,
+      this.contracts.dolomiteMargin.options.address,
       INTEGERS.ONES_255,
       options,
     );
   }
 
-  public async unsetSoloAllowance(
+  public async unsetDolomiteMarginAllowance(
     tokenAddress: address,
     ownerAddress: address,
     options: ContractCallOptions = {},
@@ -177,7 +177,7 @@ export class Token {
     return this.setAllowance(
       tokenAddress,
       ownerAddress,
-      this.contracts.soloMargin.options.address,
+      this.contracts.dolomiteMargin.options.address,
       INTEGERS.ZERO,
       options,
     );

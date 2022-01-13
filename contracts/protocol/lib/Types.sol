@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Math } from "./Math.sol";
 
 
@@ -27,7 +27,7 @@ import { Math } from "./Math.sol";
  * @title Types
  * @author dYdX
  *
- * Library for interacting with the basic structs used in Solo
+ * Library for interacting with the basic structs used in DolomiteMargin
  */
 library Types {
     using Math for uint256;
@@ -176,6 +176,26 @@ library Types {
         returns (bool)
     {
         return a.value == 0;
+    }
+
+    function isLessThanZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return a.value > 0 && !a.sign;
+    }
+
+    function isGreaterThanOrEqualToZero(
+        Par memory a
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return isZero(a) || a.sign;
     }
 
     // ============ Wei (Token Amount) ============

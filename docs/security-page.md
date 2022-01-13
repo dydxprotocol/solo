@@ -2,21 +2,16 @@
 
 ## Independent Audits
 
-### Solo
+### DolomiteMargin
 
-The Solo smart contracts were audited independently by both
+The DolomiteMargin smart contracts were audited independently by both
 [Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
 
 **[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**
 
 **[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
 
-### Perpetual
-
-The Perpetual smart contracts were audited independently by
-[Zeppelin Solutions](https://zeppelin.solutions/) at commit [`c5e2b0e`](https://github.com/dydxprotocol/perpetual/tree/c5e2b0e58aaf532d2c8b1f658d1df2f6a3385318/contracts), excluding [`P1Orders.sol`](https://github.com/dydxprotocol/perpetual/tree/c5e2b0e58aaf532d2c8b1f658d1df2f6a3385318/contracts/protocol/v1/traders/P1Orders.sol).
-
-**[Zeppelin Solutions Audit Report](https://blog.openzeppelin.com/dydx-perpetual-audit/)**
+**[SECBIT Labs Audit Report](https://raw.githubusercontent.com/dolomite-exchange/dolomite-margin/master/docs/Dolomite_Protocol_V2_Report_EN.pdf)**
 
 ## Code Coverage
 
@@ -29,7 +24,7 @@ The disclosure of security vulnerabilities helps us ensure the security of our u
 **How to report a security vulnerability?**
 
 If you believe you’ve found a security vulnerability in one of our contracts or platforms,
-send it to us by emailing [security@dydx.exchange](mailto:security@dydx.exchange).
+send it to us by emailing [security@dolomite.io](mailto:security@dolomite.io).
 Please include the following details with your report:
 
 * A description of the location and potential impact of the vulnerability.
@@ -50,7 +45,7 @@ disruption to production systems, and destruction of data during security testin
 * Use the identified communication channels to report vulnerability information to us.
 
 * Keep information about any vulnerabilities you’ve discovered confidential between yourself and
-dYdX until we’ve had 30 days to resolve the issue.
+Dolomite until we’ve had 30 days to resolve the issue.
 
 If you follow these guidelines when reporting an issue to us, we commit to:
 
@@ -59,4 +54,5 @@ If you follow these guidelines when reporting an issue to us, we commit to:
 * Work with you to understand and resolve the issue quickly
 (including an initial confirmation of your report within 72 hours of submission).
 
+TODO replace link
 * Grant a monetary reward based on the [OWASP risk assessment methodology](https://medium.com/dydxderivatives/announcing-bug-bounties-for-the-dydx-margin-trading-protocol-d0c817d1cda4).

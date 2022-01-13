@@ -29,7 +29,7 @@ import {
   Operation,
   SignedOperation,
   SigningMethod,
-} from '../../src/types';
+} from '../types';
 
 const EIP712_OPERATION_STRUCT = [
   { type: 'Action[]', name: 'actions' },
@@ -124,10 +124,10 @@ export class SignedOperations extends Signer {
     const accounts = [];
     const actions = [];
 
-    const getAccountId = function(
+    const getAccountId = (
       accountOwner: string,
       accountNumber: Integer,
-    ): number {
+    ): number => {
       if (accountOwner === ADDRESSES.ZERO) {
         return 0;
       }
@@ -344,9 +344,10 @@ export class SignedOperations extends Signer {
 
   // ============ Signing Cancel Operation Methods ============
 
+  // noinspection JSUnusedGlobalSymbols
   /**
    * Uses web3.eth.sign to sign a cancel message for an operation. This signature is not used
-   * on-chain,but allows dYdX backend services to verify that the cancel operation api call is from
+   * on-chain,but allows backend services to verify that the cancel operation api call is from
    * the original maker of the operation.
    */
   public async ethSignCancelOperation(operation: Operation): Promise<string> {
@@ -517,6 +518,10 @@ export class SignedOperations extends Signer {
     );
   }
 
+  public getNetworkDomainHash(): Promise<string> {
+    return this.contracts.signedOperationProxy.methods.EIP712_DOMAIN_HASH().call();
+  }
+
   /**
    * Returns a signable EIP712 Hash of a struct
    */
@@ -543,7 +548,7 @@ export class SignedOperations extends Signer {
     operation: Operation,
     signingMethod: SigningMethod,
   ): Promise<string> {
-    const actionsData = operation.actions.map(action => {
+    const actionsData = operation.actions.map((action) => {
       return {
         actionType: toString(action.actionType),
         accountOwner: action.primaryAccountOwner,

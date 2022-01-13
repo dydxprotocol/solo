@@ -27,7 +27,7 @@ import { Types } from "../lib/Types.sol";
  * @title IAutoTrader
  * @author dYdX
  *
- * Interface that Auto-Traders for Solo must implement in order to approve trades.
+ * Interface that Auto-Traders for DolomiteMargin must implement in order to approve trades.
  */
 contract IAutoTrader {
 

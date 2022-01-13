@@ -15,11 +15,7 @@ import { stringToDecimal, valueToInteger } from '../lib/Helpers';
 import { abi as operationAbi } from '../../build/published_contracts/Events.json';
 import { abi as adminAbi } from '../../build/published_contracts/AdminImpl.json';
 import { abi as permissionAbi } from '../../build/published_contracts/Permission.json';
-import { abi as expiryV2Abi } from '../../build/published_contracts/ExpiryV2.json';
-import { abi as refunderAbi } from '../../build/published_contracts/Refunder.json';
-import { abi as limitOrdersAbi } from '../../build/published_contracts/LimitOrders.json';
-import { abi as stopLimitOrdersAbi } from '../../build/published_contracts/StopLimitOrders.json';
-import { abi as canonicalOrdersAbi } from '../../build/published_contracts/CanonicalOrders.json';
+import { abi as expiryAbi } from '../../build/published_contracts/Expiry.json';
 import { abi as signedOperationProxyAbi } from '../../build/published_contracts/SignedOperationProxy.json';
 
 export class Logs {
@@ -43,24 +39,14 @@ export class Logs {
     if (options.skipPermissionLogs) {
       logs = logs.filter((log: any) => !this.logIsFrom(log, permissionAbi));
     }
-    if (options.skipExpiryLogs) {
-      logs = logs.filter((log: any) => !this.logIsFrom(log, expiryV2Abi));
-    }
-    if (options.skipRefunderLogs) {
-      logs = logs.filter((log: any) => !this.logIsFrom(log, refunderAbi));
-    }
-    if (options.skipLimitOrdersLogs) {
-      logs = logs.filter((log: any) => !this.logIsFrom(log, limitOrdersAbi));
-      logs = logs.filter(
-        (log: any) => !this.logIsFrom(log, stopLimitOrdersAbi),
-      );
-      logs = logs.filter(
-        (log: any) => !this.logIsFrom(log, canonicalOrdersAbi),
-      );
-    }
     if (options.skipSignedOperationProxyLogs) {
       logs = logs.filter(
         (log: any) => !this.logIsFrom(log, signedOperationProxyAbi),
+      );
+    }
+    if (options.skipExpiryLogs) {
+      logs = logs.filter(
+        (log: any) => !this.logIsFrom(log, expiryAbi),
       );
     }
 
@@ -111,11 +97,11 @@ export class Logs {
 
   private parseLog(log: Log) {
     switch (log.address.toLowerCase()) {
-      case this.contracts.soloMargin.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.soloMargin, log);
+      case this.contracts.dolomiteMargin.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.dolomiteMargin, log);
       }
-      case this.contracts.expiryV2.options.address.toLowerCase(): {
-        return this.parseLogWithContract(this.contracts.expiryV2, log);
+      case this.contracts.expiry.options.address.toLowerCase(): {
+        return this.parseLogWithContract(this.contracts.expiry, log);
       }
       // case this.contracts.refunder.options.address.toLowerCase(): {
       //   return this.parseLogWithContract(this.contracts.refunder, log);
@@ -181,14 +167,16 @@ export class Logs {
       } else if (input.type.match(/^uint[0-9]*$/)) {
         val = new BigNumber(eventArgs[input.name]);
       } else if (input.type === 'tuple') {
-        val = this.parseTuple(input, eventArgs);
+        val = Logs.parseTuple(input, eventArgs);
+      } else if (input.type === 'string') {
+        val = eventArgs[input.name];
       } else {
-        throw new Error(`Unknown evnt arg type ${input.type}`);
+        throw new Error(`Unknown event arg type ${input.type}`);
       }
       parsed[input.name] = val;
 
       if (input.name === 'orderFlags') {
-        const parsedOrderFlags = this.parseOrderFlags(eventArgs[input.name]);
+        const parsedOrderFlags = Logs.parseOrderFlags(eventArgs[input.name]);
         parsed.isBuy = parsedOrderFlags.isBuy;
         parsed.isDecreaseOnly = parsedOrderFlags.isDecreaseOnly;
         parsed.isNegativeLimitFee = parsedOrderFlags.isNegativeLimitFee;
@@ -198,7 +186,7 @@ export class Logs {
     return parsed;
   }
 
-  private parseOrderFlags(
+  private static parseOrderFlags(
     flags: string,
   ): {
     isBuy: boolean;
@@ -213,14 +201,14 @@ export class Logs {
     };
   }
 
-  private parseTuple(input: any, eventArgs: any) {
+  private static parseTuple(input: any, eventArgs: any) {
     if (
       Array.isArray(input.components) &&
       input.components.length === 2 &&
       input.components[0].name === 'owner' &&
       input.components[1].name === 'number'
     ) {
-      return this.parseAccountInfo(eventArgs[input.name]);
+      return Logs.parseAccountInfo(eventArgs[input.name]);
     }
 
     if (
@@ -229,7 +217,7 @@ export class Logs {
       input.components[0].name === 'deltaWei' &&
       input.components[1].name === 'newPar'
     ) {
-      return this.parseBalanceUpdate(eventArgs[input.name]);
+      return Logs.parseBalanceUpdate(eventArgs[input.name]);
     }
 
     if (
@@ -239,7 +227,7 @@ export class Logs {
       input.components[1].name === 'supply' &&
       input.components[2].name === 'lastUpdate'
     ) {
-      return this.parseIndex(eventArgs[input.name]);
+      return Logs.parseIndex(eventArgs[input.name]);
     }
 
     if (
@@ -253,9 +241,9 @@ export class Logs {
         input.name.toLowerCase().includes('rate') ||
         input.name.toLowerCase().includes('premium')
       ) {
-        return this.parseDecimalValue(eventArgs[input.name]);
+        return Logs.parseDecimalValue(eventArgs[input.name]);
       }
-      return this.parseIntegerValue(eventArgs[input.name]);
+      return Logs.parseIntegerValue(eventArgs[input.name]);
     }
 
     if (
@@ -265,13 +253,13 @@ export class Logs {
       input.components[1].name === 'fee' &&
       input.components[2].name === 'isNegativeFee'
     ) {
-      return this.parseFillData(eventArgs[input.name]);
+      return Logs.parseFillData(eventArgs[input.name]);
     }
 
     throw new Error('Unknown tuple type in event');
   }
 
-  private parseAccountInfo(
+  private static parseAccountInfo(
     accountInfo: any,
   ): {
     owner: address;
@@ -283,7 +271,7 @@ export class Logs {
     };
   }
 
-  private parseIndex(index: any): Index {
+  private static parseIndex(index: any): Index {
     return {
       borrow: stringToDecimal(index.borrow),
       supply: stringToDecimal(index.supply),
@@ -291,22 +279,22 @@ export class Logs {
     };
   }
 
-  private parseBalanceUpdate(update: any): BalanceUpdate {
+  private static parseBalanceUpdate(update: any): BalanceUpdate {
     return {
       deltaWei: valueToInteger(update.deltaWei),
       newPar: valueToInteger(update.newPar),
     };
   }
 
-  private parseDecimalValue(value: any): Decimal {
+  private static parseDecimalValue(value: any): Decimal {
     return stringToDecimal(value.value);
   }
 
-  private parseIntegerValue(value: any): Integer {
+  private static parseIntegerValue(value: any): Integer {
     return new BigNumber(value.value);
   }
 
-  private parseFillData(
+  private static parseFillData(
     fillData: any,
   ): {
     price: BigNumber;

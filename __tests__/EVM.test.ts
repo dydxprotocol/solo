@@ -1,16 +1,16 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
-import { address } from '../src/types';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
+import { address } from '../src';
 import { resetEVM } from './helpers/EVM';
 
 describe('EVM', () => {
-  let solo: TestSolo;
+  let dolomiteMargin: TestDolomiteMargin;
   let accounts: address[];
 
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
   });
 
@@ -21,13 +21,13 @@ describe('EVM', () => {
   it('Resets the state of the EVM successfully', async () => {
     const account = accounts[1];
     const amount = new BigNumber(1);
-    await solo.testing.tokenA.issueTo(amount, account);
-    const balance: BigNumber = await solo.testing.tokenA.getBalance(account);
+    await dolomiteMargin.testing.tokenA.issueTo(amount, account);
+    const balance: BigNumber = await dolomiteMargin.testing.tokenA.getBalance(account);
     expect(balance).toEqual(amount);
 
     await resetEVM();
 
-    const newBalance: BigNumber = await solo.testing.tokenA.getBalance(account);
+    const newBalance: BigNumber = await dolomiteMargin.testing.tokenA.getBalance(account);
     expect(newBalance).toEqual(new BigNumber(0));
   });
 });

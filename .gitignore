@@ -14,3 +14,5 @@ config
 *.swp
 
 artifacts/
+
+.coverage_contracts/

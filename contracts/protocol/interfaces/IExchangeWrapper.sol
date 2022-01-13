@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title IExchangeWrapper
  * @author dYdX
  *
- * Interface that Exchange Wrappers for Solo must implement in order to trade ERC20 tokens.
+ * Interface that Exchange Wrappers for DolomiteMargin must implement in order to trade ERC20 tokens.
  */
 interface IExchangeWrapper {
 

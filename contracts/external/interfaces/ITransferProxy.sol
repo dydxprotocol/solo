@@ -20,6 +20,13 @@ pragma solidity ^0.5.7;
 
 interface ITransferProxy {
 
+    /**
+     * @dev Allows or disallows the caller from invoking the different transfer functions in this contract
+     */
+    function setIsCallerTrusted(address caller, bool isTrusted) external;
+
+    function isCallerTrusted(address caller) external view returns (bool);
+
     function transfer(
         uint fromAccountIndex,
         address to,

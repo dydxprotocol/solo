@@ -19,13 +19,13 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { TypedSignature } from "../lib/TypedSignature.sol";
 
 
@@ -36,7 +36,7 @@ import { TypedSignature } from "../lib/TypedSignature.sol";
  * Contract for sending operations on behalf of others
  */
 contract SignedOperationProxy is
-    OnlySolo,
+OnlyDolomiteMargin,
     Ownable
 {
     using SafeMath for uint256;
@@ -176,11 +176,11 @@ contract SignedOperationProxy is
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         uint256 chainId
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {
         g_isOperational = true;
 
@@ -250,13 +250,13 @@ contract SignedOperationProxy is
     }
 
     /**
-     * Submits an operation to SoloMargin. Actions for accounts that the msg.sender does not control
+     * Submits an operation to DolomiteMargin. Actions for accounts that the msg.sender does not control
      * must be authorized by a signed message. Each authorization can apply to multiple actions at
      * once which must occur in-order next to each other. An empty authorization must be supplied
      * explicitly for each group of actions that do not require a signed message.
      *
-     * @param  accounts  The accounts to forward to SoloMargin.operate()
-     * @param  actions   The actions to forward to SoloMargin.operate()
+     * @param  accounts  The accounts to forward to DolomiteMargin.operate()
+     * @param  actions   The actions to forward to DolomiteMargin.operate()
      * @param  auths     The signed authorizations for each group of actions
      *                   (or unsigned if msg.sender is already authorized)
      */
@@ -359,7 +359,7 @@ contract SignedOperationProxy is
         );
 
         // send the operation
-        SOLO_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     // ============ Getters ============
@@ -400,8 +400,8 @@ contract SignedOperationProxy is
         bool valid =
             msg.sender == accountOwner
             || signer == accountOwner
-            || SOLO_MARGIN.getIsLocalOperator(accountOwner, msg.sender)
-            || SOLO_MARGIN.getIsLocalOperator(accountOwner, signer);
+            || DOLOMITE_MARGIN.getIsLocalOperator(accountOwner, msg.sender)
+            || DOLOMITE_MARGIN.getIsLocalOperator(accountOwner, signer);
 
         Require.that(
             valid,

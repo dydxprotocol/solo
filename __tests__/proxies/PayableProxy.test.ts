@@ -1,20 +1,30 @@
 import BigNumber from 'bignumber.js';
-import { getSolo } from '../helpers/Solo';
-import { TestSolo } from '../modules/TestSolo';
-import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/SoloHelpers';
-import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
-import { expectThrow } from '../../src/lib/Expect';
-import { toBytes } from '../../src/lib/BytesHelper';
-import { OrderType, TestOrder } from '@dydxprotocol/exchange-wrappers';
 import {
   address,
   Amount,
   AmountDenomination,
   AmountReference,
-} from '../../src/types';
+} from '../../src';
+import { toBytes } from '../../src/lib/BytesHelper';
+import {
+  ADDRESSES,
+  INTEGERS,
+} from '../../src/lib/Constants';
+import { expectThrow } from '../../src/lib/Expect';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import {
+  resetEVM,
+  snapshot,
+} from '../helpers/EVM';
+import {
+  TestExchangeWrapperOrder,
+  TestOrder,
+  TestOrderType,
+} from '../helpers/types';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
 let snapshotId: string;
 let admin: address;
@@ -33,11 +43,10 @@ const zero = new BigNumber(0);
 const par = new BigNumber(100);
 const negPar = par.times(-1);
 const defaultIsClosing = false;
+const defaultIsRecyclable = false;
 
-const PRIMARY_REVERT_REASON =
-  'PayableProxyForSoloMargin: Sender must be primary account';
-const SECONDARY_REVERT_REASON =
-  'PayableProxyForSoloMargin: Sender must be secondary account';
+const PRIMARY_REVERT_REASON = 'PayableProxy: Sender must be primary account';
+const SECONDARY_REVERT_REASON = 'PayableProxy: Sender must be secondary account';
 
 const tradeId = new BigNumber('5678');
 
@@ -51,24 +60,24 @@ let bigBlob: any;
 
 describe('PayableProxy', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     admin = accounts[0];
-    owner1 = solo.getDefaultAccount();
+    owner1 = dolomiteMargin.getDefaultAccount();
     owner2 = accounts[3];
     operator = accounts[6];
     testOrder = {
-      type: OrderType.Test,
-      exchangeWrapperAddress: solo.testing.exchangeWrapper.getAddress(),
+      type: TestOrderType.Test,
+      exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.address,
       originator: operator,
-      makerToken: solo.testing.tokenA.getAddress(),
-      takerToken: solo.testing.tokenB.getAddress(),
+      makerToken: dolomiteMargin.testing.tokenA.address,
+      takerToken: dolomiteMargin.testing.tokenB.address,
       makerAmount: zero,
       takerAmount: zero,
       allegedTakerAmount: zero,
       desiredMakerAmount: zero,
-    };
+    } as TestExchangeWrapperOrder;
     bigBlob = {
       amount: amountBlob,
 
@@ -97,26 +106,27 @@ describe('PayableProxy', () => {
       from: owner1,
       to: owner1,
       order: testOrder,
-      autoTrader: solo.testing.autoTrader.getAddress(),
+      autoTrader: dolomiteMargin.testing.autoTrader.address,
       data: toBytes(tradeId),
-      callee: solo.testing.callee.getAddress(),
+      callee: dolomiteMargin.testing.callee.address,
     };
     await resetEVM();
     await Promise.all([
-      setupMarkets(solo, accounts),
-      solo.testing.autoTrader.setData(tradeId, amountBlob),
-      solo.testing.priceOracle.setPrice(
-        solo.weth.getAddress(),
+      setupMarkets(dolomiteMargin, accounts),
+      dolomiteMargin.testing.autoTrader.setData(tradeId, amountBlob),
+      dolomiteMargin.testing.priceOracle.setPrice(
+        dolomiteMargin.weth.address,
         new BigNumber('1e40'),
       ),
     ]);
-    await solo.admin.addMarket(
-      solo.weth.getAddress(),
-      solo.testing.priceOracle.getAddress(),
-      solo.testing.interestSetter.getAddress(),
+    await dolomiteMargin.admin.addMarket(
+      dolomiteMargin.weth.address,
+      dolomiteMargin.testing.priceOracle.address,
+      dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
       defaultIsClosing,
+      defaultIsRecyclable,
       { from: admin },
     );
     snapshotId = await snapshot();
@@ -213,14 +223,14 @@ describe('PayableProxy', () => {
   });
 
   it('Fails for withdrawing to zero', async () => {
-    await solo.weth.wrap(owner1, amount);
+    await dolomiteMargin.weth.wrap(owner1, amount);
     await Promise.all([
-      solo.weth.transfer(
+      dolomiteMargin.weth.transfer(
         owner1,
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
         amount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner1,
         accountNumber1,
         wethMarket,
@@ -232,30 +242,30 @@ describe('PayableProxy', () => {
         .withdraw({
           ...bigBlob,
           marketId: wethMarket,
-          to: solo.contracts.payableProxy.options.address,
+          to: dolomiteMargin.contracts.payableProxy.options.address,
         })
         .commit(),
-      'PayableProxyForSoloMargin: Must set sendEthTo',
+      'PayableProxy: Must set sendEthTo',
     );
   });
 
   it('Succeeds for other accounts', async () => {
     await Promise.all([
-      solo.permissions.approveOperator(solo.testing.autoTrader.getAddress(), {
+      dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.address, {
         from: owner1,
       }),
-      solo.testing.tokenB.issueTo(
+      dolomiteMargin.testing.tokenB.issueTo(
         par,
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner1,
         accountNumber1,
         new BigNumber(2),
         par,
       ),
-      solo.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
-      solo.testing.setAccountBalance(owner2, accountNumber2, market2, par),
+      dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, market1, negPar),
+      dolomiteMargin.testing.setAccountBalance(owner2, accountNumber2, market2, par),
     ]);
     await newOperation()
       .deposit(bigBlob)
@@ -322,20 +332,20 @@ describe('PayableProxy', () => {
           denomination: AmountDenomination.Actual,
         },
         marketId: wethMarket,
-        from: solo.contracts.payableProxy.options.address,
+        from: dolomiteMargin.contracts.payableProxy.options.address,
       })
       .commit({ from: owner1, value: amount.toNumber() });
   });
 
   it('Succeeds for un-wrapping ETH', async () => {
-    await solo.weth.wrap(owner1, amount);
+    await dolomiteMargin.weth.wrap(owner1, amount);
     await Promise.all([
-      solo.weth.transfer(
+      dolomiteMargin.weth.transfer(
         owner1,
-        solo.contracts.soloMargin.options.address,
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
         amount,
       ),
-      solo.testing.setAccountBalance(
+      dolomiteMargin.testing.setAccountBalance(
         owner1,
         accountNumber1,
         wethMarket,
@@ -351,7 +361,7 @@ describe('PayableProxy', () => {
           denomination: AmountDenomination.Actual,
         },
         marketId: wethMarket,
-        to: solo.contracts.payableProxy.options.address,
+        to: dolomiteMargin.contracts.payableProxy.options.address,
       })
       .commit({ from: owner1, value: amount.toNumber() });
   });
@@ -366,16 +376,19 @@ describe('PayableProxy', () => {
           denomination: AmountDenomination.Actual,
         },
         marketId: wethMarket,
-        from: solo.contracts.payableProxy.options.address,
+        from: dolomiteMargin.contracts.payableProxy.options.address,
       })
-      .commit({ from: owner1, value: amount.times(2).toNumber() });
+      .commit({ from: owner1,
+        value: amount.times(2)
+          .toNumber(),
+      });
   });
 });
 
 // ============ Helper Functions ============
 
 function newOperation(sendEthTo?: address) {
-  return solo.operation.initiate({
+  return dolomiteMargin.operation.initiate({
     usePayableProxy: true,
     sendEthTo: sendEthTo || owner1,
   });

@@ -52,6 +52,12 @@ function getChainId(network) {
   if (isMainNet(network)) {
     return 1;
   }
+  if (isArbitrum(network)) {
+    return 42161;
+  }
+  if (isArbitrumTest(network)) {
+    return 421611;
+  }
   if (isMatic(network)) {
     return 137;
   }
@@ -70,7 +76,7 @@ function getChainId(network) {
   if (network.startsWith('test') || network.startsWith('test_ci')) {
     return 1001;
   }
-  throw new Error('No chainId for network', network);
+  throw new Error('No chainId for network ' + network);
 }
 
 async function getRiskLimits() {
@@ -124,28 +130,6 @@ async function getDoubleExponentParams(network) {
   };
 }
 
-function getDaiPriceOracleParams(network) {
-  verifyNetwork(network);
-  if (isDevNetwork) {
-    return {
-      oasisEthAmount: decimalToString('0.01'),
-      deviationParams: {
-        denominator: decimalToString('1.00'),
-        maximumPerSecond: decimalToString('0.0001'),
-        maximumAbsolute: decimalToString('0.01'),
-      },
-    };
-  }
-  return {
-    oasisEthAmount: decimalToString('1.00'),
-    deviationParams: {
-      denominator: decimalToString('1.00'),
-      maximumPerSecond: decimalToString('0.0001'),
-      maximumAbsolute: decimalToString('0.01'),
-    },
-  };
-}
-
 function getExpiryRampTime(network) {
   if (isMaticTest(network)) {
     return '300';
@@ -173,20 +157,13 @@ function getSenderAddress(network, accounts) {
   if (isMatic(network)) {
     return accounts[0];
   }
-  throw new Error('Cannot find Sender address');
-}
-
-function getOraclePokerAddress(network, accounts) {
-  if (isMainNet(network)) {
-    return '0x500dd93a74dbfa65a4eeda44da489adcef530cb9';
-  }
-  if (isKovan(network)) {
-    return '0xa13cc3ab215bf669764a1a56a831c1bdc95659dd';
-  }
-  if (isDevNetwork(network) || isMaticTest(network) || isMaticTest(network)) {
+  if (isArbitrumTest(network)) {
     return accounts[0];
   }
-  throw new Error('Cannot find Oracle Poker');
+  if (isArbitrum(network)) {
+    return accounts[0];
+  }
+  throw new Error('Cannot find Sender address');
 }
 
 function getMultisigAddress(network) {
@@ -205,20 +182,18 @@ function getMultisigAddress(network) {
 module.exports = {
   isArbitrum,
   isArbitrumTest,
+  getChainId,
   isDevNetwork,
   isMainNet,
   isMatic,
   isMaticTest,
   isKovan,
   isDocker,
-  getChainId,
   getRiskLimits,
   getRiskParams,
   getPolynomialParams,
   getDoubleExponentParams,
-  getDaiPriceOracleParams,
   getExpiryRampTime,
-  getOraclePokerAddress,
   getSenderAddress,
   getMultisigAddress,
 };

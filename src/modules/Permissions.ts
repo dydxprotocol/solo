@@ -13,7 +13,7 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators(operatorArgs),
+      this.contracts.dolomiteMargin.methods.setOperators(operatorArgs),
       options,
     );
   }
@@ -22,8 +22,11 @@ export class Permissions {
     operator: address,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    if (!operator) {
+      console.error('cannot find operator!');
+    }
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators([
+      this.contracts.dolomiteMargin.methods.setOperators([
         {
           operator,
           trusted: true,
@@ -38,22 +41,12 @@ export class Permissions {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.setOperators([
+      this.contracts.dolomiteMargin.methods.setOperators([
         {
           operator,
           trusted: false,
         },
       ]),
-      options,
-    );
-  }
-
-  public async disapproveGlobalOperator(
-    operator: address,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
-    return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetGlobalOperator(operator, false),
       options,
     );
   }

@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { OnlySolo } from "../external/helpers/OnlySolo.sol";
+import {OnlyDolomiteMargin} from "../external/helpers/OnlyDolomiteMargin.sol";
 import { ICallee } from "../protocol/interfaces/ICallee.sol";
 import { Account } from "../protocol/lib/Account.sol";
 
@@ -32,7 +32,7 @@ import { Account } from "../protocol/lib/Account.sol";
  */
 contract TestSimpleCallee is
     ICallee,
-    OnlySolo
+OnlyDolomiteMargin
 {
     // ============ Constants ============
 
@@ -50,10 +50,10 @@ contract TestSimpleCallee is
     // ============ Constructor ============
 
     constructor(
-        address soloMargin
+        address dolomiteMargin
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {}
 
     // ============ ICallee Functions ============
@@ -64,7 +64,7 @@ contract TestSimpleCallee is
         bytes memory data
     )
         public
-        onlySolo(msg.sender)
+        onlyDolomiteMargin(msg.sender)
     {
         emit Called(
             sender,

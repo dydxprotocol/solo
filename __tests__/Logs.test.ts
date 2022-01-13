@@ -1,12 +1,12 @@
-import { getSolo } from './helpers/Solo';
-import { TestSolo } from './modules/TestSolo';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 
-let solo: TestSolo;
+let dolomiteMargin: TestDolomiteMargin;
 
 describe('Logs', () => {
   beforeAll(async () => {
-    const r = await getSolo();
-    solo = r.solo;
+    const r = await getDolomiteMargin();
+    dolomiteMargin = r.dolomiteMargin;
   });
 
   it('Succeeds in parsing txResult.logs', async () => {
@@ -33,7 +33,7 @@ describe('Logs', () => {
           id: 'log_21ca9c63',
         },
         {
-          address: solo.contracts.testSoloMargin.options.address,
+          address: dolomiteMargin.contracts.testDolomiteMargin.options.address,
           blockHash:
             '0x81441018c1131afd6f7ceec2077257f4ecfc3325d56b375bf370008d17a20d65',
           blockNumber: 7492404,
@@ -73,7 +73,7 @@ describe('Logs', () => {
           id: 'log_e4f19380',
         },
         {
-          address: solo.contracts.testSoloMargin.options.address,
+          address: dolomiteMargin.contracts.testDolomiteMargin.options.address,
           blockHash:
             '0x81441018c1131afd6f7ceec2077257f4ecfc3325d56b375bf370008d17a20d65',
           blockNumber: 7492404,
@@ -100,7 +100,7 @@ describe('Logs', () => {
         },
       ],
     };
-    const logs = solo.logs.parseLogs(txResult as any);
+    const logs = dolomiteMargin.logs.parseLogs(txResult as any);
     expect(logs.length).not.toEqual(0);
   });
 });

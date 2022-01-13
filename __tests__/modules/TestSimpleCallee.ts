@@ -7,7 +7,7 @@ export class TestSimpleCallee {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testSimpleCallee.options.address;
   }
 }

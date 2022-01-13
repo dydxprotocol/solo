@@ -4,7 +4,7 @@ import {
   ContractCallOptions,
   Decimal,
   TxResult,
-} from '../../src/types';
+} from '../../src';
 import { decimalToString } from '../../src/lib/Helpers';
 
 export class TestInterestSetter {
@@ -14,7 +14,7 @@ export class TestInterestSetter {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testInterestSetter.options.address;
   }
 

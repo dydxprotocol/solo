@@ -19,8 +19,8 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
 import { Account } from "../../protocol/lib/Account.sol";
@@ -30,23 +30,24 @@ import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
-import { OnlySolo } from "../helpers/OnlySolo.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 
 
 /**
  * @title Expiry
  * @author dYdX
  *
- * Sets the negative balance for an account to expire at a certain time. This allows any other
- * account to repay that negative balance after expiry using any positive balance in the same
- * account. The arbitrage incentive is the same as liquidation in the base protocol.
+ * Expiry contract that also allows approved senders to set expiry to be 28 days in the future.
  */
 contract Expiry is
     Ownable,
-    OnlySolo,
+    OnlyDolomiteMargin,
+    IExpiry,
     ICallee,
     IAutoTrader
 {
+    using Math for uint256;
     using SafeMath for uint32;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -69,10 +70,19 @@ contract Expiry is
         uint256 expiryRampTime
     );
 
+    event LogSenderApproved(
+        address approver,
+        address sender,
+        uint32 minTimeDelta
+    );
+
     // ============ Storage ============
 
     // owner => number => market => time
     mapping (address => mapping (uint256 => mapping (uint256 => uint32))) g_expiries;
+
+    // owner => sender => minimum time delta
+    mapping (address => mapping (address => uint32)) public g_approvedSender;
 
     // time over which the liquidation ratio goes from zero to maximum
     uint256 public g_expiryRampTime;
@@ -80,11 +90,11 @@ contract Expiry is
     // ============ Constructor ============
 
     constructor (
-        address soloMargin,
+        address dolomiteMargin,
         uint256 expiryRampTime
     )
         public
-        OnlySolo(soloMargin)
+        OnlyDolomiteMargin(dolomiteMargin)
     {
         g_expiryRampTime = expiryRampTime;
     }
@@ -101,7 +111,18 @@ contract Expiry is
         g_expiryRampTime = newExpiryRampTime;
     }
 
-    // ============ Only-Solo Functions ============
+    // ============ Approval Functions ============
+
+    function approveSender(
+        address sender,
+        uint32 minTimeDelta
+    )
+        external
+    {
+        setApproval(msg.sender, sender, minTimeDelta);
+    }
+
+    // ============ Only-DolomiteMargin Functions ============
 
     function callFunction(
         address /* sender */,
@@ -109,19 +130,14 @@ contract Expiry is
         bytes memory data
     )
         public
-        onlySolo(msg.sender)
+        onlyDolomiteMargin(msg.sender)
     {
-        (
-            uint256 marketId,
-            uint32 expiryTime
-        ) = parseCallArgs(data);
-
-        // don't set expiry time for accounts with positive balance
-        if (expiryTime != 0 && !SOLO_MARGIN.getAccountPar(account, marketId).isNegative()) {
-            return;
+        CallFunctionType callType = abi.decode(data, (CallFunctionType));
+        if (callType == CallFunctionType.SetExpiry) {
+            callFunctionSetExpiry(account.owner, data);
+        } else {
+            callFunctionSetApproval(account.owner, data);
         }
-
-        setExpiry(account, marketId, expiryTime);
     }
 
     function getTradeCost(
@@ -135,7 +151,7 @@ contract Expiry is
         bytes memory data
     )
         public
-        onlySolo(msg.sender)
+        onlyDolomiteMargin(msg.sender)
         returns (Types.AssetAmount memory)
     {
         // return zero if input amount is zero
@@ -148,10 +164,7 @@ contract Expiry is
             });
         }
 
-        (
-            uint256 owedMarketId,
-            uint32 maxExpiry
-        ) = parseTradeArgs(data);
+        (uint256 owedMarketId, uint32 maxExpiry) = abi.decode(data, (uint256, uint32));
 
         uint32 expiry = getExpiry(makerAccount, owedMarketId);
 
@@ -214,7 +227,7 @@ contract Expiry is
             Monetary.Price memory
         )
     {
-        Decimal.D256 memory spread = SOLO_MARGIN.getLiquidationSpreadForPair(
+        Decimal.D256 memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
             heldMarketId,
             owedMarketId
         );
@@ -225,14 +238,68 @@ contract Expiry is
             spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
         }
 
-        Monetary.Price memory heldPrice = SOLO_MARGIN.getMarketPrice(heldMarketId);
-        Monetary.Price memory owedPrice = SOLO_MARGIN.getMarketPrice(owedMarketId);
+        Monetary.Price memory heldPrice = DOLOMITE_MARGIN.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = DOLOMITE_MARGIN.getMarketPrice(owedMarketId);
         owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
 
         return (heldPrice, owedPrice);
     }
 
     // ============ Private Functions ============
+
+    function callFunctionSetExpiry(
+        address sender,
+        bytes memory data
+    )
+        private
+    {
+        (
+            CallFunctionType callType,
+            SetExpiryArg[] memory expiries
+        ) = abi.decode(data, (CallFunctionType, SetExpiryArg[]));
+
+        assert(callType == CallFunctionType.SetExpiry);
+
+        for (uint256 i = 0; i < expiries.length; i++) {
+            SetExpiryArg memory exp = expiries[i];
+            if (exp.account.owner != sender) {
+                // don't do anything if sender is not approved for this action
+                uint32 minApprovedTimeDelta = g_approvedSender[exp.account.owner][sender];
+                if (minApprovedTimeDelta == 0 || exp.timeDelta < minApprovedTimeDelta) {
+                    continue;
+                }
+            }
+
+            // if timeDelta is zero, interpret it as unset expiry
+            if (
+                exp.timeDelta != 0 &&
+                DOLOMITE_MARGIN.getAccountPar(exp.account, exp.marketId).isNegative()
+            ) {
+                // only change non-zero values if forceUpdate is true
+                if (exp.forceUpdate || getExpiry(exp.account, exp.marketId) == 0) {
+                    uint32 newExpiryTime = Time.currentTime().add(exp.timeDelta).to32();
+                    setExpiry(exp.account, exp.marketId, newExpiryTime);
+                }
+            } else {
+                // timeDelta is zero or account has non-negative balance
+                setExpiry(exp.account, exp.marketId, 0);
+            }
+        }
+    }
+
+    function callFunctionSetApproval(
+        address sender,
+        bytes memory data
+    )
+        private
+    {
+        (
+            CallFunctionType callType,
+            SetApprovalArg memory approvalArg
+        ) = abi.decode(data, (CallFunctionType, SetApprovalArg));
+        assert(callType == CallFunctionType.SetApproval);
+        setApproval(sender, approvalArg.sender, approvalArg.minTimeDelta);
+    }
 
     function getTradeCostInternal(
         uint256 inputMarketId,
@@ -248,7 +315,7 @@ contract Expiry is
         returns (Types.AssetAmount memory)
     {
         Types.AssetAmount memory output;
-        Types.Wei memory maxOutputWei = SOLO_MARGIN.getAccountWei(makerAccount, outputMarketId);
+        Types.Wei memory maxOutputWei = DOLOMITE_MARGIN.getAccountWei(makerAccount, outputMarketId);
 
         if (inputWei.isPositive()) {
             Require.that(
@@ -336,13 +403,23 @@ contract Expiry is
         private
     {
         g_expiries[account.owner][account.number][marketId] = time;
-
         emit ExpirySet(
             account.owner,
             account.number,
             marketId,
             time
         );
+    }
+
+    function setApproval(
+        address approver,
+        address sender,
+        uint32 minTimeDelta
+    )
+        private
+    {
+        g_approvedSender[approver][sender] = minTimeDelta;
+        emit LogSenderApproved(approver, sender, minTimeDelta);
     }
 
     function heldWeiToOwedWei(
@@ -409,69 +486,5 @@ contract Expiry is
             ref: Types.AssetReference.Delta,
             value: heldAmount
         });
-    }
-
-    function parseCallArgs(
-        bytes memory data
-    )
-        private
-        pure
-        returns (
-            uint256,
-            uint32
-        )
-    {
-        Require.that(
-            data.length == 64,
-            FILE,
-            "Call data invalid length",
-            data.length
-        );
-
-        uint256 marketId;
-        uint256 rawExpiry;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            marketId := mload(add(data, 32))
-            rawExpiry := mload(add(data, 64))
-        }
-
-        return (
-            marketId,
-            Math.to32(rawExpiry)
-        );
-    }
-
-    function parseTradeArgs(
-        bytes memory data
-    )
-        private
-        pure
-        returns (
-            uint256,
-            uint32
-        )
-    {
-        Require.that(
-            data.length == 64,
-            FILE,
-            "Trade data invalid length",
-            data.length
-        );
-
-        uint256 owedMarketId;
-        uint256 rawExpiry;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            owedMarketId := mload(add(data, 32))
-            rawExpiry := mload(add(data, 64))
-        }
-
-        return (
-            owedMarketId,
-            Math.to32(rawExpiry)
-        );
     }
 }

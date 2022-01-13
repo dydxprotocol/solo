@@ -32,7 +32,7 @@ export class EVM {
   /**
    * Attempts to reset the EVM to its initial state. Useful for testing suites
    *
-   * @param provider a valid web3 provider
+   * @param resetSnapshotId a valid snapshot to which the evm will be reverted
    * @returns null
    */
   public async resetEVM(resetSnapshotId: string = '0x1'): Promise<void> {
@@ -94,7 +94,7 @@ export class EVM {
   }
 
   private async send(args: JsonRPCRequest): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const callback: any = (error: Error, val: JsonRPCResponse): void => {
         if (error) {
           reject(error);
@@ -103,7 +103,7 @@ export class EVM {
         }
       };
 
-      this.provider.send(args, callback);
+      await this.provider.send(args, callback);
     });
   }
 }

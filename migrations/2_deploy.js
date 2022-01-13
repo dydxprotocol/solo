@@ -35,6 +35,7 @@ const {
   isArbitrumTest,
 } = require('./helpers');
 const {
+  getChainlinkPriceOracleContract,
   getChainlinkPriceOracleV1Params,
 } = require('./oracle_helpers');
 const {
@@ -42,7 +43,6 @@ const {
   getWethAddress,
 } = require('./token_helpers');
 const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV2Pair.json');
-const { ADDRESSES } = require('../src/lib/Constants');
 
 
 // ============ Contracts ============
@@ -50,10 +50,12 @@ const { ADDRESSES } = require('../src/lib/Constants');
 // Base Protocol
 const AdminImpl = artifacts.require('AdminImpl');
 const OperationImpl = artifacts.require('OperationImpl');
-const SoloMargin = artifacts.require('SoloMargin');
+const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
+const TestOperationImpl = artifacts.require('TestOperationImpl');
+const DolomiteMargin = artifacts.require('DolomiteMargin');
 
 // Test Contracts
-const TestSoloMargin = artifacts.require('TestSoloMargin');
+const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
 const TokenA = artifacts.require('TokenA');
 const TokenB = artifacts.require('TokenB');
 const TokenC = artifacts.require('TokenC');
@@ -83,21 +85,18 @@ const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 
 // Second-Layer Contracts
-const PayableProxyForSoloMargin = artifacts.require('PayableProxyForSoloMargin');
-const ExpiryV2 = artifacts.require('ExpiryV2');
-const LiquidatorProxyV1ForSoloMargin = artifacts.require('LiquidatorProxyV1ForSoloMargin');
-const LiquidatorProxyV1WithAmmForSoloMargin = artifacts.require('LiquidatorProxyV1WithAmmForSoloMargin');
+const PayableProxy = artifacts.require('PayableProxy');
+const Expiry = artifacts.require('Expiry');
+const LiquidatorProxyV1 = artifacts.require('LiquidatorProxyV1');
+const LiquidatorProxyV1WithAmm = artifacts.require('LiquidatorProxyV1WithAmm');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
-const TestnetAmmRebalancerProxy = artifacts.require('TestnetAmmRebalancerProxy');
+const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
-
-// Oracles
-const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // Amm
 const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
@@ -120,7 +119,7 @@ const migration = async (deployer, network, accounts) => {
   await deployer.deploy(
     SimpleFeeOwner,
     await DolomiteAmmFactory.address,
-    (await getSoloMargin(network)).address,
+    (await getDolomiteMargin(network)).address,
   );
 };
 
@@ -152,27 +151,35 @@ async function deployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer, network) {
+  await deployer.deploy(LiquidateOrVaporizeImpl);
+
+  OperationImpl.link('LiquidateOrVaporizeImpl', LiquidateOrVaporizeImpl.address);
+
   await Promise.all([
     deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl, { gas: 6600000 }),
+    deployer.deploy(OperationImpl),
   ]);
 
-  let soloMargin;
+  let dolomiteMargin;
   if (isDevNetwork(network)) {
-    soloMargin = TestSoloMargin;
+    await deployer.deploy(TestOperationImpl);
+    dolomiteMargin = TestDolomiteMargin;
   } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network)) {
-    soloMargin = SoloMargin;
+    dolomiteMargin = DolomiteMargin;
   } else if (isKovan(network) || isMainNet(network)) {
-    soloMargin = SoloMargin;
+    dolomiteMargin = DolomiteMargin;
   } else {
-    throw new Error('Cannot deploy SoloMargin');
+    throw new Error('Cannot deploy DolomiteMargin');
   }
 
   await Promise.all([
-    soloMargin.link('AdminImpl', AdminImpl.address),
-    soloMargin.link('OperationImpl', OperationImpl.address),
+    dolomiteMargin.link('AdminImpl', AdminImpl.address),
+    dolomiteMargin.link('OperationImpl', OperationImpl.address),
   ]);
-  await deployer.deploy(soloMargin, getRiskParams(network), getRiskLimits());
+  if (isDevNetwork(network)) {
+    await dolomiteMargin.link('TestOperationImpl', TestOperationImpl.address);
+  }
+  await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
 }
 
 async function deployInterestSetters(deployer, network) {
@@ -220,10 +227,11 @@ async function deployPriceOracles(deployer, network) {
     usdcUsdAggregator: TestUsdcUsdChainlinkAggregator,
   };
 
+  const oracleContract = getChainlinkPriceOracleContract(network, artifacts);
   const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);
   await Promise.all([
     deployer.deploy(
-      ChainlinkPriceOracleV1,
+      oracleContract,
       params.tokens,
       params.aggregators,
       params.tokenDecimals,
@@ -234,12 +242,12 @@ async function deployPriceOracles(deployer, network) {
 }
 
 async function deploySecondLayer(deployer, network, accounts) {
-  const soloMargin = await getSoloMargin(network);
+  const dolomiteMargin = await getDolomiteMargin(network);
 
   if (isDevNetwork(network)) {
     await Promise.all([
-      deployer.deploy(TestCallee, soloMargin.address),
-      deployer.deploy(TestSimpleCallee, soloMargin.address),
+      deployer.deploy(TestCallee, dolomiteMargin.address),
+      deployer.deploy(TestSimpleCallee, dolomiteMargin.address),
       deployer.deploy(UniswapV2Factory, getSenderAddress(network, accounts)),
     ]);
 
@@ -251,34 +259,34 @@ async function deploySecondLayer(deployer, network, accounts) {
 
   await deployer.deploy(
     TransferProxy,
-    soloMargin.address,
+    dolomiteMargin.address,
   );
 
   const dolomiteAmmFactory = await deployer.deploy(
     DolomiteAmmFactory,
     getSenderAddress(network, accounts),
-    soloMargin.address,
+    dolomiteMargin.address,
     TransferProxy.address,
   );
 
-  const expiryV2 = await deployer.deploy(
-    ExpiryV2,
-    soloMargin.address,
+  const expiry = await deployer.deploy(
+    Expiry,
+    dolomiteMargin.address,
     getExpiryRampTime(network),
   );
 
   await deployer.deploy(
     DolomiteAmmRouterProxy,
-    soloMargin.address,
+    dolomiteMargin.address,
     dolomiteAmmFactory.address,
-    expiryV2.address,
+    expiry.address,
   );
 
   if (isDevNetwork(network)) {
     const uniswapV2Router = await UniswapV2Router02.deployed();
     await deployer.deploy(
       AmmRebalancerProxy,
-      soloMargin.address,
+      dolomiteMargin.address,
       dolomiteAmmFactory.address,
       [uniswapV2Router.address],
       [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
@@ -287,7 +295,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   } else {
     await deployer.deploy(
       AmmRebalancerProxy,
-      soloMargin.address,
+      dolomiteMargin.address,
       dolomiteAmmFactory.address,
       [],
       [],
@@ -297,111 +305,74 @@ async function deploySecondLayer(deployer, network, accounts) {
 
   if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
     await deployer.deploy(
-      TestnetAmmRebalancerProxy,
-      soloMargin.address,
+      TestAmmRebalancerProxy,
+      dolomiteMargin.address,
       dolomiteAmmFactory.address,
     );
   }
 
   await Promise.all([
     deployer.deploy(
-      PayableProxyForSoloMargin,
-      soloMargin.address,
+      PayableProxy,
+      dolomiteMargin.address,
       isMatic(network) || isMaticTest(network) ? getMaticAddress(network) : getWethAddress(network, WETH9),
     ),
     deployer.deploy(
-      LiquidatorProxyV1ForSoloMargin,
-      soloMargin.address,
+      LiquidatorProxyV1,
+      dolomiteMargin.address,
     ),
     deployer.deploy(
-      LiquidatorProxyV1WithAmmForSoloMargin,
-      soloMargin.address,
+      LiquidatorProxyV1WithAmm,
+      dolomiteMargin.address,
       DolomiteAmmRouterProxy.address,
-      ExpiryV2.address,
+      Expiry.address,
     ),
     deployer.deploy(
       SignedOperationProxy,
-      soloMargin.address,
+      dolomiteMargin.address,
       getChainId(network),
     ),
   ]);
 
   await Promise.all([
-    soloMargin.ownerSetGlobalOperator(
-      PayableProxyForSoloMargin.address,
+    dolomiteMargin.ownerSetGlobalOperator(
+      PayableProxy.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
-      ExpiryV2.address,
+    dolomiteMargin.ownerSetGlobalOperator(
+      Expiry.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
+    dolomiteMargin.ownerSetGlobalOperator(
       SignedOperationProxy.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
+    dolomiteMargin.ownerSetGlobalOperator(
       DolomiteAmmRouterProxy.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
+    dolomiteMargin.ownerSetGlobalOperator(
+      DolomiteAmmFactory.address,
+      true,
+    ),
+    dolomiteMargin.ownerSetGlobalOperator(
       TransferProxy.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
-      LiquidatorProxyV1ForSoloMargin.address,
+    dolomiteMargin.ownerSetGlobalOperator(
+      LiquidatorProxyV1.address,
       true,
     ),
-    soloMargin.ownerSetGlobalOperator(
-      LiquidatorProxyV1WithAmmForSoloMargin.address,
+    dolomiteMargin.ownerSetGlobalOperator(
+      LiquidatorProxyV1WithAmm.address,
       true,
     ),
   ]);
 }
 
-async function getSoloMargin(network) {
+async function getDolomiteMargin(network) {
   if (isDevNetwork(network)) {
-    return TestSoloMargin.deployed();
+    return TestDolomiteMargin.deployed();
   }
-  return SoloMargin.deployed();
-}
-
-// ============ Address Helper Functions ============
-
-function getMedianizerAddress(network) {
-  if (isDevNetwork(network)) {
-    return TestMakerOracle.address;
-  }
-  if (isMainNet(network)) {
-    return '0x729D19f657BD0614b4985Cf1D82531c67569197B';
-  }
-  if (isKovan(network)) {
-    return '0xa5aA4e07F5255E14F02B385b1f04b35cC50bdb66';
-  }
-  throw new Error('Cannot find Medianizer');
-}
-
-function getOasisAddress(network) {
-  if (isDevNetwork(network)) {
-    return TestOasisDex.address;
-  }
-  if (isMainNet(network)) {
-    return '0x794e6e91555438aFc3ccF1c5076A74F42133d08D';
-  }
-  if (isKovan(network)) {
-    return '0x4A6bC4e803c62081ffEbCc8d227B5a87a58f1F8F';
-  }
-  throw new Error('Cannot find OasisDex');
-}
-
-function getDaiUniswapAddress(network) {
-  if (isDevNetwork(network)) {
-    return ADDRESSES.TEST_UNISWAP;
-  }
-  if (isMainNet(network)) {
-    return '0x2a1530c4c41db0b0b2bb646cb5eb1a67b7158667';
-  }
-  if (isKovan(network)) {
-    return '0x40b4d262fd09814e5e96f7b386d81ba4659a2b1d';
-  }
-  throw new Error('Cannot find Uniswap for Dai');
+  return DolomiteMargin.deployed();
 }

@@ -23,7 +23,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerWithdrawExcessTokens(
+      this.contracts.dolomiteMargin.methods.ownerWithdrawExcessTokens(
         marketId.toFixed(0),
         recipient,
       ),
@@ -37,7 +37,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerWithdrawUnsupportedTokens(
+      this.contracts.dolomiteMargin.methods.ownerWithdrawUnsupportedTokens(
         token,
         recipient,
       ),
@@ -54,16 +54,38 @@ export class Admin {
     marginPremium: Decimal,
     spreadPremium: Decimal,
     isClosing: boolean,
+    isRecyclable: boolean,
     options?: ContractCallOptions,
   ): Promise<TxResult> {
+    if (options) {
+      options.gas = '1000000';
+    }
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerAddMarket(
+      this.contracts.dolomiteMargin.methods.ownerAddMarket(
         token,
         priceOracle,
         interestSetter,
         { value: decimalToString(marginPremium) },
         { value: decimalToString(spreadPremium) },
         isClosing,
+        isRecyclable,
+      ),
+      options,
+    );
+  }
+
+  public async removeMarkets(
+    marketIds: Integer[],
+    salvager: address,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    if (options) {
+      options.gas = '1000000';
+    }
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteMargin.methods.ownerRemoveMarkets(
+        marketIds.map(marketId => marketId.toFixed(0)),
+        salvager,
       ),
       options,
     );
@@ -75,7 +97,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetIsClosing(
+      this.contracts.dolomiteMargin.methods.ownerSetIsClosing(
         marketId.toFixed(0),
         isClosing,
       ),
@@ -89,7 +111,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetMarginPremium(
+      this.contracts.dolomiteMargin.methods.ownerSetMarginPremium(
         marketId.toFixed(0),
         { value: decimalToString(marginPremium) },
       ),
@@ -103,7 +125,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetSpreadPremium(
+      this.contracts.dolomiteMargin.methods.ownerSetSpreadPremium(
         marketId.toFixed(0),
         { value: decimalToString(spreadPremium) },
       ),
@@ -117,7 +139,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetPriceOracle(
+      this.contracts.dolomiteMargin.methods.ownerSetPriceOracle(
         marketId.toFixed(0),
         oracle,
       ),
@@ -131,7 +153,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetInterestSetter(
+      this.contracts.dolomiteMargin.methods.ownerSetInterestSetter(
         marketId.toFixed(0),
         interestSetter,
       ),
@@ -146,7 +168,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetMarginRatio({
+      this.contracts.dolomiteMargin.methods.ownerSetMarginRatio({
         value: decimalToString(ratio),
       }),
       options,
@@ -158,7 +180,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetLiquidationSpread({
+      this.contracts.dolomiteMargin.methods.ownerSetLiquidationSpread({
         value: decimalToString(spread),
       }),
       options,
@@ -170,7 +192,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetEarningsRate({
+      this.contracts.dolomiteMargin.methods.ownerSetEarningsRate({
         value: decimalToString(rate),
       }),
       options,
@@ -182,7 +204,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetMinBorrowedValue({
+      this.contracts.dolomiteMargin.methods.ownerSetMinBorrowedValue({
         value: minBorrowedValue.toFixed(0),
       }),
       options,
@@ -197,7 +219,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.soloMargin.methods.ownerSetGlobalOperator(
+      this.contracts.dolomiteMargin.methods.ownerSetGlobalOperator(
         operator,
         approved,
       ),
