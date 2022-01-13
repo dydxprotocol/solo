@@ -3381,11 +3381,6 @@ library AdminImpl {
         address token
     );
 
-    event LogSetIsAllowedInIndexZero(
-        uint256 marketId,
-        bool isAllowedInIndexZero
-    );
-
     event LogSetIsClosing(
         uint256 marketId,
         bool isClosing

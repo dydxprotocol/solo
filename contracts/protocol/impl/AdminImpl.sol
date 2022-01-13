@@ -29,7 +29,7 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Token } from "../lib/Token.sol";
-import { Types } from "../lib/Types.sol";
+import { Types } from "../lib/Types.sol";00
 
 
 /**
@@ -71,11 +71,6 @@ library AdminImpl {
     event LogRemoveMarket(
         uint256 marketId,
         address token
-    );
-
-    event LogSetIsAllowedInIndexZero(
-        uint256 marketId,
-        bool isAllowedInIndexZero
     );
 
     event LogSetIsClosing(
