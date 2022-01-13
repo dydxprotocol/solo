@@ -132,6 +132,7 @@ async function addMarkets(
   const marginPremium = { value: '0' };
   const spreadPremium = { value: '0' };
   const isClosed = false;
+  const isRecyclable = false;
 
   for (let i = 0; i < tokens.length; i += 1) {
     // eslint-disable-next-line no-await-in-loop
@@ -142,6 +143,7 @@ async function addMarkets(
       marginPremium,
       spreadPremium,
       isClosed,
+      isRecyclable,
     );
   }
 }
@@ -158,24 +160,25 @@ async function getDolomiteMargin(network) {
 function getTokens(network) {
   if (isMatic(network)) {
     return [
+      { address: getWethAddress(network, WETH9) },
       { address: getDaiAddress(network, TokenB) },
       { address: getMaticAddress(network, TokenD) },
       { address: getUsdcAddress(network, TokenA) },
-      { address: getWethAddress(network, WETH9) },
       { address: getLinkAddress(network, TokenF) },
     ];
-  }
-  if (isArbitrum(network)) {
+  } else if (isMaticTest(network)) {
+    return [
+      { address: getWethAddress(network, WETH9) },
+      { address: getDaiAddress(network, TokenB) },
+      { address: getMaticAddress(network, TokenD) },
+      { address: getUsdcAddress(network, TokenA) },
+    ];
+  } else if (isArbitrum(network)) {
     // TODO
     throw new Error('TODO: add tokens');
   }
 
-  return [
-    { address: getDaiAddress(network, TokenB) },
-    { address: getMaticAddress(network, TokenD) },
-    { address: getUsdcAddress(network, TokenA) },
-    { address: getWethAddress(network, WETH9) },
-  ];
+  throw new Error('unknown network');
 }
 
 async function getOracles(network) {

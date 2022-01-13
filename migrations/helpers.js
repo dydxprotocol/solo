@@ -157,6 +157,12 @@ function getSenderAddress(network, accounts) {
   if (isMatic(network)) {
     return accounts[0];
   }
+  if (isArbitrumTest(network)) {
+    return accounts[0];
+  }
+  if (isArbitrum(network)) {
+    return accounts[0];
+  }
   throw new Error('Cannot find Sender address');
 }
 

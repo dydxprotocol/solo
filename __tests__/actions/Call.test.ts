@@ -5,7 +5,7 @@ import { expectThrow } from '../../src/lib/Expect';
 import {
   AccountStatus,
   address,
-  Call,
+  Call, TxResult,
 } from '../../src';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
@@ -143,7 +143,7 @@ describe('Call', () => {
 
 // ============ Helper Functions ============
 
-async function expectCallOkay(glob: Object, options?: Object) {
+async function expectCallOkay(glob: Object, options?: Object): Promise<TxResult> {
   const combinedGlob = { ...defaultGlob, ...glob };
   return dolomiteMargin.operation
     .initiate()

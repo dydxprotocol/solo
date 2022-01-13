@@ -21,13 +21,16 @@ const {
   getMultisigAddress,
 } = require('./helpers');
 
+const {
+  getChainlinkPriceOracleContract,
+} = require('./oracle_helpers');
+
 // ============ Contracts ============
 
 const DolomiteMargin = artifacts.require('DolomiteMargin');
 const Expiry = artifacts.require('Expiry');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
-const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
 const UniswapV2Factory = artifacts.require('UniswapV2Factory');
 
@@ -49,7 +52,7 @@ const migration = async (deployer, network) => {
       Expiry.deployed(),
       SignedOperationProxy.deployed(),
       SimpleFeeOwner.deployed(),
-      ChainlinkPriceOracleV1.deployed(),
+      getChainlinkPriceOracleContract(network, artifacts).deployed(),
       DolomiteAmmFactory.deployed(),
     ]);
 

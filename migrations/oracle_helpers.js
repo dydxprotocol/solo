@@ -1,5 +1,6 @@
 const {
   isDevNetwork, isMainNet, isKovan, isMaticTest, isMatic, isArbitrum,
+  isArbitrumTest,
 } = require('./helpers');
 const {
   getDaiAddress, getLinkAddress, getLrcAddress, getMaticAddress, getUsdcAddress, getWbtcAddress, getWethAddress,
@@ -142,6 +143,20 @@ function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
   throw new Error('Cannot find USDC-ETH aggregator');
 }
 
+function getChainlinkPriceOracleContract(network, artifacts) {
+  // Oracles
+  const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
+  const TestChainlinkPriceOracleV1 = artifacts.require('TestChainlinkPriceOracleV1');
+
+  if (isMatic(network) || isArbitrum(network)) {
+    return ChainlinkPriceOracleV1;
+  } else if (isMaticTest(network) || isArbitrumTest(network)) {
+    return TestChainlinkPriceOracleV1;
+  } else {
+    throw new Error('Invalid network!');
+  }
+}
+
 function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
   if (isMaticTest(network)) {
     return mapPairsToParams([
@@ -150,8 +165,7 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
     ]);
-  }
-  if (isMatic(network)) {
+  } else if (isMatic(network)) {
     return mapPairsToParams([
       [getDaiAddress(network), getDaiUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
       [getLinkAddress(network), getLinkUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
@@ -159,12 +173,9 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
     ]);
-  }
-  if (isArbitrum(network)) {
+  } else if (isArbitrum(network)) {
     throw new Error('Cannot get Chainlink params for Arbitrum');
-  }
-
-  if (isDevNetwork(network)) {
+  } else if (isDevNetwork(network)) {
     const {
       TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
     } = tokens;
@@ -209,4 +220,5 @@ function mapPairsToParams(pairs) {
 
 module.exports = {
   getChainlinkPriceOracleV1Params,
+  getChainlinkPriceOracleContract,
 };

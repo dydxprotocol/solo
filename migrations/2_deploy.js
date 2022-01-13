@@ -35,6 +35,7 @@ const {
   isArbitrumTest,
 } = require('./helpers');
 const {
+  getChainlinkPriceOracleContract,
   getChainlinkPriceOracleV1Params,
 } = require('./oracle_helpers');
 const {
@@ -96,9 +97,6 @@ const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
-
-// Oracles
-const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
 
 // Amm
 const DolomiteAmmFactory = artifacts.require('DolomiteAmmFactory');
@@ -229,10 +227,11 @@ async function deployPriceOracles(deployer, network) {
     usdcUsdAggregator: TestUsdcUsdChainlinkAggregator,
   };
 
+  const oracleContract = getChainlinkPriceOracleContract(network, artifacts);
   const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);
   await Promise.all([
     deployer.deploy(
-      ChainlinkPriceOracleV1,
+      oracleContract,
       params.tokens,
       params.aggregators,
       params.tokenDecimals,

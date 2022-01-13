@@ -94,7 +94,7 @@ export class EVM {
   }
 
   private async send(args: JsonRPCRequest): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const callback: any = (error: Error, val: JsonRPCResponse): void => {
         if (error) {
           reject(error);
@@ -103,7 +103,7 @@ export class EVM {
         }
       };
 
-      this.provider.send(args, callback);
+      await this.provider.send(args, callback);
     });
   }
 }

@@ -25,6 +25,7 @@ import { default as Weth } from '../build/contracts/WETH9.json';
 import { default as Events } from '../build/contracts/Events.json';
 import { default as AdminImpl } from '../build/contracts/AdminImpl.json';
 import { default as OperationImpl } from '../build/contracts/OperationImpl.json';
+import { default as LiquidateOrVaporizeImpl } from '../build/contracts/LiquidateOrVaporizeImpl.json';
 import { default as Permission } from '../build/contracts/Permission.json';
 import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
@@ -53,6 +54,7 @@ export default {
   Events,
   AdminImpl,
   OperationImpl,
+  LiquidateOrVaporizeImpl,
   Permission,
   PartiallyDelayedMultiSig,
   ChainlinkPriceOracleV1,
