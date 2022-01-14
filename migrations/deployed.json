@@ -55,8 +55,8 @@
     "ChainlinkPriceOracleV1": {
         "80001": {
             "links": {},
-            "address": "0xde03A33f1cF854Fd31A5dC5f29872D3E334Dca42",
-            "transactionHash": "0x1e0397ab654465b0de4d86ae1ad44041a81892a4b9c2da4590c4f775860289ba"
+            "address": "0x817de0dda92f1574421ffbe3d3baf85cbef03227",
+            "transactionHash": "0x10c501657ba43f3813b074f805af9bcd99e4c59fdf3ed551faa13c4cf0ad5d76"
         }
     },
     "Expiry": {
