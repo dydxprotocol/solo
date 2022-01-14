@@ -19,7 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
-import {IERC20Detailed} from "../interfaces/IERC20Detailed.sol";
+import { IERC20Detailed } from "../interfaces/IERC20Detailed.sol";
 
 
 /**
