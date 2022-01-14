@@ -29,7 +29,7 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Token } from "../lib/Token.sol";
-import { Types } from "../lib/Types.sol";00
+import { Types } from "../lib/Types.sol";
 
 
 /**

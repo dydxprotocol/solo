@@ -27,3 +27,4 @@ BigNumber.config({
 export { DolomiteMargin } from './DolomiteMargin';
 export { Web3, BigNumber };
 export * from './types';
+export * from './lib/Constants';
