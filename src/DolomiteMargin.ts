@@ -47,6 +47,7 @@ import {
   EthereumAccount,
   Networks,
 } from './types';
+import { MultiCall } from './modules/MultiCall';
 
 export class DolomiteMargin {
   public contracts: Contracts;
@@ -66,6 +67,7 @@ export class DolomiteMargin {
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxy: AmmRebalancerProxy;
   public transferProxy: TransferProxy;
+  public multiCall: MultiCall;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -114,6 +116,7 @@ export class DolomiteMargin {
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxy = new AmmRebalancerProxy(this.contracts);
     this.transferProxy = new TransferProxy(this.contracts);
+    this.multiCall = new MultiCall(this.contracts);
     this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);

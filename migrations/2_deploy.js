@@ -54,6 +54,9 @@ const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
 const TestOperationImpl = artifacts.require('TestOperationImpl');
 const DolomiteMargin = artifacts.require('DolomiteMargin');
 
+// MultiCall
+const MultiCall = artifacts.require('MultiCall');
+
 // Test Contracts
 const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
 const TokenA = artifacts.require('TokenA');
@@ -110,6 +113,7 @@ const migration = async (deployer, network, accounts) => {
   await Promise.all([
     deployTestContracts(deployer, network),
     deployBaseProtocol(deployer, network),
+    deployMultiCall(deployer, network),
   ]);
   await Promise.all([
     deployInterestSetters(deployer, network),
@@ -180,6 +184,10 @@ async function deployBaseProtocol(deployer, network) {
     await dolomiteMargin.link('TestOperationImpl', TestOperationImpl.address);
   }
   await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
+}
+
+async function deployMultiCall(deployer) {
+  deployer.deploy(MultiCall);
 }
 
 async function deployInterestSetters(deployer, network) {

@@ -41,6 +41,10 @@ import "../external/interfaces/IUniswapV2Router.sol";
 
 import "../external/helpers/OnlyDolomiteMargin.sol";
 
+/**
+ * @dev The difference between this contract and `AmmRebalancerProxy` is this does not rebalance using arbitrage with
+ *      another DEX. Instead, it simply swaps to price using msg.sender's funds.
+ */
 contract TestAmmRebalancerProxy is OnlyDolomiteMargin, Ownable {
     using SafeMath for uint;
 
@@ -97,13 +101,13 @@ contract TestAmmRebalancerProxy is OnlyDolomiteMargin, Ownable {
 
         Account.Info[] memory accounts = new Account.Info[](1 + dolomitePools.length);
         accounts[0] = Account.Info({
-        owner : msg.sender,
-        number : 0
+            owner : msg.sender,
+            number : 0
         });
 
         accounts[1] = Account.Info({
-        owner : dolomitePools[0],
-        number : 0
+            owner : dolomitePools[0],
+            number : 0
         });
 
         uint[] memory dolomiteMarketPath = _getMarketPathFromTokenPath(dolomitePath);

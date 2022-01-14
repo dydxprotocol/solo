@@ -35,6 +35,7 @@ import { default as DolomiteAmmFactory } from '../build/contracts/DolomiteAmmFac
 import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.json';
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerProxy.json';
+import { default as MultiCall } from '../build/contracts/MultiCall.json';
 
 export default {
   DolomiteMargin,
@@ -62,4 +63,5 @@ export default {
   DolomiteAmmPair,
   SimpleFeeOwner,
   TransferProxy,
+  MultiCall,
 };

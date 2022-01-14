@@ -9,6 +9,13 @@
             "transactionHash": "0xa962247a49e9a44627eebc7ad9943178de5494c3a1c5b149e9b5981cdd71401c"
         }
     },
+    "MultiCall": {
+        "80001": {
+            "links": {},
+            "address": "0xE5035F01382E0E2291661cbBdf1933498dbD7D55",
+            "transactionHash": "0x1b6a36fb8cb4e62322becf663e37cd3779ae17702e790c48b42561840f6acbeb"
+        }
+    },
     "PayableProxy": {
         "80001": {
             "links": {},
@@ -48,7 +55,7 @@
     },
     "LiquidateOrVaporizeImpl": {
         "80001": {
-            "address": "0x131ad0b5c9dc67810524f0a8911fa834a19a091e",
+            "address": "0x131ad0b5c9dc67810524f0a8911fa834aFAmm19a091e",
             "transactionHash": "0x535d81389cfa43949d49f5936c6407d674ed9e32b945c021941183d37437a506"
         }
     },
@@ -113,6 +120,13 @@
             "links": {},
             "address": "0x5D90759b056b0a75199132b836d2392dC8e1f70F",
             "transactionHash": "0x3bd06bb51e1c1b2a0c5f30046a40128fff072189ec44b3ea9fc46ed6d95f004b"
+        }
+    },
+    "TestAmmRebalancerProxy": {
+        "80001": {
+            "links": {},
+            "address": "0xde03A33f1cF854Fd31A5dC5f29872D3E334Dca42",
+            "transactionHash": "0x1e0397ab654465b0de4d86ae1ad44041a81892a4b9c2da4590c4f775860289ba"
         }
     }
 }

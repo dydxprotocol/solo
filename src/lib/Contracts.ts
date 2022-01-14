@@ -46,14 +46,15 @@ import polynomialInterestSetterJson from '../../build/published_contracts/Polyno
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
 import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
+import multiCallJson from '../../build/published_contracts/MultiCall.json';
 import wethJson from '../../build/published_contracts/Weth.json';
+
+// Contracts
 import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
 import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
 import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
 import { DolomiteAmmRouterProxy } from '../../build/wrappers/DolomiteAmmRouterProxy';
-
-// Contracts
 import { DolomiteMargin } from '../../build/wrappers/DolomiteMargin';
 import { DoubleExponentInterestSetter } from '../../build/wrappers/DoubleExponentInterestSetter';
 import { Expiry } from '../../build/wrappers/Expiry';
@@ -62,6 +63,7 @@ import { IInterestSetter as InterestSetter } from '../../build/wrappers/IInteres
 import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { LiquidatorProxyV1 as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1';
 import { LiquidatorProxyV1WithAmm as LiquidatorProxyV1WithAmm } from '../../build/wrappers/LiquidatorProxyV1WithAmm';
+import { MultiCall } from '../../build/wrappers/MultiCall';
 import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
@@ -105,6 +107,7 @@ export class Contracts {
   public simpleFeeOwner: SimpleFeeOwner;
   public weth: Weth;
   public transferProxy: TransferProxy;
+  public multiCall: MultiCall;
   protected web3: Web3;
   private blockGasLimit: number;
   private readonly autoGasMultiplier: number;
@@ -175,6 +178,7 @@ export class Contracts {
     ) as SimpleFeeOwner;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
     this.transferProxy = new this.web3.eth.Contract(transferProxyJson.abi) as TransferProxy;
+    this.multiCall = new this.web3.eth.Contract(multiCallJson.abi) as MultiCall;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -251,6 +255,7 @@ export class Contracts {
       },
       { contract: this.weth, json: wethJson },
       { contract: this.transferProxy, json: transferProxyJson },
+      { contract: this.multiCall, json: multiCallJson },
     ];
 
     contracts.forEach(contract =>
@@ -284,6 +289,7 @@ export class Contracts {
     this.simpleFeeOwner.options.from = account;
     this.weth.options.from = account;
     this.transferProxy.options.from = account;
+    this.multiCall.options.from = account;
   }
 
   public async callContractFunction<T>(

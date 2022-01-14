@@ -4,10 +4,14 @@ pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
 
 
-/// @title MultiCall - Aggregate results from multiple read-only function calls
-/// @author Michael Elliot <mike@makerdao.com>
-/// @author Joshua Levine <joshua@makerdao.com>
-/// @author Nick Johnson <arachnid@notdot.net>
+
+/**
+ * @title MultiCall - Aggregate results from multiple read-only function calls
+ * @author Michael Elliot <mike@makerdao.com>
+ * @author Joshua Levine <joshua@makerdao.com>
+ * @author Nick Johnson <arachnid@notdot.net>
+ * @author Corey Caplan <corey@dolomite.io>
+ */
 contract MultiCall {
 
     struct Call {
