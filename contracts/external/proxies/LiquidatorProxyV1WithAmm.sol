@@ -378,6 +378,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
     view
     returns (MarketInfo[] memory)
     {
+        // TODO fix and reuse this function
         uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
         MarketInfo[] memory markets = new MarketInfo[](numMarkets);
         for (uint256 m = 0; m < numMarkets; m++) {
@@ -423,17 +424,17 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
             toLiquidate : 0,
             solidHeldUpdateWithReward : 0,
             solidHeldWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
-                    constants.markets[heldMarket].index
-                ),
+                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
+                constants.markets[heldMarket].index
+            ),
             liquidHeldWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
-                    constants.markets[heldMarket].index
-                ),
+                DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
+                constants.markets[heldMarket].index
+            ),
             liquidOwedWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
-                    constants.markets[owedMarket].index
-                ),
+                DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
+                constants.markets[owedMarket].index
+            ),
             heldMarket : heldMarket,
             owedMarket : owedMarket,
             heldPrice : heldPrice,
