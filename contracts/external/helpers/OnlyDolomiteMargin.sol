@@ -24,8 +24,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
- * @title onlyDolomiteMargin
- * @author dYdX
+ * @title OnlyDolomiteMargin
+ * @author Dolomite
  *
  * Inheritable contract that restricts the calling of certain functions to DolomiteMargin only
  */

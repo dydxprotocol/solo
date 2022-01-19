@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import {
   AccountStatus,
   address,
-  Index,
+  Index, Integer,
 } from '../../src';
 import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
@@ -765,6 +765,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
           market2,
           defaultTokenPath,
           null,
+          INTEGERS.ONE,
           true,
           { from: operator },
         );
@@ -854,7 +855,7 @@ describe('LiquidatorProxyV1WithAmm', () => {
           defaultTokenPath,
         );
         await expectThrow(
-          liquidate(market1, market2, defaultTokenPath, true),
+          liquidate(market1, market2, defaultTokenPath, INTEGERS.ZERO, true),
           `LiquidatorProxyV1WithAmm: totalSolidHeldWei is too small <${totalSolidHeldWei}, ${amountNeededToBuyOwedAmount}>`,
         );
       });
@@ -1051,12 +1052,11 @@ describe('LiquidatorProxyV1WithAmm', () => {
           index1,
         );
 
-        const shouldRevertOnFailToSellCollateral = false;
         await liquidate(
           market1,
           market2,
           defaultTokenPath,
-          shouldRevertOnFailToSellCollateral,
+          amountOutWei,
         );
 
         await expectBalances([solidNewPar1_2, zero], [liquidNewPar1_1, zero]);
@@ -1084,6 +1084,7 @@ async function liquidate(
   owedMarket: BigNumber,
   heldMarket: BigNumber,
   tokenPath: address[],
+  minOwedOutputAmount: Integer = INTEGERS.ONE,
   revertOnFailToSellCollateral: boolean = false,
 ) {
   return dolomiteMargin.liquidatorProxyWithAmm.liquidate(
@@ -1095,6 +1096,7 @@ async function liquidate(
     heldMarket,
     tokenPath,
     null,
+    minOwedOutputAmount,
     revertOnFailToSellCollateral,
     { from: operator },
   );

@@ -19,6 +19,7 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
+import { Bits } from "./Bits.sol";
 import { Monetary } from "./Monetary.sol";
 import { Require } from "./Require.sol";
 
@@ -34,8 +35,6 @@ library Cache {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Cache";
-    uint internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -67,7 +66,7 @@ library Cache {
     {
         return MarketCache({
             markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
+            marketBitmaps: Bits.createBitmaps(numMarkets),
             marketsLength: 0
         });
     }
@@ -92,10 +91,7 @@ library Cache {
         pure
         returns (bool)
     {
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
-        return bit > 0;
+        return Bits.hasBit(cache.marketBitmaps, marketId);
     }
 
     function get(
@@ -133,9 +129,7 @@ library Cache {
             "already initialized"
         );
 
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
+        Bits.setBit(cache.marketBitmaps, marketId);
 
         cache.marketsLength += 1;
     }
@@ -158,62 +152,6 @@ library Cache {
         return cache.markets[index];
     }
 
-    // solium-disable security/no-assign-params
-    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
-        // gas usage peaks at 350 per call
-
-        uint lsb = 255;
-
-        if (x & uint128(-1) > 0) {
-            lsb -= 128;
-        } else {
-            x >>= 128;
-        }
-
-        if (x & uint64(-1) > 0) {
-            lsb -= 64;
-        } else {
-            x >>= 64;
-        }
-
-        if (x & uint32(-1) > 0) {
-            lsb -= 32;
-        } else {
-            x >>= 32;
-        }
-
-        if (x & uint16(-1) > 0) {
-            lsb -= 16;
-        } else {
-            x >>= 16;
-        }
-
-        if (x & uint8(-1) > 0) {
-            lsb -= 8;
-        } else {
-            x >>= 8;
-        }
-
-        if (x & 0xf > 0) {
-            lsb -= 4;
-        } else {
-            x >>= 4;
-        }
-
-        if (x & 0x3 > 0) {
-            lsb -= 2;
-        } else {
-            x >>= 2;
-        }
-
-        if (x & 0x1 > 0) {
-            lsb -= 1;
-        }
-
-        // solium-enable security/no-assign-params
-        return lsb;
-    }
-
     // ============ Private Functions ============
 
     function _getInternal(
@@ -223,7 +161,7 @@ library Cache {
         uint marketId
     ) private pure returns (MarketInfo memory) {
         uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
             revert("Cache: item not found");
         }
 

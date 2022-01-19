@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
@@ -30,6 +31,7 @@ import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
+import { LiquidatorProxyHelper } from "../helpers/LiquidatorProxyHelper.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 
@@ -39,7 +41,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
  *
  * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
  */
-contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
+contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorProxyHelper {
     using Math for uint256;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -52,18 +54,16 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Structs ============
 
     struct Constants {
+        IDolomiteMargin dolomiteMargin;
         Account.Info solidAccount;
         Account.Info liquidAccount;
         Decimal.D256 minLiquidatorRatio;
         MarketInfo[] markets;
+        uint256[] solidMarkets;
+        uint256[] liquidMarkets;
     }
 
-    struct MarketInfo {
-        Monetary.Price price;
-        Interest.Index index;
-    }
-
-    struct Cache {
+    struct LiquidatorProxyCache {
         // mutable
         uint256 toLiquidate;
         Types.Wei heldWei;
@@ -99,7 +99,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * @param  liquidAccount       The account that will be liquidated
      * @param  minLiquidatorRatio  The minimum collateralization ratio to leave the solidAccount at
      * @param  owedPreferences     Ordered list of markets to repay first
-     * @param  heldPreferences     Ordered list of markets to recieve payout for first
+     * @param  heldPreferences     Ordered list of markets to receive payout for first
      */
     function liquidate(
         Account.Info memory solidAccount,
@@ -113,12 +113,23 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         nonReentrant
     {
         // put all values that will not change into a single struct
-        Constants memory constants = Constants({
-            solidAccount: solidAccount,
-            liquidAccount: liquidAccount,
-            minLiquidatorRatio: minLiquidatorRatio,
-            markets: getMarketsInfo()
-        });
+        Constants memory constants;
+        // solium-disable indentation
+        {
+            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
+            uint256[] memory solidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount);
+            uint256[] memory liquidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+            constants = Constants({
+                dolomiteMargin: dolomiteMargin,
+                solidAccount: solidAccount,
+                liquidAccount: liquidAccount,
+                minLiquidatorRatio: minLiquidatorRatio,
+                markets: getMarketInfos(dolomiteMargin, solidMarkets, liquidMarkets),
+                solidMarkets: solidMarkets,
+                liquidMarkets: liquidMarkets
+            });
+        }
+        // solium-enable indentation
 
         // validate the msg.sender and that the liquidAccount can be liquidated
         checkRequirements(constants);
@@ -140,21 +151,17 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
                 }
 
                 // cannot liquidate non-negative markets
-                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, owedMarket).isNegative()) {
+                if (!constants.dolomiteMargin.getAccountPar(liquidAccount, owedMarket).isNegative()) {
                     break;
                 }
 
                 // cannot use non-positive markets as collateral
-                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive()) {
+                if (!constants.dolomiteMargin.getAccountPar(liquidAccount, heldMarket).isPositive()) {
                     continue;
                 }
 
                 // get all relevant values
-                Cache memory cache = initializeCache(
-                    constants,
-                    heldMarket,
-                    owedMarket
-                );
+                LiquidatorProxyCache memory cache = initializeCache(constants, heldMarket, owedMarket);
 
                 // get the liquidation amount (before liquidator decreases in collateralization)
                 calculateSafeLiquidationAmount(cache);
@@ -168,14 +175,13 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
                 }
 
                 // execute the liquidations
-                DOLOMITE_MARGIN.operate(
+                constants.dolomiteMargin.operate(
                     constructAccountsArray(constants),
                     constructActionsArray(cache)
                 );
 
                 // increment the total value liquidated
-                totalValueLiquidated =
-                    totalValueLiquidated.add(cache.toLiquidate.mul(cache.owedPrice));
+                totalValueLiquidated = totalValueLiquidated.add(cache.toLiquidate.mul(cache.owedPrice));
             }
         }
 
@@ -198,7 +204,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * account will begin to decrease.
      */
     function calculateSafeLiquidationAmount(
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure
@@ -220,9 +226,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
             owedGoesToZeroLast = true;
         } else {
             // owed is still positive and held is still negative
-            owedGoesToZeroLast =
-                cache.owedWei.value.mul(cache.owedPriceAdj) >
-                cache.heldWei.value.mul(cache.heldPrice);
+            owedGoesToZeroLast = cache.owedWei.value.mul(cache.owedPriceAdj) > cache.heldWei.value.mul(cache.heldPrice);
         }
 
         if (owedGoesToZeroLast) {
@@ -257,7 +261,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      */
     function calculateMaxLiquidationAmount(
         Constants memory constants,
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure
@@ -300,7 +304,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
 
     /**
      * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender is permissioned to use the liquidator account
+     *  - Require that the msg.sender has the permission to use the liquidator account
      *  - Require that the liquid account is liquidatable
      */
     function checkRequirements(
@@ -312,7 +316,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         // check credentials for msg.sender
         Require.that(
             constants.solidAccount.owner == msg.sender
-            || DOLOMITE_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
+            || constants.dolomiteMargin.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
             constants.solidAccount.owner
@@ -322,18 +326,23 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         (
             Monetary.Value memory liquidSupplyValue,
             Monetary.Value memory liquidBorrowValue
-        ) = getCurrentAccountValues(constants, constants.liquidAccount);
+        ) = getAdjustedAccountValues(
+            constants.dolomiteMargin,
+            constants.markets,
+            constants.liquidAccount,
+            constants.liquidMarkets
+        );
         Require.that(
             liquidSupplyValue.value != 0,
             FILE,
             "Liquid account no supply"
         );
         Require.that(
-            DOLOMITE_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
-            || !isCollateralized(
+            constants.dolomiteMargin.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+            !isCollateralized(
                 liquidSupplyValue.value,
                 liquidBorrowValue.value,
-                DOLOMITE_MARGIN.getMarginRatio()
+                constants.dolomiteMargin.getMarginRatio()
             ),
             FILE,
             "Liquid account not liquidatable",
@@ -347,7 +356,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * account. Changes toLiquidate, heldWei, owedWei, supplyValue, and borrowValue.
      */
     function setCacheWeiValues(
-        Cache memory cache,
+        LiquidatorProxyCache memory cache,
         Types.Wei memory newHeldWei,
         Types.Wei memory newOwedWei
     )
@@ -413,60 +422,6 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Getter Functions ============
 
     /**
-     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
-     * the current index will be once updated.
-     */
-    function getCurrentAccountValues(
-        Constants memory constants,
-        Account.Info memory account
-    )
-        private
-        view
-        returns (
-            Monetary.Value memory,
-            Monetary.Value memory
-        )
-    {
-        Monetary.Value memory supplyValue;
-        Monetary.Value memory borrowValue;
-
-        for (uint256 m = 0; m < constants.markets.length; m++) {
-            Types.Par memory par = DOLOMITE_MARGIN.getAccountPar(account, m);
-            if (par.isZero()) {
-                continue;
-            }
-            Types.Wei memory userWei = Interest.parToWei(par, constants.markets[m].index);
-            uint256 assetValue = userWei.value.mul(constants.markets[m].price.value);
-            if (userWei.sign) {
-                supplyValue.value = supplyValue.value.add(assetValue);
-            } else {
-                borrowValue.value = borrowValue.value.add(assetValue);
-            }
-        }
-
-        return (supplyValue, borrowValue);
-    }
-
-    /**
-     * Get the updated index and price for every market.
-     */
-    function getMarketsInfo()
-        private
-        view
-        returns (MarketInfo[] memory)
-    {
-        uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
-        MarketInfo[] memory markets = new MarketInfo[](numMarkets);
-        for (uint256 m = 0; m < numMarkets; m++) {
-            markets[m] = MarketInfo({
-                price: DOLOMITE_MARGIN.getMarketPrice(m),
-                index: DOLOMITE_MARGIN.getMarketCurrentIndex(m)
-            });
-        }
-        return markets;
-    }
-
-    /**
      * Pre-populates cache values for some pair of markets.
      */
     function initializeCache(
@@ -476,26 +431,32 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     )
         private
         view
-        returns (Cache memory)
+        returns (LiquidatorProxyCache memory)
     {
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = getCurrentAccountValues(constants, constants.solidAccount);
+        ) = getAccountValues(
+            constants.dolomiteMargin,
+            constants.markets,
+            constants.solidAccount,
+            constants.solidMarkets
+        );
 
-        uint256 heldPrice = constants.markets[heldMarket].price.value;
-        uint256 owedPrice = constants.markets[owedMarket].price.value;
-        Decimal.D256 memory spread =
-            DOLOMITE_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
+        MarketInfo memory heldMarketInfo = binarySearch(constants.markets, heldMarket);
+        MarketInfo memory owedMarketInfo = binarySearch(constants.markets, heldMarket);
+        uint256 heldPrice = heldMarketInfo.price.value;
+        uint256 owedPrice = owedMarketInfo.price.value;
+        Decimal.D256 memory spread = constants.dolomiteMargin.getLiquidationSpreadForPair(heldMarket, owedMarket);
 
-        return Cache({
+        return LiquidatorProxyCache({
             heldWei: Interest.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
-                constants.markets[heldMarket].index
+                constants.dolomiteMargin.getAccountPar(constants.solidAccount, heldMarket),
+                heldMarketInfo.index
             ),
             owedWei: Interest.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, owedMarket),
-                constants.markets[owedMarket].index
+                constants.dolomiteMargin.getAccountPar(constants.solidAccount, owedMarket),
+                owedMarketInfo.index
             ),
             toLiquidate: 0,
             supplyValue: supplyValue.value,
@@ -525,7 +486,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     }
 
     function constructActionsArray(
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure

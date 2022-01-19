@@ -117,6 +117,6 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
     }
 
     function getPairInitCodeHash() public pure returns (bytes32) {
-        return keccak256(getPairInitCode());
+        return keccak256(type(DolomiteAmmPair).creationCode);
     }
 }

@@ -1,5 +1,8 @@
 {
-  "extends": ["tslint-config-airbnb", "tslint-no-focused-test"],
+  "extends": [
+    "tslint-config-airbnb",
+    "tslint-no-focused-test"
+  ],
   "rules": {
     "import-name": false,
     "variable-name": [
@@ -15,10 +18,13 @@
         "limit": 150
       }
     ],
+    "ter-arrow-parens": false,
     "ter-indent": [
       true,
       2,
-      { "SwitchCase":  1 }
+      {
+        "SwitchCase": 1
+      }
     ],
     "prefer-array-literal": false
   }

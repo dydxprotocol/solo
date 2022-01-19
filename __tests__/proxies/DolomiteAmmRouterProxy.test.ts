@@ -1,17 +1,9 @@
 import BigNumber from 'bignumber.js';
-import {
-  address,
-  Integer,
-} from '../../src';
-import { INTEGERS } from '../../src/lib/Constants';
+import { address, Integer, INTEGERS } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import {
-  mineAvgBlock,
-  resetEVM,
-  snapshot,
-} from '../helpers/EVM';
+import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let defaultPath: address[];
@@ -28,12 +20,7 @@ const zero = new BigNumber(0);
 const parA = new BigNumber('1000000000000000000');
 const parB = new BigNumber('2000000');
 const parC = new BigNumber('300000000000000000000');
-const prices = [
-  new BigNumber('1e20'),
-  new BigNumber('1e32'),
-  new BigNumber('1e18'),
-  new BigNumber('1e21'),
-];
+const prices = [new BigNumber('1e20'), new BigNumber('1e32'), new BigNumber('1e18'), new BigNumber('1e21')];
 const defaultDeadline = new BigNumber('123456789123');
 const defaultIsClosing = false;
 const defaultIsRecyclable = false;
@@ -51,46 +38,17 @@ describe('DolomiteAmmRouterProxy', () => {
     await resetEVM();
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenA.address,
-        prices[0],
-      ),
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.address,
-        prices[1],
-      ),
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.address,
-        prices[2],
-      ),
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.weth.address,
-        prices[3],
-      ),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.address, prices[0]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenB.address, prices[1]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenC.address, prices[2]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       setUpBasicBalances(),
     ]);
 
-    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
-      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash()).toEqual(
+      await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash(),
+    );
 
-    // Needs to be done once the balances are set up
-    await Promise.all([
-      addLiquidity(
-        owner2,
-        parA.div(100),
-        parB.div(100),
-        dolomiteMargin.testing.tokenA.address,
-        dolomiteMargin.testing.tokenB.address
-      ),
-      addLiquidity(
-        owner2,
-        parB.div(100),
-        parC.div(100),
-        dolomiteMargin.testing.tokenB.address,
-        dolomiteMargin.testing.tokenC.address
-      ),
-    ]);
-    console.log('added liquidity...');
     await dolomiteMargin.admin.addMarket(
       dolomiteMargin.weth.address,
       dolomiteMargin.testing.priceOracle.address,
@@ -101,6 +59,35 @@ describe('DolomiteAmmRouterProxy', () => {
       defaultIsRecyclable,
       { from: admin },
     );
+
+    await Promise.all([
+      dolomiteMargin.dolomiteAmmFactory.createPair(
+        dolomiteMargin.testing.tokenA.address,
+        dolomiteMargin.testing.tokenB.address,
+      ),
+      dolomiteMargin.dolomiteAmmFactory.createPair(
+        dolomiteMargin.testing.tokenB.address,
+        dolomiteMargin.testing.tokenC.address,
+      ),
+    ]);
+
+    // Needs to be done once the balances are set up
+    await Promise.all([
+      addLiquidity(
+        owner2,
+        parA.div(100),
+        parB.div(100),
+        dolomiteMargin.testing.tokenA.address,
+        dolomiteMargin.testing.tokenB.address,
+      ),
+      addLiquidity(
+        owner2,
+        parB.div(100),
+        parC.div(100),
+        dolomiteMargin.testing.tokenB.address,
+        dolomiteMargin.testing.tokenC.address,
+      ),
+    ]);
 
     token_ab = await dolomiteMargin.dolomiteAmmFactory.getPair(
       dolomiteMargin.testing.tokenA.address,
@@ -126,17 +113,16 @@ describe('DolomiteAmmRouterProxy', () => {
       it('should get name properly', async () => {
         const pair = dolomiteMargin.getDolomiteAmmPair(token_ab);
         const symbol = await pair.symbol();
-        const [token0] = dolomiteMargin.testing.tokenA.address < dolomiteMargin.testing.tokenB.address
-          ? [dolomiteMargin.testing.tokenA.address]
-          : [dolomiteMargin.testing.tokenB.address];
+        const [token0] =
+          dolomiteMargin.testing.tokenA.address < dolomiteMargin.testing.tokenB.address
+            ? [dolomiteMargin.testing.tokenA.address]
+            : [dolomiteMargin.testing.tokenB.address];
 
         // tokenA === USDC && tokenB === DAI
         if (token0 === dolomiteMargin.testing.tokenA.address) {
-          expect(symbol)
-            .toEqual('DLP_USDC_DAI');
+          expect(symbol).toEqual('DLP_USDC_DAI');
         } else {
-          expect(symbol)
-            .toEqual('DLP_DAI_USDC');
+          expect(symbol).toEqual('DLP_DAI_USDC');
         }
       });
     });
@@ -147,17 +133,16 @@ describe('DolomiteAmmRouterProxy', () => {
       it('should get name properly', async () => {
         const pair = dolomiteMargin.getDolomiteAmmPair(token_ab);
         const name = await pair.name();
-        const [token0] = dolomiteMargin.testing.tokenA.address < dolomiteMargin.testing.tokenB.address
-          ? [dolomiteMargin.testing.tokenA.address]
-          : [dolomiteMargin.testing.tokenB.address];
+        const [token0] =
+          dolomiteMargin.testing.tokenA.address < dolomiteMargin.testing.tokenB.address
+            ? [dolomiteMargin.testing.tokenA.address]
+            : [dolomiteMargin.testing.tokenB.address];
 
         // tokenA === USDC && tokenB === DAI
         if (token0 === dolomiteMargin.testing.tokenA.address) {
-          expect(name)
-            .toEqual('Dolomite LP Token: USDC_DAI');
+          expect(name).toEqual('Dolomite LP Token: USDC_DAI');
         } else {
-          expect(name)
-            .toEqual('Dolomite LP Token: DAI_USDC');
+          expect(name).toEqual('Dolomite LP Token: DAI_USDC');
         }
       });
     });
@@ -179,13 +164,11 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0 = await pair.marketId0();
         const balance0 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0);
-        expect(reserves.reserve0)
-          .toEqual(balance0);
+        expect(reserves.reserve0).toEqual(balance0);
 
         const marketId1 = await pair.marketId1();
         const balance1 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1);
-        expect(reserves.reserve1)
-          .toEqual(balance1);
+        expect(reserves.reserve1).toEqual(balance1);
       });
     });
 
@@ -224,11 +207,9 @@ describe('DolomiteAmmRouterProxy', () => {
         const lpToken = await dolomiteMargin.getDolomiteAmmPair(token_ab);
         const liquidity = await lpToken.balanceOf(owner1);
 
-        await lpToken.approve(
-          dolomiteMargin.contracts.dolomiteAmmRouterProxy.options.address,
-          INTEGERS.ONES_255,
-          { from: owner1 },
-        );
+        await lpToken.approve(dolomiteMargin.contracts.dolomiteAmmRouterProxy.options.address, INTEGERS.ONES_255, {
+          from: owner1,
+        });
 
         await removeLiquidity(owner1, liquidity);
 
@@ -237,13 +218,11 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0 = await pair.marketId0();
         const balance0 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0);
-        expect(reserves.reserve0)
-          .toEqual(balance0);
+        expect(reserves.reserve0).toEqual(balance0);
 
         const marketId1 = await pair.marketId1();
         const balance1 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1);
-        expect(reserves.reserve1)
-          .toEqual(balance1);
+        expect(reserves.reserve1).toEqual(balance1);
       });
     });
 
@@ -267,23 +246,11 @@ describe('DolomiteAmmRouterProxy', () => {
         await expectThrow(removeLiquidity(owner1, liquidity.times('2')), '');
 
         await expectThrow(
-          removeLiquidity(
-            owner1,
-            liquidity,
-            parA.times('2'),
-            parB.times('99')
-              .div('100'),
-          ),
+          removeLiquidity(owner1, liquidity, parA.times('2'), parB.times('99').div('100')),
           `DolomiteAmmRouterProxy: insufficient A amount <${parA}, ${parA.times('2')}>`,
         );
         await expectThrow(
-          removeLiquidity(
-            owner1,
-            liquidity,
-            parA.times('99')
-              .div('100'),
-            parB.times('2'),
-          ),
+          removeLiquidity(owner1, liquidity, parA.times('99').div('100'), parB.times('2')),
           `DolomiteAmmRouterProxy: insufficient B amount <${parB}, ${parB.times('2')}>`,
         );
       });
@@ -308,13 +275,11 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0 = await pair.marketId0();
         const reserveBalance0 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0);
-        expect(reserve0)
-          .toEqual(reserveBalance0);
+        expect(reserve0).toEqual(reserveBalance0);
 
         const marketId1 = await pair.marketId1();
         const reserveBalance1 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1);
-        expect(reserve1)
-          .toEqual(reserveBalance1);
+        expect(reserve1).toEqual(reserveBalance1);
       });
 
       it('should work for normal case with a path of more than 2 tokens', async () => {
@@ -349,26 +314,22 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0_ab = await pair_ab.marketId0();
         const balance0_ab = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0_ab);
-        expect(reserves_ab.reserve0)
-          .toEqual(balance0_ab);
+        expect(reserves_ab.reserve0).toEqual(balance0_ab);
 
         const marketId1_ab = await pair_ab.marketId1();
         const balance1_ab = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1_ab);
-        expect(reserves_ab.reserve1)
-          .toEqual(balance1_ab);
+        expect(reserves_ab.reserve1).toEqual(balance1_ab);
 
         const pair_bc = dolomiteMargin.getDolomiteAmmPair(token_bc);
         const reserves_bc = await pair_bc.getReservesWei();
 
         const marketId0_bc = await pair_bc.marketId0();
         const balance0_bc = await dolomiteMargin.getters.getAccountWei(token_bc, INTEGERS.ZERO, marketId0_bc);
-        expect(reserves_bc.reserve0)
-          .toEqual(balance0_bc);
+        expect(reserves_bc.reserve0).toEqual(balance0_bc);
 
         const marketId1_bc = await pair_bc.marketId1();
         const balance1_bc = await dolomiteMargin.getters.getAccountWei(token_bc, INTEGERS.ZERO, marketId1_bc);
-        expect(reserves_bc.reserve1)
-          .toEqual(balance1_bc);
+        expect(reserves_bc.reserve1).toEqual(balance1_bc);
       });
     });
 
@@ -407,7 +368,7 @@ describe('DolomiteAmmRouterProxy', () => {
           accountNumber,
           parA.div(100),
           INTEGERS.ONE,
-          [dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address],
+          defaultPath,
           dolomiteMargin.testing.tokenB.address,
           true,
           parB.div(10),
@@ -417,7 +378,7 @@ describe('DolomiteAmmRouterProxy', () => {
         );
 
         console.log(
-          '#swapExactTokensForTokensAndModifyPosition gas used  ',
+          `#swapExactTokensForTokensAndModifyPosition gas used ${defaultPath.length}-path with deposit and expiration`,
           txResult.gasUsed.toString(),
         );
 
@@ -426,13 +387,11 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0 = await pair.marketId0();
         const balance0 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0);
-        expect(reserves.reserve0)
-          .toEqual(balance0);
+        expect(reserves.reserve0).toEqual(balance0);
 
         const marketId1 = await pair.marketId1();
         const balance1 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1);
-        expect(reserves.reserve1)
-          .toEqual(balance1);
+        expect(reserves.reserve1).toEqual(balance1);
       });
     });
   });
@@ -455,13 +414,11 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0 = await pair.marketId0();
         const balance0 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0);
-        expect(reserve0)
-          .toEqual(balance0);
+        expect(reserve0).toEqual(balance0);
 
         const marketId1 = await pair.marketId1();
         const balance1 = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1);
-        expect(reserve1)
-          .toEqual(balance1);
+        expect(reserve1).toEqual(balance1);
       });
 
       it('should work for normal case with a path of more than 2 tokens', async () => {
@@ -495,26 +452,22 @@ describe('DolomiteAmmRouterProxy', () => {
 
         const marketId0_ab = await pair_ab.marketId0();
         const balance0_ab = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId0_ab);
-        expect(reserves_ab.reserve0)
-          .toEqual(balance0_ab);
+        expect(reserves_ab.reserve0).toEqual(balance0_ab);
 
         const marketId1_ab = await pair_ab.marketId1();
         const balance1_ab = await dolomiteMargin.getters.getAccountWei(token_ab, INTEGERS.ZERO, marketId1_ab);
-        expect(reserves_ab.reserve1)
-          .toEqual(balance1_ab);
+        expect(reserves_ab.reserve1).toEqual(balance1_ab);
 
         const pair_bc = dolomiteMargin.getDolomiteAmmPair(token_bc);
         const reserves_bc = await pair_bc.getReservesWei();
 
         const marketId0_bc = await pair_bc.marketId0();
         const balance0_bc = await dolomiteMargin.getters.getAccountWei(token_bc, INTEGERS.ZERO, marketId0_bc);
-        expect(reserves_bc.reserve0)
-          .toEqual(balance0_bc);
+        expect(reserves_bc.reserve0).toEqual(balance0_bc);
 
         const marketId1_bc = await pair_bc.marketId1();
         const balance1_bc = await dolomiteMargin.getters.getAccountWei(token_bc, INTEGERS.ZERO, marketId1_bc);
-        expect(reserves_bc.reserve1)
-          .toEqual(balance1_bc);
+        expect(reserves_bc.reserve1).toEqual(balance1_bc);
       });
     });
 
@@ -561,7 +514,7 @@ async function addLiquidity(
       defaultDeadline,
       { from: walletAddress },
     )
-    .catch((reason) => {
+    .catch(reason => {
       console.log('reason ', reason);
       return { gasUsed: 0 };
     });
@@ -611,10 +564,7 @@ async function swapExactTokensForTokens(
     { from: walletAddress },
   );
 
-  console.log(
-    '#swapExactTokensForTokens gas used ${path.length}-path ',
-    result.gasUsed.toString(),
-  );
+  console.log(`#swapExactTokensForTokens gas used ${path.length}-path `, result.gasUsed.toString());
 
   return result;
 }
@@ -634,24 +584,15 @@ async function swapTokensForExactTokens(
     { from: walletAddress },
   );
 
-  console.log(
-    '#swapTokensForExactTokens gas used  ',
-    result.gasUsed.toString(),
-  );
+  console.log(`#swapTokensForExactTokens gas used ${path.length}-path`, result.gasUsed.toString());
 
   return result;
 }
 
 async function setUpBasicBalances() {
-  const marketA = await dolomiteMargin.getters.getMarketIdByTokenAddress(
-    dolomiteMargin.testing.tokenA.address
-  );
-  const marketB = await dolomiteMargin.getters.getMarketIdByTokenAddress(
-    dolomiteMargin.testing.tokenB.address
-  );
-  const marketC = await dolomiteMargin.getters.getMarketIdByTokenAddress(
-    dolomiteMargin.testing.tokenC.address
-  );
+  const marketA = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenA.address);
+  const marketB = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenB.address);
+  const marketC = await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenC.address);
 
   return Promise.all([
     dolomiteMargin.testing.setAccountBalance(owner1, INTEGERS.ZERO, marketA, parA),

@@ -6,12 +6,7 @@ import { mineAvgBlock, resetEVM } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { stripHexPrefix } from '../src/lib/BytesHelper';
-import {
-  createTypedSignature,
-  PREPEND_DEC,
-  PREPEND_HEX,
-  SIGNATURE_TYPES,
-} from '../src/lib/SignatureHelper';
+import { createTypedSignature, PREPEND_DEC, PREPEND_HEX, SIGNATURE_TYPES } from '../src/lib/SignatureHelper';
 import { address } from '../src';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -46,21 +41,12 @@ describe('Library', () => {
 
     describe('recover', () => {
       it('fails for invalid signature length', async () => {
-        await expectThrow(
-          recover(hash, hash.slice(0, -2)),
-          'TypedSignature: Invalid signature length',
-        );
+        await expectThrow(recover(hash, hash.slice(0, -2)), 'TypedSignature: Invalid signature length');
       });
 
       it('fails for invalid signature type', async () => {
-        await expectThrow(
-          recover(hash, `0x${'00'.repeat(65)}04`),
-          'TypedSignature: Invalid signature type',
-        );
-        await expectThrow(
-          recover(hash, `0x${'00'.repeat(65)}05`),
-          'TypedSignature: Invalid signature type',
-        );
+        await expectThrow(recover(hash, `0x${'00'.repeat(65)}04`), 'TypedSignature: Invalid signature type');
+        await expectThrow(recover(hash, `0x${'00'.repeat(65)}05`), 'TypedSignature: Invalid signature type');
       });
 
       it('succeeds for no prepend', async () => {
@@ -70,46 +56,31 @@ describe('Library', () => {
           v,
           messageHash: hash,
         });
-        const recoveredAddress = await recover(
-          hash,
-          createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND),
-        );
+        const recoveredAddress = await recover(hash, createTypedSignature(signature, SIGNATURE_TYPES.NO_PREPEND));
         expect(recoveredAddress).toEqual(signer);
       });
 
       it('succeeds for decimal prepend', async () => {
-        const decHash = Web3.utils.soliditySha3(
-          { t: 'string', v: PREPEND_DEC },
-          { t: 'bytes32', v: hash },
-        );
+        const decHash = Web3.utils.soliditySha3({ t: 'string', v: PREPEND_DEC }, { t: 'bytes32', v: hash });
         const signer = dolomiteMargin.web3.eth.accounts.recover({
           r,
           s,
           v,
           messageHash: decHash,
         });
-        const recoveredAddress = await recover(
-          hash,
-          createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL),
-        );
+        const recoveredAddress = await recover(hash, createTypedSignature(signature, SIGNATURE_TYPES.DECIMAL));
         expect(recoveredAddress).toEqual(signer);
       });
 
       it('succeeds for hexadecimal prepend', async () => {
-        const hexHash = Web3.utils.soliditySha3(
-          { t: 'string', v: PREPEND_HEX },
-          { t: 'bytes32', v: hash },
-        );
+        const hexHash = Web3.utils.soliditySha3({ t: 'string', v: PREPEND_HEX }, { t: 'bytes32', v: hash });
         const signer = dolomiteMargin.web3.eth.accounts.recover({
           r,
           s,
           v,
           messageHash: hexHash,
         });
-        const recoveredAddress = await recover(
-          hash,
-          createTypedSignature(signature, SIGNATURE_TYPES.HEXADECIMAL),
-        );
+        const recoveredAddress = await recover(hash, createTypedSignature(signature, SIGNATURE_TYPES.HEXADECIMAL));
         expect(recoveredAddress).toEqual(signer);
       });
     });
@@ -137,83 +108,73 @@ describe('Library', () => {
 
     it('getPartial', async () => {
       const results = await Promise.all(
-        tests.map(args => dolomiteMargin.contracts.testLib.methods
-          .MathGetPartial(args[0], args[1], args[2])
-          .call()),
+        tests.map(args => dolomiteMargin.contracts.testLib.methods.MathGetPartial(args[0], args[1], args[2]).call()),
       );
       expect(results).toEqual(
-        tests.map(args => new BN_DOWN(args[0])
-          .times(args[1])
-          .div(args[2])
-          .toFixed(0)),
+        tests.map(args =>
+          new BN_DOWN(args[0])
+            .times(args[1])
+            .div(args[2])
+            .toFixed(0),
+        ),
       );
     });
 
     it('getPartial reverts', async () => {
-      await expectThrow(
-        dolomiteMargin.contracts.testLib.methods.MathGetPartial(1, 1, 0).call(),
-      );
-      await expectThrow(
-        dolomiteMargin.contracts.testLib.methods.MathGetPartial(largeNumber, largeNumber, 1).call(),
-      );
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartial(1, 1, 0).call());
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartial(largeNumber, largeNumber, 1).call());
     });
 
     it('getPartialRoundUp', async () => {
       const results = await Promise.all(
-        tests.map(args => dolomiteMargin.contracts.testLib.methods
-          .MathGetPartialRoundUp(args[0], args[1], args[2])
-          .call()),
+        tests.map(args =>
+          dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(args[0], args[1], args[2]).call(),
+        ),
       );
       expect(results).toEqual(
-        tests.map(args => new BN_UP(args[0])
-          .times(args[1])
-          .div(args[2])
-          .toFixed(0)),
+        tests.map(args =>
+          new BN_UP(args[0])
+            .times(args[1])
+            .div(args[2])
+            .toFixed(0),
+        ),
       );
     });
 
     it('getPartialRoundHalfUp', async () => {
       const results = await Promise.all(
-        tests.map(args => dolomiteMargin.contracts.testLib.methods
-          .MathGetPartialRoundHalfUp(args[0], args[1], args[2])
-          .call()),
+        tests.map(args =>
+          dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(args[0], args[1], args[2]).call(),
+        ),
       );
       expect(results).toEqual(
-        tests.map(args => new BN_HALF_UP(args[0])
-          .times(args[1])
-          .div(args[2])
-          .toFixed(0)),
+        tests.map(args =>
+          new BN_HALF_UP(args[0])
+            .times(args[1])
+            .div(args[2])
+            .toFixed(0),
+        ),
       );
     });
 
     it('getPartialRoundUp reverts', async () => {
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call());
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call(),
-      );
-      await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .MathGetPartialRoundUp(largeNumber, largeNumber, 1)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(largeNumber, largeNumber, 1).call(),
       );
     });
 
     it('getPartialRoundHalfUp reverts', async () => {
+      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call());
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call(),
-      );
-      await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .MathGetPartialRoundHalfUp(largeNumber, largeNumber, 1)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(largeNumber, largeNumber, 1).call(),
       );
     });
 
     it('to128', async () => {
       const large = '340282366920938463463374607431768211456'; // 2^128
       const small = '340282366920938463463374607431768211455'; // 2^128 - 1
-      const result = await dolomiteMargin.contracts.testLib.methods
-        .MathTo128(small)
-        .call();
+      const result = await dolomiteMargin.contracts.testLib.methods.MathTo128(small).call();
       expect(result).toEqual(small);
       await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo128(large).call());
     });
@@ -221,9 +182,7 @@ describe('Library', () => {
     it('to96', async () => {
       const large = '79228162514264337593543950336'; // 2^96
       const small = '79228162514264337593543950335'; // 2^96 - 1
-      const result = await dolomiteMargin.contracts.testLib.methods
-        .MathTo96(small)
-        .call();
+      const result = await dolomiteMargin.contracts.testLib.methods.MathTo96(small).call();
       expect(result).toEqual(small);
       await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo96(large).call());
     });
@@ -231,9 +190,7 @@ describe('Library', () => {
     it('to32', async () => {
       const large = '4294967296'; // 2^32
       const small = '4294967295'; // 2^32 - 1
-      const result = await dolomiteMargin.contracts.testLib.methods
-        .MathTo32(small)
-        .call();
+      const result = await dolomiteMargin.contracts.testLib.methods.MathTo32(small).call();
       expect(result).toEqual(small);
       await expectThrow(dolomiteMargin.contracts.testLib.methods.MathTo32(large).call());
     });
@@ -287,36 +244,28 @@ describe('Library', () => {
 
     it('that (1 address, 1 number)', async () => {
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .RequireThatA1(reason2, addr, arg1)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThatA1(reason2, addr, arg1).call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}>`,
       );
     });
 
     it('that (1 address, 2 numbers)', async () => {
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .RequireThatA2(reason2, addr, arg1, arg3)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThatA2(reason2, addr, arg1, arg3).call(),
         `TestLib: ${reasonString2} <${addr}, ${arg1}, ${arg3}>`,
       );
     });
 
     it('that (bytes32 arg)', async () => {
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .RequireThatB0(reason1, bytes32Hex)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThatB0(reason1, bytes32Hex).call(),
         `TestLib: ${reasonString1} <${bytes32Hex}>`,
       );
     });
 
     it('that (1 bytes32, 2 numbers)', async () => {
       await expectThrow(
-        dolomiteMargin.contracts.testLib.methods
-          .RequireThatB2(reason2, bytes32Hex, arg1, arg3)
-          .call(),
+        dolomiteMargin.contracts.testLib.methods.RequireThatB2(reason2, bytes32Hex, arg1, arg3).call(),
         `TestLib: ${reasonString2} <${bytes32Hex}, ${arg1}, ${arg3}>`,
       );
     });
@@ -333,12 +282,8 @@ describe('Library', () => {
         dolomiteMargin.web3.eth.getBlock('latest'),
         dolomiteMargin.contracts.testLib.methods.TimeCurrentTime().call(),
       ]);
-      expect(new BigNumber(time1).toNumber()).toBeGreaterThanOrEqual(
-        block1.timestamp,
-      );
-      expect(new BigNumber(time2).toNumber()).toBeGreaterThanOrEqual(
-        block2.timestamp,
-      );
+      expect(new BigNumber(time1).toNumber()).toBeGreaterThanOrEqual(block1.timestamp);
+      expect(new BigNumber(time2).toNumber()).toBeGreaterThanOrEqual(block2.timestamp);
       expect(block2.timestamp).toBeGreaterThanOrEqual(block1.timestamp + 15);
     });
   });
@@ -358,30 +303,22 @@ describe('Library', () => {
     });
 
     it('balanceOf (normal)', async () => {
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(token, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
       expect(result).toEqual(zero);
       await dolomiteMargin.contracts.callContractFunction(
         dolomiteMargin.contracts.tokenA.methods.issueTo(addr, amount),
       );
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(token, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
       expect(result).toEqual(amount);
     });
 
     it('balanceOf (omise)', async () => {
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(omise, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
       expect(result).toEqual(zero);
       await dolomiteMargin.contracts.callContractFunction(
         dolomiteMargin.contracts.omiseToken.methods.issueTo(addr, amount),
       );
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(omise, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
       expect(result).toEqual(amount);
     });
 
@@ -390,9 +327,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.tokenA.methods.issueTo(libAddr, amount),
       );
       await dolomiteMargin.contracts.testLib.methods.TokenTransfer(token, addr, amount);
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(token, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
       expect(result).toEqual(amount);
     });
 
@@ -401,20 +336,14 @@ describe('Library', () => {
         dolomiteMargin.contracts.omiseToken.methods.issueTo(libAddr, amount),
       );
       await dolomiteMargin.contracts.testLib.methods.TokenTransfer(omise, addr, amount);
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(omise, addr)
-        .call();
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
       expect(result).toEqual(amount);
     });
 
     it('transfer (error)', async () => {
       await expectThrow(
         dolomiteMargin.contracts.callContractFunction(
-          dolomiteMargin.contracts.testLib.methods.TokenTransfer(
-            errorToken,
-            addr,
-            amount,
-          ),
+          dolomiteMargin.contracts.testLib.methods.TokenTransfer(errorToken, addr, amount),
         ),
         'Token: transfer failed',
       );
@@ -422,35 +351,21 @@ describe('Library', () => {
 
     it('transferFrom (normal)', async () => {
       await Promise.all([
-        dolomiteMargin.contracts.callContractFunction(
-          dolomiteMargin.contracts.tokenA.methods.issueTo(owner, amount),
-        ),
+        dolomiteMargin.contracts.callContractFunction(dolomiteMargin.contracts.tokenA.methods.issueTo(owner, amount)),
         dolomiteMargin.contracts.callContractFunction(
           dolomiteMargin.contracts.tokenA.methods.approve(libAddr, amount),
           { from: owner },
         ),
       ]);
-      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
-        token,
-        owner,
-        addr,
-        amount,
-      );
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(token, addr)
-        .call();
+      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(token, owner, addr, amount);
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(token, addr).call();
       expect(result).toEqual(amount);
     });
 
     it('transferFrom (error)', async () => {
       await expectThrow(
         dolomiteMargin.contracts.callContractFunction(
-          dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
-            errorToken,
-            owner,
-            addr,
-            amount,
-          ),
+          dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(errorToken, owner, addr, amount),
         ),
         'Token: transferFrom failed',
       );
@@ -466,15 +381,8 @@ describe('Library', () => {
           { from: owner },
         ),
       ]);
-      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(
-        omise,
-        owner,
-        addr,
-        amount,
-      );
-      result = await dolomiteMargin.contracts.testLib.methods
-        .TokenBalanceOf(omise, addr)
-        .call();
+      await dolomiteMargin.contracts.testLib.methods.TokenTransferFrom(omise, owner, addr, amount);
+      result = await dolomiteMargin.contracts.testLib.methods.TokenBalanceOf(omise, addr).call();
       expect(result).toEqual(amount);
     });
   });
@@ -508,16 +416,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, posZo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        posLo,
-        posZo,
-        posZo,
-        negZo,
-        negZo,
-        negLo,
-        negLo,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
 
       // sub positive
       results = await Promise.all([
@@ -528,14 +427,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParSub(posHi, posLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParSub(negLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negLo,
-        posZo,
-        negLo,
-        negLo,
-        posLo,
-        negHi,
-      ]);
+      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
 
       // sub negative
       results = await Promise.all([
@@ -546,14 +438,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParSub(negHi, negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParSub(posLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        negZo,
-        posLo,
-        posLo,
-        negLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
     });
 
     it('parAdd', async () => {
@@ -569,16 +454,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, posZo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        posLo,
-        posZo,
-        posZo,
-        negZo,
-        negZo,
-        negLo,
-        negLo,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
 
       // add positive
       results = await Promise.all([
@@ -589,14 +465,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(negHi, posLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(posLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        negZo,
-        posLo,
-        posLo,
-        negLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
 
       // add negative
       results = await Promise.all([
@@ -607,14 +476,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(posHi, negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParAdd(negLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negLo,
-        posZo,
-        negLo,
-        negLo,
-        posLo,
-        negHi,
-      ]);
+      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
     });
 
     it('parEquals', async () => {
@@ -649,14 +511,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesParNegative(negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesParNegative(negHi).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negHi,
-        negLo,
-        negZo,
-        posZo,
-        posLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([negHi, negLo, negZo, posZo, posLo, posHi]);
     });
 
     it('parIsNegative', async () => {
@@ -714,16 +569,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, posZo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        posLo,
-        posZo,
-        posZo,
-        negZo,
-        negZo,
-        negLo,
-        negLo,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
 
       // sub positive
       results = await Promise.all([
@@ -734,14 +580,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posHi, posLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negLo,
-        posZo,
-        negLo,
-        negLo,
-        posLo,
-        negHi,
-      ]);
+      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
 
       // sub negative
       results = await Promise.all([
@@ -752,14 +591,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(negHi, negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiSub(posLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        negZo,
-        posLo,
-        posLo,
-        negLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
     });
 
     it('weiAdd', async () => {
@@ -775,16 +607,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, posZo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, negZo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        posLo,
-        posZo,
-        posZo,
-        negZo,
-        negZo,
-        negLo,
-        negLo,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, posLo, posZo, posZo, negZo, negZo, negLo, negLo]);
 
       // add positive
       results = await Promise.all([
@@ -795,14 +618,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negHi, posLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posLo, posLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        posLo,
-        negZo,
-        posLo,
-        posLo,
-        negLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([posLo, negZo, posLo, posLo, negLo, posHi]);
 
       // add negative
       results = await Promise.all([
@@ -813,14 +629,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(posHi, negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiAdd(negLo, negLo).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negLo,
-        posZo,
-        negLo,
-        negLo,
-        posLo,
-        negHi,
-      ]);
+      expect(results.map(parse)).toEqual([negLo, posZo, negLo, negLo, posLo, negHi]);
     });
 
     it('weiEquals', async () => {
@@ -855,14 +664,7 @@ describe('Library', () => {
         dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(negLo).call(),
         dolomiteMargin.contracts.testLib.methods.TypesWeiNegative(negHi).call(),
       ]);
-      expect(results.map(parse)).toEqual([
-        negHi,
-        negLo,
-        negZo,
-        posZo,
-        posLo,
-        posHi,
-      ]);
+      expect(results.map(parse)).toEqual([negHi, negLo, negZo, posZo, posLo, posHi]);
     });
 
     it('weiIsNegative', async () => {

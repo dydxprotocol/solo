@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Account } from "./Account.sol";
+import { Bits } from "./Bits.sol";
 import { Cache } from "./Cache.sol";
 import { Decimal } from "./Decimal.sol";
 import { Interest } from "./Interest.sol";
@@ -54,8 +55,6 @@ library Storage {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Storage";
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -749,8 +748,8 @@ library Storage {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
@@ -772,7 +771,7 @@ library Storage {
                 }
 
                 // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
             }
             if (counter == cache.marketsLength) {
                 break;
