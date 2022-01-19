@@ -616,9 +616,7 @@ export class Getters {
 
     // return true if account is undercollateralized
     const marginRequirement = accountValues.borrow.times(marginRatio);
-    return accountValues.supply.lt(
-      accountValues.borrow.plus(marginRequirement),
-    );
+    return accountValues.supply.lt(accountValues.borrow.plus(marginRequirement));
   }
 
   // ============ Getters for Admin ============
