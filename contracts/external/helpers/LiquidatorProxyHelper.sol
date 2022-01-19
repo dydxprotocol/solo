@@ -117,8 +117,10 @@ contract LiquidatorProxyHelper {
         uint256[] memory liquidMarkets
     ) internal view returns (MarketInfo[] memory) {
         uint[] memory marketBitmaps = Bits.createBitmaps(dolomiteMargin.getNumMarkets());
-        uint marketsLength = _addMarketsToBitmap(solidMarkets, marketBitmaps, 0);
-        marketsLength += _addMarketsToBitmap(liquidMarkets, marketBitmaps, marketsLength);
+        uint marketsLength = 0;
+        marketsLength = _addMarketsToBitmap(solidMarkets, marketBitmaps, marketsLength);
+        marketsLength = _addMarketsToBitmap(liquidMarkets, marketBitmaps, marketsLength);
+//        Require.that(false, FILE, "<marketsLength, bitmap>", marketsLength, marketBitmaps[0]);
 
         uint counter = 0;
         MarketInfo[] memory marketInfos = new MarketInfo[](marketsLength);

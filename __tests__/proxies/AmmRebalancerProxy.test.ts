@@ -4,8 +4,7 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
-import { address } from '../../src';
+import { address, INTEGERS } from '../../src';
 import { TestToken } from '../modules/TestToken';
 
 let dolomiteMargin: TestDolomiteMargin;

@@ -173,13 +173,16 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         // solium-disable indentation
         {
             IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
-            uint256[] memory solidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount);
             uint256[] memory liquidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
             constants = Constants({
                 dolomiteMargin: dolomiteMargin,
                 solidAccount: solidAccount,
                 liquidAccount: liquidAccount,
-                markets: getMarketInfos(dolomiteMargin, solidMarkets, liquidMarkets),
+                markets: getMarketInfos(
+                    dolomiteMargin,
+                    dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+                    liquidMarkets
+                ),
                 liquidMarkets: liquidMarkets,
                 EXPIRY_PROXY: expiry > 0 ? EXPIRY_PROXY: IExpiry(address(0)),
                 expiry: uint32(expiry)
@@ -288,7 +291,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
 
     /**
      * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender is permissioned to use the liquidator account
+     *  - Require that the msg.sender has the permission to use the liquidator account
      *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
      *    not just what's being liquidated)
      */

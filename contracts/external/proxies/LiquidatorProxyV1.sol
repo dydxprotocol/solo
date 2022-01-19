@@ -59,7 +59,6 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
         Account.Info liquidAccount;
         Decimal.D256 minLiquidatorRatio;
         MarketInfo[] markets;
-        uint256[] solidMarkets;
         uint256[] liquidMarkets;
     }
 
@@ -117,15 +116,17 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
         // solium-disable indentation
         {
             IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
-            uint256[] memory solidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount);
             uint256[] memory liquidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
             constants = Constants({
                 dolomiteMargin: dolomiteMargin,
                 solidAccount: solidAccount,
                 liquidAccount: liquidAccount,
                 minLiquidatorRatio: minLiquidatorRatio,
-                markets: getMarketInfos(dolomiteMargin, solidMarkets, liquidMarkets),
-                solidMarkets: solidMarkets,
+                markets: getMarketInfos(
+                    dolomiteMargin,
+                    dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+                    liquidMarkets
+                ),
                 liquidMarkets: liquidMarkets
             });
         }
@@ -366,9 +367,9 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
         // roll-back the old held value
         uint256 oldHeldValue = cache.heldWei.value.mul(cache.heldPrice);
         if (cache.heldWei.sign) {
-            cache.supplyValue = cache.supplyValue.sub(oldHeldValue);
+            cache.supplyValue = cache.supplyValue.sub(oldHeldValue, "cache.heldWei.sign");
         } else {
-            cache.borrowValue = cache.borrowValue.sub(oldHeldValue);
+            cache.borrowValue = cache.borrowValue.sub(oldHeldValue, "!cache.heldWei.sign");
         }
 
         // add the new held value
@@ -382,9 +383,9 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
         // roll-back the old owed value
         uint256 oldOwedValue = cache.owedWei.value.mul(cache.owedPrice);
         if (cache.owedWei.sign) {
-            cache.supplyValue = cache.supplyValue.sub(oldOwedValue);
+            cache.supplyValue = cache.supplyValue.sub(oldOwedValue, "cache.owedWei.sign");
         } else {
-            cache.borrowValue = cache.borrowValue.sub(oldOwedValue);
+            cache.borrowValue = cache.borrowValue.sub(oldOwedValue, "!cache.owedWei.sign");
         }
 
         // add the new owed value
@@ -440,11 +441,12 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
             constants.dolomiteMargin,
             constants.markets,
             constants.solidAccount,
-            constants.solidMarkets
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(constants.solidAccount)
         );
 
         MarketInfo memory heldMarketInfo = binarySearch(constants.markets, heldMarket);
-        MarketInfo memory owedMarketInfo = binarySearch(constants.markets, heldMarket);
+        MarketInfo memory owedMarketInfo = binarySearch(constants.markets, owedMarket);
+
         uint256 heldPrice = heldMarketInfo.price.value;
         uint256 owedPrice = owedMarketInfo.price.value;
         Decimal.D256 memory spread = constants.dolomiteMargin.getLiquidationSpreadForPair(heldMarket, owedMarket);
