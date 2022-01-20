@@ -124,7 +124,8 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
      *                                      cannot cover the `liquidAccount`'s debt.
      * @param  revertOnFailToSellCollateral True to revert the transaction completely if all collateral from the
      *                                      liquidation cannot repay the owed debt. False to swallow the error and sell
-     *                                      whatever is possible.
+     *                                      whatever is possible. If set to false, the liquidator must have sufficient
+     *                                      assets to be prevent becoming liquidated or under-collateralized.
      */
     function liquidate(
         Account.Info memory solidAccount,
@@ -210,8 +211,8 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         if (cache.solidHeldWei.sign) {
             // If the solid account has held wei, add the amount the solid account will receive from liquidation to its
             // total held wei
-            // We do this so we can accurately track how much the solid account has, in case we need to input it
-            // exactly to Router#getParamsForSwapExactTokensForTokens
+            // We do this so we can accurately track how much the solid account has (and will have after the swap), in
+            // case we need to input it exactly to Router#getParamsForSwapExactTokensForTokens
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
 
@@ -225,7 +226,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         );
         if (revertOnFailToSellCollateral) {
             Require.that(
-                totalSolidHeldWei >= actions[0].amount.value,
+                cache.solidHeldUpdateWithReward >= actions[0].amount.value,
                 FILE,
                 "totalSolidHeldWei is too small",
                 totalSolidHeldWei,
