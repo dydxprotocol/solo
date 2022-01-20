@@ -303,7 +303,7 @@ library OperationImpl {
             }
 
             // validate minBorrowedValue
-            bool collateralized = state.isCollateralized(account, cache, true);
+            bool collateralized = state.isCollateralized(account, cache, /* requireMinBorrow = */ true);
 
             // check collateralization for primary accounts
             Require.that(
