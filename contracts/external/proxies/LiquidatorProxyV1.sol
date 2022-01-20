@@ -113,24 +113,16 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
     {
         // put all values that will not change into a single struct
         Constants memory constants;
-        // solium-disable indentation
-        {
-            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
-            uint256[] memory liquidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
-            constants = Constants({
-                dolomiteMargin: dolomiteMargin,
-                solidAccount: solidAccount,
-                liquidAccount: liquidAccount,
-                minLiquidatorRatio: minLiquidatorRatio,
-                markets: getMarketInfos(
-                    dolomiteMargin,
-                    dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
-                    liquidMarkets
-                ),
-                liquidMarkets: liquidMarkets
-            });
-        }
-        // solium-enable indentation
+        constants.dolomiteMargin = DOLOMITE_MARGIN;
+        constants.solidAccount = solidAccount;
+        constants.liquidAccount = liquidAccount;
+        constants.minLiquidatorRatio = minLiquidatorRatio;
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.markets = getMarketInfos(
+            constants.dolomiteMargin,
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.liquidMarkets
+        );
 
         // validate the msg.sender and that the liquidAccount can be liquidated
         checkRequirements(constants);

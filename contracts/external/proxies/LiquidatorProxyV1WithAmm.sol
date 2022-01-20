@@ -63,7 +63,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         Account.Info liquidAccount;
         MarketInfo[] markets;
         uint256[] liquidMarkets;
-        IExpiry EXPIRY_PROXY;
+        IExpiry expiryProxy;
         uint32 expiry;
     }
 
@@ -170,25 +170,17 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
 
         // put all values that will not change into a single struct
         Constants memory constants;
-        // solium-disable indentation
-        {
-            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
-            uint256[] memory liquidMarkets = dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
-            constants = Constants({
-                dolomiteMargin: dolomiteMargin,
-                solidAccount: solidAccount,
-                liquidAccount: liquidAccount,
-                markets: getMarketInfos(
-                    dolomiteMargin,
-                    dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
-                    liquidMarkets
-                ),
-                liquidMarkets: liquidMarkets,
-                EXPIRY_PROXY: expiry > 0 ? EXPIRY_PROXY: IExpiry(address(0)),
-                expiry: uint32(expiry)
-            });
-        }
-        // solium-enable indentation
+        constants.dolomiteMargin = DOLOMITE_MARGIN;
+        constants.solidAccount = solidAccount;
+        constants.liquidAccount = liquidAccount;
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.markets = getMarketInfos(
+            constants.dolomiteMargin,
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.liquidMarkets
+        );
+        constants.expiryProxy = expiry > 0 ? EXPIRY_PROXY: IExpiry(address(0));
+        constants.expiry = uint32(expiry);
 
         LiquidatorProxyWithAmmCache memory cache = initializeCache(
             constants,
@@ -390,7 +382,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
 
         uint256 owedPriceAdj;
         if (constants.expiry > 0) {
-            (, Monetary.Price memory owedPricePrice) = constants.EXPIRY_PROXY.getSpreadAdjustedPrices(
+            (, Monetary.Price memory owedPricePrice) = constants.expiryProxy.getSpreadAdjustedPrices(
                 heldMarket,
                 owedMarket,
                 constants.expiry
@@ -475,7 +467,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             }),
             primaryMarketId: cache.owedMarket,
             secondaryMarketId: cache.heldMarket,
-            otherAddress: address(constants.EXPIRY_PROXY),
+            otherAddress: address(constants.expiryProxy),
             otherAccountId: accounts.length - 1,
             data: abi.encode(cache.owedMarket, constants.expiry)
             });
