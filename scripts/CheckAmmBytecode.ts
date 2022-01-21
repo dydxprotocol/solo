@@ -31,6 +31,8 @@ async function replaceBytecode(): Promise<void> {
   if (uniswapV2Matcher[1].toString() !== uniswapV2InitCodeHash) {
     throw new Error(`Uniswap init code hash does not match! Expected ${uniswapV2InitCodeHash}`);
   }
+
+  console.log('All bytecodes match!');
 }
 
 replaceBytecode()
