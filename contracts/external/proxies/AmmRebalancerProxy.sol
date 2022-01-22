@@ -363,12 +363,12 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
         address[] memory path = new address[](rawPath.length / 20);
         for (uint i = 0; i < path.length; i++) {
             uint offset = 20 * i; // 20 bytes per address
-            address token;
+            bytes20 token;
             // solium-disable-next-line
             assembly {
-                token := div(mload(add(add(rawPath, 0x20), offset)), 0x1000000000000000000000000)
+                token := mload(add(add(rawPath, 32), offset))
             }
-            path[i] = token;
+            path[i] = address(token);
         }
         return path;
     }
