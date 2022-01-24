@@ -84,6 +84,18 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         uint256 owedPriceAdj;
     }
 
+    // ============ Events ============
+
+    event LogArbWithAmm(
+        address solidAccountOwner,
+        uint solidAccountNumber,
+        uint heldMarket,
+        uint heldWeiWithReward,
+        uint owedMarket,
+        uint owedHeldWei,
+        bool isProfitable
+    );
+
     // ============ Storage ============
 
     IDolomiteMargin DOLOMITE_MARGIN;
@@ -232,13 +244,31 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
                 totalSolidHeldWei,
                 actions[0].amount.value
             );
-        } else if (totalSolidHeldWei < actions[0].amount.value) {
+            emit LogArbWithAmm(
+                constants.solidAccount.owner,
+                constants.solidAccount.number,
+                heldMarket,
+                cache.solidHeldUpdateWithReward,
+                owedMarket,
+                cache.toLiquidate,
+                /* isProfitable= */ true // solium-disable-line indentation
+            );
+        } else if (cache.solidHeldUpdateWithReward < actions[0].amount.value) {
             (accounts, actions) = ROUTER_PROXY.getParamsForSwapExactTokensForTokens(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 totalSolidHeldWei, // inputWei
                 minOwedOutputAmount,
                 tokenPath
+            );
+            emit LogArbWithAmm(
+                constants.solidAccount.owner,
+                constants.solidAccount.number,
+                heldMarket,
+                cache.solidHeldUpdateWithReward,
+                owedMarket,
+                cache.toLiquidate,
+                /* isProfitable= */ false // solium-disable-line indentation
             );
         }
 
