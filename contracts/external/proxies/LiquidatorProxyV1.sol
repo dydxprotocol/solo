@@ -39,7 +39,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
  * @title LiquidatorProxyV1
  * @author dYdX
  *
- * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin.
  */
 contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorProxyHelper {
     using Math for uint256;

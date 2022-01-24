@@ -41,9 +41,9 @@ import { DolomiteAmmRouterProxy } from "./DolomiteAmmRouterProxy.sol";
 
 /**
  * @title LiquidatorProxyV1WithAmm
- * @author dYdX
+ * @author Dolomite
  *
- * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin.
  */
 contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
     using Math for uint256;
