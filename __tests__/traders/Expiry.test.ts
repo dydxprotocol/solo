@@ -1324,7 +1324,7 @@ describe('Expiry', () => {
 
       const eventLogs = await liquidContract.getPastEvents(
         'LogOnLiquidateInputs',
-        { fromBlock: 'latest' },
+        { fromBlock: txResult.blockNumber ?? 'latest' },
       );
       expect(eventLogs.length === 1);
       log = parseEvent(liquidContract, eventLogs[0]);
