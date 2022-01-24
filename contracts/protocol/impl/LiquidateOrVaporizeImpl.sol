@@ -49,6 +49,7 @@ library LiquidateOrVaporizeImpl {
     // ============ Events ============
 
     event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
+
     event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Account Functions ============
@@ -112,7 +113,13 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
 
-            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+            _callLiquidateCallbackIfNecessary(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei,
+                args.owedMarket,
+                owedWei
+            );
 
             state.setPar(
                 args.liquidAccount,
@@ -125,7 +132,13 @@ library LiquidateOrVaporizeImpl {
                 owedWei
             );
         } else {
-            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+            _callLiquidateCallbackIfNecessary(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei,
+                args.owedMarket,
+                owedWei
+            );
 
             state.setPar(
                 args.liquidAccount,
@@ -182,8 +195,8 @@ library LiquidateOrVaporizeImpl {
 
         // First, attempt to refund using the same token
         (
-        bool fullyRepaid,
-        Types.Wei memory excessWei
+            bool fullyRepaid,
+            Types.Wei memory excessWei
         ) = _vaporizeUsingExcess(state, args);
         if (fullyRepaid) {
             Events.logVaporize(
@@ -231,12 +244,28 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
+            _callLiquidateCallbackIfNecessary(
+                args.vaporAccount,
+                args.heldMarket,
+                Types.zeroWei(),
+                args.owedMarket,
+                owedWei
+            );
+
             state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMarket,
                 owedWei
             );
         } else {
+            _callLiquidateCallbackIfNecessary(
+                args.vaporAccount,
+                args.heldMarket,
+                Types.zeroWei(),
+                args.owedMarket,
+                owedWei
+            );
+
             state.setPar(
                 args.vaporAccount,
                 args.owedMarket,
@@ -378,25 +407,27 @@ library LiquidateOrVaporizeImpl {
     }
 
     function _callLiquidateCallbackIfNecessary(
-        Actions.LiquidateArgs memory args,
+        Account.Info memory liquidAccount,
+        uint heldMarket,
         Types.Wei memory heldDeltaWei,
+        uint owedMarket,
         Types.Wei memory owedDeltaWei
     ) internal {
-        if (args.liquidAccount.owner.isContract()) {
+        if (liquidAccount.owner.isContract()) {
             // solium-disable-next-line security/no-low-level-calls
-            (bool isCallSuccessful, bytes memory result) = args.liquidAccount.owner.call(
+            (bool isCallSuccessful, bytes memory result) = liquidAccount.owner.call(
                 abi.encodeWithSelector(
-                    ILiquidationCallback(args.liquidAccount.owner).onLiquidate.selector,
-                    args.liquidAccount.number,
-                    args.heldMarket,
+                    ILiquidationCallback(liquidAccount.owner).onLiquidate.selector,
+                    liquidAccount.number,
+                    heldMarket,
                     heldDeltaWei,
-                    args.owedMarket,
+                    owedMarket,
                     owedDeltaWei
                 )
             );
 
             if (isCallSuccessful) {
-                emit LogLiquidationCallbackSuccess(args.liquidAccount.owner, args.liquidAccount.number);
+                emit LogLiquidationCallbackSuccess(liquidAccount.owner, liquidAccount.number);
             } else {
                 if (result.length < 68) {
                     result = bytes("");
@@ -407,7 +438,7 @@ library LiquidateOrVaporizeImpl {
                     }
                     result = bytes(abi.decode(result, (string)));
                 }
-                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number, string(result));
+                emit LogLiquidationCallbackFailure(liquidAccount.owner, liquidAccount.number, string(result));
             }
         }
     }

@@ -42,5 +42,4 @@ interface ILiquidationCallback {
         uint owedMarketId,
         Types.Wei calldata owedDeltaWei
     ) external;
-
 }

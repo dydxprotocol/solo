@@ -21,8 +21,11 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IAutoTrader } from "../../protocol/interfaces/IAutoTrader.sol";
 import { ICallee } from "../../protocol/interfaces/ICallee.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { ILiquidationCallback } from "../../protocol/interfaces/ILiquidationCallback.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
@@ -47,6 +50,7 @@ contract Expiry is
     ICallee,
     IAutoTrader
 {
+    using Address for address;
     using Math for uint256;
     using SafeMath for uint32;
     using SafeMath for uint256;
@@ -75,6 +79,10 @@ contract Expiry is
         address sender,
         uint32 minTimeDelta
     );
+
+    event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
+
+    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Storage ============
 
@@ -119,7 +127,7 @@ contract Expiry is
     )
         external
     {
-        setApproval(msg.sender, sender, minTimeDelta);
+        _setApproval(msg.sender, sender, minTimeDelta);
     }
 
     // ============ Only-DolomiteMargin Functions ============
@@ -134,9 +142,9 @@ contract Expiry is
     {
         CallFunctionType callType = abi.decode(data, (CallFunctionType));
         if (callType == CallFunctionType.SetExpiry) {
-            callFunctionSetExpiry(account.owner, data);
+            _callFunctionSetExpiry(account.owner, data);
         } else {
-            callFunctionSetApproval(account.owner, data);
+            _callFunctionSetApproval(account.owner, data);
         }
     }
 
@@ -190,7 +198,8 @@ contract Expiry is
             expiry
         );
 
-        return getTradeCostInternal(
+        return _getTradeCostInternal(
+            DOLOMITE_MARGIN,
             inputMarketId,
             outputMarketId,
             makerAccount,
@@ -227,7 +236,30 @@ contract Expiry is
             Monetary.Price memory
         )
     {
-        Decimal.D256 memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
+        return _getSpreadAdjustedPrices(
+            DOLOMITE_MARGIN,
+            heldMarketId,
+            owedMarketId,
+            expiry
+        );
+    }
+
+    // ============ Private Functions ============
+
+    function _getSpreadAdjustedPrices(
+        IDolomiteMargin dolomiteMargin,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 expiry
+    )
+        private
+        view
+        returns (
+            Monetary.Price memory,
+            Monetary.Price memory
+        )
+    {
+        Decimal.D256 memory spread = dolomiteMargin.getLiquidationSpreadForPair(
             heldMarketId,
             owedMarketId
         );
@@ -238,16 +270,14 @@ contract Expiry is
             spread.value = Math.getPartial(spread.value, expiryAge, g_expiryRampTime);
         }
 
-        Monetary.Price memory heldPrice = DOLOMITE_MARGIN.getMarketPrice(heldMarketId);
-        Monetary.Price memory owedPrice = DOLOMITE_MARGIN.getMarketPrice(owedMarketId);
+        Monetary.Price memory heldPrice = dolomiteMargin.getMarketPrice(heldMarketId);
+        Monetary.Price memory owedPrice = dolomiteMargin.getMarketPrice(owedMarketId);
         owedPrice.value = owedPrice.value.add(Decimal.mul(owedPrice.value, spread));
 
         return (heldPrice, owedPrice);
     }
 
-    // ============ Private Functions ============
-
-    function callFunctionSetExpiry(
+    function _callFunctionSetExpiry(
         address sender,
         bytes memory data
     )
@@ -278,16 +308,16 @@ contract Expiry is
                 // only change non-zero values if forceUpdate is true
                 if (exp.forceUpdate || getExpiry(exp.account, exp.marketId) == 0) {
                     uint32 newExpiryTime = Time.currentTime().add(exp.timeDelta).to32();
-                    setExpiry(exp.account, exp.marketId, newExpiryTime);
+                    _setExpiry(exp.account, exp.marketId, newExpiryTime);
                 }
             } else {
                 // timeDelta is zero or account has non-negative balance
-                setExpiry(exp.account, exp.marketId, 0);
+                _setExpiry(exp.account, exp.marketId, 0);
             }
         }
     }
 
-    function callFunctionSetApproval(
+    function _callFunctionSetApproval(
         address sender,
         bytes memory data
     )
@@ -298,10 +328,11 @@ contract Expiry is
             SetApprovalArg memory approvalArg
         ) = abi.decode(data, (CallFunctionType, SetApprovalArg));
         assert(callType == CallFunctionType.SetApproval);
-        setApproval(sender, approvalArg.sender, approvalArg.minTimeDelta);
+        _setApproval(sender, approvalArg.sender, approvalArg.minTimeDelta);
     }
 
-    function getTradeCostInternal(
+    function _getTradeCostInternal(
+        IDolomiteMargin dolomiteMargin,
         uint256 inputMarketId,
         uint256 outputMarketId,
         Account.Info memory makerAccount,
@@ -315,7 +346,7 @@ contract Expiry is
         returns (Types.AssetAmount memory)
     {
         Types.AssetAmount memory output;
-        Types.Wei memory maxOutputWei = DOLOMITE_MARGIN.getAccountWei(makerAccount, outputMarketId);
+        Types.Wei memory maxOutputWei = dolomiteMargin.getAccountWei(makerAccount, outputMarketId);
 
         if (inputWei.isPositive()) {
             Require.that(
@@ -338,7 +369,8 @@ contract Expiry is
                 outputMarketId,
                 maxOutputWei.value
             );
-            output = owedWeiToHeldWei(
+            output = _owedWeiToHeldWei(
+                dolomiteMargin,
                 inputWei,
                 outputMarketId,
                 inputMarketId,
@@ -347,7 +379,7 @@ contract Expiry is
 
             // clear expiry if borrow is fully repaid
             if (newInputPar.isZero()) {
-                setExpiry(makerAccount, owedMarketId, 0);
+                _setExpiry(makerAccount, owedMarketId, 0);
             }
         } else {
             Require.that(
@@ -370,7 +402,8 @@ contract Expiry is
                 outputMarketId,
                 maxOutputWei.value
             );
-            output = heldWeiToOwedWei(
+            output = _heldWeiToOwedWei(
+                dolomiteMargin,
                 inputWei,
                 inputMarketId,
                 outputMarketId,
@@ -379,7 +412,7 @@ contract Expiry is
 
             // clear expiry if borrow is fully repaid
             if (output.value == maxOutputWei.value) {
-                setExpiry(makerAccount, owedMarketId, 0);
+                _setExpiry(makerAccount, owedMarketId, 0);
             }
         }
 
@@ -392,10 +425,18 @@ contract Expiry is
         );
         assert(output.sign != maxOutputWei.sign);
 
+        _callLiquidateCallbackIfNecessary(
+            makerAccount,
+            owedMarketId == inputMarketId ? outputMarketId : inputMarketId,
+            owedMarketId == inputMarketId ? Types.Wei(output.sign, output.value) : inputWei,
+            owedMarketId,
+            owedMarketId == inputMarketId ? inputWei : Types.Wei(output.sign, output.value)
+        );
+
         return output;
     }
 
-    function setExpiry(
+    function _setExpiry(
         Account.Info memory account,
         uint256 marketId,
         uint32 time
@@ -411,7 +452,7 @@ contract Expiry is
         );
     }
 
-    function setApproval(
+    function _setApproval(
         address approver,
         address sender,
         uint32 minTimeDelta
@@ -422,7 +463,8 @@ contract Expiry is
         emit LogSenderApproved(approver, sender, minTimeDelta);
     }
 
-    function heldWeiToOwedWei(
+    function _heldWeiToOwedWei(
+        IDolomiteMargin dolomiteMargin,
         Types.Wei memory heldWei,
         uint256 heldMarketId,
         uint256 owedMarketId,
@@ -435,7 +477,8 @@ contract Expiry is
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = getSpreadAdjustedPrices(
+        ) = _getSpreadAdjustedPrices(
+            dolomiteMargin,
             heldMarketId,
             owedMarketId,
             expiry
@@ -455,7 +498,8 @@ contract Expiry is
         });
     }
 
-    function owedWeiToHeldWei(
+    function _owedWeiToHeldWei(
+        IDolomiteMargin dolomiteMargin,
         Types.Wei memory owedWei,
         uint256 heldMarketId,
         uint256 owedMarketId,
@@ -468,7 +512,8 @@ contract Expiry is
         (
             Monetary.Price memory heldPrice,
             Monetary.Price memory owedPrice
-        ) = getSpreadAdjustedPrices(
+        ) = _getSpreadAdjustedPrices(
+            dolomiteMargin,
             heldMarketId,
             owedMarketId,
             expiry
@@ -486,5 +531,46 @@ contract Expiry is
             ref: Types.AssetReference.Delta,
             value: heldAmount
         });
+    }
+
+    function _callLiquidateCallbackIfNecessary(
+        Account.Info memory liquidAccount,
+        uint heldMarket,
+        Types.Wei memory heldDeltaWei,
+        uint owedMarket,
+        Types.Wei memory owedDeltaWei
+    ) private {
+        if (liquidAccount.owner.isContract()) {
+            // solium-disable-next-line security/no-low-level-calls
+            (bool isCallSuccessful, bytes memory result) = liquidAccount.owner.call(
+                abi.encodeWithSelector(
+                    ILiquidationCallback(liquidAccount.owner).onLiquidate.selector,
+                    liquidAccount.number,
+                    heldMarket,
+                    heldDeltaWei,
+                    owedMarket,
+                    owedDeltaWei
+                )
+            );
+
+            if (isCallSuccessful) {
+                emit LogLiquidationCallbackSuccess(liquidAccount.owner, liquidAccount.number);
+            } else {
+                if (result.length < 68) {
+                    result = bytes("");
+                } else {
+                    // solium-disable-next-line security/no-inline-assembly
+                    assembly {
+                        result := add(result, 0x04)
+                    }
+                    result = bytes(abi.decode(result, (string)));
+                }
+                emit LogLiquidationCallbackFailure(
+                    liquidAccount.owner,
+                    liquidAccount.number,
+                    string(result)
+                );
+            }
+        }
     }
 }

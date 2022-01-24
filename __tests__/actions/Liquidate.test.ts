@@ -3,9 +3,8 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { AccountStatus, address, AmountDenomination, AmountReference, Integer, Liquidate, } from '../../src';
+import { AccountStatus, address, AmountDenomination, AmountReference, Integer, INTEGERS, Liquidate } from '../../src';
 import { TestLiquidateCallback } from '../../build/testing_wrappers/TestLiquidateCallback';
 import {
   abi as testLiquidateCallbackABI,
@@ -71,24 +70,9 @@ describe('Liquidate', () => {
     await Promise.all([
       dolomiteMargin.testing.setMarketIndex(owedMarket, defaultIndex),
       dolomiteMargin.testing.setMarketIndex(heldMarket, defaultIndex),
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        owedMarket,
-        negPar,
-      ),
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        heldMarket,
-        collatPar,
-      ),
-      dolomiteMargin.testing.setAccountBalance(
-        solidOwner,
-        solidAccountNumber,
-        owedMarket,
-        par,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, owedMarket, negPar),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, collatPar),
+      dolomiteMargin.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par),
     ]);
     snapshotId = await snapshot();
   });
@@ -100,10 +84,7 @@ describe('Liquidate', () => {
   it('Basic liquidate test', async () => {
     const txResult = await expectLiquidateOkay({});
     console.log(`\tLiquidate gas used: ${txResult.gasUsed}`);
-    await Promise.all([
-      expectSolidPars(par.times(premium), zero),
-      expectLiquidPars(par.times(remaining), zero),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium), zero), expectLiquidPars(par.times(remaining), zero)]);
   });
 
   it('Succeeds for events', async () => {
@@ -168,10 +149,7 @@ describe('Liquidate', () => {
       },
     });
 
-    await Promise.all([
-      expectSolidPars(par.times(premium), zero),
-      expectLiquidPars(par.times(remaining), zero),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium), zero), expectLiquidPars(par.times(remaining), zero)]);
   });
 
   it('Succeeds when liquidating a contract with callback', async () => {
@@ -179,18 +157,13 @@ describe('Liquidate', () => {
     const shouldRevertWithMessage = false;
     const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidContract.options.address,
-        liquidAccountNumber,
-        owedMarket,
-        negPar,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
         liquidContract.options.address,
         liquidAccountNumber,
         heldMarket,
         collatPar,
-      )
+      ),
     ]);
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
@@ -219,18 +192,13 @@ describe('Liquidate', () => {
     const shouldRevertWithMessage = true;
     const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidContract.options.address,
-        liquidAccountNumber,
-        owedMarket,
-        negPar,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
         liquidContract.options.address,
         liquidAccountNumber,
         heldMarket,
         collatPar,
-      )
+      ),
     ]);
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
@@ -260,18 +228,13 @@ describe('Liquidate', () => {
     const shouldRevertWithMessage = false;
     const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidContract.options.address,
-        liquidAccountNumber,
-        owedMarket,
-        negPar,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
         liquidContract.options.address,
         liquidAccountNumber,
         heldMarket,
         collatPar,
-      )
+      ),
     ]);
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
@@ -304,35 +267,19 @@ describe('Liquidate', () => {
       },
     });
 
-    await Promise.all([
-      expectSolidPars(par.times(premium), zero),
-      expectLiquidPars(par.times(remaining), zero),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium), zero), expectLiquidPars(par.times(remaining), zero)]);
   });
 
   it('Succeeds when bound by heldToken', async () => {
     const amount = par.times(premium).div(2);
-    await dolomiteMargin.testing.setAccountBalance(
-      liquidOwner,
-      liquidAccountNumber,
-      heldMarket,
-      amount,
-    );
+    await dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount);
     await expectLiquidateOkay({});
 
-    await Promise.all([
-      expectSolidPars(par.times(premium).div(2), par.div(2)),
-      expectLiquidPars(zero, negPar.div(2)),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium).div(2), par.div(2)), expectLiquidPars(zero, negPar.div(2))]);
   });
 
   it('Succeeds for solid account that takes on a negative balance', async () => {
-    await dolomiteMargin.testing.setAccountBalance(
-      solidOwner,
-      solidAccountNumber,
-      owedMarket,
-      par.div(2),
-    );
+    await dolomiteMargin.testing.setAccountBalance(solidOwner, solidAccountNumber, owedMarket, par.div(2));
     await expectLiquidateOkay({});
     await Promise.all([
       expectSolidPars(par.times(premium), negPar.div(2)),
@@ -343,17 +290,8 @@ describe('Liquidate', () => {
   it('Succeeds for liquidating twice', async () => {
     const amount = par.times(2);
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        heldMarket,
-        amount,
-      ),
-      dolomiteMargin.testing.setAccountStatus(
-        liquidOwner,
-        liquidAccountNumber,
-        AccountStatus.Liquidating,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount),
+      dolomiteMargin.testing.setAccountStatus(liquidOwner, liquidAccountNumber, AccountStatus.Liquidating),
     ]);
     await dolomiteMargin.operation
       .initiate()
@@ -376,17 +314,8 @@ describe('Liquidate', () => {
   it('Succeeds for account already marked with liquidating flag', async () => {
     const amount = par.times(2);
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        heldMarket,
-        amount,
-      ),
-      dolomiteMargin.testing.setAccountStatus(
-        liquidOwner,
-        liquidAccountNumber,
-        AccountStatus.Liquidating,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount),
+      dolomiteMargin.testing.setAccountStatus(liquidOwner, liquidAccountNumber, AccountStatus.Liquidating),
     ]);
     await expectLiquidateOkay({});
     await Promise.all([
@@ -396,45 +325,29 @@ describe('Liquidate', () => {
   });
 
   it('Succeeds and sets status to Normal', async () => {
-    await dolomiteMargin.testing.setAccountStatus(
-      solidOwner,
-      solidAccountNumber,
-      AccountStatus.Liquidating,
-    );
+    await dolomiteMargin.testing.setAccountStatus(solidOwner, solidAccountNumber, AccountStatus.Liquidating);
     await expectLiquidateOkay({});
-    const status = await dolomiteMargin.getters.getAccountStatus(
-      solidOwner,
-      solidAccountNumber,
-    );
+    const status = await dolomiteMargin.getters.getAccountStatus(solidOwner, solidAccountNumber);
     expect(status).toEqual(AccountStatus.Normal);
   });
 
   it('Succeeds for local operator', async () => {
     await dolomiteMargin.permissions.approveOperator(operator, { from: solidOwner });
     await expectLiquidateOkay({}, { from: operator });
-    await Promise.all([
-      expectSolidPars(par.times(premium), zero),
-      expectLiquidPars(par.times(remaining), zero),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium), zero), expectLiquidPars(par.times(remaining), zero)]);
   });
 
   it('Succeeds for global operator', async () => {
     await dolomiteMargin.admin.setGlobalOperator(operator, true, { from: accounts[0] });
     await expectLiquidateOkay({}, { from: operator });
-    await Promise.all([
-      expectSolidPars(par.times(premium), zero),
-      expectLiquidPars(par.times(remaining), zero),
-    ]);
+    await Promise.all([expectSolidPars(par.times(premium), zero), expectLiquidPars(par.times(remaining), zero)]);
   });
 
   it('Succeeds (without effect) for zero collateral', async () => {
     await expectLiquidateOkay({
       payoutMarketId: otherMarket,
     });
-    await Promise.all([
-      expectSolidPars(zero, par),
-      expectLiquidPars(collatPar, negPar),
-    ]);
+    await Promise.all([expectSolidPars(zero, par), expectLiquidPars(collatPar, negPar)]);
     const totalOtherPar = await dolomiteMargin.getters.getMarketWithInfo(otherMarket);
     expect(totalOtherPar.market.totalPar.supply).toEqual(zero);
     expect(totalOtherPar.market.totalPar.borrow).toEqual(zero);
@@ -444,10 +357,7 @@ describe('Liquidate', () => {
     await expectLiquidateOkay({
       liquidMarketId: otherMarket,
     });
-    await Promise.all([
-      expectSolidPars(zero, par),
-      expectLiquidPars(collatPar, negPar),
-    ]);
+    await Promise.all([expectSolidPars(zero, par), expectLiquidPars(collatPar, negPar)]);
     const totalOtherPar = await dolomiteMargin.getters.getMarketWithInfo(otherMarket);
     expect(totalOtherPar.market.totalPar.supply).toEqual(zero);
     expect(totalOtherPar.market.totalPar.borrow).toEqual(zero);
@@ -455,12 +365,7 @@ describe('Liquidate', () => {
 
   it('Fails for over-collateralized account', async () => {
     const amount = par.times(2);
-    await dolomiteMargin.testing.setAccountBalance(
-      liquidOwner,
-      liquidAccountNumber,
-      heldMarket,
-      amount,
-    );
+    await dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, amount);
     await expectLiquidateRevert({}, 'LiquidateOrVaporizeImpl: Unliquidatable account');
   });
 
@@ -485,10 +390,7 @@ describe('Liquidate', () => {
       },
     });
     operation.liquidate(defaultGlob);
-    await expectThrow(
-      operation.commit(),
-      'OperationImpl: Requires non-primary account',
-    );
+    await expectThrow(operation.commit(), 'OperationImpl: Requires non-primary account');
   });
 
   it('Fails if liquidating totally zero account', async () => {
@@ -502,39 +404,18 @@ describe('Liquidate', () => {
   });
 
   it('Fails for repeated market', async () => {
-    await expectLiquidateRevert(
-      { payoutMarketId: owedMarket },
-      'OperationImpl: Duplicate markets in action',
-    );
+    await expectLiquidateRevert({ payoutMarketId: owedMarket }, 'OperationImpl: Duplicate markets in action');
   });
 
   it('Fails for negative collateral', async () => {
-    await dolomiteMargin.testing.setAccountBalance(
-      liquidOwner,
-      liquidAccountNumber,
-      heldMarket,
-      negPar,
-    );
-    await expectLiquidateRevert(
-      {},
-      'LiquidateOrVaporizeImpl: Collateral cannot be negative',
-    );
+    await dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, negPar);
+    await expectLiquidateRevert({}, 'LiquidateOrVaporizeImpl: Collateral cannot be negative');
   });
 
   it('Fails for paying back market that is already positive', async () => {
     await Promise.all([
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        owedMarket,
-        collatPar,
-      ),
-      dolomiteMargin.testing.setAccountBalance(
-        liquidOwner,
-        liquidAccountNumber,
-        heldMarket,
-        negPar,
-      ),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, owedMarket, collatPar),
+      dolomiteMargin.testing.setAccountBalance(liquidOwner, liquidAccountNumber, heldMarket, negPar),
     ]);
     await expectLiquidateRevert(
       {
@@ -574,23 +455,16 @@ async function deployCallbackContract(
   shouldRevert: boolean,
   shouldRevertWithMessage: boolean,
 ): Promise<TestLiquidateCallback> {
-  return (
-    await new dolomiteMargin.web3.eth.Contract(
-      testLiquidateCallbackABI,
-    )
-      .deploy({
-        data: testLiquidateCallbackBytecode,
-        arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
-      })
-      .send({ from: accounts[0], gas: '6000000' })
-  ) as TestLiquidateCallback;
+  return (await new dolomiteMargin.web3.eth.Contract(testLiquidateCallbackABI)
+    .deploy({
+      data: testLiquidateCallbackBytecode,
+      arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
+    })
+    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidateCallback;
 }
 
 async function expectLiquidationFlagSet(liquidAddress: address = liquidOwner) {
-  const status = await dolomiteMargin.getters.getAccountStatus(
-    liquidAddress,
-    liquidAccountNumber,
-  );
+  const status = await dolomiteMargin.getters.getAccountStatus(liquidAddress, liquidAccountNumber);
   expect(status).toEqual(AccountStatus.Liquidating);
 }
 
@@ -604,23 +478,13 @@ async function expectLiquidateOkay(glob: Object, options?: Object) {
   return txResult;
 }
 
-async function expectLiquidateRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
+async function expectLiquidateRevert(glob: Object, reason?: string, options?: Object) {
   await expectThrow(expectLiquidateOkay(glob, options), reason);
 }
 
-async function expectSolidPars(
-  expectedHeldPar: Integer,
-  expectedOwedPar: Integer,
-) {
-  const balances = await dolomiteMargin.getters.getAccountBalances(
-    solidOwner,
-    solidAccountNumber,
-  );
-  balances.forEach((balance) => {
+async function expectSolidPars(expectedHeldPar: Integer, expectedOwedPar: Integer) {
+  const balances = await dolomiteMargin.getters.getAccountBalances(solidOwner, solidAccountNumber);
+  balances.forEach(balance => {
     if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
     } else if (balance.marketId.eq(owedMarket)) {
@@ -634,13 +498,10 @@ async function expectSolidPars(
 async function expectLiquidPars(
   expectedHeldPar: Integer,
   expectedOwedPar: Integer,
-  liquidAddress: address = liquidOwner
+  liquidAddress: address = liquidOwner,
 ) {
-  const balances = await dolomiteMargin.getters.getAccountBalances(
-    liquidAddress,
-    liquidAccountNumber,
-  );
-  balances.forEach((balance) => {
+  const balances = await dolomiteMargin.getters.getAccountBalances(liquidAddress, liquidAccountNumber);
+  balances.forEach(balance => {
     if (balance.marketId.eq(heldMarket)) {
       expect(balance.par).toEqual(expectedHeldPar);
     } else if (balance.marketId.eq(owedMarket)) {

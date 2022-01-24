@@ -236,7 +236,7 @@ export class AccountOperation {
     return this;
   }
 
-  public liquidateExpiredAccountV2(
+  public liquidateExpiredAccount(
     liquidate: Liquidate,
     maxExpiry?: Integer,
   ): AccountOperation {
@@ -247,7 +247,7 @@ export class AccountOperation {
     );
   }
 
-  public fullyLiquidateExpiredAccountV2(
+  public fullyLiquidateExpiredAccount(
     primaryAccountOwner: address,
     primaryAccountNumber: Integer,
     expiredAccountOwner: address,

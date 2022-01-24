@@ -126,7 +126,7 @@ export class Logs {
     return null;
   }
 
-  private parseLogWithContract(contract: any, log: Log) {
+  parseLogWithContract(contract: any, log: Log) {
     const events = contract.options.jsonInterface.filter(
       (e: any) => e.type === 'event',
     );
@@ -152,7 +152,7 @@ export class Logs {
     };
   }
 
-  private parseArgs(eventJson: any, eventArgs: any) {
+  parseArgs(eventJson: any, eventArgs: any) {
     const parsed: any = {};
 
     eventJson.inputs.forEach((input: any) => {
@@ -256,6 +256,15 @@ export class Logs {
       return Logs.parseFillData(eventArgs[input.name]);
     }
 
+    if (
+      Array.isArray(input.components) &&
+      input.components.length === 2 &&
+      input.components[0].name === 'sign' &&
+      input.components[1].name === 'value'
+    ) {
+      return Logs.parseWei(eventArgs[input.name]);
+    }
+
     throw new Error('Unknown tuple type in event');
   }
 
@@ -292,6 +301,15 @@ export class Logs {
 
   private static parseIntegerValue(value: any): Integer {
     return new BigNumber(value.value);
+  }
+
+  private static parseWei(
+    weiData: any,
+  ): BigNumber {
+    return valueToInteger({
+      value: weiData.value,
+      sign: weiData.sign,
+    });
   }
 
   private static parseFillData(

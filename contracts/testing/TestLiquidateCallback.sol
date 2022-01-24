@@ -28,6 +28,14 @@ contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
 
     bytes32 public constant FILE = "TestLiquidateCallback";
 
+    event LogOnLiquidateInputs(
+        uint accountNumber,
+        uint heldMarketId,
+        Types.Wei heldDeltaWei,
+        uint owedMarketId,
+        Types.Wei owedDeltaWei
+    );
+
     bool public SHOULD_REVERT;
     bool public SHOULD_REVERT_WITH_MESSAGE;
 
@@ -40,12 +48,19 @@ contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
         SHOULD_REVERT_WITH_MESSAGE = shouldRevertWithMessage;
     }
 
+    function setLocalOperator() external {
+        Types.OperatorArg[] memory operators = new Types.OperatorArg[](1);
+        operators[0].operator = msg.sender;
+        operators[0].trusted = true;
+        DOLOMITE_MARGIN.setOperators(operators);
+    }
+
     function onLiquidate(
-        uint,
-        uint,
-        Types.Wei memory,
-        uint,
-        Types.Wei memory
+        uint accountNumber,
+        uint heldMarketId,
+        Types.Wei memory heldDeltaWei,
+        uint owedMarketId,
+        Types.Wei memory owedDeltaWei
     ) public {
         if (SHOULD_REVERT) {
             if (SHOULD_REVERT_WITH_MESSAGE) {
@@ -57,6 +72,8 @@ contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
             } else {
                 revert();
             }
+        } else {
+            emit LogOnLiquidateInputs(accountNumber, heldMarketId, heldDeltaWei, owedMarketId, owedDeltaWei);
         }
     }
 

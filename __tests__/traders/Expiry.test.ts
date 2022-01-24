@@ -4,15 +4,21 @@ import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import { toBytes } from '../../src/lib/BytesHelper';
-import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import {
   address,
   AmountDenomination,
   AmountReference,
+  INTEGERS,
   Trade,
   TxResult,
 } from '../../src';
+import { TestLiquidateCallback } from '../../build/testing_wrappers/TestLiquidateCallback';
+import {
+  abi as testLiquidateCallbackABI,
+  bytecode as testLiquidateCallbackBytecode
+} from '../../build/contracts/TestLiquidateCallback.json';
+import { EventLog } from 'web3/types';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -1000,7 +1006,7 @@ describe('Expiry', () => {
     });
   });
 
-  describe('AccountOperation#fullyLiquidateExpiredAccountV2', () => {
+  describe('AccountOperation#fullyLiquidateExpiredAccount', () => {
     it('Succeeds for two assets', async () => {
       const prices = [INTEGERS.ONES_31, INTEGERS.ONES_31, INTEGERS.ONES_31];
       const premiums = [INTEGERS.ZERO, INTEGERS.ZERO, INTEGERS.ZERO];
@@ -1017,7 +1023,7 @@ describe('Expiry', () => {
       );
       await dolomiteMargin.operation
         .initiate()
-        .fullyLiquidateExpiredAccountV2(
+        .fullyLiquidateExpiredAccount(
           owner1,
           accountNumber1,
           owner2,
@@ -1068,7 +1074,7 @@ describe('Expiry', () => {
       );
       await dolomiteMargin.operation
         .initiate()
-        .fullyLiquidateExpiredAccountV2(
+        .fullyLiquidateExpiredAccount(
           owner1,
           accountNumber1,
           owner2,
@@ -1140,7 +1146,7 @@ describe('Expiry', () => {
       );
       await dolomiteMargin.operation
         .initiate()
-        .fullyLiquidateExpiredAccountV2(
+        .fullyLiquidateExpiredAccount(
           owner1,
           accountNumber1,
           owner2,
@@ -1235,7 +1241,7 @@ describe('Expiry', () => {
     it('Succeeds', async () => {
       await dolomiteMargin.operation
         .initiate()
-        .liquidateExpiredAccountV2({
+        .liquidateExpiredAccount({
           liquidMarketId: owedMarket,
           payoutMarketId: heldMarket,
           primaryAccountOwner: owner1,
@@ -1255,6 +1261,222 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, heldMarket),
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2).minus(held1));
+    });
+
+    it('Succeeds with callback', async () => {
+      const shouldRevert = false;
+      const shouldRevertWithMessage = false;
+      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackSuccess');
+      expect(logs.length).toEqual(1);
+      let log = logs[0];
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+
+      const eventLogs = await liquidContract.getPastEvents(
+        'LogOnLiquidateInputs',
+        { fromBlock: 'latest' },
+      );
+      expect(eventLogs.length === 1);
+      log = parseEvent(liquidContract, eventLogs[0]);
+      expect(log.args.accountNumber).toEqual(accountNumber2);
+      expect(log.args.heldMarketId).toEqual(heldMarket);
+      expect(log.args.heldDeltaWei).toEqual(par.times(premium).times(-1));
+      expect(log.args.owedMarketId).toEqual(owedMarket);
+      expect(log.args.owedDeltaWei).toEqual(par);
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2).minus(held1));
+    });
+
+    it('Succeeds with failed callback', async () => {
+      const shouldRevert = true;
+      const shouldRevertWithMessage = false;
+      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('');
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2).minus(held1));
+    });
+
+    it('Succeeds with failed callback with reason', async () => {
+      const shouldRevert = true;
+      const shouldRevertWithMessage = true;
+      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+      expect(logs.length).toEqual(1);
+      const log = logs[0];
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('TestLiquidateCallback: purposeful reversion');
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
       expect(owed1).toEqual(zero);
@@ -1282,6 +1504,32 @@ async function setExpiryForSelf(
           timeDelta,
           forceUpdate,
           accountOwner: owner2,
+          accountId: accountNumber2,
+          marketId: owedMarket,
+        },
+      ],
+    })
+    .commit({ ...options, from: owner2 });
+}
+
+async function setExpiryForCallbackContract(
+  contract: TestLiquidateCallback,
+  timeDelta: BigNumber,
+  forceUpdate: boolean,
+  options?: any,
+) {
+  await contract.methods.setLocalOperator().send({ ...options, from: owner2 });
+
+  return dolomiteMargin.operation
+    .initiate()
+    .setExpiry({
+      primaryAccountOwner: contract.options.address,
+      primaryAccountId: accountNumber2,
+      expiryArgs: [
+        {
+          timeDelta,
+          forceUpdate,
+          accountOwner: contract.options.address,
           accountId: accountNumber2,
           marketId: owedMarket,
         },
@@ -1367,4 +1615,29 @@ async function expectNoExpirySet(txResult: TxResult) {
     owedMarket,
   );
   expect(expiry).toEqual(startingExpiry);
+}
+
+async function deployCallbackContract(
+  shouldRevert: boolean,
+  shouldRevertWithMessage: boolean,
+): Promise<TestLiquidateCallback> {
+  return (await new dolomiteMargin.web3.eth.Contract(testLiquidateCallbackABI)
+    .deploy({
+      data: testLiquidateCallbackBytecode,
+      arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
+    })
+    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidateCallback;
+}
+
+function parseEvent(contract: TestLiquidateCallback, event: EventLog) {
+  return dolomiteMargin.logs.parseLogWithContract(contract, {
+    address: event.address,
+    data: event.raw.data,
+    topics: event.raw.topics,
+    logIndex: event.logIndex,
+    transactionHash: event.transactionHash,
+    transactionIndex: event.transactionIndex,
+    blockHash: event.blockHash,
+    blockNumber: event.blockNumber,
+  });
 }
