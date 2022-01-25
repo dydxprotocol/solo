@@ -6547,14 +6547,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             cache.toLiquidate, // the amount of owedMarket that needs to be repaid. Exact output amount
             tokenPath
         );
-        if (revertOnFailToSellCollateral) {
-            Require.that(
-                cache.solidHeldUpdateWithReward >= actions[0].amount.value,
-                FILE,
-                "totalSolidHeldWei is too small",
-                totalSolidHeldWei,
-                actions[0].amount.value
-            );
+        if (cache.solidHeldUpdateWithReward >= actions[0].amount.value) {
             emit LogArbWithAmm(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
@@ -6564,7 +6557,15 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
                 cache.toLiquidate,
             /* isProfitable= */ true // solium-disable-line indentation
             );
-        } else if (cache.solidHeldUpdateWithReward < actions[0].amount.value) {
+        } else {
+            Require.that(
+                !revertOnFailToSellCollateral,
+                FILE,
+                "totalSolidHeldWei is too small",
+                totalSolidHeldWei,
+                actions[0].amount.value
+            );
+
             (accounts, actions) = ROUTER_PROXY.getParamsForSwapExactTokensForTokens(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,

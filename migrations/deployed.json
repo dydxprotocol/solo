@@ -83,8 +83,8 @@
     "LiquidatorProxyV1WithAmm": {
         "80001": {
             "links": {},
-            "address": "0xb4B27F425e0883Cb7C836640B99eF07239e95E29",
-            "transactionHash": "0x67cf3a87c3af2abb854b6be5854e9796543f0b2ae9e9115601a08dcd0e3410d2"
+            "address": "0x0850c1E7f7bf11C39034717EeAB8c55aE66c87e3",
+            "transactionHash": "0x9b34a35aee5c2ec8d3f3503630034da24642c923526d85c5dcb3de4d1bdedac4"
         }
     },
     "DolomiteAmmRouterProxy": {
