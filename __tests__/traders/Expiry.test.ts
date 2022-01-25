@@ -18,7 +18,6 @@ import {
   abi as testLiquidateCallbackABI,
   bytecode as testLiquidateCallbackBytecode
 } from '../../build/contracts/TestLiquidateCallback.json';
-import { EventLog } from 'web3/types';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -1327,7 +1326,7 @@ describe('Expiry', () => {
         { fromBlock: txResult.blockNumber ?? 'latest' },
       );
       expect(eventLogs.length === 1);
-      log = parseEvent(liquidContract, eventLogs[0]);
+      log = dolomiteMargin.logs.parseEventLogWithContract(liquidContract, eventLogs[0]);
       expect(log.args.accountNumber).toEqual(accountNumber2);
       expect(log.args.heldMarketId).toEqual(heldMarket);
       expect(log.args.heldDeltaWei).toEqual(par.times(premium).times(-1));
@@ -1627,17 +1626,4 @@ async function deployCallbackContract(
       arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
     })
     .send({ from: accounts[0], gas: '6000000' })) as TestLiquidateCallback;
-}
-
-function parseEvent(contract: TestLiquidateCallback, event: EventLog) {
-  return dolomiteMargin.logs.parseLogWithContract(contract, {
-    address: event.address,
-    data: event.raw.data,
-    topics: event.raw.topics,
-    logIndex: event.logIndex,
-    transactionHash: event.transactionHash,
-    transactionIndex: event.transactionIndex,
-    blockHash: event.blockHash,
-    blockNumber: event.blockNumber,
-  });
 }

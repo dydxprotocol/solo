@@ -107,5 +107,8 @@ module.exports = {
       networkCheckTimeout: 99999,
     },
   },
-  // migrations_file_extension_regexp: /.*\.ts$/, truffle does not currently support ts migrations
+  plugins: ['truffle-plugin-verify'],
+  api_keys: {
+    polygonscan: process.env.POLYGONSCAN_API_KEY
+  }
 };

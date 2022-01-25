@@ -1,132 +1,133 @@
 {
-    "DolomiteMargin": {
-        "80001": {
-            "links": {
-                "AdminImpl": "0x30054518B735cb7AF9C9d54117a8214e6405B07F",
-                "OperationImpl": "0xc4dFf08281216BCF43f9b763d53E0D38fea5DED0"
-            },
-            "address": "0x7f3A1bED810efeB54189e87C9e1838CB4E3AD44e",
-            "transactionHash": "0xa962247a49e9a44627eebc7ad9943178de5494c3a1c5b149e9b5981cdd71401c"
-        }
-    },
-    "MultiCall": {
+    "LiquidateOrVaporizeImpl": {
         "80001": {
             "links": {},
-            "address": "0xE5035F01382E0E2291661cbBdf1933498dbD7D55",
-            "transactionHash": "0x1b6a36fb8cb4e62322becf663e37cd3779ae17702e790c48b42561840f6acbeb"
-        }
-    },
-    "PayableProxy": {
-        "80001": {
-            "links": {},
-            "address": "0xbbf842809665D288EE382b90834C393b390A66c3",
-            "transactionHash": "0x75759fd7aba796a6ece1b6edf4a82dc14c896b292836a7c5a460b9b57626b6e5"
-        }
-    },
-    "LiquidatorProxyV1": {
-        "80001": {
-            "links": {},
-            "address": "0x9c95d7750558B3b6BD43bdc6484376432F8b719A",
-            "transactionHash": "0xddfdad8f9a21f23838f2e82481553103d7aa368f3f4e082371c1ec503370e4b1"
-        }
-    },
-    "DoubleExponentInterestSetter": {
-        "80001": {
-            "links": {},
-            "address": "0xdFFD859dEa68eB5F71873415d49105cb4e73b8E6",
-            "transactionHash": "0x369275feef0900e747f1bcf8ec4704f402fcf15b0193357e965d905f71fe256d"
-        }
-    },
-    "AdminImpl": {
-        "80001": {
-            "links": {},
-            "address": "0x30054518B735cb7AF9C9d54117a8214e6405B07F",
-            "transactionHash": "0x655c3baa9eb4d3de67432bf175f89a74c9d6395283678c487206a0401f049e51"
+            "address": "0x278Dc1c6B7C83F03F1f151e68F52B690a8798657",
+            "transactionHash": "0xf438812f3e9937c7e5f0726002f754864a0283a77812995a593b4f72185aec26"
         }
     },
     "OperationImpl": {
         "80001": {
             "links": {
-                "LiquidateOrVaporizeImpl": "0x131aD0B5C9dC67810524F0A8911fa834A19A091e"
+                "LiquidateOrVaporizeImpl": "0x278Dc1c6B7C83F03F1f151e68F52B690a8798657"
             },
-            "address": "0xc4dFf08281216BCF43f9b763d53E0D38fea5DED0",
-            "transactionHash": "0x25596932476ffbef71ff5b18db560fe4c3ac7263a3ea0dbfb0bf1097e7f4f6b4"
+            "address": "0x300466234A3D5ff4c81f75EaA0f9A03645F823d3",
+            "transactionHash": "0x269b2667d241273ecfb332352149fa9feb59c51a13a50896d4699333dd8fddd3"
         }
     },
-    "LiquidateOrVaporizeImpl": {
-        "80001": {
-            "address": "0x131ad0b5c9dc67810524f0a8911fa834aFAmm19a091e",
-            "transactionHash": "0x535d81389cfa43949d49f5936c6407d674ed9e32b945c021941183d37437a506"
-        }
-    },
-    "ChainlinkPriceOracleV1": {
+    "AdminImpl": {
         "80001": {
             "links": {},
-            "address": "0x817de0dda92f1574421ffbe3d3baf85cbef03227",
-            "transactionHash": "0x10c501657ba43f3813b074f805af9bcd99e4c59fdf3ed551faa13c4cf0ad5d76"
+            "address": "0x23501fEA1107c7ebac5Bb44E5207E78F9EB44672",
+            "transactionHash": "0x168f198474cec3db2f8a8cc3fcb74a61ffad50e9ec4b313e629231eeb2208bf8"
+        }
+    },
+    "DolomiteMargin": {
+        "80001": {
+            "links": {
+                "AdminImpl": "0x23501fEA1107c7ebac5Bb44E5207E78F9EB44672",
+                "OperationImpl": "0x300466234A3D5ff4c81f75EaA0f9A03645F823d3"
+            },
+            "address": "0x2548CB005F16c7dFc711ace901b0C2f144DCd90B",
+            "transactionHash": "0x82e039b2a9329afeae83e6eff941a5e7706a1dd5acb31d803b3027462c1851d5"
         }
     },
     "Expiry": {
         "80001": {
             "links": {},
-            "address": "0x409Ee666C9AF39183deb8F4cB5B8DDE4Da51B3Ed",
-            "transactionHash": "0x96d5edf2c921c43455aa779d66bebdd7a5c5da2cc56dfcf22d4da0fa9ab13909"
+            "address": "0xb1DD89690E86754d58204fEE6551b45ae1Dd6D30",
+            "transactionHash": "0x5ce75695d7623c20a76c27a4c6312999faa5051bd0ea4a4c829ca36fd315c5e6"
+        }
+    },
+    "PayableProxy": {
+        "80001": {
+            "links": {},
+            "address": "0xBD93984a2c74607ee1B649D91222D711518Bd70B",
+            "transactionHash": "0xe0cd0cf3ff6783e347b3d3a8ee19f9db9f8f1eda05028d135dcb43ce2bb83d97"
         }
     },
     "SignedOperationProxy": {
         "80001": {
             "links": {},
-            "address": "0xa82afD73F0191f3cf9dbcaE2194eaCc9BAce4D7d",
-            "transactionHash": "0x596dc20fbcfc1e2aa579eeb5a796d32a5c4f71d68240d0d66a064351663279b0"
+            "address": "0x14c998127E5866f9FA81138D620013471cA2BCC2",
+            "transactionHash": "0xb4808b39889f18aa4bbaf4efd7e4c70c3432ed78a7ead717a534108debca3241"
+        }
+    },
+    "LiquidatorProxyV1": {
+        "80001": {
+            "links": {},
+            "address": "0xB96374dF791905Bea6636024367C1CF18BcC5729",
+            "transactionHash": "0xfb89c7a8ec25f7054a575123cf43e823f3bf7842261a412163a41c86778fe802"
         }
     },
     "LiquidatorProxyV1WithAmm": {
         "80001": {
             "links": {},
-            "address": "0x0850c1E7f7bf11C39034717EeAB8c55aE66c87e3",
-            "transactionHash": "0x9b34a35aee5c2ec8d3f3503630034da24642c923526d85c5dcb3de4d1bdedac4"
-        }
-    },
-    "DolomiteAmmRouterProxy": {
-        "80001": {
-            "links": {},
-            "address": "0x01A6Eec2f65c4350a728014f5a34aCeeB1a7fE12",
-            "transactionHash": "0xb3b1056adea1ad3e5738391f58bbdd956be6e89c854f6e5116201938da716a8b"
-        }
-    },
-    "DolomiteAmmFactory": {
-        "80001": {
-            "links": {},
-            "address": "0x2bA6532E2F88773A0e58aA177e4A9Cc4225281f1",
-            "transactionHash": "0xa051c2788c16f22523fa2b28af7f10dfd9d288e9527f30c71d6a6ecc17ba06fd"
-        }
-    },
-    "SimpleFeeOwner": {
-        "80001": {
-            "links": {},
-            "address": "0xf6C0ce04F0C4D999eAA02883d9029abc37878BbF",
-            "transactionHash": "0xa7edca1845ffcedbf8f423025e25ab6e181626b48abe7072ee444b0e443fc6be"
-        }
-    },
-    "TransferProxy": {
-        "80001": {
-            "links": {},
-            "address": "0x6E48395c918BD0E66f472D60fa9137D357f42F4E",
-            "transactionHash": "0xf2bcd2a54a03ffc5018dc90442be3abfa898252b15ebf62da200000ee3de23a0"
+            "address": "0xE08B0c247baB1534d2720C9263884d6E5B5bdd3e",
+            "transactionHash": "0x7c2035c3aca0c7840652208c91e0affb58302d9f59385c8b570003e6d76bc55f"
         }
     },
     "AmmRebalancerProxy": {
         "80001": {
             "links": {},
-            "address": "0x5D90759b056b0a75199132b836d2392dC8e1f70F",
-            "transactionHash": "0x3bd06bb51e1c1b2a0c5f30046a40128fff072189ec44b3ea9fc46ed6d95f004b"
+            "address": "0xB3883b684b179A2B7a7B0299e463D05f2ed7A0c5",
+            "transactionHash": "0x09d95debc2a0e70ed96cbb6805c38b813c00e8d930bede4a74e11a402ff5c44c"
         }
     },
-    "TestAmmRebalancerProxy": {
+    "DolomiteAmmRouterProxy": {
         "80001": {
             "links": {},
-            "address": "0xde03A33f1cF854Fd31A5dC5f29872D3E334Dca42",
-            "transactionHash": "0x1e0397ab654465b0de4d86ae1ad44041a81892a4b9c2da4590c4f775860289ba"
+            "address": "0x705DD555603dbdf8593Ec9d3176d2ebCa839b8e1",
+            "transactionHash": "0x80d91ebf730e0564bbf7d7a4c3ce6eeabfe7822f5cb9d5da5abe2adcf40d8c37"
+        }
+    },
+    "DoubleExponentInterestSetter": {
+        "80001": {
+            "links": {},
+            "address": "0xb6810d8E975F70814CA3aC36aA55c10b68df4507",
+            "transactionHash": "0x9a614117e64f482a00901e7a260504b7ade2a9c27a17eb7de9535547f0c0253f"
+        }
+    },
+    "ChainlinkPriceOracleV1": {
+        "80001": {
+            "links": {},
+            "address": "0x27167EDda48917fc38eC6c5616e22EBe759dfFCb",
+            "transactionHash": "0xbde273af30b0f497b0559dda64e9ea80e4ec1929c57968b253b83dcef4b2206a"
+        }
+    },
+    "DolomiteAmmFactory": {
+        "80001": {
+            "links": {},
+            "address": "0x790C61eA35C6480f46EBCFff390e2dB5745B4Dd1",
+            "transactionHash": "0x391551128e2152dc04367b2e7cce1d7b412c6461339037fdc8530341d6572c54"
+        }
+    },
+    "SimpleFeeOwner": {
+        "80001": {
+            "links": {},
+            "address": "0x6BfB8Cd5Cdbfa58818626a8f25708aE76Fc50f3e",
+            "transactionHash": "0x67178eb1b2cf0bb882b93cc04c83bc863be00bee2d3464a913df31cacd151b69"
+        }
+    },
+    "TransferProxy": {
+        "80001": {
+            "links": {},
+            "address": "0xd7E0F3191E727E8821BB9DBBeb2575D9b8fF590D",
+            "transactionHash": "0x4c83c8607a3359f3a25d5f2c5d006408dc26ad10e76ec2fe3946307257a811a7"
+        }
+    },
+    "MultiCall": {
+        "80001": {
+            "links": {},
+            "address": "0x74819e81e3dBE03D92621d62194d530C5824B4e5",
+            "transactionHash": "0xae2fa2b30c2fb2fa34bc35cff10622521b51a0d36d03dc1c47d05e744c2c75bb"
+        }
+    },
+    "TestUniswapAmmRebalancerProxy": {
+        "80001": {
+            "links": {},
+            "address": "0x698A96F01A5db4C23D1B5C8184C20c7044c269CE",
+            "transactionHash": "0x698A96F01A5db4C23D1B5C8184C20c7044c269CE"
         }
     }
 }

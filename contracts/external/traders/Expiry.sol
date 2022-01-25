@@ -484,7 +484,7 @@ contract Expiry is
             expiry
         );
 
-        uint256 owedAmount = Math.getPartialRoundUp(
+        uint256 owedAmount = Math.getPartialRoundHalfUp(
             heldWei.value,
             heldPrice.value,
             owedPrice.value

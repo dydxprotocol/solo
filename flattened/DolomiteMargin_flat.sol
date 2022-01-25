@@ -796,7 +796,8 @@ library Math {
     }
 
     /*
-     * Return target * (numerator / denominator), but rounded up.
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.1 rounds to 102
+     * instead of 101.
      */
     function getPartialRoundUp(
         uint256 target,
@@ -814,6 +815,10 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.5 rounds to 102
+     * instead of 101.
+     */
     function getPartialRoundHalfUp(
         uint256 target,
         uint256 numerator,
@@ -1417,6 +1422,139 @@ library Account {
     }
 }
 
+// File: contracts/protocol/lib/Bits.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title Bits
+ * @author Dolomite
+ *
+ * Library for caching information about markets
+ */
+library Bits {
+
+    // ============ Constants ============
+
+    uint internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
+
+    // ============ Functions ============
+
+    function createBitmaps(uint maxLength) internal pure returns (uint[] memory) {
+        return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
+    }
+
+    function getMarketIdFromBit(
+        uint index,
+        uint bit
+    ) internal pure returns (uint) {
+        return (MAX_UINT_BITS * index) + bit;
+    }
+
+    function setBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        bitmaps[bucketIndex] |= (ONE << indexFromRight);
+    }
+
+    function hasBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure returns (bool) {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
+        return bit > 0;
+    }
+
+    function unsetBit(
+        uint bitmap,
+        uint bit
+    ) internal pure returns (uint) {
+        return bitmap - (ONE << bit);
+    }
+
+    // solium-disable security/no-assign-params
+    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
+        // gas usage peaks at 350 per call
+
+        uint lsb = 255;
+
+        if (x & uint128(-1) > 0) {
+            lsb -= 128;
+        } else {
+            x >>= 128;
+        }
+
+        if (x & uint64(-1) > 0) {
+            lsb -= 64;
+        } else {
+            x >>= 64;
+        }
+
+        if (x & uint32(-1) > 0) {
+            lsb -= 32;
+        } else {
+            x >>= 32;
+        }
+
+        if (x & uint16(-1) > 0) {
+            lsb -= 16;
+        } else {
+            x >>= 16;
+        }
+
+        if (x & uint8(-1) > 0) {
+            lsb -= 8;
+        } else {
+            x >>= 8;
+        }
+
+        if (x & 0xf > 0) {
+            lsb -= 4;
+        } else {
+            x >>= 4;
+        }
+
+        if (x & 0x3 > 0) {
+            lsb -= 2;
+        } else {
+            x >>= 2;
+            // solium-enable security/no-assign-params
+        }
+
+        if (x & 0x1 > 0) {
+            lsb -= 1;
+        }
+
+        return lsb;
+    }
+}
+
 // File: contracts/protocol/lib/Monetary.sol
 
 /*
@@ -1488,6 +1626,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Cache
  * @author dYdX
@@ -1499,8 +1638,6 @@ library Cache {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Cache";
-    uint internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -1532,7 +1669,7 @@ library Cache {
     {
         return MarketCache({
             markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
+            marketBitmaps: Bits.createBitmaps(numMarkets),
             marketsLength: 0
         });
     }
@@ -1557,10 +1694,7 @@ library Cache {
         pure
         returns (bool)
     {
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
-        return bit > 0;
+        return Bits.hasBit(cache.marketBitmaps, marketId);
     }
 
     function get(
@@ -1598,9 +1732,7 @@ library Cache {
             "already initialized"
         );
 
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
+        Bits.setBit(cache.marketBitmaps, marketId);
 
         cache.marketsLength += 1;
     }
@@ -1623,62 +1755,6 @@ library Cache {
         return cache.markets[index];
     }
 
-    // solium-disable security/no-assign-params
-    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
-        // gas usage peaks at 350 per call
-
-        uint lsb = 255;
-
-        if (x & uint128(-1) > 0) {
-            lsb -= 128;
-        } else {
-            x >>= 128;
-        }
-
-        if (x & uint64(-1) > 0) {
-            lsb -= 64;
-        } else {
-            x >>= 64;
-        }
-
-        if (x & uint32(-1) > 0) {
-            lsb -= 32;
-        } else {
-            x >>= 32;
-        }
-
-        if (x & uint16(-1) > 0) {
-            lsb -= 16;
-        } else {
-            x >>= 16;
-        }
-
-        if (x & uint8(-1) > 0) {
-            lsb -= 8;
-        } else {
-            x >>= 8;
-        }
-
-        if (x & 0xf > 0) {
-            lsb -= 4;
-        } else {
-            x >>= 4;
-        }
-
-        if (x & 0x3 > 0) {
-            lsb -= 2;
-        } else {
-            x >>= 2;
-        }
-
-        if (x & 0x1 > 0) {
-            lsb -= 1;
-        }
-
-        // solium-enable security/no-assign-params
-        return lsb;
-    }
-
     // ============ Private Functions ============
 
     function _getInternal(
@@ -1688,7 +1764,7 @@ library Cache {
         uint marketId
     ) private pure returns (MarketInfo memory) {
         uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
             revert("Cache: item not found");
         }
 
@@ -1985,7 +2061,7 @@ library Interest {
         } else {
             return Types.Wei({
                 sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.borrow, BASE)
             });
         }
     }
@@ -2009,7 +2085,7 @@ library Interest {
         } else {
             return Types.Par({
                 sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.borrow).to128()
             });
         }
     }
@@ -2403,6 +2479,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Storage
  * @author dYdX
@@ -2421,8 +2498,6 @@ library Storage {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Storage";
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -3116,8 +3191,8 @@ library Storage {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
@@ -3139,7 +3214,7 @@ library Storage {
                 }
 
                 // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
             }
             if (counter == cache.marketsLength) {
                 break;
@@ -6018,7 +6093,6 @@ interface ILiquidationCallback {
         uint owedMarketId,
         Types.Wei calldata owedDeltaWei
     ) external;
-
 }
 
 // File: contracts/protocol/impl/LiquidateOrVaporizeImpl.sol
@@ -6072,6 +6146,7 @@ library LiquidateOrVaporizeImpl {
     // ============ Events ============
 
     event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
+
     event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Account Functions ============
@@ -6110,8 +6185,8 @@ library LiquidateOrVaporizeImpl {
         );
 
         (
-        Types.Par memory owedPar,
-        Types.Wei memory owedWei
+            Types.Par memory owedPar,
+            Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.liquidAccount,
             args.owedMarket,
@@ -6119,8 +6194,8 @@ library LiquidateOrVaporizeImpl {
         );
 
         (
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPriceAdj
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPriceAdj
         ) = _getLiquidationPrices(
             state,
             cache,
@@ -6135,7 +6210,13 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
 
-            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+            _callLiquidateCallbackIfNecessary(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei,
+                args.owedMarket,
+                owedWei
+            );
 
             state.setPar(
                 args.liquidAccount,
@@ -6148,7 +6229,13 @@ library LiquidateOrVaporizeImpl {
                 owedWei
             );
         } else {
-            _callLiquidateCallbackIfNecessary(args, heldWei, owedWei);
+            _callLiquidateCallbackIfNecessary(
+                args.liquidAccount,
+                args.heldMarket,
+                heldWei,
+                args.owedMarket,
+                owedWei
+            );
 
             state.setPar(
                 args.liquidAccount,
@@ -6205,8 +6292,8 @@ library LiquidateOrVaporizeImpl {
 
         // First, attempt to refund using the same token
         (
-        bool fullyRepaid,
-        Types.Wei memory excessWei
+            bool fullyRepaid,
+            Types.Wei memory excessWei
         ) = _vaporizeUsingExcess(state, args);
         if (fullyRepaid) {
             Events.logVaporize(
@@ -6254,12 +6341,28 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
+            _callLiquidateCallbackIfNecessary(
+                args.vaporAccount,
+                args.heldMarket,
+                Types.zeroWei(),
+                args.owedMarket,
+                owedWei
+            );
+
             state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMarket,
                 owedWei
             );
         } else {
+            _callLiquidateCallbackIfNecessary(
+                args.vaporAccount,
+                args.heldMarket,
+                Types.zeroWei(),
+                args.owedMarket,
+                owedWei
+            );
+
             state.setPar(
                 args.vaporAccount,
                 args.owedMarket,
@@ -6401,25 +6504,27 @@ library LiquidateOrVaporizeImpl {
     }
 
     function _callLiquidateCallbackIfNecessary(
-        Actions.LiquidateArgs memory args,
+        Account.Info memory liquidAccount,
+        uint heldMarket,
         Types.Wei memory heldDeltaWei,
+        uint owedMarket,
         Types.Wei memory owedDeltaWei
     ) internal {
-        if (args.liquidAccount.owner.isContract()) {
+        if (liquidAccount.owner.isContract()) {
             // solium-disable-next-line security/no-low-level-calls
-            (bool isCallSuccessful, bytes memory result) = args.liquidAccount.owner.call(
+            (bool isCallSuccessful, bytes memory result) = liquidAccount.owner.call(
                 abi.encodeWithSelector(
-                    ILiquidationCallback(args.liquidAccount.owner).onLiquidate.selector,
-                    args.liquidAccount.number,
-                    args.heldMarket,
+                    ILiquidationCallback(liquidAccount.owner).onLiquidate.selector,
+                    liquidAccount.number,
+                    heldMarket,
                     heldDeltaWei,
-                    args.owedMarket,
+                    owedMarket,
                     owedDeltaWei
                 )
             );
 
             if (isCallSuccessful) {
-                emit LogLiquidationCallbackSuccess(args.liquidAccount.owner, args.liquidAccount.number);
+                emit LogLiquidationCallbackSuccess(liquidAccount.owner, liquidAccount.number);
             } else {
                 if (result.length < 68) {
                     result = bytes("");
@@ -6430,7 +6535,7 @@ library LiquidateOrVaporizeImpl {
                     }
                     result = bytes(abi.decode(result, (string)));
                 }
-                emit LogLiquidationCallbackFailure(args.liquidAccount.owner, args.liquidAccount.number, string(result));
+                emit LogLiquidationCallbackFailure(liquidAccount.owner, liquidAccount.number, string(result));
             }
         }
     }
@@ -6742,7 +6847,7 @@ library OperationImpl {
             }
 
             // validate minBorrowedValue
-            bool collateralized = state.isCollateralized(account, cache, true);
+            bool collateralized = state.isCollateralized(account, cache, /* requireMinBorrow = */ true);
 
             // check collateralization for primary accounts
             Require.that(

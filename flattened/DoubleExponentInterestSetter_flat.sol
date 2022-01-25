@@ -629,7 +629,8 @@ library Math {
     }
 
     /*
-     * Return target * (numerator / denominator), but rounded up.
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.1 rounds to 102
+     * instead of 101.
      */
     function getPartialRoundUp(
         uint256 target,
@@ -647,6 +648,10 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.5 rounds to 102
+     * instead of 101.
+     */
     function getPartialRoundHalfUp(
         uint256 target,
         uint256 numerator,
@@ -1325,7 +1330,7 @@ library Interest {
         } else {
             return Types.Wei({
                 sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.borrow, BASE)
             });
         }
     }
@@ -1349,7 +1354,7 @@ library Interest {
         } else {
             return Types.Par({
                 sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.borrow).to128()
             });
         }
     }

@@ -1132,7 +1132,7 @@ describe('Getters', () => {
           } else if (balance.marketId.eq(market2)) {
             expect(balance.par)
               .toEqual(par.div(-2));
-            expect(balance.wei.lt(wei.div(-2)))
+            expect(balance.wei.lte(wei.div(-2)))
               .toBeTruthy();
           } else {
             expect(balance.par)

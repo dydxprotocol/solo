@@ -2,9 +2,10 @@ import BigNumber from 'bignumber.js';
 import {
   AccountStatus,
   address,
-  Index, Integer,
+  Index,
+  Integer,
+  INTEGERS,
 } from '../../src';
-import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import DolomiteMarginMath from '../../src/modules/DolomiteMarginMath';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
@@ -966,7 +967,6 @@ describe('LiquidatorProxyV1WithAmm', () => {
       });
 
       it('Liquidates properly when reward does not cover debt', async () => {
-        // const rate = INTEGERS.ONE.div(INTEGERS.ONE_YEAR_IN_SECONDS);
         const rate = INTEGERS.ZERO;
         const index1: Index = {
           borrow: new BigNumber('1.4'),
@@ -984,10 +984,8 @@ describe('LiquidatorProxyV1WithAmm', () => {
           dolomiteMargin.testing.setMarketIndex(market1, index1),
           dolomiteMargin.testing.setMarketIndex(market2, index2),
         ]);
-        await fastForward(1);
 
         const solidPar1 = par.div('2'); // 5,000 par --> 5,500 wei --> $550,000
-        // const solidPar2 = par.negated().times('30'); // -300,000 par --> -360,000 wei --> -$360,000
         const solidPar2 = zero; // $0
         const liquidPar1 = par.negated(); // -10,000 par --> -14,000 wei --> -$1,400,000
         const liquidPar2 = par.times('110'); // 1,100,000 par --> 1,210,000 wei --> $1,430,000
@@ -1025,10 +1023,10 @@ describe('LiquidatorProxyV1WithAmm', () => {
           ),
         ]);
 
-        const priceAdj = new BigNumber('105'); // 1.05 * $100; price of market1 is $100
+        const priceAdj = price1.times('1.05'); // 1.05 * $100; price of market1 is $100
         const toLiquidateWei = DolomiteMarginMath.getPartialRoundUp(
           liquidWei2,
-          INTEGERS.ONE,
+          price2,
           priceAdj,
         );
         const amountOutWei = await dolomiteMargin.dolomiteAmmRouterProxy.getDolomiteAmmAmountOutWithPath(

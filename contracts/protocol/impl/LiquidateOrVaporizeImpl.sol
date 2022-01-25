@@ -88,8 +88,8 @@ library LiquidateOrVaporizeImpl {
         );
 
         (
-        Types.Par memory owedPar,
-        Types.Wei memory owedWei
+            Types.Par memory owedPar,
+            Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.liquidAccount,
             args.owedMarket,
@@ -97,8 +97,8 @@ library LiquidateOrVaporizeImpl {
         );
 
         (
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPriceAdj
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPriceAdj
         ) = _getLiquidationPrices(
             state,
             cache,

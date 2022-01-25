@@ -18,3 +18,5 @@ artifacts/
 .coverage_contracts/
 
 .coveralls.yml
+
+verify-contract.sh

@@ -54,7 +54,8 @@ library Math {
     }
 
     /*
-     * Return target * (numerator / denominator), but rounded up.
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.1 rounds to 102
+     * instead of 101.
      */
     function getPartialRoundUp(
         uint256 target,
@@ -72,6 +73,10 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.5 rounds to 102
+     * instead of 101.
+     */
     function getPartialRoundHalfUp(
         uint256 target,
         uint256 numerator,

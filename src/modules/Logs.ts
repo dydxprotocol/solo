@@ -82,8 +82,8 @@ export class Logs {
     throw new Error('Receipt has no logs');
   }
 
-  private parseEvent(event: EventLog) {
-    return this.parseLog({
+  public eventLogToLog(event: EventLog): Log {
+    return {
       address: event.address,
       data: event.raw.data,
       topics: event.raw.topics,
@@ -92,7 +92,11 @@ export class Logs {
       transactionIndex: event.transactionIndex,
       blockHash: event.blockHash,
       blockNumber: event.blockNumber,
-    });
+    };
+  }
+
+  private parseEvent(event: EventLog) {
+    return this.parseLog(this.eventLogToLog(event));
   }
 
   private parseLog(log: Log) {
@@ -124,6 +128,10 @@ export class Logs {
     }
 
     return null;
+  }
+
+  parseEventLogWithContract(contract: any, event: EventLog) {
+    return this.parseLogWithContract(contract, this.eventLogToLog(event));
   }
 
   parseLogWithContract(contract: any, log: Log) {

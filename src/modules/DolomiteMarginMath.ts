@@ -47,21 +47,26 @@ export default class DolomiteMarginMath {
   }
 
   public static weiToPar(valueWei: Integer, index: Index): Integer {
+    const base = INTEGERS.INTEREST_RATE_BASE;
     if (valueWei.lt(INTEGERS.ZERO)) {
-      return DolomiteMarginMath.getPartialRoundUp(
-        valueWei,
-        INTEGERS.INTEREST_RATE_BASE,
-        index.borrow.times(INTEGERS.INTEREST_RATE_BASE),
-      );
+      return DolomiteMarginMath.getPartialRoundHalfUp(
+        valueWei.negated(),
+        base,
+        index.borrow.times(base),
+      ).negated();
     }
 
-    return valueWei.dividedToIntegerBy(index.supply);
+    return DolomiteMarginMath.getPartialRoundHalfUp(
+      valueWei,
+      base,
+      index.supply.times(base),
+    );
   }
 
   public static parToWei(valueWei: Integer, index: Index): Integer {
     const base = INTEGERS.INTEREST_RATE_BASE;
     if (valueWei.lt(INTEGERS.ZERO)) {
-      return DolomiteMarginMath.getPartialRoundUp(
+      return DolomiteMarginMath.getPartialRoundHalfUp(
         valueWei.negated(),
         index.borrow.times(base),
         base,

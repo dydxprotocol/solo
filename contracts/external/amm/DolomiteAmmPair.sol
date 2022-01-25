@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../protocol/interfaces/IAutoTrader.sol";
 import "../../protocol/interfaces/IDolomiteMargin.sol";
+import "../../protocol/lib/Math.sol";
 import "../../protocol/lib/Require.sol";
 
 import "../interfaces/IDolomiteAmmFactory.sol";
@@ -35,12 +36,13 @@ import "./DolomiteAmmERC20.sol";
 
 
 contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
+    using Math for uint;
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
     bytes32 internal constant FILE = "DolomiteAmmPair";
 
-    uint public constant INTEREST_INDEX_BASE = 1e18;
+    uint public constant INDEX_BASE = 1e18;
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public factory;
@@ -72,7 +74,7 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         unlocked = 1;
     }
 
-    struct Cache {
+    struct DolomiteAmmCache {
         IDolomiteMargin dolomiteMargin;
         uint marketId0;
         uint marketId1;
@@ -184,9 +186,9 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             feeOn = _mintFee(_reserve0, _reserve1);
             uint _totalSupply = totalSupply;
             // gas savings, must be defined here since totalSupply can update in _mintFee
-            amount0Wei = (liquidity.mul(balance0) / _totalSupply).mul(token0Index).div(INTEREST_INDEX_BASE);
+            amount0Wei = (liquidity.mul(balance0) / _totalSupply).getPartialRoundHalfUp(token0Index, INDEX_BASE);
             // using balances ensures pro-rata distribution
-            amount1Wei = (liquidity.mul(balance1) / _totalSupply).mul(token1Index).div(INTEREST_INDEX_BASE);
+            amount1Wei = (liquidity.mul(balance1) / _totalSupply).getPartialRoundHalfUp(token1Index, INDEX_BASE);
             Require.that(
                 amount0Wei > 0 && amount1Wei > 0,
                 FILE,
@@ -300,8 +302,8 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         uint reserve0InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId0).supply;
         uint reserve1InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId1).supply;
 
-        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
-        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
+        _reserve0 = uint112(uint(reserve0Par).getPartialRoundHalfUp(reserve0InterestIndex, INDEX_BASE));
+        _reserve1 = uint112(uint(reserve1Par).getPartialRoundHalfUp(reserve1InterestIndex, INDEX_BASE));
         _blockTimestampLast = blockTimestampLast;
     }
 
@@ -317,11 +319,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     )
     public
     returns (Types.AssetAmount memory) {
-        Cache memory cache;
+        DolomiteAmmCache memory cache;
         /* solium-disable indentation */
         {
             IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
-            cache = Cache({
+            cache = DolomiteAmmCache({
                 dolomiteMargin : _dolomiteMargin,
                 marketId0 : marketId0,
                 marketId1 : marketId1,
@@ -434,10 +436,10 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
             // convert the numbers from wei to par
             _update(
-                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
-                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
-                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
-                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
+                cache.balance0Wei.getPartialRoundHalfUp(INDEX_BASE, cache.index0.supply),
+                cache.balance1Wei.getPartialRoundHalfUp(INDEX_BASE, cache.index1.supply),
+                uint112(uint(_reserve0).getPartialRoundHalfUp(INDEX_BASE, cache.index0.supply)),
+                uint112(uint(_reserve1).getPartialRoundHalfUp(INDEX_BASE, cache.index1.supply))
             );
         }
         /* solium-enable indentation */

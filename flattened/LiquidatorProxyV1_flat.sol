@@ -687,7 +687,8 @@ library Math {
     }
 
     /*
-     * Return target * (numerator / denominator), but rounded up.
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.1 rounds to 102
+     * instead of 101.
      */
     function getPartialRoundUp(
         uint256 target,
@@ -705,6 +706,10 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.5 rounds to 102
+     * instead of 101.
+     */
     function getPartialRoundHalfUp(
         uint256 target,
         uint256 numerator,
@@ -1383,7 +1388,7 @@ library Interest {
         } else {
             return Types.Wei({
                 sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.borrow, BASE)
             });
         }
     }
@@ -1407,7 +1412,7 @@ library Interest {
         } else {
             return Types.Par({
                 sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.borrow).to128()
             });
         }
     }
@@ -2194,7 +2199,7 @@ library Actions {
     }
 }
 
-// File: contracts/protocol/lib/Cache.sol
+// File: contracts/protocol/lib/Bits.sol
 
 /*
 
@@ -2218,140 +2223,56 @@ pragma solidity ^0.5.7;
 
 
 
-
 /**
- * @title Cache
- * @author dYdX
+ * @title Bits
+ * @author Dolomite
  *
  * Library for caching information about markets
  */
-library Cache {
+library Bits {
 
     // ============ Constants ============
 
-    bytes32 internal constant FILE = "Cache";
     uint internal constant ONE = 1;
     uint256 internal constant MAX_UINT_BITS = 256;
 
-    // ============ Structs ============
+    // ============ Functions ============
 
-    struct MarketInfo {
-        uint marketId;
-        address token;
-        bool isClosing;
-        uint128 borrowPar;
-        Monetary.Price price;
+    function createBitmaps(uint maxLength) internal pure returns (uint[] memory) {
+        return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
     }
 
-    struct MarketCache {
-        MarketInfo[] markets;
-        uint256[] marketBitmaps;
-        uint256 marketsLength;
+    function getMarketIdFromBit(
+        uint index,
+        uint bit
+    ) internal pure returns (uint) {
+        return (MAX_UINT_BITS * index) + bit;
     }
 
-    // ============ Setter Functions ============
-
-    /**
-     * Initialize an empty cache for some given number of total markets.
-     */
-    function create(
-        uint256 numMarkets
-    )
-        internal
-        pure
-        returns (MarketCache memory)
-    {
-        return MarketCache({
-            markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
-            marketsLength: 0
-        });
-    }
-
-    // ============ Getter Functions ============
-
-    function getNumMarkets(
-        MarketCache memory cache
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return cache.markets.length;
-    }
-
-    function hasMarket(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (bool)
-    {
+    function setBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure {
         uint bucketIndex = marketId / MAX_UINT_BITS;
         uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
+        bitmaps[bucketIndex] |= (ONE << indexFromRight);
+    }
+
+    function hasBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure returns (bool) {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
         return bit > 0;
     }
 
-    function get(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
-        Require.that(
-            cache.markets.length > 0,
-            FILE,
-            "not initialized"
-        );
-        return _getInternal(
-            cache.markets,
-            0,
-            cache.marketsLength,
-            marketId
-        );
-    }
-
-    function set(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-    {
-        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
-        Require.that(
-            cache.markets.length == 0,
-            FILE,
-            "already initialized"
-        );
-
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
-
-        cache.marketsLength += 1;
-    }
-
-    function getAtIndex(
-        MarketCache memory cache,
-        uint256 index
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
-        Require.that(
-            index < cache.markets.length,
-            FILE,
-            "invalid index",
-            index,
-            cache.markets.length
-        );
-        return cache.markets[index];
+    function unsetBit(
+        uint bitmap,
+        uint bit
+    ) internal pure returns (uint) {
+        return bitmap - (ONE << bit);
     }
 
     // solium-disable security/no-assign-params
@@ -2400,14 +2321,169 @@ library Cache {
             lsb -= 2;
         } else {
             x >>= 2;
+            // solium-enable security/no-assign-params
         }
 
         if (x & 0x1 > 0) {
             lsb -= 1;
         }
 
-        // solium-enable security/no-assign-params
         return lsb;
+    }
+}
+
+// File: contracts/protocol/lib/Cache.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+/**
+ * @title Cache
+ * @author dYdX
+ *
+ * Library for caching information about markets
+ */
+library Cache {
+
+    // ============ Constants ============
+
+    bytes32 internal constant FILE = "Cache";
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        uint marketId;
+        address token;
+        bool isClosing;
+        uint128 borrowPar;
+        Monetary.Price price;
+    }
+
+    struct MarketCache {
+        MarketInfo[] markets;
+        uint256[] marketBitmaps;
+        uint256 marketsLength;
+    }
+
+    // ============ Setter Functions ============
+
+    /**
+     * Initialize an empty cache for some given number of total markets.
+     */
+    function create(
+        uint256 numMarkets
+    )
+        internal
+        pure
+        returns (MarketCache memory)
+    {
+        return MarketCache({
+            markets: new MarketInfo[](0),
+            marketBitmaps: Bits.createBitmaps(numMarkets),
+            marketsLength: 0
+        });
+    }
+
+    // ============ Getter Functions ============
+
+    function getNumMarkets(
+        MarketCache memory cache
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return cache.markets.length;
+    }
+
+    function hasMarket(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return Bits.hasBit(cache.marketBitmaps, marketId);
+    }
+
+    function get(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (MarketInfo memory)
+    {
+        Require.that(
+            cache.markets.length > 0,
+            FILE,
+            "not initialized"
+        );
+        return _getInternal(
+            cache.markets,
+            0,
+            cache.marketsLength,
+            marketId
+        );
+    }
+
+    function set(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+    {
+        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
+        Require.that(
+            cache.markets.length == 0,
+            FILE,
+            "already initialized"
+        );
+
+        Bits.setBit(cache.marketBitmaps, marketId);
+
+        cache.marketsLength += 1;
+    }
+
+    function getAtIndex(
+        MarketCache memory cache,
+        uint256 index
+    )
+        internal
+        pure
+        returns (MarketInfo memory)
+    {
+        Require.that(
+            index < cache.markets.length,
+            FILE,
+            "invalid index",
+            index,
+            cache.markets.length
+        );
+        return cache.markets[index];
     }
 
     // ============ Private Functions ============
@@ -2419,7 +2495,7 @@ library Cache {
         uint marketId
     ) private pure returns (MarketInfo memory) {
         uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
             revert("Cache: item not found");
         }
 
@@ -2702,6 +2778,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Storage
  * @author dYdX
@@ -2720,8 +2797,6 @@ library Storage {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Storage";
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -3415,8 +3490,8 @@ library Storage {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
@@ -3438,7 +3513,7 @@ library Storage {
                 }
 
                 // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
             }
             if (counter == cache.marketsLength) {
                 break;
@@ -3923,6 +3998,257 @@ interface IDolomiteMargin {
 
 }
 
+// File: contracts/external/helpers/LiquidatorProxyHelper.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * @title LiquidatorProxyHelper
+ * @author Dolomite
+ *
+ * Inheritable contract that allows sharing code across different liquidator proxy contracts
+ */
+contract LiquidatorProxyHelper {
+    using SafeMath for uint;
+    using Types for Types.Par;
+
+    // ============ Constants ============
+
+    bytes32 private constant FILE = "LiquidatorProxyHelper";
+    uint256 private constant MAX_UINT_BITS = 256;
+    uint256 private constant ONE = 1;
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        uint256 marketId;
+        Decimal.D256 spreadPremium;
+        Monetary.Price price;
+        Interest.Index index;
+    }
+
+    /**
+     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
+     * the current index will be once updated.
+     */
+    function getAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds
+    )
+    internal
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        return getAccountValues(
+            dolomiteMargin,
+            marketInfos,
+            account,
+            marketIds,
+            /* adjustForSpreadPremiums = */ false // solium-disable-line indentation
+        );
+    }
+
+    /**
+     * Gets the adjusted current total supplyValue and borrowValue for some account. Takes into account what
+     * the current index will be once updated and the spread premium.
+     */
+    function getAdjustedAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds
+    )
+    internal
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        return getAccountValues(
+            dolomiteMargin,
+            marketInfos,
+            account,
+            marketIds,
+            /* adjustForSpreadPremiums = */ true // solium-disable-line indentation
+        );
+    }
+
+    // ============ Internal Functions ============
+
+    function getMarketInfos(
+        IDolomiteMargin dolomiteMargin,
+        uint256[] memory solidMarkets,
+        uint256[] memory liquidMarkets
+    ) internal view returns (MarketInfo[] memory) {
+        uint[] memory marketBitmaps = Bits.createBitmaps(dolomiteMargin.getNumMarkets());
+        uint marketsLength = 0;
+        marketsLength = _addMarketsToBitmap(solidMarkets, marketBitmaps, marketsLength);
+        marketsLength = _addMarketsToBitmap(liquidMarkets, marketBitmaps, marketsLength);
+//        Require.that(false, FILE, "<marketsLength, bitmap>", marketsLength, marketBitmaps[0]);
+
+        uint counter = 0;
+        MarketInfo[] memory marketInfos = new MarketInfo[](marketsLength);
+        for (uint i = 0; i < marketBitmaps.length; i++) {
+            uint bitmap = marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
+
+                marketInfos[counter++] = MarketInfo({
+                    marketId: marketId,
+                    spreadPremium: dolomiteMargin.getMarketSpreadPremium(marketId),
+                    price: dolomiteMargin.getMarketPrice(marketId),
+                    index: dolomiteMargin.getMarketCurrentIndex(marketId)
+                });
+
+                // unset the set bit
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
+            }
+            if (counter == marketsLength) {
+                break;
+            }
+        }
+
+        return marketInfos;
+    }
+
+    function binarySearch(
+        MarketInfo[] memory markets,
+        uint marketId
+    ) internal pure returns (MarketInfo memory) {
+        return _binarySearch(
+            markets,
+            0,
+            markets.length,
+            marketId
+        );
+    }
+
+    // Private Functions
+
+    function getAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds,
+        bool adjustForSpreadPremiums
+    )
+    private
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
+
+        for (uint256 i = 0; i < marketIds.length; i++) {
+            Types.Par memory par = dolomiteMargin.getAccountPar(account, marketIds[i]);
+            if (par.isZero()) {
+                // This if statement should never fire
+                continue;
+            }
+            MarketInfo memory marketInfo = binarySearch(marketInfos, marketIds[i]);
+            Types.Wei memory userWei = Interest.parToWei(par, marketInfo.index);
+            uint256 assetValue = userWei.value.mul(marketInfo.price.value);
+            Decimal.D256 memory spreadPremium = Decimal.one();
+            if (adjustForSpreadPremiums) {
+                spreadPremium = Decimal.onePlus(marketInfo.spreadPremium);
+            }
+            if (userWei.sign) {
+                supplyValue.value = supplyValue.value.add(Decimal.div(assetValue, spreadPremium));
+            } else {
+                borrowValue.value = borrowValue.value.add(Decimal.mul(assetValue, spreadPremium));
+            }
+        }
+
+        return (supplyValue, borrowValue);
+    }
+
+    // solium-disable-next-line security/no-assign-params
+    function _addMarketsToBitmap(
+        uint256[] memory markets,
+        uint256[] memory bitmaps,
+        uint marketsLength
+    ) private pure returns (uint) {
+        for (uint i = 0; i < markets.length; i++) {
+            if (!Bits.hasBit(bitmaps, markets[i])) {
+                Bits.setBit(bitmaps, markets[i]);
+                marketsLength += 1;
+            }
+        }
+        return marketsLength;
+    }
+
+    function _binarySearch(
+        MarketInfo[] memory markets,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == 1 && markets[beginInclusive].marketId != marketId)) {
+            revert("LiquidatorProxyHelper: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = markets[mid].marketId;
+        if (marketId < midMarketId) {
+            return _binarySearch(
+                markets,
+                beginInclusive,
+                mid,
+                marketId
+            );
+        } else if (marketId > midMarketId) {
+            return _binarySearch(
+                markets,
+                mid + 1,
+                endExclusive,
+                marketId
+            );
+        } else {
+            return markets[mid];
+        }
+    }
+
+}
+
 // File: contracts/external/helpers/OnlyDolomiteMargin.sol
 
 /*
@@ -3949,8 +4275,8 @@ pragma solidity ^0.5.7;
 
 
 /**
- * @title onlyDolomiteMargin
- * @author dYdX
+ * @title OnlyDolomiteMargin
+ * @author Dolomite
  *
  * Inheritable contract that restricts the calling of certain functions to DolomiteMargin only
  */
@@ -4022,13 +4348,14 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title LiquidatorProxyV1
  * @author dYdX
  *
- * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin.
  */
-contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
+contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorProxyHelper {
     using Math for uint256;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -4041,18 +4368,15 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Structs ============
 
     struct Constants {
+        IDolomiteMargin dolomiteMargin;
         Account.Info solidAccount;
         Account.Info liquidAccount;
         Decimal.D256 minLiquidatorRatio;
         MarketInfo[] markets;
+        uint256[] liquidMarkets;
     }
 
-    struct MarketInfo {
-        Monetary.Price price;
-        Interest.Index index;
-    }
-
-    struct Cache {
+    struct LiquidatorProxyCache {
         // mutable
         uint256 toLiquidate;
         Types.Wei heldWei;
@@ -4088,7 +4412,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * @param  liquidAccount       The account that will be liquidated
      * @param  minLiquidatorRatio  The minimum collateralization ratio to leave the solidAccount at
      * @param  owedPreferences     Ordered list of markets to repay first
-     * @param  heldPreferences     Ordered list of markets to recieve payout for first
+     * @param  heldPreferences     Ordered list of markets to receive payout for first
      */
     function liquidate(
         Account.Info memory solidAccount,
@@ -4102,12 +4426,17 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         nonReentrant
     {
         // put all values that will not change into a single struct
-        Constants memory constants = Constants({
-            solidAccount: solidAccount,
-            liquidAccount: liquidAccount,
-            minLiquidatorRatio: minLiquidatorRatio,
-            markets: getMarketsInfo()
-        });
+        Constants memory constants;
+        constants.dolomiteMargin = DOLOMITE_MARGIN;
+        constants.solidAccount = solidAccount;
+        constants.liquidAccount = liquidAccount;
+        constants.minLiquidatorRatio = minLiquidatorRatio;
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.markets = getMarketInfos(
+            constants.dolomiteMargin,
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.liquidMarkets
+        );
 
         // validate the msg.sender and that the liquidAccount can be liquidated
         checkRequirements(constants);
@@ -4129,21 +4458,17 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
                 }
 
                 // cannot liquidate non-negative markets
-                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, owedMarket).isNegative()) {
+                if (!constants.dolomiteMargin.getAccountPar(liquidAccount, owedMarket).isNegative()) {
                     break;
                 }
 
                 // cannot use non-positive markets as collateral
-                if (!DOLOMITE_MARGIN.getAccountPar(liquidAccount, heldMarket).isPositive()) {
+                if (!constants.dolomiteMargin.getAccountPar(liquidAccount, heldMarket).isPositive()) {
                     continue;
                 }
 
                 // get all relevant values
-                Cache memory cache = initializeCache(
-                    constants,
-                    heldMarket,
-                    owedMarket
-                );
+                LiquidatorProxyCache memory cache = initializeCache(constants, heldMarket, owedMarket);
 
                 // get the liquidation amount (before liquidator decreases in collateralization)
                 calculateSafeLiquidationAmount(cache);
@@ -4157,14 +4482,13 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
                 }
 
                 // execute the liquidations
-                DOLOMITE_MARGIN.operate(
+                constants.dolomiteMargin.operate(
                     constructAccountsArray(constants),
                     constructActionsArray(cache)
                 );
 
                 // increment the total value liquidated
-                totalValueLiquidated =
-                    totalValueLiquidated.add(cache.toLiquidate.mul(cache.owedPrice));
+                totalValueLiquidated = totalValueLiquidated.add(cache.toLiquidate.mul(cache.owedPrice));
             }
         }
 
@@ -4187,7 +4511,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * account will begin to decrease.
      */
     function calculateSafeLiquidationAmount(
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure
@@ -4209,9 +4533,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
             owedGoesToZeroLast = true;
         } else {
             // owed is still positive and held is still negative
-            owedGoesToZeroLast =
-                cache.owedWei.value.mul(cache.owedPriceAdj) >
-                cache.heldWei.value.mul(cache.heldPrice);
+            owedGoesToZeroLast = cache.owedWei.value.mul(cache.owedPriceAdj) > cache.heldWei.value.mul(cache.heldPrice);
         }
 
         if (owedGoesToZeroLast) {
@@ -4246,7 +4568,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      */
     function calculateMaxLiquidationAmount(
         Constants memory constants,
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure
@@ -4289,7 +4611,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
 
     /**
      * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender is permissioned to use the liquidator account
+     *  - Require that the msg.sender has the permission to use the liquidator account
      *  - Require that the liquid account is liquidatable
      */
     function checkRequirements(
@@ -4301,7 +4623,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         // check credentials for msg.sender
         Require.that(
             constants.solidAccount.owner == msg.sender
-            || DOLOMITE_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
+            || constants.dolomiteMargin.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
             constants.solidAccount.owner
@@ -4311,18 +4633,23 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         (
             Monetary.Value memory liquidSupplyValue,
             Monetary.Value memory liquidBorrowValue
-        ) = getCurrentAccountValues(constants, constants.liquidAccount);
+        ) = getAdjustedAccountValues(
+            constants.dolomiteMargin,
+            constants.markets,
+            constants.liquidAccount,
+            constants.liquidMarkets
+        );
         Require.that(
             liquidSupplyValue.value != 0,
             FILE,
             "Liquid account no supply"
         );
         Require.that(
-            DOLOMITE_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid
-            || !isCollateralized(
+            constants.dolomiteMargin.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+            !isCollateralized(
                 liquidSupplyValue.value,
                 liquidBorrowValue.value,
-                DOLOMITE_MARGIN.getMarginRatio()
+                constants.dolomiteMargin.getMarginRatio()
             ),
             FILE,
             "Liquid account not liquidatable",
@@ -4336,7 +4663,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
      * account. Changes toLiquidate, heldWei, owedWei, supplyValue, and borrowValue.
      */
     function setCacheWeiValues(
-        Cache memory cache,
+        LiquidatorProxyCache memory cache,
         Types.Wei memory newHeldWei,
         Types.Wei memory newOwedWei
     )
@@ -4346,9 +4673,9 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         // roll-back the old held value
         uint256 oldHeldValue = cache.heldWei.value.mul(cache.heldPrice);
         if (cache.heldWei.sign) {
-            cache.supplyValue = cache.supplyValue.sub(oldHeldValue);
+            cache.supplyValue = cache.supplyValue.sub(oldHeldValue, "cache.heldWei.sign");
         } else {
-            cache.borrowValue = cache.borrowValue.sub(oldHeldValue);
+            cache.borrowValue = cache.borrowValue.sub(oldHeldValue, "!cache.heldWei.sign");
         }
 
         // add the new held value
@@ -4362,9 +4689,9 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
         // roll-back the old owed value
         uint256 oldOwedValue = cache.owedWei.value.mul(cache.owedPrice);
         if (cache.owedWei.sign) {
-            cache.supplyValue = cache.supplyValue.sub(oldOwedValue);
+            cache.supplyValue = cache.supplyValue.sub(oldOwedValue, "cache.owedWei.sign");
         } else {
-            cache.borrowValue = cache.borrowValue.sub(oldOwedValue);
+            cache.borrowValue = cache.borrowValue.sub(oldOwedValue, "!cache.owedWei.sign");
         }
 
         // add the new owed value
@@ -4402,60 +4729,6 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     // ============ Getter Functions ============
 
     /**
-     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
-     * the current index will be once updated.
-     */
-    function getCurrentAccountValues(
-        Constants memory constants,
-        Account.Info memory account
-    )
-        private
-        view
-        returns (
-            Monetary.Value memory,
-            Monetary.Value memory
-        )
-    {
-        Monetary.Value memory supplyValue;
-        Monetary.Value memory borrowValue;
-
-        for (uint256 m = 0; m < constants.markets.length; m++) {
-            Types.Par memory par = DOLOMITE_MARGIN.getAccountPar(account, m);
-            if (par.isZero()) {
-                continue;
-            }
-            Types.Wei memory userWei = Interest.parToWei(par, constants.markets[m].index);
-            uint256 assetValue = userWei.value.mul(constants.markets[m].price.value);
-            if (userWei.sign) {
-                supplyValue.value = supplyValue.value.add(assetValue);
-            } else {
-                borrowValue.value = borrowValue.value.add(assetValue);
-            }
-        }
-
-        return (supplyValue, borrowValue);
-    }
-
-    /**
-     * Get the updated index and price for every market.
-     */
-    function getMarketsInfo()
-        private
-        view
-        returns (MarketInfo[] memory)
-    {
-        uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
-        MarketInfo[] memory markets = new MarketInfo[](numMarkets);
-        for (uint256 m = 0; m < numMarkets; m++) {
-            markets[m] = MarketInfo({
-                price: DOLOMITE_MARGIN.getMarketPrice(m),
-                index: DOLOMITE_MARGIN.getMarketCurrentIndex(m)
-            });
-        }
-        return markets;
-    }
-
-    /**
      * Pre-populates cache values for some pair of markets.
      */
     function initializeCache(
@@ -4465,26 +4738,33 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     )
         private
         view
-        returns (Cache memory)
+        returns (LiquidatorProxyCache memory)
     {
         (
             Monetary.Value memory supplyValue,
             Monetary.Value memory borrowValue
-        ) = getCurrentAccountValues(constants, constants.solidAccount);
+        ) = getAccountValues(
+            constants.dolomiteMargin,
+            constants.markets,
+            constants.solidAccount,
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(constants.solidAccount)
+        );
 
-        uint256 heldPrice = constants.markets[heldMarket].price.value;
-        uint256 owedPrice = constants.markets[owedMarket].price.value;
-        Decimal.D256 memory spread =
-            DOLOMITE_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket);
+        MarketInfo memory heldMarketInfo = binarySearch(constants.markets, heldMarket);
+        MarketInfo memory owedMarketInfo = binarySearch(constants.markets, owedMarket);
 
-        return Cache({
+        uint256 heldPrice = heldMarketInfo.price.value;
+        uint256 owedPrice = owedMarketInfo.price.value;
+        Decimal.D256 memory spread = constants.dolomiteMargin.getLiquidationSpreadForPair(heldMarket, owedMarket);
+
+        return LiquidatorProxyCache({
             heldWei: Interest.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
-                constants.markets[heldMarket].index
+                constants.dolomiteMargin.getAccountPar(constants.solidAccount, heldMarket),
+                heldMarketInfo.index
             ),
             owedWei: Interest.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, owedMarket),
-                constants.markets[owedMarket].index
+                constants.dolomiteMargin.getAccountPar(constants.solidAccount, owedMarket),
+                owedMarketInfo.index
             ),
             toLiquidate: 0,
             supplyValue: supplyValue.value,
@@ -4514,7 +4794,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard {
     }
 
     function constructActionsArray(
-        Cache memory cache
+        LiquidatorProxyCache memory cache
     )
         private
         pure

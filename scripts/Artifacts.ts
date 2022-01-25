@@ -38,6 +38,9 @@ import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerP
 import { default as MultiCall } from '../build/contracts/MultiCall.json';
 
 export default {
+  LiquidateOrVaporizeImpl,
+  OperationImpl,
+  AdminImpl,
   DolomiteMargin,
   IERC20,
   IInterestSetter,
@@ -53,9 +56,6 @@ export default {
   DoubleExponentInterestSetter,
   Weth,
   Events,
-  AdminImpl,
-  OperationImpl,
-  LiquidateOrVaporizeImpl,
   Permission,
   PartiallyDelayedMultiSig,
   ChainlinkPriceOracleV1,

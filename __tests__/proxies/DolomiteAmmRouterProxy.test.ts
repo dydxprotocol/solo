@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { address, Integer, INTEGERS } from '../../src';
+import { address, Integer, INTEGERS, TxResult } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
@@ -377,6 +377,8 @@ describe('DolomiteAmmRouterProxy', () => {
           { from: owner1 },
         );
 
+        await checkSwapLogs(txResult, defaultPath);
+
         console.log(
           `#swapExactTokensForTokensAndModifyPosition gas used ${defaultPath.length}-path with deposit and expiration`,
           txResult.gasUsed.toString(),
@@ -501,23 +503,20 @@ async function addLiquidity(
   tokenB: address,
   skipGasCheck: boolean = false,
 ) {
-  const result = await dolomiteMargin.dolomiteAmmRouterProxy
-    .addLiquidity(
-      walletAddress,
-      INTEGERS.ZERO,
-      tokenA,
-      tokenB,
-      amountADesired,
-      amountBDesired,
-      INTEGERS.ONE,
-      INTEGERS.ONE,
-      defaultDeadline,
-      { from: walletAddress },
-    )
-    .catch(reason => {
-      console.log('reason ', reason);
-      return { gasUsed: 0 };
-    });
+  const result = await dolomiteMargin.dolomiteAmmRouterProxy.addLiquidity(
+    walletAddress,
+    INTEGERS.ZERO,
+    tokenA,
+    tokenB,
+    amountADesired,
+    amountBDesired,
+    INTEGERS.ONE,
+    INTEGERS.ONE,
+    defaultDeadline,
+    { from: walletAddress },
+  );
+
+  await checkSyncLogs(result, dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address);
 
   if (skipGasCheck) {
     console.log('#addLiquidity gas used  ', result.gasUsed.toString());
@@ -544,6 +543,8 @@ async function removeLiquidity(
     { from: walletAddress },
   );
 
+  await checkSyncLogs(result, dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address);
+
   console.log('#removeLiquidity gas used  ', result.gasUsed.toString());
 
   return result;
@@ -563,6 +564,8 @@ async function swapExactTokensForTokens(
     defaultDeadline,
     { from: walletAddress },
   );
+
+  await checkSwapLogs(result, path);
 
   console.log(`#swapExactTokensForTokens gas used ${path.length}-path `, result.gasUsed.toString());
 
@@ -584,9 +587,55 @@ async function swapTokensForExactTokens(
     { from: walletAddress },
   );
 
+  await checkSwapLogs(result, path);
+
   console.log(`#swapTokensForExactTokens gas used ${path.length}-path`, result.gasUsed.toString());
 
   return result;
+}
+
+async function checkSwapLogs(result: TxResult, path: address[]) {
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const pairAddress = await dolomiteMargin.dolomiteAmmFactory.getPair(path[i], path[i + 1]);
+    const pairContract = dolomiteMargin.contracts.getDolomiteAmmPair(pairAddress);
+
+    const swapEventLogs = await pairContract.getPastEvents(
+      'Swap',
+      { fromBlock: result.blockNumber ?? 'latest' },
+    );
+    expect(swapEventLogs.length === path.length - 1);
+    swapEventLogs.forEach((eventLog) => {
+      const log = dolomiteMargin.logs.parseEventLogWithContract(pairContract, eventLog);
+      const amountInLength = [log.args.amount0In, log.args.amount1In].filter(a => a.eq(INTEGERS.ZERO)).length;
+      expect(amountInLength).toEqual(1);
+
+      const amountOutLength = [log.args.amount0Out, log.args.amount1Out].filter(a => a.eq(INTEGERS.ZERO)).length;
+      expect(amountOutLength).toEqual(1);
+    });
+
+    await checkSyncLogs(result, path[i], path[i + 1]);
+  }
+}
+
+async function checkSyncLogs(result: TxResult, tokenA: address, tokenB: address) {
+  const pairAddress = await dolomiteMargin.dolomiteAmmFactory.getPair(tokenA, tokenB);
+  const pairContract = dolomiteMargin.contracts.getDolomiteAmmPair(pairAddress);
+  const pair = dolomiteMargin.getDolomiteAmmPair(pairAddress);
+  const syncEventLogs = await pairContract.getPastEvents(
+    'Sync',
+    { fromBlock: result.blockNumber ?? 'latest' },
+  );
+  expect(syncEventLogs.length === 1);
+  for (const eventLog of syncEventLogs) {
+    const log = dolomiteMargin.logs.parseEventLogWithContract(pairContract, eventLog);
+    const [marketId0, marketId1] = await Promise.all([pair.marketId0(), pair.marketId1()]);
+    const [balance0, balance1] = await Promise.all([
+      dolomiteMargin.getters.getAccountPar(log.address, INTEGERS.ZERO, marketId0),
+      dolomiteMargin.getters.getAccountPar(log.address, INTEGERS.ZERO, marketId1),
+    ]);
+    expect(log.args.reserve0).toEqual(balance0);
+    expect(log.args.reserve1).toEqual(balance1);
+  }
 }
 
 async function setUpBasicBalances() {

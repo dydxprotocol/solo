@@ -86,14 +86,26 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
 
     // ============ Events ============
 
-    event LogArbWithAmm(
-        address solidAccountOwner,
+    /**
+     * @param solidAccountOwner         The liquidator's address
+     * @param solidAccountOwner         The liquidator's account number
+     * @param heldMarket                The held market (collateral) that will be received by the liquidator
+     * @param heldDeltaWeiWithReward    The amount of heldMarket the liquidator will receive, including the reward
+     *                                  (positive number)
+     * @param owedMarket                The debt market that will be received by the liquidator
+     * @param owedDeltaWei              The amount of owedMarket that will be received by the liquidator (negative
+     *                                  number)
+     * @param profitHeldWei             The amount of profit the liquidator will realize by performing the liquidation
+     *                                  and atomically selling off the collateral. Can be negative or positive.
+     */
+    event LogLiquidateWithAmm(
+        address indexed solidAccountOwner,
         uint solidAccountNumber,
         uint heldMarket,
-        uint heldWeiWithReward,
+        uint heldDeltaWeiWithReward,
         uint owedMarket,
-        uint owedHeldWei,
-        bool isProfitable
+        uint owedDeltaWei,
+        Types.Wei profitHeldWei // calculated as `heldWeiWithReward - soldHeldWei`
     );
 
     // ============ Storage ============
@@ -228,23 +240,26 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
 
-        (Account.Info[] memory accounts, Actions.ActionArgs[] memory actions) =
-        ROUTER_PROXY.getParamsForSwapTokensForExactTokens(
+        (
+            Account.Info[] memory accounts,
+            Actions.ActionArgs[] memory actions
+        ) = ROUTER_PROXY.getParamsForSwapTokensForExactTokens(
             constants.solidAccount.owner,
             constants.solidAccount.number,
             uint(- 1), // maxInputWei
             cache.toLiquidate, // the amount of owedMarket that needs to be repaid. Exact output amount
             tokenPath
         );
+
         if (cache.solidHeldUpdateWithReward >= actions[0].amount.value) {
-            emit LogArbWithAmm(
+            emit LogLiquidateWithAmm(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 heldMarket,
                 cache.solidHeldUpdateWithReward,
                 owedMarket,
                 cache.toLiquidate,
-                /* isProfitable= */ true // solium-disable-line indentation
+                Types.Wei(true, cache.solidHeldUpdateWithReward.sub(actions[0].amount.value))
             );
         } else {
             Require.that(
@@ -262,14 +277,14 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
                 minOwedOutputAmount,
                 tokenPath
             );
-            emit LogArbWithAmm(
+            emit LogLiquidateWithAmm(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 heldMarket,
                 cache.solidHeldUpdateWithReward,
                 owedMarket,
                 cache.toLiquidate,
-                /* isProfitable= */ false // solium-disable-line indentation
+                Types.Wei(false, actions[0].amount.value.sub(cache.solidHeldUpdateWithReward))
             );
         }
 
@@ -490,12 +505,12 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
             actionType: Actions.ActionType.Trade,
-            accountId: 0,
+            accountId: 0, // solidAccount
             amount: Types.AssetAmount({
-            sign: true,
-            denomination: Types.AssetDenomination.Wei,
-            ref: Types.AssetReference.Delta,
-            value: cache.toLiquidate
+                sign: true,
+                denomination: Types.AssetDenomination.Wei,
+                ref: Types.AssetReference.Delta,
+                value: cache.toLiquidate
             }),
             primaryMarketId: cache.owedMarket,
             secondaryMarketId: cache.heldMarket,
@@ -508,12 +523,12 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
             actionType: Actions.ActionType.Liquidate,
-            accountId: 0,
+            accountId: 0, // solidAccount
             amount: Types.AssetAmount({
-            sign: true,
-            denomination: Types.AssetDenomination.Wei,
-            ref: Types.AssetReference.Delta,
-            value: cache.toLiquidate
+                sign: true,
+                denomination: Types.AssetDenomination.Wei,
+                ref: Types.AssetReference.Delta,
+                value: cache.toLiquidate
             }),
             primaryMarketId: cache.owedMarket,
             secondaryMarketId: cache.heldMarket,

@@ -3,9 +3,8 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import { AccountStatus, address } from '../../src';
+import { AccountStatus, address, INTEGERS } from '../../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];

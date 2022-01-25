@@ -157,13 +157,6 @@ describe('Library', () => {
       );
     });
 
-    it('getPartialRoundUp reverts', async () => {
-      await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(1, 1, 0).call());
-      await expectThrow(
-        dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundUp(largeNumber, largeNumber, 1).call(),
-      );
-    });
-
     it('getPartialRoundHalfUp reverts', async () => {
       await expectThrow(dolomiteMargin.contracts.testLib.methods.MathGetPartialRoundHalfUp(1, 1, 0).call());
       await expectThrow(

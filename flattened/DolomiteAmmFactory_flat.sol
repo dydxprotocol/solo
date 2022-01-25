@@ -629,7 +629,8 @@ library Math {
     }
 
     /*
-     * Return target * (numerator / denominator), but rounded up.
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.1 rounds to 102
+     * instead of 101.
      */
     function getPartialRoundUp(
         uint256 target,
@@ -647,6 +648,10 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /*
+     * Return target * (numerator / denominator), but rounded half-up. Meaning, a result of 101.5 rounds to 102
+     * instead of 101.
+     */
     function getPartialRoundHalfUp(
         uint256 target,
         uint256 numerator,
@@ -2035,7 +2040,7 @@ library Interest {
         } else {
             return Types.Wei({
                 sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
+                value: inputValue.getPartialRoundHalfUp(index.borrow, BASE)
             });
         }
     }
@@ -2059,7 +2064,7 @@ library Interest {
         } else {
             return Types.Par({
                 sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+                value: input.value.getPartialRoundHalfUp(BASE, index.borrow).to128()
             });
         }
     }
@@ -2243,7 +2248,7 @@ contract IPriceOracle {
         returns (Monetary.Price memory);
 }
 
-// File: contracts/protocol/lib/Cache.sol
+// File: contracts/protocol/lib/Bits.sol
 
 /*
 
@@ -2267,140 +2272,56 @@ pragma solidity ^0.5.7;
 
 
 
-
 /**
- * @title Cache
- * @author dYdX
+ * @title Bits
+ * @author Dolomite
  *
  * Library for caching information about markets
  */
-library Cache {
+library Bits {
 
     // ============ Constants ============
 
-    bytes32 internal constant FILE = "Cache";
     uint internal constant ONE = 1;
     uint256 internal constant MAX_UINT_BITS = 256;
 
-    // ============ Structs ============
+    // ============ Functions ============
 
-    struct MarketInfo {
-        uint marketId;
-        address token;
-        bool isClosing;
-        uint128 borrowPar;
-        Monetary.Price price;
+    function createBitmaps(uint maxLength) internal pure returns (uint[] memory) {
+        return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
     }
 
-    struct MarketCache {
-        MarketInfo[] markets;
-        uint256[] marketBitmaps;
-        uint256 marketsLength;
+    function getMarketIdFromBit(
+        uint index,
+        uint bit
+    ) internal pure returns (uint) {
+        return (MAX_UINT_BITS * index) + bit;
     }
 
-    // ============ Setter Functions ============
-
-    /**
-     * Initialize an empty cache for some given number of total markets.
-     */
-    function create(
-        uint256 numMarkets
-    )
-        internal
-        pure
-        returns (MarketCache memory)
-    {
-        return MarketCache({
-            markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
-            marketsLength: 0
-        });
-    }
-
-    // ============ Getter Functions ============
-
-    function getNumMarkets(
-        MarketCache memory cache
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return cache.markets.length;
-    }
-
-    function hasMarket(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (bool)
-    {
+    function setBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure {
         uint bucketIndex = marketId / MAX_UINT_BITS;
         uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
+        bitmaps[bucketIndex] |= (ONE << indexFromRight);
+    }
+
+    function hasBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure returns (bool) {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
         return bit > 0;
     }
 
-    function get(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
-        Require.that(
-            cache.markets.length > 0,
-            FILE,
-            "not initialized"
-        );
-        return _getInternal(
-            cache.markets,
-            0,
-            cache.marketsLength,
-            marketId
-        );
-    }
-
-    function set(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-    {
-        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
-        Require.that(
-            cache.markets.length == 0,
-            FILE,
-            "already initialized"
-        );
-
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
-
-        cache.marketsLength += 1;
-    }
-
-    function getAtIndex(
-        MarketCache memory cache,
-        uint256 index
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
-        Require.that(
-            index < cache.markets.length,
-            FILE,
-            "invalid index",
-            index,
-            cache.markets.length
-        );
-        return cache.markets[index];
+    function unsetBit(
+        uint bitmap,
+        uint bit
+    ) internal pure returns (uint) {
+        return bitmap - (ONE << bit);
     }
 
     // solium-disable security/no-assign-params
@@ -2449,14 +2370,169 @@ library Cache {
             lsb -= 2;
         } else {
             x >>= 2;
+            // solium-enable security/no-assign-params
         }
 
         if (x & 0x1 > 0) {
             lsb -= 1;
         }
 
-        // solium-enable security/no-assign-params
         return lsb;
+    }
+}
+
+// File: contracts/protocol/lib/Cache.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+/**
+ * @title Cache
+ * @author dYdX
+ *
+ * Library for caching information about markets
+ */
+library Cache {
+
+    // ============ Constants ============
+
+    bytes32 internal constant FILE = "Cache";
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        uint marketId;
+        address token;
+        bool isClosing;
+        uint128 borrowPar;
+        Monetary.Price price;
+    }
+
+    struct MarketCache {
+        MarketInfo[] markets;
+        uint256[] marketBitmaps;
+        uint256 marketsLength;
+    }
+
+    // ============ Setter Functions ============
+
+    /**
+     * Initialize an empty cache for some given number of total markets.
+     */
+    function create(
+        uint256 numMarkets
+    )
+        internal
+        pure
+        returns (MarketCache memory)
+    {
+        return MarketCache({
+            markets: new MarketInfo[](0),
+            marketBitmaps: Bits.createBitmaps(numMarkets),
+            marketsLength: 0
+        });
+    }
+
+    // ============ Getter Functions ============
+
+    function getNumMarkets(
+        MarketCache memory cache
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return cache.markets.length;
+    }
+
+    function hasMarket(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        return Bits.hasBit(cache.marketBitmaps, marketId);
+    }
+
+    function get(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+        returns (MarketInfo memory)
+    {
+        Require.that(
+            cache.markets.length > 0,
+            FILE,
+            "not initialized"
+        );
+        return _getInternal(
+            cache.markets,
+            0,
+            cache.marketsLength,
+            marketId
+        );
+    }
+
+    function set(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+        internal
+        pure
+    {
+        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
+        Require.that(
+            cache.markets.length == 0,
+            FILE,
+            "already initialized"
+        );
+
+        Bits.setBit(cache.marketBitmaps, marketId);
+
+        cache.marketsLength += 1;
+    }
+
+    function getAtIndex(
+        MarketCache memory cache,
+        uint256 index
+    )
+        internal
+        pure
+        returns (MarketInfo memory)
+    {
+        Require.that(
+            index < cache.markets.length,
+            FILE,
+            "invalid index",
+            index,
+            cache.markets.length
+        );
+        return cache.markets[index];
     }
 
     // ============ Private Functions ============
@@ -2468,7 +2544,7 @@ library Cache {
         uint marketId
     ) private pure returns (MarketInfo memory) {
         uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
             revert("Cache: item not found");
         }
 
@@ -2751,6 +2827,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Storage
  * @author dYdX
@@ -2769,8 +2846,6 @@ library Storage {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Storage";
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -3464,8 +3539,8 @@ library Storage {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
@@ -3487,7 +3562,7 @@ library Storage {
                 }
 
                 // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
             }
             if (counter == cache.marketsLength) {
                 break;
@@ -4198,6 +4273,24 @@ interface ITransferProxy {
 
 // File: contracts/external/interfaces/IDolomiteAmmERC20.sol
 
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
 pragma solidity >=0.5.0;
 
 
@@ -4400,13 +4493,15 @@ pragma solidity ^0.5.16;
 
 
 
+
 contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
+    using Math for uint;
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
     bytes32 internal constant FILE = "DolomiteAmmPair";
 
-    uint public constant INTEREST_INDEX_BASE = 1e18;
+    uint public constant INDEX_BASE = 1e18;
     uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     address public factory;
@@ -4438,7 +4533,7 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         unlocked = 1;
     }
 
-    struct Cache {
+    struct DolomiteAmmCache {
         IDolomiteMargin dolomiteMargin;
         uint marketId0;
         uint marketId1;
@@ -4550,9 +4645,9 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
             feeOn = _mintFee(_reserve0, _reserve1);
             uint _totalSupply = totalSupply;
             // gas savings, must be defined here since totalSupply can update in _mintFee
-            amount0Wei = (liquidity.mul(balance0) / _totalSupply).mul(token0Index).div(INTEREST_INDEX_BASE);
+            amount0Wei = (liquidity.mul(balance0) / _totalSupply).getPartialRoundHalfUp(token0Index, INDEX_BASE);
             // using balances ensures pro-rata distribution
-            amount1Wei = (liquidity.mul(balance1) / _totalSupply).mul(token1Index).div(INTEREST_INDEX_BASE);
+            amount1Wei = (liquidity.mul(balance1) / _totalSupply).getPartialRoundHalfUp(token1Index, INDEX_BASE);
             Require.that(
                 amount0Wei > 0 && amount1Wei > 0,
                 FILE,
@@ -4666,8 +4761,8 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
         uint reserve0InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId0).supply;
         uint reserve1InterestIndex = _dolomiteMargin.getMarketCurrentIndex(marketId1).supply;
 
-        _reserve0 = uint112(uint(reserve0Par).mul(reserve0InterestIndex).div(INTEREST_INDEX_BASE));
-        _reserve1 = uint112(uint(reserve1Par).mul(reserve1InterestIndex).div(INTEREST_INDEX_BASE));
+        _reserve0 = uint112(uint(reserve0Par).getPartialRoundHalfUp(reserve0InterestIndex, INDEX_BASE));
+        _reserve1 = uint112(uint(reserve1Par).getPartialRoundHalfUp(reserve1InterestIndex, INDEX_BASE));
         _blockTimestampLast = blockTimestampLast;
     }
 
@@ -4683,11 +4778,11 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
     )
     public
     returns (Types.AssetAmount memory) {
-        Cache memory cache;
+        DolomiteAmmCache memory cache;
         /* solium-disable indentation */
         {
             IDolomiteMargin _dolomiteMargin = IDolomiteMargin(dolomiteMargin);
-            cache = Cache({
+            cache = DolomiteAmmCache({
                 dolomiteMargin : _dolomiteMargin,
                 marketId0 : marketId0,
                 marketId1 : marketId1,
@@ -4800,10 +4895,10 @@ contract DolomiteAmmPair is IDolomiteAmmPair, DolomiteAmmERC20, IAutoTrader {
 
             // convert the numbers from wei to par
             _update(
-                cache.balance0Wei.mul(INTEREST_INDEX_BASE).div(cache.index0.supply),
-                cache.balance1Wei.mul(INTEREST_INDEX_BASE).div(cache.index1.supply),
-                uint112(uint(_reserve0).mul(INTEREST_INDEX_BASE).div(cache.index0.supply)),
-                uint112(uint(_reserve1).mul(INTEREST_INDEX_BASE).div(cache.index1.supply))
+                cache.balance0Wei.getPartialRoundHalfUp(INDEX_BASE, cache.index0.supply),
+                cache.balance1Wei.getPartialRoundHalfUp(INDEX_BASE, cache.index1.supply),
+                uint112(uint(_reserve0).getPartialRoundHalfUp(INDEX_BASE, cache.index0.supply)),
+                uint112(uint(_reserve1).getPartialRoundHalfUp(INDEX_BASE, cache.index1.supply))
             );
         }
         /* solium-enable indentation */
@@ -5053,6 +5148,6 @@ contract DolomiteAmmFactory is IDolomiteAmmFactory {
     }
 
     function getPairInitCodeHash() public pure returns (bytes32) {
-        return keccak256(getPairInitCode());
+        return keccak256(type(DolomiteAmmPair).creationCode);
     }
 }
