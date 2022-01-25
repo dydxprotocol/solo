@@ -505,7 +505,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
             actionType: Actions.ActionType.Trade,
-            accountId: 0, // solidAccount
+            accountId: 0,
             amount: Types.AssetAmount({
                 sign: true,
                 denomination: Types.AssetDenomination.Wei,
@@ -523,7 +523,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
             actionType: Actions.ActionType.Liquidate,
-            accountId: 0, // solidAccount
+            accountId: 0,
             amount: Types.AssetAmount({
                 sign: true,
                 denomination: Types.AssetDenomination.Wei,
