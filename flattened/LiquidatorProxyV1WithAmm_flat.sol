@@ -1,3 +1,1427 @@
+
+// File: contracts/external/uniswap-v2/interfaces/IUniswapV2Pair.sol
+
+pragma solidity >=0.5.0;
+
+interface IUniswapV2Pair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(
+        address owner,
+        address spender,
+        uint value,
+        uint deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    )
+    external;
+
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
+
+    function mint(address to) external returns (uint liquidity);
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(
+        uint amount0Out,
+        uint amount1Out,
+        address to,
+        bytes calldata data
+    )
+    external;
+    function skim(address to) external;
+    function sync() external;
+
+    function initialize(address, address) external;
+}
+
+// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// File: contracts/protocol/interfaces/IERC20Detailed.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+pragma experimental ABIEncoderV2;
+
+
+
+/**
+ * @title IERC20
+ * @author dYdX
+ *
+ * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
+ * that we don't automatically revert when calling non-compliant tokens that have no return value for
+ * transfer(), transferFrom(), or approve().
+ */
+contract IERC20Detailed is IERC20 {
+
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function decimals() external view returns (uint8);
+}
+
+// File: contracts/protocol/lib/Token.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title Token
+ * @author dYdX
+ *
+ * This library contains basic functions for interacting with ERC20 tokens. Modified to work with
+ * tokens that don't adhere strictly to the ERC20 standard (for example tokens that don't return a
+ * boolean value on success).
+ */
+library Token {
+
+    // ============ Library Functions ============
+
+    function transfer(
+        address token,
+        address to,
+        uint256 amount
+    )
+    internal
+    {
+        if (amount == 0 || to == address(this)) {
+            return;
+        }
+
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20Detailed(token).transfer.selector, to, amount),
+            "Token: transfer failed"
+        );
+    }
+
+    function transferFrom(
+        address token,
+        address from,
+        address to,
+        uint256 amount
+    )
+    internal
+    {
+        if (amount == 0 || to == from) {
+            return;
+        }
+
+        // solium-disable arg-overflow
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20Detailed(token).transferFrom.selector, from, to, amount),
+            "Token: transferFrom failed"
+        );
+        // solium-enable arg-overflow
+    }
+
+    // ============ Private Functions ============
+
+    function _callOptionalReturn(address token, bytes memory data, string memory error) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
+
+        // A Solidity high level call has three parts:
+        // 1. The target address is checked to contain contract code. Not needed since tokens are manually added
+        // 2. The call itself is made, and success asserted
+        // 3. The return value is decoded, which in turn checks the size of the returned data.
+
+        // solium-disable-next-line security/no-low-level-calls
+        (bool success, bytes memory returnData) = token.call(data);
+        require(success, error);
+
+        if (returnData.length > 0) {
+            // Return data is optional
+            require(abi.decode(returnData, (bool)), error);
+        }
+    }
+
+}
+
+// File: contracts/protocol/lib/EnumerableSet.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+library EnumerableSet {
+
+    struct Set {
+        // Storage of set values
+        uint256[] _values;
+        // Value to the index in `_values` array, plus 1 because index 0 means a value is not in the set.
+        mapping(uint256 => uint256) _valueToIndexMap;
+    }
+
+    /**
+    * @dev Add a value to a set. O(1).
+     *
+     * @return true if the value was added to the set, that is if it was not already present.
+     */
+    function add(Set storage set, uint256 value) internal returns (bool) {
+        if (!contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._valueToIndexMap[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * @return true if the value was removed from the set, that is if it was present.
+     */
+    function remove(Set storage set, uint256 value) internal returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._valueToIndexMap[value];
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                uint256 lastValue = set._values[lastIndex];
+
+                // Move the last value to the index where the value to delete is
+                set._values[toDeleteIndex] = lastValue;
+                // Update the index for the moved value
+                set._valueToIndexMap[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
+            }
+
+            // Delete the slot where the moved value was stored, which is the last index
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._valueToIndexMap[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(Set storage set, uint256 value) internal view returns (bool) {
+        return set._valueToIndexMap[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(Set storage set) internal view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(Set storage set) internal view returns (uint256[] memory) {
+        return set._values;
+    }
+
+}
+
+// File: contracts/protocol/lib/Monetary.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+/**
+ * @title Monetary
+ * @author dYdX
+ *
+ * Library for types involving money
+ */
+library Monetary {
+
+    /*
+     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
+     */
+    struct Price {
+        uint256 value;
+    }
+
+    /*
+     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
+     */
+    struct Value {
+        uint256 value;
+    }
+}
+
+// File: contracts/protocol/interfaces/IPriceOracle.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title IPriceOracle
+ * @author dYdX
+ *
+ * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
+ */
+contract IPriceOracle {
+
+    // ============ Constants ============
+
+    uint256 public constant ONE_DOLLAR = 10 ** 36;
+
+    // ============ Public Functions ============
+
+    /**
+     * Get the price of a token
+     *
+     * @param  token  The ERC20 token address of the market
+     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
+     *                So a USD-stable coin with 18 decimal places would return 10^18.
+     *                This is the price of the base unit rather than the price of a "human-readable"
+     *                token amount. Every ERC20 may have a different number of decimals.
+     */
+    function getPrice(
+        address token
+    )
+    public
+    view
+    returns (Monetary.Price memory);
+}
+
+// File: contracts/protocol/lib/Require.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+/**
+ * @title Require
+ * @author dYdX
+ *
+ * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
+ */
+library Require {
+
+    // ============ Constants ============
+
+    uint256 constant ASCII_ZERO = 48; // '0'
+    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
+    uint256 constant ASCII_LOWER_EX = 120; // 'x'
+    bytes2 constant COLON = 0x3a20; // ': '
+    bytes2 constant COMMA = 0x2c20; // ', '
+    bytes2 constant LPAREN = 0x203c; // ' <'
+    byte constant RPAREN = 0x3e; // '>'
+    uint256 constant FOUR_BIT_MASK = 0xf;
+
+    // ============ Library Functions ============
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason)
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        uint256 payloadA
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        uint256 payloadA,
+        uint256 payloadB
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        address payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    COMMA,
+                    stringify(payloadC),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    function that(
+        bool must,
+        bytes32 file,
+        bytes32 reason,
+        bytes32 payloadA,
+        uint256 payloadB,
+        uint256 payloadC
+    )
+    internal
+    pure
+    {
+        if (!must) {
+            revert(
+            string(
+                abi.encodePacked(
+                    stringifyTruncated(file),
+                    COLON,
+                    stringifyTruncated(reason),
+                    LPAREN,
+                    stringify(payloadA),
+                    COMMA,
+                    stringify(payloadB),
+                    COMMA,
+                    stringify(payloadC),
+                    RPAREN
+                )
+            )
+            );
+        }
+    }
+
+    // ============ Private Functions ============
+
+    function stringifyTruncated(
+        bytes32 input
+    )
+    private
+    pure
+    returns (bytes memory)
+    {
+        // put the input bytes into the result
+        bytes memory result = abi.encodePacked(input);
+
+        // determine the length of the input by finding the location of the last non-zero byte
+        for (uint256 i = 32; i > 0; ) {
+            // reverse-for-loops with unsigned integer
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // find the last non-zero byte in order to determine the length
+            if (result[i] != 0) {
+                uint256 length = i + 1;
+
+                /* solium-disable-next-line security/no-inline-assembly */
+                assembly {
+                    mstore(result, length) // r.length = length;
+                }
+
+                return result;
+            }
+        }
+
+        // all bytes are zero
+        return new bytes(0);
+    }
+
+    function stringify(
+        uint256 input
+    )
+    private
+    pure
+    returns (bytes memory)
+    {
+        if (input == 0) {
+            return "0";
+        }
+
+        // get the final string length
+        uint256 j = input;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+
+        // allocate the string
+        bytes memory bstr = new bytes(length);
+
+        // populate the string starting with the least-significant character
+        j = input;
+        for (uint256 i = length; i > 0; ) {
+            // reverse-for-loops with unsigned integer
+            /* solium-disable-next-line security/no-modify-for-iter-var */
+            i--;
+
+            // take last decimal digit
+            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
+
+            // remove the last decimal digit
+            j /= 10;
+        }
+
+        return bstr;
+    }
+
+    function stringify(
+        address input
+    )
+    private
+    pure
+    returns (bytes memory)
+    {
+        uint256 z = uint256(input);
+
+        // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(42);
+
+        // populate the result with "0x"
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 20; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[41 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[40 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function stringify(
+        bytes32 input
+    )
+    private
+    pure
+    returns (bytes memory)
+    {
+        uint256 z = uint256(input);
+
+        // bytes32 are "0x" followed by 32 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(66);
+
+        // populate the result with "0x"
+        result[0] = byte(uint8(ASCII_ZERO));
+        result[1] = byte(uint8(ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 32; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[65 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[64 - shift] = char(z & FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
+    function char(
+        uint256 input
+    )
+    private
+    pure
+    returns (byte)
+    {
+        // return ASCII digit (0-9)
+        if (input < 10) {
+            return byte(uint8(input + ASCII_ZERO));
+        }
+
+        // return ASCII letter (a-f)
+        return byte(uint8(input + ASCII_RELATIVE_ZERO));
+    }
+}
+
+// File: contracts/external/lib/TypedSignature.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title TypedSignature
+ * @author dYdX
+ *
+ * Library to unparse typed signatures
+ */
+library TypedSignature {
+
+    // ============ Constants ============
+
+    bytes32 constant private FILE = "TypedSignature";
+
+    // prepended message with the length of the signed hash in decimal
+    bytes constant private PREPEND_DEC = "\x19Ethereum Signed Message:\n32";
+
+    // prepended message with the length of the signed hash in hexadecimal
+    bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";
+
+    // Number of bytes in a typed signature
+    uint256 constant private NUM_SIGNATURE_BYTES = 66;
+
+    // ============ Enums ============
+
+    // Different RPC providers may implement signing methods differently, so we allow different
+    // signature types depending on the string prepended to a hash before it was signed.
+    enum SignatureType {
+        NoPrepend,   // No string was prepended.
+        Decimal,     // PREPEND_DEC was prepended.
+        Hexadecimal, // PREPEND_HEX was prepended.
+        Invalid      // Not a valid type. Used for bound-checking.
+    }
+
+    // ============ Functions ============
+
+    /**
+     * Gives the address of the signer of a hash. Also allows for the commonly prepended string of
+     * '\x19Ethereum Signed Message:\n' + message.length
+     *
+     * @param  hash               Hash that was signed (does not include prepended message)
+     * @param  signatureWithType  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}
+     * @return                    address of the signer of the hash
+     */
+    function recover(
+        bytes32 hash,
+        bytes memory signatureWithType
+    )
+    internal
+    pure
+    returns (address)
+    {
+        Require.that(
+            signatureWithType.length == NUM_SIGNATURE_BYTES,
+            FILE,
+            "Invalid signature length"
+        );
+
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        uint8 rawSigType;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            r := mload(add(signatureWithType, 0x20))
+            s := mload(add(signatureWithType, 0x40))
+            let lastSlot := mload(add(signatureWithType, 0x60))
+            v := byte(0, lastSlot)
+            rawSigType := byte(1, lastSlot)
+        }
+
+        Require.that(
+            rawSigType < uint8(SignatureType.Invalid),
+            FILE,
+            "Invalid signature type"
+        );
+
+        SignatureType sigType = SignatureType(rawSigType);
+
+        bytes32 signedHash;
+        if (sigType == SignatureType.NoPrepend) {
+            signedHash = hash;
+        } else if (sigType == SignatureType.Decimal) {
+            signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
+        } else {
+            assert(sigType == SignatureType.Hexadecimal);
+            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
+        }
+
+        return ecrecover(
+            signedHash,
+            v,
+            r,
+            s
+        );
+    }
+}
+
+// File: contracts/protocol/lib/Bits.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title Bits
+ * @author Dolomite
+ *
+ * Library for caching information about markets
+ */
+library Bits {
+
+    // ============ Constants ============
+
+    uint internal constant ONE = 1;
+    uint256 internal constant MAX_UINT_BITS = 256;
+
+    // ============ Functions ============
+
+    function createBitmaps(uint maxLength) internal pure returns (uint[] memory) {
+        return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
+    }
+
+    function getMarketIdFromBit(
+        uint index,
+        uint bit
+    ) internal pure returns (uint) {
+        return (MAX_UINT_BITS * index) + bit;
+    }
+
+    function setBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        bitmaps[bucketIndex] |= (ONE << indexFromRight);
+    }
+
+    function hasBit(
+        uint[] memory bitmaps,
+        uint marketId
+    ) internal pure returns (bool) {
+        uint bucketIndex = marketId / MAX_UINT_BITS;
+        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
+        return bit > 0;
+    }
+
+    function unsetBit(
+        uint bitmap,
+        uint bit
+    ) internal pure returns (uint) {
+        return bitmap - (ONE << bit);
+    }
+
+    // solium-disable security/no-assign-params
+    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
+        // gas usage peaks at 350 per call
+
+        uint lsb = 255;
+
+        if (x & uint128(-1) > 0) {
+            lsb -= 128;
+        } else {
+            x >>= 128;
+        }
+
+        if (x & uint64(-1) > 0) {
+            lsb -= 64;
+        } else {
+            x >>= 64;
+        }
+
+        if (x & uint32(-1) > 0) {
+            lsb -= 32;
+        } else {
+            x >>= 32;
+        }
+
+        if (x & uint16(-1) > 0) {
+            lsb -= 16;
+        } else {
+            x >>= 16;
+        }
+
+        if (x & uint8(-1) > 0) {
+            lsb -= 8;
+        } else {
+            x >>= 8;
+        }
+
+        if (x & 0xf > 0) {
+            lsb -= 4;
+        } else {
+            x >>= 4;
+        }
+
+        if (x & 0x3 > 0) {
+            lsb -= 2;
+        } else {
+            x >>= 2;
+            // solium-enable security/no-assign-params
+        }
+
+        if (x & 0x1 > 0) {
+            lsb -= 1;
+        }
+
+        return lsb;
+    }
+}
+
+// File: contracts/protocol/lib/Cache.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+/**
+ * @title Cache
+ * @author dYdX
+ *
+ * Library for caching information about markets
+ */
+library Cache {
+
+    // ============ Constants ============
+
+    bytes32 internal constant FILE = "Cache";
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        uint marketId;
+        address token;
+        bool isClosing;
+        uint128 borrowPar;
+        Monetary.Price price;
+    }
+
+    struct MarketCache {
+        MarketInfo[] markets;
+        uint256[] marketBitmaps;
+        uint256 marketsLength;
+    }
+
+    // ============ Setter Functions ============
+
+    /**
+     * Initialize an empty cache for some given number of total markets.
+     */
+    function create(
+        uint256 numMarkets
+    )
+    internal
+    pure
+    returns (MarketCache memory)
+    {
+        return MarketCache({
+        markets: new MarketInfo[](0),
+        marketBitmaps: Bits.createBitmaps(numMarkets),
+        marketsLength: 0
+        });
+    }
+
+    // ============ Getter Functions ============
+
+    function getNumMarkets(
+        MarketCache memory cache
+    )
+    internal
+    pure
+    returns (uint256)
+    {
+        return cache.markets.length;
+    }
+
+    function hasMarket(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+    internal
+    pure
+    returns (bool)
+    {
+        return Bits.hasBit(cache.marketBitmaps, marketId);
+    }
+
+    function get(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+    internal
+    pure
+    returns (MarketInfo memory)
+    {
+        Require.that(
+            cache.markets.length > 0,
+            FILE,
+            "not initialized"
+        );
+        return _getInternal(
+            cache.markets,
+            0,
+            cache.marketsLength,
+            marketId
+        );
+    }
+
+    function set(
+        MarketCache memory cache,
+        uint256 marketId
+    )
+    internal
+    pure
+    {
+        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
+        Require.that(
+            cache.markets.length == 0,
+            FILE,
+            "already initialized"
+        );
+
+        Bits.setBit(cache.marketBitmaps, marketId);
+
+        cache.marketsLength += 1;
+    }
+
+    function getAtIndex(
+        MarketCache memory cache,
+        uint256 index
+    )
+    internal
+    pure
+    returns (MarketInfo memory)
+    {
+        Require.that(
+            index < cache.markets.length,
+            FILE,
+            "invalid index",
+            index,
+            cache.markets.length
+        );
+        return cache.markets[index];
+    }
+
+    // ============ Private Functions ============
+
+    function _getInternal(
+        MarketInfo[] memory data,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == 1 && data[beginInclusive].marketId != marketId)) {
+            revert("Cache: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = data[mid].marketId;
+        if (marketId < midMarketId) {
+            return _getInternal(
+                data,
+                beginInclusive,
+                mid,
+                marketId
+            );
+        } else if (marketId > midMarketId) {
+            return _getInternal(
+                data,
+                mid + 1,
+                endExclusive,
+                marketId
+            );
+        } else {
+            return data[mid];
+        }
+    }
+
+}
+
+// File: @openzeppelin/contracts/utils/ReentrancyGuard.sol
+
+pragma solidity ^0.5.0;
+
+/**
+ * @dev Contract module that helps prevent reentrant calls to a function.
+ *
+ * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
+ * available, which can be applied to functions to make sure there are no nested
+ * (reentrant) calls to them.
+ *
+ * Note that because there is a single `nonReentrant` guard, functions marked as
+ * `nonReentrant` may not call one another. This can be worked around by making
+ * those functions `private`, and then adding `external` `nonReentrant` entry
+ * points to them.
+ *
+ * TIP: If you would like to learn more about reentrancy and alternative ways
+ * to protect against it, check out our blog post
+ * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
+ *
+ * _Since v2.5.0:_ this module is now much more gas efficient, given net gas
+ * metering changes introduced in the Istanbul hardfork.
+ */
+contract ReentrancyGuard {
+    bool private _notEntered;
+
+    constructor () internal {
+        // Storing an initial non-zero value makes deployment a bit more
+        // expensive, but in exchange the refund on every call to nonReentrant
+        // will be lower in amount. Since refunds are capped to a percetange of
+        // the total transaction's gas, it is best to keep them low in cases
+        // like this one, to increase the likelihood of the full refund coming
+        // into effect.
+        _notEntered = true;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        // On the first call to nonReentrant, _notEntered will be true
+        require(_notEntered, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _notEntered = false;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _notEntered = true;
+    }
+}
+
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
@@ -157,480 +1581,6 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/utils/ReentrancyGuard.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Contract module that helps prevent reentrant calls to a function.
- *
- * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier
- * available, which can be applied to functions to make sure there are no nested
- * (reentrant) calls to them.
- *
- * Note that because there is a single `nonReentrant` guard, functions marked as
- * `nonReentrant` may not call one another. This can be worked around by making
- * those functions `private`, and then adding `external` `nonReentrant` entry
- * points to them.
- *
- * TIP: If you would like to learn more about reentrancy and alternative ways
- * to protect against it, check out our blog post
- * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].
- *
- * _Since v2.5.0:_ this module is now much more gas efficient, given net gas
- * metering changes introduced in the Istanbul hardfork.
- */
-contract ReentrancyGuard {
-    bool private _notEntered;
-
-    constructor () internal {
-        // Storing an initial non-zero value makes deployment a bit more
-        // expensive, but in exchange the refund on every call to nonReentrant
-        // will be lower in amount. Since refunds are capped to a percetange of
-        // the total transaction's gas, it is best to keep them low in cases
-        // like this one, to increase the likelihood of the full refund coming
-        // into effect.
-        _notEntered = true;
-    }
-
-    /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and make it call a
-     * `private` function that does the actual work.
-     */
-    modifier nonReentrant() {
-        // On the first call to nonReentrant, _notEntered will be true
-        require(_notEntered, "ReentrancyGuard: reentrant call");
-
-        // Any calls to nonReentrant after this point will fail
-        _notEntered = false;
-
-        _;
-
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _notEntered = true;
-    }
-}
-
-// File: contracts/protocol/lib/Require.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
-
-
-/**
- * @title Require
- * @author dYdX
- *
- * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
- */
-library Require {
-
-    // ============ Constants ============
-
-    uint256 constant ASCII_ZERO = 48; // '0'
-    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
-    uint256 constant ASCII_LOWER_EX = 120; // 'x'
-    bytes2 constant COLON = 0x3a20; // ': '
-    bytes2 constant COMMA = 0x2c20; // ', '
-    bytes2 constant LPAREN = 0x203c; // ' <'
-    byte constant RPAREN = 0x3e; // '>'
-    uint256 constant FOUR_BIT_MASK = 0xf;
-
-    // ============ Library Functions ============
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason)
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        uint256 payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        uint256 payloadA,
-        uint256 payloadB
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA,
-        uint256 payloadB
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        address payloadA,
-        uint256 payloadB,
-        uint256 payloadC
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        bytes32 payloadA
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    function that(
-        bool must,
-        bytes32 file,
-        bytes32 reason,
-        bytes32 payloadA,
-        uint256 payloadB,
-        uint256 payloadC
-    )
-        internal
-        pure
-    {
-        if (!must) {
-            revert(
-                string(
-                    abi.encodePacked(
-                        stringifyTruncated(file),
-                        COLON,
-                        stringifyTruncated(reason),
-                        LPAREN,
-                        stringify(payloadA),
-                        COMMA,
-                        stringify(payloadB),
-                        COMMA,
-                        stringify(payloadC),
-                        RPAREN
-                    )
-                )
-            );
-        }
-    }
-
-    // ============ Private Functions ============
-
-    function stringifyTruncated(
-        bytes32 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        // put the input bytes into the result
-        bytes memory result = abi.encodePacked(input);
-
-        // determine the length of the input by finding the location of the last non-zero byte
-        for (uint256 i = 32; i > 0; ) {
-            // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
-            i--;
-
-            // find the last non-zero byte in order to determine the length
-            if (result[i] != 0) {
-                uint256 length = i + 1;
-
-                /* solium-disable-next-line security/no-inline-assembly */
-                assembly {
-                    mstore(result, length) // r.length = length;
-                }
-
-                return result;
-            }
-        }
-
-        // all bytes are zero
-        return new bytes(0);
-    }
-
-    function stringify(
-        uint256 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        if (input == 0) {
-            return "0";
-        }
-
-        // get the final string length
-        uint256 j = input;
-        uint256 length;
-        while (j != 0) {
-            length++;
-            j /= 10;
-        }
-
-        // allocate the string
-        bytes memory bstr = new bytes(length);
-
-        // populate the string starting with the least-significant character
-        j = input;
-        for (uint256 i = length; i > 0; ) {
-            // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
-            i--;
-
-            // take last decimal digit
-            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
-
-            // remove the last decimal digit
-            j /= 10;
-        }
-
-        return bstr;
-    }
-
-    function stringify(
-        address input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        uint256 z = uint256(input);
-
-        // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
-        bytes memory result = new bytes(42);
-
-        // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
-
-        // for each byte (starting from the lowest byte), populate the result with two characters
-        for (uint256 i = 0; i < 20; i++) {
-            // each byte takes two characters
-            uint256 shift = i * 2;
-
-            // populate the least-significant character
-            result[41 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-
-            // populate the most-significant character
-            result[40 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-        }
-
-        return result;
-    }
-
-    function stringify(
-        bytes32 input
-    )
-        private
-        pure
-        returns (bytes memory)
-    {
-        uint256 z = uint256(input);
-
-        // bytes32 are "0x" followed by 32 bytes of data which take up 2 characters each
-        bytes memory result = new bytes(66);
-
-        // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
-
-        // for each byte (starting from the lowest byte), populate the result with two characters
-        for (uint256 i = 0; i < 32; i++) {
-            // each byte takes two characters
-            uint256 shift = i * 2;
-
-            // populate the least-significant character
-            result[65 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-
-            // populate the most-significant character
-            result[64 - shift] = char(z & FOUR_BIT_MASK);
-            z = z >> 4;
-        }
-
-        return result;
-    }
-
-    function char(
-        uint256 input
-    )
-        private
-        pure
-        returns (byte)
-    {
-        // return ASCII digit (0-9)
-        if (input < 10) {
-            return byte(uint8(input + ASCII_ZERO));
-        }
-
-        // return ASCII letter (a-f)
-        return byte(uint8(input + ASCII_RELATIVE_ZERO));
-    }
-}
-
 // File: contracts/protocol/lib/Math.sol
 
 /*
@@ -679,9 +1629,9 @@ library Math {
         uint256 numerator,
         uint256 denominator
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return target.mul(numerator).div(denominator);
     }
@@ -694,9 +1644,9 @@ library Math {
         uint256 numerator,
         uint256 denominator
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         if (target == 0 || numerator == 0) {
             // SafeMath will check for zero denominator
@@ -710,9 +1660,9 @@ library Math {
         uint256 numerator,
         uint256 denominator
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         if (target == 0 || numerator == 0) {
             // SafeMath will check for zero denominator
@@ -727,9 +1677,9 @@ library Math {
     function to128(
         uint256 number
     )
-        internal
-        pure
-        returns (uint128)
+    internal
+    pure
+    returns (uint128)
     {
         uint128 result = uint128(number);
         Require.that(
@@ -744,9 +1694,9 @@ library Math {
     function to96(
         uint256 number
     )
-        internal
-        pure
-        returns (uint96)
+    internal
+    pure
+    returns (uint96)
     {
         uint96 result = uint96(number);
         Require.that(
@@ -761,9 +1711,9 @@ library Math {
     function to32(
         uint256 number
     )
-        internal
-        pure
-        returns (uint32)
+    internal
+    pure
+    returns (uint32)
     {
         uint32 result = uint32(number);
         Require.that(
@@ -779,9 +1729,9 @@ library Math {
         uint256 a,
         uint256 b
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return a < b ? a : b;
     }
@@ -790,141 +1740,11 @@ library Math {
         uint256 a,
         uint256 b
     )
-        internal
-        pure
-        returns (uint256)
+    internal
+    pure
+    returns (uint256)
     {
         return a > b ? a : b;
-    }
-}
-
-// File: contracts/protocol/lib/Decimal.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title Decimal
- * @author dYdX
- *
- * Library that defines a fixed-point number with 18 decimal places.
- */
-library Decimal {
-    using SafeMath for uint256;
-
-    // ============ Constants ============
-
-    uint256 constant BASE = 10**18;
-
-    // ============ Structs ============
-
-    struct D256 {
-        uint256 value;
-    }
-
-    // ============ Functions ============
-
-    function one()
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: BASE });
-    }
-
-    function onePlus(
-        D256 memory d
-    )
-        internal
-        pure
-        returns (D256 memory)
-    {
-        return D256({ value: d.value.add(BASE) });
-    }
-
-    function mul(
-        uint256 target,
-        D256 memory d
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return Math.getPartial(target, d.value, BASE);
-    }
-
-    function div(
-        uint256 target,
-        D256 memory d
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return Math.getPartial(target, BASE, d.value);
-    }
-}
-
-// File: contracts/protocol/lib/Time.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title Time
- * @author dYdX
- *
- * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
- */
-library Time {
-
-    // ============ Library Functions ============
-
-    function currentTime()
-        internal
-        view
-        returns (uint32)
-    {
-        return Math.to32(block.timestamp);
     }
 }
 
@@ -1003,13 +1823,13 @@ library Types {
     }
 
     function zeroPar()
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return Par({
-            sign: false,
-            value: 0
+        sign: false,
+        value: 0
         });
     }
 
@@ -1017,9 +1837,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return add(a, negative(b));
     }
@@ -1028,9 +1848,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         Par memory result;
         if (a.sign == b.sign) {
@@ -1052,9 +1872,9 @@ library Types {
         Par memory a,
         Par memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         if (a.value == b.value) {
             if (a.value == 0) {
@@ -1068,22 +1888,22 @@ library Types {
     function negative(
         Par memory a
     )
-        internal
-        pure
-        returns (Par memory)
+    internal
+    pure
+    returns (Par memory)
     {
         return Par({
-            sign: !a.sign,
-            value: a.value
+        sign: !a.sign,
+        value: a.value
         });
     }
 
     function isNegative(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return !a.sign && a.value > 0;
     }
@@ -1091,9 +1911,9 @@ library Types {
     function isPositive(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.sign && a.value > 0;
     }
@@ -1101,9 +1921,9 @@ library Types {
     function isZero(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.value == 0;
     }
@@ -1111,9 +1931,9 @@ library Types {
     function isLessThanZero(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.value > 0 && !a.sign;
     }
@@ -1121,9 +1941,9 @@ library Types {
     function isGreaterThanOrEqualToZero(
         Par memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return isZero(a) || a.sign;
     }
@@ -1137,13 +1957,13 @@ library Types {
     }
 
     function zeroWei()
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return Wei({
-            sign: false,
-            value: 0
+        sign: false,
+        value: 0
         });
     }
 
@@ -1151,9 +1971,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return add(a, negative(b));
     }
@@ -1162,9 +1982,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         Wei memory result;
         if (a.sign == b.sign) {
@@ -1186,9 +2006,9 @@ library Types {
         Wei memory a,
         Wei memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         if (a.value == b.value) {
             if (a.value == 0) {
@@ -1202,22 +2022,22 @@ library Types {
     function negative(
         Wei memory a
     )
-        internal
-        pure
-        returns (Wei memory)
+    internal
+    pure
+    returns (Wei memory)
     {
         return Wei({
-            sign: !a.sign,
-            value: a.value
+        sign: !a.sign,
+        value: a.value
         });
     }
 
     function isNegative(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return !a.sign && a.value > 0;
     }
@@ -1225,9 +2045,9 @@ library Types {
     function isPositive(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.sign && a.value > 0;
     }
@@ -1235,476 +2055,12 @@ library Types {
     function isZero(
         Wei memory a
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.value == 0;
     }
-}
-
-// File: contracts/protocol/lib/Interest.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-
-
-
-/**
- * @title Interest
- * @author dYdX
- *
- * Library for managing the interest rate and interest indexes of DolomiteMargin
- */
-library Interest {
-    using Math for uint256;
-    using SafeMath for uint256;
-
-    // ============ Constants ============
-
-    bytes32 constant FILE = "Interest";
-    uint64 constant BASE = 10**18;
-
-    // ============ Structs ============
-
-    struct Rate {
-        uint256 value;
-    }
-
-    struct Index {
-        uint96 borrow;
-        uint96 supply;
-        uint32 lastUpdate;
-    }
-
-    // ============ Library Functions ============
-
-    /**
-     * Get a new market Index based on the old index and market interest rate.
-     * Calculate interest for borrowers by using the formula rate * time. Approximates
-     * continuously-compounded interest when called frequently, but is much more
-     * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
-     * then prorated across all suppliers.
-     *
-     * @param  index         The old index for a market
-     * @param  rate          The current interest rate of the market
-     * @param  totalPar      The total supply and borrow par values of the market
-     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
-     * @return               The updated index for a market
-     */
-    function calculateNewIndex(
-        Index memory index,
-        Rate memory rate,
-        Types.TotalPar memory totalPar,
-        Decimal.D256 memory earningsRate
-    )
-        internal
-        view
-        returns (Index memory)
-    {
-        (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
-        ) = totalParToWei(totalPar, index);
-
-        // get interest increase for borrowers
-        uint32 currentTime = Time.currentTime();
-        uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
-
-        // get interest increase for suppliers
-        uint256 supplyInterest;
-        if (Types.isZero(supplyWei)) {
-            supplyInterest = 0;
-        } else {
-            supplyInterest = Decimal.mul(borrowInterest, earningsRate);
-            if (borrowWei.value < supplyWei.value) {
-                supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
-            }
-        }
-        assert(supplyInterest <= borrowInterest);
-
-        return Index({
-            borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
-            supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
-            lastUpdate: currentTime
-        });
-    }
-
-    function newIndex()
-        internal
-        view
-        returns (Index memory)
-    {
-        return Index({
-            borrow: BASE,
-            supply: BASE,
-            lastUpdate: Time.currentTime()
-        });
-    }
-
-    /*
-     * Convert a principal amount to a token amount given an index.
-     */
-    function parToWei(
-        Types.Par memory input,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Wei memory)
-    {
-        uint256 inputValue = uint256(input.value);
-        if (input.sign) {
-            return Types.Wei({
-                sign: true,
-                value: inputValue.getPartialRoundHalfUp(index.supply, BASE)
-            });
-        } else {
-            return Types.Wei({
-                sign: false,
-                value: inputValue.getPartialRoundUp(index.borrow, BASE)
-            });
-        }
-    }
-
-    /*
-     * Convert a token amount to a principal amount given an index.
-     */
-    function weiToPar(
-        Types.Wei memory input,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Par memory)
-    {
-        if (input.sign) {
-            return Types.Par({
-                sign: true,
-                value: input.value.getPartialRoundHalfUp(BASE, index.supply).to128()
-            });
-        } else {
-            return Types.Par({
-                sign: false,
-                value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
-            });
-        }
-    }
-
-    /*
-     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
-     * token amounts.
-     */
-    function totalParToWei(
-        Types.TotalPar memory totalPar,
-        Index memory index
-    )
-        internal
-        pure
-        returns (Types.Wei memory, Types.Wei memory)
-    {
-        Types.Par memory supplyPar = Types.Par({
-            sign: true,
-            value: totalPar.supply
-        });
-        Types.Par memory borrowPar = Types.Par({
-            sign: false,
-            value: totalPar.borrow
-        });
-        Types.Wei memory supplyWei = parToWei(supplyPar, index);
-        Types.Wei memory borrowWei = parToWei(borrowPar, index);
-        return (supplyWei, borrowWei);
-    }
-}
-
-// File: contracts/protocol/interfaces/IInterestSetter.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title IInterestSetter
- * @author dYdX
- *
- * Interface that Interest Setters for DolomiteMargin must implement in order to report interest rates.
- */
-interface IInterestSetter {
-
-    // ============ Public Functions ============
-
-    /**
-     * Get the interest rate of a token given some borrowed and supplied amounts
-     *
-     * @param  token        The address of the ERC20 token for the market
-     * @param  borrowWei    The total borrowed token amount for the market
-     * @param  supplyWei    The total supplied token amount for the market
-     * @return              The interest rate per second
-     */
-    function getInterestRate(
-        address token,
-        uint256 borrowWei,
-        uint256 supplyWei
-    )
-        external
-        view
-        returns (Interest.Rate memory);
-}
-
-// File: contracts/protocol/lib/Monetary.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-/**
- * @title Monetary
- * @author dYdX
- *
- * Library for types involving money
- */
-library Monetary {
-
-    /*
-     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
-     */
-    struct Price {
-        uint256 value;
-    }
-
-    /*
-     * Total value of an some amount of an asset. Equal to (price * amount). Has 36 decimals.
-     */
-    struct Value {
-        uint256 value;
-    }
-}
-
-// File: contracts/protocol/interfaces/IPriceOracle.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title IPriceOracle
- * @author dYdX
- *
- * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
- */
-contract IPriceOracle {
-
-    // ============ Constants ============
-
-    uint256 public constant ONE_DOLLAR = 10 ** 36;
-
-    // ============ Public Functions ============
-
-    /**
-     * Get the price of a token
-     *
-     * @param  token  The ERC20 token address of the market
-     * @return        The USD price of a base unit of the token, then multiplied by 10^36.
-     *                So a USD-stable coin with 18 decimal places would return 10^18.
-     *                This is the price of the base unit rather than the price of a "human-readable"
-     *                token amount. Every ERC20 may have a different number of decimals.
-     */
-    function getPrice(
-        address token
-    )
-        public
-        view
-        returns (Monetary.Price memory);
-}
-
-// File: contracts/protocol/lib/EnumerableSet.sol
-
-/*
-
-    Copyright 2021 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-library EnumerableSet {
-
-    struct Set {
-        // Storage of set values
-        uint256[] _values;
-        // Value to the index in `_values` array, plus 1 because index 0 means a value is not in the set.
-        mapping(uint256 => uint256) _valueToIndexMap;
-    }
-
-    /**
-    * @dev Add a value to a set. O(1).
-     *
-     * @return true if the value was added to the set, that is if it was not already present.
-     */
-    function add(Set storage set, uint256 value) internal returns (bool) {
-        if (!contains(set, value)) {
-            set._values.push(value);
-            // The value is stored at length-1, but we add 1 to all indexes
-            // and use 0 as a sentinel value
-            set._valueToIndexMap[value] = set._values.length;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Removes a value from a set. O(1).
-     *
-     * @return true if the value was removed from the set, that is if it was present.
-     */
-    function remove(Set storage set, uint256 value) internal returns (bool) {
-        // We read and store the value's index to prevent multiple reads from the same storage slot
-        uint256 valueIndex = set._valueToIndexMap[value];
-
-        if (valueIndex != 0) {
-            // Equivalent to contains(set, value)
-            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
-            // the array, and then remove the last element (sometimes called as 'swap and pop').
-            // This modifies the order of the array, as noted in {at}.
-
-            uint256 toDeleteIndex = valueIndex - 1;
-            uint256 lastIndex = set._values.length - 1;
-
-            if (lastIndex != toDeleteIndex) {
-                uint256 lastValue = set._values[lastIndex];
-
-                // Move the last value to the index where the value to delete is
-                set._values[toDeleteIndex] = lastValue;
-                // Update the index for the moved value
-                set._valueToIndexMap[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
-            }
-
-            // Delete the slot where the moved value was stored, which is the last index
-            set._values.pop();
-
-            // Delete the index for the deleted slot
-            delete set._valueToIndexMap[value];
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * @dev Returns true if the value is in the set. O(1).
-     */
-    function contains(Set storage set, uint256 value) internal view returns (bool) {
-        return set._valueToIndexMap[value] != 0;
-    }
-
-    /**
-     * @dev Returns the number of values on the set. O(1).
-     */
-    function length(Set storage set) internal view returns (uint256) {
-        return set._values.length;
-    }
-
-    /**
-     * @dev Return the entire set in an array
-     *
-     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-     */
-    function values(Set storage set) internal view returns (uint256[] memory) {
-        return set._values;
-    }
-
 }
 
 // File: contracts/protocol/lib/Account.sol
@@ -1778,12 +2134,192 @@ library Account {
         Info memory a,
         Info memory b
     )
-        internal
-        pure
-        returns (bool)
+    internal
+    pure
+    returns (bool)
     {
         return a.owner == b.owner && a.number == b.number;
     }
+}
+
+// File: contracts/external/interfaces/IDolomiteAmmPair.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity >=0.5.0;
+
+
+
+interface IDolomiteAmmPair {
+
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function decimals() external pure returns (uint8);
+
+    function totalSupply() external view returns (uint);
+
+    function balanceOf(address owner) external view returns (uint);
+
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+
+    function transfer(address to, uint value) external returns (bool);
+
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+
+    function nonces(address owner) external view returns (uint);
+
+    function permit(
+        address owner,
+        address spender,
+        uint value,
+        uint deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+
+    event Mint(address indexed sender, uint amount0Wei, uint amount1Wei);
+    event Burn(address indexed sender, uint amount0Wei, uint amount1Wei, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+
+    function factory() external view returns (address);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+
+    function getReservesWei() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+
+    function getReservesPar() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+
+    function price0CumulativeLast() external view returns (uint);
+
+    function price1CumulativeLast() external view returns (uint);
+
+    function kLast() external view returns (uint);
+
+    function mint(address to) external returns (uint liquidity);
+
+    function burn(address to, uint toAccountNumber) external returns (uint amount0Wei, uint amount1Wei);
+
+    function getTradeCost(
+        uint256 inputMarketId,
+        uint256 outputMarketId,
+        Account.Info calldata makerAccount,
+        Account.Info calldata takerAccount,
+        Types.Par calldata,
+        Types.Par calldata,
+        Types.Wei calldata inputWei,
+        bytes calldata data
+    )
+    external
+    returns (Types.AssetAmount memory);
+
+    function skim(address to, uint toAccountNumber) external;
+
+    function sync() external;
+
+    function initialize(address _token0, address _token1, address _transferProxy) external;
+}
+
+// File: contracts/external/interfaces/IExpiry.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+/**
+ * @title IExpiry
+ * @author Dolomite
+ */
+contract IExpiry {
+
+    // ============ Enums ============
+
+    enum CallFunctionType {
+        SetExpiry,
+        SetApproval
+    }
+
+    // ============ Structs ============
+
+    struct SetExpiryArg {
+        Account.Info account;
+        uint256 marketId;
+        uint32 timeDelta;
+        bool forceUpdate;
+    }
+
+    struct SetApprovalArg {
+        address sender;
+        uint32 minTimeDelta;
+    }
+
+    function getSpreadAdjustedPrices(
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 expiry
+    )
+    public
+    view
+    returns (Monetary.Price memory heldPrice, Monetary.Price memory owedPriceAdj);
+
 }
 
 // File: contracts/protocol/lib/Actions.sol
@@ -2001,9 +2537,9 @@ library Actions {
     function getMarketLayout(
         ActionType actionType
     )
-        internal
-        pure
-        returns (MarketLayout)
+    internal
+    pure
+    returns (MarketLayout)
     {
         if (
             actionType == Actions.ActionType.Deposit
@@ -2021,9 +2557,9 @@ library Actions {
     function getAccountLayout(
         ActionType actionType
     )
-        internal
-        pure
-        returns (AccountLayout)
+    internal
+    pure
+    returns (AccountLayout)
     {
         if (
             actionType == Actions.ActionType.Transfer
@@ -2045,15 +2581,15 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (DepositArgs memory)
+    internal
+    pure
+    returns (DepositArgs memory)
     {
         return DepositArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            from: args.otherAddress
+        amount: args.amount,
+        account: accounts[args.accountId],
+        market: args.primaryMarketId,
+        from: args.otherAddress
         });
     }
 
@@ -2061,15 +2597,15 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (WithdrawArgs memory)
+    internal
+    pure
+    returns (WithdrawArgs memory)
     {
         return WithdrawArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            market: args.primaryMarketId,
-            to: args.otherAddress
+        amount: args.amount,
+        account: accounts[args.accountId],
+        market: args.primaryMarketId,
+        to: args.otherAddress
         });
     }
 
@@ -2077,15 +2613,15 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (TransferArgs memory)
+    internal
+    pure
+    returns (TransferArgs memory)
     {
         return TransferArgs({
-            amount: args.amount,
-            accountOne: accounts[args.accountId],
-            accountTwo: accounts[args.otherAccountId],
-            market: args.primaryMarketId
+        amount: args.amount,
+        accountOne: accounts[args.accountId],
+        accountTwo: accounts[args.otherAccountId],
+        market: args.primaryMarketId
         });
     }
 
@@ -2093,17 +2629,17 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (BuyArgs memory)
+    internal
+    pure
+    returns (BuyArgs memory)
     {
         return BuyArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            makerMarket: args.primaryMarketId,
-            takerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
+        amount: args.amount,
+        account: accounts[args.accountId],
+        makerMarket: args.primaryMarketId,
+        takerMarket: args.secondaryMarketId,
+        exchangeWrapper: args.otherAddress,
+        orderData: args.data
         });
     }
 
@@ -2111,17 +2647,17 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (SellArgs memory)
+    internal
+    pure
+    returns (SellArgs memory)
     {
         return SellArgs({
-            amount: args.amount,
-            account: accounts[args.accountId],
-            takerMarket: args.primaryMarketId,
-            makerMarket: args.secondaryMarketId,
-            exchangeWrapper: args.otherAddress,
-            orderData: args.data
+        amount: args.amount,
+        account: accounts[args.accountId],
+        takerMarket: args.primaryMarketId,
+        makerMarket: args.secondaryMarketId,
+        exchangeWrapper: args.otherAddress,
+        orderData: args.data
         });
     }
 
@@ -2129,18 +2665,18 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (TradeArgs memory)
+    internal
+    pure
+    returns (TradeArgs memory)
     {
         return TradeArgs({
-            amount: args.amount,
-            takerAccount: accounts[args.accountId],
-            makerAccount: accounts[args.otherAccountId],
-            inputMarket: args.primaryMarketId,
-            outputMarket: args.secondaryMarketId,
-            autoTrader: args.otherAddress,
-            tradeData: args.data
+        amount: args.amount,
+        takerAccount: accounts[args.accountId],
+        makerAccount: accounts[args.otherAccountId],
+        inputMarket: args.primaryMarketId,
+        outputMarket: args.secondaryMarketId,
+        autoTrader: args.otherAddress,
+        tradeData: args.data
         });
     }
 
@@ -2148,16 +2684,16 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (LiquidateArgs memory)
+    internal
+    pure
+    returns (LiquidateArgs memory)
     {
         return LiquidateArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            liquidAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
+        amount: args.amount,
+        solidAccount: accounts[args.accountId],
+        liquidAccount: accounts[args.otherAccountId],
+        owedMarket: args.primaryMarketId,
+        heldMarket: args.secondaryMarketId
         });
     }
 
@@ -2165,16 +2701,16 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (VaporizeArgs memory)
+    internal
+    pure
+    returns (VaporizeArgs memory)
     {
         return VaporizeArgs({
-            amount: args.amount,
-            solidAccount: accounts[args.accountId],
-            vaporAccount: accounts[args.otherAccountId],
-            owedMarket: args.primaryMarketId,
-            heldMarket: args.secondaryMarketId
+        amount: args.amount,
+        solidAccount: accounts[args.accountId],
+        vaporAccount: accounts[args.otherAccountId],
+        owedMarket: args.primaryMarketId,
+        heldMarket: args.secondaryMarketId
         });
     }
 
@@ -2182,23 +2718,23 @@ library Actions {
         Account.Info[] memory accounts,
         ActionArgs memory args
     )
-        internal
-        pure
-        returns (CallArgs memory)
+    internal
+    pure
+    returns (CallArgs memory)
     {
         return CallArgs({
-            account: accounts[args.accountId],
-            callee: args.otherAddress,
-            data: args.data
+        account: accounts[args.accountId],
+        callee: args.otherAddress,
+        data: args.data
         });
     }
 }
 
-// File: contracts/protocol/lib/Cache.sol
+// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
 
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2021 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -2214,318 +2750,352 @@ library Actions {
 
 */
 
-pragma solidity ^0.5.7;
+pragma solidity >=0.5.0;
+
+
+
+interface IDolomiteAmmFactory {
+
+    function feeTo() external view returns (address);
+    function feeToSetter() external view returns (address);
+    function dolomiteMargin() external view returns (address);
+
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function allPairs(uint) external view returns (address pair);
+    function allPairsLength() external view returns (uint);
+    function getPairInitCode() external pure returns (bytes memory);
+    function getPairInitCodeHash() external pure returns (bytes32);
+
+    function createPair(address tokenA, address tokenB) external returns (address pair);
+
+    function setFeeTo(address) external;
+    function setFeeToSetter(address) external;
+
+}
+
+// File: contracts/external/lib/DolomiteAmmLibrary.sol
+
+/*
+
+    Copyright 2021 Dolomite.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity >=0.5.0;
 
 
 
 
-/**
- * @title Cache
- * @author dYdX
- *
- * Library for caching information about markets
- */
-library Cache {
 
-    // ============ Constants ============
 
-    bytes32 internal constant FILE = "Cache";
-    uint internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
-    // ============ Structs ============
+library DolomiteAmmLibrary {
+    using SafeMath for uint;
 
-    struct MarketInfo {
-        uint marketId;
-        address token;
-        bool isClosing;
-        uint128 borrowPar;
-        Monetary.Price price;
+    bytes32 private constant FILE = "DolomiteAmmLibrary";
+    bytes32 private constant PAIR_INIT_CODE_HASH = 0x4b99ca02a6bca7f0ec8b681e7d639df6798914b72d0cae823856f951b2934b33;
+
+    function getPairInitCodeHash() internal pure returns (bytes32) {
+        return PAIR_INIT_CODE_HASH;
     }
 
-    struct MarketCache {
-        MarketInfo[] markets;
-        uint256[] marketBitmaps;
-        uint256 marketsLength;
+    function getPools(
+        address factory,
+        address[] memory path
+    ) internal pure returns (address[] memory) {
+        return getPools(factory, PAIR_INIT_CODE_HASH, path);
     }
 
-    // ============ Setter Functions ============
-
-    /**
-     * Initialize an empty cache for some given number of total markets.
-     */
-    function create(
-        uint256 numMarkets
-    )
-        internal
-        pure
-        returns (MarketCache memory)
-    {
-        return MarketCache({
-            markets: new MarketInfo[](0),
-            marketBitmaps: new uint[]((numMarkets / MAX_UINT_BITS) + ONE),
-            marketsLength: 0
-        });
-    }
-
-    // ============ Getter Functions ============
-
-    function getNumMarkets(
-        MarketCache memory cache
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return cache.markets.length;
-    }
-
-    function hasMarket(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (bool)
-    {
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = cache.marketBitmaps[bucketIndex] & (ONE << indexFromRight);
-        return bit > 0;
-    }
-
-    function get(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
+    function getPools(
+        address factory,
+        bytes32 initCodeHash,
+        address[] memory path
+    ) internal pure returns (address[] memory) {
         Require.that(
-            cache.markets.length > 0,
+            path.length >= 2,
             FILE,
-            "not initialized"
-        );
-        return _getInternal(
-            cache.markets,
-            0,
-            cache.marketsLength,
-            marketId
-        );
-    }
-
-    function set(
-        MarketCache memory cache,
-        uint256 marketId
-    )
-        internal
-        pure
-    {
-        // Devs should not be able to call this function once the `markets` array has been initialized (non-zero length)
-        Require.that(
-            cache.markets.length == 0,
-            FILE,
-            "already initialized"
+            "invalid path length"
         );
 
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        cache.marketBitmaps[bucketIndex] |= (ONE << indexFromRight);
-
-        cache.marketsLength += 1;
-    }
-
-    function getAtIndex(
-        MarketCache memory cache,
-        uint256 index
-    )
-        internal
-        pure
-        returns (MarketInfo memory)
-    {
-        Require.that(
-            index < cache.markets.length,
-            FILE,
-            "invalid index",
-            index,
-            cache.markets.length
-        );
-        return cache.markets[index];
-    }
-
-    // solium-disable security/no-assign-params
-    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
-        // gas usage peaks at 350 per call
-
-        uint lsb = 255;
-
-        if (x & uint128(-1) > 0) {
-            lsb -= 128;
-        } else {
-            x >>= 128;
-        }
-
-        if (x & uint64(-1) > 0) {
-            lsb -= 64;
-        } else {
-            x >>= 64;
-        }
-
-        if (x & uint32(-1) > 0) {
-            lsb -= 32;
-        } else {
-            x >>= 32;
-        }
-
-        if (x & uint16(-1) > 0) {
-            lsb -= 16;
-        } else {
-            x >>= 16;
-        }
-
-        if (x & uint8(-1) > 0) {
-            lsb -= 8;
-        } else {
-            x >>= 8;
-        }
-
-        if (x & 0xf > 0) {
-            lsb -= 4;
-        } else {
-            x >>= 4;
-        }
-
-        if (x & 0x3 > 0) {
-            lsb -= 2;
-        } else {
-            x >>= 2;
-        }
-
-        if (x & 0x1 > 0) {
-            lsb -= 1;
-        }
-
-        // solium-enable security/no-assign-params
-        return lsb;
-    }
-
-    // ============ Private Functions ============
-
-    function _getInternal(
-        MarketInfo[] memory data,
-        uint beginInclusive,
-        uint endExclusive,
-        uint marketId
-    ) private pure returns (MarketInfo memory) {
-        uint len = endExclusive - beginInclusive;
-        if (len == 0 || (len == ONE && data[beginInclusive].marketId != marketId)) {
-            revert("Cache: item not found");
-        }
-
-        uint mid = beginInclusive + len / 2;
-        uint midMarketId = data[mid].marketId;
-        if (marketId < midMarketId) {
-            return _getInternal(
-                data,
-                beginInclusive,
-                mid,
-                marketId
+        address[] memory pools = new address[](path.length - 1);
+        for (uint i = 0; i < path.length - 1; i++) {
+            pools[i] = pairFor(
+                factory,
+                path[i],
+                path[i + 1],
+                initCodeHash
             );
-        } else if (marketId > midMarketId) {
-            return _getInternal(
-                data,
-                mid + 1,
-                endExclusive,
-                marketId
-            );
-        } else {
-            return data[mid];
+        }
+        return pools;
+    }
+
+    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
+        Require.that(
+            tokenA != tokenB,
+            FILE,
+            "identical addresses"
+        );
+        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        Require.that(
+            token0 != address(0),
+            FILE,
+            "zero address"
+        );
+    }
+
+    // calculates the CREATE2 address for a pair without making any external calls
+    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
+        return pairFor(
+            factory,
+            tokenA,
+            tokenB,
+            PAIR_INIT_CODE_HASH
+        );
+    }
+
+    function pairFor(
+        address factory,
+        address tokenA,
+        address tokenB,
+        bytes32 initCodeHash
+    ) internal pure returns (address pair) {
+        (address token0, address token1) = sortTokens(tokenA, tokenB);
+        pair = address(
+            uint(
+                keccak256(
+                    abi.encodePacked(
+                        hex"ff",
+                        factory,
+                        keccak256(abi.encodePacked(token0, token1)),
+                        initCodeHash
+                    )
+                )
+            )
+        );
+    }
+
+    // fetches and sorts the reserves for a pair
+    function getReservesWei(
+        address factory,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
+        return getReservesWei(
+            factory,
+            PAIR_INIT_CODE_HASH,
+            tokenA,
+            tokenB
+        );
+    }
+
+    function getReserves(
+        address factory,
+        bytes32 initCodeHash,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IUniswapV2Pair(
+            pairFor(
+                factory,
+                tokenA,
+                tokenB,
+                initCodeHash
+            )
+        ).getReserves();
+        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
+    function getReservesWei(
+        address factory,
+        bytes32 initCodeHash,
+        address tokenA,
+        address tokenB
+    ) internal view returns (uint reserveA, uint reserveB) {
+        (address token0,) = sortTokens(tokenA, tokenB);
+        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(
+            pairFor(
+                factory,
+                tokenA,
+                tokenB,
+                initCodeHash
+            )
+        ).getReservesWei();
+        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+    }
+
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+        Require.that(
+            amountA > 0,
+            FILE,
+            "insufficient amount"
+        );
+        Require.that(
+            reserveA > 0 && reserveB > 0,
+            FILE,
+            "insufficient liquidity"
+        );
+        amountB = amountA.mul(reserveB) / reserveA;
+    }
+
+    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+        Require.that(
+            amountIn > 0,
+            FILE,
+            "insufficient input amount"
+        );
+        Require.that(
+            reserveIn > 0 && reserveOut > 0,
+            FILE,
+            "insufficient liquidity"
+        );
+        uint amountInWithFee = amountIn.mul(997);
+        uint numerator = amountInWithFee.mul(reserveOut);
+        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+        amountOut = numerator / denominator;
+    }
+
+    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+        Require.that(
+            amountOut > 0,
+            FILE,
+            "insufficient output amount"
+        );
+        Require.that(
+            reserveIn > 0 && reserveOut > 0,
+            FILE,
+            "insufficient liquidity"
+        );
+        uint numerator = reserveIn.mul(amountOut).mul(1000);
+        uint denominator = reserveOut.sub(amountOut).mul(997);
+        // reverts from the 'sub'
+        amountIn = numerator.div(denominator).add(1);
+    }
+
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOutWei(
+        address factory,
+        uint amountIn,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        Require.that(
+            path.length >= 2,
+            FILE,
+            "invalid path"
+        );
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i], path[i + 1]);
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
 
+    // performs chained getAmountOut calculations on any number of pairs
+    function getAmountsOutWei(
+        address factory,
+        bytes32 initCodeHash,
+        uint amountIn,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        Require.that(
+            path.length >= 2,
+            FILE,
+            "invalid path"
+        );
+        amounts = new uint[](path.length);
+        amounts[0] = amountIn;
+        for (uint i; i < path.length - 1; i++) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(
+                factory,
+                initCodeHash,
+                path[i],
+                path[i + 1]
+            );
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    function getAmountsInWei(
+        address factory,
+        bytes32 initCodeHash,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        Require.that(
+            path.length >= 2,
+            FILE,
+            "invalid path"
+        );
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut) = getReservesWei(
+                factory,
+                initCodeHash,
+                path[i - 1],
+                path[i]
+            );
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    function getAmountsIn(
+        address factory,
+        bytes32 initCodeHash,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        Require.that(
+            path.length >= 2,
+            FILE,
+            "invalid path"
+        );
+        amounts = new uint[](path.length);
+        amounts[amounts.length - 1] = amountOut;
+        for (uint i = path.length - 1; i > 0; i--) {
+            (uint reserveIn, uint reserveOut) = getReserves(
+                factory,
+                initCodeHash,
+                path[i - 1],
+                path[i]
+            );
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+        }
+    }
+
+    // performs chained getAmountIn calculations on any number of pairs
+    function getAmountsInWei(
+        address factory,
+        uint amountOut,
+        address[] memory path
+    ) internal view returns (uint[] memory amounts) {
+        return getAmountsInWei(
+            factory,
+            PAIR_INIT_CODE_HASH,
+            amountOut,
+            path
+        );
+    }
 }
 
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
- * the optional functions; to access them see {ERC20Detailed}.
- */
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
-
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through {transferFrom}. This is
-     * zero by default.
-     *
-     * This value changes when {approve} or {transferFrom} are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * IMPORTANT: Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an {Approval} event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a {Transfer} event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to {approve}. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// File: contracts/protocol/interfaces/IERC20Detailed.sol
+// File: contracts/protocol/lib/Time.sol
 
 /*
 
@@ -2550,118 +3120,356 @@ pragma solidity ^0.5.7;
 
 
 /**
- * @title IERC20
+ * @title Time
  * @author dYdX
  *
- * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
- * that we don't automatically revert when calling non-compliant tokens that have no return value for
- * transfer(), transferFrom(), or approve().
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
  */
-contract IERC20Detailed is IERC20 {
-
-    function name() external view returns (string memory);
-
-    function symbol() external view returns (string memory);
-
-    function decimals() external view returns (uint8);
-}
-
-// File: contracts/protocol/lib/Token.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title Token
- * @author dYdX
- *
- * This library contains basic functions for interacting with ERC20 tokens. Modified to work with
- * tokens that don't adhere strictly to the ERC20 standard (for example tokens that don't return a
- * boolean value on success).
- */
-library Token {
+library Time {
 
     // ============ Library Functions ============
 
-    function transfer(
-        address token,
-        address to,
-        uint256 amount
-    )
-        internal
+    function currentTime()
+    internal
+    view
+    returns (uint32)
     {
-        if (amount == 0 || to == address(this)) {
-            return;
-        }
+        return Math.to32(block.timestamp);
+    }
+}
 
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(IERC20Detailed(token).transfer.selector, to, amount),
-            "Token: transfer failed"
-        );
+// File: contracts/protocol/lib/Decimal.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+/**
+ * @title Decimal
+ * @author dYdX
+ *
+ * Library that defines a fixed-point number with 18 decimal places.
+ */
+library Decimal {
+    using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    uint256 constant BASE = 10**18;
+
+    // ============ Structs ============
+
+    struct D256 {
+        uint256 value;
     }
 
-    function transferFrom(
-        address token,
-        address from,
-        address to,
-        uint256 amount
-    )
-        internal
+    // ============ Functions ============
+
+    function one()
+    internal
+    pure
+    returns (D256 memory)
     {
-        if (amount == 0 || to == from) {
-            return;
-        }
-
-        // solium-disable arg-overflow
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(IERC20Detailed(token).transferFrom.selector, from, to, amount),
-            "Token: transferFrom failed"
-        );
-        // solium-enable arg-overflow
+        return D256({ value: BASE });
     }
 
-    // ============ Private Functions ============
+    function onePlus(
+        D256 memory d
+    )
+    internal
+    pure
+    returns (D256 memory)
+    {
+        return D256({ value: d.value.add(BASE) });
+    }
 
-    function _callOptionalReturn(address token, bytes memory data, string memory error) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves.
+    function mul(
+        uint256 target,
+        D256 memory d
+    )
+    internal
+    pure
+    returns (uint256)
+    {
+        return Math.getPartial(target, d.value, BASE);
+    }
 
-        // A Solidity high level call has three parts:
-        // 1. The target address is checked to contain contract code. Not needed since tokens are manually added
-        // 2. The call itself is made, and success asserted
-        // 3. The return value is decoded, which in turn checks the size of the returned data.
+    function div(
+        uint256 target,
+        D256 memory d
+    )
+    internal
+    pure
+    returns (uint256)
+    {
+        return Math.getPartial(target, BASE, d.value);
+    }
+}
 
-        // solium-disable-next-line security/no-low-level-calls
-        (bool success, bytes memory returnData) = token.call(data);
-        require(success, error);
+// File: contracts/protocol/lib/Interest.sol
 
-        if (returnData.length > 0) {
-            // Return data is optional
-            require(abi.decode(returnData, (bool)), error);
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+
+
+/**
+ * @title Interest
+ * @author dYdX
+ *
+ * Library for managing the interest rate and interest indexes of DolomiteMargin
+ */
+library Interest {
+    using Math for uint256;
+    using SafeMath for uint256;
+
+    // ============ Constants ============
+
+    bytes32 constant FILE = "Interest";
+    uint64 constant BASE = 10**18;
+
+    // ============ Structs ============
+
+    struct Rate {
+        uint256 value;
+    }
+
+    struct Index {
+        uint96 borrow;
+        uint96 supply;
+        uint32 lastUpdate;
+    }
+
+    // ============ Library Functions ============
+
+    /**
+     * Get a new market Index based on the old index and market interest rate.
+     * Calculate interest for borrowers by using the formula rate * time. Approximates
+     * continuously-compounded interest when called frequently, but is much more
+     * gas-efficient to calculate. For suppliers, the interest rate is adjusted by the earningsRate,
+     * then prorated across all suppliers.
+     *
+     * @param  index         The old index for a market
+     * @param  rate          The current interest rate of the market
+     * @param  totalPar      The total supply and borrow par values of the market
+     * @param  earningsRate  The portion of the interest that is forwarded to the suppliers
+     * @return               The updated index for a market
+     */
+    function calculateNewIndex(
+        Index memory index,
+        Rate memory rate,
+        Types.TotalPar memory totalPar,
+        Decimal.D256 memory earningsRate
+    )
+    internal
+    view
+    returns (Index memory)
+    {
+        (
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
+        ) = totalParToWei(totalPar, index);
+
+        // get interest increase for borrowers
+        uint32 currentTime = Time.currentTime();
+        uint256 borrowInterest = rate.value.mul(uint256(currentTime).sub(index.lastUpdate));
+
+        // get interest increase for suppliers
+        uint256 supplyInterest;
+        if (Types.isZero(supplyWei)) {
+            supplyInterest = 0;
+        } else {
+            supplyInterest = Decimal.mul(borrowInterest, earningsRate);
+            if (borrowWei.value < supplyWei.value) {
+                supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
+            }
+        }
+        assert(supplyInterest <= borrowInterest);
+
+        return Index({
+        borrow: Math.getPartial(index.borrow, borrowInterest, BASE).add(index.borrow).to96(),
+        supply: Math.getPartial(index.supply, supplyInterest, BASE).add(index.supply).to96(),
+        lastUpdate: currentTime
+        });
+    }
+
+    function newIndex()
+    internal
+    view
+    returns (Index memory)
+    {
+        return Index({
+        borrow: BASE,
+        supply: BASE,
+        lastUpdate: Time.currentTime()
+        });
+    }
+
+    /*
+     * Convert a principal amount to a token amount given an index.
+     */
+    function parToWei(
+        Types.Par memory input,
+        Index memory index
+    )
+    internal
+    pure
+    returns (Types.Wei memory)
+    {
+        uint256 inputValue = uint256(input.value);
+        if (input.sign) {
+            return Types.Wei({
+            sign: true,
+            value: inputValue.getPartialRoundHalfUp(index.supply, BASE)
+            });
+        } else {
+            return Types.Wei({
+            sign: false,
+            value: inputValue.getPartialRoundUp(index.borrow, BASE)
+            });
         }
     }
 
+    /*
+     * Convert a token amount to a principal amount given an index.
+     */
+    function weiToPar(
+        Types.Wei memory input,
+        Index memory index
+    )
+    internal
+    pure
+    returns (Types.Par memory)
+    {
+        if (input.sign) {
+            return Types.Par({
+            sign: true,
+            value: input.value.getPartialRoundHalfUp(BASE, index.supply).to128()
+            });
+        } else {
+            return Types.Par({
+            sign: false,
+            value: input.value.getPartialRoundUp(BASE, index.borrow).to128()
+            });
+        }
+    }
+
+    /*
+     * Convert the total supply and borrow principal amounts of a market to total supply and borrow
+     * token amounts.
+     */
+    function totalParToWei(
+        Types.TotalPar memory totalPar,
+        Index memory index
+    )
+    internal
+    pure
+    returns (Types.Wei memory, Types.Wei memory)
+    {
+        Types.Par memory supplyPar = Types.Par({
+        sign: true,
+        value: totalPar.supply
+        });
+        Types.Par memory borrowPar = Types.Par({
+        sign: false,
+        value: totalPar.borrow
+        });
+        Types.Wei memory supplyWei = parToWei(supplyPar, index);
+        Types.Wei memory borrowWei = parToWei(borrowPar, index);
+        return (supplyWei, borrowWei);
+    }
+}
+
+// File: contracts/protocol/interfaces/IInterestSetter.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+/**
+ * @title IInterestSetter
+ * @author dYdX
+ *
+ * Interface that Interest Setters for DolomiteMargin must implement in order to report interest rates.
+ */
+interface IInterestSetter {
+
+    // ============ Public Functions ============
+
+    /**
+     * Get the interest rate of a token given some borrowed and supplied amounts
+     *
+     * @param  token        The address of the ERC20 token for the market
+     * @param  borrowWei    The total borrowed token amount for the market
+     * @param  supplyWei    The total supplied token amount for the market
+     * @return              The interest rate per second
+     */
+    function getInterestRate(
+        address token,
+        uint256 borrowWei,
+        uint256 supplyWei
+    )
+    external
+    view
+    returns (Interest.Rate memory);
 }
 
 // File: contracts/protocol/lib/Storage.sol
@@ -2702,6 +3510,7 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title Storage
  * @author dYdX
@@ -2720,8 +3529,6 @@ library Storage {
     // ============ Constants ============
 
     bytes32 internal constant FILE = "Storage";
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Structs ============
 
@@ -2827,9 +3634,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (address)
+    internal
+    view
+    returns (address)
     {
         return state.markets[marketId].token;
     }
@@ -2838,9 +3645,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.TotalPar memory)
+    internal
+    view
+    returns (Types.TotalPar memory)
     {
         return state.markets[marketId].totalPar;
     }
@@ -2849,9 +3656,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Interest.Index memory)
+    internal
+    view
+    returns (Interest.Index memory)
     {
         return state.markets[marketId].index;
     }
@@ -2860,9 +3667,9 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Wei memory)
+    internal
+    view
+    returns (Types.Wei memory)
     {
         Interest.Index memory index = state.getIndex(marketId);
         Types.TotalPar memory totalPar = state.getTotalPar(marketId);
@@ -2870,13 +3677,13 @@ library Storage {
         address token = state.getToken(marketId);
 
         Types.Wei memory balanceWei = Types.Wei({
-            sign: true,
-            value: IERC20Detailed(token).balanceOf(address(this))
+        sign: true,
+        value: IERC20Detailed(token).balanceOf(address(this))
         });
 
         (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
         // borrowWei is negative, so subtracting it makes the value more positive
@@ -2887,9 +3694,9 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account
     )
-        internal
-        view
-        returns (Account.Status)
+    internal
+    view
+    returns (Account.Status)
     {
         return state.accounts[account.owner][account.number].status;
     }
@@ -2899,9 +3706,9 @@ library Storage {
         Account.Info memory account,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Par memory)
+    internal
+    view
+    returns (Types.Par memory)
     {
         return state.accounts[account.owner][account.number].balances[marketId];
     }
@@ -2911,9 +3718,9 @@ library Storage {
         Account.Info memory account,
         uint256 marketId
     )
-        internal
-        view
-        returns (Types.Wei memory)
+    internal
+    view
+    returns (Types.Wei memory)
     {
         Types.Par memory par = state.getPar(account, marketId);
 
@@ -2963,15 +3770,15 @@ library Storage {
         uint256 heldMarketId,
         uint256 owedMarketId
     )
-        internal
-        view
-        returns (Decimal.D256 memory)
+    internal
+    view
+    returns (Decimal.D256 memory)
     {
         uint256 result = state.riskParams.liquidationSpread.value;
         result = Decimal.mul(result, Decimal.onePlus(state.markets[heldMarketId].spreadPremium));
         result = Decimal.mul(result, Decimal.onePlus(state.markets[owedMarketId].spreadPremium));
         return Decimal.D256({
-            value: result
+        value: result
         });
     }
 
@@ -2980,9 +3787,9 @@ library Storage {
         uint256 marketId,
         Interest.Index memory index
     )
-        internal
-        view
-        returns (Interest.Index memory)
+    internal
+    view
+    returns (Interest.Index memory)
     {
         Interest.Rate memory rate = state.fetchInterestRate(marketId, index);
 
@@ -2999,14 +3806,14 @@ library Storage {
         uint256 marketId,
         Interest.Index memory index
     )
-        internal
-        view
-        returns (Interest.Rate memory)
+    internal
+    view
+    returns (Interest.Rate memory)
     {
         Types.TotalPar memory totalPar = state.getTotalPar(marketId);
         (
-            Types.Wei memory supplyWei,
-            Types.Wei memory borrowWei
+        Types.Wei memory supplyWei,
+        Types.Wei memory borrowWei
         ) = Interest.totalParToWei(totalPar, index);
 
         Interest.Rate memory rate = state.markets[marketId].interestSetter.getInterestRate(
@@ -3023,9 +3830,9 @@ library Storage {
         uint256 marketId,
         address token
     )
-        internal
-        view
-        returns (Monetary.Price memory)
+    internal
+    view
+    returns (Monetary.Price memory)
     {
         IPriceOracle oracle = IPriceOracle(state.markets[marketId].priceOracle);
         Monetary.Price memory price = oracle.getPrice(token);
@@ -3044,9 +3851,9 @@ library Storage {
         Cache.MarketCache memory cache,
         bool adjustForLiquidity
     )
-        internal
-        view
-        returns (Monetary.Value memory, Monetary.Value memory)
+    internal
+    view
+    returns (Monetary.Value memory, Monetary.Value memory)
     {
         Monetary.Value memory supplyValue;
         Monetary.Value memory borrowValue;
@@ -3081,9 +3888,9 @@ library Storage {
         Cache.MarketCache memory cache,
         bool requireMinBorrow
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         if (state.getNumberOfMarketsWithBorrow(account) == 0) {
             // The user does not have a balance with a borrow amount, so they must be collateralized
@@ -3092,8 +3899,8 @@ library Storage {
 
         // get account values (adjusted for liquidity)
         (
-            Monetary.Value memory supplyValue,
-            Monetary.Value memory borrowValue
+        Monetary.Value memory supplyValue,
+        Monetary.Value memory borrowValue
         ) = state.getAccountValues(account, cache, /* adjustForLiquidity = */ true);
 
         if (borrowValue.value == 0) {
@@ -3119,9 +3926,9 @@ library Storage {
         Storage.State storage state,
         address operator
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         return state.globalOperators[operator];
     }
@@ -3131,9 +3938,9 @@ library Storage {
         address owner,
         address operator
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         return state.operators[owner][operator];
     }
@@ -3142,8 +3949,8 @@ library Storage {
         Storage.State storage state,
         address operator
     )
-        internal
-        view
+    internal
+    view
     {
         bool isValidOperator = state.isGlobalOperator(operator);
 
@@ -3160,13 +3967,13 @@ library Storage {
         Account.Info memory account,
         address operator
     )
-        internal
-        view
+    internal
+    view
     {
         bool isValidOperator =
-            operator == account.owner
-            || state.isGlobalOperator(operator)
-            || state.isLocalOperator(account.owner, operator);
+        operator == account.owner
+        || state.isGlobalOperator(operator)
+        || state.isLocalOperator(account.owner, operator);
 
         Require.that(
             isValidOperator,
@@ -3186,9 +3993,9 @@ library Storage {
         uint256 marketId,
         Types.AssetAmount memory amount
     )
-        internal
-        view
-        returns (Types.Par memory, Types.Wei memory)
+    internal
+    view
+    returns (Types.Par memory, Types.Wei memory)
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -3203,8 +4010,8 @@ library Storage {
 
         if (amount.denomination == Types.AssetDenomination.Wei) {
             deltaWei = Types.Wei({
-                sign: amount.sign,
-                value: amount.value
+            sign: amount.sign,
+            value: amount.value
             });
             if (amount.ref == Types.AssetReference.Target) {
                 deltaWei = deltaWei.sub(oldWei);
@@ -3212,8 +4019,8 @@ library Storage {
             newPar = Interest.weiToPar(oldWei.add(deltaWei), index);
         } else { // AssetDenomination.Par
             newPar = Types.Par({
-                sign: amount.sign,
-                value: amount.value.to128()
+            sign: amount.sign,
+            value: amount.value.to128()
             });
             if (amount.ref == Types.AssetReference.Delta) {
                 newPar = oldPar.add(newPar);
@@ -3230,9 +4037,9 @@ library Storage {
         uint256 marketId,
         Types.AssetAmount memory amount
     )
-        internal
-        view
-        returns (Types.Par memory, Types.Wei memory)
+    internal
+    view
+    returns (Types.Par memory, Types.Wei memory)
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -3245,8 +4052,8 @@ library Storage {
         );
 
         (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
+        Types.Par memory newPar,
+        Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             account,
             marketId,
@@ -3280,9 +4087,9 @@ library Storage {
         Account.Info memory account,
         Cache.MarketCache memory cache
     )
-        internal
-        view
-        returns (bool)
+    internal
+    view
+    returns (bool)
     {
         bool hasNegative = false;
         uint256 numMarkets = cache.getNumMarkets();
@@ -3305,8 +4112,8 @@ library Storage {
         Storage.State storage state,
         uint256 marketId
     )
-        internal
-        returns (Interest.Index memory)
+    internal
+    returns (Interest.Index memory)
     {
         Interest.Index memory index = state.getIndex(marketId);
         if (index.lastUpdate == Time.currentTime()) {
@@ -3320,7 +4127,7 @@ library Storage {
         Account.Info memory account,
         Account.Status status
     )
-        internal
+    internal
     {
         state.accounts[account.owner][account.number].status = status;
     }
@@ -3331,7 +4138,7 @@ library Storage {
         uint256 marketId,
         Types.Par memory newPar
     )
-        internal
+    internal
     {
         Types.Par memory oldPar = state.getPar(account, marketId);
 
@@ -3386,7 +4193,7 @@ library Storage {
         uint256 marketId,
         Types.Wei memory deltaWei
     )
-        internal
+    internal
     {
         if (deltaWei.isZero()) {
             return;
@@ -3415,8 +4222,8 @@ library Storage {
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];
             while (bitmap != 0) {
-                uint nextSetBit = Cache.getLeastSignificantBit(bitmap);
-                uint marketId = (MAX_UINT_BITS * i) + nextSetBit;
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
@@ -3438,7 +4245,7 @@ library Storage {
                 }
 
                 // unset the set bit
-                bitmap = bitmap - (ONE << nextSetBit);
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
             }
             if (counter == cache.marketsLength) {
                 break;
@@ -3452,6 +4259,470 @@ library Storage {
             cache.marketsLength,
             cache.markets.length
         );
+    }
+}
+
+// File: contracts/protocol/lib/Events.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+
+
+/**
+ * @title Events
+ * @author dYdX
+ *
+ * Library to parse and emit logs from which the state of all accounts and indexes can be followed
+ */
+library Events {
+    using Types for Types.Wei;
+    using Storage for Storage.State;
+
+    // ============ Events ============
+
+    event LogIndexUpdate(
+        uint256 indexed market,
+        Interest.Index index
+    );
+
+    event LogOperation(
+        address sender
+    );
+
+    event LogDeposit(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
+        BalanceUpdate update,
+        address from
+    );
+
+    event LogWithdraw(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 market,
+        BalanceUpdate update,
+        address to
+    );
+
+    event LogTransfer(
+        address indexed accountOneOwner,
+        uint256 accountOneNumber,
+        address indexed accountTwoOwner,
+        uint256 accountTwoNumber,
+        uint256 market,
+        BalanceUpdate updateOne,
+        BalanceUpdate updateTwo
+    );
+
+    event LogBuy(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
+        BalanceUpdate takerUpdate,
+        BalanceUpdate makerUpdate,
+        address exchangeWrapper
+    );
+
+    event LogSell(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        uint256 takerMarket,
+        uint256 makerMarket,
+        BalanceUpdate takerUpdate,
+        BalanceUpdate makerUpdate,
+        address exchangeWrapper
+    );
+
+    event LogTrade(
+        address indexed takerAccountOwner,
+        uint256 takerAccountNumber,
+        address indexed makerAccountOwner,
+        uint256 makerAccountNumber,
+        uint256 inputMarket,
+        uint256 outputMarket,
+        BalanceUpdate takerInputUpdate,
+        BalanceUpdate takerOutputUpdate,
+        BalanceUpdate makerInputUpdate,
+        BalanceUpdate makerOutputUpdate,
+        address autoTrader
+    );
+
+    event LogCall(
+        address indexed accountOwner,
+        uint256 accountNumber,
+        address callee
+    );
+
+    event LogLiquidate(
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed liquidAccountOwner,
+        uint256 liquidAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
+        BalanceUpdate solidHeldUpdate,
+        BalanceUpdate solidOwedUpdate,
+        BalanceUpdate liquidHeldUpdate,
+        BalanceUpdate liquidOwedUpdate
+    );
+
+    event LogVaporize(
+        address indexed solidAccountOwner,
+        uint256 solidAccountNumber,
+        address indexed vaporAccountOwner,
+        uint256 vaporAccountNumber,
+        uint256 heldMarket,
+        uint256 owedMarket,
+        BalanceUpdate solidHeldUpdate,
+        BalanceUpdate solidOwedUpdate,
+        BalanceUpdate vaporOwedUpdate
+    );
+
+    // ============ Structs ============
+
+    struct BalanceUpdate {
+        Types.Wei deltaWei;
+        Types.Par newPar;
+    }
+
+    // ============ Internal Functions ============
+
+    function logIndexUpdate(
+        uint256 marketId,
+        Interest.Index memory index
+    )
+    internal
+    {
+        emit LogIndexUpdate(
+            marketId,
+            index
+        );
+    }
+
+    function logOperation()
+    internal
+    {
+        emit LogOperation(msg.sender);
+    }
+
+    function logDeposit(
+        Storage.State storage state,
+        Actions.DepositArgs memory args,
+        Types.Wei memory deltaWei
+    )
+    internal
+    {
+        emit LogDeposit(
+            args.account.owner,
+            args.account.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.market,
+                deltaWei
+            ),
+            args.from
+        );
+    }
+
+    function logWithdraw(
+        Storage.State storage state,
+        Actions.WithdrawArgs memory args,
+        Types.Wei memory deltaWei
+    )
+    internal
+    {
+        emit LogWithdraw(
+            args.account.owner,
+            args.account.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.market,
+                deltaWei
+            ),
+            args.to
+        );
+    }
+
+    function logTransfer(
+        Storage.State storage state,
+        Actions.TransferArgs memory args,
+        Types.Wei memory deltaWei
+    )
+    internal
+    {
+        emit LogTransfer(
+            args.accountOne.owner,
+            args.accountOne.number,
+            args.accountTwo.owner,
+            args.accountTwo.number,
+            args.market,
+            getBalanceUpdate(
+                state,
+                args.accountOne,
+                args.market,
+                deltaWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.accountTwo,
+                args.market,
+                deltaWei.negative()
+            )
+        );
+    }
+
+    function logBuy(
+        Storage.State storage state,
+        Actions.BuyArgs memory args,
+        Types.Wei memory takerWei,
+        Types.Wei memory makerWei
+    )
+    internal
+    {
+        emit LogBuy(
+            args.account.owner,
+            args.account.number,
+            args.takerMarket,
+            args.makerMarket,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.takerMarket,
+                takerWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.makerMarket,
+                makerWei
+            ),
+            args.exchangeWrapper
+        );
+    }
+
+    function logSell(
+        Storage.State storage state,
+        Actions.SellArgs memory args,
+        Types.Wei memory takerWei,
+        Types.Wei memory makerWei
+    )
+    internal
+    {
+        emit LogSell(
+            args.account.owner,
+            args.account.number,
+            args.takerMarket,
+            args.makerMarket,
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.takerMarket,
+                takerWei
+            ),
+            getBalanceUpdate(
+                state,
+                args.account,
+                args.makerMarket,
+                makerWei
+            ),
+            args.exchangeWrapper
+        );
+    }
+
+    function logTrade(
+        Storage.State storage state,
+        Actions.TradeArgs memory args,
+        Types.Wei memory inputWei,
+        Types.Wei memory outputWei
+    )
+    internal
+    {
+        BalanceUpdate[4] memory updates = [
+        getBalanceUpdate(
+            state,
+            args.takerAccount,
+            args.inputMarket,
+            inputWei.negative()
+        ),
+        getBalanceUpdate(
+            state,
+            args.takerAccount,
+            args.outputMarket,
+            outputWei.negative()
+        ),
+        getBalanceUpdate(
+            state,
+            args.makerAccount,
+            args.inputMarket,
+            inputWei
+        ),
+        getBalanceUpdate(
+            state,
+            args.makerAccount,
+            args.outputMarket,
+            outputWei
+        )
+        ];
+
+        emit          LogTrade(
+            args.takerAccount.owner,
+            args.takerAccount.number,
+            args.makerAccount.owner,
+            args.makerAccount.number,
+            args.inputMarket,
+            args.outputMarket,
+            updates[0],
+            updates[1],
+            updates[2],
+            updates[3],
+            args.autoTrader
+        );
+    }
+
+    function logCall(
+        Actions.CallArgs memory args
+    )
+    internal
+    {
+        emit LogCall(
+            args.account.owner,
+            args.account.number,
+            args.callee
+        );
+    }
+
+    function logLiquidate(
+        Storage.State storage state,
+        Actions.LiquidateArgs memory args,
+        Types.Wei memory heldWei,
+        Types.Wei memory owedWei
+    )
+    internal
+    {
+        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
+            state,
+            args.liquidAccount,
+            args.heldMarket,
+            heldWei
+        );
+        BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
+            state,
+            args.liquidAccount,
+            args.owedMarket,
+            owedWei
+        );
+
+        emit LogLiquidate(
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.liquidAccount.owner,
+            args.liquidAccount.number,
+            args.heldMarket,
+            args.owedMarket,
+            solidHeldUpdate,
+            solidOwedUpdate,
+            liquidHeldUpdate,
+            liquidOwedUpdate
+        );
+    }
+
+    function logVaporize(
+        Storage.State storage state,
+        Actions.VaporizeArgs memory args,
+        Types.Wei memory heldWei,
+        Types.Wei memory owedWei,
+        Types.Wei memory excessWei
+    )
+    internal
+    {
+        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.heldMarket,
+            heldWei.negative()
+        );
+        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
+            state,
+            args.solidAccount,
+            args.owedMarket,
+            owedWei.negative()
+        );
+        BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
+            state,
+            args.vaporAccount,
+            args.owedMarket,
+            owedWei.add(excessWei)
+        );
+
+        emit LogVaporize(
+            args.solidAccount.owner,
+            args.solidAccount.number,
+            args.vaporAccount.owner,
+            args.vaporAccount.number,
+            args.heldMarket,
+            args.owedMarket,
+            solidHeldUpdate,
+            solidOwedUpdate,
+            vaporOwedUpdate
+        );
+    }
+
+    // ============ Private Functions ============
+
+    function getBalanceUpdate(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 market,
+        Types.Wei memory deltaWei
+    )
+    private
+    view
+    returns (BalanceUpdate memory)
+    {
+        return BalanceUpdate({
+        deltaWei: deltaWei,
+        newPar: state.getPar(account, market)
+        });
     }
 }
 
@@ -3923,1206 +5194,6 @@ interface IDolomiteMargin {
 
 }
 
-// File: contracts/external/interfaces/IExpiry.sol
-
-/*
-
-    Copyright 2021 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-/**
- * @title IExpiry
- * @author Dolomite
- */
-contract IExpiry {
-
-    // ============ Enums ============
-
-    enum CallFunctionType {
-        SetExpiry,
-        SetApproval
-    }
-
-    // ============ Structs ============
-
-    struct SetExpiryArg {
-        Account.Info account;
-        uint256 marketId;
-        uint32 timeDelta;
-        bool forceUpdate;
-    }
-
-    struct SetApprovalArg {
-        address sender;
-        uint32 minTimeDelta;
-    }
-
-    function getSpreadAdjustedPrices(
-        uint256 heldMarketId,
-        uint256 owedMarketId,
-        uint32 expiry
-    )
-        public
-        view
-        returns (Monetary.Price memory heldPrice, Monetary.Price memory owedPriceAdj);
-
-}
-
-// File: contracts/protocol/lib/Events.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-
-
-
-
-/**
- * @title Events
- * @author dYdX
- *
- * Library to parse and emit logs from which the state of all accounts and indexes can be followed
- */
-library Events {
-    using Types for Types.Wei;
-    using Storage for Storage.State;
-
-    // ============ Events ============
-
-    event LogIndexUpdate(
-        uint256 indexed market,
-        Interest.Index index
-    );
-
-    event LogOperation(
-        address sender
-    );
-
-    event LogDeposit(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 market,
-        BalanceUpdate update,
-        address from
-    );
-
-    event LogWithdraw(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 market,
-        BalanceUpdate update,
-        address to
-    );
-
-    event LogTransfer(
-        address indexed accountOneOwner,
-        uint256 accountOneNumber,
-        address indexed accountTwoOwner,
-        uint256 accountTwoNumber,
-        uint256 market,
-        BalanceUpdate updateOne,
-        BalanceUpdate updateTwo
-    );
-
-    event LogBuy(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 takerMarket,
-        uint256 makerMarket,
-        BalanceUpdate takerUpdate,
-        BalanceUpdate makerUpdate,
-        address exchangeWrapper
-    );
-
-    event LogSell(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        uint256 takerMarket,
-        uint256 makerMarket,
-        BalanceUpdate takerUpdate,
-        BalanceUpdate makerUpdate,
-        address exchangeWrapper
-    );
-
-    event LogTrade(
-        address indexed takerAccountOwner,
-        uint256 takerAccountNumber,
-        address indexed makerAccountOwner,
-        uint256 makerAccountNumber,
-        uint256 inputMarket,
-        uint256 outputMarket,
-        BalanceUpdate takerInputUpdate,
-        BalanceUpdate takerOutputUpdate,
-        BalanceUpdate makerInputUpdate,
-        BalanceUpdate makerOutputUpdate,
-        address autoTrader
-    );
-
-    event LogCall(
-        address indexed accountOwner,
-        uint256 accountNumber,
-        address callee
-    );
-
-    event LogLiquidate(
-        address indexed solidAccountOwner,
-        uint256 solidAccountNumber,
-        address indexed liquidAccountOwner,
-        uint256 liquidAccountNumber,
-        uint256 heldMarket,
-        uint256 owedMarket,
-        BalanceUpdate solidHeldUpdate,
-        BalanceUpdate solidOwedUpdate,
-        BalanceUpdate liquidHeldUpdate,
-        BalanceUpdate liquidOwedUpdate
-    );
-
-    event LogVaporize(
-        address indexed solidAccountOwner,
-        uint256 solidAccountNumber,
-        address indexed vaporAccountOwner,
-        uint256 vaporAccountNumber,
-        uint256 heldMarket,
-        uint256 owedMarket,
-        BalanceUpdate solidHeldUpdate,
-        BalanceUpdate solidOwedUpdate,
-        BalanceUpdate vaporOwedUpdate
-    );
-
-    // ============ Structs ============
-
-    struct BalanceUpdate {
-        Types.Wei deltaWei;
-        Types.Par newPar;
-    }
-
-    // ============ Internal Functions ============
-
-    function logIndexUpdate(
-        uint256 marketId,
-        Interest.Index memory index
-    )
-        internal
-    {
-        emit LogIndexUpdate(
-            marketId,
-            index
-        );
-    }
-
-    function logOperation()
-        internal
-    {
-        emit LogOperation(msg.sender);
-    }
-
-    function logDeposit(
-        Storage.State storage state,
-        Actions.DepositArgs memory args,
-        Types.Wei memory deltaWei
-    )
-        internal
-    {
-        emit LogDeposit(
-            args.account.owner,
-            args.account.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.market,
-                deltaWei
-            ),
-            args.from
-        );
-    }
-
-    function logWithdraw(
-        Storage.State storage state,
-        Actions.WithdrawArgs memory args,
-        Types.Wei memory deltaWei
-    )
-        internal
-    {
-        emit LogWithdraw(
-            args.account.owner,
-            args.account.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.market,
-                deltaWei
-            ),
-            args.to
-        );
-    }
-
-    function logTransfer(
-        Storage.State storage state,
-        Actions.TransferArgs memory args,
-        Types.Wei memory deltaWei
-    )
-        internal
-    {
-        emit LogTransfer(
-            args.accountOne.owner,
-            args.accountOne.number,
-            args.accountTwo.owner,
-            args.accountTwo.number,
-            args.market,
-            getBalanceUpdate(
-                state,
-                args.accountOne,
-                args.market,
-                deltaWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.accountTwo,
-                args.market,
-                deltaWei.negative()
-            )
-        );
-    }
-
-    function logBuy(
-        Storage.State storage state,
-        Actions.BuyArgs memory args,
-        Types.Wei memory takerWei,
-        Types.Wei memory makerWei
-    )
-        internal
-    {
-        emit LogBuy(
-            args.account.owner,
-            args.account.number,
-            args.takerMarket,
-            args.makerMarket,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.takerMarket,
-                takerWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.makerMarket,
-                makerWei
-            ),
-            args.exchangeWrapper
-        );
-    }
-
-    function logSell(
-        Storage.State storage state,
-        Actions.SellArgs memory args,
-        Types.Wei memory takerWei,
-        Types.Wei memory makerWei
-    )
-        internal
-    {
-        emit LogSell(
-            args.account.owner,
-            args.account.number,
-            args.takerMarket,
-            args.makerMarket,
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.takerMarket,
-                takerWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.account,
-                args.makerMarket,
-                makerWei
-            ),
-            args.exchangeWrapper
-        );
-    }
-
-    function logTrade(
-        Storage.State storage state,
-        Actions.TradeArgs memory args,
-        Types.Wei memory inputWei,
-        Types.Wei memory outputWei
-    )
-        internal
-    {
-        BalanceUpdate[4] memory updates = [
-            getBalanceUpdate(
-                state,
-                args.takerAccount,
-                args.inputMarket,
-                inputWei.negative()
-            ),
-            getBalanceUpdate(
-                state,
-                args.takerAccount,
-                args.outputMarket,
-                outputWei.negative()
-            ),
-            getBalanceUpdate(
-                state,
-                args.makerAccount,
-                args.inputMarket,
-                inputWei
-            ),
-            getBalanceUpdate(
-                state,
-                args.makerAccount,
-                args.outputMarket,
-                outputWei
-            )
-        ];
-
-        emit          LogTrade(
-            args.takerAccount.owner,
-            args.takerAccount.number,
-            args.makerAccount.owner,
-            args.makerAccount.number,
-            args.inputMarket,
-            args.outputMarket,
-            updates[0],
-            updates[1],
-            updates[2],
-            updates[3],
-            args.autoTrader
-        );
-    }
-
-    function logCall(
-        Actions.CallArgs memory args
-    )
-        internal
-    {
-        emit LogCall(
-            args.account.owner,
-            args.account.number,
-            args.callee
-        );
-    }
-
-    function logLiquidate(
-        Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Types.Wei memory heldWei,
-        Types.Wei memory owedWei
-    )
-        internal
-    {
-        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        BalanceUpdate memory liquidHeldUpdate = getBalanceUpdate(
-            state,
-            args.liquidAccount,
-            args.heldMarket,
-            heldWei
-        );
-        BalanceUpdate memory liquidOwedUpdate = getBalanceUpdate(
-            state,
-            args.liquidAccount,
-            args.owedMarket,
-            owedWei
-        );
-
-        emit LogLiquidate(
-            args.solidAccount.owner,
-            args.solidAccount.number,
-            args.liquidAccount.owner,
-            args.liquidAccount.number,
-            args.heldMarket,
-            args.owedMarket,
-            solidHeldUpdate,
-            solidOwedUpdate,
-            liquidHeldUpdate,
-            liquidOwedUpdate
-        );
-    }
-
-    function logVaporize(
-        Storage.State storage state,
-        Actions.VaporizeArgs memory args,
-        Types.Wei memory heldWei,
-        Types.Wei memory owedWei,
-        Types.Wei memory excessWei
-    )
-        internal
-    {
-        BalanceUpdate memory solidHeldUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.heldMarket,
-            heldWei.negative()
-        );
-        BalanceUpdate memory solidOwedUpdate = getBalanceUpdate(
-            state,
-            args.solidAccount,
-            args.owedMarket,
-            owedWei.negative()
-        );
-        BalanceUpdate memory vaporOwedUpdate = getBalanceUpdate(
-            state,
-            args.vaporAccount,
-            args.owedMarket,
-            owedWei.add(excessWei)
-        );
-
-        emit LogVaporize(
-            args.solidAccount.owner,
-            args.solidAccount.number,
-            args.vaporAccount.owner,
-            args.vaporAccount.number,
-            args.heldMarket,
-            args.owedMarket,
-            solidHeldUpdate,
-            solidOwedUpdate,
-            vaporOwedUpdate
-        );
-    }
-
-    // ============ Private Functions ============
-
-    function getBalanceUpdate(
-        Storage.State storage state,
-        Account.Info memory account,
-        uint256 market,
-        Types.Wei memory deltaWei
-    )
-        private
-        view
-        returns (BalanceUpdate memory)
-    {
-        return BalanceUpdate({
-            deltaWei: deltaWei,
-            newPar: state.getPar(account, market)
-        });
-    }
-}
-
-// File: contracts/external/lib/TypedSignature.sol
-
-/*
-
-    Copyright 2019 dYdX Trading Inc.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity ^0.5.7;
-
-
-
-/**
- * @title TypedSignature
- * @author dYdX
- *
- * Library to unparse typed signatures
- */
-library TypedSignature {
-
-    // ============ Constants ============
-
-    bytes32 constant private FILE = "TypedSignature";
-
-    // prepended message with the length of the signed hash in decimal
-    bytes constant private PREPEND_DEC = "\x19Ethereum Signed Message:\n32";
-
-    // prepended message with the length of the signed hash in hexadecimal
-    bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";
-
-    // Number of bytes in a typed signature
-    uint256 constant private NUM_SIGNATURE_BYTES = 66;
-
-    // ============ Enums ============
-
-    // Different RPC providers may implement signing methods differently, so we allow different
-    // signature types depending on the string prepended to a hash before it was signed.
-    enum SignatureType {
-        NoPrepend,   // No string was prepended.
-        Decimal,     // PREPEND_DEC was prepended.
-        Hexadecimal, // PREPEND_HEX was prepended.
-        Invalid      // Not a valid type. Used for bound-checking.
-    }
-
-    // ============ Functions ============
-
-    /**
-     * Gives the address of the signer of a hash. Also allows for the commonly prepended string of
-     * '\x19Ethereum Signed Message:\n' + message.length
-     *
-     * @param  hash               Hash that was signed (does not include prepended message)
-     * @param  signatureWithType  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}
-     * @return                    address of the signer of the hash
-     */
-    function recover(
-        bytes32 hash,
-        bytes memory signatureWithType
-    )
-        internal
-        pure
-        returns (address)
-    {
-        Require.that(
-            signatureWithType.length == NUM_SIGNATURE_BYTES,
-            FILE,
-            "Invalid signature length"
-        );
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        uint8 rawSigType;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            r := mload(add(signatureWithType, 0x20))
-            s := mload(add(signatureWithType, 0x40))
-            let lastSlot := mload(add(signatureWithType, 0x60))
-            v := byte(0, lastSlot)
-            rawSigType := byte(1, lastSlot)
-        }
-
-        Require.that(
-            rawSigType < uint8(SignatureType.Invalid),
-            FILE,
-            "Invalid signature type"
-        );
-
-        SignatureType sigType = SignatureType(rawSigType);
-
-        bytes32 signedHash;
-        if (sigType == SignatureType.NoPrepend) {
-            signedHash = hash;
-        } else if (sigType == SignatureType.Decimal) {
-            signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
-        } else {
-            assert(sigType == SignatureType.Hexadecimal);
-            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
-        }
-
-        return ecrecover(
-            signedHash,
-            v,
-            r,
-            s
-        );
-    }
-}
-
-// File: contracts/external/uniswap-v2/interfaces/IUniswapV2Pair.sol
-
-pragma solidity >=0.5.0;
-
-interface IUniswapV2Pair {
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    function name() external pure returns (string memory);
-    function symbol() external pure returns (string memory);
-    function decimals() external pure returns (uint8);
-    function totalSupply() external view returns (uint);
-    function balanceOf(address owner) external view returns (uint);
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function approve(address spender, uint value) external returns (bool);
-    function transfer(address to, uint value) external returns (bool);
-    function transferFrom(address from, address to, uint value) external returns (bool);
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
-    function nonces(address owner) external view returns (uint);
-
-    function permit(
-        address owner,
-        address spender,
-        uint value,
-        uint deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    )
-        external;
-
-    event Mint(address indexed sender, uint amount0, uint amount1);
-    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
-    event Swap(
-        address indexed sender,
-        uint amount0In,
-        uint amount1In,
-        uint amount0Out,
-        uint amount1Out,
-        address indexed to
-    );
-    event Sync(uint112 reserve0, uint112 reserve1);
-
-    function MINIMUM_LIQUIDITY() external pure returns (uint);
-    function factory() external view returns (address);
-    function token0() external view returns (address);
-    function token1() external view returns (address);
-    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function price0CumulativeLast() external view returns (uint);
-    function price1CumulativeLast() external view returns (uint);
-    function kLast() external view returns (uint);
-
-    function mint(address to) external returns (uint liquidity);
-    function burn(address to) external returns (uint amount0, uint amount1);
-    function swap(
-        uint amount0Out,
-        uint amount1Out,
-        address to,
-        bytes calldata data
-    )
-        external;
-    function skim(address to) external;
-    function sync() external;
-
-    function initialize(address, address) external;
-}
-
-// File: contracts/external/interfaces/IDolomiteAmmFactory.sol
-
-/*
-
-    Copyright 2021 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity >=0.5.0;
-
-
-
-interface IDolomiteAmmFactory {
-
-    function feeTo() external view returns (address);
-    function feeToSetter() external view returns (address);
-    function dolomiteMargin() external view returns (address);
-
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
-    function allPairs(uint) external view returns (address pair);
-    function allPairsLength() external view returns (uint);
-    function getPairInitCode() external pure returns (bytes memory);
-    function getPairInitCodeHash() external pure returns (bytes32);
-
-    function createPair(address tokenA, address tokenB) external returns (address pair);
-
-    function setFeeTo(address) external;
-    function setFeeToSetter(address) external;
-
-}
-
-// File: contracts/external/interfaces/IDolomiteAmmPair.sol
-
-/*
-
-    Copyright 2021 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity >=0.5.0;
-
-
-
-interface IDolomiteAmmPair {
-
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    function name() external view returns (string memory);
-
-    function symbol() external view returns (string memory);
-
-    function decimals() external pure returns (uint8);
-
-    function totalSupply() external view returns (uint);
-
-    function balanceOf(address owner) external view returns (uint);
-
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function approve(address spender, uint value) external returns (bool);
-
-    function transfer(address to, uint value) external returns (bool);
-
-    function transferFrom(address from, address to, uint value) external returns (bool);
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
-
-    function nonces(address owner) external view returns (uint);
-
-    function permit(
-        address owner,
-        address spender,
-        uint value,
-        uint deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    event Mint(address indexed sender, uint amount0Wei, uint amount1Wei);
-    event Burn(address indexed sender, uint amount0Wei, uint amount1Wei, address indexed to);
-    event Swap(
-        address indexed sender,
-        uint amount0In,
-        uint amount1In,
-        uint amount0Out,
-        uint amount1Out,
-        address indexed to
-    );
-    event Sync(uint112 reserve0, uint112 reserve1);
-
-    function MINIMUM_LIQUIDITY() external pure returns (uint);
-
-    function factory() external view returns (address);
-
-    function token0() external view returns (address);
-
-    function token1() external view returns (address);
-
-    function getReservesWei() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-
-    function getReservesPar() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-
-    function price0CumulativeLast() external view returns (uint);
-
-    function price1CumulativeLast() external view returns (uint);
-
-    function kLast() external view returns (uint);
-
-    function mint(address to) external returns (uint liquidity);
-
-    function burn(address to, uint toAccountNumber) external returns (uint amount0Wei, uint amount1Wei);
-
-    function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        Account.Info calldata makerAccount,
-        Account.Info calldata takerAccount,
-        Types.Par calldata,
-        Types.Par calldata,
-        Types.Wei calldata inputWei,
-        bytes calldata data
-    )
-    external
-    returns (Types.AssetAmount memory);
-
-    function skim(address to, uint toAccountNumber) external;
-
-    function sync() external;
-
-    function initialize(address _token0, address _token1, address _transferProxy) external;
-}
-
-// File: contracts/external/lib/DolomiteAmmLibrary.sol
-
-/*
-
-    Copyright 2021 Dolomite.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-*/
-
-pragma solidity >=0.5.0;
-
-
-
-
-
-
-
-library DolomiteAmmLibrary {
-    using SafeMath for uint;
-
-    bytes32 private constant FILE = "DolomiteAmmLibrary";
-    bytes32 private constant PAIR_INIT_CODE_HASH = 0x112eb5146fef1a2cefdb3018a26bc4daac5b84e16aca447ae3a7ed20b28eb831;
-
-    function getPairInitCodeHash() internal pure returns (bytes32) {
-        return PAIR_INIT_CODE_HASH;
-    }
-
-    function getPools(
-        address factory,
-        address[] memory path
-    ) internal pure returns (address[] memory) {
-        return getPools(factory, PAIR_INIT_CODE_HASH, path);
-    }
-
-    function getPools(
-        address factory,
-        bytes32 initCodeHash,
-        address[] memory path
-    ) internal pure returns (address[] memory) {
-        Require.that(
-            path.length >= 2,
-            FILE,
-            "invalid path length"
-        );
-
-        address[] memory pools = new address[](path.length - 1);
-        for (uint i = 0; i < path.length - 1; i++) {
-            pools[i] = pairFor(
-                factory,
-                path[i],
-                path[i + 1],
-                initCodeHash
-            );
-        }
-        return pools;
-    }
-
-    // returns sorted token addresses, used to handle return values from pairs sorted in this order
-    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-        Require.that(
-            tokenA != tokenB,
-            FILE,
-            "identical addresses"
-        );
-        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        Require.that(
-            token0 != address(0),
-            FILE,
-            "zero address"
-        );
-    }
-
-    // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
-        return pairFor(
-            factory,
-            tokenA,
-            tokenB,
-            PAIR_INIT_CODE_HASH
-        );
-    }
-
-    function pairFor(
-        address factory,
-        address tokenA,
-        address tokenB,
-        bytes32 initCodeHash
-    ) internal pure returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(
-            uint(
-                keccak256(
-                    abi.encodePacked(
-                        hex"ff",
-                        factory,
-                        keccak256(abi.encodePacked(token0, token1)),
-                        initCodeHash
-                    )
-                )
-            )
-        );
-    }
-
-    // fetches and sorts the reserves for a pair
-    function getReservesWei(
-        address factory,
-        address tokenA,
-        address tokenB
-    ) internal view returns (uint reserveA, uint reserveB) {
-        return getReservesWei(
-            factory,
-            PAIR_INIT_CODE_HASH,
-            tokenA,
-            tokenB
-        );
-    }
-
-    function getReserves(
-        address factory,
-        bytes32 initCodeHash,
-        address tokenA,
-        address tokenB
-    ) internal view returns (uint reserveA, uint reserveB) {
-        (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IUniswapV2Pair(
-            pairFor(
-                factory,
-                tokenA,
-                tokenB,
-                initCodeHash
-            )
-        ).getReserves();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    function getReservesWei(
-        address factory,
-        bytes32 initCodeHash,
-        address tokenA,
-        address tokenB
-    ) internal view returns (uint reserveA, uint reserveB) {
-        (address token0,) = sortTokens(tokenA, tokenB);
-        (uint reserve0, uint reserve1,) = IDolomiteAmmPair(
-            pairFor(
-                factory,
-                tokenA,
-                tokenB,
-                initCodeHash
-            )
-        ).getReservesWei();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-        Require.that(
-            amountA > 0,
-            FILE,
-            "insufficient amount"
-        );
-        Require.that(
-            reserveA > 0 && reserveB > 0,
-            FILE,
-            "insufficient liquidity"
-        );
-        amountB = amountA.mul(reserveB) / reserveA;
-    }
-
-    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
-        Require.that(
-            amountIn > 0,
-            FILE,
-            "insufficient input amount"
-        );
-        Require.that(
-            reserveIn > 0 && reserveOut > 0,
-            FILE,
-            "insufficient liquidity"
-        );
-        uint amountInWithFee = amountIn.mul(997);
-        uint numerator = amountInWithFee.mul(reserveOut);
-        uint denominator = reserveIn.mul(1000).add(amountInWithFee);
-        amountOut = numerator / denominator;
-    }
-
-    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
-        Require.that(
-            amountOut > 0,
-            FILE,
-            "insufficient output amount"
-        );
-        Require.that(
-            reserveIn > 0 && reserveOut > 0,
-            FILE,
-            "insufficient liquidity"
-        );
-        uint numerator = reserveIn.mul(amountOut).mul(1000);
-        uint denominator = reserveOut.sub(amountOut).mul(997);
-        // reverts from the 'sub'
-        amountIn = numerator.div(denominator).add(1);
-    }
-
-    // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOutWei(
-        address factory,
-        uint amountIn,
-        address[] memory path
-    ) internal view returns (uint[] memory amounts) {
-        Require.that(
-            path.length >= 2,
-            FILE,
-            "invalid path"
-        );
-        amounts = new uint[](path.length);
-        amounts[0] = amountIn;
-        for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
-        }
-    }
-
-    // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOutWei(
-        address factory,
-        bytes32 initCodeHash,
-        uint amountIn,
-        address[] memory path
-    ) internal view returns (uint[] memory amounts) {
-        Require.that(
-            path.length >= 2,
-            FILE,
-            "invalid path"
-        );
-        amounts = new uint[](path.length);
-        amounts[0] = amountIn;
-        for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(
-                factory,
-                initCodeHash,
-                path[i],
-                path[i + 1]
-            );
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
-        }
-    }
-
-    function getAmountsInWei(
-        address factory,
-        bytes32 initCodeHash,
-        uint amountOut,
-        address[] memory path
-    ) internal view returns (uint[] memory amounts) {
-        Require.that(
-            path.length >= 2,
-            FILE,
-            "invalid path"
-        );
-        amounts = new uint[](path.length);
-        amounts[amounts.length - 1] = amountOut;
-        for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReservesWei(
-                factory,
-                initCodeHash,
-                path[i - 1],
-                path[i]
-            );
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
-        }
-    }
-
-    function getAmountsIn(
-        address factory,
-        bytes32 initCodeHash,
-        uint amountOut,
-        address[] memory path
-    ) internal view returns (uint[] memory amounts) {
-        Require.that(
-            path.length >= 2,
-            FILE,
-            "invalid path"
-        );
-        amounts = new uint[](path.length);
-        amounts[amounts.length - 1] = amountOut;
-        for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReserves(
-                factory,
-                initCodeHash,
-                path[i - 1],
-                path[i]
-            );
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
-        }
-    }
-
-    // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsInWei(
-        address factory,
-        uint amountOut,
-        address[] memory path
-    ) internal view returns (uint[] memory amounts) {
-        return getAmountsInWei(
-            factory,
-            PAIR_INIT_CODE_HASH,
-            amountOut,
-            path
-        );
-    }
-}
-
 // File: contracts/external/proxies/DolomiteAmmRouterProxy.sol
 
 /*
@@ -5311,23 +5382,23 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ensure(deadline) {
         _swapExactTokensForTokensAndModifyPosition(
             ModifyPositionCache({
-                params : ModifyPositionParams({
-                    accountNumber : accountNumber,
-                    amountIn : _defaultAssetAmount(amountInWei),
-                    amountOut : _defaultAssetAmount(amountOutMinWei),
-                    tokenPath : tokenPath,
-                    depositToken : address(0),
-                    isPositiveMarginDeposit : false,
-                    marginDeposit : 0,
-                    expiryTimeDelta : 0
-                }),
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : msg.sender,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0,
+        expiryTimeDelta : 0
+        }),
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5341,23 +5412,23 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
         return _getParamsForSwapExactTokensForTokens(
             ModifyPositionCache({
-                params : ModifyPositionParams({
-                    accountNumber : accountNumber,
-                    amountIn : _defaultAssetAmount(amountInWei),
-                    amountOut : _defaultAssetAmount(amountOutMinWei),
-                    tokenPath : tokenPath,
-                    depositToken : address(0),
-                    isPositiveMarginDeposit : false,
-                    marginDeposit : 0,
-                    expiryTimeDelta : 0
-                }),
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : account,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInWei),
+        amountOut : _defaultAssetAmount(amountOutMinWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0,
+        expiryTimeDelta : 0
+        }),
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5372,23 +5443,23 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ensure(deadline) {
         _swapTokensForExactTokensAndModifyPosition(
             ModifyPositionCache({
-                params : ModifyPositionParams({
-                    accountNumber : accountNumber,
-                    amountIn : _defaultAssetAmount(amountInMaxWei),
-                    amountOut : _defaultAssetAmount(amountOutWei),
-                    tokenPath : tokenPath,
-                    depositToken : address(0),
-                    isPositiveMarginDeposit : false,
-                    marginDeposit : 0,
-                    expiryTimeDelta : 0
-                }),
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : msg.sender,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0,
+        expiryTimeDelta : 0
+        }),
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5402,23 +5473,23 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     external view returns (Account.Info[] memory, Actions.ActionArgs[] memory) {
         return _getParamsForSwapTokensForExactTokens(
             ModifyPositionCache({
-                params : ModifyPositionParams({
-                    accountNumber : accountNumber,
-                    amountIn : _defaultAssetAmount(amountInMaxWei),
-                    amountOut : _defaultAssetAmount(amountOutWei),
-                    tokenPath : tokenPath,
-                    depositToken : address(0),
-                    isPositiveMarginDeposit : false,
-                    marginDeposit : 0,
-                    expiryTimeDelta : 0
-                }),
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : account,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : ModifyPositionParams({
+        accountNumber : accountNumber,
+        amountIn : _defaultAssetAmount(amountInMaxWei),
+        amountOut : _defaultAssetAmount(amountOutWei),
+        tokenPath : tokenPath,
+        depositToken : address(0),
+        isPositiveMarginDeposit : false,
+        marginDeposit : 0,
+        expiryTimeDelta : 0
+        }),
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : account,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5496,14 +5567,14 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public ensure(deadline) {
         _swapExactTokensForTokensAndModifyPosition(
             ModifyPositionCache({
-                params : params,
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : msg.sender,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : params,
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5513,14 +5584,14 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) public ensure(deadline) {
         _swapTokensForExactTokensAndModifyPosition(
             ModifyPositionCache({
-                params : params,
-                dolomiteMargin : DOLOMITE_MARGIN,
-                ammFactory : DOLOMITE_AMM_FACTORY,
-                account : msg.sender,
-                marketPath : new uint[](0),
-                amountsWei : new uint[](0),
-                marginDepositDeltaWei : 0
-            })
+        params : params,
+        dolomiteMargin : DOLOMITE_MARGIN,
+        ammFactory : DOLOMITE_AMM_FACTORY,
+        account : msg.sender,
+        marketPath : new uint[](0),
+        amountsWei : new uint[](0),
+        marginDepositDeltaWei : 0
+        })
         );
     }
 
@@ -5635,7 +5706,7 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
     ) {
         Require.that(
             cache.params.amountIn.ref == Types.AssetReference.Delta &&
-                cache.params.amountOut.ref == Types.AssetReference.Delta,
+            cache.params.amountOut.ref == Types.AssetReference.Delta,
             FILE,
             "invalid asset reference"
         );
@@ -5704,14 +5775,14 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             );
         }
         return Actions.ActionArgs({
-            actionType : Actions.ActionType.Transfer,
-            accountId : fromAccountIndex,
-            amount : assetAmount,
-            primaryMarketId : marketId,
-            secondaryMarketId : uint(- 1),
-            otherAddress : address(0),
-            otherAccountId : toAccountIndex,
-            data : bytes("")
+        actionType : Actions.ActionType.Transfer,
+        accountId : fromAccountIndex,
+        amount : assetAmount,
+        primaryMarketId : marketId,
+        secondaryMarketId : uint(- 1),
+        otherAddress : address(0),
+        otherAccountId : toAccountIndex,
+        data : bytes("")
         });
     }
 
@@ -5736,15 +5807,15 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         });
 
         return Actions.ActionArgs({
-            actionType : Actions.ActionType.Call,
-            accountId : accountIndex,
-            // solium-disable-next-line arg-overflow
-            amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
-            primaryMarketId : uint(- 1),
-            secondaryMarketId : uint(- 1),
-            otherAddress : EXPIRY,
-            otherAccountId : uint(- 1),
-            data : abi.encode(IExpiry.CallFunctionType.SetExpiry, expiryArgs)
+        actionType : Actions.ActionType.Call,
+        accountId : accountIndex,
+        // solium-disable-next-line arg-overflow
+        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
+        primaryMarketId : uint(- 1),
+        secondaryMarketId : uint(- 1),
+        otherAddress : EXPIRY,
+        otherAccountId : uint(- 1),
+        data : abi.encode(IExpiry.CallFunctionType.SetExpiry, expiryArgs)
         });
     }
 
@@ -5758,15 +5829,15 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         uint amountOutWei
     ) internal pure returns (Actions.ActionArgs memory) {
         return Actions.ActionArgs({
-            actionType : Actions.ActionType.Trade,
-            accountId : fromAccountIndex,
-            // solium-disable-next-line arg-overflow
-            amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
-            primaryMarketId : primaryMarketId,
-            secondaryMarketId : secondaryMarketId,
-            otherAddress : traderAddress,
-            otherAccountId : toAccountIndex,
-            data : abi.encode(amountOutWei)
+        actionType : Actions.ActionType.Trade,
+        accountId : fromAccountIndex,
+        // solium-disable-next-line arg-overflow
+        amount : Types.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, amountInWei),
+        primaryMarketId : primaryMarketId,
+        secondaryMarketId : secondaryMarketId,
+        otherAddress : traderAddress,
+        otherAccountId : toAccountIndex,
+        data : abi.encode(amountOutWei)
         });
     }
 
@@ -5860,8 +5931,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
             bool isWithdrawal = !cache.params.isPositiveMarginDeposit;
             // solium-disable indentation
             actions[actions.length - 1 - expiryActionCount] = _encodeTransferAction(
-                /* from */ isWithdrawal ? 0 : accounts.length - 1,
-                /* to */ isWithdrawal ? accounts.length - 1 : 0,
+            /* from */ isWithdrawal ? 0 : accounts.length - 1,
+            /* to */ isWithdrawal ? accounts.length - 1 : 0,
                 cache.dolomiteMargin.getMarketIdByTokenAddress(cache.params.depositToken),
                 cache.params.marginDeposit
             );
@@ -5991,6 +6062,257 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
 }
 
+// File: contracts/external/helpers/LiquidatorProxyHelper.sol
+
+/*
+
+    Copyright 2019 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity ^0.5.7;
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * @title LiquidatorProxyHelper
+ * @author Dolomite
+ *
+ * Inheritable contract that allows sharing code across different liquidator proxy contracts
+ */
+contract LiquidatorProxyHelper {
+    using SafeMath for uint;
+    using Types for Types.Par;
+
+    // ============ Constants ============
+
+    bytes32 private constant FILE = "LiquidatorProxyHelper";
+    uint256 private constant MAX_UINT_BITS = 256;
+    uint256 private constant ONE = 1;
+
+    // ============ Structs ============
+
+    struct MarketInfo {
+        uint256 marketId;
+        Decimal.D256 spreadPremium;
+        Monetary.Price price;
+        Interest.Index index;
+    }
+
+    /**
+     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
+     * the current index will be once updated.
+     */
+    function getAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds
+    )
+    internal
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        return getAccountValues(
+            dolomiteMargin,
+            marketInfos,
+            account,
+            marketIds,
+        /* adjustForSpreadPremiums = */ false // solium-disable-line indentation
+        );
+    }
+
+    /**
+     * Gets the adjusted current total supplyValue and borrowValue for some account. Takes into account what
+     * the current index will be once updated and the spread premium.
+     */
+    function getAdjustedAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds
+    )
+    internal
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        return getAccountValues(
+            dolomiteMargin,
+            marketInfos,
+            account,
+            marketIds,
+        /* adjustForSpreadPremiums = */ true // solium-disable-line indentation
+        );
+    }
+
+    // ============ Internal Functions ============
+
+    function getMarketInfos(
+        IDolomiteMargin dolomiteMargin,
+        uint256[] memory solidMarkets,
+        uint256[] memory liquidMarkets
+    ) internal view returns (MarketInfo[] memory) {
+        uint[] memory marketBitmaps = Bits.createBitmaps(dolomiteMargin.getNumMarkets());
+        uint marketsLength = 0;
+        marketsLength = _addMarketsToBitmap(solidMarkets, marketBitmaps, marketsLength);
+        marketsLength = _addMarketsToBitmap(liquidMarkets, marketBitmaps, marketsLength);
+        //        Require.that(false, FILE, "<marketsLength, bitmap>", marketsLength, marketBitmaps[0]);
+
+        uint counter = 0;
+        MarketInfo[] memory marketInfos = new MarketInfo[](marketsLength);
+        for (uint i = 0; i < marketBitmaps.length; i++) {
+            uint bitmap = marketBitmaps[i];
+            while (bitmap != 0) {
+                uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
+                uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
+
+                marketInfos[counter++] = MarketInfo({
+                marketId: marketId,
+                spreadPremium: dolomiteMargin.getMarketSpreadPremium(marketId),
+                price: dolomiteMargin.getMarketPrice(marketId),
+                index: dolomiteMargin.getMarketCurrentIndex(marketId)
+                });
+
+                // unset the set bit
+                bitmap = Bits.unsetBit(bitmap, nextSetBit);
+            }
+            if (counter == marketsLength) {
+                break;
+            }
+        }
+
+        return marketInfos;
+    }
+
+    function binarySearch(
+        MarketInfo[] memory markets,
+        uint marketId
+    ) internal pure returns (MarketInfo memory) {
+        return _binarySearch(
+            markets,
+            0,
+            markets.length,
+            marketId
+        );
+    }
+
+    // Private Functions
+
+    function getAccountValues(
+        IDolomiteMargin dolomiteMargin,
+        MarketInfo[] memory marketInfos,
+        Account.Info memory account,
+        uint256[] memory marketIds,
+        bool adjustForSpreadPremiums
+    )
+    private
+    view
+    returns (
+        Monetary.Value memory,
+        Monetary.Value memory
+    )
+    {
+        Monetary.Value memory supplyValue;
+        Monetary.Value memory borrowValue;
+
+        for (uint256 i = 0; i < marketIds.length; i++) {
+            Types.Par memory par = dolomiteMargin.getAccountPar(account, marketIds[i]);
+            if (par.isZero()) {
+                // This if statement should never fire
+                continue;
+            }
+            MarketInfo memory marketInfo = binarySearch(marketInfos, marketIds[i]);
+            Types.Wei memory userWei = Interest.parToWei(par, marketInfo.index);
+            uint256 assetValue = userWei.value.mul(marketInfo.price.value);
+            Decimal.D256 memory spreadPremium = Decimal.one();
+            if (adjustForSpreadPremiums) {
+                spreadPremium = Decimal.onePlus(marketInfo.spreadPremium);
+            }
+            if (userWei.sign) {
+                supplyValue.value = supplyValue.value.add(Decimal.div(assetValue, spreadPremium));
+            } else {
+                borrowValue.value = borrowValue.value.add(Decimal.mul(assetValue, spreadPremium));
+            }
+        }
+
+        return (supplyValue, borrowValue);
+    }
+
+    // solium-disable-next-line security/no-assign-params
+    function _addMarketsToBitmap(
+        uint256[] memory markets,
+        uint256[] memory bitmaps,
+        uint marketsLength
+    ) private pure returns (uint) {
+        for (uint i = 0; i < markets.length; i++) {
+            if (!Bits.hasBit(bitmaps, markets[i])) {
+                Bits.setBit(bitmaps, markets[i]);
+                marketsLength += 1;
+            }
+        }
+        return marketsLength;
+    }
+
+    function _binarySearch(
+        MarketInfo[] memory markets,
+        uint beginInclusive,
+        uint endExclusive,
+        uint marketId
+    ) private pure returns (MarketInfo memory) {
+        uint len = endExclusive - beginInclusive;
+        if (len == 0 || (len == 1 && markets[beginInclusive].marketId != marketId)) {
+            revert("LiquidatorProxyHelper: item not found");
+        }
+
+        uint mid = beginInclusive + len / 2;
+        uint midMarketId = markets[mid].marketId;
+        if (marketId < midMarketId) {
+            return _binarySearch(
+                markets,
+                beginInclusive,
+                mid,
+                marketId
+            );
+        } else if (marketId > midMarketId) {
+            return _binarySearch(
+                markets,
+                mid + 1,
+                endExclusive,
+                marketId
+            );
+        } else {
+            return markets[mid];
+        }
+    }
+
+}
+
 // File: contracts/external/proxies/LiquidatorProxyV1WithAmm.sol
 
 /*
@@ -6027,13 +6349,14 @@ pragma solidity ^0.5.7;
 
 
 
+
 /**
  * @title LiquidatorProxyV1WithAmm
- * @author dYdX
+ * @author Dolomite
  *
- * Contract for liquidating other accounts in DolomiteMargin. Does not take marginPremium into account.
+ * Contract for liquidating other accounts in DolomiteMargin.
  */
-contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
+contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
     using Math for uint256;
     using SafeMath for uint256;
     using Types for Types.Par;
@@ -6046,19 +6369,16 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
     // ============ Structs ============
 
     struct Constants {
+        IDolomiteMargin dolomiteMargin;
         Account.Info solidAccount;
         Account.Info liquidAccount;
         MarketInfo[] markets;
-        IExpiry EXPIRY_PROXY;
+        uint256[] liquidMarkets;
+        IExpiry expiryProxy;
         uint32 expiry;
     }
 
-    struct MarketInfo {
-        Monetary.Price price;
-        Interest.Index index;
-    }
-
-    struct LiquidatorWithAmmCache {
+    struct LiquidatorProxyWithAmmCache {
         // mutable
         uint256 toLiquidate;
         // The amount of heldMarket the solidAccount will receive. Includes the liquidation reward.
@@ -6074,6 +6394,18 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         uint256 owedPrice;
         uint256 owedPriceAdj;
     }
+
+    // ============ Events ============
+
+    event LogArbWithAmm(
+        address solidAccountOwner,
+        uint solidAccountNumber,
+        uint heldMarket,
+        uint heldWeiWithReward,
+        uint owedMarket,
+        uint owedHeldWei,
+        bool isProfitable
+    );
 
     // ============ Storage ============
 
@@ -6109,9 +6441,14 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
      * @param  tokenPath                    The path through which the trade will be routed to recover the collateral
      * @param  expiry                       The time at which the position expires, if this liquidation is for closing
      *                                      an expired position. Else, 0.
+     * @param  minOwedOutputAmount          The minimum amount that should be outputted by the trade from heldWei to
+     *                                      owedWei. Used to prevent sandwiching and mem-pool other attacks. Only used
+     *                                      if `revertOnFailToSellCollateral` is set to `false` and the collateral
+     *                                      cannot cover the `liquidAccount`'s debt.
      * @param  revertOnFailToSellCollateral True to revert the transaction completely if all collateral from the
      *                                      liquidation cannot repay the owed debt. False to swallow the error and sell
-     *                                      whatever is possible.
+     *                                      whatever is possible. If set to false, the liquidator must have sufficient
+     *                                      assets to be prevent becoming liquidated or under-collateralized.
      */
     function liquidate(
         Account.Info memory solidAccount,
@@ -6120,6 +6457,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         uint256 heldMarket,
         address[] memory tokenPath,
         uint expiry,
+        uint minOwedOutputAmount,
         bool revertOnFailToSellCollateral
     )
     public
@@ -6148,20 +6486,6 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         );
 
         Require.that(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(tokenPath[0]) == heldMarket,
-            FILE,
-            "0-index token path incorrect",
-            tokenPath[0]
-        );
-
-        Require.that(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(tokenPath[tokenPath.length - 1]) == owedMarket,
-            FILE,
-            "last-index token path incorrect",
-            tokenPath[tokenPath.length - 1]
-        );
-
-        Require.that(
             uint32(expiry) == expiry,
             FILE,
             "expiry overflow",
@@ -6169,22 +6493,32 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         );
 
         // put all values that will not change into a single struct
-        Constants memory constants = Constants({
-            solidAccount : solidAccount,
-            liquidAccount : liquidAccount,
-            markets : getMarketsInfo(),
-            EXPIRY_PROXY : expiry > 0 ? EXPIRY_PROXY : IExpiry(address(0)),
-            expiry : uint32(expiry)
-        });
+        Constants memory constants;
+        constants.dolomiteMargin = DOLOMITE_MARGIN;
+        constants.solidAccount = solidAccount;
+        constants.liquidAccount = liquidAccount;
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.markets = getMarketInfos(
+            constants.dolomiteMargin,
+            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.liquidMarkets
+        );
+        constants.expiryProxy = expiry > 0 ? EXPIRY_PROXY: IExpiry(address(0));
+        constants.expiry = uint32(expiry);
 
-        LiquidatorWithAmmCache memory cache = initializeCache(
+        LiquidatorProxyWithAmmCache memory cache = initializeCache(
             constants,
             heldMarket,
             owedMarket
         );
 
         // validate the msg.sender and that the liquidAccount can be liquidated
-        checkRequirements(constants);
+        checkRequirements(
+            constants,
+            heldMarket,
+            owedMarket,
+            tokenPath
+        );
 
         // get the max liquidation amount
         calculateMaxLiquidationAmount(cache);
@@ -6200,8 +6534,8 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         if (cache.solidHeldWei.sign) {
             // If the solid account has held wei, add the amount the solid account will receive from liquidation to its
             // total held wei
-            // We do this so we can accurately track how much the solid account has, in case we need to input it
-            // exactly to Router#getParamsForSwapExactTokensForTokens
+            // We do this so we can accurately track how much the solid account has (and will have after the swap), in
+            // case we need to input it exactly to Router#getParamsForSwapExactTokensForTokens
             totalSolidHeldWei = totalSolidHeldWei.add(cache.solidHeldWei.value);
         }
 
@@ -6215,26 +6549,44 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         );
         if (revertOnFailToSellCollateral) {
             Require.that(
-                totalSolidHeldWei >= actions[0].amount.value,
+                cache.solidHeldUpdateWithReward >= actions[0].amount.value,
                 FILE,
                 "totalSolidHeldWei is too small",
                 totalSolidHeldWei,
                 actions[0].amount.value
             );
-        } else if (totalSolidHeldWei < actions[0].amount.value) {
+            emit LogArbWithAmm(
+                constants.solidAccount.owner,
+                constants.solidAccount.number,
+                heldMarket,
+                cache.solidHeldUpdateWithReward,
+                owedMarket,
+                cache.toLiquidate,
+            /* isProfitable= */ true // solium-disable-line indentation
+            );
+        } else if (cache.solidHeldUpdateWithReward < actions[0].amount.value) {
             (accounts, actions) = ROUTER_PROXY.getParamsForSwapExactTokensForTokens(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 totalSolidHeldWei, // inputWei
-                1, // minOutputAmount; we will sell whatever collateral we can
+                minOwedOutputAmount,
                 tokenPath
+            );
+            emit LogArbWithAmm(
+                constants.solidAccount.owner,
+                constants.solidAccount.number,
+                heldMarket,
+                cache.solidHeldUpdateWithReward,
+                owedMarket,
+                cache.toLiquidate,
+            /* isProfitable= */ false // solium-disable-line indentation
             );
         }
 
         accounts = constructAccountsArray(constants, accounts);
 
         // execute the liquidations
-        DOLOMITE_MARGIN.operate(
+        constants.dolomiteMargin.operate(
             accounts,
             constructActionsArray(constants, cache, accounts, actions) //solium-disable-line arg-overflow
         );
@@ -6248,7 +6600,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
      * that the amount of owedMarket is non-positive and the amount of heldMarket is non-negative.
      */
     function calculateMaxLiquidationAmount(
-        LiquidatorWithAmmCache memory cache
+        LiquidatorProxyWithAmmCache memory cache
     )
     private
     pure
@@ -6260,7 +6612,11 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
             cache.solidHeldUpdateWithReward = cache.liquidHeldWei.value;
             cache.toLiquidate = Math.getPartialRoundUp(cache.liquidHeldWei.value, cache.heldPrice, cache.owedPriceAdj);
         } else {
-            cache.solidHeldUpdateWithReward = Math.getPartial(cache.liquidOwedWei.value, cache.owedPriceAdj, cache.heldPrice);
+            cache.solidHeldUpdateWithReward = Math.getPartial(
+                cache.liquidOwedWei.value,
+                cache.owedPriceAdj,
+                cache.heldPrice
+            );
             cache.toLiquidate = cache.liquidOwedWei.value;
         }
     }
@@ -6269,12 +6625,15 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
 
     /**
      * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender is permissioned to use the liquidator account
+     *  - Require that the msg.sender has the permission to use the liquidator account
      *  - Require that the liquid account is liquidatable based on the accounts global value (all assets held and owed,
      *    not just what's being liquidated)
      */
     function checkRequirements(
-        Constants memory constants
+        Constants memory constants,
+        uint256 heldMarket,
+        uint256 owedMarket,
+        address[] memory tokenPath
     )
     private
     view
@@ -6282,25 +6641,47 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         // check credentials for msg.sender
         Require.that(
             constants.solidAccount.owner == msg.sender
-            || DOLOMITE_MARGIN.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
+            || constants.dolomiteMargin.getIsLocalOperator(constants.solidAccount.owner, msg.sender),
             FILE,
             "Sender not operator",
             constants.solidAccount.owner
         );
 
-        // require that the liquidAccount is liquidatable
+        Require.that(
+            constants.dolomiteMargin.getMarketIdByTokenAddress(tokenPath[0]) == heldMarket,
+            FILE,
+            "0-index token path incorrect",
+            tokenPath[0]
+        );
+
+        Require.that(
+            constants.dolomiteMargin.getMarketIdByTokenAddress(tokenPath[tokenPath.length - 1]) == owedMarket,
+            FILE,
+            "last-index token path incorrect",
+            tokenPath[tokenPath.length - 1]
+        );
+
         (
         Monetary.Value memory liquidSupplyValue,
         Monetary.Value memory liquidBorrowValue
-        ) = getCurrentAccountValues(constants, constants.liquidAccount);
+        ) = getAdjustedAccountValues(
+            constants.dolomiteMargin,
+            constants.markets,
+            constants.liquidAccount,
+            constants.liquidMarkets
+        );
         Require.that(
             liquidSupplyValue.value != 0,
             FILE,
             "Liquid account no supply"
         );
         Require.that(
-            DOLOMITE_MARGIN.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
-            !isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, DOLOMITE_MARGIN.getMarginRatio()),
+            constants.dolomiteMargin.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+            !isCollateralized(
+                liquidSupplyValue.value,
+                liquidBorrowValue.value,
+                constants.dolomiteMargin.getMarginRatio()
+            ),
             FILE,
             "Liquid account not liquidatable"
         );
@@ -6325,60 +6706,6 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
     // ============ Getter Functions ============
 
     /**
-     * Gets the current total supplyValue and borrowValue for some account. Takes into account what
-     * the current index will be once updated.
-     */
-    function getCurrentAccountValues(
-        Constants memory constants,
-        Account.Info memory account
-    )
-    private
-    view
-    returns (
-        Monetary.Value memory,
-        Monetary.Value memory
-    )
-    {
-        Monetary.Value memory supplyValue;
-        Monetary.Value memory borrowValue;
-
-        for (uint256 m = 0; m < constants.markets.length; m++) {
-            Types.Par memory par = DOLOMITE_MARGIN.getAccountPar(account, m);
-            if (par.isZero()) {
-                continue;
-            }
-            Types.Wei memory userWei = Interest.parToWei(par, constants.markets[m].index);
-            uint256 assetValue = userWei.value.mul(constants.markets[m].price.value);
-            if (userWei.sign) {
-                supplyValue.value = supplyValue.value.add(assetValue);
-            } else {
-                borrowValue.value = borrowValue.value.add(assetValue);
-            }
-        }
-
-        return (supplyValue, borrowValue);
-    }
-
-    /**
-     * Get the updated index and price for every market.
-     */
-    function getMarketsInfo()
-    private
-    view
-    returns (MarketInfo[] memory)
-    {
-        uint256 numMarkets = DOLOMITE_MARGIN.getNumMarkets();
-        MarketInfo[] memory markets = new MarketInfo[](numMarkets);
-        for (uint256 m = 0; m < numMarkets; m++) {
-            markets[m] = MarketInfo({
-                price : DOLOMITE_MARGIN.getMarketPrice(m),
-                index : DOLOMITE_MARGIN.getMarketCurrentIndex(m)
-            });
-        }
-        return markets;
-    }
-
-    /**
      * Pre-populates cache values for some pair of markets.
      */
     function initializeCache(
@@ -6388,14 +6715,16 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
     )
     private
     view
-    returns (LiquidatorWithAmmCache memory)
+    returns (LiquidatorProxyWithAmmCache memory)
     {
-        uint256 heldPrice = constants.markets[heldMarket].price.value;
-        uint256 owedPrice = constants.markets[owedMarket].price.value;
+        MarketInfo memory heldMarketInfo = binarySearch(constants.markets, heldMarket);
+        MarketInfo memory owedMarketInfo = binarySearch(constants.markets, owedMarket);
+        uint256 heldPrice = heldMarketInfo.price.value;
+        uint256 owedPrice = owedMarketInfo.price.value;
 
         uint256 owedPriceAdj;
         if (constants.expiry > 0) {
-            (, Monetary.Price memory owedPricePrice) = constants.EXPIRY_PROXY.getSpreadAdjustedPrices(
+            (, Monetary.Price memory owedPricePrice) = constants.expiryProxy.getSpreadAdjustedPrices(
                 heldMarket,
                 owedMarket,
                 constants.expiry
@@ -6404,30 +6733,30 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
         } else {
             owedPriceAdj = Decimal.mul(
                 owedPrice,
-                Decimal.onePlus(DOLOMITE_MARGIN.getLiquidationSpreadForPair(heldMarket, owedMarket))
+                Decimal.onePlus(constants.dolomiteMargin.getLiquidationSpreadForPair(heldMarket, owedMarket))
             );
         }
 
-        return LiquidatorWithAmmCache({
-            toLiquidate : 0,
-            solidHeldUpdateWithReward : 0,
-            solidHeldWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.solidAccount, heldMarket),
-                    constants.markets[heldMarket].index
-                ),
-            liquidHeldWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, heldMarket),
-                    constants.markets[heldMarket].index
-                ),
-            liquidOwedWei : Interest.parToWei(
-                    DOLOMITE_MARGIN.getAccountPar(constants.liquidAccount, owedMarket),
-                    constants.markets[owedMarket].index
-                ),
-            heldMarket : heldMarket,
-            owedMarket : owedMarket,
-            heldPrice : heldPrice,
-            owedPrice : owedPrice,
-            owedPriceAdj : owedPriceAdj
+        return LiquidatorProxyWithAmmCache({
+        toLiquidate: 0,
+        solidHeldUpdateWithReward: 0,
+        solidHeldWei: Interest.parToWei(
+                constants.dolomiteMargin.getAccountPar(constants.solidAccount, heldMarket),
+                heldMarketInfo.index
+            ),
+        liquidHeldWei: Interest.parToWei(
+                constants.dolomiteMargin.getAccountPar(constants.liquidAccount, heldMarket),
+                heldMarketInfo.index
+            ),
+        liquidOwedWei: Interest.parToWei(
+                constants.dolomiteMargin.getAccountPar(constants.liquidAccount, owedMarket),
+                owedMarketInfo.index
+            ),
+        heldMarket: heldMarket,
+        owedMarket: owedMarket,
+        heldPrice: heldPrice,
+        owedPrice: owedPrice,
+        owedPriceAdj: owedPriceAdj
         });
     }
 
@@ -6456,7 +6785,7 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
 
     function constructActionsArray(
         Constants memory constants,
-        LiquidatorWithAmmCache memory cache,
+        LiquidatorProxyWithAmmCache memory cache,
         Account.Info[] memory accounts,
         Actions.ActionArgs[] memory actionsForTrade
     )
@@ -6470,37 +6799,37 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard {
             // First action is a trade for closing the expired account
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
-            actionType : Actions.ActionType.Trade,
-            accountId : 0,
-            amount : Types.AssetAmount({
-            sign : true,
-            denomination : Types.AssetDenomination.Wei,
-            ref : Types.AssetReference.Delta,
-            value : cache.toLiquidate
+            actionType: Actions.ActionType.Trade,
+            accountId: 0,
+            amount: Types.AssetAmount({
+            sign: true,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
+            value: cache.toLiquidate
             }),
-            primaryMarketId : cache.owedMarket,
-            secondaryMarketId : cache.heldMarket,
-            otherAddress : address(constants.EXPIRY_PROXY),
-            otherAccountId : accounts.length - 1,
-            data : abi.encode(cache.owedMarket, constants.expiry)
+            primaryMarketId: cache.owedMarket,
+            secondaryMarketId: cache.heldMarket,
+            otherAddress: address(constants.expiryProxy),
+            otherAccountId: accounts.length - 1,
+            data: abi.encode(cache.owedMarket, constants.expiry)
             });
         } else {
             // First action is a liquidation
             // accountId is solidAccount; otherAccountId is liquidAccount
             actions[0] = Actions.ActionArgs({
-            actionType : Actions.ActionType.Liquidate,
-            accountId : 0,
-            amount : Types.AssetAmount({
-            sign : true,
-            denomination : Types.AssetDenomination.Wei,
-            ref : Types.AssetReference.Delta,
-            value : cache.toLiquidate
+            actionType: Actions.ActionType.Liquidate,
+            accountId: 0,
+            amount: Types.AssetAmount({
+            sign: true,
+            denomination: Types.AssetDenomination.Wei,
+            ref: Types.AssetReference.Delta,
+            value: cache.toLiquidate
             }),
-            primaryMarketId : cache.owedMarket,
-            secondaryMarketId : cache.heldMarket,
-            otherAddress : address(0),
-            otherAccountId : accounts.length - 1,
-            data : new bytes(0)
+            primaryMarketId: cache.owedMarket,
+            secondaryMarketId: cache.heldMarket,
+            otherAddress: address(0),
+            otherAccountId: accounts.length - 1,
+            data: new bytes(0)
             });
         }
 

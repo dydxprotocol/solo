@@ -69,8 +69,8 @@
     "Expiry": {
         "80001": {
             "links": {},
-            "address": "0x9C8488c8441d0845626beBc1c91E9812f0b74026",
-            "transactionHash": "0xd7715f1bddbc934a9d6d7d3b49dd032dc5a6422586c356614af7e50c197e6da4"
+            "address": "0x409Ee666C9AF39183deb8F4cB5B8DDE4Da51B3Ed",
+            "transactionHash": "0x96d5edf2c921c43455aa779d66bebdd7a5c5da2cc56dfcf22d4da0fa9ab13909"
         }
     },
     "SignedOperationProxy": {
@@ -83,8 +83,8 @@
     "LiquidatorProxyV1WithAmm": {
         "80001": {
             "links": {},
-            "address": "0xf22dCF681244C0A8d6dfd10C9dA5Fba2744c9B2C",
-            "transactionHash": "0x66a426b6ffb5909b534f5ae8049fa43afe099a887287d224df9b6bb79641139a"
+            "address": "0xb4B27F425e0883Cb7C836640B99eF07239e95E29",
+            "transactionHash": "0x67cf3a87c3af2abb854b6be5854e9796543f0b2ae9e9115601a08dcd0e3410d2"
         }
     },
     "DolomiteAmmRouterProxy": {
