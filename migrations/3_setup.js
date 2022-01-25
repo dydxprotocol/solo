@@ -134,9 +134,13 @@ function getTokens(network) {
       { address: getMaticAddress(network, TokenD) },
       { address: getUsdcAddress(network, TokenA) },
     ];
-  } else if (isArbitrum(network)) {
-    // TODO
-    throw new Error('TODO: add tokens');
+  } else if (isArbitrum(network) || isArbitrumTest(network)) {
+    return [
+      { address: getWethAddress(network, WETH9) },
+      { address: getDaiAddress(network, TokenB) },
+      { address: getUsdcAddress(network, TokenA) },
+      { address: getLinkAddress(network, TokenF) },
+    ];
   }
 
   throw new Error('unknown network');

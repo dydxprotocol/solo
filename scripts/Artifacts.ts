@@ -36,6 +36,7 @@ import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.j
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 import { default as AmmRebalancerProxy } from '../build/contracts/AmmRebalancerProxy.json';
 import { default as MultiCall } from '../build/contracts/MultiCall.json';
+import { default as TestUniswapAmmRebalancerProxy } from '../build/contracts/TestUniswapAmmRebalancerProxy.json';
 
 export default {
   LiquidateOrVaporizeImpl,
@@ -64,4 +65,5 @@ export default {
   SimpleFeeOwner,
   TransferProxy,
   MultiCall,
+  TestUniswapAmmRebalancerProxy,
 };

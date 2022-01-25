@@ -5,6 +5,7 @@ const {
   isMatic,
   isMaticTest,
   isArbitrum,
+  isArbitrumTest,
 } = require('./helpers');
 
 function getDaiAddress(network, TokenB) {
@@ -25,6 +26,9 @@ function getDaiAddress(network, TokenB) {
   }
   if (isArbitrum(network)) {
     throw new Error('Cannot find DAI for Arbitrum');
+  }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find DAI for Arbitrum Test');
   }
   throw new Error('Cannot find DAI');
 }
@@ -48,6 +52,9 @@ function getLinkAddress(network, TokenE) {
   if (isArbitrum(network)) {
     throw new Error('Cannot find LINK for Arbitrum');
   }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find LINK for Arbitrum Test');
+  }
   throw new Error('Cannot find LINK');
 }
 
@@ -66,6 +73,9 @@ function getLrcAddress(network, TokenF) {
   }
   if (isArbitrum(network)) {
     throw new Error('Cannot find LRC for Arbitrum');
+  }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find LRC for Arbitrum Test');
   }
   throw new Error('Cannot find LRC');
 }
@@ -89,6 +99,9 @@ function getMaticAddress(network, artifact) {
   if (isArbitrum(network)) {
     throw new Error('MATIC is not supported on Arbitrum');
   }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find MATIC for Arbitrum Test');
+  }
   throw new Error('Cannot find MATIC');
 }
 
@@ -110,6 +123,9 @@ function getUsdcAddress(network, TokenA) {
   }
   if (isArbitrum(network)) {
     throw new Error('Cannot find USDC for Arbitrum');
+  }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find USDC for Arbitrum Test');
   }
   throw new Error('Cannot find USDC');
 }
@@ -133,6 +149,9 @@ function getWbtcAddress(network, TokenD) {
   if (isArbitrum(network)) {
     throw new Error('Cannot find WBTC for Arbitrum');
   }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find WBTC for Arbitrum');
+  }
   throw new Error('Cannot find WBTC');
 }
 
@@ -154,6 +173,9 @@ function getWethAddress(network, WETH9) {
   }
   if (isArbitrum(network)) {
     throw new Error('Cannot find WETH for Arbitrum');
+  }
+  if (isArbitrumTest(network)) {
+    throw new Error('Cannot find WETH for Arbitrum Test');
   }
   throw new Error('Cannot find WETH');
 }

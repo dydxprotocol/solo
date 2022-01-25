@@ -96,6 +96,7 @@ const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
 const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
+const TestUniswapAmmRebalancerProxy = artifacts.require('TestUniswapAmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
@@ -316,6 +317,8 @@ async function deploySecondLayer(deployer, network, accounts) {
       TestAmmRebalancerProxy,
       dolomiteMargin.address,
       dolomiteAmmFactory.address,
+    );
+    await deployer.deploy(TestUniswapAmmRebalancerProxy,
     );
   }
 

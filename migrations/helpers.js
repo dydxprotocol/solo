@@ -35,7 +35,7 @@ function isArbitrum(network) {
 
 function isArbitrumTest(network) {
   verifyNetwork(network);
-  return network.startsWith('arbitrum_test');
+  return network.startsWith('arbitrum_rinkeby');
 }
 
 function isKovan(network) {
