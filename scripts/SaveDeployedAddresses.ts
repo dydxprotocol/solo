@@ -7,7 +7,7 @@ import deployed from '../migrations/deployed.json';
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(mkdirp);
 
-const NETWORK_IDS = ['1', '42', '137', '80001'];
+const NETWORK_IDS = ['1', '42', '137', '80001', '42161', '421611'];
 
 async function run() {
   const directory = `${__dirname}/../migrations/`;

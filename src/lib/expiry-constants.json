@@ -7,6 +7,10 @@
     "spread": "0.05",
     "expiryRampTime": "3600"
   },
+  "137": {
+    "spread": "0.05",
+    "expiryRampTime": "300"
+  },
   "1001": {
     "spread": "0.05",
     "expiryRampTime": "3600"
@@ -15,7 +19,15 @@
     "spread": "0.05",
     "expiryRampTime": "3600"
   },
+  "42161": {
+    "spread": "0.05",
+    "expiryRampTime": "300"
+  },
   "80001": {
+    "spread": "0.05",
+    "expiryRampTime": "300"
+  },
+  "421611": {
     "spread": "0.05",
     "expiryRampTime": "300"
   }

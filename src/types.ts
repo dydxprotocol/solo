@@ -48,6 +48,7 @@ export const MarketId = {
 };
 
 export const Networks = {
+  MATIC: 137,
   MUMBAI: 80001,
   ARBITRUM: 42161,
   ARBITRUM_RINKEBY: 421611,

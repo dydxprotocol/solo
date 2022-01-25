@@ -106,9 +106,39 @@ module.exports = {
       timeoutBlocks: 5000,
       networkCheckTimeout: 99999,
     },
+    arbitrum: {
+      network_id: '42161',
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        'https://arb1.arbitrum.io/rpc',
+        0,
+        1,
+      ),
+      gasPrice: 5000000000,
+      gas: 7900000,
+      confirmations: 1,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
+    },
+    arbitrum_rinkeby: {
+      network_id: '421611',
+      provider: () => new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        "https://rinkeby.arbitrum.io/rpc",
+        0,
+        1,
+      ),
+      gasPrice: 5e9,
+      gas: 7900000,
+      confirmations: 1,
+      timeoutBlocks: 5000,
+      networkCheckTimeout: 99999,
+    },
   },
   plugins: ['truffle-plugin-verify'],
   api_keys: {
-    polygonscan: process.env.POLYGONSCAN_API_KEY
+    arbiscan: process.env.ARBISCAN_API_KEY,
+    optimistic_etherscan: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
+    polygonscan: process.env.POLYGONSCAN_API_KEY,
   }
 };
