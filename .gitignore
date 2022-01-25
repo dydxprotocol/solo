@@ -19,4 +19,5 @@ artifacts/
 
 .coveralls.yml
 
-verify-contract.sh
+scripts/verify-contracts.sh
+scripts/verify-amm-pair.sh
