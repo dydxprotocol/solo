@@ -2,7 +2,7 @@
 
 import { Contracts } from '../lib/Contracts';
 import { ContractConstantCallOptions } from '../types';
-import { bytesToHexString, hexStringToBytes } from '../lib/BytesHelper';
+import { hexStringToBytes } from '../lib/BytesHelper';
 
 export class MultiCall {
   private contracts: Contracts;
@@ -25,9 +25,10 @@ export class MultiCall {
       this.contracts.multiCall.methods.aggregate(rawCalls),
       options,
     );
+    // result.returnData is actually string[], not string[][]
     return {
       blockNumber: parseInt(result.blockNumber, 10),
-      results: result.returnData.map(result => bytesToHexString(result)),
+      results: (result.returnData as any) as string[],
     };
   }
 }

@@ -4,10 +4,9 @@ import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 import { mineAvgBlock, resetEVM } from './helpers/EVM';
 import { expectThrow } from '../src/lib/Expect';
-import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
+import { address, ADDRESSES, INTEGERS } from '../src';
 import { stripHexPrefix } from '../src/lib/BytesHelper';
 import { createTypedSignature, PREPEND_DEC, PREPEND_HEX, SIGNATURE_TYPES } from '../src/lib/SignatureHelper';
-import { address } from '../src';
 
 let dolomiteMargin: TestDolomiteMargin;
 let owner: address;
