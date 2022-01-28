@@ -123,7 +123,14 @@ library Storage {
         // 100% (1e18) would give suppliers all of the interest that borrowers are paying. A rate of 90% would give
         // suppliers 90% of the interest that borrowers pay.
         uint64 earningsRateMax;
+        // The highest min margin ratio premium that can be applied to a particular market. Meaning, a value of 100%
+        // (1e18) would require borrowers to maintain an extra 100% collateral to maintain a healthy margin ratio. This
+        // value works by increasing the debt owed and decreasing the supply held for the particular market by this
+        // amount, plus 1e18 (since a value of 10% needs to be applied as `decimal.plusOne`)
         uint64 marginPremiumMax;
+        // The highest liquidation reward that can be applied to a particular market. This percentage is applied
+        // in addition to the liquidation spread in `RiskParams`. Meaning a value of 1e18 is 100%. It is calculated as:
+        // `liquidationSpread * Decimal.onePlus(spreadPremium)`
         uint64 spreadPremiumMax;
         uint128 minBorrowedValueMax;
     }
