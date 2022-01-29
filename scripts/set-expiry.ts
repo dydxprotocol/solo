@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import {
   ConfirmationType,
-  DolomiteMargin,
+  DolomiteMargin
 } from '../src';
-// import { toBytes } from '../src/lib/BytesHelper';
+
 const truffle = require('../truffle');
 
 async function start() {
