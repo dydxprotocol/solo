@@ -76,10 +76,7 @@ export class AccountOperation {
     options: AccountOperationOptions,
   ) {
     // use the passed-in proxy type, but support the old way of passing in `usePayableProxy = true`
-    const proxy =
-      options.proxy ||
-      (options.usePayableProxy ? ProxyType.Payable : null) ||
-      ProxyType.None;
+    const proxy = options.proxy || ProxyType.None;
 
     this.contracts = contracts;
     this.actions = [];

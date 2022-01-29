@@ -1,26 +1,25 @@
 import BigNumber from 'bignumber.js';
 import {
   address,
+  ADDRESSES,
   Amount,
   AmountDenomination,
   AmountReference,
+  INTEGERS,
+  ProxyType
 } from '../../src';
 import { toBytes } from '../../src/lib/BytesHelper';
-import {
-  ADDRESSES,
-  INTEGERS,
-} from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
 import {
   resetEVM,
-  snapshot,
+  snapshot
 } from '../helpers/EVM';
 import {
   TestExchangeWrapperOrder,
   TestOrder,
-  TestOrderType,
+  TestOrderType
 } from '../helpers/types';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
@@ -378,7 +377,8 @@ describe('PayableProxy', () => {
         marketId: wethMarket,
         from: dolomiteMargin.contracts.payableProxy.options.address,
       })
-      .commit({ from: owner1,
+      .commit({
+        from: owner1,
         value: amount.times(2)
           .toNumber(),
       });
@@ -389,7 +389,7 @@ describe('PayableProxy', () => {
 
 function newOperation(sendEthTo?: address) {
   return dolomiteMargin.operation.initiate({
-    usePayableProxy: true,
+    proxy: ProxyType.Payable,
     sendEthTo: sendEthTo || owner1,
   });
 }

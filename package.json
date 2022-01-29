@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -57,7 +57,8 @@
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js",
     "install_compiler": "docker pull ethereum/solc:0.5.7",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts",
-    "serve_docs": "docsify serve ./docs"
+    "serve_docs": "docsify serve ./docs",
+    "execute-set-expiry": "ts-node ./scripts/set-expiry.ts"
   },
   "repository": {
     "type": "git",
