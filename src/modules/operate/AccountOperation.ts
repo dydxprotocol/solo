@@ -1,4 +1,3 @@
-import { OrderMapper } from '../OrderMapper';
 import BigNumber from 'bignumber.js';
 import { TransactionObject } from 'web3/eth/types';
 import {
@@ -47,6 +46,7 @@ import {
   Vaporize,
   Withdraw,
 } from '../../types';
+import { OrderMapper } from '../OrderMapper';
 
 interface OptionalActionArgs {
   actionType: number | string;
@@ -255,9 +255,9 @@ export class AccountOperation {
     expiredMarket: Integer,
     expiryTimestamp: Integer,
     blockTimestamp: Integer,
-    weis: Integer[],
-    prices: Integer[],
-    spreadPremiums: Integer[],
+    weis: { [marketId: string]: Integer },
+    prices: { [marketId: string]: Integer },
+    spreadPremiums: { [marketId: string]: Integer },
     collateralPreferences: Integer[],
   ): AccountOperation {
     return this.fullyLiquidateExpiredAccountInternal(
@@ -480,9 +480,9 @@ export class AccountOperation {
     expiredMarket: Integer,
     expiryTimestamp: Integer,
     blockTimestamp: Integer,
-    weis: Integer[],
-    prices: Integer[],
-    spreadPremiums: Integer[],
+    weis: { [marketId: string]: Integer },
+    prices: { [marketId: string]: Integer },
+    spreadPremiums: { [marketId: string]: Integer },
     collateralPreferences: Integer[],
     contractAddress: address,
   ): AccountOperation {
@@ -494,7 +494,7 @@ export class AccountOperation {
     // get info about the expired market
     let owedWei = weis[expiredMarket.toNumber()];
     const owedPrice = prices[expiredMarket.toNumber()];
-    const owedSpreadMult = spreadPremiums[expiredMarket.toNumber()].plus(1);
+    const owedSpreadMultiplier = spreadPremiums[expiredMarket.toNumber()].plus(1);
 
     // error checking
     if (owedWei.gte(0)) {
@@ -504,18 +504,19 @@ export class AccountOperation {
       throw new Error('Expiry timestamp must be larger than blockTimestamp');
     }
 
-    // loop through each collateral type as long as there is some borrow amount left
+    // loop through each collateral type as long as there is some debt left
     for (let i = 0; i < collateralPreferences.length && owedWei.lt(0); i += 1) {
       // get info about the next collateral market
       const heldMarket = collateralPreferences[i];
-      const heldWei = weis[heldMarket.toNumber()];
-      const heldPrice = prices[heldMarket.toNumber()];
-      const heldSpreadMult = spreadPremiums[heldMarket.toNumber()].plus(1);
+      const heldWei = weis[heldMarket.toFixed(0)];
 
       // skip this collateral market if the account is not positive in this market
       if (heldWei.lte(0)) {
         continue;
       }
+
+      const heldPrice = prices[heldMarket.toFixed(0)];
+      const heldSpreadMultiplier = spreadPremiums[heldMarket.toFixed(0)].plus(1);
 
       // get the relative value of each market
       const rampAdjustment = BigNumber.min(
@@ -524,8 +525,8 @@ export class AccountOperation {
         INTEGERS.ONE,
       );
       const spread = defaultSpread
-        .times(heldSpreadMult)
-        .times(owedSpreadMult)
+        .times(heldSpreadMultiplier)
+        .times(owedSpreadMultiplier)
         .plus(1);
       const heldValue = heldWei.times(heldPrice)
         .abs();

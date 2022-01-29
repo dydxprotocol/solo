@@ -26,6 +26,7 @@
         "SwitchCase": 1
       }
     ],
-    "prefer-array-literal": false
+    "prefer-array-literal": false,
+    "align": false
   }
 }
