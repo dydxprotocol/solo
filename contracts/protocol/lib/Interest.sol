@@ -94,6 +94,9 @@ library Interest {
         } else {
             supplyInterest = Decimal.mul(borrowInterest, earningsRate);
             if (borrowWei.value < supplyWei.value) {
+                // scale down the interest by the amount being supplied. Why? Because interest is only being paid on
+                // the borrowWei, which means it's split amongst all of the supplyWei. Scaling it down normalizes it
+                // for the suppliers to share what's being paid by borrowers
                 supplyInterest = Math.getPartial(supplyInterest, borrowWei.value, supplyWei.value);
             }
         }
