@@ -10,7 +10,7 @@ import { default as ErroringToken } from '../build/contracts/ErroringToken.json'
 import { default as OmiseToken } from '../build/contracts/OmiseToken.json';
 import { default as TestCounter } from '../build/contracts/TestCounter.json';
 import { default as TestLib } from '../build/contracts/TestLib.json';
-import { default as TestLiquidateCallback } from '../build/contracts/TestLiquidateCallback.json';
+import { default as TestLiquidationCallback } from '../build/contracts/TestLiquidationCallback.json';
 import { default as TestAutoTrader } from '../build/contracts/TestAutoTrader.json';
 import { default as TestCallee } from '../build/contracts/TestCallee.json';
 import { default as TestSimpleCallee } from '../build/contracts/TestSimpleCallee.json';
@@ -44,7 +44,7 @@ export default {
   TestAmmRebalancerProxy,
   TestCounter,
   TestLib,
-  TestLiquidateCallback,
+  TestLiquidationCallback,
   TestPriceOracle,
   TestOasisDex,
   TestPolynomialInterestSetter,

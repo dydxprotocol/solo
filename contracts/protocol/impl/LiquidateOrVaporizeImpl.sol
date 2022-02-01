@@ -30,12 +30,12 @@ import { Events } from "../lib/Events.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
+import { SafeLiquidationCallback } from "../lib/SafeLiquidationCallback.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
 
 library LiquidateOrVaporizeImpl {
-    using Address for address;
     using Cache for Cache.MarketCache;
     using SafeMath for uint256;
     using Storage for Storage.State;
@@ -45,12 +45,6 @@ library LiquidateOrVaporizeImpl {
     // ============ Constants ============
 
     bytes32 constant FILE = "LiquidateOrVaporizeImpl";
-
-    // ============ Events ============
-
-    event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
-
-    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Account Functions ============
 
@@ -113,7 +107,7 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPriceAdj);
 
-            _callLiquidateCallbackIfNecessary(
+            SafeLiquidationCallback.callLiquidateCallbackIfNecessary(
                 args.liquidAccount,
                 args.heldMarket,
                 heldWei,
@@ -132,7 +126,7 @@ library LiquidateOrVaporizeImpl {
                 owedWei
             );
         } else {
-            _callLiquidateCallbackIfNecessary(
+            SafeLiquidationCallback.callLiquidateCallbackIfNecessary(
                 args.liquidAccount,
                 args.heldMarket,
                 heldWei,
@@ -244,7 +238,7 @@ library LiquidateOrVaporizeImpl {
             heldWei = maxHeldWei.negative();
             owedWei = _heldWeiToOwedWei(heldWei, heldPrice, owedPrice);
 
-            _callLiquidateCallbackIfNecessary(
+            SafeLiquidationCallback.callLiquidateCallbackIfNecessary(
                 args.vaporAccount,
                 args.heldMarket,
                 Types.zeroWei(),
@@ -258,7 +252,7 @@ library LiquidateOrVaporizeImpl {
                 owedWei
             );
         } else {
-            _callLiquidateCallbackIfNecessary(
+            SafeLiquidationCallback.callLiquidateCallbackIfNecessary(
                 args.vaporAccount,
                 args.heldMarket,
                 Types.zeroWei(),
@@ -405,42 +399,4 @@ library LiquidateOrVaporizeImpl {
 
         return (cache.get(heldMarketId).price, owedPriceAdj);
     }
-
-    function _callLiquidateCallbackIfNecessary(
-        Account.Info memory liquidAccount,
-        uint heldMarket,
-        Types.Wei memory heldDeltaWei,
-        uint owedMarket,
-        Types.Wei memory owedDeltaWei
-    ) internal {
-        if (liquidAccount.owner.isContract()) {
-            // solium-disable-next-line security/no-low-level-calls
-            (bool isCallSuccessful, bytes memory result) = liquidAccount.owner.call(
-                abi.encodeWithSelector(
-                    ILiquidationCallback(liquidAccount.owner).onLiquidate.selector,
-                    liquidAccount.number,
-                    heldMarket,
-                    heldDeltaWei,
-                    owedMarket,
-                    owedDeltaWei
-                )
-            );
-
-            if (isCallSuccessful) {
-                emit LogLiquidationCallbackSuccess(liquidAccount.owner, liquidAccount.number);
-            } else {
-                if (result.length < 68) {
-                    result = bytes("");
-                } else {
-                    // solium-disable-next-line security/no-inline-assembly
-                    assembly {
-                        result := add(result, 0x04)
-                    }
-                    result = bytes(abi.decode(result, (string)));
-                }
-                emit LogLiquidationCallbackFailure(liquidAccount.owner, liquidAccount.number, string(result));
-            }
-        }
-    }
-
 }

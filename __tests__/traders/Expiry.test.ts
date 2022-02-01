@@ -1,28 +1,15 @@
 import BigNumber from 'bignumber.js';
 import {
-  abi as testLiquidateCallbackABI,
-  bytecode as testLiquidateCallbackBytecode,
-} from '../../build/contracts/TestLiquidateCallback.json';
-import { TestLiquidateCallback } from '../../build/testing_wrappers/TestLiquidateCallback';
-import {
-  address,
-  AmountDenomination,
-  AmountReference,
-  Integer,
-  INTEGERS,
-  Trade,
-  TxResult,
-} from '../../src';
+  abi as TestLiquidationCallbackABI,
+  bytecode as TestLiquidationCallbackBytecode,
+} from '../../build/contracts/TestLiquidationCallback.json';
+import { TestLiquidationCallback } from '../../build/testing_wrappers/TestLiquidationCallback';
+import { address, AmountDenomination, AmountReference, Integer, INTEGERS, Trade, TxResult, } from '../../src';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import {
-  fastForward,
-  mineAvgBlock,
-  resetEVM,
-  snapshot,
-} from '../helpers/EVM';
+import { fastForward, mineAvgBlock, resetEVM, snapshot, } from '../helpers/EVM';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -713,7 +700,7 @@ describe('Expiry', () => {
       expect(owed1)
         .toEqual(
           par.minus(par.div(premium)
-              .div(2))
+            .div(2))
             .integerValue(BigNumber.ROUND_DOWN),
         );
       expect(owed2)
@@ -1408,7 +1395,14 @@ describe('Expiry', () => {
     it('Succeeds with callback', async () => {
       const shouldRevert = false;
       const shouldRevertWithMessage = false;
-      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+      const shouldConsumeTonsOfGas = false;
+      const shouldReturnBomb = false;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
 
       await Promise.all([
         dolomiteMargin.testing.setAccountBalance(
@@ -1501,7 +1495,14 @@ describe('Expiry', () => {
     it('Succeeds with failed callback', async () => {
       const shouldRevert = true;
       const shouldRevertWithMessage = false;
-      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+      const shouldConsumeTonsOfGas = false;
+      const shouldReturnBomb = false;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
 
       await Promise.all([
         dolomiteMargin.testing.setAccountBalance(
@@ -1577,10 +1578,17 @@ describe('Expiry', () => {
           .minus(held1));
     });
 
-    it('Succeeds with failed callback with reason', async () => {
+    it('Succeeds with failed callback with error message', async () => {
       const shouldRevert = true;
       const shouldRevertWithMessage = true;
-      const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+      const shouldConsumeTonsOfGas = false;
+      const shouldReturnBomb = false;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
 
       await Promise.all([
         dolomiteMargin.testing.setAccountBalance(
@@ -1636,7 +1644,270 @@ describe('Expiry', () => {
       expect(log.args.liquidAccountNumber)
         .toEqual(accountNumber2);
       expect(log.args.reason)
-        .toEqual('TestLiquidateCallback: purposeful reversion');
+        .toEqual('TestLiquidationCallback: purposeful reversion');
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1)
+        .toEqual(zero);
+      expect(owed2)
+        .toEqual(zero);
+      expect(held1)
+        .toEqual(par.times(premium));
+      expect(held2)
+        .toEqual(par.times(2)
+          .minus(held1));
+    });
+
+    it('Succeeds with failed callback with error message that is cut off', async () => {
+      const shouldRevert = true;
+      const shouldRevertWithMessage = true;
+      const shouldConsumeTonsOfGas = false;
+      const shouldReturnBomb = false;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
+      // tslint:disable:max-line-length
+      const revertMessage =
+        'This is a long revert message that will get cut off before the vertical bar character. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eget tempus nisi, quis volutpat nulla. Proin tempus nisl id rutrum scelerisque. Praesent id magna eget lorem dictum interdum nec ac lorem. Aliquam ornare iaculis lectus ut pellentesque. Maecenas id tellus facilisis est finibus convallis id tempus odio. Sed risus nibh.';
+      // tslint:enable:max-line-length
+      await liquidContract.methods.setRevertMessage(revertMessage).send();
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult)
+        .filter(log => log.name === 'LogLiquidationCallbackFailure');
+      expect(logs.length)
+        .toEqual(1);
+      const log = logs[0];
+      expect(log.args.liquidAccountOwner)
+        .toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber)
+        .toEqual(accountNumber2);
+      expect(log.args.reason)
+        .toEqual(revertMessage.substring(0, 188));
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1)
+        .toEqual(zero);
+      expect(owed2)
+        .toEqual(zero);
+      expect(held1)
+        .toEqual(par.times(premium));
+      expect(held2)
+        .toEqual(par.times(2)
+          .minus(held1));
+    });
+
+    it('Succeeds with failed callback that consumes tons of gas', async () => {
+      const shouldRevert = true;
+      const shouldRevertWithMessage = false;
+      const shouldConsumeTonsOfGas = true;
+      const shouldReturnBomb = false;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+      console.log(`\tExpire with callback reversion with massive gas consumption gas used: ${txResult.gasUsed}`);
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult)
+        .filter(log => log.name === 'LogLiquidationCallbackFailure');
+      expect(logs.length)
+        .toEqual(1);
+      const log = logs[0];
+      expect(log.args.liquidAccountOwner)
+        .toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber)
+        .toEqual(accountNumber2);
+      expect(log.args.reason)
+        .toEqual('');
+
+      const [held1, owed1, held2, owed2] = await Promise.all([
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
+        dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, owedMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, heldMarket),
+        dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
+      ]);
+
+      expect(owed1)
+        .toEqual(zero);
+      expect(owed2)
+        .toEqual(zero);
+      expect(held1)
+        .toEqual(par.times(premium));
+      expect(held2)
+        .toEqual(par.times(2)
+          .minus(held1));
+    });
+
+    it('Succeeds with failed callback that returns a memory bomb', async () => {
+      const shouldRevert = true;
+      const shouldRevertWithMessage = false;
+      const shouldConsumeTonsOfGas = false;
+      const shouldReturnBomb = true;
+      const liquidContract = await deployCallbackContract(
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      );
+
+      await Promise.all([
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          owedMarket,
+          par.times(-1),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          heldMarket,
+          par.times(2),
+        ),
+        dolomiteMargin.testing.setAccountBalance(
+          liquidContract.options.address,
+          accountNumber2,
+          collateralMarket,
+          par.times(4),
+        ),
+      ]);
+
+      await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
+
+      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
+
+      await fastForward(60 * 60 * 24);
+
+      const txResult = await dolomiteMargin.operation
+        .initiate()
+        .liquidateExpiredAccount({
+          liquidMarketId: owedMarket,
+          payoutMarketId: heldMarket,
+          primaryAccountOwner: owner1,
+          primaryAccountId: accountNumber1,
+          liquidAccountOwner: liquidContract.options.address,
+          liquidAccountId: accountNumber2,
+          amount: {
+            value: INTEGERS.ZERO,
+            denomination: AmountDenomination.Principal,
+            reference: AmountReference.Target,
+          },
+        })
+        .commit({ from: owner1 });
+      console.log(`\tExpire with callback reversion with memory bomb gas used: ${txResult.gasUsed}`);
+
+      const logs = dolomiteMargin.logs.parseLogs(txResult)
+        .filter(log => log.name === 'LogLiquidationCallbackFailure');
+      expect(logs.length)
+        .toEqual(1);
+      const log = logs[0];
+      expect(log.args.liquidAccountOwner)
+        .toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber)
+        .toEqual(accountNumber2);
+      expect(log.args.reason)
+        .toEqual('');
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1684,7 +1955,7 @@ async function setExpiryForSelf(
 }
 
 async function setExpiryForCallbackContract(
-  callbackContract: TestLiquidateCallback,
+  callbackContract: TestLiquidationCallback,
   timeDelta: BigNumber,
   forceUpdate: boolean,
   options?: any,
@@ -1801,13 +2072,25 @@ async function expectNoExpirySet(txResult: TxResult) {
 async function deployCallbackContract(
   shouldRevert: boolean,
   shouldRevertWithMessage: boolean,
-): Promise<TestLiquidateCallback> {
-  return (await new dolomiteMargin.web3.eth.Contract(testLiquidateCallbackABI)
+  shouldConsumeTonsOfGas: boolean,
+  shouldReturnBomb: boolean,
+): Promise<TestLiquidationCallback> {
+  const liquidContract = (await new dolomiteMargin.web3.eth.Contract(TestLiquidationCallbackABI)
     .deploy({
-      data: testLiquidateCallbackBytecode,
-      arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
+      data: TestLiquidationCallbackBytecode,
+      arguments: [
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      ],
     })
-    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidateCallback;
+    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidationCallback;
+
+  liquidContract.options.gas = 6000000;
+  liquidContract.options.from = accounts[0];
+  return liquidContract;
 }
 
 function mapValuesToMap<T>(values: (number | T)[][]): { [marketId: string]: T } {

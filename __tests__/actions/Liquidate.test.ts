@@ -3,13 +3,22 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setGlobalOperator, setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { expectThrow } from '../../src/lib/Expect';
-import { AccountStatus, address, AmountDenomination, AmountReference, Integer, INTEGERS, Liquidate } from '../../src';
-import { TestLiquidateCallback } from '../../build/testing_wrappers/TestLiquidateCallback';
+import { expectOutOfGasFailure, expectThrow } from '../../src/lib/Expect';
 import {
-  abi as testLiquidateCallbackABI,
-  bytecode as testLiquidateCallbackBytecode,
-} from '../../build/contracts/TestLiquidateCallback.json';
+  AccountStatus,
+  address,
+  AmountDenomination,
+  AmountReference,
+  ConfirmationType,
+  Integer,
+  INTEGERS,
+  Liquidate,
+} from '../../src';
+import { TestLiquidationCallback } from '../../build/testing_wrappers/TestLiquidationCallback';
+import {
+  abi as TestLiquidationCallbackABI,
+  bytecode as TestLiquidationCallbackBytecode,
+} from '../../build/contracts/TestLiquidationCallback.json';
 
 let liquidOwner: address;
 let solidOwner: address;
@@ -155,7 +164,14 @@ describe('Liquidate', () => {
   it('Succeeds when liquidating a contract with callback', async () => {
     const shouldRevert = false;
     const shouldRevertWithMessage = false;
-    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    const shouldConsumeTonsOfGas = false;
+    const shouldReturnBomb = false;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
     await Promise.all([
       dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
@@ -165,6 +181,7 @@ describe('Liquidate', () => {
         collatPar,
       ),
     ]);
+
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
       amount: {
@@ -174,6 +191,7 @@ describe('Liquidate', () => {
         reference: AmountReference.Delta,
       },
     });
+    console.log(`\tLiquidate with callback success gas used: ${txResult.gasUsed}`);
 
     await Promise.all([
       expectSolidPars(par.times(premium), zero),
@@ -190,7 +208,14 @@ describe('Liquidate', () => {
   it('Succeeds when liquidating a contract with callback fails', async () => {
     const shouldRevert = true;
     const shouldRevertWithMessage = true;
-    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    const shouldConsumeTonsOfGas = false;
+    const shouldReturnBomb = false;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
     await Promise.all([
       dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
@@ -200,6 +225,13 @@ describe('Liquidate', () => {
         collatPar,
       ),
     ]);
+    await expectThrow(
+      dolomiteMargin.contracts.callContractFunction(
+        liquidContract.methods.onLiquidate('0', '0', { sign: true, value: '0' }, '0', { sign: true, value: '0' }),
+        { confirmationType: ConfirmationType.Simulate, gas: 6000000 },
+      ),
+    );
+
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
       amount: {
@@ -209,6 +241,7 @@ describe('Liquidate', () => {
         reference: AmountReference.Delta,
       },
     });
+    console.log(`\tLiquidate with callback reversion with message gas used: ${txResult.gasUsed}`);
 
     await Promise.all([
       expectSolidPars(par.times(premium), zero),
@@ -220,13 +253,25 @@ describe('Liquidate', () => {
     const log = logs[0];
     expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
     expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
-    expect(log.args.reason).toEqual('TestLiquidateCallback: purposeful reversion');
+    expect(log.args.reason).toEqual('TestLiquidationCallback: purposeful reversion');
   });
 
-  it('Succeeds when liquidating a contract with callback fails with no message', async () => {
+  it('Succeeds when liquidating a contract with callback fails with a cut off message', async () => {
     const shouldRevert = true;
-    const shouldRevertWithMessage = false;
-    const liquidContract = await deployCallbackContract(shouldRevert, shouldRevertWithMessage);
+    const shouldRevertWithMessage = true;
+    const shouldConsumeTonsOfGas = false;
+    const shouldReturnBomb = false;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
+    // tslint:disable:max-line-length
+    const revertMessage =
+      'This is a long revert message that will get cut off before the vertical bar character. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eget tempus nisi, quis volutpat nulla. Proin tempus nisl id rutrum scelerisque. Praesent id magna eget lorem dictum interdum nec ac lorem. Aliquam ornare iaculis lectus ut pellentesque. Maecenas id tellus facilisis est finibus convallis id tempus odio. Sed risus nibh.';
+    // tslint:enable:max-line-length
+    await liquidContract.methods.setRevertMessage(revertMessage).send({ from: accounts[0], gas: 6000000 });
     await Promise.all([
       dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
       dolomiteMargin.testing.setAccountBalance(
@@ -236,6 +281,64 @@ describe('Liquidate', () => {
         collatPar,
       ),
     ]);
+    await expectThrow(
+      dolomiteMargin.contracts.callContractFunction(
+        liquidContract.methods.onLiquidate('0', '0', { sign: true, value: '0' }, '0', { sign: true, value: '0' }),
+        { confirmationType: ConfirmationType.Simulate, gas: 6000000 },
+      ),
+    );
+
+    const txResult = await expectLiquidateOkay({
+      liquidAccountOwner: liquidContract.options.address,
+      amount: {
+        liquidAccountOwner: liquidContract.options.address,
+        value: par.times(2),
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+    console.log(`\tLiquidate with callback reversion with cut off message gas used: ${txResult.gasUsed}`);
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(log.args.reason).toEqual(revertMessage.substring(0, 188));
+  });
+
+  it('Succeeds when liquidating a contract with callback fails with no message', async () => {
+    const shouldRevert = true;
+    const shouldRevertWithMessage = false;
+    const shouldConsumeTonsOfGas = false;
+    const shouldReturnBomb = false;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      ),
+    ]);
+    await expectThrow(
+      dolomiteMargin.contracts.callContractFunction(
+        liquidContract.methods.onLiquidate('0', '0', { sign: true, value: '0' }, '0', { sign: true, value: '0' }),
+        { confirmationType: ConfirmationType.Simulate, gas: 6000000 },
+      ),
+    );
+
     const txResult = await expectLiquidateOkay({
       liquidAccountOwner: liquidContract.options.address,
       amount: {
@@ -244,6 +347,110 @@ describe('Liquidate', () => {
         reference: AmountReference.Delta,
       },
     });
+    console.log(`\tLiquidate with callback reversion with no message gas used: ${txResult.gasUsed}`);
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(log.args.reason).toEqual('');
+  });
+
+  it('Succeeds when liquidating a contract with callback fails and consumes tons of gas', async () => {
+    const shouldRevert = true;
+    const shouldRevertWithMessage = false;
+    const shouldConsumeTonsOfGas = true;
+    const shouldReturnBomb = false;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      ),
+    ]);
+    await expectOutOfGasFailure(
+      dolomiteMargin.contracts.callContractFunction(
+        liquidContract.methods.onLiquidate('0', '0', { sign: true, value: '0' }, '0', { sign: true, value: '0' }),
+        { confirmationType: ConfirmationType.Simulate, gas: 6000000 },
+      ),
+    );
+
+    const txResult = await expectLiquidateOkay(
+      {
+        liquidAccountOwner: liquidContract.options.address,
+        amount: {
+          value: par.times(2),
+          denomination: AmountDenomination.Principal,
+          reference: AmountReference.Delta,
+        },
+      },
+      { gas: 6000000 },
+    );
+    console.log(`\tLiquidate with callback reversion with massive gas consumption gas used: ${txResult.gasUsed}`);
+
+    await Promise.all([
+      expectSolidPars(par.times(premium), zero),
+      expectLiquidPars(par.times(remaining), zero, liquidContract.options.address),
+    ]);
+
+    const logs = dolomiteMargin.logs.parseLogs(txResult).filter(log => log.name === 'LogLiquidationCallbackFailure');
+    expect(logs.length).toEqual(1);
+    const log = logs[0];
+    expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+    expect(log.args.liquidAccountNumber).toEqual(liquidAccountNumber);
+    expect(log.args.reason).toEqual('');
+  });
+
+  it('Succeeds when liquidating a contract with callback succeeds and returns a memory bomb', async () => {
+    const shouldRevert = true;
+    const shouldRevertWithMessage = false;
+    const shouldConsumeTonsOfGas = false;
+    const shouldReturnBomb = true;
+    const liquidContract = await deployCallbackContract(
+      shouldRevert,
+      shouldRevertWithMessage,
+      shouldConsumeTonsOfGas,
+      shouldReturnBomb,
+    );
+    await Promise.all([
+      dolomiteMargin.testing.setAccountBalance(liquidContract.options.address, liquidAccountNumber, owedMarket, negPar),
+      dolomiteMargin.testing.setAccountBalance(
+        liquidContract.options.address,
+        liquidAccountNumber,
+        heldMarket,
+        collatPar,
+      ),
+    ]);
+    await expectThrow(
+      dolomiteMargin.contracts.callContractFunction(
+        liquidContract.methods.onLiquidate('0', '0', { sign: true, value: '0' }, '0', { sign: true, value: '0' }),
+        { confirmationType: ConfirmationType.Simulate, gas: 6000000 },
+      ),
+    );
+
+    const txResult = await expectLiquidateOkay({
+      liquidAccountOwner: liquidContract.options.address,
+      amount: {
+        value: par.times(2),
+        denomination: AmountDenomination.Principal,
+        reference: AmountReference.Delta,
+      },
+    });
+    console.log(`\tLiquidate with callback success with memory bomb gas used: ${txResult.gasUsed}`);
 
     await Promise.all([
       expectSolidPars(par.times(premium), zero),
@@ -454,13 +661,25 @@ describe('Liquidate', () => {
 async function deployCallbackContract(
   shouldRevert: boolean,
   shouldRevertWithMessage: boolean,
-): Promise<TestLiquidateCallback> {
-  return (await new dolomiteMargin.web3.eth.Contract(testLiquidateCallbackABI)
+  shouldConsumeTonsOfGas: boolean,
+  shouldReturnBomb: boolean,
+): Promise<TestLiquidationCallback> {
+  const liquidContract = (await new dolomiteMargin.web3.eth.Contract(TestLiquidationCallbackABI)
     .deploy({
-      data: testLiquidateCallbackBytecode,
-      arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address, shouldRevert, shouldRevertWithMessage],
+      data: TestLiquidationCallbackBytecode,
+      arguments: [
+        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        shouldRevert,
+        shouldRevertWithMessage,
+        shouldConsumeTonsOfGas,
+        shouldReturnBomb,
+      ],
     })
-    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidateCallback;
+    .send({ from: accounts[0], gas: '6000000' })) as TestLiquidationCallback;
+
+  liquidContract.options.gas = 6000000;
+  liquidContract.options.from = accounts[0];
+  return liquidContract;
 }
 
 async function expectLiquidationFlagSet(liquidAddress: address = liquidOwner) {

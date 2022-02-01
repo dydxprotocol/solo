@@ -59,4 +59,12 @@ contract IExpiry {
         view
         returns (Monetary.Price memory heldPrice, Monetary.Price memory owedPriceAdj);
 
+    function getExpiry(
+        Account.Info memory account,
+        uint256 marketId
+    )
+        public
+        view
+        returns (uint32);
+
 }

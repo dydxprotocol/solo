@@ -1,5 +1,6 @@
 const REQUIRE_MSG = 'Returned error: VM Exception while processing transaction: revert';
 const ASSERT_MSG = 'Returned error: VM Exception while processing transaction: invalid opcode';
+const OOG_MSG = 'Returned error: VM Exception while processing transaction: out of gas';
 
 // For solidity function calls that violate require()
 export async function expectThrow(promise: Promise<any>, reason?: string) {
@@ -21,6 +22,16 @@ export async function expectAssertFailure(promise: Promise<any>) {
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, ASSERT_MSG);
+  }
+}
+
+// For solidity function calls that runs out of gas()
+export async function expectOutOfGasFailure(promise: Promise<any>) {
+  try {
+    await promise;
+    throw new Error('Did not throw');
+  } catch (e) {
+    assertCertainError(e, OOG_MSG);
   }
 }
 

@@ -107,18 +107,6 @@ export class Logs {
       case this.contracts.expiry.options.address.toLowerCase(): {
         return this.parseLogWithContract(this.contracts.expiry, log);
       }
-      // case this.contracts.refunder.options.address.toLowerCase(): {
-      //   return this.parseLogWithContract(this.contracts.refunder, log);
-      // }
-      // case this.contracts.limitOrders.options.address.toLowerCase(): {
-      //   return this.parseLogWithContract(this.contracts.limitOrders, log);
-      // }
-      // case this.contracts.stopLimitOrders.options.address.toLowerCase(): {
-      //   return this.parseLogWithContract(this.contracts.stopLimitOrders, log);
-      // }
-      // case this.contracts.canonicalOrders.options.address.toLowerCase(): {
-      //   return this.parseLogWithContract(this.contracts.canonicalOrders, log);
-      // }
       case this.contracts.signedOperationProxy.options.address.toLowerCase(): {
         return this.parseLogWithContract(
           this.contracts.signedOperationProxy,

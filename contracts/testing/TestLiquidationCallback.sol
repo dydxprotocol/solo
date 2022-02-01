@@ -20,13 +20,13 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { OnlyDolomiteMargin } from "../external/helpers/OnlyDolomiteMargin.sol";
-import { ILiquidationCallback } from "../protocol/interfaces/ILiquidationCallback.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Types } from "../protocol/lib/Types.sol";
 
-contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
 
-    bytes32 public constant FILE = "TestLiquidateCallback";
+contract TestLiquidationCallback is OnlyDolomiteMargin {
+
+    bytes32 public constant FILE = "TestLiquidationCallback";
 
     event LogOnLiquidateInputs(
         uint accountNumber,
@@ -38,14 +38,24 @@ contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
 
     bool public SHOULD_REVERT;
     bool public SHOULD_REVERT_WITH_MESSAGE;
+    bool public SHOULD_CONSUME_TONS_OF_GAS;
+    bool public SHOULD_RETURN_BOMB;
+
+    string private REVERT_MESSAGE;
+
+    uint private value = 0;
 
     constructor(
         address dolomiteMargin,
         bool shouldRevert,
-        bool shouldRevertWithMessage
+        bool shouldRevertWithMessage,
+        bool shouldConsumeTonsOfGas,
+        bool shouldReturnBomb
     ) public OnlyDolomiteMargin(dolomiteMargin) {
         SHOULD_REVERT = shouldRevert;
         SHOULD_REVERT_WITH_MESSAGE = shouldRevertWithMessage;
+        SHOULD_CONSUME_TONS_OF_GAS = shouldConsumeTonsOfGas;
+        SHOULD_RETURN_BOMB = shouldReturnBomb;
     }
 
     function setLocalOperator() external {
@@ -55,25 +65,46 @@ contract TestLiquidateCallback is OnlyDolomiteMargin, ILiquidationCallback {
         DOLOMITE_MARGIN.setOperators(operators);
     }
 
+    function setRevertMessage(string calldata revertMessage) external {
+        REVERT_MESSAGE = revertMessage;
+    }
+
     function onLiquidate(
         uint accountNumber,
         uint heldMarketId,
         Types.Wei memory heldDeltaWei,
         uint owedMarketId,
         Types.Wei memory owedDeltaWei
-    ) public {
+    ) public returns (bytes memory) {
         if (SHOULD_REVERT) {
             if (SHOULD_REVERT_WITH_MESSAGE) {
-                Require.that(
-                    false,
-                    FILE,
-                    "purposeful reversion"
-                );
+                if (bytes(REVERT_MESSAGE).length == 0) {
+                    Require.that(
+                        false,
+                        FILE,
+                        "purposeful reversion"
+                    );
+                } else {
+                    revert(REVERT_MESSAGE);
+                }
+                return "";
+            } else if (SHOULD_CONSUME_TONS_OF_GAS) {
+                for (uint i = 0; i < 50000; i++) {
+                    value += 1;
+                }
+                return "";
+            } else if (SHOULD_RETURN_BOMB) {
+                // send back 1,000,000 bytes
+                assembly {
+                    revert(0, 1000000)
+                }
+                revert();
             } else {
                 revert();
             }
         } else {
             emit LogOnLiquidateInputs(accountNumber, heldMarketId, heldDeltaWei, owedMarketId, owedDeltaWei);
+            return "";
         }
     }
 

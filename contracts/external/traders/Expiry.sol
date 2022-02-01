@@ -31,6 +31,7 @@ import { Decimal } from "../../protocol/lib/Decimal.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { SafeLiquidationCallback } from "../../protocol/lib/SafeLiquidationCallback.sol";
 import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
@@ -79,10 +80,6 @@ contract Expiry is
         address sender,
         uint32 minTimeDelta
     );
-
-    event LogLiquidationCallbackSuccess(address indexed liquidAccountOwner, uint liquidAccountNumber);
-
-    event LogLiquidationCallbackFailure(address indexed liquidAccountOwner, uint liquidAccountNumber, string reason);
 
     // ============ Storage ============
 
@@ -425,7 +422,7 @@ contract Expiry is
         );
         assert(output.sign != maxOutputWei.sign);
 
-        _callLiquidateCallbackIfNecessary(
+        SafeLiquidationCallback.callLiquidateCallbackIfNecessary(
             makerAccount,
             owedMarketId == inputMarketId ? outputMarketId : inputMarketId,
             owedMarketId == inputMarketId ? Types.Wei(output.sign, output.value) : inputWei,
@@ -531,46 +528,5 @@ contract Expiry is
             ref: Types.AssetReference.Delta,
             value: heldAmount
         });
-    }
-
-    function _callLiquidateCallbackIfNecessary(
-        Account.Info memory liquidAccount,
-        uint heldMarket,
-        Types.Wei memory heldDeltaWei,
-        uint owedMarket,
-        Types.Wei memory owedDeltaWei
-    ) private {
-        if (liquidAccount.owner.isContract()) {
-            // solium-disable-next-line security/no-low-level-calls
-            (bool isCallSuccessful, bytes memory result) = liquidAccount.owner.call(
-                abi.encodeWithSelector(
-                    ILiquidationCallback(liquidAccount.owner).onLiquidate.selector,
-                    liquidAccount.number,
-                    heldMarket,
-                    heldDeltaWei,
-                    owedMarket,
-                    owedDeltaWei
-                )
-            );
-
-            if (isCallSuccessful) {
-                emit LogLiquidationCallbackSuccess(liquidAccount.owner, liquidAccount.number);
-            } else {
-                if (result.length < 68) {
-                    result = bytes("");
-                } else {
-                    // solium-disable-next-line security/no-inline-assembly
-                    assembly {
-                        result := add(result, 0x04)
-                    }
-                    result = bytes(abi.decode(result, (string)));
-                }
-                emit LogLiquidationCallbackFailure(
-                    liquidAccount.owner,
-                    liquidAccount.number,
-                    string(result)
-                );
-            }
-        }
     }
 }

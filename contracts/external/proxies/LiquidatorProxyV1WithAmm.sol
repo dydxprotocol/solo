@@ -31,6 +31,7 @@ import { Interest } from "../../protocol/lib/Interest.sol";
 import { Math } from "../../protocol/lib/Math.sol";
 import { Monetary } from "../../protocol/lib/Monetary.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { Time } from "../../protocol/lib/Time.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 
 import { LiquidatorProxyHelper } from "../helpers/LiquidatorProxyHelper.sol";
@@ -366,30 +367,49 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
             tokenPath[tokenPath.length - 1]
         );
 
-        (
-            Monetary.Value memory liquidSupplyValue,
-            Monetary.Value memory liquidBorrowValue
-        ) = getAdjustedAccountValues(
-            constants.dolomiteMargin,
-            constants.markets,
-            constants.liquidAccount,
-            constants.liquidMarkets
-        );
-        Require.that(
-            liquidSupplyValue.value != 0,
-            FILE,
-            "Liquid account no supply"
-        );
-        Require.that(
-            constants.dolomiteMargin.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
-            !isCollateralized(
-                liquidSupplyValue.value,
-                liquidBorrowValue.value,
-                constants.dolomiteMargin.getMarginRatio()
-            ),
-            FILE,
-            "Liquid account not liquidatable"
-        );
+        if (constants.expiry == 0) {
+            // user is getting liquidated, not expired. Check liquid account is indeed liquid
+            (
+                Monetary.Value memory liquidSupplyValue,
+                Monetary.Value memory liquidBorrowValue
+            ) = getAdjustedAccountValues(
+                constants.dolomiteMargin,
+                constants.markets,
+                constants.liquidAccount,
+                constants.liquidMarkets
+            );
+            Require.that(
+                liquidSupplyValue.value != 0,
+                FILE,
+                "Liquid account no supply"
+            );
+            Require.that(
+                constants.dolomiteMargin.getAccountStatus(constants.liquidAccount) == Account.Status.Liquid ||
+                !isCollateralized(
+                    liquidSupplyValue.value,
+                    liquidBorrowValue.value,
+                    constants.dolomiteMargin.getMarginRatio()
+                ),
+                FILE,
+                "Liquid account not liquidatable"
+            );
+        } else {
+            // check the expiration is valid; to get here we already know constants.expiry != 0
+            uint expiry = constants.expiryProxy.getExpiry(constants.liquidAccount, owedMarket);
+            Require.that(
+                expiry == constants.expiry,
+                FILE,
+                "expiry mismatch",
+                expiry,
+                constants.expiry
+            );
+            Require.that(
+                expiry <= Time.currentTime(),
+                FILE,
+                "Borrow not yet expired",
+                expiry
+            );
+        }
     }
 
     /**
