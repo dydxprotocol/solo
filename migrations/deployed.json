@@ -63,8 +63,8 @@
     "LiquidatorProxyV1WithAmm": {
         "80001": {
             "links": {},
-            "address": "0xE08B0c247baB1534d2720C9263884d6E5B5bdd3e",
-            "transactionHash": "0x7c2035c3aca0c7840652208c91e0affb58302d9f59385c8b570003e6d76bc55f"
+            "address": "0xe575611aFbb23A84c27A3d79e3A7e620f0098d0A",
+            "transactionHash": "0xaedb5dc63702510f5bf5d1c3682a58bcb68c10d5306ab80b9cfce26eb6eab5dd"
         }
     },
     "AmmRebalancerProxy": {
