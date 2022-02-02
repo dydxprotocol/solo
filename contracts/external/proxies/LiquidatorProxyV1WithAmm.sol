@@ -93,20 +93,20 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
      * @param heldMarket                The held market (collateral) that will be received by the liquidator
      * @param heldDeltaWeiWithReward    The amount of heldMarket the liquidator will receive, including the reward
      *                                  (positive number)
+     * @param profitHeldWei             The amount of profit the liquidator will realize by performing the liquidation
+     *                                  and atomically selling off the collateral. Can be negative or positive.
      * @param owedMarket                The debt market that will be received by the liquidator
      * @param owedDeltaWei              The amount of owedMarket that will be received by the liquidator (negative
      *                                  number)
-     * @param profitHeldWei             The amount of profit the liquidator will realize by performing the liquidation
-     *                                  and atomically selling off the collateral. Can be negative or positive.
      */
     event LogLiquidateWithAmm(
         address indexed solidAccountOwner,
         uint solidAccountNumber,
         uint heldMarket,
         uint heldDeltaWeiWithReward,
+        Types.Wei profitHeldWei, // calculated as `heldWeiWithReward - soldHeldWeiToBreakEven`
         uint owedMarket,
-        uint owedDeltaWei,
-        Types.Wei profitHeldWei // calculated as `heldWeiWithReward - soldHeldWei`
+        uint owedDeltaWei
     );
 
     // ============ Storage ============
@@ -253,14 +253,16 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         );
 
         if (cache.solidHeldUpdateWithReward >= actions[0].amount.value) {
+            uint profit = cache.solidHeldUpdateWithReward.sub(actions[0].amount.value);
+            uint _owedMarket = owedMarket; // used to prevent the "stack too deep" error
             emit LogLiquidateWithAmm(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 heldMarket,
                 cache.solidHeldUpdateWithReward,
-                owedMarket,
-                cache.toLiquidate,
-                Types.Wei(true, cache.solidHeldUpdateWithReward.sub(actions[0].amount.value))
+                Types.Wei(true, profit),
+                _owedMarket,
+                cache.toLiquidate
             );
         } else {
             Require.that(
@@ -271,6 +273,8 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
                 actions[0].amount.value
             );
 
+            // This value needs to be calculated before `actions` is overwritten below with the new swap parameters
+            uint profit = actions[0].amount.value.sub(cache.solidHeldUpdateWithReward);
             (accounts, actions) = ROUTER_PROXY.getParamsForSwapExactTokensForTokens(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
@@ -278,14 +282,16 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
                 minOwedOutputAmount,
                 tokenPath
             );
+
+            uint _owedMarket = owedMarket; // used to prevent the "stack too deep" error
             emit LogLiquidateWithAmm(
                 constants.solidAccount.owner,
                 constants.solidAccount.number,
                 heldMarket,
                 cache.solidHeldUpdateWithReward,
-                owedMarket,
-                cache.toLiquidate,
-                Types.Wei(false, actions[0].amount.value.sub(cache.solidHeldUpdateWithReward))
+                Types.Wei(false, profit),
+                _owedMarket,
+                cache.toLiquidate
             );
         }
 
