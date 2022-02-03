@@ -67,7 +67,7 @@
             "transactionHash": "0xaedb5dc63702510f5bf5d1c3682a58bcb68c10d5306ab80b9cfce26eb6eab5dd"
         }
     },
-    "AmmRebalancerProxy": {
+    "AmmRebalancerProxyV1": {
         "80001": {
             "links": {},
             "address": "0xB3883b684b179A2B7a7B0299e463D05f2ed7A0c5",

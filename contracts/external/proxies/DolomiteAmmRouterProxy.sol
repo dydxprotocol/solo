@@ -38,6 +38,12 @@ import "../interfaces/IDolomiteAmmFactory.sol";
 import "../interfaces/IDolomiteAmmPair.sol";
 
 
+/**
+ * @title DolomiteAmmRouterProxy
+ * @author Dolomite
+ *
+ * Contract for routing trades to the Dolomite AMM pools and potentially opening margin positions
+ */
 contract DolomiteAmmRouterProxy is ReentrancyGuard {
     using SafeMath for uint;
 
