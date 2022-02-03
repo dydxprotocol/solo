@@ -19,5 +19,6 @@ artifacts/
 
 .coveralls.yml
 
+scripts/set-expiry.sh
 scripts/verify-contracts.sh
 scripts/verify-amm-pair.sh

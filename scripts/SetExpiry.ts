@@ -18,6 +18,7 @@ async function start() {
 
   const dolomiteMargin = new DolomiteMargin(provider, networkId);
 
+  const accountAddress = process.env.ACCOUNT_ADDRESS;
   const accountNumber = process.env.ACCOUNT_NUMBER;
   const marketId = process.env.MARKET_ID;
   const timeDelta = process.env.TIME_DELTA;
@@ -30,17 +31,16 @@ async function start() {
     return Promise.reject(new Error('One of accountNumber, marketId, or timeDelta was not defined'));
   }
 
-  const account = (await dolomiteMargin.web3.eth.getAccounts())[0];
-  console.log('account', account);
+  const deployer = (await dolomiteMargin.web3.eth.getAccounts())[0];
 
   const txResult = await dolomiteMargin.operation
     .initiate()
     .setExpiry({
-      primaryAccountOwner: account,
+      primaryAccountOwner: accountAddress,
       primaryAccountId: new BigNumber(accountNumber),
       expiryArgs: [
         {
-          accountOwner: account,
+          accountOwner: accountAddress,
           accountId: new BigNumber(accountNumber),
           marketId: new BigNumber(marketId),
           timeDelta: new BigNumber(timeDelta),
@@ -48,7 +48,7 @@ async function start() {
         },
       ],
     })
-    .commit({ from: account, confirmationType: ConfirmationType.Hash });
+    .commit({ from: deployer, confirmationType: ConfirmationType.Hash });
 
   console.log('transaction hash', txResult.transactionHash);
 }
