@@ -1,26 +1,11 @@
 import BigNumber from 'bignumber.js';
-import {
-  address,
-  ADDRESSES,
-  Amount,
-  AmountDenomination,
-  AmountReference,
-  INTEGERS,
-  ProxyType
-} from '../../src';
+import { address, ADDRESSES, Amount, AmountDenomination, AmountReference, INTEGERS, ProxyType } from '../../src';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import {
-  resetEVM,
-  snapshot
-} from '../helpers/EVM';
-import {
-  TestExchangeWrapperOrder,
-  TestOrder,
-  TestOrderType
-} from '../helpers/types';
+import { resetEVM, snapshot } from '../helpers/EVM';
+import { TestExchangeWrapperOrder, TestOrder, TestOrderType } from '../helpers/types';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -30,6 +15,7 @@ let admin: address;
 let owner1: address;
 let owner2: address;
 let operator: address;
+let globalOperator: address;
 let testOrder: TestOrder;
 
 const amount = new BigNumber(10000);
@@ -66,6 +52,7 @@ describe('PayableProxy', () => {
     owner1 = dolomiteMargin.getDefaultAccount();
     owner2 = accounts[3];
     operator = accounts[6];
+    globalOperator = accounts[7];
     testOrder = {
       type: TestOrderType.Test,
       exchangeWrapperAddress: dolomiteMargin.testing.exchangeWrapper.address,
@@ -128,6 +115,7 @@ describe('PayableProxy', () => {
       defaultIsRecyclable,
       { from: admin },
     );
+    await dolomiteMargin.admin.setGlobalOperator(globalOperator, true, { from: admin })
     snapshotId = await snapshot();
   });
 
@@ -305,6 +293,18 @@ describe('PayableProxy', () => {
       })
       .commit();
 
+    await expectThrow(
+      newOperation()
+        .trade({
+          ...bigBlob,
+          autoTrader: dolomiteMargin.expiry.address,
+          otherAccountOwner: owner1,
+          otherAccountId: accountNumber2,
+        })
+        .commit(),
+      'PayableProxy: Unpermissioned trade operator'
+    );
+
     await newOperation()
       .call({
         ...bigBlob,
@@ -312,9 +312,14 @@ describe('PayableProxy', () => {
       })
       .commit();
 
-    await newOperation()
+    await expectThrow(
+      newOperation().liquidate(bigBlob).commit(),
+      'PayableProxy: Cannot perform liquidations'
+    );
+
+    await newOperation(undefined, ProxyType.None)
       .liquidate(bigBlob)
-      .commit();
+      .commit({ from: globalOperator });
 
     await newOperation()
       .vaporize(bigBlob)
@@ -387,9 +392,9 @@ describe('PayableProxy', () => {
 
 // ============ Helper Functions ============
 
-function newOperation(sendEthTo?: address) {
+function newOperation(sendEthTo?: address, proxy: ProxyType = ProxyType.Payable) {
   return dolomiteMargin.operation.initiate({
-    proxy: ProxyType.Payable,
+    proxy,
     sendEthTo: sendEthTo || owner1,
   });
 }

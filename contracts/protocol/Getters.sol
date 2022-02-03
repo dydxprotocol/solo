@@ -471,6 +471,16 @@ contract Getters is
         return g_state.isGlobalOperator(operator);
     }
 
+    function getIsAutoTraderSpecial(
+        address autoTrader
+    )
+        public
+        view
+        returns (bool)
+    {
+        return g_state.isAutoTraderSpecial(autoTrader);
+    }
+
     // ============ Internal/Private Helper Functions ============
 
     /**

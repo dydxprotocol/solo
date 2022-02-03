@@ -11,15 +11,16 @@ import {
   Action,
   ActionType,
   address,
+  ADDRESSES,
   AmountDenomination,
   AmountReference,
+  INTEGERS,
   Operation,
   ProxyType,
   SignedOperation,
   SigningMethod,
   TxResult,
 } from '../../src';
-import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
 import { expectAssertFailure, expectThrow } from '../../src/lib/Expect';
 import { toBytes } from '../../src/lib/BytesHelper';
 
@@ -523,6 +524,27 @@ describe('SignedOperationProxy', () => {
       await expectInvalid([signedTradeOperation]);
     });
 
+    it('Fails for special trade', async () => {
+      const specialSignedOperation = await createSignedOperation('trade', {
+        primaryAccountId: defaultSignerNumber,
+        primaryAccountOwner: defaultSigner,
+        otherAccountOwner: rando,
+        otherAccountId: randoNumber,
+        inputMarketId: takerMarket,
+        outputMarketId: makerMarket,
+        autoTrader: dolomiteMargin.expiry.address,
+        data: toBytes(tradeId),
+        amount: defaultAssetAmount,
+      });
+      await expectThrow(
+        dolomiteMargin.operation
+          .initiate({ proxy: ProxyType.Signed })
+          .addSignedOperation(specialSignedOperation)
+          .commit({ from: defaultSender }),
+        'SignedOperationProxy: Unpermissioned trade operator'
+      );
+    });
+
     it('Succeeds for call (0 bytes)', async () => {
       const txResult = await dolomiteMargin.operation
         .initiate({ proxy: ProxyType.Signed })
@@ -562,17 +584,14 @@ describe('SignedOperationProxy', () => {
       await expectInvalid([signedCallOddOperation]);
     });
 
-    it('Succeeds for liquidate', async () => {
-      const txResult = await dolomiteMargin.operation
-        .initiate({ proxy: ProxyType.Signed })
-        .addSignedOperation(signedLiquidateOperation)
-        .commit({ from: defaultSender });
-      expectLogs(txResult, [
-        'LogOperationExecuted',
-        'LogOperation',
-        'LogLiquidate',
-      ]);
-      await expectInvalid([signedLiquidateOperation]);
+    it('Fails for liquidate', async () => {
+      await expectThrow(
+        dolomiteMargin.operation
+          .initiate({ proxy: ProxyType.Signed })
+          .addSignedOperation(signedLiquidateOperation)
+          .commit({ from: defaultSender }),
+        'SignedOperationProxy: Cannot perform liquidations'
+      );
     });
 
     it('Succeeds for vaporize', async () => {

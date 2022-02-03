@@ -644,6 +644,16 @@ export class Getters {
     );
   }
 
+  public async getIsAutoTraderSpecial(
+    autoTrader: address,
+    options?: ContractConstantCallOptions,
+  ): Promise<boolean> {
+    return this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteMargin.methods.getIsAutoTraderSpecial(autoTrader),
+      options,
+    );
+  }
+
   public async getAdmin(
     options?: ContractConstantCallOptions,
   ): Promise<address> {

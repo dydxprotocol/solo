@@ -274,7 +274,7 @@ OnlyDolomiteMargin,
         );
 
         // cache the index of the first action for this auth
-        uint256 actionStartIdx = 0;
+        uint256 actionStartIndex = 0;
 
         // loop over all auths
         for (uint256 authIdx = 0; authIdx < auths.length; authIdx++) {
@@ -306,7 +306,7 @@ OnlyDolomiteMargin,
                     accounts,
                     actions,
                     auth,
-                    actionStartIdx
+                    actionStartIndex
                 );
 
                 // require that this message is still valid
@@ -333,27 +333,43 @@ OnlyDolomiteMargin,
             }
 
             // cache the index of the first action after this auth
-            uint256 actionEndIdx = actionStartIdx.add(auth.numActions);
+            uint256 actionEndIndex = actionStartIndex.add(auth.numActions);
 
             // loop over all actions for which this auth applies
-            for (uint256 actionIdx = actionStartIdx; actionIdx < actionEndIdx; actionIdx++) {
+            for (uint256 actionIndex = actionStartIndex; actionIndex < actionEndIndex; actionIndex++) {
                 // validate primary account
-                Actions.ActionArgs memory action = actions[actionIdx];
+                Actions.ActionArgs memory action = actions[actionIndex];
                 validateAccountOwner(accounts[action.accountId].owner, signer);
 
                 // validate second account in the case of a transfer
                 if (action.actionType == Actions.ActionType.Transfer) {
                     validateAccountOwner(accounts[action.otherAccountId].owner, signer);
+                } else {
+                    Require.that(
+                        action.actionType != Actions.ActionType.Liquidate,
+                        FILE,
+                        "Cannot perform liquidations"
+                    );
+                    if (
+                        action.actionType == Actions.ActionType.Trade &&
+                        DOLOMITE_MARGIN.getIsAutoTraderSpecial(action.otherAddress)
+                    ) {
+                        Require.that(
+                            DOLOMITE_MARGIN.getIsGlobalOperator(msg.sender),
+                            FILE,
+                            "Unpermissioned trade operator"
+                        );
+                    }
                 }
             }
 
             // update actionStartIdx
-            actionStartIdx = actionEndIdx;
+            actionStartIndex = actionEndIndex;
         }
 
         // require that all actions are signed or from msg.sender
         Require.that(
-            actionStartIdx == actions.length,
+            actionStartIndex == actions.length,
             FILE,
             "Not all actions are signed"
         );

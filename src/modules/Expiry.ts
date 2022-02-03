@@ -19,6 +19,10 @@ export class Expiry {
 
   // ============ Getters ============
 
+  public get address(): string {
+    return this.contracts.expiry.options.address;
+  }
+
   public async getAdmin(
     options?: ContractConstantCallOptions,
   ): Promise<address> {

@@ -1,12 +1,6 @@
 import { Contracts } from '../lib/Contracts';
-import {
-  address,
-  ContractCallOptions,
-  Decimal,
-  Integer,
-  TxResult,
-} from '../types';
 import { decimalToString } from '../lib/Helpers';
+import { address, ContractCallOptions, Decimal, Integer, TxResult } from '../types';
 
 export class Admin {
   private contracts: Contracts;
@@ -23,10 +17,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerWithdrawExcessTokens(
-        marketId.toFixed(0),
-        recipient,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerWithdrawExcessTokens(marketId.toFixed(0), recipient),
       options,
     );
   }
@@ -37,10 +28,7 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerWithdrawUnsupportedTokens(
-        token,
-        recipient,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerWithdrawUnsupportedTokens(token, recipient),
       options,
     );
   }
@@ -91,16 +79,9 @@ export class Admin {
     );
   }
 
-  public async setIsClosing(
-    marketId: Integer,
-    isClosing: boolean,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setIsClosing(marketId: Integer, isClosing: boolean, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetIsClosing(
-        marketId.toFixed(0),
-        isClosing,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetIsClosing(marketId.toFixed(0), isClosing),
       options,
     );
   }
@@ -111,10 +92,9 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetMarginPremium(
-        marketId.toFixed(0),
-        { value: decimalToString(marginPremium) },
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetMarginPremium(marketId.toFixed(0), {
+        value: decimalToString(marginPremium),
+      }),
       options,
     );
   }
@@ -125,24 +105,16 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetSpreadPremium(
-        marketId.toFixed(0),
-        { value: decimalToString(spreadPremium) },
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetSpreadPremium(marketId.toFixed(0), {
+        value: decimalToString(spreadPremium),
+      }),
       options,
     );
   }
 
-  public async setPriceOracle(
-    marketId: Integer,
-    oracle: address,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setPriceOracle(marketId: Integer, oracle: address, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetPriceOracle(
-        marketId.toFixed(0),
-        oracle,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetPriceOracle(marketId.toFixed(0), oracle),
       options,
     );
   }
@@ -153,20 +125,14 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetInterestSetter(
-        marketId.toFixed(0),
-        interestSetter,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetInterestSetter(marketId.toFixed(0), interestSetter),
       options,
     );
   }
 
   // ============ Risk Functions ============
 
-  public async setMarginRatio(
-    ratio: Decimal,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setMarginRatio(ratio: Decimal, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.dolomiteMargin.methods.ownerSetMarginRatio({
         value: decimalToString(ratio),
@@ -175,10 +141,7 @@ export class Admin {
     );
   }
 
-  public async setLiquidationSpread(
-    spread: Decimal,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setLiquidationSpread(spread: Decimal, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.dolomiteMargin.methods.ownerSetLiquidationSpread({
         value: decimalToString(spread),
@@ -187,10 +150,7 @@ export class Admin {
     );
   }
 
-  public async setEarningsRate(
-    rate: Decimal,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setEarningsRate(rate: Decimal, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.dolomiteMargin.methods.ownerSetEarningsRate({
         value: decimalToString(rate),
@@ -199,10 +159,7 @@ export class Admin {
     );
   }
 
-  public async setMinBorrowedValue(
-    minBorrowedValue: Integer,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setMinBorrowedValue(minBorrowedValue: Integer, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
       this.contracts.dolomiteMargin.methods.ownerSetMinBorrowedValue({
         value: minBorrowedValue.toFixed(0),
@@ -219,24 +176,27 @@ export class Admin {
     options?: ContractCallOptions,
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.dolomiteMargin.methods.ownerSetGlobalOperator(
-        operator,
-        approved,
-      ),
+      this.contracts.dolomiteMargin.methods.ownerSetGlobalOperator(operator, approved),
+      options,
+    );
+  }
+
+  public async setAutoTraderIsSpecial(
+    autoTrader: address,
+    isSpecial: boolean,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteMargin.methods.ownerSetAutoTraderSpecial(autoTrader, isSpecial),
       options,
     );
   }
 
   // ============ Expiry Functions ============
 
-  public async setExpiryRampTime(
-    newExpiryRampTime: Integer,
-    options?: ContractCallOptions,
-  ): Promise<TxResult> {
+  public async setExpiryRampTime(newExpiryRampTime: Integer, options?: ContractCallOptions): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.expiry.methods.ownerSetExpiryRampTime(
-        newExpiryRampTime.toFixed(0),
-      ),
+      this.contracts.expiry.methods.ownerSetExpiryRampTime(newExpiryRampTime.toFixed(0)),
       options,
     );
   }

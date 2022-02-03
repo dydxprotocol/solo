@@ -119,6 +119,11 @@ library AdminImpl {
         bool approved
     );
 
+    event LogSetAutoTraderIsSpecial(
+        address autoTrader,
+        bool isSpecial
+    );
+
     // ============ Token Functions ============
 
     function ownerWithdrawExcessTokens(
@@ -419,6 +424,18 @@ library AdminImpl {
         state.globalOperators[operator] = approved;
 
         emit LogSetGlobalOperator(operator, approved);
+    }
+
+    function ownerSetAutoTraderSpecial(
+        Storage.State storage state,
+        address autoTrader,
+        bool isSpecial
+    )
+    public
+    {
+        state.specialAutoTraders[autoTrader] = isSpecial;
+
+        emit LogSetAutoTraderIsSpecial(autoTrader, isSpecial);
     }
 
     // ============ Private Functions ============

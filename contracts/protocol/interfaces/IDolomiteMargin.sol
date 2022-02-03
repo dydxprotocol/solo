@@ -369,6 +369,13 @@ interface IDolomiteMargin {
         address operator
     ) external view returns (bool);
 
+    /**
+     * Checks if the autoTrader can only be called invoked by a global operator
+     *
+     * @param autoTrader    The trader that should be checked for special call privileges.
+     */
+    function getIsAutoTraderSpecial(address autoTrader) external view returns (bool);
+
     // ============ Getters for Risk Params ============
 
     /**

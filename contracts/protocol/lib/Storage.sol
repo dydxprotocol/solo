@@ -154,6 +154,9 @@ library Storage {
         // Addresses that can control all users accounts
         mapping (address => bool) globalOperators;
 
+        // Addresses of auto traders that can only be called by global operators. IE for expirations
+        mapping (address => bool) specialAutoTraders;
+
         // mutable risk parameters of the system
         RiskParams riskParams;
 
@@ -464,6 +467,17 @@ library Storage {
         returns (bool)
     {
         return state.globalOperators[operator];
+    }
+
+    function isAutoTraderSpecial(
+        Storage.State storage state,
+        address autoTrader
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return state.specialAutoTraders[autoTrader];
     }
 
     function isLocalOperator(

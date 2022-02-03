@@ -1,22 +1,21 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from './helpers/DolomiteMargin';
-import { EVM } from './modules/EVM';
-import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from './helpers/EVM';
-import { setupMarkets } from './helpers/DolomiteMarginHelpers';
-import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
-import { stringToDecimal } from '../src/lib/Helpers';
-import { expectThrow } from '../src/lib/Expect';
-import { address, Decimal, Integer, MarketWithInfo, RiskLimits, RiskParams, } from '../src';
-
-import { abi as recyclableABI, bytecode as recyclableBytecode, } from '../build/contracts/TestRecyclableToken.json';
 import {
   abi as customTestTokenABI,
   bytecode as customTestTokenBytecode,
 } from '../build/contracts/CustomTestToken.json';
 
+import { abi as recyclableABI, bytecode as recyclableBytecode } from '../build/contracts/TestRecyclableToken.json';
+
 import { CustomTestToken } from '../build/testing_wrappers/CustomTestToken';
 import { TestRecyclableToken } from '../build/testing_wrappers/TestRecyclableToken';
+import { address, ADDRESSES, Decimal, Integer, INTEGERS, MarketWithInfo, RiskLimits, RiskParams } from '../src';
+import { expectThrow } from '../src/lib/Expect';
+import { stringToDecimal } from '../src/lib/Helpers';
+import { getDolomiteMargin } from './helpers/DolomiteMargin';
+import { setupMarkets } from './helpers/DolomiteMarginHelpers';
+import { resetEVM, snapshot } from './helpers/EVM';
+import { EVM } from './modules/EVM';
+import { TestDolomiteMargin } from './modules/TestDolomiteMargin';
 
 let txr: any;
 let dolomiteMargin: TestDolomiteMargin;
@@ -85,18 +84,8 @@ describe('Admin', () => {
     it('Succeeds even if has more tokens than enough', async () => {
       // has 2X tokens but has X excess
       await Promise.all([
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account1,
-          market,
-          amount.times(2),
-        ),
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account2,
-          market,
-          amount.times(-1),
-        ),
+        dolomiteMargin.testing.setAccountBalance(owner, account1, market, amount.times(2)),
+        dolomiteMargin.testing.setAccountBalance(owner, account2, market, amount.times(-1)),
         dolomiteMargin.testing.tokenA.issueTo(amount.times(2), dolomiteMarginAddress),
       ]);
       const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
@@ -111,18 +100,8 @@ describe('Admin', () => {
     it('Succeeds even if existing tokens arent enough', async () => {
       // has X tokens but has 3X excess
       await Promise.all([
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account1,
-          market,
-          amount.times(-3),
-        ),
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account2,
-          market,
-          amount.times(1),
-        ),
+        dolomiteMargin.testing.setAccountBalance(owner, account1, market, amount.times(-3)),
+        dolomiteMargin.testing.setAccountBalance(owner, account2, market, amount.times(1)),
         dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
       const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
@@ -136,18 +115,8 @@ describe('Admin', () => {
 
     it('Succeeds for zero available', async () => {
       await Promise.all([
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account1,
-          market,
-          amount.times(-2),
-        ),
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account2,
-          market,
-          amount.times(1),
-        ),
+        dolomiteMargin.testing.setAccountBalance(owner, account1, market, amount.times(-2)),
+        dolomiteMargin.testing.setAccountBalance(owner, account2, market, amount.times(1)),
       ]);
       const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
       expect(excess).toEqual(amount);
@@ -160,18 +129,8 @@ describe('Admin', () => {
 
     it('Succeeds for zero excess', async () => {
       await Promise.all([
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account1,
-          market,
-          amount.times(-1),
-        ),
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account2,
-          market,
-          amount.times(2),
-        ),
+        dolomiteMargin.testing.setAccountBalance(owner, account1, market, amount.times(-1)),
+        dolomiteMargin.testing.setAccountBalance(owner, account2, market, amount.times(2)),
         dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
       const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
@@ -184,18 +143,8 @@ describe('Admin', () => {
 
     it('Fails for negative excess', async () => {
       await Promise.all([
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account1,
-          market,
-          amount.times(-1),
-        ),
-        dolomiteMargin.testing.setAccountBalance(
-          owner,
-          account2,
-          market,
-          amount.times(3),
-        ),
+        dolomiteMargin.testing.setAccountBalance(owner, account1, market, amount.times(-1)),
+        dolomiteMargin.testing.setAccountBalance(owner, account2, market, amount.times(3)),
         dolomiteMargin.testing.tokenA.issueTo(amount, dolomiteMarginAddress),
       ]);
       const excess = await dolomiteMargin.getters.getNumExcessTokens(market);
@@ -216,16 +165,10 @@ describe('Admin', () => {
     });
 
     it('Fails for non-admin', async () => {
-      await expectThrow(
-        dolomiteMargin.admin.withdrawExcessTokens(market, recipient, { from: nonAdmin }),
-      );
+      await expectThrow(dolomiteMargin.admin.withdrawExcessTokens(market, recipient, { from: nonAdmin }));
     });
 
-    async function expectBalances(
-      txResult: any,
-      expectedDolomiteMargin: Integer,
-      expectedRecipient: Integer,
-    ) {
+    async function expectBalances(txResult: any, expectedDolomiteMargin: Integer, expectedRecipient: Integer) {
       if (txResult) {
         const token = dolomiteMargin.testing.tokenA.address;
         const logs = dolomiteMargin.logs.parseLogs(txResult);
@@ -251,30 +194,24 @@ describe('Admin', () => {
       const amount = new BigNumber(100);
       await dolomiteMargin.testing.tokenC.issueTo(amount, dolomiteMarginAddress);
       await expectBalances(null, amount, INTEGERS.ZERO);
-      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
-        dolomiteMargin.testing.tokenC.address,
-        recipient,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(dolomiteMargin.testing.tokenC.address, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, INTEGERS.ZERO, amount);
     });
 
     it('Succeeds for zero tokens', async () => {
-      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(
-        dolomiteMargin.testing.tokenC.address,
-        recipient,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.withdrawUnsupportedTokens(dolomiteMargin.testing.tokenC.address, recipient, {
+        from: admin,
+      });
       await expectBalances(txr, INTEGERS.ZERO, INTEGERS.ZERO);
     });
 
     it('Fails for token with existing market', async () => {
       await expectThrow(
-        dolomiteMargin.admin.withdrawUnsupportedTokens(
-          dolomiteMargin.testing.tokenA.address,
-          recipient,
-          { from: admin },
-        ),
+        dolomiteMargin.admin.withdrawUnsupportedTokens(dolomiteMargin.testing.tokenA.address, recipient, {
+          from: admin,
+        }),
         'AdminImpl: Market exists',
       );
     });
@@ -287,11 +224,7 @@ describe('Admin', () => {
       );
     });
 
-    async function expectBalances(
-      txResult: any,
-      expectedDolomiteMargin: Integer,
-      expectedRecipient: Integer,
-    ) {
+    async function expectBalances(txResult: any, expectedDolomiteMargin: Integer, expectedRecipient: Integer) {
       if (txResult) {
         const token = dolomiteMargin.testing.tokenC.address;
         const logs = dolomiteMargin.logs.parseLogs(txResult);
@@ -336,9 +269,7 @@ describe('Admin', () => {
 
       const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(
-        marketId,
-      );
+      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(marketId);
 
       expect(marketInfo.market.token.toLowerCase()).toEqual(token);
       expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
@@ -350,16 +281,12 @@ describe('Admin', () => {
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.market.index.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(
-        new BigNumber(timestamp),
-      );
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
       expect(marketInfo.currentPrice).toEqual(defaultPrice);
       expect(marketInfo.currentInterestRate).toEqual(INTEGERS.ZERO);
       expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(
-        new BigNumber(timestamp),
-      );
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(5);
@@ -396,17 +323,14 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
-        customTestTokenABI,
-      )
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(customTestTokenABI)
         .deploy({
           data: customTestTokenBytecode,
           arguments: ['TestToken', 'TST', '18'],
         })
         .send({ from: admin, gas: '6000000' })) as CustomTestToken;
 
-      const expirationTimestamp =
-        Math.floor(new Date().getTime() / 1000) + 3600;
+      const expirationTimestamp = Math.floor(new Date().getTime() / 1000) + 3600;
       const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
         .deploy({
           data: recyclableBytecode,
@@ -419,10 +343,7 @@ describe('Admin', () => {
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await dolomiteMargin.testing.priceOracle.setPrice(
-        recyclableToken.options.address,
-        defaultPrice,
-      );
+      await dolomiteMargin.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
 
       const txResult = await dolomiteMargin.admin.addMarket(
         recyclableToken.options.address,
@@ -435,9 +356,7 @@ describe('Admin', () => {
         { from: admin },
       );
 
-      const getIsRecycledResult = await recyclableToken.methods
-        .isRecycled()
-        .call();
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
       expect(getIsRecycledResult).toEqual(false);
 
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
@@ -447,17 +366,11 @@ describe('Admin', () => {
 
       const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
-      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(
-        marketId,
-      );
+      const marketInfo: MarketWithInfo = await dolomiteMargin.getters.getMarketWithInfo(marketId);
       const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
-        marketId,
-      );
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(marketId);
 
-      expect(marketInfo.market.token.toLowerCase()).toEqual(
-        recyclableToken.options.address.toLowerCase(),
-      );
+      expect(marketInfo.market.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
       expect(marketInfo.market.priceOracle).toEqual(oracleAddress);
       expect(marketInfo.market.interestSetter).toEqual(setterAddress);
       expect(marketInfo.market.marginPremium).toEqual(marginPremium);
@@ -467,16 +380,12 @@ describe('Admin', () => {
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.index.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.market.index.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(
-        new BigNumber(timestamp),
-      );
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
       expect(marketInfo.currentPrice).toEqual(defaultPrice);
       expect(marketInfo.currentInterestRate).toEqual(INTEGERS.ZERO);
       expect(marketInfo.currentIndex.borrow).toEqual(INTEGERS.ONE);
       expect(marketInfo.currentIndex.supply).toEqual(INTEGERS.ONE);
-      expect(marketInfo.market.index.lastUpdate).toEqual(
-        new BigNumber(timestamp),
-      );
+      expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
       expect(isClosingResult).toEqual(isClosing);
       expect(isRecyclableResult).toEqual(isRecyclable);
 
@@ -486,9 +395,7 @@ describe('Admin', () => {
       const addLog = logs[0];
       expect(addLog.name).toEqual('LogAddMarket');
       expect(addLog.args.marketId).toEqual(marketId);
-      expect(addLog.args.token.toLowerCase()).toEqual(
-        recyclableToken.options.address.toLowerCase(),
-      );
+      expect(addLog.args.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
 
       const isClosingLog = logs[1];
       expect(isClosingLog.name).toEqual('LogSetIsClosing');
@@ -522,9 +429,7 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
-        customTestTokenABI,
-      )
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(customTestTokenABI)
         .deploy({
           data: customTestTokenBytecode,
           arguments: ['TestToken', 'TST', '18'],
@@ -544,10 +449,7 @@ describe('Admin', () => {
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await dolomiteMargin.testing.priceOracle.setPrice(
-        recyclableToken.options.address,
-        defaultPrice,
-      );
+      await dolomiteMargin.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
 
       await expectThrow(
         dolomiteMargin.admin.addMarket(
@@ -560,7 +462,7 @@ describe('Admin', () => {
           isRecyclable,
           { from: admin },
         ),
-        `RecyclableTokenProxy: invalid expiration timestamp <${expirationTimestamp}>`
+        `RecyclableTokenProxy: invalid expiration timestamp <${expirationTimestamp}>`,
       );
     });
 
@@ -688,17 +590,14 @@ describe('Admin', () => {
       const isClosing = true;
       const isRecyclable = true;
 
-      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
-        customTestTokenABI,
-      )
+      const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(customTestTokenABI)
         .deploy({
           data: customTestTokenBytecode,
           arguments: ['TestToken', 'TST', '18'],
         })
         .send({ from: admin, gas: '6000000' })) as CustomTestToken;
 
-      const expirationTimestamp =
-        Math.floor(new Date().getTime() / 1000) + 3600;
+      const expirationTimestamp = Math.floor(new Date().getTime() / 1000) + 3600;
       const recyclableToken = (await new dolomiteMargin.web3.eth.Contract(recyclableABI)
         .deploy({
           data: recyclableBytecode,
@@ -711,10 +610,7 @@ describe('Admin', () => {
         })
         .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-      await dolomiteMargin.testing.priceOracle.setPrice(
-        recyclableToken.options.address,
-        defaultPrice,
-      );
+      await dolomiteMargin.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
 
       await dolomiteMargin.admin.addMarket(
         recyclableToken.options.address,
@@ -734,9 +630,7 @@ describe('Admin', () => {
       const { recyclableToken, underlyingToken } = await addMarket();
       await addMarket();
 
-      const getIsRecycledResult = await recyclableToken.methods
-        .isRecycled()
-        .call();
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
       expect(getIsRecycledResult).toEqual(false);
 
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
@@ -745,9 +639,7 @@ describe('Admin', () => {
       const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(2);
       const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
-        marketId,
-      );
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(marketId);
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
@@ -767,28 +659,20 @@ describe('Admin', () => {
         [3601 + 86400 * 7], // 3600 is the expiration; 86400 * 7 is the buffer time
       );
 
-      const txResult = await dolomiteMargin.admin.removeMarkets(
-        [marketId, marketId.plus(1)],
-        admin,
-        {
-          from: admin,
-        },
-      );
+      const txResult = await dolomiteMargin.admin.removeMarkets([marketId, marketId.plus(1)], admin, {
+        from: admin,
+      });
 
       expect(await dolomiteMargin.getters.getNumMarkets()).toEqual(numMarkets);
       expect(await recyclableToken.methods.isRecycled().call()).toEqual(true);
-      expect(await underlyingToken.methods.balanceOf(admin).call()).toEqual(
-        INTEGERS.ONE.toFixed(),
-      );
+      expect(await underlyingToken.methods.balanceOf(admin).call()).toEqual(INTEGERS.ONE.toFixed());
 
       await expectThrow(
         dolomiteMargin.contracts.dolomiteMargin.methods.getMarket(marketId.toFixed()).call(),
         'Getters: Invalid market',
       );
 
-      const recyclableMarkets = await dolomiteMargin.getters.getRecyclableMarkets(
-        new BigNumber('10'),
-      );
+      const recyclableMarkets = await dolomiteMargin.getters.getRecyclableMarkets(new BigNumber('10'));
       expect(recyclableMarkets.length).toEqual(10);
       // the linked-list prepends items, reversing their order
       expect(recyclableMarkets[0]).toEqual(new BigNumber('3'));
@@ -804,9 +688,7 @@ describe('Admin', () => {
       const removeLog_0 = logs[0];
       expect(removeLog_0.name).toEqual('LogRemoveMarket');
       expect(removeLog_0.args.marketId).toEqual(new BigNumber('2'));
-      expect(removeLog_0.args.token.toLowerCase()).toEqual(
-        recyclableToken.options.address.toLowerCase(),
-      );
+      expect(removeLog_0.args.token.toLowerCase()).toEqual(recyclableToken.options.address.toLowerCase());
 
       const removeLog_1 = logs[1];
       expect(removeLog_1.name).toEqual('LogRemoveMarket');
@@ -816,14 +698,10 @@ describe('Admin', () => {
     it('Fails to remove a market that is not expired', async () => {
       const { recyclableToken } = await addMarket();
 
-      const getIsRecycledResult = await recyclableToken.methods
-        .isRecycled()
-        .call();
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
       expect(getIsRecycledResult).toEqual(false);
 
-      const expirationTimestamp = await recyclableToken.methods
-        .MAX_EXPIRATION_TIMESTAMP()
-        .call();
+      const expirationTimestamp = await recyclableToken.methods.MAX_EXPIRATION_TIMESTAMP().call();
 
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
@@ -831,9 +709,7 @@ describe('Admin', () => {
       const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
       const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
-        marketId,
-      );
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(marketId);
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
@@ -845,10 +721,7 @@ describe('Admin', () => {
         INTEGERS.ONE,
       );
 
-      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
-        'evm_increaseTime',
-        [100],
-      );
+      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod('evm_increaseTime', [100]);
 
       await expectThrow(
         dolomiteMargin.admin.removeMarkets([marketId], admin, {
@@ -861,14 +734,10 @@ describe('Admin', () => {
     it('Fails to remove a market that is not past expiration buffer', async () => {
       const { recyclableToken } = await addMarket();
 
-      const getIsRecycledResult = await recyclableToken.methods
-        .isRecycled()
-        .call();
+      const getIsRecycledResult = await recyclableToken.methods.isRecycled().call();
       expect(getIsRecycledResult).toEqual(false);
 
-      const expirationTimestamp = await recyclableToken.methods
-        .MAX_EXPIRATION_TIMESTAMP()
-        .call();
+      const expirationTimestamp = await recyclableToken.methods.MAX_EXPIRATION_TIMESTAMP().call();
 
       const marketIdResult = await recyclableToken.methods.MARKET_ID().call();
       expect(new BigNumber(marketIdResult)).toEqual(new BigNumber(2));
@@ -876,9 +745,7 @@ describe('Admin', () => {
       const numMarkets = await dolomiteMargin.getters.getNumMarkets();
       const marketId = numMarkets.minus(1);
       const isClosingResult = await dolomiteMargin.getters.getMarketIsClosing(marketId);
-      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(
-        marketId,
-      );
+      const isRecyclableResult = await dolomiteMargin.getters.getMarketIsRecyclable(marketId);
 
       expect(isClosingResult).toEqual(true);
       expect(isRecyclableResult).toEqual(true);
@@ -890,10 +757,7 @@ describe('Admin', () => {
         INTEGERS.ONE,
       );
 
-      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
-        'evm_increaseTime',
-        [3600 + 1],
-      );
+      await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod('evm_increaseTime', [3600 + 1]);
 
       await expectThrow(
         dolomiteMargin.admin.removeMarkets([marketId], admin, {
@@ -962,9 +826,7 @@ describe('Admin', () => {
     });
 
     it('Fails for non-admin', async () => {
-      await expectThrow(
-        dolomiteMargin.admin.setIsClosing(defaultMarket, true, { from: nonAdmin }),
-      );
+      await expectThrow(dolomiteMargin.admin.setIsClosing(defaultMarket, true, { from: nonAdmin }));
     });
 
     async function expectIsClosing(txResult: any, b: boolean) {
@@ -1122,11 +984,9 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setMarginPremium(
-          defaultMarket,
-          riskLimits.marginPremiumMax.plus(smallestDecimal),
-          { from: admin },
-        ),
+        dolomiteMargin.admin.setMarginPremium(defaultMarket, riskLimits.marginPremiumMax.plus(smallestDecimal), {
+          from: admin,
+        }),
         'AdminImpl: Margin premium too high',
       );
     });
@@ -1182,14 +1042,9 @@ describe('Admin', () => {
         dolomiteMargin.admin.setSpreadPremium(secondaryMarket, premium2, { from: admin }),
       ]);
 
-      const result = await dolomiteMargin.getters.getLiquidationSpreadForPair(
-        defaultMarket,
-        secondaryMarket,
-      );
+      const result = await dolomiteMargin.getters.getLiquidationSpreadForPair(defaultMarket, secondaryMarket);
 
-      const expected = riskParams.liquidationSpread
-        .times(premium1.plus(1))
-        .times(premium2.plus(1));
+      const expected = riskParams.liquidationSpread.times(premium1.plus(1)).times(premium2.plus(1));
       expect(result).toEqual(expected);
     });
 
@@ -1212,11 +1067,9 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setSpreadPremium(
-          defaultMarket,
-          riskLimits.spreadPremiumMax.plus(smallestDecimal),
-          { from: admin },
-        ),
+        dolomiteMargin.admin.setSpreadPremium(defaultMarket, riskLimits.spreadPremiumMax.plus(smallestDecimal), {
+          from: admin,
+        }),
         'AdminImpl: Spread premium too high',
       );
     });
@@ -1266,17 +1119,11 @@ describe('Admin', () => {
       await dolomiteMargin.admin.setLiquidationSpread(liquidationSpread, { from: admin });
 
       // passes when above the spread
-      txr = await dolomiteMargin.admin.setMarginRatio(
-        liquidationSpread.plus(smallestDecimal),
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setMarginRatio(liquidationSpread.plus(smallestDecimal), { from: admin });
       await expectMarginRatio(txr, liquidationSpread.plus(smallestDecimal));
 
       // revert when equal to the spread
-      await expectThrow(
-        dolomiteMargin.admin.setMarginRatio(liquidationSpread, { from: admin }),
-        error,
-      );
+      await expectThrow(dolomiteMargin.admin.setMarginRatio(liquidationSpread, { from: admin }), error);
 
       // revert when below the spread
       await expectThrow(
@@ -1289,18 +1136,13 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setMarginRatio(
-          riskLimits.marginRatioMax.plus(smallestDecimal),
-          { from: admin },
-        ),
+        dolomiteMargin.admin.setMarginRatio(riskLimits.marginRatioMax.plus(smallestDecimal), { from: admin }),
         'AdminImpl: Ratio too high',
       );
     });
 
     it('Fails for non-admin', async () => {
-      await expectThrow(
-        dolomiteMargin.admin.setMarginRatio(riskParams.marginRatio, { from: nonAdmin }),
-      );
+      await expectThrow(dolomiteMargin.admin.setMarginRatio(riskParams.marginRatio, { from: nonAdmin }));
     });
 
     async function expectMarginRatio(txResult: any, e: Integer) {
@@ -1325,24 +1167,15 @@ describe('Admin', () => {
       await expectLiquidationSpread(null, riskParams.liquidationSpread);
 
       // keep same
-      txr = await dolomiteMargin.admin.setLiquidationSpread(
-        riskParams.liquidationSpread,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
       await expectLiquidationSpread(txr, riskParams.liquidationSpread);
 
       // set to max
-      txr = await dolomiteMargin.admin.setLiquidationSpread(
-        riskLimits.liquidationSpreadMax,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax, { from: admin });
       await expectLiquidationSpread(txr, riskLimits.liquidationSpreadMax);
 
       // set back to original
-      txr = await dolomiteMargin.admin.setLiquidationSpread(
-        riskParams.liquidationSpread,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setLiquidationSpread(riskParams.liquidationSpread, { from: admin });
       await expectLiquidationSpread(txr, riskParams.liquidationSpread);
     });
 
@@ -1353,17 +1186,11 @@ describe('Admin', () => {
       await dolomiteMargin.admin.setMarginRatio(marginRatio, { from: admin });
 
       // passes when below the ratio
-      txr = await dolomiteMargin.admin.setLiquidationSpread(
-        marginRatio.minus(smallestDecimal),
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setLiquidationSpread(marginRatio.minus(smallestDecimal), { from: admin });
       await expectLiquidationSpread(txr, marginRatio.minus(smallestDecimal));
 
       // reverts when equal to the ratio
-      await expectThrow(
-        dolomiteMargin.admin.setLiquidationSpread(marginRatio, { from: admin }),
-        error,
-      );
+      await expectThrow(dolomiteMargin.admin.setLiquidationSpread(marginRatio, { from: admin }), error);
 
       // reverts when above the ratio
       await expectThrow(
@@ -1376,10 +1203,9 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setLiquidationSpread(
-          riskLimits.liquidationSpreadMax.plus(smallestDecimal),
-          { from: admin },
-        ),
+        dolomiteMargin.admin.setLiquidationSpread(riskLimits.liquidationSpreadMax.plus(smallestDecimal), {
+          from: admin,
+        }),
         'AdminImpl: Spread too high',
       );
     });
@@ -1430,18 +1256,13 @@ describe('Admin', () => {
 
     it('Fails for too-high value', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setEarningsRate(
-          riskLimits.earningsRateMax.plus(tenToNeg18),
-          { from: admin },
-        ),
+        dolomiteMargin.admin.setEarningsRate(riskLimits.earningsRateMax.plus(tenToNeg18), { from: admin }),
         'AdminImpl: Rate too high',
       );
     });
 
     it('Fails for non-admin', async () => {
-      await expectThrow(
-        dolomiteMargin.admin.setEarningsRate(riskParams.earningsRate, { from: nonAdmin }),
-      );
+      await expectThrow(dolomiteMargin.admin.setEarningsRate(riskParams.earningsRate, { from: nonAdmin }));
     });
 
     const tenToNeg18 = '0.000000000000000001';
@@ -1470,10 +1291,7 @@ describe('Admin', () => {
       await expectMinBorrowedValue(txr, riskParams.minBorrowedValue);
 
       // set to max
-      txr = await dolomiteMargin.admin.setMinBorrowedValue(
-        riskLimits.minBorrowedValueMax,
-        { from: admin },
-      );
+      txr = await dolomiteMargin.admin.setMinBorrowedValue(riskLimits.minBorrowedValueMax, { from: admin });
       await expectMinBorrowedValue(txr, riskLimits.minBorrowedValueMax);
 
       // set back to original
@@ -1533,9 +1351,7 @@ describe('Admin', () => {
     });
 
     it('Fails for non-admin', async () => {
-      await expectThrow(
-        dolomiteMargin.admin.setGlobalOperator(operator, true, { from: nonAdmin }),
-      );
+      await expectThrow(dolomiteMargin.admin.setGlobalOperator(operator, true, { from: nonAdmin }));
     });
 
     async function expectGlobalOperatorToBe(txResult: any, b: boolean) {
@@ -1548,6 +1364,37 @@ describe('Admin', () => {
         expect(log.args.approved).toEqual(b);
       }
       const result = await dolomiteMargin.getters.getIsGlobalOperator(operator);
+      expect(result).toEqual(b);
+    }
+  });
+
+  describe('#ownerSetAutoTraderSpecial', () => {
+    it('Succeeds', async () => {
+      await expectAutoTraderSpecialToBe(null, false);
+      txr = await dolomiteMargin.admin.setAutoTraderIsSpecial(operator, false, { from: admin });
+      await expectAutoTraderSpecialToBe(txr, false);
+      txr = await dolomiteMargin.admin.setAutoTraderIsSpecial(operator, true, { from: admin });
+      await expectAutoTraderSpecialToBe(txr, true);
+      txr = await dolomiteMargin.admin.setAutoTraderIsSpecial(operator, true, { from: admin });
+      await expectAutoTraderSpecialToBe(txr, true);
+      txr = await dolomiteMargin.admin.setAutoTraderIsSpecial(operator, false, { from: admin });
+      await expectAutoTraderSpecialToBe(txr, false);
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(dolomiteMargin.admin.setAutoTraderIsSpecial(operator, true, { from: nonAdmin }));
+    });
+
+    async function expectAutoTraderSpecialToBe(txResult: any, b: boolean) {
+      if (txResult) {
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetAutoTraderIsSpecial');
+        expect(log.args.autoTrader).toEqual(operator);
+        expect(log.args.isSpecial).toEqual(b);
+      }
+      const result = await dolomiteMargin.getters.getIsAutoTraderSpecial(operator);
       expect(result).toEqual(b);
     }
   });

@@ -4,12 +4,12 @@ import {
   bytecode as TestLiquidationCallbackBytecode,
 } from '../../build/contracts/TestLiquidationCallback.json';
 import { TestLiquidationCallback } from '../../build/testing_wrappers/TestLiquidationCallback';
-import { address, AmountDenomination, AmountReference, Integer, INTEGERS, Trade, TxResult, } from '../../src';
+import { address, AmountDenomination, AmountReference, Integer, INTEGERS, Trade, TxResult } from '../../src';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { fastForward, mineAvgBlock, resetEVM, snapshot, } from '../helpers/EVM';
+import { fastForward, mineAvgBlock, resetEVM, snapshot } from '../helpers/EVM';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -19,6 +19,7 @@ let admin: address;
 let owner1: address;
 let owner2: address;
 let rando: address;
+let globalOperator: address;
 let startingExpiry: BigNumber;
 
 const accountNumber1 = INTEGERS.ZERO;
@@ -43,6 +44,7 @@ describe('Expiry', () => {
     owner1 = accounts[2];
     owner2 = accounts[3];
     rando = accounts[4];
+    globalOperator = accounts[5];
     defaultGlob = {
       primaryAccountOwner: owner1,
       primaryAccountId: accountNumber1,
@@ -96,6 +98,7 @@ describe('Expiry', () => {
         collateralMarket,
         par.times(4),
       ),
+      dolomiteMargin.admin.setGlobalOperator(globalOperator, true, { from: admin }),
     ]);
     await Promise.all([
       setExpiryForSelf(INTEGERS.ONE, true),
@@ -124,22 +127,16 @@ describe('Expiry', () => {
 
       // check storage
       const approval = await dolomiteMargin.expiry.getApproval(owner2, owner1);
-      expect(approval)
-        .toEqual(zero);
+      expect(approval).toEqual(zero);
 
       // check logs
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.name)
-        .toEqual('LogSenderApproved');
-      expect(log.args.approver)
-        .toEqual(owner2);
-      expect(log.args.sender)
-        .toEqual(owner1);
-      expect(log.args.minTimeDelta)
-        .toEqual(zero);
+      expect(log.name).toEqual('LogSenderApproved');
+      expect(log.args.approver).toEqual(owner2);
+      expect(log.args.sender).toEqual(owner1);
+      expect(log.args.minTimeDelta).toEqual(zero);
     });
 
     it('Succeeds for non-zero', async () => {
@@ -150,22 +147,16 @@ describe('Expiry', () => {
 
       // check storage
       const approval = await dolomiteMargin.expiry.getApproval(owner2, owner1);
-      expect(approval)
-        .toEqual(defaultDelay);
+      expect(approval).toEqual(defaultDelay);
 
       // check logs
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.name)
-        .toEqual('LogSenderApproved');
-      expect(log.args.approver)
-        .toEqual(owner2);
-      expect(log.args.sender)
-        .toEqual(owner1);
-      expect(log.args.minTimeDelta)
-        .toEqual(defaultDelay);
+      expect(log.name).toEqual('LogSenderApproved');
+      expect(log.args.approver).toEqual(owner2);
+      expect(log.args.sender).toEqual(owner1);
+      expect(log.args.minTimeDelta).toEqual(defaultDelay);
     });
   });
 
@@ -262,15 +253,8 @@ describe('Expiry', () => {
       const txResult = await setExpiryForSelf(defaultTimeDelta, true);
       const noLogs = dolomiteMargin.logs.parseLogs(txResult, { skipExpiryLogs: true });
       const logs = dolomiteMargin.logs.parseLogs(txResult, { skipExpiryLogs: false });
-      expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length)
-        .toEqual(
-          0,
-        );
-      expect(
-        logs.filter((e: any) => e.name === 'ExpirySet').length,
-      )
-        .not
-        .toEqual(0);
+      expect(noLogs.filter((e: any) => e.name === 'ExpirySet').length).toEqual(0);
+      expect(logs.filter((e: any) => e.name === 'ExpirySet').length).not.toEqual(0);
     });
 
     it('Sets expiry to zero even if given positive delta (non-negative balances)', async () => {
@@ -355,8 +339,7 @@ describe('Expiry', () => {
         .commit({ from: rando });
       expect(
         dolomiteMargin.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
-      )
-        .toEqual(0);
+      ).toEqual(0);
 
       const txResult2 = await dolomiteMargin.operation
         .initiate()
@@ -376,16 +359,14 @@ describe('Expiry', () => {
         .commit({ from: rando });
       expect(
         dolomiteMargin.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
-      )
-        .toEqual(0);
+      ).toEqual(0);
 
       const timestamp2 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
-      expect(timestamp2)
-        .toEqual(timestamp1);
+      expect(timestamp2).toEqual(timestamp1);
     });
 
     it('Do nothing if sender not approved (non-negative balance)', async () => {
@@ -419,8 +400,7 @@ describe('Expiry', () => {
         .commit({ from: rando });
       expect(
         dolomiteMargin.logs.parseLogs(txResult1, { skipOperationLogs: true }).length,
-      )
-        .toEqual(0);
+      ).toEqual(0);
 
       const txResult2 = await dolomiteMargin.operation
         .initiate()
@@ -440,16 +420,14 @@ describe('Expiry', () => {
         .commit({ from: rando });
       expect(
         dolomiteMargin.logs.parseLogs(txResult2, { skipOperationLogs: true }).length,
-      )
-        .toEqual(0);
+      ).toEqual(0);
 
       const timestamp2 = await dolomiteMargin.expiry.getExpiry(
         owner2,
         accountNumber2,
         owedMarket,
       );
-      expect(timestamp2)
-        .toEqual(timestamp1);
+      expect(timestamp2).toEqual(timestamp1);
     });
 
     it('Set it for multiple', async () => {
@@ -522,47 +500,31 @@ describe('Expiry', () => {
       // check logs
       const { timestamp } = await dolomiteMargin.web3.eth.getBlock(txResult.blockNumber);
       const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
-      expect(logs.length)
-        .toEqual(3);
-      expect(logs[0].name)
-        .toEqual('ExpirySet');
-      expect(logs[1].name)
-        .toEqual('ExpirySet');
-      expect(logs[2].name)
-        .toEqual('ExpirySet');
-      expect(logs[0].args.owner)
-        .toEqual(owner1);
-      expect(logs[0].args.number)
-        .toEqual(accountNumber1);
-      expect(logs[0].args.marketId)
-        .toEqual(owedMarket);
-      expect(logs[0].args.time)
-        .toEqual(
-          defaultTimeDelta.div(2)
-            .plus(timestamp),
-        );
-      expect(logs[1].args.owner)
-        .toEqual(owner1);
-      expect(logs[1].args.number)
-        .toEqual(accountNumber1);
-      expect(logs[1].args.marketId)
-        .toEqual(owedMarket);
-      expect(logs[1].args.time)
-        .toEqual(
-          defaultTimeDelta.div(2)
-            .plus(timestamp),
-        );
-      expect(logs[2].args.owner)
-        .toEqual(rando);
-      expect(logs[2].args.number)
-        .toEqual(accountNumber1);
-      expect(logs[2].args.marketId)
-        .toEqual(heldMarket);
-      expect(logs[2].args.time)
-        .toEqual(
-          defaultTimeDelta.times(2)
-            .plus(timestamp),
-        );
+      expect(logs.length).toEqual(3);
+      expect(logs[0].name).toEqual('ExpirySet');
+      expect(logs[1].name).toEqual('ExpirySet');
+      expect(logs[2].name).toEqual('ExpirySet');
+      expect(logs[0].args.owner).toEqual(owner1);
+      expect(logs[0].args.number).toEqual(accountNumber1);
+      expect(logs[0].args.marketId).toEqual(owedMarket);
+      expect(logs[0].args.time).toEqual(
+        defaultTimeDelta.div(2)
+          .plus(timestamp),
+      );
+      expect(logs[1].args.owner).toEqual(owner1);
+      expect(logs[1].args.number).toEqual(accountNumber1);
+      expect(logs[1].args.marketId).toEqual(owedMarket);
+      expect(logs[1].args.time).toEqual(
+        defaultTimeDelta.div(2)
+          .plus(timestamp),
+      );
+      expect(logs[2].args.owner).toEqual(rando);
+      expect(logs[2].args.number).toEqual(accountNumber1);
+      expect(logs[2].args.marketId).toEqual(heldMarket);
+      expect(logs[2].args.time).toEqual(
+        defaultTimeDelta.times(2)
+          .plus(timestamp),
+      );
 
       // check storage
       const [expiry1, expiry2, expiry3, expiry4] = await Promise.all([
@@ -571,16 +533,12 @@ describe('Expiry', () => {
         dolomiteMargin.expiry.getExpiry(rando, accountNumber1, heldMarket),
         dolomiteMargin.expiry.getExpiry(rando, accountNumber1, owedMarket),
       ]);
-      expect(expiry1)
-        .toEqual(startingExpiry);
-      expect(expiry2)
-        .toEqual(defaultTimeDelta.div(2)
-          .plus(timestamp));
-      expect(expiry3)
-        .toEqual(defaultTimeDelta.times(2)
-          .plus(timestamp));
-      expect(expiry4)
-        .toEqual(zero);
+      expect(expiry1).toEqual(startingExpiry);
+      expect(expiry2).toEqual(defaultTimeDelta.div(2)
+        .plus(timestamp));
+      expect(expiry3).toEqual(defaultTimeDelta.times(2)
+        .plus(timestamp));
+      expect(expiry4).toEqual(zero);
     });
 
     it('Sets expiry to zero for non-negative balances', async () => {
@@ -624,9 +582,7 @@ describe('Expiry', () => {
       const txResult = await expectExpireOkay(heldGlob);
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      logs.forEach((log: any) => expect(log.name)
-        .not
-        .toEqual('ExpirySet'));
+      logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -635,17 +591,10 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(
-          par.minus(par.div(premium))
-            .integerValue(BigNumber.ROUND_DOWN),
-        );
-      expect(owed2)
-        .toEqual(owed1.times(-1));
-      expect(held1)
-        .toEqual(par);
-      expect(held2)
-        .toEqual(zero);
+      expect(owed1).toEqual(par.minus(par.div(premium)).integerValue(BigNumber.ROUND_DOWN));
+      expect(owed2).toEqual(owed1.times(-1));
+      expect(held1).toEqual(par);
+      expect(held2).toEqual(zero);
 
       console.log(`\tExpiring (held) gas used: ${txResult.gasUsed}`);
     });
@@ -660,19 +609,13 @@ describe('Expiry', () => {
       const txResult = await expectExpireOkay(heldGlob);
 
       const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const expiryLog = logs[0];
-      expect(expiryLog.name)
-        .toEqual('ExpirySet');
-      expect(expiryLog.args.owner)
-        .toEqual(owner2);
-      expect(expiryLog.args.number)
-        .toEqual(accountNumber2);
-      expect(expiryLog.args.marketId)
-        .toEqual(owedMarket);
-      expect(expiryLog.args.time)
-        .toEqual(zero);
+      expect(expiryLog.name).toEqual('ExpirySet');
+      expect(expiryLog.args.owner).toEqual(owner2);
+      expect(expiryLog.args.number).toEqual(accountNumber2);
+      expect(expiryLog.args.marketId).toEqual(owedMarket);
+      expect(expiryLog.args.time).toEqual(zero);
     });
 
     it('Succeeds in expiring part of a position', async () => {
@@ -686,9 +629,7 @@ describe('Expiry', () => {
       });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      logs.forEach((log: any) => expect(log.name)
-        .not
-        .toEqual('ExpirySet'));
+      logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -697,18 +638,10 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(
-          par.minus(par.div(premium)
-            .div(2))
-            .integerValue(BigNumber.ROUND_DOWN),
-        );
-      expect(owed2)
-        .toEqual(owed1.times(-1));
-      expect(held1)
-        .toEqual(par.div(2));
-      expect(held2)
-        .toEqual(par.minus(held1));
+      expect(owed1).toEqual(par.minus(par.div(premium).div(2)).integerValue(BigNumber.ROUND_DOWN));
+      expect(owed2).toEqual(owed1.times(-1));
+      expect(held1).toEqual(par.div(2));
+      expect(held2).toEqual(par.minus(held1));
     });
 
     it('Succeeds in expiring including premiums', async () => {
@@ -733,17 +666,10 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(
-          par.minus(par.div(adjustedPremium))
-            .integerValue(BigNumber.ROUND_DOWN),
-        );
-      expect(owed2)
-        .toEqual(owed1.times(-1));
-      expect(held1)
-        .toEqual(par);
-      expect(held2)
-        .toEqual(zero);
+      expect(owed1).toEqual(par.minus(par.div(adjustedPremium)).integerValue(BigNumber.ROUND_DOWN));
+      expect(owed2).toEqual(owed1.times(-1));
+      expect(held1).toEqual(par);
+      expect(held2).toEqual(zero);
     });
 
     it('Succeeds for zero inputMarket', async () => {
@@ -764,8 +690,7 @@ describe('Expiry', () => {
       await expectExpireOkay(heldGlob);
 
       const end = await Promise.all(getAllBalances);
-      expect(start)
-        .toEqual(end);
+      expect(start).toEqual(end);
     });
 
     it('Fails for negative inputMarket', async () => {
@@ -862,6 +787,10 @@ describe('Expiry', () => {
       );
       await expectExpireRevert(heldGlob, 'Expiry: outputMarket too small');
     });
+
+    it('Fails for non-global operator calling', async () => {
+      await expectExpireRevert({}, 'OperationImpl: Unpermissioned trade operator', { from: owner1 });
+    });
   });
 
   describe('expire account (owedAmount)', () => {
@@ -869,19 +798,13 @@ describe('Expiry', () => {
       const txResult = await expectExpireOkay({});
 
       const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const expiryLog = logs[0];
-      expect(expiryLog.name)
-        .toEqual('ExpirySet');
-      expect(expiryLog.args.owner)
-        .toEqual(owner2);
-      expect(expiryLog.args.number)
-        .toEqual(accountNumber2);
-      expect(expiryLog.args.marketId)
-        .toEqual(owedMarket);
-      expect(expiryLog.args.time)
-        .toEqual(zero);
+      expect(expiryLog.name).toEqual('ExpirySet');
+      expect(expiryLog.args.owner).toEqual(owner2);
+      expect(expiryLog.args.number).toEqual(accountNumber2);
+      expect(expiryLog.args.marketId).toEqual(owedMarket);
+      expect(expiryLog.args.time).toEqual(zero);
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -890,15 +813,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
 
       console.log(`\tExpiring (owed) gas used: ${txResult.gasUsed}`);
     });
@@ -913,9 +832,7 @@ describe('Expiry', () => {
       });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      logs.forEach((log: any) => expect(log.name)
-        .not
-        .toEqual('ExpirySet'));
+      logs.forEach((log: any) => expect(log.name).not.toEqual('ExpirySet'));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -924,16 +841,12 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(par.div(2));
-      expect(owed2)
-        .toEqual(par.div(-2));
-      expect(held1)
-        .toEqual(par.times(premium)
-          .div(2));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(par.div(2));
+      expect(owed2).toEqual(par.div(-2));
+      expect(held1).toEqual(par.times(premium)
+        .div(2));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds in expiring including premiums', async () => {
@@ -958,15 +871,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(adjustedPremium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(adjustedPremium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Fails for non-DolomiteMargin calls', async () => {
@@ -1003,8 +912,7 @@ describe('Expiry', () => {
       await expectExpireOkay({});
 
       const end = await Promise.all(getAllBalances);
-      expect(start)
-        .toEqual(end);
+      expect(start).toEqual(end);
     });
 
     it('Fails for positive inputMarket', async () => {
@@ -1100,6 +1008,10 @@ describe('Expiry', () => {
       );
       await expectExpireRevert({}, 'Expiry: outputMarket too small');
     });
+
+    it('Fails for non-global operator calling', async () => {
+      await expectExpireRevert({}, 'OperationImpl: Unpermissioned trade operator', { from: owner1 });
+    });
   });
 
   describe('AccountOperation#fullyLiquidateExpiredAccount', () => {
@@ -1134,7 +1046,7 @@ describe('Expiry', () => {
           premiumsMap,
           collateralPreferences,
         )
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const balances = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -1142,13 +1054,10 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
-      expect(balances[0])
-        .toEqual(zero);
-      expect(balances[1])
-        .toEqual(par.times(2)
-          .minus(par.times(premium)));
-      expect(balances[2])
-        .toEqual(par.times(4));
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(par.times(2)
+        .minus(par.times(premium)));
+      expect(balances[2]).toEqual(par.times(4));
     });
 
     it('Succeeds for three assets', async () => {
@@ -1191,7 +1100,7 @@ describe('Expiry', () => {
           premiumsMap,
           collateralPreferences,
         )
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const balances = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -1199,19 +1108,15 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
-      expect(balances[0])
-        .toEqual(zero);
-      expect(balances[1])
-        .toEqual(zero);
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(zero);
 
       // calculate the last expected value
       const remainingOwed = par.minus(par.div(premium));
-      expect(balances[2])
-        .toEqual(
-          par
-            .minus(remainingOwed.times(premium))
-            .integerValue(BigNumber.ROUND_UP),
-        );
+      expect(balances[2]).toEqual(
+        par
+          .minus(remainingOwed.times(premium)).integerValue(BigNumber.ROUND_UP),
+      );
     });
 
     it('Succeeds for three assets (with premiums)', async () => {
@@ -1266,7 +1171,7 @@ describe('Expiry', () => {
           premiumsMap,
           collateralPreferences,
         )
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const balances = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
@@ -1274,10 +1179,8 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, collateralMarket),
       ]);
 
-      expect(balances[0])
-        .toEqual(zero);
-      expect(balances[1])
-        .toEqual(zero);
+      expect(balances[0]).toEqual(zero);
+      expect(balances[1]).toEqual(zero);
 
       // calculate the last expected value
       const firstPrem = premium
@@ -1292,12 +1195,10 @@ describe('Expiry', () => {
         .plus(1);
       const remainingOwed = par.minus(par.times(premium)
         .div(firstPrem));
-      expect(balances[2])
-        .toEqual(
-          par
-            .minus(remainingOwed.times(secondPrem))
-            .integerValue(BigNumber.ROUND_UP),
-        );
+      expect(balances[2]).toEqual(
+        par
+          .minus(remainingOwed.times(secondPrem)).integerValue(BigNumber.ROUND_UP),
+      );
     });
   });
 
@@ -1312,12 +1213,9 @@ describe('Expiry', () => {
         owedMarket,
         new BigNumber(timestamp),
       );
-      expect(prices.owedPrice.lt(defaultPrice.times(premium)))
-        .toEqual(true);
-      expect(prices.owedPrice.gt(defaultPrice))
-        .toEqual(true);
-      expect(prices.heldPrice)
-        .toEqual(defaultPrice);
+      expect(prices.owedPrice.lt(defaultPrice.times(premium))).toEqual(true);
+      expect(prices.owedPrice.gt(defaultPrice)).toEqual(true);
+      expect(prices.heldPrice).toEqual(defaultPrice);
     });
 
     it('Succeeds for very expired positions', async () => {
@@ -1326,31 +1224,23 @@ describe('Expiry', () => {
         owedMarket,
         INTEGERS.ONE,
       );
-      expect(prices.owedPrice)
-        .toEqual(defaultPrice.times(premium));
-      expect(prices.heldPrice)
-        .toEqual(defaultPrice);
+      expect(prices.owedPrice).toEqual(defaultPrice.times(premium));
+      expect(prices.heldPrice).toEqual(defaultPrice);
     });
   });
 
   describe('#ownerSetExpiryRampTime', () => {
     it('Succeeds for owner', async () => {
       const oldValue = await dolomiteMargin.expiry.getRampTime();
-      expect(oldValue)
-        .toEqual(INTEGERS.ONE_HOUR_IN_SECONDS);
-      await dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
-        from: admin,
-      });
+      expect(oldValue).toEqual(INTEGERS.ONE_HOUR_IN_SECONDS);
+      await dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, { from: admin });
       const newValue = await dolomiteMargin.expiry.getRampTime();
-      expect(newValue)
-        .toEqual(INTEGERS.ONE_DAY_IN_SECONDS);
+      expect(newValue).toEqual(INTEGERS.ONE_DAY_IN_SECONDS);
     });
 
     it('Fails for non-owner', async () => {
       await expectThrow(
-        dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, {
-          from: owner1,
-        }),
+        dolomiteMargin.expiry.setRampTime(INTEGERS.ONE_DAY_IN_SECONDS, { from: owner1 }),
       );
     });
   });
@@ -1372,7 +1262,7 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1381,15 +1271,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(owner2, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with callback', async () => {
@@ -1444,17 +1330,14 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackSuccess');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       let log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
 
       const eventLogs = await liquidContract.getPastEvents(
         'LogOnLiquidateInputs',
@@ -1462,17 +1345,12 @@ describe('Expiry', () => {
       );
       expect(eventLogs.length === 1);
       log = dolomiteMargin.logs.parseEventLogWithContract(liquidContract, eventLogs[0]);
-      expect(log.args.accountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.heldMarketId)
-        .toEqual(heldMarket);
-      expect(log.args.heldDeltaWei)
-        .toEqual(par.times(premium)
-          .times(-1));
-      expect(log.args.owedMarketId)
-        .toEqual(owedMarket);
-      expect(log.args.owedDeltaWei)
-        .toEqual(par);
+      expect(log.args.accountNumber).toEqual(accountNumber2);
+      expect(log.args.heldMarketId).toEqual(heldMarket);
+      expect(log.args.heldDeltaWei).toEqual(par.times(premium)
+        .times(-1));
+      expect(log.args.owedMarketId).toEqual(owedMarket);
+      expect(log.args.owedDeltaWei).toEqual(par);
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1481,15 +1359,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with failed callback', async () => {
@@ -1527,8 +1401,6 @@ describe('Expiry', () => {
 
       await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
 
-      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
-
       await fastForward(60 * 60 * 24);
 
       const txResult = await dolomiteMargin.operation
@@ -1546,19 +1418,15 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackFailure');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.reason)
-        .toEqual('');
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('');
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1567,15 +1435,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with failed callback with error message', async () => {
@@ -1613,8 +1477,6 @@ describe('Expiry', () => {
 
       await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
 
-      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
-
       await fastForward(60 * 60 * 24);
 
       const txResult = await dolomiteMargin.operation
@@ -1632,19 +1494,15 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackFailure');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.reason)
-        .toEqual('TestLiquidationCallback: purposeful reversion');
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('TestLiquidationCallback: purposeful reversion');
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1653,15 +1511,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with failed callback with error message that is cut off', async () => {
@@ -1721,19 +1575,15 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackFailure');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.reason)
-        .toEqual(revertMessage.substring(0, 188));
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual(revertMessage.substring(0, 188));
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1742,15 +1592,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with failed callback that consumes tons of gas', async () => {
@@ -1788,8 +1634,6 @@ describe('Expiry', () => {
 
       await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
 
-      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
-
       await fastForward(60 * 60 * 24);
 
       const txResult = await dolomiteMargin.operation
@@ -1807,20 +1651,16 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
       console.log(`\tExpire with callback reversion with massive gas consumption gas used: ${txResult.gasUsed}`);
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackFailure');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.reason)
-        .toEqual('');
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('');
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1829,15 +1669,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
 
     it('Succeeds with failed callback that returns a memory bomb', async () => {
@@ -1875,8 +1711,6 @@ describe('Expiry', () => {
 
       await setExpiryForCallbackContract(liquidContract, INTEGERS.ONE, true);
 
-      // await dolomiteMargin.expiry.setApproval(liquidContract.options.address, defaultTimeDelta, { from: owner2 });
-
       await fastForward(60 * 60 * 24);
 
       const txResult = await dolomiteMargin.operation
@@ -1894,20 +1728,16 @@ describe('Expiry', () => {
             reference: AmountReference.Target,
           },
         })
-        .commit({ from: owner1 });
+        .commit({ from: globalOperator });
       console.log(`\tExpire with callback reversion with memory bomb gas used: ${txResult.gasUsed}`);
 
       const logs = dolomiteMargin.logs.parseLogs(txResult)
         .filter(log => log.name === 'LogLiquidationCallbackFailure');
-      expect(logs.length)
-        .toEqual(1);
+      expect(logs.length).toEqual(1);
       const log = logs[0];
-      expect(log.args.liquidAccountOwner)
-        .toEqual(liquidContract.options.address);
-      expect(log.args.liquidAccountNumber)
-        .toEqual(accountNumber2);
-      expect(log.args.reason)
-        .toEqual('');
+      expect(log.args.liquidAccountOwner).toEqual(liquidContract.options.address);
+      expect(log.args.liquidAccountNumber).toEqual(accountNumber2);
+      expect(log.args.reason).toEqual('');
 
       const [held1, owed1, held2, owed2] = await Promise.all([
         dolomiteMargin.getters.getAccountPar(owner1, accountNumber1, heldMarket),
@@ -1916,15 +1746,11 @@ describe('Expiry', () => {
         dolomiteMargin.getters.getAccountPar(liquidContract.options.address, accountNumber2, owedMarket),
       ]);
 
-      expect(owed1)
-        .toEqual(zero);
-      expect(owed2)
-        .toEqual(zero);
-      expect(held1)
-        .toEqual(par.times(premium));
-      expect(held2)
-        .toEqual(par.times(2)
-          .minus(held1));
+      expect(owed1).toEqual(zero);
+      expect(owed2).toEqual(zero);
+      expect(held1).toEqual(par.times(premium));
+      expect(held2).toEqual(par.times(2)
+        .minus(held1));
     });
   });
 });
@@ -2009,7 +1835,7 @@ async function expectExpireOkay(glob: Object, options?: Object) {
   return dolomiteMargin.operation
     .initiate()
     .trade(combinedGlob)
-    .commit({ ...options, from: owner1 });
+    .commit({ from: globalOperator, ...options });
 }
 
 async function expectExpireRevert(
@@ -2033,40 +1859,31 @@ async function expectExpiry(
     : timeDelta.plus(timestamp);
 
   const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
-  expect(logs.length)
-    .toEqual(1);
+  expect(logs.length).toEqual(1);
   const expirySetLog = logs[0];
-  expect(expirySetLog.name)
-    .toEqual('ExpirySet');
-  expect(expirySetLog.args.owner)
-    .toEqual(owner);
-  expect(expirySetLog.args.number)
-    .toEqual(accountNumber);
-  expect(expirySetLog.args.marketId)
-    .toEqual(market);
-  expect(expirySetLog.args.time)
-    .toEqual(expectedExpiryTime);
+  expect(expirySetLog.name).toEqual('ExpirySet');
+  expect(expirySetLog.args.owner).toEqual(owner);
+  expect(expirySetLog.args.number).toEqual(accountNumber);
+  expect(expirySetLog.args.marketId).toEqual(market);
+  expect(expirySetLog.args.time).toEqual(expectedExpiryTime);
 
   const expiry = await dolomiteMargin.expiry.getExpiry(
     owner2,
     accountNumber2,
     owedMarket,
   );
-  expect(expiry)
-    .toEqual(expectedExpiryTime);
+  expect(expiry).toEqual(expectedExpiryTime);
 }
 
 async function expectNoExpirySet(txResult: TxResult) {
   const logs = dolomiteMargin.logs.parseLogs(txResult, { skipOperationLogs: true });
-  expect(logs.length)
-    .toEqual(0);
+  expect(logs.length).toEqual(0);
   const expiry = await dolomiteMargin.expiry.getExpiry(
     owner2,
     accountNumber2,
     owedMarket,
   );
-  expect(expiry)
-    .toEqual(startingExpiry);
+  expect(expiry).toEqual(startingExpiry);
 }
 
 async function deployCallbackContract(

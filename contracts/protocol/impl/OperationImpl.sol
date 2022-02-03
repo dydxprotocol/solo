@@ -562,6 +562,13 @@ library OperationImpl {
     {
         state.requireIsOperator(args.takerAccount, msg.sender);
         state.requireIsOperator(args.makerAccount, args.autoTrader);
+        if (state.isAutoTraderSpecial(args.autoTrader)) {
+            Require.that(
+                state.isGlobalOperator(msg.sender),
+                FILE,
+                "Unpermissioned trade operator"
+            );
+        }
 
         Types.Par memory oldInputPar = state.getPar(
             args.makerAccount,

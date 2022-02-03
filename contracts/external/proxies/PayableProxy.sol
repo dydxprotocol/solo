@@ -109,6 +109,22 @@ contract PayableProxy is OnlyDolomiteMargin, ReentrancyGuard {
                     "Sender must be secondary account",
                     owner2
                 );
+            } else {
+                Require.that(
+                    action.actionType != Actions.ActionType.Liquidate,
+                    FILE,
+                    "Cannot perform liquidations"
+                );
+                if (
+                    action.actionType == Actions.ActionType.Trade &&
+                    DOLOMITE_MARGIN.getIsAutoTraderSpecial(action.otherAddress)
+                ) {
+                    Require.that(
+                        DOLOMITE_MARGIN.getIsGlobalOperator(msg.sender),
+                        FILE,
+                        "Unpermissioned trade operator"
+                    );
+                }
             }
         }
 

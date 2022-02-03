@@ -45,10 +45,10 @@ contract Admin is
     // ============ Token Functions ============
 
     /**
-     * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be
-     * withdrawn. The number of excess tokens is calculated by taking the current number of tokens
-     * held in DolomiteMargin, adding the number of tokens owed to DolomiteMargin by borrowers, and subtracting the
-     * number of tokens owed to suppliers by DolomiteMargin.
+     * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be withdrawn. The number
+     * of excess tokens is calculated by taking the current number of tokens held in DolomiteMargin, adding the number
+     * of tokens owed to DolomiteMargin by borrowers, and subtracting the number of tokens owed to suppliers by
+     * DolomiteMargin.
      */
     function ownerWithdrawExcessTokens(
         uint256 marketId,
@@ -116,8 +116,8 @@ contract Admin is
     }
 
     /**
-     * Removes a market from DolomiteMargin, sends any remaining tokens in this contract to `salvager` and invokes the recyclable
-     * callback
+     * Removes a market from DolomiteMargin, sends any remaining tokens in this contract to `salvager` and invokes the
+     * recyclable callback
      */
     function ownerRemoveMarkets(
         uint[] memory marketIds,
@@ -135,8 +135,8 @@ contract Admin is
     }
 
     /**
-     * Set (or unset) the status of a market to "closing". The borrowedValue of a market cannot
-     * increase while its status is "closing".
+     * Set (or unset) the status of a market to "closing". The borrowedValue of a market cannot increase while its
+     * status is "closing".
      */
     function ownerSetIsClosing(
         uint256 marketId,
@@ -190,8 +190,8 @@ contract Admin is
     }
 
     /**
-     * Set a premium on the minimum margin-ratio for a market. This makes it so that any positions
-     * that include this market require a higher collateralization to avoid being liquidated.
+     * Set a premium on the minimum margin-ratio for a market. This makes it so that any positions that include this
+     * market require a higher collateralization to avoid being liquidated.
      */
     function ownerSetMarginPremium(
         uint256 marketId,
@@ -209,8 +209,8 @@ contract Admin is
     }
 
     /**
-     * Set a premium on the liquidation spread for a market. This makes it so that any liquidations
-     * that include this market have a higher spread than the global default.
+     * Set a premium on the liquidation spread for a market. This makes it so that any liquidations that include this
+     * market have a higher spread than the global default.
      */
     function ownerSetSpreadPremium(
         uint256 marketId,
@@ -230,8 +230,7 @@ contract Admin is
     // ============ Risk Functions ============
 
     /**
-     * Set the global minimum margin-ratio that every position must maintain to prevent being
-     * liquidated.
+     * Set the global minimum margin-ratio that every position must maintain to prevent being liquidated.
      */
     function ownerSetMarginRatio(
         Decimal.D256 memory ratio
@@ -247,8 +246,8 @@ contract Admin is
     }
 
     /**
-     * Set the global liquidation spread. This is the spread between oracle prices that incentivizes
-     * the liquidation of risky positions.
+     * Set the global liquidation spread. This is the spread between oracle prices that incentivizes the liquidation of
+     * risky positions.
      */
     function ownerSetLiquidationSpread(
         Decimal.D256 memory spread
@@ -264,8 +263,8 @@ contract Admin is
     }
 
     /**
-     * Set the global earnings-rate variable that determines what percentage of the interest paid
-     * by borrowers gets passed-on to suppliers.
+     * Set the global earnings-rate variable that determines what percentage of the interest paid by borrowers gets
+     * passed-on to suppliers.
      */
     function ownerSetEarningsRate(
         Decimal.D256 memory earningsRate
@@ -299,8 +298,8 @@ contract Admin is
     // ============ Global Operator Functions ============
 
     /**
-     * Approve (or disapprove) an address that is permissioned to be an operator for all accounts in
-     * DolomiteMargin. Intended only to approve smart-contracts.
+     * Approve (or disapprove) an address that is permissioned to be an operator for all accounts in DolomiteMargin.
+     * Intended only to approve smart-contracts.
      */
     function ownerSetGlobalOperator(
         address operator,
@@ -314,6 +313,24 @@ contract Admin is
             g_state,
             operator,
             approved
+        );
+    }
+
+    /**
+     * Approve (or disapprove) an auto trader that can only be called by a global operator. IE for expirations
+     */
+    function ownerSetAutoTraderSpecial(
+        address autoTrader,
+        bool special
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetAutoTraderSpecial(
+            g_state,
+            autoTrader,
+            special
         );
     }
 }

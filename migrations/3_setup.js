@@ -35,6 +35,7 @@ const { getChainlinkPriceOracleContract } = require('./oracle_helpers');
 
 // Base Protocol
 const DolomiteMargin = artifacts.require('DolomiteMargin');
+const Expiry = artifacts.require('Expiry');
 
 // Test Contracts
 const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
@@ -64,12 +65,15 @@ module.exports = migration;
 // ============ Setup Functions ============
 
 async function setupProtocol(deployer, network, accounts) {
+  const expiry = await Expiry.deployed();
+  const dolomiteMargin = await getDolomiteMargin(network);
+  await dolomiteMargin.ownerSetAutoTraderSpecial(expiry.address, true);
+
   if (isDevNetwork(network) && !isDocker(network)) {
     return;
   }
 
-  const [dolomiteMargin, tokens, oracles, setters] = await Promise.all([
-    getDolomiteMargin(network),
+  const [tokens, oracles, setters] = await Promise.all([
     getTokens(network),
     getOracles(network),
     getSetters(network),
