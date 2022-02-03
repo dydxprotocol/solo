@@ -45,11 +45,17 @@ import "../interfaces/IUniswapV2Router.sol";
 import "../helpers/OnlyDolomiteMargin.sol";
 
 
-contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
+/**
+ * @title AmmRebalancerProxyV1
+ * @author Dolomite
+ *
+ * Contract for re-balancing the Dolomite AMM pools against other UniswapV2Router compatible pools
+ */
+contract AmmRebalancerProxyV1 is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint;
 
-    bytes32 public constant FILE = "AmmRebalancerProxy";
+    bytes32 public constant FILE = "AmmRebalancerProxyV1";
 
     address public DOLOMITE_AMM_FACTORY;
     mapping(address => bytes32) public ROUTER_TO_INIT_CODE_HASH_MAP;
@@ -142,7 +148,7 @@ contract AmmRebalancerProxy is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
             amountOutMin,
             path,
             address(this),
-            block.timestamp + 1
+            block.timestamp
         );
 
         _checkAllowanceAndApprove(makerToken, receiver, amounts[amounts.length - 1]);

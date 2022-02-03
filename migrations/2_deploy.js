@@ -94,7 +94,7 @@ const LiquidatorProxyV1 = artifacts.require('LiquidatorProxyV1');
 const LiquidatorProxyV1WithAmm = artifacts.require('LiquidatorProxyV1WithAmm');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
 const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
-const AmmRebalancerProxy = artifacts.require('AmmRebalancerProxy');
+const AmmRebalancerProxyV1 = artifacts.require('AmmRebalancerProxyV1');
 const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
 const TestUniswapAmmRebalancerProxy = artifacts.require('TestUniswapAmmRebalancerProxy');
 const TransferProxy = artifacts.require('TransferProxy');
@@ -294,22 +294,22 @@ async function deploySecondLayer(deployer, network, accounts) {
   if (isDevNetwork(network)) {
     const uniswapV2Router = await UniswapV2Router02.deployed();
     await deployer.deploy(
-      AmmRebalancerProxy,
+      AmmRebalancerProxyV1,
       dolomiteMargin.address,
       dolomiteAmmFactory.address,
       [uniswapV2Router.address],
       [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
     );
-    await AmmRebalancerProxy.deployed();
+    await AmmRebalancerProxyV1.deployed();
   } else {
     await deployer.deploy(
-      AmmRebalancerProxy,
+      AmmRebalancerProxyV1,
       dolomiteMargin.address,
       dolomiteAmmFactory.address,
       [],
       [],
     );
-    await AmmRebalancerProxy.deployed();
+    await AmmRebalancerProxyV1.deployed();
   }
 
   if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
@@ -318,8 +318,7 @@ async function deploySecondLayer(deployer, network, accounts) {
       dolomiteMargin.address,
       dolomiteAmmFactory.address,
     );
-    await deployer.deploy(TestUniswapAmmRebalancerProxy,
-    );
+    await deployer.deploy(TestUniswapAmmRebalancerProxy);
   }
 
   await Promise.all([

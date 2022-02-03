@@ -25,7 +25,7 @@ const prices = [
 const defaultIsClosing = false;
 const defaultIsRecyclable = false;
 
-describe('AmmRebalancerProxy', () => {
+describe('AmmRebalancerProxyV1', () => {
   beforeAll(async () => {
     const r = await getDolomiteMargin();
     dolomiteMargin = r.dolomiteMargin;
@@ -53,13 +53,13 @@ describe('AmmRebalancerProxy', () => {
       deployDolomiteLpTokens(),
       deployUniswapLpTokens(),
       dolomiteMargin.permissions.approveOperator(
-        dolomiteMargin.contracts.ammRebalancerProxy.options.address,
+        dolomiteMargin.contracts.ammRebalancerProxyV1.options.address,
         { from: owner1 },
       ),
     ]);
 
-    // expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
-    //   .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
+    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
+      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
 
     expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
       .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());
@@ -117,7 +117,7 @@ describe('AmmRebalancerProxy', () => {
 
         // converge the prices of the two on ~0.5025 (0.5% away from the "real" price of 0.5)
         // true price needs to be calculated assuming the correct number of decimals, per asset
-        const txResult = await dolomiteMargin.ammRebalancerProxy.performRebalance(
+        const txResult = await dolomiteMargin.ammRebalancerProxyV1.performRebalance(
           [dolomiteMargin.testing.tokenB.address, dolomiteMargin.testing.tokenA.address],
           new BigNumber('1990049'),
           new BigNumber('1000000000000000000'),

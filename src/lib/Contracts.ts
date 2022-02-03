@@ -26,7 +26,7 @@ import {
 import PromiEvent from 'web3/promiEvent';
 import { Provider } from 'web3/providers';
 import { TransactionReceipt } from 'web3/types';
-import ammRebalancerProxyJson from '../../build/published_contracts/AmmRebalancerProxy.json';
+import ammRebalancerProxyV1Json from '../../build/published_contracts/AmmRebalancerProxyV1.json';
 import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
 import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
@@ -50,7 +50,7 @@ import multiCallJson from '../../build/published_contracts/MultiCall.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 
 // Contracts
-import { AmmRebalancerProxy } from '../../build/wrappers/AmmRebalancerProxy';
+import { AmmRebalancerProxyV1 } from '../../build/wrappers/AmmRebalancerProxyV1';
 import { ChainlinkPriceOracleV1 } from '../../build/wrappers/ChainlinkPriceOracleV1';
 import { DolomiteAmmFactory } from '../../build/wrappers/DolomiteAmmFactory';
 import { DolomiteAmmPair } from '../../build/wrappers/DolomiteAmmPair';
@@ -99,7 +99,7 @@ export class Contracts {
   public liquidatorProxyV1: LiquidatorProxyV1;
   public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
-  public ammRebalancerProxy: AmmRebalancerProxy;
+  public ammRebalancerProxyV1: AmmRebalancerProxyV1;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
@@ -158,9 +158,9 @@ export class Contracts {
     this.dolomiteAmmRouterProxy = new this.web3.eth.Contract(
       dolomiteAmmRouterProxyJson.abi,
     ) as DolomiteAmmRouterProxy;
-    this.ammRebalancerProxy = new this.web3.eth.Contract(
-      ammRebalancerProxyJson.abi,
-    ) as AmmRebalancerProxy;
+    this.ammRebalancerProxyV1 = new this.web3.eth.Contract(
+      ammRebalancerProxyV1Json.abi,
+    ) as AmmRebalancerProxyV1;
     this.polynomialInterestSetter = new this.web3.eth.Contract(
       polynomialInterestSetterJson.abi,
     ) as PolynomialInterestSetter;
@@ -238,7 +238,7 @@ export class Contracts {
         contract: this.dolomiteAmmRouterProxy,
         json: dolomiteAmmRouterProxyJson,
       },
-      { contract: this.ammRebalancerProxy, json: ammRebalancerProxyJson },
+      { contract: this.ammRebalancerProxyV1, json: ammRebalancerProxyV1Json },
       {
         contract: this.polynomialInterestSetter,
         json: polynomialInterestSetterJson,
@@ -281,7 +281,7 @@ export class Contracts {
     this.liquidatorProxyV1.options.from = account;
     this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
-    this.ammRebalancerProxy.options.from = account;
+    this.ammRebalancerProxyV1.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.chainlinkPriceOracleV1.options.from = account;

@@ -2,7 +2,7 @@ import { Contracts } from '../lib/Contracts';
 import { toBytesNoPadding } from '../lib/BytesHelper';
 import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
-export class AmmRebalancerProxy {
+export class AmmRebalancerProxyV1 {
   private contracts: Contracts;
 
   constructor(contracts: Contracts) {
@@ -20,7 +20,7 @@ export class AmmRebalancerProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.ammRebalancerProxy.methods.performRebalance({
+      this.contracts.ammRebalancerProxyV1.methods.performRebalance({
         otherRouter,
         dolomitePath: toBytesNoPadding(...dolomitePath),
         otherPath: toBytesNoPadding(...otherPath),

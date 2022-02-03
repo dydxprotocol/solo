@@ -34,7 +34,7 @@ import "../protocol/lib/Require.sol";
 
 
 /**
- * @dev Attempts to swap a Uniswap-v2-style DEX to a particular price using tokens in msg.sender wallet. Allowances must
+ * @dev Attempts to swap a Uniswap-V2-style DEX to a particular price using tokens in msg.sender wallet. Allowances must
  *      be set for the tokens that will be swapped, using this contract as the spender
  */
 contract TestUniswapAmmRebalancerProxy is Ownable {
