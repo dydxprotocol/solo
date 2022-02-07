@@ -48,6 +48,7 @@ import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.j
 import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
 import multiCallJson from '../../build/published_contracts/MultiCall.json';
 import wethJson from '../../build/published_contracts/Weth.json';
+import testUniswapAmmRebalancerJson from '../../build/published_contracts/TestUniswapAmmRebalancerProxy.json';
 
 // Contracts
 import { AmmRebalancerProxyV1 } from '../../build/wrappers/AmmRebalancerProxyV1';
@@ -70,6 +71,7 @@ import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy'
 import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
 import { TransferProxy } from '../../build/wrappers/TransferProxy';
 import { Weth } from '../../build/wrappers/Weth';
+import { TestUniswapAmmRebalancerProxy } from '../../build/wrappers/TestUniswapAmmRebalancerProxy';
 import {
   address,
   ConfirmationType,
@@ -105,9 +107,10 @@ export class Contracts {
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public simpleFeeOwner: SimpleFeeOwner;
-  public weth: Weth;
   public transferProxy: TransferProxy;
   public multiCall: MultiCall;
+  public weth: Weth;
+  public testUniswapAmmRebalancer: TestUniswapAmmRebalancerProxy;
   protected web3: Web3;
   private blockGasLimit: number;
   private readonly autoGasMultiplier: number;
@@ -176,9 +179,12 @@ export class Contracts {
     this.simpleFeeOwner = new this.web3.eth.Contract(
       simpleFeeOwnerJson.abi,
     ) as SimpleFeeOwner;
-    this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
     this.transferProxy = new this.web3.eth.Contract(transferProxyJson.abi) as TransferProxy;
     this.multiCall = new this.web3.eth.Contract(multiCallJson.abi) as MultiCall;
+    this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
+    this.testUniswapAmmRebalancer = new this.web3.eth.Contract(
+      testUniswapAmmRebalancerJson.abi,
+    ) as TestUniswapAmmRebalancerProxy;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -253,9 +259,10 @@ export class Contracts {
         contract: this.chainlinkPriceOracleV1,
         json: chainlinkPriceOracleV1Json,
       },
-      { contract: this.weth, json: wethJson },
       { contract: this.transferProxy, json: transferProxyJson },
       { contract: this.multiCall, json: multiCallJson },
+      { contract: this.weth, json: wethJson },
+      { contract: this.testUniswapAmmRebalancer, json: testUniswapAmmRebalancerJson },
     ];
 
     contracts.forEach(contract =>
@@ -287,9 +294,10 @@ export class Contracts {
     this.chainlinkPriceOracleV1.options.from = account;
     this.dolomiteAmmFactory.options.from = account;
     this.simpleFeeOwner.options.from = account;
-    this.weth.options.from = account;
     this.transferProxy.options.from = account;
     this.multiCall.options.from = account;
+    this.weth.options.from = account;
+    this.testUniswapAmmRebalancer.options.from = account;
   }
 
   public async callContractFunction<T>(
