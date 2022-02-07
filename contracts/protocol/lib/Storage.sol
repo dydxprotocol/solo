@@ -756,6 +756,9 @@ library Storage {
         );
     }
 
+    /**
+     * Initializes the cache using the set bits
+     */
     function initializeCache(
         Storage.State storage state,
         Cache.MarketCache memory cache
@@ -774,20 +777,20 @@ library Storage {
                 address token = state.getToken(marketId);
                 if (state.markets[marketId].isClosing) {
                     cache.markets[counter++] = Cache.MarketInfo({
-                    marketId: marketId,
-                    token: token,
-                    isClosing: true,
-                    borrowPar: state.getTotalPar(marketId).borrow,
-                    price: state.fetchPrice(marketId, token)
+                        marketId: marketId,
+                        token: token,
+                        isClosing: true,
+                        borrowPar: state.getTotalPar(marketId).borrow,
+                        price: state.fetchPrice(marketId, token)
                     });
                 } else {
                     // don't need the borrowPar if the market is not closing
                     cache.markets[counter++] = Cache.MarketInfo({
-                    marketId: marketId,
-                    token: token,
-                    isClosing: false,
-                    borrowPar: 0,
-                    price: state.fetchPrice(marketId, token)
+                        marketId: marketId,
+                        token: token,
+                        isClosing: false,
+                        borrowPar: 0,
+                        price: state.fetchPrice(marketId, token)
                     });
                 }
 
