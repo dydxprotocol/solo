@@ -42,7 +42,7 @@ rooted in fixing a bug with the protocol and making the process of adding a larg
 efficient. Prior to the changes, adding a large number of markets, around 10+, would result in an `n` increase in gas
 consumption, since all markets needed to be read into memory. With the changes outlined below, now only the necessary
 markets are loaded into memory. This allows the protocol to support potentially hundreds of markets in the same deployment,
-which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-partitioned markets) 
+which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-isolated markets) 
 margin systems in DeFi. The detailed changes are outlined below:
 
  - Added a `getPartialRoundHalfUp` function that's used when converting between `Wei` & `Par` values. The reason for 
