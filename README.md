@@ -81,13 +81,13 @@ the same as the `IRecyclable` (recall, `IRecyclable` is the "user" in all other 
 changing the market ID in the future does not mess up the mapping of user's balances, described as 
 `user => account number => par`. Prior to removing a recyclable market, two new and important checks are
 done. The first is that there are *no* active borrows for that market, where a user has borrowed the recyclable token.
-The second is that the market has *expired* and a one-week buffer, beyond the expiration timestamp, has passed. This will 
+The second is that the market has *expired* and a one-week buffer has passed, beyond the expiration timestamp. This will 
 allow for more than enough time for the liquidation bots to close out any active margin positions that were opened 
-involving the recyclable markets. All recyclable markets must be expired in order to wind down any leverage used, to
+involving the recyclable market. All recyclable markets must be expired in order to wind down any leverage used, to
 prevent liquidations from occurring with clashing market IDs. Once the contract is expired, all control of the contract
-is confined to the IRecyclable instance itself. Presumably, no more expirations or liquidations will occur. Lastly, there
-is nothing forcing a market to be recycled as soon as the one-week buffer passes, after expiration. The protocol 
-administrators may choose to recycle the market at any time after the buffer has passed.
+is confined to the IRecyclable instance itself. Meaning, no more expirations or liquidations can occur for that market. Lastly, 
+there is nothing forcing a market to be recycled as soon as it's expired and the one-week buffer passes. The protocol 
+administrators may choose to recycle the market at any time after the buffer passes.
  - Added a `recycledMarketIds` linked list to `Storage.State` that prepends all recycled/removed markets to this linked list.
 This allows newly-added markets to reuse an old ID upon being added. IDs are reused by popping off the first value from the 
 head of the linked list.
