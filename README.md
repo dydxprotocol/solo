@@ -75,9 +75,9 @@ through the Recyclable smart contract itself, expirations, and liquidations. Use
 and thus are considered "sub accounts" under the contract itself. The recyclable smart contract contains logic 
 for depositing, withdrawing, withdrawing after recycling, and trading with instances of `IExchangeWrapper`. Using this 
 recyclable smart contract as a proxy, the implementation can finely control how a user interacts with DolomiteMargin via this 
-market. However, there are two circumstances where control cannot be siloed - expirations and liquidations. If an 
-expiration or liquidation occurs, a check is done that ensures no collateral is held in by a user whose address is not 
-the same as the `IRecyclable` (recall, IRecyclable is the "user" in all other circumstances) smart contract. This ensures 
+market. However, there are two circumstances where control cannot be siloed - expirations and liquidations. After any action 
+occurs, including an expiration or a liquidation, a check is done that ensures no collateral is held by a user whose address is not 
+the same as the `IRecyclable` (recall, `IRecyclable` is the "user" in all other circumstances) smart contract. This ensures 
 changing the market ID in the future does not mess up the mapping of user's balances, described as 
 `user => account number => par`. Prior to removing a recyclable market, two new and important checks are
 done. The first is that there are *no* active borrows for that market, where a user has borrowed the recyclable token.
