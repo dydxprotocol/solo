@@ -85,7 +85,7 @@ The second is that the market has *expired* and a one-week buffer has passed, be
 allow for more than enough time for the liquidation bots to close out any active margin positions that were opened 
 involving the recyclable market. All recyclable markets must be expired in order to wind down any leverage used, to
 prevent liquidations from occurring with clashing market IDs. Once the contract is expired, all control of the contract
-is confined to the IRecyclable instance itself. Meaning, no more expirations or liquidations can occur for that market. Lastly, 
+is confined to the `IRecyclable` instance itself. Meaning, no more expirations or liquidations can occur for that market. Lastly, 
 there is nothing forcing a market to be recycled as soon as it's expired and the one-week buffer passes. The protocol 
 administrators may choose to recycle the market at any time after the buffer passes.
  - Added a `recycledMarketIds` linked list to `Storage.State` that prepends all recycled/removed markets to this linked list.
