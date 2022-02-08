@@ -98,8 +98,9 @@ allow for Chainlink nodes to be the sole liquidator in the future, allowing the 
 (thus, socializing the reward), instead of having gas wars amongst liquidators to receive the reward while simultaneously 
 clogging the network.
  - Similar to the prior point, added a require statement in `OperationImpl` that forces expirations to come from a 
-*global operator*. This requirement is done by first checking if the internal trader is considered `special`. If it is,
-all interactions with *DolomiteMargin* must be done through a *global operator*.
+*global operator*. This requirement is done by first checking if the internal trader is considered *special* through a 
+new mapping `specialAutoTraders` `mapping (address => bool)`. If it is, interactions with *DolomiteMargin* must be 
+done through a *global operator*.
 
 ## Documentation
 
