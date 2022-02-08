@@ -54,7 +54,7 @@ always returns `true`. Else, it does the normal collateralization check.
  - Added a `marketsWithNonZeroBalanceSet` which function as an enumerable hash set. Its implementation mimics
 [Open Zeppelin's](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol)
 with adjustments made to support only the `uint256` type (for gas efficiency's sake). The purpose for this set is to
-track, in O(1) time, a user's active markets, for reading markets into memory in `OperationImpl`. These markets are needed at 
+track, in `O(1)` time, a user's active markets, for reading markets into memory in `OperationImpl`. These markets are needed at 
 the end of each transaction for checking the user's collateralization. It's understood that reading this user's array into memory
 can be more costly gas-wise than the old algorithm, but as the number of markets listed grows to the tens or hundreds,
 the new algorithm will be much more efficient. Most importantly, it's understood that a user can inadvertently DOS
