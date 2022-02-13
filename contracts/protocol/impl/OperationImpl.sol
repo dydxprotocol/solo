@@ -194,6 +194,11 @@ library OperationImpl {
 
         state.initializeCache(cache);
 
+        numMarkets = cache.getNumMarkets();
+        for (uint i = 0; i < numMarkets; i++) {
+            Events.logOraclePrice(cache.getAtIndex(i).marketId, cache.getAtIndex(i).price);
+        }
+
         return (primaryAccounts, cache);
     }
 

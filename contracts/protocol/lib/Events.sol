@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { Account } from "./Account.sol";
 import { Actions } from "./Actions.sol";
 import { Interest } from "./Interest.sol";
+import { Monetary } from "./Monetary.sol";
 import { Storage } from "./Storage.sol";
 import { Types } from "./Types.sol";
 
@@ -41,6 +42,11 @@ library Events {
     event LogIndexUpdate(
         uint256 indexed market,
         Interest.Index index
+    );
+
+    event LogOraclePrice(
+        uint256 indexed market,
+        Monetary.Price price
     );
 
     event LogOperation(
@@ -156,6 +162,18 @@ library Events {
         emit LogIndexUpdate(
             marketId,
             index
+        );
+    }
+
+    function logOraclePrice(
+        uint256 marketId,
+        Monetary.Price memory price
+    )
+        internal
+    {
+        emit LogOraclePrice(
+            marketId,
+            price
         );
     }
 
