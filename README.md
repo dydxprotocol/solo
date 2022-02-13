@@ -42,19 +42,19 @@ rooted in fixing a bug with the protocol and making the process of adding a larg
 efficient. Prior to the changes, adding a large number of markets, around 10+, would result in an `n` increase in gas
 consumption, since all markets needed to be read into memory. With the changes outlined below, now only the necessary
 markets are loaded into memory. This allows the protocol to support potentially hundreds of markets in the same deployment,
-which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-partitioned markets) 
+which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-isolated markets) 
 margin systems in DeFi. The detailed changes are outlined below:
 
- - Added a `getPartialRoundHalfUp` function that's used when converting between positive `Wei` & `Par` values. The reason for 
-this change is that there would be truncation issues when using `getPartial`, which would lead to lossy conversions
-to and from `Wei` and `Par` that would be off by 1.
+ - Added a `getPartialRoundHalfUp` function that's used when converting between `Wei` & `Par` values. The reason for 
+this change is that there would be truncation issues when using `getPartial` or `getPartialRoundUp`, which would lead to 
+lossy conversions to and from `Wei` and `Par` that would be incorrect by 1 unit.
  - Added a `numberOfMarketsWithBorrow` field to `Account.Storage`, which makes checking collateralization for accounts
 that do not have an active borrow much more gas efficient. If `numberOfMarketsWithBorrow` is `0`, `state.isCollateralized(...)`
 always returns `true`. Else, it does the normal collateralization check.
  - Added a `marketsWithNonZeroBalanceSet` which function as an enumerable hash set. Its implementation mimics
 [Open Zeppelin's](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/structs/EnumerableSet.sol)
 with adjustments made to support only the `uint256` type (for gas efficiency's sake). The purpose for this set is to
-track, in O(1) time, a user's active markets, for reading markets into memory in `OperationImpl`. These markets are needed at 
+track, in `O(1)` time, a user's active markets, for reading markets into memory in `OperationImpl`. These markets are needed at 
 the end of each transaction for checking the user's collateralization. It's understood that reading this user's array into memory
 can be more costly gas-wise than the old algorithm, but as the number of markets listed grows to the tens or hundreds,
 the new algorithm will be much more efficient. Most importantly, it's understood that a user can inadvertently DOS
@@ -69,30 +69,38 @@ reading the least significant bit, truncating it out of the bitmap, and repeatin
 The process of reading the least significant bit is done in `O(1)` time using crafty bit math. Then, since the final
 array that the bitmap is read into is sorted, it can be searched in later parts of `OperationImpl` in `O(log(n))` time, and 
 iterated in its entirety in `O(m)`, where `m` represents the number of items. 
- - Added `isRecyclable` field to `Storage.Market` that denotes whether or not a market can be removed and reused. The 
+ - Added `isRecyclable` field to `Storage.Market` that denotes whether a market can be removed and reused. The 
 technicalities of this implementation are intricate and cautious. Recyclable markets may only interact with DolomiteMargin
 through the Recyclable smart contract itself, expirations, and liquidations. User accounts are partitioned by account number 
 and thus are considered "sub accounts" under the contract itself. The recyclable smart contract contains logic 
 for depositing, withdrawing, withdrawing after recycling, and trading with instances of `IExchangeWrapper`. Using this 
 recyclable smart contract as a proxy, the implementation can finely control how a user interacts with DolomiteMargin via this 
-market. However, there are two circumstances where control cannot be siloed - expirations and liquidations. If an 
-expiration or liquidation occurs, a check is done that ensures no collateral is held in by a user whose address is not 
-the same as the `IRecyclable` (recall, IRecyclable is the "user" in all other circumstances) smart contract. This ensures 
+market. However, there are two circumstances where control cannot be siloed - expirations and liquidations. After any action 
+occurs, including an expiration or a liquidation, a check is done that ensures no collateral is held by a user whose address is not 
+the same as the `IRecyclable` (recall, `IRecyclable` is the "user" in all other circumstances) smart contract. This ensures 
 changing the market ID in the future does not mess up the mapping of user's balances, described as 
 `user => account number => par`. Prior to removing a recyclable market, two new and important checks are
 done. The first is that there are *no* active borrows for that market, where a user has borrowed the recyclable token.
-The second is that the market has *expired* and a one-week buffer, beyond the expiration timestamp, has passed. This will 
+The second is that the market has *expired* and a one-week buffer has passed, beyond the expiration timestamp. This will 
 allow for more than enough time for the liquidation bots to close out any active margin positions that were opened 
-involving the recyclable markets. All recyclable markets must be expired in order to wind down any leverage used, to
+involving the recyclable market. All recyclable markets must be expired in order to wind down any leverage used, to
 prevent liquidations from occurring with clashing market IDs. Once the contract is expired, all control of the contract
-is confined to the IRecyclable instance itself. Presumably, no more expirations or liquidations will occur. Lastly, there
-is nothing forcing a market to be recycled as soon as the one-week buffer passes, after expiration. The protocol 
-administrators may choose to recycle the market at any time after the buffer has passed.
+is confined to the `IRecyclable` instance itself. Meaning, no more expirations or liquidations can occur for that market. Lastly, 
+there is nothing forcing a market to be recycled as soon as it's expired and the one-week buffer passes. The protocol 
+administrators may choose to recycle the market at any time after the buffer passes.
  - Added a `recycledMarketIds` linked list to `Storage.State` that prepends all recycled/removed markets to this linked list.
 This allows newly-added markets to reuse an old ID upon being added. IDs are reused by popping off the first value from the 
 head of the linked list.
  - Separated liquidation and vaporization logic into another library, `LiquidateOrVaporizeImpl`, to save bytecode (compilation 
 size) in `OperationImpl`. Otherwise, the `OperationImpl` bytecode was too large and could not be deployed.
+ - Added a require statement in `OperationImpl` that forces liquidations to come from a *global operator*. This will 
+allow for Chainlink nodes to be the sole liquidator in the future, allowing the DAO to receive liquidation rewards 
+(thus, socializing the reward), instead of having gas wars amongst liquidators to receive the reward while simultaneously 
+clogging the network.
+ - Similar to the prior point, added a require statement in `OperationImpl` that forces expirations to come from a 
+*global operator*. This requirement is done by first checking if the internal trader is considered *special* through a 
+new mapping `specialAutoTraders` `mapping (address => bool)`. If it is, interactions with *DolomiteMargin* must be 
+done through a *global operator*.
 
 ## Documentation
 
@@ -106,23 +114,24 @@ Documentation can be found at [docs.dolomite.io](https://docs.dolomite.io).
 
 ### Mainnet
 
-|Contract Name|Description|Address|
-|---|---|---|
-|[`AdminImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/AdminImpl.sol)|DolomiteMargin library containing admin functions|[](https://etherscan.io/address/)|
-|[`DolomiteAmmFactory`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)|Factory for creating templated AMM pools. These AMM pools allow users to trade with on-chain liquidity. They also are natively integrated with DolomiteMargin, so LPs also accrue interest from borrowers|[](https://etherscan.io/address/)|
-|[`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)|Routing contract for trading against Dolomite AMM pools|[](https://etherscan.io/address/)|
-|[`DolomiteMargin`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/DolomiteMargin.sol)|Main margin contract|[](https://etherscan.io/address/)|
-|[`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)|Price oracle for all assets, utilizing Chainlink|[](https://etherscan.io/address/)|
-|[`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol)|Handles account expirations|[](https://etherscan.io/address/)|
-|[`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)|DolomiteMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`|[](https://etherscan.io/address/)|
-|[`LiquidatorProxyV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1.sol)|Proxy contract for liquidating other accounts|[](https://etherscan.io/address/)|
-|[`LiquidatorProxyV1WithAmm`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmm.sol)|Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools|[](https://etherscan.io/address/)|
-|[`OperationImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/OperationImpl.sol)|DolomiteMargin library containing operation functions|[](https://etherscan.io/address/)|
-|[`PayableProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol)|WETH wrapper proxy|[](https://etherscan.io/address/)|
-|[`PolynomialInterestSetter`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/interestsetters/PolynomialInterestSetter.sol)|Sets interest rates|[](https://etherscan.io/address/)|
-|[`SignedOperationProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/SignedOperationProxy.sol)|Contract for sending signed operations on behalf of another account owner|[](https://etherscan.io/address/)|
-|[`SimpleFeeOwner`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/SimpleFeeOwner.sol)|Owns the admin fees that are accrued by AMM liquidity providers (LPs)|[](https://etherscan.io/address/)|
-|[`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)|Contract for transferring funds within Dolomite to other users|[](https://etherscan.io/address/)|
+| Contract Name                                                                                                                                                          | Description                                                                                                                                                                                               | Address                          |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------|
+| [`AdminImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/AdminImpl.sol)                                                  | DolomiteMargin library containing admin functions                                                                                                                                                         | [](https://arbiscan.io/address/) |
+| [`DolomiteAmmFactory`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/DolomiteAmmFactory.sol)                                 | Factory for creating templated AMM pools. These AMM pools allow users to trade with on-chain liquidity. They also are natively integrated with DolomiteMargin, so LPs also accrue interest from borrowers | [](https://arbiscan.io/address/) |
+| [`DolomiteAmmRouterProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/DolomiteAmmRouterProxy.sol)                     | Routing contract for trading against Dolomite AMM pools                                                                                                                                                   | [](https://arbiscan.io/address/) |
+| [`DolomiteMargin`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/DolomiteMargin.sol)                                             | Main margin contract                                                                                                                                                                                      | [](https://arbiscan.io/address/) |
+| [`ChainlinkPriceOracleV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/oracles/ChainlinkPriceOracleV1.sol)                     | Price oracle for all assets, utilizing Chainlink                                                                                                                                                          | [](https://arbiscan.io/address/) |
+| [`Expiry`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/traders/Expiry.sol)                                                     | Handles account expirations                                                                                                                                                                               | [](https://arbiscan.io/address/) |
+| [`LiquidateOrVaporizeImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/LiquidateOrVaporizeImpl.sol)                      | DolomiteMargin library containing liquidation and vaporization functions. Designed to be used within `OperationImpl`                                                                                      | [](https://arbiscan.io/address/) |
+| [`LiquidatorProxyV1`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1.sol)                               | Proxy contract for liquidating other accounts                                                                                                                                                             | [](https://arbiscan.io/address/) |
+| [`LiquidatorProxyV1WithAmm`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/LiquidatorProxyV1WithAmm.sol)                 | Proxy contract for liquidating other accounts and automatically selling collateral using Dolomite's AMM pools                                                                                             | [](https://arbiscan.io/address/) |
+| [`MultiCall`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/utils/MultiCall.sol)                                                 | A utility contract for aggregating calls to the RPC node                                                                                                                                                  | [](https://arbiscan.io/address/) |
+| [`OperationImpl`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/protocol/impl/OperationImpl.sol)                                          | DolomiteMargin library containing operation functions                                                                                                                                                     | [](https://arbiscan.io/address/) |
+| [`PayableProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/PayableProxy.sol)                                         | WETH wrapper proxy                                                                                                                                                                                        | [](https://arbiscan.io/address/) |
+| [`DoubleExponentInterestSetter`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/interestsetters/DoubleExponentInterestSetter.sol) | Sets interest rates                                                                                                                                                                                       | [](https://arbiscan.io/address/) |
+| [`SignedOperationProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/SignedOperationProxy.sol)                         | Contract for sending signed operations on behalf of another account owner                                                                                                                                 | [](https://arbiscan.io/address/) |
+| [`SimpleFeeOwner`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/SimpleFeeOwner.sol)                                         | Owns the admin fees that are accrued by AMM liquidity providers (LPs)                                                                                                                                     | [](https://arbiscan.io/address/) |
+| [`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)                                       | Contract for transferring funds within Dolomite to other users                                                                                                                                            | [](https://arbiscan.io/address/) |
 
 ## Security
 
