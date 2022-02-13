@@ -129,5 +129,19 @@
             "address": "0x698A96F01A5db4C23D1B5C8184C20c7044c269CE",
             "transactionHash": "0x698A96F01A5db4C23D1B5C8184C20c7044c269CE"
         }
+    },
+    "UniswapV2Router02": {
+        "80001": {
+            "links": {},
+            "address": "0x9D9186d2756bde6557B8793ED5fCBB51c0e67De3",
+            "transactionHash": "0x4cb9d7716a1f1709c3e3f00f3863edac335e804e83b31f385c3e1a6250f04d54"
+        }
+    },
+    "UniswapV2Factory": {
+        "80001": {
+            "links": {},
+            "address": "0xC4c12Cbb383B2b644918B422e9fC234e07967c47",
+            "transactionHash": "0xdc7bf9dda12ccae7dd0397aa1cae7a4c6fdb3b6a5a62e9f26da34d1dc637f25a"
+        }
     }
 }
