@@ -32,7 +32,7 @@ library DolomiteAmmLibrary {
     using SafeMath for uint;
 
     bytes32 private constant FILE = "DolomiteAmmLibrary";
-    bytes32 private constant PAIR_INIT_CODE_HASH = 0x752b18f9c5dbceeac7339c1e7d27b76a85637748e21b577cfb0b8768a8fd5ce7;
+    bytes32 private constant PAIR_INIT_CODE_HASH = 0x9f667da2eec425eabcd935ec53f6a4d2d4f4d3db9b235358225a9892a03e378c;
 
     function getPairInitCodeHash() internal pure returns (bytes32) {
         return PAIR_INIT_CODE_HASH;
