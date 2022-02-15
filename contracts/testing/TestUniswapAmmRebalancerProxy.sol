@@ -59,12 +59,12 @@ contract TestUniswapAmmRebalancerProxy is Ownable {
             "invalid pair"
         );
 
-        (uint112 reserveA, uint112 reserveB,) = IUniswapV2Pair(pair).getReserves();
+        (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pair).getReserves();
         (bool isAToB, uint amountIn) = _computeProfitMaximizingTrade(
-            truePriceTokenA,
-            truePriceTokenB,
-            reserveA,
-            reserveB
+            tokenA < tokenB ? truePriceTokenA : truePriceTokenB,
+            tokenA < tokenB ? truePriceTokenB : truePriceTokenA,
+            reserve0,
+            reserve1
         );
 
         address[] memory path = new address[](2);
