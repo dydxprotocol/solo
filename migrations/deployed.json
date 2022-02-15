@@ -126,8 +126,8 @@
     "TestUniswapAmmRebalancerProxy": {
         "80001": {
             "links": {},
-            "address": "0x6292bCe2c724eFFA9E7A19D2439D557f524F8C7a",
-            "transactionHash": "0x6e70656a5f921015a4b795400efb60d0b7461cc89ed865f019b5d7082136f9bf"
+            "address": "0xB3C9E63aE2Be93ad35bdf28823B16eb82fe64bB5",
+            "transactionHash": "0x8ee1dadd09a4a4fa752e1f1a48cfb042c33b8bf68f9f1243b156d96a69dd9c6c"
         }
     },
     "UniswapV2Router02": {
