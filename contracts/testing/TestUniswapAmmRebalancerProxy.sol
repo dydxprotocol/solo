@@ -76,6 +76,7 @@ contract TestUniswapAmmRebalancerProxy is Ownable {
             path[1] = tokenA;
         }
 
+        IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
         IERC20(path[0]).safeApprove(router, amountIn);
 
         IUniswapV2Router(router).swapExactTokensForTokens(
