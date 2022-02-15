@@ -133,8 +133,8 @@
     "UniswapV2Router02": {
         "80001": {
             "links": {},
-            "address": "0x9D9186d2756bde6557B8793ED5fCBB51c0e67De3",
-            "transactionHash": "0x4cb9d7716a1f1709c3e3f00f3863edac335e804e83b31f385c3e1a6250f04d54"
+            "address": "0x6D16773b70e4bE31C009409eff590E9aFEC48eF2",
+            "transactionHash": "0xd1bb8ebe84e0f2431ec67a7cbff4cd1bcbf8aa85e4b566359be005b27f9637f1"
         }
     },
     "UniswapV2Factory": {
