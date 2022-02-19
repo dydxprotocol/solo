@@ -241,7 +241,7 @@ contract AmmRebalancerProxyV1 is IExchangeWrapper, OnlyDolomiteMargin, Ownable {
         });
         accounts[1] = Account.Info({
             owner : msg.sender,
-            number : 1
+            number : uint(-1)
         });
 
         for (uint i = 0; i < cache.dolomitePools.length; i++) {

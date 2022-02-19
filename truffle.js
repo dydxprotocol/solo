@@ -96,7 +96,7 @@ module.exports = {
       network_id: '80001',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        "https://matic-mumbai.chainstacklabs.com",
+        "https://rpc-mumbai.maticvigil.com",
         0,
         1,
       ),
