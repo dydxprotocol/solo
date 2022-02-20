@@ -783,10 +783,10 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
 
     function _defaultAssetAmount(uint value) internal pure returns (Types.AssetAmount memory) {
         return Types.AssetAmount({
-        sign : true,
-        denomination : Types.AssetDenomination.Wei,
-        ref : Types.AssetReference.Delta,
-        value : value
+            sign : true,
+            denomination : Types.AssetDenomination.Wei,
+            ref : Types.AssetReference.Delta,
+            value : value
         });
     }
 
@@ -827,17 +827,17 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 cache.params.tokenPath[cache.params.tokenPath.length - 1],
                 cache.params.depositToken,
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(false, cache.amountsWei[0]),
-            newPar : cache.dolomiteMargin.getAccountPar(accounts[0], cache.marketPath[0])
-            }),
+                    deltaWei : Types.Wei(false, cache.amountsWei[0]),
+                    newPar : cache.dolomiteMargin.getAccountPar(accounts[0], cache.marketPath[0])
+                }),
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
-            newPar : newOutputPar
-            }),
+                    deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+                    newPar : newOutputPar
+                }),
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(true, cache.marginDepositDeltaWei),
-            newPar : newOutputPar
-            })
+                    deltaWei : Types.Wei(true, cache.marginDepositDeltaWei),
+                    newPar : newOutputPar
+                })
             );
         } else if (cache.params.accountNumber > 0) {
             Types.Par memory newInputPar = cache.dolomiteMargin.getAccountPar(accounts[0], cache.marketPath[0]);
@@ -849,17 +849,17 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
                 cache.params.tokenPath[cache.params.tokenPath.length - 1],
                 cache.params.depositToken,
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(false, cache.amountsWei[0]),
-            newPar : newInputPar
-            }),
+                    deltaWei : Types.Wei(false, cache.amountsWei[0]),
+                    newPar : newInputPar
+                }),
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
-            newPar : _getOutputPar(cache, accounts[0])
-            }),
+                    deltaWei : Types.Wei(true, cache.amountsWei[cache.amountsWei.length - 1]),
+                    newPar : _getOutputPar(cache, accounts[0])
+                }),
                 Events.BalanceUpdate({
-            deltaWei : Types.Wei(false, cache.marginDepositDeltaWei),
-            newPar : newInputPar
-            })
+                    deltaWei : Types.Wei(false, cache.marginDepositDeltaWei),
+                    newPar : newInputPar
+                })
             );
         }
     }
