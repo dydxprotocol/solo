@@ -4,8 +4,6 @@ import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { toBytes } from '../../src/lib/BytesHelper';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
-import { expectThrow } from '../../src/lib/Expect';
 import {
   AccountStatus,
   address,
@@ -13,8 +11,10 @@ import {
   AmountReference,
   Balance,
   Integer,
+  INTEGERS,
   Trade,
 } from '../../src';
+import { expectThrow } from '../../src/lib/Expect';
 
 let who1: address;
 let who2: address;
@@ -84,18 +84,8 @@ describe('Trade', () => {
     await Promise.all([
       dolomiteMargin.testing.setMarketIndex(inputMkt, defaultIndex),
       dolomiteMargin.testing.setMarketIndex(outputMkt, defaultIndex),
-      dolomiteMargin.testing.setAccountBalance(
-        who1,
-        accountNumber1,
-        collateralMkt,
-        collateralAmount,
-      ),
-      dolomiteMargin.testing.setAccountBalance(
-        who2,
-        accountNumber2,
-        collateralMkt,
-        collateralAmount,
-      ),
+      dolomiteMargin.testing.setAccountBalance(who1, accountNumber1, collateralMkt, collateralAmount),
+      dolomiteMargin.testing.setAccountBalance(who2, accountNumber2, collateralMkt, collateralAmount),
     ]);
     snapshotId = await snapshot();
   });
@@ -108,10 +98,7 @@ describe('Trade', () => {
     await Promise.all([approveTrader(), setTradeData()]);
     const txResult = await expectTradeOkay({});
     console.log(`\tTrade gas used: ${txResult.gasUsed}`);
-    await Promise.all([
-      expectBalances1(par, negPar),
-      expectBalances2(negPar, par),
-    ]);
+    await Promise.all([expectBalances1(par, negPar), expectBalances2(negPar, par)]);
   });
 
   it('Succeeds for events', async () => {
@@ -122,16 +109,26 @@ describe('Trade', () => {
     ]);
     const txResult = await expectTradeOkay({}, { from: operator });
 
-    const [inputIndex, outputIndex, collateralIndex] = await Promise.all([
+    const [
+      inputIndex,
+      outputIndex,
+      collateralIndex,
+      inputOraclePrice,
+      outputOraclePrice,
+      collateralOraclePrice,
+    ] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(inputMkt),
       dolomiteMargin.getters.getMarketCachedIndex(outputMkt),
       dolomiteMargin.getters.getMarketCachedIndex(collateralMkt),
+      dolomiteMargin.getters.getMarketPrice(inputMkt),
+      dolomiteMargin.getters.getMarketPrice(outputMkt),
+      dolomiteMargin.getters.getMarketPrice(collateralMkt),
       expectBalances1(par, negPar),
       expectBalances2(negPar, par),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(5);
+    expect(logs.length).toEqual(8);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -152,7 +149,23 @@ describe('Trade', () => {
     expect(collateralIndexLog.args.market).toEqual(collateralMkt);
     expect(collateralIndexLog.args.index).toEqual(collateralIndex);
 
-    const tradeLog = logs[4];
+    // oracle price logs are emitted in order by the `marketId`
+    const collateralOraclePriceLog = logs[4];
+    expect(collateralOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(collateralOraclePriceLog.args.market).toEqual(collateralMkt);
+    expect(collateralOraclePriceLog.args.price).toEqual(collateralOraclePrice);
+
+    const inputOraclePriceLog = logs[5];
+    expect(inputOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(inputOraclePriceLog.args.market).toEqual(inputMkt);
+    expect(inputOraclePriceLog.args.price).toEqual(inputOraclePrice);
+
+    const outputOraclePriceLog = logs[6];
+    expect(outputOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(outputOraclePriceLog.args.market).toEqual(outputMkt);
+    expect(outputOraclePriceLog.args.price).toEqual(outputOraclePrice);
+
+    const tradeLog = logs[7];
     expect(tradeLog.name).toEqual('LogTrade');
     expect(tradeLog.args.takerAccountOwner).toEqual(who1);
     expect(tradeLog.args.takerAccountNumber).toEqual(accountNumber1);
@@ -176,9 +189,7 @@ describe('Trade', () => {
       newPar: par,
       deltaWei: wei,
     });
-    expect(tradeLog.args.autoTrader).toEqual(
-      dolomiteMargin.testing.autoTrader.address,
-    );
+    expect(tradeLog.args.autoTrader).toEqual(dolomiteMargin.testing.autoTrader.address);
   });
 
   it('Succeeds for positive delta par/wei', async () => {
@@ -203,79 +214,37 @@ describe('Trade', () => {
     // test input (output will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar, zero),
-        expectBalances2(par, zero),
-      ]);
+      await Promise.all([expectBalances1(negPar, zero), expectBalances2(par, zero)]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar, zero),
-        expectBalances2(par.times(2), par),
-      ]);
+      await Promise.all([expectBalances1(negPar, zero), expectBalances2(par.times(2), par)]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar, zero),
-        expectBalances2(zero, negPar),
-      ]);
+      await Promise.all([expectBalances1(negPar, zero), expectBalances2(zero, negPar)]);
     }
 
     // test output (input will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar),
-        expectBalances2(zero, par),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar), expectBalances2(zero, par)]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar),
-        expectBalances2(par, par.times(2)),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar), expectBalances2(par, par.times(2))]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar),
-        expectBalances2(negPar, zero),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar), expectBalances2(negPar, zero)]);
     }
   });
 
@@ -301,79 +270,37 @@ describe('Trade', () => {
     // test input (output will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par, zero),
-        expectBalances2(negPar, zero),
-      ]);
+      await Promise.all([expectBalances1(par, zero), expectBalances2(negPar, zero)]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par, zero),
-        expectBalances2(zero, par),
-      ]);
+      await Promise.all([expectBalances1(par, zero), expectBalances2(zero, par)]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par, zero),
-        expectBalances2(negPar.times(2), negPar),
-      ]);
+      await Promise.all([expectBalances1(par, zero), expectBalances2(negPar.times(2), negPar)]);
     }
 
     // test output (input will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par),
-        expectBalances2(zero, negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, par), expectBalances2(zero, negPar)]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par),
-        expectBalances2(par, zero),
-      ]);
+      await Promise.all([expectBalances1(zero, par), expectBalances2(par, zero)]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par),
-        expectBalances2(negPar, negPar.times(2)),
-      ]);
+      await Promise.all([expectBalances1(zero, par), expectBalances2(negPar, negPar.times(2))]);
     }
   });
 
@@ -399,16 +326,9 @@ describe('Trade', () => {
     // test input (output will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar, zero),
-        expectBalances2(par, zero),
-      ]);
+      await Promise.all([expectBalances1(negPar, zero), expectBalances2(par, zero)]);
 
       // starting positive (<target)
       await Promise.all([
@@ -417,22 +337,12 @@ describe('Trade', () => {
         setBalances2(par.div(2), par.div(2)),
       ]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar.div(2), zero),
-        expectBalances2(par, par.div(2)),
-      ]);
+      await Promise.all([expectBalances1(negPar.div(2), zero), expectBalances2(par, par.div(2))]);
 
       // starting positive (=target)
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(zero, zero),
-        expectBalances2(par, par),
-      ]);
+      await Promise.all([expectBalances1(zero, zero), expectBalances2(par, par)]);
 
       // starting positive (>target)
       await Promise.all([
@@ -441,37 +351,20 @@ describe('Trade', () => {
         setBalances2(par.times(2), par.times(2)),
       ]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par, zero),
-        expectBalances2(par, par.times(2)),
-      ]);
+      await Promise.all([expectBalances1(par, zero), expectBalances2(par, par.times(2))]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar.times(2), zero),
-        expectBalances2(par, negPar),
-      ]);
+      await Promise.all([expectBalances1(negPar.times(2), zero), expectBalances2(par, negPar)]);
     }
 
     // test output (input will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar),
-        expectBalances2(zero, par),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar), expectBalances2(zero, par)]);
 
       // starting positive (<target)
       await Promise.all([
@@ -480,22 +373,12 @@ describe('Trade', () => {
         setBalances2(par.div(2), par.div(2)),
       ]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar.div(2)),
-        expectBalances2(par.div(2), par),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar.div(2)), expectBalances2(par.div(2), par)]);
 
       // starting positive (=target)
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, zero),
-        expectBalances2(par, par),
-      ]);
+      await Promise.all([expectBalances1(zero, zero), expectBalances2(par, par)]);
 
       // starting positive (>target)
       await Promise.all([
@@ -504,22 +387,12 @@ describe('Trade', () => {
         setBalances2(par.times(2), par.times(2)),
       ]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par),
-        expectBalances2(par.times(2), par),
-      ]);
+      await Promise.all([expectBalances1(zero, par), expectBalances2(par.times(2), par)]);
 
       // starting negative
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar.times(2)),
-        expectBalances2(negPar, par),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar.times(2)), expectBalances2(negPar, par)]);
     }
   });
 
@@ -545,16 +418,9 @@ describe('Trade', () => {
     // test input (output will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par, zero),
-        expectBalances2(negPar, zero),
-      ]);
+      await Promise.all([expectBalances1(par, zero), expectBalances2(negPar, zero)]);
 
       // starting negative (<target)
       await Promise.all([
@@ -563,22 +429,12 @@ describe('Trade', () => {
         setBalances2(negPar.div(2), negPar.div(2)),
       ]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par.div(2), zero),
-        expectBalances2(negPar, negPar.div(2)),
-      ]);
+      await Promise.all([expectBalances1(par.div(2), zero), expectBalances2(negPar, negPar.div(2))]);
 
       // starting negative (=target)
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(zero, zero),
-        expectBalances2(negPar, negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, zero), expectBalances2(negPar, negPar)]);
 
       // starting negative (>target)
       await Promise.all([
@@ -587,37 +443,20 @@ describe('Trade', () => {
         setBalances2(negPar.times(2), negPar.times(2)),
       ]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(negPar, zero),
-        expectBalances2(negPar, negPar.times(2)),
-      ]);
+      await Promise.all([expectBalances1(negPar, zero), expectBalances2(negPar, negPar.times(2))]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(zeroGlob.amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(zeroGlob.amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(par.times(2), zero),
-        expectBalances2(negPar, par),
-      ]);
+      await Promise.all([expectBalances1(par.times(2), zero), expectBalances2(negPar, par)]);
     }
 
     // test output (input will be zero)
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(zero, zero)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par),
-        expectBalances2(zero, negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, par), expectBalances2(zero, negPar)]);
 
       // starting negative (<target)
       await Promise.all([
@@ -626,22 +465,12 @@ describe('Trade', () => {
         setBalances2(negPar.div(2), negPar.div(2)),
       ]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par.div(2)),
-        expectBalances2(negPar.div(2), negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, par.div(2)), expectBalances2(negPar.div(2), negPar)]);
 
       // starting negative (=target)
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(negPar, negPar),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(negPar, negPar)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, zero),
-        expectBalances2(negPar, negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, zero), expectBalances2(negPar, negPar)]);
 
       // starting negative (>target)
       await Promise.all([
@@ -650,22 +479,12 @@ describe('Trade', () => {
         setBalances2(negPar.times(2), negPar.times(2)),
       ]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, negPar),
-        expectBalances2(negPar.times(2), negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, negPar), expectBalances2(negPar.times(2), negPar)]);
 
       // starting positive
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(zero, zero),
-        setBalances2(par, par),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(zero, zero), setBalances2(par, par)]);
       await expectTradeOkay(zeroGlob);
-      await Promise.all([
-        expectBalances1(zero, par.times(2)),
-        expectBalances2(par, negPar),
-      ]);
+      await Promise.all([expectBalances1(zero, par.times(2)), expectBalances2(par, negPar)]);
     }
   });
 
@@ -693,40 +512,19 @@ describe('Trade', () => {
 
     for (let i = 0; i < globs.length; i += 1) {
       // starting from zero
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(start1, start2),
-        setBalances2(zero, zero),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(start1, start2), setBalances2(zero, zero)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(start1, start2),
-        expectBalances2(zero, zero),
-      ]);
+      await Promise.all([expectBalances1(start1, start2), expectBalances2(zero, zero)]);
 
       // starting positive/negative
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(start1, start2),
-        setBalances2(par, negPar),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(start1, start2), setBalances2(par, negPar)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(start1.plus(par), start2.plus(negPar)),
-        expectBalances2(zero, zero),
-      ]);
+      await Promise.all([expectBalances1(start1.plus(par), start2.plus(negPar)), expectBalances2(zero, zero)]);
 
       // starting negative/positive
-      await Promise.all([
-        setTradeData(globs[i].amount),
-        setBalances1(start1, start2),
-        setBalances2(negPar, par),
-      ]);
+      await Promise.all([setTradeData(globs[i].amount), setBalances1(start1, start2), setBalances2(negPar, par)]);
       await expectTradeOkay(globs[i]);
-      await Promise.all([
-        expectBalances1(start1.plus(negPar), start2.plus(par)),
-        expectBalances2(zero, zero),
-      ]);
+      await Promise.all([expectBalances1(start1.plus(negPar), start2.plus(par)), expectBalances2(zero, zero)]);
     }
   });
 
@@ -739,10 +537,7 @@ describe('Trade', () => {
         reference: AmountReference.Delta,
       },
     });
-    await Promise.all([
-      expectBalances1(zero, zero),
-      expectBalances2(zero, zero),
-    ]);
+    await Promise.all([expectBalances1(zero, zero), expectBalances2(zero, zero)]);
   });
 
   it('Succeeds for zero input amount (positive output)', async () => {
@@ -754,10 +549,7 @@ describe('Trade', () => {
         reference: AmountReference.Delta,
       },
     });
-    await Promise.all([
-      expectBalances1(zero, negPar),
-      expectBalances2(zero, par),
-    ]);
+    await Promise.all([expectBalances1(zero, negPar), expectBalances2(zero, par)]);
   });
 
   it('Succeeds for zero input amount (negative output)', async () => {
@@ -769,10 +561,7 @@ describe('Trade', () => {
         reference: AmountReference.Delta,
       },
     });
-    await Promise.all([
-      expectBalances1(zero, par),
-      expectBalances2(zero, negPar),
-    ]);
+    await Promise.all([expectBalances1(zero, par), expectBalances2(zero, negPar)]);
   });
 
   it('Succeeds for zero output amount (positive input)', async () => {
@@ -784,10 +573,7 @@ describe('Trade', () => {
         reference: AmountReference.Delta,
       },
     });
-    await Promise.all([
-      expectBalances1(negPar, zero),
-      expectBalances2(par, zero),
-    ]);
+    await Promise.all([expectBalances1(negPar, zero), expectBalances2(par, zero)]);
   });
 
   it('Succeeds for zero output amount (negative input)', async () => {
@@ -799,24 +585,13 @@ describe('Trade', () => {
         reference: AmountReference.Delta,
       },
     });
-    await Promise.all([
-      expectBalances1(par, zero),
-      expectBalances2(negPar, zero),
-    ]);
+    await Promise.all([expectBalances1(par, zero), expectBalances2(negPar, zero)]);
   });
 
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
-      dolomiteMargin.testing.setAccountStatus(
-        who1,
-        accountNumber1,
-        AccountStatus.Liquidating,
-      ),
-      dolomiteMargin.testing.setAccountStatus(
-        who2,
-        accountNumber2,
-        AccountStatus.Liquidating,
-      ),
+      dolomiteMargin.testing.setAccountStatus(who1, accountNumber1, AccountStatus.Liquidating),
+      dolomiteMargin.testing.setAccountStatus(who2, accountNumber2, AccountStatus.Liquidating),
       approveTrader(),
       setTradeData(),
     ]);
@@ -832,10 +607,7 @@ describe('Trade', () => {
   it('Succeeds for local operator sender', async () => {
     await Promise.all([approveTrader(), approveOperator(), setTradeData()]);
     await expectTradeOkay({}, { from: operator });
-    await Promise.all([
-      expectBalances1(par, negPar),
-      expectBalances2(negPar, par),
-    ]);
+    await Promise.all([expectBalances1(par, negPar), expectBalances2(negPar, par)]);
   });
 
   it('Succeeds for global operator sender', async () => {
@@ -845,10 +617,7 @@ describe('Trade', () => {
       setTradeData(),
     ]);
     await expectTradeOkay({}, { from: operator });
-    await Promise.all([
-      expectBalances1(par, negPar),
-      expectBalances2(negPar, par),
-    ]);
+    await Promise.all([expectBalances1(par, negPar), expectBalances2(negPar, par)]);
   });
 
   it('Verifies input market', async () => {
@@ -881,10 +650,7 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: maker account owner mismatch');
     await dolomiteMargin.testing.autoTrader.setRequireMakerAccount(who2, accountNumber1);
-    await expectTradeRevert(
-      {},
-      'TestAutoTrader: maker account number mismatch',
-    );
+    await expectTradeRevert({}, 'TestAutoTrader: maker account number mismatch');
     await dolomiteMargin.testing.autoTrader.setRequireMakerAccount(who2, accountNumber2);
     await expectTradeOkay({});
   });
@@ -897,10 +663,7 @@ describe('Trade', () => {
     ]);
     await expectTradeRevert({}, 'TestAutoTrader: taker account owner mismatch');
     await dolomiteMargin.testing.autoTrader.setRequireTakerAccount(who1, accountNumber2);
-    await expectTradeRevert(
-      {},
-      'TestAutoTrader: taker account number mismatch',
-    );
+    await expectTradeRevert({}, 'TestAutoTrader: taker account number mismatch');
     await dolomiteMargin.testing.autoTrader.setRequireTakerAccount(who1, accountNumber1);
     await expectTradeOkay({});
   });
@@ -1000,28 +763,18 @@ async function setTradeData(data?: object) {
   return dolomiteMargin.testing.autoTrader.setData(tradeId, combinedData);
 }
 
-async function expectBalances1(
-  expectedInputPar: Integer,
-  expectedOutputPar: Integer,
-) {
+async function expectBalances1(expectedInputPar: Integer, expectedOutputPar: Integer) {
   const balances = await dolomiteMargin.getters.getAccountBalances(who1, accountNumber1);
   expectBalances(balances, expectedInputPar, expectedOutputPar);
 }
 
-async function expectBalances2(
-  expectedInputPar: Integer,
-  expectedOutputPar: Integer,
-) {
+async function expectBalances2(expectedInputPar: Integer, expectedOutputPar: Integer) {
   const balances = await dolomiteMargin.getters.getAccountBalances(who2, accountNumber2);
   expectBalances(balances, expectedInputPar, expectedOutputPar);
 }
 
-function expectBalances(
-  balances: Balance[],
-  expectedInputPar: Integer,
-  expectedOutputPar: Integer,
-) {
-  balances.forEach((balance) => {
+function expectBalances(balances: Balance[], expectedInputPar: Integer, expectedOutputPar: Integer) {
+  balances.forEach(balance => {
     if (balance.marketId.eq(inputMkt)) {
       expect(balance.par).toEqual(expectedInputPar);
     } else if (balance.marketId.eq(outputMkt)) {
@@ -1035,10 +788,7 @@ function expectBalances(
 }
 
 async function approveTrader() {
-  return dolomiteMargin.permissions.approveOperator(
-    dolomiteMargin.testing.autoTrader.address,
-    { from: who2 },
-  );
+  return dolomiteMargin.permissions.approveOperator(dolomiteMargin.testing.autoTrader.address, { from: who2 });
 }
 
 async function approveOperator() {
@@ -1053,10 +803,6 @@ async function expectTradeOkay(glob: Object, options?: Object) {
     .commit(options);
 }
 
-async function expectTradeRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
+async function expectTradeRevert(glob: Object, reason?: string, options?: Object) {
   await expectThrow(expectTradeOkay(glob, options), reason);
 }

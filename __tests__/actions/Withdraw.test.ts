@@ -100,14 +100,16 @@ describe('Withdraw', () => {
       { from: operator },
     );
 
-    const [marketIndex, collateralIndex] = await Promise.all([
+    const [marketIndex, collateralIndex, marketOraclePrice, collateralOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(market),
       dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketPrice(market),
+      dolomiteMargin.getters.getMarketPrice(collateralMarket),
       expectBalances(par, wei, zero, zero, wei),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -123,7 +125,17 @@ describe('Withdraw', () => {
     expect(collateralIndexLog.args.market).toEqual(collateralMarket);
     expect(collateralIndexLog.args.index).toEqual(collateralIndex);
 
-    const withdrawLog = logs[3];
+    const marketOraclePriceLog = logs[3];
+    expect(marketOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(marketOraclePriceLog.args.market).toEqual(market);
+    expect(marketOraclePriceLog.args.price).toEqual(marketOraclePrice);
+
+    const collateralOraclePriceLog = logs[4];
+    expect(collateralOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(collateralOraclePriceLog.args.market).toEqual(collateralMarket);
+    expect(collateralOraclePriceLog.args.price).toEqual(collateralOraclePrice);
+
+    const withdrawLog = logs[5];
     expect(withdrawLog.name).toEqual('LogWithdraw');
     expect(withdrawLog.args.accountOwner).toEqual(who);
     expect(withdrawLog.args.accountNumber).toEqual(accountNumber);

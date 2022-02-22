@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Account } from "./Account.sol";
 import { Actions } from "./Actions.sol";
+import { Cache } from "./Cache.sol";
 import { Interest } from "./Interest.sol";
 import { Monetary } from "./Monetary.sol";
 import { Storage } from "./Storage.sol";
@@ -166,14 +167,13 @@ library Events {
     }
 
     function logOraclePrice(
-        uint256 marketId,
-        Monetary.Price memory price
+        Cache.MarketInfo memory marketInfo
     )
         internal
     {
         emit LogOraclePrice(
-            marketId,
-            price
+            marketInfo.marketId,
+            marketInfo.price
         );
     }
 

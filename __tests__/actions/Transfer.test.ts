@@ -142,14 +142,16 @@ describe('Transfer', () => {
       { from: operator },
     );
 
-    const [marketIndex, collateralIndex] = await Promise.all([
+    const [marketIndex, collateralIndex, marketOraclePrice, collateralOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(market),
       dolomiteMargin.getters.getMarketCachedIndex(collateralMarket),
+      dolomiteMargin.getters.getMarketPrice(market),
+      dolomiteMargin.getters.getMarketPrice(collateralMarket),
       expectBalances(par, wei, negPar, negWei),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -165,7 +167,17 @@ describe('Transfer', () => {
     expect(collateralIndexLog.args.market).toEqual(collateralMarket);
     expect(collateralIndexLog.args.index).toEqual(collateralIndex);
 
-    const transferLog = logs[3];
+    const marketOraclePriceLog = logs[3];
+    expect(marketOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(marketOraclePriceLog.args.market).toEqual(market);
+    expect(marketOraclePriceLog.args.price).toEqual(marketOraclePrice);
+
+    const collateralOraclePriceLog = logs[4];
+    expect(collateralOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(collateralOraclePriceLog.args.market).toEqual(collateralMarket);
+    expect(collateralOraclePriceLog.args.price).toEqual(collateralOraclePrice);
+
+    const transferLog = logs[5];
     expect(transferLog.name).toEqual('LogTransfer');
     expect(transferLog.args.accountOneOwner).toEqual(owner1);
     expect(transferLog.args.accountOneNumber).toEqual(accountNumber1);
@@ -173,10 +185,7 @@ describe('Transfer', () => {
     expect(transferLog.args.accountTwoNumber).toEqual(accountNumber2);
     expect(transferLog.args.market).toEqual(market);
     expect(transferLog.args.updateOne).toEqual({ newPar: par, deltaWei: wei });
-    expect(transferLog.args.updateTwo).toEqual({
-      newPar: negPar,
-      deltaWei: negWei,
-    });
+    expect(transferLog.args.updateTwo).toEqual({ newPar: negPar, deltaWei: negWei });
   });
 
   it('Succeeds for positive delta par/wei', async () => {

@@ -99,15 +99,17 @@ describe('Liquidate', () => {
   it('Succeeds for events', async () => {
     await dolomiteMargin.permissions.approveOperator(operator, { from: solidOwner });
     const txResult = await expectLiquidateOkay({}, { from: operator });
-    const [heldIndex, owedIndex] = await Promise.all([
+    const [heldIndex, owedIndex, heldOraclePrice, owedOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
       dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketPrice(heldMarket),
+      dolomiteMargin.getters.getMarketPrice(owedMarket),
       expectSolidPars(par.times(premium), zero),
       expectLiquidPars(par.times(remaining), zero),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -123,7 +125,17 @@ describe('Liquidate', () => {
     expect(heldIndexLog.args.market).toEqual(heldMarket);
     expect(heldIndexLog.args.index).toEqual(heldIndex);
 
-    const liquidateLog = logs[3];
+    const owedOraclePriceLog = logs[3];
+    expect(owedOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(owedOraclePriceLog.args.market).toEqual(owedMarket);
+    expect(owedOraclePriceLog.args.price).toEqual(owedOraclePrice);
+
+    const heldOraclePriceLog = logs[4];
+    expect(heldOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(heldOraclePriceLog.args.market).toEqual(heldMarket);
+    expect(heldOraclePriceLog.args.price).toEqual(heldOraclePrice);
+
+    const liquidateLog = logs[5];
     expect(liquidateLog.name).toEqual('LogLiquidate');
     expect(liquidateLog.args.solidAccountOwner).toEqual(solidOwner);
     expect(liquidateLog.args.solidAccountNumber).toEqual(solidAccountNumber);

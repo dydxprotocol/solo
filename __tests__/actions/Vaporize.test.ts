@@ -104,16 +104,18 @@ describe('Vaporize', () => {
       dolomiteMargin.permissions.approveOperator(operator, { from: solidOwner }),
     ]);
     const txResult = await expectVaporizeOkay({}, { from: operator });
-    const [heldIndex, owedIndex] = await Promise.all([
+    const [heldIndex, owedIndex, heldOraclePrice, owedOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
       dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketPrice(heldMarket),
+      dolomiteMargin.getters.getMarketPrice(owedMarket),
       expectExcessHeldToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(par.times(premium), zero),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -129,7 +131,17 @@ describe('Vaporize', () => {
     expect(heldIndexLog.args.market).toEqual(heldMarket);
     expect(heldIndexLog.args.index).toEqual(heldIndex);
 
-    const vaporizeLog = logs[3];
+    const owedOraclePriceLog = logs[3];
+    expect(owedOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(owedOraclePriceLog.args.market).toEqual(owedMarket);
+    expect(owedOraclePriceLog.args.price).toEqual(owedOraclePrice);
+
+    const heldOraclePriceLog = logs[4];
+    expect(heldOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(heldOraclePriceLog.args.market).toEqual(heldMarket);
+    expect(heldOraclePriceLog.args.price).toEqual(heldOraclePrice);
+
+    const vaporizeLog = logs[5];
     expect(vaporizeLog.name).toEqual('LogVaporize');
     expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
     expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
@@ -167,16 +179,18 @@ describe('Vaporize', () => {
 
     const txResult = await expectVaporizeOkay({});
 
-    const [heldIndex, owedIndex] = await Promise.all([
+    const [heldIndex, owedIndex, heldOraclePrice, owedOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
       dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketPrice(heldMarket),
+      dolomiteMargin.getters.getMarketPrice(owedMarket),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
       expectSolidPars(zero, par),
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -192,7 +206,17 @@ describe('Vaporize', () => {
     expect(heldIndexLog.args.market).toEqual(heldMarket);
     expect(heldIndexLog.args.index).toEqual(heldIndex);
 
-    const vaporizeLog = logs[3];
+    const owedOraclePriceLog = logs[3];
+    expect(owedOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(owedOraclePriceLog.args.market).toEqual(owedMarket);
+    expect(owedOraclePriceLog.args.price).toEqual(owedOraclePrice);
+
+    const heldOraclePriceLog = logs[4];
+    expect(heldOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(heldOraclePriceLog.args.market).toEqual(heldMarket);
+    expect(heldOraclePriceLog.args.price).toEqual(heldOraclePrice);
+
+    const vaporizeLog = logs[5];
     expect(vaporizeLog.name).toEqual('LogVaporize');
     expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
     expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
@@ -223,9 +247,11 @@ describe('Vaporize', () => {
 
     const txResult = await expectVaporizeOkay({});
 
-    const [heldIndex, owedIndex] = await Promise.all([
+    const [heldIndex, owedIndex, heldOraclePrice, owedOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(heldMarket),
       dolomiteMargin.getters.getMarketCachedIndex(owedMarket),
+      dolomiteMargin.getters.getMarketPrice(heldMarket),
+      dolomiteMargin.getters.getMarketPrice(owedMarket),
       expectExcessHeldToken(payoutAmount.div(2)),
       expectExcessOwedToken(zero),
       expectVaporPars(zero, zero),
@@ -233,7 +259,7 @@ describe('Vaporize', () => {
     ]);
 
     const logs = dolomiteMargin.logs.parseLogs(txResult);
-    expect(logs.length).toEqual(4);
+    expect(logs.length).toEqual(6);
 
     const operationLog = logs[0];
     expect(operationLog.name).toEqual('LogOperation');
@@ -249,7 +275,17 @@ describe('Vaporize', () => {
     expect(heldIndexLog.args.market).toEqual(heldMarket);
     expect(heldIndexLog.args.index).toEqual(heldIndex);
 
-    const vaporizeLog = logs[3];
+    const owedOraclePriceLog = logs[3];
+    expect(owedOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(owedOraclePriceLog.args.market).toEqual(owedMarket);
+    expect(owedOraclePriceLog.args.price).toEqual(owedOraclePrice);
+
+    const heldOraclePriceLog = logs[4];
+    expect(heldOraclePriceLog.name).toEqual('LogOraclePrice');
+    expect(heldOraclePriceLog.args.market).toEqual(heldMarket);
+    expect(heldOraclePriceLog.args.price).toEqual(heldOraclePrice);
+
+    const vaporizeLog = logs[5];
     expect(vaporizeLog.name).toEqual('LogVaporize');
     expect(vaporizeLog.args.solidAccountOwner).toEqual(solidOwner);
     expect(vaporizeLog.args.solidAccountNumber).toEqual(solidAccountNumber);
