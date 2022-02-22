@@ -1280,7 +1280,7 @@ function expectLogs(txResult: TxResult, logTitles: string[]) {
   const logs = dolomiteMargin.logs.parseLogs(txResult);
   const actualTitles = logs
     .map((x: any) => x.name)
-    .filter((x: string) => x !== 'LogIndexUpdate');
+    .filter((x: string) => x !== 'LogIndexUpdate' && x !== 'LogOraclePrice');
   expect(actualTitles).toEqual(logTitles);
 }
 

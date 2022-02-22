@@ -33,12 +33,16 @@ export class TestExchangeWrapper {
   }
 
   private static toBytes(val: string | BN | BigNumber): number[] {
+    let paddedBytes: string;
     if (val instanceof BigNumber) {
-      // tslint:disable-next-line
-      val = new BN(val.toFixed());
+      paddedBytes = web3Utils.padLeft(web3Utils.toHex(val.toFixed()), 64, '0');
+    } else if (typeof val === 'string') {
+      paddedBytes = web3Utils.padLeft(web3Utils.toHex(val), 64, '0');
+    } else {
+      // val instanceof BN
+      paddedBytes = web3Utils.padLeft(web3Utils.toHex(val.toString()), 64, '0');
     }
-    return web3Utils.hexToBytes(
-      web3Utils.padLeft(web3Utils.toHex(val), 64, '0'),
-    );
+
+    return web3Utils.hexToBytes(paddedBytes);
   }
 }

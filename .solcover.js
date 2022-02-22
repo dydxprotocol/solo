@@ -1,10 +1,13 @@
 module.exports = {
   skipFiles: [
-    'testing/',
+    'Migrations.sol',
+    'external/oracles/TestChainlinkPriceOracleV1.sol',
     'external/uniswap-v2/',
+    'external/utils/MultiCall.sol',
     'external/multisig/MultiSig.sol',
     'external/multisig/DelayedMultiSig.sol',
-    'Migrations.sol'
+    'protocol/interfaces/',
+    'testing/',
   ],
   providerOptions: {
     port: 8555,
