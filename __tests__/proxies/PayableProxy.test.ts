@@ -115,7 +115,7 @@ describe('PayableProxy', () => {
       defaultIsRecyclable,
       { from: admin },
     );
-    await dolomiteMargin.admin.setGlobalOperator(globalOperator, true, { from: admin })
+    await dolomiteMargin.admin.setGlobalOperator(globalOperator, true, { from: admin });
     snapshotId = await snapshot();
   });
 

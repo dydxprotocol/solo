@@ -34,15 +34,19 @@ library DolomiteAmmLibrary {
     bytes32 private constant FILE = "DolomiteAmmLibrary";
     bytes32 private constant PAIR_INIT_CODE_HASH = 0x9edcda3fdaab1b87309439b13fca8cb91cf8c4dbbf7796f5fe761f7397595bf9;
 
-    function getPairInitCodeHash() internal pure returns (bytes32) {
-        return PAIR_INIT_CODE_HASH;
+    function getPairInitCodeHash(address factory) internal pure returns (bytes32) {
+        // Instead of only returning PAIR_INIT_CODE_HASH, this value is used to make running test coverage possible;
+        // test coverage changes the bytecode on the fly, which messes up the static value for init_code_hash
+        return PAIR_INIT_CODE_HASH == bytes32(0)
+            ? IDolomiteAmmFactory(factory).getPairInitCodeHash()
+            : PAIR_INIT_CODE_HASH;
     }
 
     function getPools(
         address factory,
         address[] memory path
     ) internal pure returns (address[] memory) {
-        return getPools(factory, PAIR_INIT_CODE_HASH, path);
+        return getPools(factory, getPairInitCodeHash(factory), path);
     }
 
     function getPools(
@@ -89,7 +93,7 @@ library DolomiteAmmLibrary {
             factory,
             tokenA,
             tokenB,
-            PAIR_INIT_CODE_HASH
+            getPairInitCodeHash(factory)
         );
     }
 
@@ -122,7 +126,7 @@ library DolomiteAmmLibrary {
     ) internal view returns (uint reserveA, uint reserveB) {
         return getReservesWei(
             factory,
-            PAIR_INIT_CODE_HASH,
+            getPairInitCodeHash(factory),
             tokenA,
             tokenB
         );
@@ -315,7 +319,7 @@ library DolomiteAmmLibrary {
     ) internal view returns (uint[] memory amounts) {
         return getAmountsInWei(
             factory,
-            PAIR_INIT_CODE_HASH,
+            getPairInitCodeHash(factory),
             amountOut,
             path
         );

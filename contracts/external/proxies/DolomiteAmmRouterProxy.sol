@@ -138,8 +138,8 @@ contract DolomiteAmmRouterProxy is ReentrancyGuard {
         EXPIRY = expiry;
     }
 
-    function getPairInitCodeHash() external pure returns (bytes32) {
-        return DolomiteAmmLibrary.getPairInitCodeHash();
+    function getPairInitCodeHash() external view returns (bytes32) {
+        return DolomiteAmmLibrary.getPairInitCodeHash(address(DOLOMITE_AMM_FACTORY));
     }
 
     function addLiquidity(

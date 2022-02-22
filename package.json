@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -37,7 +37,7 @@
     "node": "ganache-cli",
     "debug": "truffle debug",
     "build:js": "rm -rf dist/ && node --max-old-space-size=8192 node_modules/.bin/tsc && cp -r build/wrappers dist/build",
-    "build:cov": "npm run replace_bytecode && npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
+    "build:cov": "npm run clean_contract_json && npm run build:wrappers && npm run build:test_wrappers",
     "replace_bytecode": "ts-node ./scripts/ReplaceCoverageBytecode.ts",
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "check_amm_bytecode": "ts-node ./scripts/CheckAmmBytecode.ts",

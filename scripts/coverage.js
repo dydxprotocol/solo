@@ -107,6 +107,7 @@ function coverage() {
                     config.contracts_build_directory = path.join(tempArtifactsDir, path.basename(config.contracts_build_directory));
                     config.all = true;
                     config.compilers.solc.settings.optimizer.enabled = false;
+                    shell.exec('npm run replace_bytecode');
                     // ========
                     // Compile
                     // ========
