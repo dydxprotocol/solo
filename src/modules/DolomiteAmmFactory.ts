@@ -39,7 +39,7 @@ export class DolomiteAmmFactory {
   public async allPairsLength(
     options: ContractConstantCallOptions = {},
   ): Promise<Integer> {
-    const result = await this.contracts.callConstantContractFunction(
+    const result: string = await this.contracts.callConstantContractFunction(
       this.contracts.dolomiteAmmFactory.methods.allPairsLength(),
       options,
     );

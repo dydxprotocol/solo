@@ -11,8 +11,10 @@ library UniswapV2Library {
 
     bytes32 private constant PAIR_INIT_CODE_HASH = 0x5a9f5c3574970dea87031a97b794f46fbe4a0f2c3bf2d6e322a3edfb9ff6d0b5;
 
-    function getPairInitCodeHash() internal pure returns (bytes32) {
-        return PAIR_INIT_CODE_HASH;
+    function getPairInitCodeHash(address factory) internal pure returns (bytes32) {
+        return PAIR_INIT_CODE_HASH == bytes32(0)
+            ? IUniswapV2Factory(factory).getPairInitCodeHash()
+            : PAIR_INIT_CODE_HASH;
     }
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
@@ -32,7 +34,7 @@ library UniswapV2Library {
                         hex"ff",
                         factory,
                         keccak256(abi.encodePacked(token0, token1)),
-                        PAIR_INIT_CODE_HASH
+                        getPairInitCodeHash(factory)
                     )
                 )
             )
