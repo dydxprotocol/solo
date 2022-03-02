@@ -123,6 +123,35 @@
             "transactionHash": "0xae2fa2b30c2fb2fa34bc35cff10622521b51a0d36d03dc1c47d05e744c2c75bb"
         }
     },
+    "DelayedMultiSig": {
+        "1": {
+            "links": {},
+            "address": "0xE412991Fb026df586C2f2F9EE06ACaD1A34f585B",
+            "transactionHash": "0x0925fe8d18ac5e2dc8199bc9542cf48fb22bba09570d82677aeec2c1a9e056ca"
+        },
+        "42161": {
+            "links": {},
+            "address": "0xE412991Fb026df586C2f2F9EE06ACaD1A34f585B",
+            "transactionHash": "0x9ec006e95981383dc4746a2f4e6efa80459e02b4a22d82b19b0e41d7053dc364"
+        },
+        "421611": {
+            "links": {},
+            "address": "0xE412991Fb026df586C2f2F9EE06ACaD1A34f585B",
+            "transactionHash": "0x0faa36362951a25bfe9095f0d104e11f3c51a09e67f268e2e906dc6946817436"
+        }
+    },
+    "GnosisSafe": {
+        "1": {
+            "links": {},
+            "address": "0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4",
+            "transactionHash": "0x6cb5f5aeba77e5a9fa3c3860724d9dabcc92d5099fdc6d8e7e0646e595f15de6"
+        },
+        "42161": {
+            "links": {},
+            "address": "0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4",
+            "transactionHash": "0x3b5e1649b683c5c7d088a5a03ad1cebb486c77ccd29a484656f08ad13493a580"
+        }
+    },
     "TestUniswapAmmRebalancerProxy": {
         "80001": {
             "links": {},

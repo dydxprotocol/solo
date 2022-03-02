@@ -49,7 +49,7 @@ contract MultiSig {
     event Revocation(address indexed sender, uint256 indexed transactionId);
     event Submission(uint256 indexed transactionId);
     event Execution(uint256 indexed transactionId);
-    event ExecutionFailure(uint256 indexed transactionId);
+    event ExecutionFailure(uint256 indexed transactionId, string error);
     event OwnerAddition(address indexed owner);
     event OwnerRemoval(address indexed owner);
     event RequirementChange(uint256 required);
@@ -281,7 +281,7 @@ contract MultiSig {
         public
         returns (uint256)
     {
-        uint256 transactionId = addTransaction(destination, value, data);
+        uint256 transactionId = _addTransaction(destination, value, data);
         confirmTransaction(transactionId);
         return transactionId;
     }
@@ -337,15 +337,11 @@ contract MultiSig {
         if (isConfirmed(transactionId)) {
             Transaction storage txn = transactions[transactionId];
             txn.executed = true;
-            if (externalCall(
-                txn.destination,
-                txn.value,
-                txn.data.length,
-                txn.data)
-            ) {
+            (bool success, string memory error) = _externalCall(txn.destination, txn.value, txn.data);
+            if (success) {
                 emit Execution(transactionId);
             } else {
-                emit ExecutionFailure(transactionId);
+                emit ExecutionFailure(transactionId, error);
                 txn.executed = false;
             }
         }
@@ -511,33 +507,40 @@ contract MultiSig {
 
     // call has been separated into its own function in order to take advantage
     // of the Solidity's code generator to produce a loop that copies tx.data into memory.
-    function externalCall(
+    function _externalCall(
         address destination,
         uint256 value,
-        uint256 dataLength,
         bytes memory data
     )
         internal
-        returns (bool)
+        returns (bool, string memory)
     {
-        bool result;
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            let x := mload(0x40)   // "Allocate" memory for output (0x40 is where "free memory" pointer is stored by convention)
-            let d := add(data, 32) // First 32 bytes are the padded length of data, so exclude that
-            result := call(
-                sub(gas, 34710),   // 34710 is the value that solidity is currently emitting
-                                   // It includes callGas (700) + callVeryLow (3, to pay for SUB) + callValueTransferGas (9000) +
-                                   // callNewAccountGas (25000, in case the destination address does not exist and needs creating)
-                destination,
-                value,
-                d,
-                dataLength,        // Size of the input (in bytes) - this is what fixes the padding problem
-                x,
-                0                  // Output is ignored, therefore the output size is zero
-            )
+        // solium-disable-next-line security/no-low-level-calls
+        (bool success, bytes memory result) = destination.call.value(value)(data);
+        if (!success) {
+            string memory targetString = _addressToString(destination);
+            if (result.length < 68) {
+                return (false, string(abi.encodePacked("MultiSig::_externalCall: revert at <", targetString, ">")));
+            } else {
+                // solium-disable-next-line security/no-inline-assembly
+                assembly {
+                    result := add(result, 0x04)
+                }
+                return (
+                    false,
+                    string(
+                        abi.encodePacked(
+                            "MultiSig::_externalCall: revert at <",
+                            targetString,
+                            "> with reason: ",
+                            abi.decode(result, (string))
+                        )
+                    )
+                );
+            }
+        } else {
+            return (true, "");
         }
-        return result;
     }
 
     /**
@@ -548,7 +551,7 @@ contract MultiSig {
      * @param  data         Transaction data payload.
      * @return              Transaction ID.
      */
-    function addTransaction(
+    function _addTransaction(
         address destination,
         uint256 value,
         bytes memory data
@@ -567,5 +570,18 @@ contract MultiSig {
         transactionCount += 1;
         emit Submission(transactionId);
         return transactionId;
+    }
+
+    function _addressToString(address _address) internal pure returns(string memory) {
+        bytes32 _bytes = bytes32(uint256(_address));
+        bytes memory HEX = "0123456789abcdef";
+        bytes memory _string = new bytes(42);
+        _string[0] = "0";
+        _string[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            _string[2 + i * 2] = HEX[uint8(_bytes[i + 12] >> 4)];
+            _string[3 + i * 2] = HEX[uint8(_bytes[i + 12] & 0x0f)];
+        }
+        return string(_string);
     }
 }

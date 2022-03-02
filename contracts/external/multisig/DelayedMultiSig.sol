@@ -160,15 +160,14 @@ contract DelayedMultiSig is
     {
         Transaction storage txn = transactions[transactionId];
         txn.executed = true;
-        bool success = externalCall(
+        (bool success, string memory errorMessage) = _externalCall(
             txn.destination,
             txn.value,
-            txn.data.length,
             txn.data
         );
         require(
             success,
-            "TX_REVERTED"
+            errorMessage
         );
         emit Execution(transactionId);
     }

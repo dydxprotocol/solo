@@ -135,8 +135,9 @@ module.exports = {
       networkCheckTimeout: 99999,
     },
   },
-  plugins: ['truffle-plugin-verify', '@float-capital/solidity-coverage'],
+  plugins: ['truffle-plugin-verify', 'solidity-coverage'],
   api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY,
     arbiscan: process.env.ARBISCAN_API_KEY,
     optimistic_etherscan: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
     polygonscan: process.env.POLYGONSCAN_API_KEY,
