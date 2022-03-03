@@ -515,7 +515,7 @@ contract MultiSig {
         internal
         returns (bool, string memory)
     {
-        // solium-disable-next-line security/no-low-level-calls
+        // solium-disable-next-line security/no-call-value
         (bool success, bytes memory result) = destination.call.value(value)(data);
         if (!success) {
             string memory targetString = _addressToString(destination);
