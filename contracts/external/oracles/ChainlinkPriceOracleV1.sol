@@ -153,6 +153,7 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
         );
         IChainlinkFlags _chainlinkFlags = chainlinkFlags;
         if (address(_chainlinkFlags) != address(0)) {
+            // https://docs.chain.link/docs/l2-sequencer-flag/
             bool isFlagRaised = _chainlinkFlags.getFlag(FLAG_ARBITRUM_SEQ_OFFLINE);
             Require.that(
                 !isFlagRaised,

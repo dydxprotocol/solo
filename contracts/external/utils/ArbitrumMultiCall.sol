@@ -12,6 +12,8 @@ import "../interfaces/IArbSys.sol";
  * @author Joshua Levine <joshua@makerdao.com>
  * @author Nick Johnson <arachnid@notdot.net>
  * @author Corey Caplan <corey@dolomite.io>
+ * @dev This multi call contract is almost the same as the ordinary one, with minor adjustments for Arbitrum. See:
+ *      https://developer.offchainlabs.com/docs/time_in_arbitrum#case-study-multicall for more information.
  */
 contract ArbitrumMultiCall {
 
