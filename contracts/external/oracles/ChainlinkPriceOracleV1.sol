@@ -28,6 +28,8 @@ import "../../protocol/lib/Require.sol";
 
 import "../interfaces/IChainlinkAggregator.sol";
 
+import "./IChainlinkFlags.sol";
+
 
 /**
  * @title ChainlinkPriceOracleV1
@@ -39,6 +41,8 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     using SafeMath for uint;
 
     bytes32 private constant FILE = "ChainlinkPriceOracleV1";
+    // solium-disable-next-line max-len
+    address constant private FLAG_ARBITRUM_SEQ_OFFLINE = address(bytes20(bytes32(uint256(keccak256("chainlink.flags.arbitrum-seq-offline")) - 1)));
 
     event TokenInsertedOrUpdated(
         address indexed token,
@@ -49,10 +53,13 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
     mapping(address => IChainlinkAggregator) public tokenToAggregatorMap;
     mapping(address => uint8) public tokenToDecimalsMap;
 
-    // Defaults to USD if the value is the ZERO address
+    /// Defaults to USD if the value is the ZERO address
     mapping(address => address) public tokenToPairingMap;
-    // Should defaults to CHAINLINK_USD_DECIMALS when value is empty
+
+    /// Should defaults to CHAINLINK_USD_DECIMALS when value is empty
     mapping(address => uint8) public tokenToAggregatorDecimalsMap;
+
+    IChainlinkFlags public chainlinkFlags;
 
     uint8 public CHAINLINK_USD_DECIMALS = 8;
     uint8 public CHAINLINK_ETH_DECIMALS = 18;
@@ -67,13 +74,17 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
      *                              zero address means USD.
      * @param aggregatorDecimals    The number of decimals that the value has that comes back from the corresponding
      *                              Chainlink Aggregator.
+     * @param chainlinkFlagsOrNull  The contract for layer-2 that denotes whether or not Chainlink oracles are currently
+     *                              offline, meaning data is stale and any critical operations should *not* occur. If
+     *                              not on layer 2, this value can be set to `address(0)`.
      */
     constructor(
         address[] memory tokens,
         address[] memory chainlinkAggregators,
         uint8[] memory tokenDecimals,
         address[] memory tokenPairs,
-        uint8[] memory aggregatorDecimals
+        uint8[] memory aggregatorDecimals,
+        address chainlinkFlagsOrNull
     ) public {
         // can't use Require.that because it causes the compiler to hang for some reason
         require(
@@ -101,6 +112,10 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
                 aggregatorDecimals[i],
                 tokenPairs[i]
             );
+        }
+
+        if (chainlinkFlagsOrNull != address(0)) {
+            chainlinkFlags = IChainlinkFlags(chainlinkFlagsOrNull);
         }
     }
 
@@ -136,6 +151,15 @@ contract ChainlinkPriceOracleV1 is IPriceOracle, Ownable {
             "invalid token",
             token
         );
+        IChainlinkFlags _chainlinkFlags = chainlinkFlags;
+        if (address(_chainlinkFlags) != address(0)) {
+            bool isFlagRaised = _chainlinkFlags.getFlag(FLAG_ARBITRUM_SEQ_OFFLINE);
+            Require.that(
+                !isFlagRaised,
+                FILE,
+                "Chainlink price oracles offline"
+            );
+        }
 
         uint rawChainlinkPrice = uint(tokenToAggregatorMap[token].latestAnswer());
         address tokenPair = tokenToPairingMap[token];

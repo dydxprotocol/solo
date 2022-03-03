@@ -28,7 +28,9 @@ const {
   isArbitrum,
   isArbitrumTest,
 } = require('./helpers');
-const { getDaiAddress, getLinkAddress, getMaticAddress, getUsdcAddress, getWethAddress } = require('./token_helpers');
+const { getDaiAddress, getLinkAddress, getMaticAddress, getUsdcAddress, getWethAddress,
+  getWbtcAddress
+} = require('./token_helpers');
 const { getChainlinkPriceOracleContract } = require('./oracle_helpers');
 
 // ============ Contracts ============
@@ -144,6 +146,7 @@ function getTokens(network) {
       { address: getDaiAddress(network, TokenB) },
       { address: getUsdcAddress(network, TokenA) },
       { address: getLinkAddress(network, TokenF) },
+      { address: getWbtcAddress(network, TokenD) },
     ];
   }
 
@@ -170,6 +173,9 @@ async function getOracles(network) {
     return tokens.map(() => ({ address: OracleContract.address }));
   }
   if (isArbitrum(network)) {
+    return tokens.map(() => ({ address: OracleContract.address }));
+  }
+  if (isArbitrumTest(network)) {
     return tokens.map(() => ({ address: OracleContract.address }));
   }
   throw new Error('Cannot find Oracles');

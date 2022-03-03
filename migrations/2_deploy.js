@@ -33,6 +33,7 @@ const {
   isMaticTest,
   isArbitrum,
   isArbitrumTest,
+  getChainlinkFlags,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleContract,
@@ -169,7 +170,7 @@ async function deployBaseProtocol(deployer, network) {
   if (isDevNetwork(network)) {
     await deployer.deploy(TestOperationImpl);
     dolomiteMargin = TestDolomiteMargin;
-  } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network)) {
+  } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network) || isArbitrumTest(network)) {
     dolomiteMargin = DolomiteMargin;
   } else if (isKovan(network) || isMainNet(network)) {
     dolomiteMargin = DolomiteMargin;
@@ -246,6 +247,7 @@ async function deployPriceOracles(deployer, network) {
       params.tokenDecimals,
       params.tokenPairs,
       params.aggregatorDecimals,
+      getChainlinkFlags(network),
     ),
   ]);
 }

@@ -20,12 +20,18 @@ function getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator) {
     return '0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find BTC-USD for Arbitrum');
+    return '0x6ce185860a4963106506c203335a2910413708e9';
   }
-  throw new Error('Cannot find Weth');
+  if (isArbitrumTest(network)) {
+    return '0x0c9973e7a27d00e656B9f153348dA46CaD70d03d';
+  }
+  throw new Error('Cannot find BTC-USD aggregator for network ' + network);
 }
 
-function getDaiUsdAggregatorAddress(network) {
+function getDaiUsdAggregatorAddress(network, TestDaiUsdChainlinkAggregator) {
+  if (isDevNetwork(network)) {
+    return TestDaiUsdChainlinkAggregator.address;
+  }
   if (isMaticTest(network)) {
     return '0x0FCAa9c899EC5A91eBc3D5Dd869De833b06fB046';
   }
@@ -33,22 +39,12 @@ function getDaiUsdAggregatorAddress(network) {
     return '0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find DAI-USD for Arbitrum');
+    return '0xc5c8e77b397e531b8ec06bfb0048328b30e9ecfb';
   }
-  throw new Error('Cannot find DAI/USD aggregator');
-}
-
-function getDaiEthAggregatorAddress(network, TestDaiUsdChainlinkAggregator) {
-  if (isDevNetwork(network)) {
-    return TestDaiUsdChainlinkAggregator.address;
+  if (isArbitrumTest(network)) {
+    return '0xcAE7d280828cf4a0869b26341155E4E9b864C7b2';
   }
-  if (isMainNet(network)) {
-    return '0x037E8F2125bF532F3e228991e051c8A7253B642c';
-  }
-  if (isKovan(network)) {
-    return '0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90';
-  }
-  throw new Error('Cannot find DAI-ETH aggregator');
+  throw new Error('Cannot find DAI-USD aggregator for network ' + network);
 }
 
 function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
@@ -68,9 +64,12 @@ function getEthUsdAggregatorAddress(network, TestEthUsdChainlinkAggregator) {
     return '0xD21912D8762078598283B14cbA40Cb4bFCb87581';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find ETH-USD for Arbitrum');
+    return '0x639fe6ab55c921f74e7fac1ee960c0b6293ba612';
   }
-  throw new Error('Cannot find ETH-USD aggregator');
+  if (isArbitrumTest(network)) {
+    return '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8';
+  }
+  throw new Error('Cannot find ETH-USD aggregator for network ' + network);
 }
 
 function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
@@ -87,9 +86,12 @@ function getLinkUsdAggregatorAddress(network, TestLinkUsdChainlinkAggregator) {
     return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find LINK-USD for Arbitrum');
+    return '0x86e53cf1b870786351da77a57575e79cb55812cb';
   }
-  throw new Error('Cannot find LINK-USD aggregator');
+  if (isArbitrumTest(network)) {
+    return '0x52C9Eb2Cc68555357221CAe1e5f2dD956bC194E5';
+  }
+  throw new Error('Cannot find LINK-USD aggregator for network ' + network);
 }
 
 function getLrcEthAggregatorAddress(network, TestLrcEthChainlinkAggregator) {
@@ -125,9 +127,12 @@ function getUsdcUsdAggregatorAddress(network) {
     return '0x572dDec9087154dC5dfBB1546Bb62713147e0Ab0';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find USDC-USD for Arbitrum');
+    return '0x50834f3163758fcc1df9973b6e91f0f0f0434ad3';
   }
-  throw new Error('Cannot find USDC-USD aggregator');
+  if (isArbitrumTest(network)) {
+    return '0xe020609A0C31f4F96dCBB8DF9882218952dD95c4';
+  }
+  throw new Error('Cannot find USDC-USD aggregator for network ' + network);
 }
 
 function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
@@ -175,8 +180,16 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
     ]);
-  } else if (isArbitrum(network)) {
-    throw new Error('Cannot get Chainlink params for Arbitrum');
+  } else if (isArbitrum(network) || isArbitrumTest(network)) {
+    return mapPairsToParams([
+      [getDaiAddress(network), getDaiUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getLinkAddress(network), getLinkUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
+      [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
+      [getWbtcAddress(network), getBtcUsdAggregatorAddress(network), 8, ADDRESSES.ZERO, 8],
+    ]);
+  } else if (isArbitrumTest(network)) {
+    throw new Error('Cannot get Chainlink params for Arbitrum Rinkeby');
   } else if (isDevNetwork(network)) {
     const {
       TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
@@ -193,7 +206,7 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
 
     return mapPairsToParams([
       // eslint-disable-next-line max-len
-      [getDaiAddress(network, TokenB), getDaiEthAggregatorAddress(network, daiUsdAggregator), 18, ADDRESSES.ZERO, 8],
+      [getDaiAddress(network, TokenB), getDaiUsdAggregatorAddress(network, daiUsdAggregator), 18, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
       [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, linkUsdAggregator), 18, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
