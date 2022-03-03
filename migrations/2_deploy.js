@@ -57,6 +57,7 @@ const DolomiteMargin = artifacts.require('DolomiteMargin');
 
 // MultiCall
 const MultiCall = artifacts.require('MultiCall');
+const ArbitrumMultiCall = artifacts.require('ArbitrumMultiCall');
 
 // Test Contracts
 const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
@@ -157,13 +158,13 @@ async function deployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer, network) {
-  await deployer.deploy(LiquidateOrVaporizeImpl);
+  await deployer.deploy(LiquidateOrVaporizeImp);
 
   OperationImpl.link('LiquidateOrVaporizeImpl', LiquidateOrVaporizeImpl.address);
 
   await Promise.all([
-    deployer.deploy(AdminImpl),
-    deployer.deploy(OperationImpl),
+    deployer.deploy(AdminImp),
+    deployer.deploy(OperationImp),
   ]);
 
   let dolomiteMargin;
@@ -188,8 +189,12 @@ async function deployBaseProtocol(deployer, network) {
   await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
 }
 
-async function deployMultiCall(deployer) {
-  deployer.deploy(MultiCall);
+async function deployMultiCall(deployer, network) {
+  if (isArbitrum(network) || isArbitrumTest(network)) {
+    deployer.deploy(ArbitrumMultiCall);
+  } else {
+    deployer.deploy(MultiCall);
+  }
 }
 
 async function deployInterestSetters(deployer, network) {
@@ -197,7 +202,7 @@ async function deployInterestSetters(deployer, network) {
     await deployer.deploy(TestInterestSetter);
   }
   await Promise.all([
-    deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network)),
+    deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network))
   ]);
 }
 

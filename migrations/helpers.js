@@ -1,3 +1,4 @@
+const Web3 = require('web3');
 const { coefficientsToString, decimalToString } = require('../dist/src/lib/Helpers');
 
 // ============ Network Helper Functions ============
@@ -30,7 +31,7 @@ function isMaticTest(network) {
 
 function isArbitrum(network) {
   verifyNetwork(network);
-  return network.startsWith('arbitrum');
+  return network.startsWith('arbitrum') && !isArbitrumTest(network);
 }
 
 function isArbitrumTest(network) {
@@ -145,6 +146,7 @@ function verifyNetwork(network) {
 }
 
 function getSenderAddress(network, accounts) {
+  const web3 = new Web3(process.env.NODE_URL);
   if (isMainNet(network) || isKovan(network)) {
     return accounts[0];
   }
@@ -157,11 +159,11 @@ function getSenderAddress(network, accounts) {
   if (isMatic(network)) {
     return accounts[0];
   }
-  if (isArbitrumTest(network)) {
-    return accounts[0];
-  }
   if (isArbitrum(network)) {
-    return accounts[0];
+    return web3.eth.accounts.privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY).address;
+  }
+  if (isArbitrumTest(network)) {
+    return web3.eth.accounts.privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY).address;
   }
   throw new Error('Cannot find Sender address');
 }

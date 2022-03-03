@@ -153,9 +153,9 @@ function getChainlinkPriceOracleContract(network, artifacts) {
   const ChainlinkPriceOracleV1 = artifacts.require('ChainlinkPriceOracleV1');
   const TestChainlinkPriceOracleV1 = artifacts.require('TestChainlinkPriceOracleV1');
 
-  if (isMatic(network) || isArbitrum(network)) {
+  if (isMatic(network) || isArbitrum(network) || isArbitrumTest(network)) {
     return ChainlinkPriceOracleV1;
-  } else if (isMaticTest(network) || isArbitrumTest(network)) {
+  } else if (isMaticTest(network)) {
     return TestChainlinkPriceOracleV1;
   } else if (isDevNetwork(network)) {
     return ChainlinkPriceOracleV1;

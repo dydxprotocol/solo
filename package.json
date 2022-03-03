@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -47,6 +47,8 @@
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_matic": "NETWORK=matic npm run deploy",
     "deploy_mumbai": "NETWORK=mumbai_matic npm run deploy",
+    "deploy_arbitrum": "NETWORK=arbitrum npm run deploy",
+    "deploy_arbitrum_rinkeby": "NETWORK=arbitrum_rinkeby npm run deploy",
     "deploy_test": "npm run reset_test_evm && npm run migrate -- --network test --reset && npm run snapshot_test_evm && npm run check_amm_bytecode && npm run clean_contract_json",
     "deploy_coverage": "RPC_NODE_URI=http://127.0.0.1:8555 npm run reset_test_evm && COVERAGE=true npm run migrate -- --network coverage && RPC_NODE_URI=http://127.0.0.1:8555 npm run snapshot_test_evm && npm run clean_contract_json",
     "deploy_test_ci": "RPC_NODE_URI=http://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && RPC_NODE_URI=http://0.0.0.0:8545 npm run snapshot_test_evm && npm run check_amm_bytecode && npm run clean_contract_json",
