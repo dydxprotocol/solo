@@ -346,7 +346,7 @@
             "transactionHash": "0x3b5e1649b683c5c7d088a5a03ad1cebb486c77ccd29a484656f08ad13493a580"
         }
     },
-    "IArbGasInfo": {
+    "IArbitrumGasInfo": {
         "42161": {
             "links": {},
             "address": "0x000000000000000000000000000000000000006C",
