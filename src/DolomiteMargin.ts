@@ -49,6 +49,7 @@ import {
   Networks,
 } from './types';
 import { MultiCall } from './modules/MultiCall';
+import { ArbitrumGasInfo } from './modules/ArbitrumGasInfo';
 
 export class DolomiteMargin {
   public contracts: Contracts;
@@ -70,6 +71,7 @@ export class DolomiteMargin {
   public ammRebalancerProxyV2: AmmRebalancerProxyV2;
   public transferProxy: TransferProxy;
   public multiCall: MultiCall;
+  public arbitrumGasInfo: ArbitrumGasInfo;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -120,6 +122,7 @@ export class DolomiteMargin {
     this.ammRebalancerProxyV2 = new AmmRebalancerProxyV2(this.contracts);
     this.transferProxy = new TransferProxy(this.contracts);
     this.multiCall = new MultiCall(this.contracts);
+    this.arbitrumGasInfo = new ArbitrumGasInfo(this.contracts);
     this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);

@@ -24,7 +24,7 @@ pragma solidity ^0.5.7;
  *
  * Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
  */
-interface IArbSys {
+interface IArbitrumSys {
     /**
     * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
     * @return block number as int

@@ -38,6 +38,7 @@ import { default as AmmRebalancerProxyV1 } from '../build/contracts/AmmRebalance
 import { default as AmmRebalancerProxyV2 } from '../build/contracts/AmmRebalancerProxyV2.json';
 import { default as ArbitrumMultiCall } from '../build/contracts/ArbitrumMultiCall.json';
 import { default as MultiCall } from '../build/contracts/MultiCall.json';
+import { default as IArbitrumGasInfo } from '../build/contracts/IArbitrumGasInfo.json';
 import { default as TestUniswapAmmRebalancerProxy } from '../build/contracts/TestUniswapAmmRebalancerProxy.json';
 
 export default {
@@ -69,5 +70,6 @@ export default {
   TransferProxy,
   ArbitrumMultiCall,
   MultiCall,
+  IArbitrumGasInfo,
   TestUniswapAmmRebalancerProxy,
 };

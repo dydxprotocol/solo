@@ -28,6 +28,7 @@ import { Provider } from 'web3/providers';
 import { TransactionReceipt } from 'web3/types';
 import ammRebalancerProxyV1Json from '../../build/published_contracts/AmmRebalancerProxyV1.json';
 import ammRebalancerProxyV2Json from '../../build/published_contracts/AmmRebalancerProxyV2.json';
+import arbitrumGasInfoJson from '../../build/published_contracts/IArbitrumGasInfo.json';
 import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
 import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
@@ -88,6 +89,7 @@ import {
   SUBTRACT_GAS_LIMIT,
 } from './Constants';
 import { AmmRebalancerProxyV2 } from '../../build/wrappers/AmmRebalancerProxyV2';
+import { IArbitrumGasInfo } from '../../build/wrappers/IArbitrumGasInfo';
 
 interface CallableTransactionObject<T> {
   call(tx?: Tx, blockNumber?: number): Promise<T>;
@@ -107,6 +109,7 @@ export class Contracts {
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxyV1: AmmRebalancerProxyV1;
   public ammRebalancerProxyV2: AmmRebalancerProxyV2;
+  public arbitrumGasInfo: IArbitrumGasInfo;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
@@ -173,6 +176,9 @@ export class Contracts {
     this.ammRebalancerProxyV2 = new this.web3.eth.Contract(
       ammRebalancerProxyV2Json.abi,
     ) as AmmRebalancerProxyV2;
+    this.arbitrumGasInfo = new this.web3.eth.Contract(
+      arbitrumGasInfoJson.abi,
+    ) as IArbitrumGasInfo;
     this.polynomialInterestSetter = new this.web3.eth.Contract(
       polynomialInterestSetterJson.abi,
     ) as PolynomialInterestSetter;
@@ -256,6 +262,7 @@ export class Contracts {
       },
       { contract: this.ammRebalancerProxyV1, json: ammRebalancerProxyV1Json },
       { contract: this.ammRebalancerProxyV2, json: ammRebalancerProxyV2Json },
+      { contract: this.arbitrumGasInfo, json: arbitrumGasInfoJson },
       {
         contract: this.polynomialInterestSetter,
         json: polynomialInterestSetterJson,
@@ -302,6 +309,7 @@ export class Contracts {
     this.dolomiteAmmRouterProxy.options.from = account;
     this.ammRebalancerProxyV1.options.from = account;
     this.ammRebalancerProxyV2.options.from = account;
+    this.arbitrumGasInfo.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.chainlinkPriceOracleV1.options.from = account;

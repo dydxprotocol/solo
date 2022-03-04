@@ -3,7 +3,7 @@
 pragma solidity >=0.5.0;
 pragma experimental ABIEncoderV2;
 
-import "../interfaces/IArbSys.sol";
+import "../interfaces/IArbitrumSys.sol";
 
 
 /**
@@ -23,7 +23,7 @@ contract ArbitrumMultiCall {
     }
 
     function aggregate(Call[] memory calls) public returns (uint256 blockNumber, bytes[] memory returnData) {
-        blockNumber = IArbSys(address(100)).arbBlockNumber();
+        blockNumber = IArbitrumSys(address(100)).arbBlockNumber();
         returnData = new bytes[](calls.length);
         for (uint256 i = 0; i < calls.length; i++) {
             // solium-disable-next-line security/no-low-level-calls
@@ -64,7 +64,7 @@ contract ArbitrumMultiCall {
     }
 
     function getLastBlockHash() public view returns (bytes32 blockHash) {
-        blockHash = blockhash(IArbSys(address(100)).arbBlockNumber() - 1);
+        blockHash = blockhash(IArbitrumSys(address(100)).arbBlockNumber() - 1);
     }
 
     function getCurrentBlockTimestamp() public view returns (uint256 timestamp) {
@@ -84,7 +84,7 @@ contract ArbitrumMultiCall {
     }
 
     function getBlockNumber() public view returns (uint256 blockNumber) {
-        blockNumber = IArbSys(address(100)).arbBlockNumber();
+        blockNumber = IArbitrumSys(address(100)).arbBlockNumber();
     }
 
     function getL1BlockNumber() public view returns (uint256 l1BlockNumber) {
