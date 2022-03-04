@@ -35,6 +35,8 @@ import { default as DolomiteAmmFactory } from '../build/contracts/DolomiteAmmFac
 import { default as DolomiteAmmPair } from '../build/contracts/DolomiteAmmPair.json';
 import { default as TransferProxy } from '../build/contracts/TransferProxy.json';
 import { default as AmmRebalancerProxyV1 } from '../build/contracts/AmmRebalancerProxyV1.json';
+import { default as AmmRebalancerProxyV2 } from '../build/contracts/AmmRebalancerProxyV2.json';
+import { default as ArbitrumMultiCall } from '../build/contracts/ArbitrumMultiCall.json';
 import { default as MultiCall } from '../build/contracts/MultiCall.json';
 import { default as TestUniswapAmmRebalancerProxy } from '../build/contracts/TestUniswapAmmRebalancerProxy.json';
 
@@ -52,6 +54,7 @@ export default {
   LiquidatorProxyV1,
   LiquidatorProxyV1WithAmm,
   AmmRebalancerProxyV1,
+  AmmRebalancerProxyV2,
   DolomiteAmmRouterProxy,
   PolynomialInterestSetter,
   DoubleExponentInterestSetter,
@@ -64,6 +67,7 @@ export default {
   DolomiteAmmPair,
   SimpleFeeOwner,
   TransferProxy,
+  ArbitrumMultiCall,
   MultiCall,
   TestUniswapAmmRebalancerProxy,
 };

@@ -21,8 +21,12 @@ export class MultiCall {
         callData: hexStringToBytes(callData),
       };
     });
+    const transaction = !this.contracts.multiCall.options.address
+      ? this.contracts.arbitrumMultiCall.methods.aggregate(rawCalls)
+      : this.contracts.multiCall.methods.aggregate(rawCalls);
+
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.multiCall.methods.aggregate(rawCalls),
+      transaction,
       options,
     );
     // result.returnData is actually string[], not string[][]

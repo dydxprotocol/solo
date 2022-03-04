@@ -16,16 +16,11 @@ let owner1: address;
 const zero = new BigNumber(0);
 const parA = new BigNumber('100000000000000000000'); // 100
 const parB = new BigNumber('200000000'); // 200
-const prices = [
-  new BigNumber('1e20'),
-  new BigNumber('1e32'),
-  new BigNumber('1e18'),
-  new BigNumber('1e21'),
-];
+const prices = [new BigNumber('1e20'), new BigNumber('1e32'), new BigNumber('1e18'), new BigNumber('1e21')];
 const defaultIsClosing = false;
 const defaultIsRecyclable = false;
 
-describe('AmmRebalancerProxyV1', () => {
+describe('AmmRebalancerProxyV2', () => {
   beforeAll(async () => {
     const r = await getDolomiteMargin();
     dolomiteMargin = r.dolomiteMargin;
@@ -36,33 +31,20 @@ describe('AmmRebalancerProxyV1', () => {
     await resetEVM();
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenA.address,
-        prices[0],
-      ),
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenB.address,
-        prices[1],
-      ),
-      dolomiteMargin.testing.priceOracle.setPrice(
-        dolomiteMargin.testing.tokenC.address,
-        prices[2],
-      ),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenA.address, prices[0]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenB.address, prices[1]),
+      dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.testing.tokenC.address, prices[2]),
       dolomiteMargin.testing.priceOracle.setPrice(dolomiteMargin.weth.address, prices[3]),
       setUpBasicBalances(),
       deployDolomiteLpTokens(),
-      deployUniswapLpTokens(),
-      dolomiteMargin.permissions.approveOperator(
-        dolomiteMargin.contracts.ammRebalancerProxyV1.options.address,
-        { from: owner1 },
-      ),
+      dolomiteMargin.permissions.approveOperator(dolomiteMargin.contracts.ammRebalancerProxyV2.options.address, {
+        from: owner1,
+      }),
     ]);
 
-    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash())
-      .toEqual(await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash());
-
-    expect(await dolomiteMargin.testing.uniswapV2Factory.getPairInitCodeHash())
-      .toEqual(await dolomiteMargin.testing.uniswapV2Router.getPairInitCodeHash());
+    expect(await dolomiteMargin.dolomiteAmmFactory.getPairInitCodeHash()).toEqual(
+      await dolomiteMargin.dolomiteAmmRouterProxy.getPairInitCodeHash(),
+    );
 
     await dolomiteMargin.admin.addMarket(
       dolomiteMargin.weth.address,
@@ -95,15 +77,6 @@ describe('AmmRebalancerProxyV1', () => {
           dolomiteMargin.testing.tokenA.address,
           dolomiteMargin.testing.tokenB.address,
         );
-        // price is 0.5
-        await addUniswapLiquidity(
-          owner1,
-          parA.times(1000000), // 10
-          parB.times(1000000), // 20
-          dolomiteMargin.testing.tokenA.address,
-          dolomiteMargin.testing.tokenB.address,
-        );
-
         const accountWeiA = await dolomiteMargin.getters.getAccountWei(
           owner1,
           INTEGERS.ZERO,
@@ -115,14 +88,21 @@ describe('AmmRebalancerProxyV1', () => {
           new BigNumber(await getMarketId(dolomiteMargin.testing.tokenB)),
         );
 
+        const otherAmountIn = new BigNumber('100');
+        const otherAmountOut = new BigNumber('1990050');
+
+        const uniswapV3CallData = dolomiteMargin.contracts.testUniswapV3MultiRouter.methods
+          .call(dolomiteMargin.testing.tokenB.address, otherAmountOut.toFixed(0))
+          .encodeABI();
+
         // converge the prices of the two on ~0.5025 (0.5% away from the "real" price of 0.5)
         // true price needs to be calculated assuming the correct number of decimals, per asset
-        const txResult = await dolomiteMargin.ammRebalancerProxyV1.performRebalance(
+        const txResult = await dolomiteMargin.ammRebalancerProxyV2.performRebalance(
           [dolomiteMargin.testing.tokenB.address, dolomiteMargin.testing.tokenA.address],
           new BigNumber('1990049'),
           new BigNumber('1000000000000000000'),
-          dolomiteMargin.contracts.testUniswapV2Router.options.address,
-          [dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address],
+          otherAmountIn,
+          uniswapV3CallData,
           { from: owner1 },
         );
         console.log('\tperformRebalance gas used', txResult.gasUsed.toString());
@@ -141,7 +121,7 @@ describe('AmmRebalancerProxyV1', () => {
           ),
         );
 
-        console.log('\tArbitrage profit', accountWeiANew.minus(accountWeiA).toFixed(0));
+        console.log('\tarb profit', accountWeiANew.minus(accountWeiA).toFixed(0));
       });
     });
   });
@@ -170,7 +150,7 @@ async function addDolomiteLiquidity(
       new BigNumber('123456789123'),
       { from: walletAddress },
     )
-    .catch((reason) => {
+    .catch(reason => {
       console.error('could not add dolomite liquidity: ', reason);
       return { gasUsed: 0 };
     });
@@ -180,50 +160,8 @@ async function addDolomiteLiquidity(
   return result;
 }
 
-async function addUniswapLiquidity(
-  walletAddress: address,
-  amountADesired: BigNumber,
-  amountBDesired: BigNumber,
-  tokenA: address,
-  tokenB: address,
-) {
-  await dolomiteMargin.testing.tokenA.approve(
-    dolomiteMargin.contracts.testUniswapV2Router.options.address,
-    INTEGERS.MAX_UINT,
-    { from: walletAddress },
-  );
-  await dolomiteMargin.testing.tokenB.approve(
-    dolomiteMargin.contracts.testUniswapV2Router.options.address,
-    INTEGERS.MAX_UINT,
-    { from: walletAddress },
-  );
-
-  const result = await dolomiteMargin.testing.uniswapV2Router
-    .addLiquidity(
-      tokenA,
-      tokenB,
-      amountADesired,
-      amountBDesired,
-      INTEGERS.ONE,
-      INTEGERS.ONE,
-      walletAddress,
-      new BigNumber('123456789123'),
-      { from: walletAddress },
-    )
-    .catch(async (reason) => {
-      console.error('could not add uniswap liquidity: ', reason);
-      return { gasUsed: 0 };
-    });
-
-  console.log('\t#addUniswapLiquidity gas used  ', result.gasUsed.toString());
-
-  return result;
-}
-
 async function getMarketId(token: TestToken): Promise<string> {
-  return dolomiteMargin.contracts.dolomiteMargin.methods
-    .getMarketIdByTokenAddress(token.address)
-    .call();
+  return dolomiteMargin.contracts.dolomiteMargin.methods.getMarketIdByTokenAddress(token.address).call();
 }
 
 async function setUpBasicBalances() {
@@ -251,21 +189,6 @@ async function deployDolomiteLpTokens() {
   );
   await dolomiteMargin.contracts.callContractFunction(
     dolomiteMargin.contracts.dolomiteAmmFactory.methods.createPair(
-      dolomiteMargin.testing.tokenB.address,
-      dolomiteMargin.testing.tokenC.address,
-    ),
-  );
-}
-
-async function deployUniswapLpTokens() {
-  await dolomiteMargin.contracts.callContractFunction(
-    dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
-      dolomiteMargin.testing.tokenA.address,
-      dolomiteMargin.testing.tokenB.address,
-    ),
-  );
-  await dolomiteMargin.contracts.callContractFunction(
-    dolomiteMargin.contracts.testUniswapV2Factory.methods.createPair(
       dolomiteMargin.testing.tokenB.address,
       dolomiteMargin.testing.tokenC.address,
     ),

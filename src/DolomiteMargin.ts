@@ -22,6 +22,7 @@ import { Contracts } from './lib/Contracts';
 import { Interest } from './lib/Interest';
 import { Admin } from './modules/Admin';
 import { AmmRebalancerProxyV1 } from './modules/AmmRebalancerProxyV1';
+import { AmmRebalancerProxyV2 } from './modules/AmmRebalancerProxyV2';
 import { DolomiteAmmFactory } from './modules/DolomiteAmmFactory';
 import { DolomiteAmmPair } from './modules/DolomiteAmmPair';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
@@ -66,6 +67,7 @@ export class DolomiteMargin {
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxyV1: AmmRebalancerProxyV1;
+  public ammRebalancerProxyV2: AmmRebalancerProxyV2;
   public transferProxy: TransferProxy;
   public multiCall: MultiCall;
   public permissions: Permissions;
@@ -115,6 +117,7 @@ export class DolomiteMargin {
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxyV1 = new AmmRebalancerProxyV1(this.contracts);
+    this.ammRebalancerProxyV2 = new AmmRebalancerProxyV2(this.contracts);
     this.transferProxy = new TransferProxy(this.contracts);
     this.multiCall = new MultiCall(this.contracts);
     this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);

@@ -204,6 +204,14 @@ function getChainlinkFlags(network) {
   return '0x0000000000000000000000000000000000000000';
 }
 
+function getUniswapV3MultiRouter(network, TestUniswapV3MultiRouter) {
+  if (isDevNetwork(network)) {
+    return TestUniswapV3MultiRouter.address;
+  }
+
+  return '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
+}
+
 module.exports = {
   isArbitrum,
   isArbitrumTest,
@@ -223,4 +231,5 @@ module.exports = {
   getDelayedMultisigAddress,
   getGnosisSafeAddress,
   getChainlinkFlags,
+  getUniswapV3MultiRouter,
 };
