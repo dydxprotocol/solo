@@ -26,3 +26,7 @@ scripts/verify-mumbai-contracts.sh
 scripts/verify-amm-pair.sh
 
 verify-mainnet-contracts.sh
+
+contracts/external/rebalancers/*
+
+bfg-1.14.0.jar

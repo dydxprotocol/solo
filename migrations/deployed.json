@@ -192,8 +192,8 @@
         },
         "421611": {
             "links": {},
-            "address": "0xCf028E08Ff9C483A963Dfa302131f2A281Ef6E09",
-            "transactionHash": "0xa36ecd6937187b8ec715b71ab67e884a61b290e2ec7ce0396ec8772ecfbdb89d"
+            "address": "0x7b81d09b220243795c078cbc4ed4C6Ca1969a7d0",
+            "transactionHash": "0x945a9aa6488a62ae32f6c601cd70f7a8c2145cbb108641a6552c0bd47149e709"
         }
     },
     "DolomiteAmmRouterProxy": {
