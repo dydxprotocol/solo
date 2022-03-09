@@ -45,6 +45,7 @@ markets are loaded into memory. This allows the protocol to support potentially 
 which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-isolated markets) 
 margin systems in DeFi. The detailed changes are outlined below:
 
+- Upgraded the Solidity compiler version from `0.5.7` to `0.5.16`. 
  - Added a `getPartialRoundHalfUp` function that's used when converting between `Wei` & `Par` values. The reason for 
 this change is that there would be truncation issues when using `getPartial` or `getPartialRoundUp`, which would lead to 
 lossy conversions to and from `Wei` and `Par` that would be incorrect by 1 unit.
