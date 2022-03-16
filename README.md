@@ -3,9 +3,9 @@
 </p>
 
 <div align="center">
-  <a href="https://circleci.com/gh/dolomite-exchange/dolomite-v2-protocol/tree/master" style="text-decoration:none;">
+<!--   <a href="https://circleci.com/gh/dolomite-exchange/dolomite-v2-protocol/tree/master" style="text-decoration:none;">
     <img src="https://img.shields.io/circleci/project/github/dolomite--exchange/dolomite--margin.svg" alt='CI' />
-  </a>
+  </a> -->
   <a href='https://www.npmjs.com/package/@dolomite-exchange/dolomite-margin' style="text-decoration:none;">
     <img src='https://img.shields.io/npm/v/@dolomite-exchange/dolomite-margin.svg' alt='NPM' />
   </a>
@@ -45,6 +45,7 @@ markets are loaded into memory. This allows the protocol to support potentially 
 which will allow DolomiteMargin to become one of the most flexible and largest (in terms of number of non-isolated markets) 
 margin systems in DeFi. The detailed changes are outlined below:
 
+- Upgraded the Solidity compiler version from `0.5.7` to `0.5.16`. 
  - Added a `getPartialRoundHalfUp` function that's used when converting between `Wei` & `Par` values. The reason for 
 this change is that there would be truncation issues when using `getPartial` or `getPartialRoundUp`, which would lead to 
 lossy conversions to and from `Wei` and `Par` that would be incorrect by 1 unit.
