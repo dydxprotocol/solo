@@ -50,6 +50,7 @@ import {
 } from './types';
 import { MultiCall } from './modules/MultiCall';
 import { ArbitrumGasInfo } from './modules/ArbitrumGasInfo';
+import { DepositProxy } from './modules/DepositProxy';
 
 export class DolomiteMargin {
   public contracts: Contracts;
@@ -69,6 +70,7 @@ export class DolomiteMargin {
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxyV1: AmmRebalancerProxyV1;
   public ammRebalancerProxyV2: AmmRebalancerProxyV2;
+  public depositProxy: DepositProxy;
   public transferProxy: TransferProxy;
   public multiCall: MultiCall;
   public arbitrumGasInfo: ArbitrumGasInfo;
@@ -120,6 +122,7 @@ export class DolomiteMargin {
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxyV1 = new AmmRebalancerProxyV1(this.contracts);
     this.ammRebalancerProxyV2 = new AmmRebalancerProxyV2(this.contracts);
+    this.depositProxy = new DepositProxy(this.contracts);
     this.transferProxy = new TransferProxy(this.contracts);
     this.multiCall = new MultiCall(this.contracts);
     this.arbitrumGasInfo = new ArbitrumGasInfo(this.contracts);

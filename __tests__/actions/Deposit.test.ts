@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { AccountStatus, address, AmountDenomination, AmountReference, Deposit, Integer } from '../../src';
-import { INTEGERS } from '../../src/lib/Constants';
+import { AccountStatus, address, AmountDenomination, AmountReference, Deposit, Integer, INTEGERS } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
@@ -57,12 +56,7 @@ describe('Deposit', () => {
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
       dolomiteMargin.testing.setMarketIndex(market, defaultIndex),
-      dolomiteMargin.testing.setAccountBalance(
-        who,
-        accountNumber,
-        collateralMarket,
-        collateralAmount,
-      ),
+      dolomiteMargin.testing.setAccountBalance(who, accountNumber, collateralMarket, collateralAmount),
       dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(who),
     ]);
     snapshotId = await snapshot();
@@ -88,10 +82,7 @@ describe('Deposit', () => {
       dolomiteMargin.permissions.approveOperator(operator, { from: who }),
       dolomiteMargin.testing.setAccountBalance(who, accountNumber, market, par),
     ]);
-    const txResult = await expectDepositOkay(
-      { from: operator },
-      { from: operator },
-    );
+    const txResult = await expectDepositOkay({ from: operator }, { from: operator });
 
     const [marketIndex, collateralIndex, marketOraclePrice, collateralOraclePrice] = await Promise.all([
       dolomiteMargin.getters.getMarketCachedIndex(market),
@@ -170,10 +161,7 @@ describe('Deposit', () => {
       await expectBalances(par.times(2), wei.times(2), zero, wei);
 
       // starting negative (>par)
-      await Promise.all([
-        setAccountBalance(negPar.times(2)),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(negPar.times(2)), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(negPar, negWei, zero, wei);
 
@@ -183,10 +171,7 @@ describe('Deposit', () => {
       await expectBalances(zero, zero, zero, wei);
 
       // starting negative (<par)
-      await Promise.all([
-        setAccountBalance(negPar.div(2)),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(negPar.div(2)), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par.div(2), wei.div(2), zero, wei);
     }
@@ -289,10 +274,7 @@ describe('Deposit', () => {
       await expectBalances(par, wei, zero, wei);
 
       // starting positive (<target)
-      await Promise.all([
-        setAccountBalance(par.div(2)),
-        issueTokensToUser(wei.div(2)),
-      ]);
+      await Promise.all([setAccountBalance(par.div(2)), issueTokensToUser(wei.div(2))]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par, wei, zero, wei.div(2));
 
@@ -306,10 +288,7 @@ describe('Deposit', () => {
       await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
 
       // starting negative
-      await Promise.all([
-        setAccountBalance(negPar),
-        issueTokensToUser(wei.times(2)),
-      ]);
+      await Promise.all([setAccountBalance(negPar), issueTokensToUser(wei.times(2))]);
       await expectDepositOkay(globs[i]);
       await expectBalances(par, wei, zero, wei.times(2));
     }
@@ -374,10 +353,7 @@ describe('Deposit', () => {
       await expectDepositRevert(globs[i], CANNOT_DEPOSIT_NEGATIVE);
 
       // starting negative (<target)
-      await Promise.all([
-        setAccountBalance(negPar.times(2)),
-        issueTokensToUser(wei),
-      ]);
+      await Promise.all([setAccountBalance(negPar.times(2)), issueTokensToUser(wei)]);
       await expectDepositOkay(globs[i]);
       await expectBalances(negPar, negWei, zero, wei);
 
@@ -398,9 +374,7 @@ describe('Deposit', () => {
 
   it('Succeeds for lending in par', async () => {
     const supplyIndex = new BigNumber('3.99');
-    const expectedWei = par
-      .times(supplyIndex)
-      .integerValue(BigNumber.ROUND_DOWN);
+    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -421,9 +395,7 @@ describe('Deposit', () => {
 
   it('Succeeds for lending in wei', async () => {
     const supplyIndex = new BigNumber('3.99');
-    const expectedWei = par
-      .times(supplyIndex)
-      .integerValue(BigNumber.ROUND_DOWN);
+    const expectedWei = par.times(supplyIndex).integerValue(BigNumber.ROUND_DOWN);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -444,8 +416,7 @@ describe('Deposit', () => {
 
   it('Succeeds for repaying in par', async () => {
     const borrowIndex = new BigNumber('1.99');
-    const expectedWei = par.times(borrowIndex)
-      .integerValue(BigNumber.ROUND_UP);
+    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -467,8 +438,7 @@ describe('Deposit', () => {
 
   it('Succeeds for repaying in wei', async () => {
     const borrowIndex = new BigNumber('1.99');
-    const expectedWei = par.times(borrowIndex)
-      .integerValue(BigNumber.ROUND_UP);
+    const expectedWei = par.times(borrowIndex).integerValue(BigNumber.ROUND_UP);
     await Promise.all([
       issueTokensToUser(expectedWei),
       dolomiteMargin.testing.setMarketIndex(market, {
@@ -491,11 +461,7 @@ describe('Deposit', () => {
   it('Succeeds and sets status to Normal', async () => {
     await Promise.all([
       issueTokensToUser(wei),
-      dolomiteMargin.testing.setAccountStatus(
-        who,
-        accountNumber,
-        AccountStatus.Liquidating,
-      ),
+      dolomiteMargin.testing.setAccountStatus(who, accountNumber, AccountStatus.Liquidating),
     ]);
     await expectDepositOkay({});
     const status = await dolomiteMargin.getters.getAccountStatus(who, accountNumber);
@@ -503,10 +469,7 @@ describe('Deposit', () => {
   });
 
   it('Succeeds for local operator', async () => {
-    await Promise.all([
-      issueTokensToUser(wei),
-      dolomiteMargin.permissions.approveOperator(operator),
-    ]);
+    await Promise.all([issueTokensToUser(wei), dolomiteMargin.permissions.approveOperator(operator)]);
     await expectDepositOkay({}, { from: operator });
   });
 
@@ -526,10 +489,7 @@ describe('Deposit', () => {
   });
 
   it('Fails for from random address', async () => {
-    await expectDepositRevert(
-      { from: operator },
-      'OperationImpl: Invalid deposit source',
-    );
+    await expectDepositRevert({ from: operator }, 'OperationImpl: Invalid deposit source');
   });
 
   it('Fails if depositing more tokens than owned', async () => {
@@ -560,16 +520,12 @@ async function expectBalances(
   walletWei: Integer,
   dolomiteMarginWei: Integer,
 ) {
-  const [
-    accountBalances,
-    walletTokenBalance,
-    dolomiteMarginTokenBalance,
-  ] = await Promise.all([
+  const [accountBalances, walletTokenBalance, dolomiteMarginTokenBalance] = await Promise.all([
     dolomiteMargin.getters.getAccountBalances(who, accountNumber),
     dolomiteMargin.testing.tokenA.getBalance(who),
     dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
   ]);
-  accountBalances.forEach((balance) => {
+  accountBalances.forEach(balance => {
     let expected = { par: zero, wei: zero };
     if (balance.marketId.eq(market)) {
       expected = { par: expectedPar, wei: expectedWei };
@@ -582,10 +538,8 @@ async function expectBalances(
     expect(balance.par).toEqual(expected.par);
     expect(balance.wei).toEqual(expected.wei);
   });
-  expect(walletTokenBalance.minus(cachedWeis.walletWei))
-    .toEqual(walletWei);
-  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei))
-    .toEqual(dolomiteMarginWei);
+  expect(walletTokenBalance.minus(cachedWeis.walletWei)).toEqual(walletWei);
+  expect(dolomiteMarginTokenBalance.minus(cachedWeis.dolomiteMarginWei)).toEqual(dolomiteMarginWei);
   cachedWeis.walletWei = walletTokenBalance;
   cachedWeis.dolomiteMarginWei = dolomiteMarginTokenBalance;
 }
@@ -598,10 +552,6 @@ async function expectDepositOkay(glob: Object, options?: Object) {
     .commit(options);
 }
 
-async function expectDepositRevert(
-  glob: Object,
-  reason?: string,
-  options?: Object,
-) {
+async function expectDepositRevert(glob: Object, reason?: string, options?: Object) {
   await expectThrow(expectDepositOkay(glob, options), reason);
 }

@@ -1,18 +1,9 @@
 import BigNumber from 'bignumber.js';
-import {
-  address,
-  Integer,
-} from '../../src';
-import {
-  INTEGERS,
-} from '../../src/lib/Constants';
+import { address, Integer, INTEGERS } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import {
-  resetEVM,
-  snapshot,
-} from '../helpers/EVM';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -276,7 +267,7 @@ async function expectBalances(
   owner: address,
   market: Integer,
   amount: Integer,
-): Promise<void>  {
+): Promise<void> {
   const balance = await dolomiteMargin.getters.getAccountWei(owner, INTEGERS.ZERO, market);
   expect(balance).toEqual(amount);
 }
