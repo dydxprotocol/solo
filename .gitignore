@@ -30,3 +30,7 @@ verify-mainnet-contracts.sh
 contracts/external/rebalancers/*
 
 bfg-1.14.0.jar
+
+.nvmrc
+
+.envrc
