@@ -48,6 +48,7 @@ import polynomialInterestSetterJson from '../../build/published_contracts/Polyno
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
 import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
+import depositProxyJson from '../../build/published_contracts/DepositWithdrawalProxy.json';
 import multiCallJson from '../../build/published_contracts/MultiCall.json';
 import arbitrumMultiCallJson from '../../build/published_contracts/ArbitrumMultiCall.json';
 import wethJson from '../../build/published_contracts/Weth.json';
@@ -73,6 +74,7 @@ import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy'
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
 import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
+import { DepositWithdrawalProxy } from '../../build/wrappers/DepositWithdrawalProxy';
 import { TransferProxy } from '../../build/wrappers/TransferProxy';
 import { Weth } from '../../build/wrappers/Weth';
 import { TestUniswapAmmRebalancerProxy } from '../../build/wrappers/TestUniswapAmmRebalancerProxy';
@@ -116,6 +118,7 @@ export class Contracts {
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public simpleFeeOwner: SimpleFeeOwner;
   public transferProxy: TransferProxy;
+  public depositProxy: DepositWithdrawalProxy;
   public multiCall: MultiCall;
   public arbitrumMultiCall: ArbitrumMultiCall;
   public weth: Weth;
@@ -195,6 +198,7 @@ export class Contracts {
       simpleFeeOwnerJson.abi,
     ) as SimpleFeeOwner;
     this.transferProxy = new this.web3.eth.Contract(transferProxyJson.abi) as TransferProxy;
+    this.depositProxy = new this.web3.eth.Contract(depositProxyJson.abi) as DepositWithdrawalProxy;
     this.multiCall = new this.web3.eth.Contract(multiCallJson.abi) as MultiCall;
     this.arbitrumMultiCall = new this.web3.eth.Contract(arbitrumMultiCallJson.abi) as ArbitrumMultiCall;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
@@ -278,6 +282,7 @@ export class Contracts {
         json: chainlinkPriceOracleV1Json,
       },
       { contract: this.transferProxy, json: transferProxyJson },
+      { contract: this.depositProxy, json: depositProxyJson },
       { contract: this.multiCall, json: multiCallJson },
       { contract: this.arbitrumMultiCall, json: arbitrumMultiCallJson },
       { contract: this.weth, json: wethJson },
@@ -316,6 +321,7 @@ export class Contracts {
     this.dolomiteAmmFactory.options.from = account;
     this.simpleFeeOwner.options.from = account;
     this.transferProxy.options.from = account;
+    this.depositProxy.options.from = account;
     this.multiCall.options.from = account;
     this.arbitrumMultiCall.options.from = account;
     this.weth.options.from = account;

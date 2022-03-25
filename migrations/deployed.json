@@ -298,6 +298,23 @@
             "transactionHash": "0x11733a7b387e4a81425cd806beeed756a7e07628a7b6baab5a26408062b9c8ea"
         }
     },
+    "DepositWithdrawalProxy": {
+        "42161": {
+            "links": {},
+            "address": "0xCf028E08Ff9C483A963Dfa302131f2A281Ef6E09",
+            "transactionHash": "0x5d5fc9bee525e5dcbbf6bfe1668f756115050689752c67526eb8d5e575cecf54"
+        },
+        "80001": {
+            "links": {},
+            "address": "0x37Aa6b3169814E99E9f04e61e070a07F22B1EB51",
+            "transactionHash": "0xcedc70df294c5ac69e975cfb43bc1dbbca1e2578abef4e1ce26837f7f43ab4f8"
+        },
+        "421611": {
+            "links": {},
+            "address": "0xB04a47e829440c65A49ea6c225D193aFb23879aB",
+            "transactionHash": "0xc33967e14a26e1f6cc675dcd041e6997615e45e123b140f02cf5ff135f1b222e"
+        }
+    },
     "ArbitrumMultiCall": {
         "42161": {
             "links": {},

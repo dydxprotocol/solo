@@ -104,7 +104,7 @@ interface IDepositWithdrawalProxy {
      * @param _marketId     The ID of the market being withdrawn
      * @param _amountPar    The amount, in Par, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire balance
      */
-    function withdrawParIntoDefaultAccount(
+    function withdrawParFromDefaultAccount(
         uint _marketId,
         uint _amountPar
     ) external;

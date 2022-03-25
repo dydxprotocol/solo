@@ -51,14 +51,14 @@ const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV
 
 // Base Protocol
 const AdminImpl = artifacts.require('AdminImpl');
-const OperationImpl = artifacts.require('OperationImpl');
-const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
-const TestOperationImpl = artifacts.require('TestOperationImpl');
 const DolomiteMargin = artifacts.require('DolomiteMargin');
+const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
+const OperationImpl = artifacts.require('OperationImpl');
+const TestOperationImpl = artifacts.require('TestOperationImpl');
 
 // MultiCall
-const MultiCall = artifacts.require('MultiCall');
 const ArbitrumMultiCall = artifacts.require('ArbitrumMultiCall');
+const MultiCall = artifacts.require('MultiCall');
 
 // Test Contracts
 const TestDolomiteMargin = artifacts.require('TestDolomiteMargin');
@@ -91,14 +91,15 @@ const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 
 // Second-Layer Contracts
-const PayableProxy = artifacts.require('PayableProxy');
+const AmmRebalancerProxyV1 = artifacts.require('AmmRebalancerProxyV1');
+const AmmRebalancerProxyV2 = artifacts.require('AmmRebalancerProxyV2');
+const DepositWithdrawalProxy = artifacts.require('DepositWithdrawalProxy');
+const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const Expiry = artifacts.require('Expiry');
 const LiquidatorProxyV1 = artifacts.require('LiquidatorProxyV1');
 const LiquidatorProxyV1WithAmm = artifacts.require('LiquidatorProxyV1WithAmm');
+const PayableProxy = artifacts.require('PayableProxy');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
-const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
-const AmmRebalancerProxyV1 = artifacts.require('AmmRebalancerProxyV1');
-const AmmRebalancerProxyV2 = artifacts.require('AmmRebalancerProxyV2');
 const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
 const TestUniswapAmmRebalancerProxy = artifacts.require('TestUniswapAmmRebalancerProxy');
 const TestUniswapV3MultiRouter = artifacts.require('TestUniswapV3MultiRouter');
@@ -281,6 +282,11 @@ async function deploySecondLayer(deployer, network, accounts) {
     dolomiteMargin.address,
   );
 
+  await deployer.deploy(
+    DepositWithdrawalProxy,
+    dolomiteMargin.address,
+  );
+
   const dolomiteAmmFactory = await deployer.deploy(
     DolomiteAmmFactory,
     getSenderAddress(network, accounts),
@@ -385,6 +391,10 @@ async function deploySecondLayer(deployer, network, accounts) {
     ),
     dolomiteMargin.ownerSetGlobalOperator(
       TransferProxy.address,
+      true,
+    ),
+    dolomiteMargin.ownerSetGlobalOperator(
+      DepositWithdrawalProxy.address,
       true,
     ),
     dolomiteMargin.ownerSetGlobalOperator(

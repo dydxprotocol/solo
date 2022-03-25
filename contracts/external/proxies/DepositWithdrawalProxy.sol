@@ -27,7 +27,6 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
 import { Types } from "../../protocol/lib/Types.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
@@ -38,8 +37,8 @@ import { IDepositWithdrawalProxy } from "../interfaces/IDepositWithdrawalProxy.s
  * @title DepositWithdrawalProxy
  * @author Dolomite
  *
- * Contract for depositing or withdrawing to/from Dolomite easily. This lowers gas costs on Arbitrum by minimizing
- * callData
+ * @dev Contract for depositing or withdrawing to/from Dolomite easily. This lowers gas costs on Arbitrum by minimizing
+ *      callData
  */
 contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, ReentrancyGuard {
 
@@ -62,7 +61,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         uint _accountIndex,
         uint _marketId,
         uint _amountWei
-    ) external {
+    )
+    external
+    nonReentrant {
         _deposit(
             _accountIndex,
             _marketId,
@@ -70,7 +71,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
                 sign: true,
                 denomination: Types.AssetDenomination.Wei,
                 ref: Types.AssetReference.Delta,
-                value: _amountWei == uint(-1) ? _getBalanceOf(_marketId) : _amountWei
+                value: _amountWei == uint(-1) ? _getSenderBalance(_marketId) : _amountWei
             })
         );
     }
@@ -78,7 +79,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     function depositWeiIntoDefaultAccount(
         uint _marketId,
         uint _amountWei
-    ) external {
+    )
+    external
+    nonReentrant {
         _deposit(
             0,
             _marketId,
@@ -86,7 +89,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
                 sign: true,
                 denomination: Types.AssetDenomination.Wei,
                 ref: Types.AssetReference.Delta,
-                value: _amountWei == uint(-1) ? _getBalanceOf(_marketId) : _amountWei
+                value: _amountWei == uint(-1) ? _getSenderBalance(_marketId) : _amountWei
             })
         );
     }
@@ -95,7 +98,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         uint _accountIndex,
         uint _marketId,
         uint _amountWei
-    ) external {
+    )
+    external
+    nonReentrant {
         _withdraw(
             _accountIndex,
             _marketId,
@@ -111,7 +116,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     function withdrawWeiIntoDefaultAccount(
         uint _marketId,
         uint _amountWei
-    ) external {
+    )
+    external
+    nonReentrant {
         _withdraw(
             0,
             _marketId,
@@ -130,7 +137,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         uint _accountIndex,
         uint _marketId,
         uint _amountPar
-    ) external {
+    )
+    external
+    nonReentrant {
         _deposit(
             _accountIndex,
             _marketId,
@@ -146,7 +155,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     function depositParIntoDefaultAccount(
         uint _marketId,
         uint _amountPar
-    ) external {
+    )
+    external
+    nonReentrant {
         _deposit(
             0,
             _marketId,
@@ -163,7 +174,9 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         uint _accountIndex,
         uint _marketId,
         uint _amountPar
-    ) external {
+    )
+    external
+    nonReentrant {
         _withdraw(
             _accountIndex,
             _marketId,
@@ -176,10 +189,12 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         );
     }
 
-    function withdrawParIntoDefaultAccount(
+    function withdrawParFromDefaultAccount(
         uint _marketId,
         uint _amountPar
-    ) external {
+    )
+    external
+    nonReentrant {
         _withdraw(
             0,
             _marketId,
@@ -194,7 +209,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
 
     // ============ Internal Functions ============
 
-    function _getBalanceOf(uint _marketId) internal view returns (uint) {
+    function _getSenderBalance(uint _marketId) internal view returns (uint) {
         return IERC20(DOLOMITE_MARGIN.getMarketTokenAddress(_marketId)).balanceOf(msg.sender);
     }
 
@@ -237,7 +252,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
 
         Actions.ActionArgs[] memory actions = new Actions.ActionArgs[](1);
         actions[0] = Actions.ActionArgs({
-            actionType: Actions.ActionType.Deposit,
+            actionType: Actions.ActionType.Withdraw,
             accountId: 0,
             amount: _amount,
             primaryMarketId: _marketId,
