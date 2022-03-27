@@ -1,3 +1,4 @@
+const Web3 = require('web3');
 const { coefficientsToString, decimalToString } = require('../dist/src/lib/Helpers');
 
 // ============ Network Helper Functions ============
@@ -30,7 +31,7 @@ function isMaticTest(network) {
 
 function isArbitrum(network) {
   verifyNetwork(network);
-  return network.startsWith('arbitrum');
+  return network.startsWith('arbitrum') && !isArbitrumTest(network);
 }
 
 function isArbitrumTest(network) {
@@ -131,7 +132,7 @@ async function getDoubleExponentParams(network) {
 }
 
 function getExpiryRampTime(network) {
-  if (isMaticTest(network)) {
+  if (isArbitrum(network) || isArbitrumTest(network) || isMaticTest(network)) {
     return '300';
   } else {
     return '3600';
@@ -145,6 +146,7 @@ function verifyNetwork(network) {
 }
 
 function getSenderAddress(network, accounts) {
+  const web3 = new Web3(process.env.NODE_URL);
   if (isMainNet(network) || isKovan(network)) {
     return accounts[0];
   }
@@ -157,18 +159,18 @@ function getSenderAddress(network, accounts) {
   if (isMatic(network)) {
     return accounts[0];
   }
-  if (isArbitrumTest(network)) {
-    return accounts[0];
-  }
   if (isArbitrum(network)) {
-    return accounts[0];
+    return web3.eth.accounts.privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY).address;
+  }
+  if (isArbitrumTest(network)) {
+    return web3.eth.accounts.privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY).address;
   }
   throw new Error('Cannot find Sender address');
 }
 
-function getMultisigAddress(network) {
-  if (isMainNet(network)) {
-    throw new Error('No Mainnet multisig');
+function getDelayedMultisigAddress(network) {
+  if (isMainNet(network) || isArbitrum(network) || isArbitrumTest(network)) {
+    return '0xE412991Fb026df586C2f2F9EE06ACaD1A34f585B';
   }
   if (isKovan(network)) {
     throw new Error('No Kovan multisig');
@@ -176,7 +178,38 @@ function getMultisigAddress(network) {
   if (isMaticTest(network)) {
     return '0x874Ad8fb87a67B1A33C5834CC8820DBa80D18Bbb';
   }
-  throw new Error('Cannot find Admin Multisig');
+  throw new Error('Cannot find DelayedMultisig for network: ' + network);
+}
+
+function getGnosisSafeAddress(network) {
+  if (isMainNet(network) || isArbitrum(network)) {
+    return '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4';
+  }
+  if (isArbitrumTest(network)) {
+    return '0xE412991Fb026df586C2f2F9EE06ACaD1A34f585B'; // use the delayed multi sig
+  }
+  if (isMaticTest(network)) {
+    return '0x874Ad8fb87a67B1A33C5834CC8820DBa80D18Bbb'; // use the delayed multi sig
+  }
+  throw new Error('Cannot find GnosisSafe for network: ' + network);
+}
+
+function getChainlinkFlags(network) {
+  if (isArbitrum(network)) {
+    return '0x3C14e07Edd0dC67442FA96f1Ec6999c57E810a83';
+  }
+  if (isArbitrumTest(network)) {
+    return '0x491B1dDA0A8fa069bbC1125133A975BF4e85a91b';
+  }
+  return '0x0000000000000000000000000000000000000000';
+}
+
+function getUniswapV3MultiRouter(network, TestUniswapV3MultiRouter) {
+  if (isDevNetwork(network)) {
+    return TestUniswapV3MultiRouter.address;
+  }
+
+  return '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
 }
 
 module.exports = {
@@ -195,5 +228,8 @@ module.exports = {
   getDoubleExponentParams,
   getExpiryRampTime,
   getSenderAddress,
-  getMultisigAddress,
+  getDelayedMultisigAddress,
+  getGnosisSafeAddress,
+  getChainlinkFlags,
+  getUniswapV3MultiRouter,
 };

@@ -59,6 +59,7 @@ import testUniswapV2PairJson from '../../build/testing_contracts/UniswapV2Pair.j
 import testUniswapV2RouterJson from '../../build/testing_contracts/UniswapV2Router02.json';
 import testUniswapV2FactoryJson from '../../build/testing_contracts/UniswapV2Factory.json';
 import testAmmRebalancerProxyJson from '../../build/testing_contracts/TestAmmRebalancerProxy.json';
+import testUniswapV3MultiRouterJson from '../../build/testing_contracts/TestUniswapV3MultiRouter.json';
 
 import { address, DolomiteMarginOptions } from '../../src';
 import { Contracts } from '../../src/lib/Contracts';
@@ -66,6 +67,7 @@ import { UniswapV2Factory } from '../../build/testing_wrappers/UniswapV2Factory'
 import { UniswapV2Router02 } from '../../build/testing_wrappers/UniswapV2Router02';
 import { UniswapV2Pair } from '../../build/testing_wrappers/UniswapV2Pair';
 import { TestAmmRebalancerProxy } from '../../build/testing_wrappers/TestAmmRebalancerProxy';
+import { TestUniswapV3MultiRouter } from '../../build/testing_wrappers/TestUniswapV3MultiRouter';
 
 export class TestContracts extends Contracts {
   // Contract instances
@@ -94,6 +96,7 @@ export class TestContracts extends Contracts {
   public testInterestSetter: TestInterestSetter;
   public testUniswapV2Factory: UniswapV2Factory;
   public testUniswapV2Router: UniswapV2Router02;
+  public testUniswapV3MultiRouter: TestUniswapV3MultiRouter;
 
   constructor(
     provider: Provider,
@@ -157,6 +160,9 @@ export class TestContracts extends Contracts {
     this.testUniswapV2Router = new this.web3.eth.Contract(
       testUniswapV2RouterJson.abi,
     ) as UniswapV2Router02;
+    this.testUniswapV3MultiRouter = new this.web3.eth.Contract(
+      testUniswapV3MultiRouterJson.abi,
+    ) as TestUniswapV3MultiRouter;
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -217,6 +223,7 @@ export class TestContracts extends Contracts {
       { contract: this.testInterestSetter, json: testInterestSetterJson },
       { contract: this.testUniswapV2Factory, json: testUniswapV2FactoryJson },
       { contract: this.testUniswapV2Router, json: testUniswapV2RouterJson },
+      { contract: this.testUniswapV3MultiRouter, json: testUniswapV3MultiRouterJson },
     ];
 
     contracts.forEach(contract =>
@@ -260,5 +267,6 @@ export class TestContracts extends Contracts {
     this.testInterestSetter.options.from = account;
     this.testUniswapV2Factory.options.from = account;
     this.testUniswapV2Router.options.from = account;
+    this.testUniswapV3MultiRouter.options.from = account;
   }
 }

@@ -33,6 +33,8 @@ const {
   isMaticTest,
   isArbitrum,
   isArbitrumTest,
+  getChainlinkFlags,
+  getUniswapV3MultiRouter,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleContract,
@@ -49,12 +51,13 @@ const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV
 
 // Base Protocol
 const AdminImpl = artifacts.require('AdminImpl');
-const OperationImpl = artifacts.require('OperationImpl');
-const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
-const TestOperationImpl = artifacts.require('TestOperationImpl');
 const DolomiteMargin = artifacts.require('DolomiteMargin');
+const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
+const OperationImpl = artifacts.require('OperationImpl');
+const TestOperationImpl = artifacts.require('TestOperationImpl');
 
 // MultiCall
+const ArbitrumMultiCall = artifacts.require('ArbitrumMultiCall');
 const MultiCall = artifacts.require('MultiCall');
 
 // Test Contracts
@@ -88,15 +91,18 @@ const TestExchangeWrapper = artifacts.require('TestExchangeWrapper');
 const WETH9 = artifacts.require('WETH9');
 
 // Second-Layer Contracts
-const PayableProxy = artifacts.require('PayableProxy');
+const AmmRebalancerProxyV1 = artifacts.require('AmmRebalancerProxyV1');
+const AmmRebalancerProxyV2 = artifacts.require('AmmRebalancerProxyV2');
+const DepositWithdrawalProxy = artifacts.require('DepositWithdrawalProxy');
+const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
 const Expiry = artifacts.require('Expiry');
 const LiquidatorProxyV1 = artifacts.require('LiquidatorProxyV1');
 const LiquidatorProxyV1WithAmm = artifacts.require('LiquidatorProxyV1WithAmm');
+const PayableProxy = artifacts.require('PayableProxy');
 const SignedOperationProxy = artifacts.require('SignedOperationProxy');
-const DolomiteAmmRouterProxy = artifacts.require('DolomiteAmmRouterProxy');
-const AmmRebalancerProxyV1 = artifacts.require('AmmRebalancerProxyV1');
 const TestAmmRebalancerProxy = artifacts.require('TestAmmRebalancerProxy');
 const TestUniswapAmmRebalancerProxy = artifacts.require('TestUniswapAmmRebalancerProxy');
+const TestUniswapV3MultiRouter = artifacts.require('TestUniswapV3MultiRouter');
 const TransferProxy = artifacts.require('TransferProxy');
 
 // Interest Setters
@@ -169,7 +175,7 @@ async function deployBaseProtocol(deployer, network) {
   if (isDevNetwork(network)) {
     await deployer.deploy(TestOperationImpl);
     dolomiteMargin = TestDolomiteMargin;
-  } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network)) {
+  } else if (isMatic(network) || isMaticTest(network) || isArbitrum(network) || isArbitrumTest(network)) {
     dolomiteMargin = DolomiteMargin;
   } else if (isKovan(network) || isMainNet(network)) {
     dolomiteMargin = DolomiteMargin;
@@ -187,8 +193,12 @@ async function deployBaseProtocol(deployer, network) {
   await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
 }
 
-async function deployMultiCall(deployer) {
-  deployer.deploy(MultiCall);
+async function deployMultiCall(deployer, network) {
+  if (isArbitrum(network) || isArbitrumTest(network)) {
+    deployer.deploy(ArbitrumMultiCall);
+  } else {
+    deployer.deploy(MultiCall);
+  }
 }
 
 async function deployInterestSetters(deployer, network) {
@@ -196,7 +206,7 @@ async function deployInterestSetters(deployer, network) {
     await deployer.deploy(TestInterestSetter);
   }
   await Promise.all([
-    deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network)),
+    deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network))
   ]);
 }
 
@@ -246,6 +256,7 @@ async function deployPriceOracles(deployer, network) {
       params.tokenDecimals,
       params.tokenPairs,
       params.aggregatorDecimals,
+      getChainlinkFlags(network),
     ),
   ]);
 }
@@ -271,6 +282,11 @@ async function deploySecondLayer(deployer, network, accounts) {
     dolomiteMargin.address,
   );
 
+  await deployer.deploy(
+    DepositWithdrawalProxy,
+    dolomiteMargin.address,
+  );
+
   const dolomiteAmmFactory = await deployer.deploy(
     DolomiteAmmFactory,
     getSenderAddress(network, accounts),
@@ -291,6 +307,18 @@ async function deploySecondLayer(deployer, network, accounts) {
     expiry.address,
   );
 
+  if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
+    await deployer.deploy(
+      TestAmmRebalancerProxy,
+      dolomiteMargin.address,
+      dolomiteAmmFactory.address,
+    );
+    await deployer.deploy(TestUniswapAmmRebalancerProxy);
+  }
+  if (isDevNetwork(network)) {
+    await deployer.deploy(TestUniswapV3MultiRouter);
+  }
+
   if (isDevNetwork(network)) {
     const uniswapV2Router = await UniswapV2Router02.deployed();
     await deployer.deploy(
@@ -300,7 +328,6 @@ async function deploySecondLayer(deployer, network, accounts) {
       [uniswapV2Router.address],
       [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
     );
-    await AmmRebalancerProxyV1.deployed();
   } else {
     await deployer.deploy(
       AmmRebalancerProxyV1,
@@ -309,7 +336,6 @@ async function deploySecondLayer(deployer, network, accounts) {
       [],
       [],
     );
-    await AmmRebalancerProxyV1.deployed();
   }
 
   if (isDevNetwork(network) || isMaticTest(network) || isArbitrumTest(network)) {
@@ -320,6 +346,12 @@ async function deploySecondLayer(deployer, network, accounts) {
     );
     await deployer.deploy(TestUniswapAmmRebalancerProxy);
   }
+  await deployer.deploy(
+    AmmRebalancerProxyV2,
+    dolomiteMargin.address,
+    dolomiteAmmFactory.address,
+    getUniswapV3MultiRouter(network, TestUniswapV3MultiRouter),
+  );
 
   await Promise.all([
     deployer.deploy(
@@ -367,6 +399,10 @@ async function deploySecondLayer(deployer, network, accounts) {
     ),
     dolomiteMargin.ownerSetGlobalOperator(
       TransferProxy.address,
+      true,
+    ),
+    dolomiteMargin.ownerSetGlobalOperator(
+      DepositWithdrawalProxy.address,
       true,
     ),
     dolomiteMargin.ownerSetGlobalOperator(

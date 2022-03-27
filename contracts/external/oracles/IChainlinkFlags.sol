@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2022 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,8 +16,14 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity ^0.5.7;
 
-const migration = deployer => deployer.deploy(Migrations);
 
-module.exports = migration
+/**
+ * @title IChainlinkFlags
+ * @author Dolomite
+ */
+interface IChainlinkFlags {
+
+    function getFlag(address subject) external view returns (bool);
+}

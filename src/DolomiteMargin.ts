@@ -22,6 +22,7 @@ import { Contracts } from './lib/Contracts';
 import { Interest } from './lib/Interest';
 import { Admin } from './modules/Admin';
 import { AmmRebalancerProxyV1 } from './modules/AmmRebalancerProxyV1';
+import { AmmRebalancerProxyV2 } from './modules/AmmRebalancerProxyV2';
 import { DolomiteAmmFactory } from './modules/DolomiteAmmFactory';
 import { DolomiteAmmPair } from './modules/DolomiteAmmPair';
 import { DolomiteAmmRouterProxy } from './modules/DolomiteAmmRouterProxy';
@@ -48,6 +49,8 @@ import {
   Networks,
 } from './types';
 import { MultiCall } from './modules/MultiCall';
+import { ArbitrumGasInfo } from './modules/ArbitrumGasInfo';
+import { DepositProxy } from './modules/DepositProxy';
 
 export class DolomiteMargin {
   public contracts: Contracts;
@@ -66,8 +69,11 @@ export class DolomiteMargin {
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxyV1: AmmRebalancerProxyV1;
+  public ammRebalancerProxyV2: AmmRebalancerProxyV2;
+  public depositProxy: DepositProxy;
   public transferProxy: TransferProxy;
   public multiCall: MultiCall;
+  public arbitrumGasInfo: ArbitrumGasInfo;
   public permissions: Permissions;
   public logs: Logs;
   public operation: Operation;
@@ -115,8 +121,11 @@ export class DolomiteMargin {
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.liquidatorProxyWithAmm = new LiquidatorProxyWithAmm(this.contracts);
     this.ammRebalancerProxyV1 = new AmmRebalancerProxyV1(this.contracts);
+    this.ammRebalancerProxyV2 = new AmmRebalancerProxyV2(this.contracts);
+    this.depositProxy = new DepositProxy(this.contracts);
     this.transferProxy = new TransferProxy(this.contracts);
     this.multiCall = new MultiCall(this.contracts);
+    this.arbitrumGasInfo = new ArbitrumGasInfo(this.contracts);
     this.dolomiteAmmFactory = new DolomiteAmmFactory(this.contracts);
     this.dolomiteAmmRouterProxy = new DolomiteAmmRouterProxy(this.contracts);
     this.permissions = new Permissions(this.contracts);

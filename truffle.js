@@ -102,7 +102,6 @@ module.exports = {
       ),
       gasPrice: 5e9,
       gas: 7900000,
-      confirmations: 1,
       timeoutBlocks: 5000,
       networkCheckTimeout: 99999,
     },
@@ -110,13 +109,12 @@ module.exports = {
       network_id: '42161',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        'https://arb1.arbitrum.io/rpc',
+        process.env.NODE_URL,
         0,
         1,
       ),
-      gasPrice: 5000000000,
-      gas: 7900000,
-      confirmations: 1,
+      gasPrice: 1000000000, // 1 gwei
+      gas: 100000000, // 100M gas
       timeoutBlocks: 5000,
       networkCheckTimeout: 99999,
     },
@@ -124,19 +122,19 @@ module.exports = {
       network_id: '421611',
       provider: () => new HDWalletProvider(
         [process.env.DEPLOYER_PRIVATE_KEY],
-        "https://rinkeby.arbitrum.io/rpc",
+        process.env.NODE_URL,
         0,
         1,
       ),
-      gasPrice: 5e9,
-      gas: 7900000,
-      confirmations: 1,
+      gasPrice: 100000000, // 0.1 gwei
+      gas: 100000000, // 100M gas
       timeoutBlocks: 5000,
       networkCheckTimeout: 99999,
     },
   },
-  plugins: ['truffle-plugin-verify', '@float-capital/solidity-coverage'],
+  plugins: ['truffle-plugin-verify', 'solidity-coverage'],
   api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY,
     arbiscan: process.env.ARBISCAN_API_KEY,
     optimistic_etherscan: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
     polygonscan: process.env.POLYGONSCAN_API_KEY,

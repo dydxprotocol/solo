@@ -125,7 +125,7 @@ describe('AmmRebalancerProxyV1', () => {
           [dolomiteMargin.testing.tokenA.address, dolomiteMargin.testing.tokenB.address],
           { from: owner1 },
         );
-        console.log('performRebalance gas used', txResult.gasUsed.toString());
+        console.log('\tperformRebalance gas used', txResult.gasUsed.toString());
 
         const accountWeiANew = await dolomiteMargin.getters.getAccountWei(
           owner1,
@@ -141,7 +141,7 @@ describe('AmmRebalancerProxyV1', () => {
           ),
         );
 
-        console.log('profit', accountWeiANew.minus(accountWeiA).toFixed(0));
+        console.log('\tArbitrage profit', accountWeiANew.minus(accountWeiA).toFixed(0));
       });
     });
   });
@@ -175,7 +175,7 @@ async function addDolomiteLiquidity(
       return { gasUsed: 0 };
     });
 
-  console.log('#addDolomiteLiquidity gas used  ', result.gasUsed.toString());
+  console.log('\t#addDolomiteLiquidity gas used  ', result.gasUsed.toString());
 
   return result;
 }
@@ -215,7 +215,7 @@ async function addUniswapLiquidity(
       return { gasUsed: 0 };
     });
 
-  console.log('#addUniswapLiquidity gas used  ', result.gasUsed.toString());
+  console.log('\t#addUniswapLiquidity gas used  ', result.gasUsed.toString());
 
   return result;
 }

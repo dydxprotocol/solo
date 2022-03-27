@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2022 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,8 +16,21 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity ^0.5.7;
 
-const migration = deployer => deployer.deploy(Migrations);
+import "./TestToken.sol";
 
-module.exports = migration
+
+contract TestUniswapV3MultiRouter {
+
+    /**
+     * This function is called blindly by `AmmRebalancerProxyV2` via the pass through "_uniswapV3CallData" variable
+     */
+    function call(
+        address token,
+        uint amountOut
+    ) external {
+        TestToken(token).addBalance(msg.sender, amountOut);
+    }
+
+}

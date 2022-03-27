@@ -27,6 +27,8 @@ import PromiEvent from 'web3/promiEvent';
 import { Provider } from 'web3/providers';
 import { TransactionReceipt } from 'web3/types';
 import ammRebalancerProxyV1Json from '../../build/published_contracts/AmmRebalancerProxyV1.json';
+import ammRebalancerProxyV2Json from '../../build/published_contracts/AmmRebalancerProxyV2.json';
+import arbitrumGasInfoJson from '../../build/published_contracts/IArbitrumGasInfo.json';
 import chainlinkPriceOracleV1Json from '../../build/published_contracts/ChainlinkPriceOracleV1.json';
 import dolomiteAmmFactoryJson from '../../build/published_contracts/DolomiteAmmFactory.json';
 import dolomiteAmmPairJson from '../../build/published_contracts/DolomiteAmmPair.json';
@@ -46,7 +48,9 @@ import polynomialInterestSetterJson from '../../build/published_contracts/Polyno
 import signedOperationProxyJson from '../../build/published_contracts/SignedOperationProxy.json';
 import simpleFeeOwnerJson from '../../build/published_contracts/SimpleFeeOwner.json';
 import transferProxyJson from '../../build/published_contracts/TransferProxy.json';
+import depositProxyJson from '../../build/published_contracts/DepositWithdrawalProxy.json';
 import multiCallJson from '../../build/published_contracts/MultiCall.json';
+import arbitrumMultiCallJson from '../../build/published_contracts/ArbitrumMultiCall.json';
 import wethJson from '../../build/published_contracts/Weth.json';
 import testUniswapAmmRebalancerJson from '../../build/published_contracts/TestUniswapAmmRebalancerProxy.json';
 
@@ -65,10 +69,12 @@ import { IPriceOracle as PriceOracle } from '../../build/wrappers/IPriceOracle';
 import { LiquidatorProxyV1 as LiquidatorProxyV1 } from '../../build/wrappers/LiquidatorProxyV1';
 import { LiquidatorProxyV1WithAmm as LiquidatorProxyV1WithAmm } from '../../build/wrappers/LiquidatorProxyV1WithAmm';
 import { MultiCall } from '../../build/wrappers/MultiCall';
+import { ArbitrumMultiCall } from '../../build/wrappers/ArbitrumMultiCall';
 import { PayableProxy as PayableProxy } from '../../build/wrappers/PayableProxy';
 import { PolynomialInterestSetter } from '../../build/wrappers/PolynomialInterestSetter';
 import { SignedOperationProxy } from '../../build/wrappers/SignedOperationProxy';
 import { SimpleFeeOwner } from '../../build/wrappers/SimpleFeeOwner';
+import { DepositWithdrawalProxy } from '../../build/wrappers/DepositWithdrawalProxy';
 import { TransferProxy } from '../../build/wrappers/TransferProxy';
 import { Weth } from '../../build/wrappers/Weth';
 import { TestUniswapAmmRebalancerProxy } from '../../build/wrappers/TestUniswapAmmRebalancerProxy';
@@ -84,6 +90,8 @@ import {
 import {
   SUBTRACT_GAS_LIMIT,
 } from './Constants';
+import { AmmRebalancerProxyV2 } from '../../build/wrappers/AmmRebalancerProxyV2';
+import { IArbitrumGasInfo } from '../../build/wrappers/IArbitrumGasInfo';
 
 interface CallableTransactionObject<T> {
   call(tx?: Tx, blockNumber?: number): Promise<T>;
@@ -102,13 +110,17 @@ export class Contracts {
   public liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   public dolomiteAmmRouterProxy: DolomiteAmmRouterProxy;
   public ammRebalancerProxyV1: AmmRebalancerProxyV1;
+  public ammRebalancerProxyV2: AmmRebalancerProxyV2;
+  public arbitrumGasInfo: IArbitrumGasInfo;
   public polynomialInterestSetter: PolynomialInterestSetter;
   public doubleExponentInterestSetter: DoubleExponentInterestSetter;
   public chainlinkPriceOracleV1: ChainlinkPriceOracleV1;
   public dolomiteAmmFactory: DolomiteAmmFactory;
   public simpleFeeOwner: SimpleFeeOwner;
   public transferProxy: TransferProxy;
+  public depositProxy: DepositWithdrawalProxy;
   public multiCall: MultiCall;
+  public arbitrumMultiCall: ArbitrumMultiCall;
   public weth: Weth;
   public testUniswapAmmRebalancer: TestUniswapAmmRebalancerProxy;
   protected web3: Web3;
@@ -164,6 +176,12 @@ export class Contracts {
     this.ammRebalancerProxyV1 = new this.web3.eth.Contract(
       ammRebalancerProxyV1Json.abi,
     ) as AmmRebalancerProxyV1;
+    this.ammRebalancerProxyV2 = new this.web3.eth.Contract(
+      ammRebalancerProxyV2Json.abi,
+    ) as AmmRebalancerProxyV2;
+    this.arbitrumGasInfo = new this.web3.eth.Contract(
+      arbitrumGasInfoJson.abi,
+    ) as IArbitrumGasInfo;
     this.polynomialInterestSetter = new this.web3.eth.Contract(
       polynomialInterestSetterJson.abi,
     ) as PolynomialInterestSetter;
@@ -180,7 +198,9 @@ export class Contracts {
       simpleFeeOwnerJson.abi,
     ) as SimpleFeeOwner;
     this.transferProxy = new this.web3.eth.Contract(transferProxyJson.abi) as TransferProxy;
+    this.depositProxy = new this.web3.eth.Contract(depositProxyJson.abi) as DepositWithdrawalProxy;
     this.multiCall = new this.web3.eth.Contract(multiCallJson.abi) as MultiCall;
+    this.arbitrumMultiCall = new this.web3.eth.Contract(arbitrumMultiCallJson.abi) as ArbitrumMultiCall;
     this.weth = new this.web3.eth.Contract(wethJson.abi) as Weth;
     this.testUniswapAmmRebalancer = new this.web3.eth.Contract(
       testUniswapAmmRebalancerJson.abi,
@@ -245,6 +265,8 @@ export class Contracts {
         json: dolomiteAmmRouterProxyJson,
       },
       { contract: this.ammRebalancerProxyV1, json: ammRebalancerProxyV1Json },
+      { contract: this.ammRebalancerProxyV2, json: ammRebalancerProxyV2Json },
+      { contract: this.arbitrumGasInfo, json: arbitrumGasInfoJson },
       {
         contract: this.polynomialInterestSetter,
         json: polynomialInterestSetterJson,
@@ -260,7 +282,9 @@ export class Contracts {
         json: chainlinkPriceOracleV1Json,
       },
       { contract: this.transferProxy, json: transferProxyJson },
+      { contract: this.depositProxy, json: depositProxyJson },
       { contract: this.multiCall, json: multiCallJson },
+      { contract: this.arbitrumMultiCall, json: arbitrumMultiCallJson },
       { contract: this.weth, json: wethJson },
       { contract: this.testUniswapAmmRebalancer, json: testUniswapAmmRebalancerJson },
     ];
@@ -289,13 +313,17 @@ export class Contracts {
     this.liquidatorProxyV1WithAmm.options.from = account;
     this.dolomiteAmmRouterProxy.options.from = account;
     this.ammRebalancerProxyV1.options.from = account;
+    this.ammRebalancerProxyV2.options.from = account;
+    this.arbitrumGasInfo.options.from = account;
     this.polynomialInterestSetter.options.from = account;
     this.doubleExponentInterestSetter.options.from = account;
     this.chainlinkPriceOracleV1.options.from = account;
     this.dolomiteAmmFactory.options.from = account;
     this.simpleFeeOwner.options.from = account;
     this.transferProxy.options.from = account;
+    this.depositProxy.options.from = account;
     this.multiCall.options.from = account;
+    this.arbitrumMultiCall.options.from = account;
     this.weth.options.from = account;
     this.testUniswapAmmRebalancer.options.from = account;
   }

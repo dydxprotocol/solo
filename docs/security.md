@@ -4,8 +4,8 @@
 
 ### DolomiteMargin
 
-The DolomiteMargin smart contracts were audited independently by both
-[Zeppelin Solutions](https://zeppelin.solutions/) and Bramah Systems.
+The DolomiteMargin smart contracts were audited independently by
+[Zeppelin Solutions](https://zeppelin.solutions/), Bramah Systems, and [SECBIT Labs](https://secbit.io).
 
 **[Zeppelin Solutions Audit Report](https://blog.zeppelin.solutions/solo-margin-protocol-audit-30ac2aaf6b10)**
 

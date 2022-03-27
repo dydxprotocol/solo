@@ -25,10 +25,10 @@ function getDaiAddress(network, TokenB) {
     return '0x4448d5F172FC3073C458d72C8Ee97A81cd824962';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find DAI for Arbitrum');
+    return '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1';
   }
   if (isArbitrumTest(network)) {
-    throw new Error('Cannot find DAI for Arbitrum Test');
+    return '0x362eD516f2E8eEab895043AF976864126BdD9C7b';
   }
   throw new Error('Cannot find DAI');
 }
@@ -50,10 +50,10 @@ function getLinkAddress(network, TokenE) {
     return '0x326C977E6efc84E512bB9C30f76E30c160eD06FB';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find LINK for Arbitrum');
+    return '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4';
   }
   if (isArbitrumTest(network)) {
-    throw new Error('Cannot find LINK for Arbitrum Test');
+    return '0x615fBe6372676474d9e6933d310469c9b68e9726';
   }
   throw new Error('Cannot find LINK');
 }
@@ -72,7 +72,7 @@ function getLrcAddress(network, TokenF) {
     return '0xd64cD7A5Cd54C90be14B601dEe83b87546f975c7';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find LRC for Arbitrum');
+    return '0x46d0cE7de6247b0A95f67b43B589b4041BaE7fbE'
   }
   if (isArbitrumTest(network)) {
     throw new Error('Cannot find LRC for Arbitrum Test');
@@ -122,10 +122,10 @@ function getUsdcAddress(network, TokenA) {
     return '0xfb5755567e071663F2DA276aC1D6167B093f00f4';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find USDC for Arbitrum');
+    return '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8';
   }
   if (isArbitrumTest(network)) {
-    throw new Error('Cannot find USDC for Arbitrum Test');
+    return '0xf5ba7ca17aF300F52112C4CC8A7AB1A0482e84D5';
   }
   throw new Error('Cannot find USDC');
 }
@@ -147,10 +147,10 @@ function getWbtcAddress(network, TokenD) {
     return '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find WBTC for Arbitrum');
+    return '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f';
   }
   if (isArbitrumTest(network)) {
-    throw new Error('Cannot find WBTC for Arbitrum');
+    return '0x48c40e8B9F45E199238e3131B232ADf12d88eA2C';
   }
   throw new Error('Cannot find WBTC');
 }
@@ -172,10 +172,10 @@ function getWethAddress(network, WETH9) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
   }
   if (isArbitrum(network)) {
-    throw new Error('Cannot find WETH for Arbitrum');
+    return '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
   }
   if (isArbitrumTest(network)) {
-    throw new Error('Cannot find WETH for Arbitrum Test');
+    return '0x267dc5f342e139b5E407684e3A731aeaE8A71E3e';
   }
   throw new Error('Cannot find WETH');
 }

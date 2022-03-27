@@ -3,4 +3,4 @@
 - [HTTP API](api.md "Dolomite Documentation - HTTP API")
 - [Trading](trading.md "Dolomite Documentation - Trading")
 - [Smart Contracts](contracts.md "Dolomite Documentation - Smart Contracts")
-- [Security](security-page.md "Dolomite Documentation - Security")
+- [Security](security.md "Dolomite Documentation - Security")

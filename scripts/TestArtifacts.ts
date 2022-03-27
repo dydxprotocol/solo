@@ -29,6 +29,7 @@ import { default as UniswapV2Router02 } from '../build/contracts/UniswapV2Router
 import { default as TestRecyclableToken } from '../build/contracts/TestRecyclableToken.json';
 import { default as TestTrader } from '../build/contracts/TestTrader.json';
 import { default as TestAmmRebalancerProxy } from '../build/contracts/TestAmmRebalancerProxy.json';
+import { default as TestUniswapV3MultiRouter } from '../build/contracts/TestUniswapV3MultiRouter.json';
 
 export default {
   CustomTestToken,
@@ -60,4 +61,5 @@ export default {
   UniswapV2Router02,
   TestRecyclableToken,
   TestTrader,
+  TestUniswapV3MultiRouter,
 };

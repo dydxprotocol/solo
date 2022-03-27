@@ -12,7 +12,7 @@
 - [Subgraph](subgraph.md "Dolomite Documentation - Subgraph")
 - [Smart Contracts](contracts.md "Dolomite Documentation - Smart Contracts")
 - [Trading](trading.md "Dolomite Documentation - Trading")
-- [Security](security-page.md "Dolomite Documentation - Security")
+- [Security](security.md "Dolomite Documentation - Security")
 
 ## Additional Communication Channels
 

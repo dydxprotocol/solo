@@ -20,5 +20,13 @@ artifacts/
 .coveralls.yml
 
 scripts/set-expiry.sh
-scripts/verify-contracts.sh
+scripts/verify-arbitrum-one-contracts.sh
+scripts/verify-arbitrum-rinkeby-contracts.sh
+scripts/verify-mumbai-contracts.sh
 scripts/verify-amm-pair.sh
+
+verify-mainnet-contracts.sh
+
+contracts/external/rebalancers/*
+
+bfg-1.14.0.jar

@@ -1,6 +1,6 @@
 /*
 
-    Copyright 2019 dYdX Trading Inc.
+    Copyright 2020 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,8 +16,18 @@
 
 */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity ^0.5.7;
 
-const migration = deployer => deployer.deploy(Migrations);
-
-module.exports = migration
+/**
+ * @title IChainlinkAggregator
+ * @author Dolomite
+ *
+ * Gets the latest price from the Chainlink Oracle Network. Amount of decimals depends on the base.
+ */
+interface IArbitrumSys {
+    /**
+    * @notice Get Arbitrum block number (distinct from L1 block number; Arbitrum genesis block has block number 0)
+    * @return block number as int
+     */
+    function arbBlockNumber() external view returns (uint);
+}

@@ -45,16 +45,27 @@ contract TestChainlinkPriceOracleV1 is ChainlinkPriceOracleV1 {
      *                              zero address means USD.
      * @param aggregatorDecimals    The number of decimals that the value has that comes back from the corresponding
      *                              Chainlink Aggregator.
+     * @param chainlinkFlagsOrNull  The contract for layer-2 that denotes whether or not Chainlink oracles are currently
+     *                              offline, meaning data is stale and any critical operations should *not* occur. If
+     *                              not on layer 2, this value can be set to `address(0)`.
      */
     constructor(
         address[] memory tokens,
         address[] memory chainlinkAggregators,
         uint8[] memory tokenDecimals,
         address[] memory tokenPairs,
-        uint8[] memory aggregatorDecimals
+        uint8[] memory aggregatorDecimals,
+        address chainlinkFlagsOrNull
     )
     public
-    ChainlinkPriceOracleV1(tokens, chainlinkAggregators, tokenDecimals, tokenPairs, aggregatorDecimals) {
+    ChainlinkPriceOracleV1(
+        tokens,
+        chainlinkAggregators,
+        tokenDecimals,
+        tokenPairs,
+        aggregatorDecimals,
+        chainlinkFlagsOrNull
+    ) {
         // solium-disable-line no-empty-blocks
     }
 
