@@ -1,0 +1,3 @@
+[submodule "contracts/external/rebalancers"]
+	path = contracts/external/rebalancers
+	url = https://github.com/dolomite-exchange/rebalancer-contracts
