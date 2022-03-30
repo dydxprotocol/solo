@@ -81,21 +81,21 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
     }
 
     function transfer(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
+        uint256 toAccountIndex,
         address token,
-        uint amount
+        uint256 amountWei
     )
         external
         nonReentrant
         isAuthorized(msg.sender)
     {
-        uint[] memory markets = new uint[](1);
+        uint256[] memory markets = new uint256[](1);
         markets[0] = DOLOMITE_MARGIN.getMarketIdByTokenAddress(token);
 
-        uint[] memory amounts = new uint[](1);
-        amounts[0] = amount;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amountWei;
 
         _transferMultiple(
             fromAccountIndex,
@@ -107,19 +107,19 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
     }
 
     function transferMultiple(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
+        uint256 toAccountIndex,
         address[] calldata tokens,
-        uint[] calldata amounts
+        uint256[] calldata amountsWei
     )
         external
         nonReentrant
         isAuthorized(msg.sender)
     {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN;
-        uint[] memory markets = new uint[](tokens.length);
-        for (uint i = 0; i < markets.length; i++) {
+        uint256[] memory markets = new uint256[](tokens.length);
+        for (uint256 i = 0; i < markets.length; i++) {
             markets[i] = dolomiteMargin.getMarketIdByTokenAddress(tokens[i]);
         }
 
@@ -128,16 +128,16 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
             to,
             toAccountIndex,
             markets,
-            amounts
+            amountsWei
         );
     }
 
     function transferMultipleWithMarkets(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
-        uint[] calldata markets,
-        uint[] calldata amounts
+        uint256 toAccountIndex,
+        uint256[] calldata markets,
+        uint256[] calldata amountsWei
     )
         external
         nonReentrant
@@ -148,16 +148,16 @@ contract TransferProxy is ITransferProxy, OnlyDolomiteMargin, ReentrancyGuard {
             to,
             toAccountIndex,
             markets,
-            amounts
+            amountsWei
         );
     }
 
     function _transferMultiple(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
-        uint[] memory markets,
-        uint[] memory amounts
+        uint256 toAccountIndex,
+        uint256[] memory markets,
+        uint256[] memory amounts
     )
         internal
     {

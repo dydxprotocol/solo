@@ -29,19 +29,19 @@ interface ITransferProxy {
     function isCallerTrusted(address caller) external view returns (bool);
 
     function transfer(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
+        uint256 toAccountIndex,
         address token,
-        uint amount
+        uint256 amountWei
     ) external;
 
     function transferMultiple(
-        uint fromAccountIndex,
+        uint256 fromAccountIndex,
         address to,
-        uint toAccountIndex,
+        uint256 toAccountIndex,
         address[] calldata tokens,
-        uint[] calldata amounts
+        uint256[] calldata amountsWei
     ) external;
 
     function transferMultipleWithMarkets(
@@ -49,6 +49,6 @@ interface ITransferProxy {
         address to,
         uint toAccountIndex,
         uint[] calldata markets,
-        uint[] calldata amounts
+        uint[] calldata amountsWei
     ) external;
 }

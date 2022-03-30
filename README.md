@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://dolomite.io/assets/img/logo.png" width="256" />
+<img src="./docs/dolomite-logo.png" width="256" />
 </p>
 
 <div align="center">
@@ -14,6 +14,9 @@
   </a>
   <a href='https://github.com/dolomite-exchange/dolomite-margin/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/Apache--2.0-llicense-red?longCache=true' alt='License' />
+  </a>
+  <a href='https://discord.com/invite/uDRzrB2YgP' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/chat-on%20discord-7289DA.svg?longCache=true' alt='Discord' />
   </a>
   <a href='https://t.me/dolomite_official' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />
@@ -158,6 +161,7 @@ Documentation can be found at [docs.dolomite.io](https://docs.dolomite.io).
 | [`SimpleFeeOwner`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/amm/SimpleFeeOwner.sol)                                         | Owns the admin fees that are accrued by AMM liquidity providers (LPs)                                                                                                                                     | [0xE82D868AbB3eb97ee588D2f86289d37edb8dc502](https://testnet.arbiscan.io/address/0xE82D868AbB3eb97ee588D2f86289d37edb8dc502) |
 | [`TransferProxy`](https://github.com/dolomite-exchange/dolomite-margin/blob/master/contracts/external/proxies/TransferProxy.sol)                                       | Contract for transferring funds within Dolomite to other users                                                                                                                                            | [0x063611DcdB17F7cCDb053574D63eCd12c508D1ab](https://testnet.arbiscan.io/address/0x063611DcdB17F7cCDb053574D63eCd12c508D1ab) |
 
+
 ## Security
 
 ### Independent Audits
@@ -172,7 +176,7 @@ The original DolomiteMargin smart contracts were audited independently by both
 Some changes discussed above were audited by [SECBIT Labs](https://secbit.io/). We plan on performing at least one more 
 audit of the system before the new *Recyclable* feature is used in production.
 
-**[TODO add SECBIT audit link](https://)**
+**[SECBIT Audit Report](./docs/Dolomite_Protocol_V2_Report_EN.pdf)**
 
 ### Code Coverage
 
@@ -268,4 +272,4 @@ changes or the motivation behind any additions. All pull requests should contain
 
 ## License
 
-[Apache-2.0](./blob/master/LICENSE)
+[Apache-2.0](./LICENSE)
