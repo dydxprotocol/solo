@@ -25,6 +25,7 @@ import { IPriceOracle } from "../interfaces/IPriceOracle.sol";
 import { IRecyclable } from "../interfaces/IRecyclable.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Interest } from "../lib/Interest.sol";
+import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
@@ -39,6 +40,7 @@ import { Types } from "../lib/Types.sol";
  * Administrative functions to keep the protocol updated
  */
 library AdminImpl {
+    using Math for uint256;
     using Storage for Storage.State;
     using Token for address;
     using Types for Types.Wei;
@@ -61,6 +63,10 @@ library AdminImpl {
     event LogWithdrawUnsupportedTokens(
         address token,
         uint256 amount
+    );
+
+    event LogSetMaxNumberOfMarketsWithBalancesAndDebt(
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
     );
 
     event LogAddMarket(
@@ -176,6 +182,19 @@ library AdminImpl {
     }
 
     // ============ Market Functions ============
+
+    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+        Storage.State storage state,
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
+    ) public {
+        Require.that(
+            maxNumberOfMarketsWithBalancesAndDebt >= 2,
+            FILE,
+            "invalid max # of non-zero bals"
+        );
+        state.maxNumberOfMarketsWithBalancesAndDebt = maxNumberOfMarketsWithBalancesAndDebt.to128();
+        emit LogSetMaxNumberOfMarketsWithBalancesAndDebt(maxNumberOfMarketsWithBalancesAndDebt);
+    }
 
     function ownerAddMarket(
         Storage.State storage state,

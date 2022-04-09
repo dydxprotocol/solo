@@ -4,8 +4,8 @@ import {
   AmountDenomination,
   AmountReference,
   TxResult,
+  INTEGERS,
 } from '../src';
-import { INTEGERS } from '../src/lib/Constants';
 import { stringToDecimal } from '../src/lib/Helpers';
 import { getDolomiteMargin } from './helpers/DolomiteMargin';
 import {

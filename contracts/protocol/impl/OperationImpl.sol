@@ -34,7 +34,9 @@ import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
+import { CallImpl } from "./CallImpl.sol";
 import { LiquidateOrVaporizeImpl } from "./LiquidateOrVaporizeImpl.sol";
+import { TransferImpl } from "./TransferImpl.sol";
 
 
 /**
@@ -234,7 +236,7 @@ library OperationImpl {
                 _withdraw(state, Actions.parseWithdrawArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Transfer) {
-                _transfer(state, Actions.parseTransferArgs(accounts, action));
+                TransferImpl.transfer(state, Actions.parseTransferArgs(accounts, action));
             }
             else if (actionType == Actions.ActionType.Buy) {
                 _buy(state, Actions.parseBuyArgs(accounts, action));
@@ -253,7 +255,7 @@ library OperationImpl {
                 LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
             }
             else if (actionType == Actions.ActionType.Call) {
-                _call(state, Actions.parseCallArgs(accounts, action));
+                CallImpl.call(state, Actions.parseCallArgs(accounts, action));
             }
         }
     }
@@ -402,43 +404,6 @@ library OperationImpl {
         );
 
         Events.logWithdraw(
-            state,
-            args,
-            deltaWei
-        );
-    }
-
-    function _transfer(
-        Storage.State storage state,
-        Actions.TransferArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.accountOne, msg.sender);
-        state.requireIsOperator(args.accountTwo, msg.sender);
-
-        (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
-        ) = state.getNewParAndDeltaWei(
-            args.accountOne,
-            args.market,
-            args.amount
-        );
-
-        state.setPar(
-            args.accountOne,
-            args.market,
-            newPar
-        );
-
-        state.setParFromDeltaWei(
-            args.accountTwo,
-            args.market,
-            deltaWei.negative()
-        );
-
-        Events.logTransfer(
             state,
             args,
             deltaWei
@@ -645,22 +610,4 @@ library OperationImpl {
             outputWei
         );
     }
-
-    function _call(
-        Storage.State storage state,
-        Actions.CallArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.account, msg.sender);
-
-        ICallee(args.callee).callFunction(
-            msg.sender,
-            args.account,
-            args.data
-        );
-
-        Events.logCall(args);
-    }
-
 }

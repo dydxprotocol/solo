@@ -102,6 +102,14 @@ contract Getters is
         return g_state.riskLimits;
     }
 
+    function getMaxNumberOfMarketsWithBalancesAndDebt()
+        public
+        view
+        returns (uint256)
+    {
+        return g_state.maxNumberOfMarketsWithBalancesAndDebt;
+    }
+
     // ============ Getters for Markets ============
 
     function getNumMarkets()

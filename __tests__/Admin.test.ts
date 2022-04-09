@@ -245,6 +245,35 @@ describe('Admin', () => {
 
   // ============ Market Functions ============
 
+  describe('#setMaxNumberOfMarketsWithBalancesAndDebt', () => {
+    it('Successfully sets value', async () => {
+      const txResult = await dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(100, { from: admin });
+      const logs = dolomiteMargin.logs.parseLogs(txResult);
+      expect(logs.length).toEqual(1);
+      expect(logs[0].name).toEqual('LogSetMaxNumberOfMarketsWithBalancesAndDebt');
+      expect(logs[0].args.maxNumberOfMarketsWithBalancesAndDebt).toEqual(new BigNumber('100'));
+      expect(await dolomiteMargin.getters.getMaxNumberOfMarketsWithBalancesAndDebt()).toEqual(new BigNumber('100'));
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(
+        dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(
+          100,
+          { from: nonAdmin },
+        ),
+      );
+    });
+
+    it('Fails for when too low', async () => {
+      await expectThrow(
+        dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(
+          1,
+          { from: admin },
+        ),
+      );
+    });
+  });
+
   describe('#ownerAddMarket', () => {
     const token = ADDRESSES.TEST[2];
 

@@ -88,6 +88,26 @@ contract Admin is
     // ============ Market Functions ============
 
     /**
+     * Sets the number of non-zero balances an account may have within the same `accountIndex`, if the account has any
+     * debt. This ensures a user cannot DOS the system by filling their account with non-zero balances (which linearly
+     * increases gas costs when checking collateralization) and disallowing themselves to close the position, because
+     * the number of gas units needed to process their transaction exceed the block's gas limit. In turn, this would
+     * prevent the user from also being liquidated, causing the all of the capital to be "stuck" in the position.
+     */
+    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+            g_state,
+            maxNumberOfMarketsWithBalancesAndDebt
+        );
+    }
+
+    /**
      * Add a new market to DolomiteMargin. Must be for a previously-unsupported ERC20 token.
      */
     function ownerAddMarket(

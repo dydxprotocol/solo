@@ -139,6 +139,16 @@ export class Getters {
     };
   }
 
+  public async getMaxNumberOfMarketsWithBalancesAndDebt(
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteMargin.methods.getMaxNumberOfMarketsWithBalancesAndDebt(),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
   public async getNumMarkets(
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {

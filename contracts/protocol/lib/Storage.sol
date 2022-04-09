@@ -142,7 +142,11 @@ library Storage {
 
         // marketId => Market
         mapping (uint256 => Market) markets;
+
+        // token address => marketId
         mapping (address => uint256) tokenToMarketId;
+
+        // Linked list from marketId to the next recycled market id
         mapping(uint256 => uint256) recycledMarketIds;
 
         // owner => account number => Account
@@ -159,6 +163,10 @@ library Storage {
 
         // mutable risk parameters of the system
         RiskParams riskParams;
+
+        // The maximum number of markets a user can have a non-zero balance for, when the account has any debt.
+        // This variable was not added to RiskParams because it would break implementations that read the variable.
+        uint256 maxNumberOfMarketsWithBalancesAndDebt;
 
         // immutable risk limits of the system
         RiskLimits riskLimits;
@@ -288,6 +296,17 @@ library Storage {
     returns (uint256[] memory)
     {
         return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
+    }
+
+    function getNumberOfMarketsWithBalances(
+        Storage.State storage state,
+        Account.Info memory account
+    )
+    internal
+    view
+    returns (uint256)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.length();
     }
 
     function getNumberOfMarketsWithBorrow(
@@ -432,6 +451,14 @@ library Storage {
             // The user does not have a balance with a borrow amount, so they must be collateralized
             return true;
         }
+
+        Require.that(
+            state.getNumberOfMarketsWithBalances(account) <= state.maxNumberOfMarketsWithBalancesAndDebt,
+            FILE,
+            "Too many non-zero balances",
+            account.owner,
+            account.number
+        );
 
         // get account values (adjusted for liquidity)
         (

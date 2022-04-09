@@ -33,6 +33,18 @@ export class Admin {
     );
   }
 
+  public async setMaxNumberOfMarketsWithBalancesAndDebt(
+    maxNumberOfMarketsWithBalancesAndDebt: number,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteMargin.methods.ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+        maxNumberOfMarketsWithBalancesAndDebt,
+      ),
+      options,
+    );
+  }
+
   // ============ Market Functions ============
 
   public async addMarket(

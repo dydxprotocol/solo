@@ -46,11 +46,13 @@ contract DolomiteMargin is
 
     constructor(
         Storage.RiskParams memory riskParams,
-        Storage.RiskLimits memory riskLimits
+        Storage.RiskLimits memory riskLimits,
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
     )
         public
     {
         g_state.riskParams = riskParams;
         g_state.riskLimits = riskLimits;
+        g_state.maxNumberOfMarketsWithBalancesAndDebt = maxNumberOfMarketsWithBalancesAndDebt;
     }
 }

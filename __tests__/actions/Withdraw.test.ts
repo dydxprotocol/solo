@@ -3,23 +3,17 @@ import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
 import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
 import { expectThrow } from '../../src/lib/Expect';
-import {
-  AccountStatus,
-  address,
-  AmountDenomination,
-  AmountReference,
-  Integer,
-  Withdraw,
-} from '../../src';
+import { AccountStatus, address, AmountDenomination, AmountReference, Integer, INTEGERS, Withdraw } from '../../src';
 
 let who: address;
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
+let admin: address;
 let operator: address;
 const accountNumber = INTEGERS.ZERO;
 const market = INTEGERS.ZERO;
+const otherMarket = new BigNumber(1);
 const collateralMarket = new BigNumber(2);
 const collateralAmount = new BigNumber(1000000);
 const zero = new BigNumber(0);
@@ -42,6 +36,7 @@ describe('Withdraw', () => {
     dolomiteMargin = r.dolomiteMargin;
     accounts = r.accounts;
     who = dolomiteMargin.getDefaultAccount();
+    admin = accounts[0];
     operator = accounts[6];
     defaultGlob = {
       primaryAccountOwner: who,
@@ -545,6 +540,16 @@ describe('Withdraw', () => {
 
   it('Fails if withdrawing more tokens than exist', async () => {
     await expectWithdrawRevert({}, 'Token: transfer failed');
+  });
+
+  it('Fails if the user has too many non-zero balances and has debt', async () => {
+    await issueTokensToDolomiteMargin(wei);
+    await dolomiteMargin.testing.setAccountBalance(who, accountNumber, otherMarket, wei);
+    await dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(2, { from: admin });
+    await expectWithdrawRevert(
+      {},
+      `Storage: Too many non-zero balances <${defaultGlob.primaryAccountOwner.toLowerCase()}, ${defaultGlob.primaryAccountId.toString()}>`,
+    );
   });
 });
 
