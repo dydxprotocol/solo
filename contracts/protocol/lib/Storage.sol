@@ -95,6 +95,11 @@ library Storage {
         // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
         // (when performing a liquidation between two markets)
         Decimal.D256 spreadPremium;
+
+        // The maximum amount that can be held by the protocol. This allows the protocol to cap any additional risk
+        // that is inferred by allowing borrowing against low-cap or assets with increased volatility. Settings this
+        // value to 0 is analogous to having no limit. This value can never be below 0.
+        Types.Wei maxWei;
     }
 
     // The global risk parameters that govern the health and security of the system
@@ -111,6 +116,9 @@ library Storage {
         // The minimum absolute borrow value of an account
         // There must be sufficient incentivize to liquidate undercollateralized accounts
         Monetary.Value minBorrowedValue;
+
+        // The maximum number of markets a user can have a non-zero balance for, when the account has any debt.
+        uint256 maxNumberOfMarketsWithBalancesAndDebt;
     }
 
     // The maximum RiskParam values that can be set
@@ -164,10 +172,6 @@ library Storage {
         // mutable risk parameters of the system
         RiskParams riskParams;
 
-        // The maximum number of markets a user can have a non-zero balance for, when the account has any debt.
-        // This variable was not added to RiskParams because it would break implementations that read the variable.
-        uint256 maxNumberOfMarketsWithBalancesAndDebt;
-
         // immutable risk limits of the system
         RiskLimits riskLimits;
     }
@@ -194,6 +198,17 @@ library Storage {
         returns (Types.TotalPar memory)
     {
         return state.markets[marketId].totalPar;
+    }
+
+    function getMaxWei(
+        Storage.State storage state,
+        uint256 marketId
+    )
+        internal
+        view
+        returns (Types.Wei memory)
+    {
+        return state.markets[marketId].maxWei;
     }
 
     function getIndex(
@@ -453,7 +468,7 @@ library Storage {
         }
 
         Require.that(
-            state.getNumberOfMarketsWithBalances(account) <= state.maxNumberOfMarketsWithBalancesAndDebt,
+            state.getNumberOfMarketsWithBalances(account) <= state.riskParams.maxNumberOfMarketsWithBalancesAndDebt,
             FILE,
             "Too many non-zero balances",
             account.owner,
@@ -802,24 +817,16 @@ library Storage {
                 uint nextSetBit = Bits.getLeastSignificantBit(bitmap);
                 uint marketId = Bits.getMarketIdFromBit(i, nextSetBit);
                 address token = state.getToken(marketId);
-                if (state.markets[marketId].isClosing) {
-                    cache.markets[counter++] = Cache.MarketInfo({
-                        marketId: marketId,
-                        token: token,
-                        isClosing: true,
-                        borrowPar: state.getTotalPar(marketId).borrow,
-                        price: state.fetchPrice(marketId, token)
-                    });
-                } else {
-                    // don't need the borrowPar if the market is not closing
-                    cache.markets[counter++] = Cache.MarketInfo({
-                        marketId: marketId,
-                        token: token,
-                        isClosing: false,
-                        borrowPar: 0,
-                        price: state.fetchPrice(marketId, token)
-                    });
-                }
+                Types.TotalPar memory totalPar = state.getTotalPar(marketId);
+                cache.markets[counter++] = Cache.MarketInfo({
+                    marketId: marketId,
+                    token: token,
+                    isClosing: state.markets[marketId].isClosing,
+                    borrowPar: totalPar.borrow,
+                    supplyPar: totalPar.supply,
+                    index: state.getIndex(marketId),
+                    price: state.fetchPrice(marketId, token)
+                });
 
                 // unset the set bit
                 bitmap = Bits.unsetBit(bitmap, nextSetBit);

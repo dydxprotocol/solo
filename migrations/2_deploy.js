@@ -53,8 +53,11 @@ const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV
 const AdminImpl = artifacts.require('AdminImpl');
 const DolomiteMargin = artifacts.require('DolomiteMargin');
 const CallImpl = artifacts.require('CallImpl');
+const DepositImpl = artifacts.require('DepositImpl');
 const LiquidateOrVaporizeImpl = artifacts.require('LiquidateOrVaporizeImpl');
+const TradeImpl = artifacts.require('TradeImpl');
 const TransferImpl = artifacts.require('TransferImpl');
+const WithdrawalImpl = artifacts.require('WithdrawalImpl');
 const OperationImpl = artifacts.require('OperationImpl');
 const TestOperationImpl = artifacts.require('TestOperationImpl');
 
@@ -165,12 +168,18 @@ async function deployTestContracts(deployer, network) {
 
 async function deployBaseProtocol(deployer, network) {
   await deployer.deploy(CallImpl);
+  await deployer.deploy(DepositImpl);
   await deployer.deploy(LiquidateOrVaporizeImpl);
+  await deployer.deploy(TradeImpl);
   await deployer.deploy(TransferImpl);
+  await deployer.deploy(WithdrawalImpl);
 
   OperationImpl.link('CallImpl', CallImpl.address);
+  OperationImpl.link('DepositImpl', DepositImpl.address);
   OperationImpl.link('LiquidateOrVaporizeImpl', LiquidateOrVaporizeImpl.address);
+  OperationImpl.link('TradeImpl', TradeImpl.address);
   OperationImpl.link('TransferImpl', TransferImpl.address);
+  OperationImpl.link('WithdrawalImpl', WithdrawalImpl.address);
 
   await Promise.all([
     deployer.deploy(AdminImpl),
@@ -196,7 +205,7 @@ async function deployBaseProtocol(deployer, network) {
   if (isDevNetwork(network)) {
     await dolomiteMargin.link('TestOperationImpl', TestOperationImpl.address);
   }
-  await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits(), 32);
+  await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
 }
 
 async function deployMultiCall(deployer, network) {

@@ -40,6 +40,7 @@ describe('DepositWithdrawalProxy', () => {
       dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },
@@ -83,7 +84,8 @@ describe('DepositWithdrawalProxy', () => {
 
   describe('depositWeiIntoDefaultAccount', () => {
     it('should work normally', async () => {
-      await dolomiteMargin.depositProxy.depositWeiIntoDefaultAccount(market, wei);
+      const txResult = await dolomiteMargin.depositProxy.depositWeiIntoDefaultAccount(market, wei);
+      console.log('\tDeposit wei into default account gas used: ', txResult.gasUsed);
       await expectProtocolBalanceWei(INTEGERS.ZERO, market, wei.times(2));
       await expectWalletBalanceWei(market, INTEGERS.ZERO);
     });

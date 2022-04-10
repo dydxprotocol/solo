@@ -44,6 +44,7 @@ describe('PolynomialInterestSetter', () => {
       dolomiteMargin.testing.polynomialInterestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },

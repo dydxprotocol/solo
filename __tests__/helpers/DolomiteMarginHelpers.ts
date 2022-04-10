@@ -24,6 +24,7 @@ export async function setupMarkets(
   const price = new BigNumber('1e40'); // large to prevent hitting minBorrowValue check
   const marginPremium = new BigNumber(0);
   const spreadPremium = new BigNumber(0);
+  const maxWei = new BigNumber(0);
   const isClosing = false;
   const isRecyclable = false;
 
@@ -49,6 +50,7 @@ export async function setupMarkets(
       interestSetter,
       marginPremium,
       spreadPremium,
+      maxWei,
       isClosing,
       isRecyclable,
       { from: accounts[0] },

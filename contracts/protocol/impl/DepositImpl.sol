@@ -21,51 +21,59 @@ pragma experimental ABIEncoderV2;
 
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
+import { Exchange } from "../lib/Exchange.sol";
+import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
 
-library TransferImpl {
+library DepositImpl {
     using Storage for Storage.State;
-    using Types for Types.Wei;
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "TransferImpl";
+    bytes32 constant FILE = "DepositImpl";
 
     // ============ Account Actions ============
 
-    function transfer(
+    function deposit(
         Storage.State storage state,
-        Actions.TransferArgs memory args
+        Actions.DepositArgs memory args
     )
-    public
+        public
     {
-        state.requireIsOperator(args.accountOne, msg.sender);
-        state.requireIsOperator(args.accountTwo, msg.sender);
+        state.requireIsOperator(args.account, msg.sender);
+
+        Require.that(
+            args.from == msg.sender || args.from == args.account.owner,
+            FILE,
+            "Invalid deposit source",
+            args.from
+        );
 
         (
             Types.Par memory newPar,
             Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
-            args.accountOne,
+            args.account,
             args.market,
             args.amount
         );
 
         state.setPar(
-            args.accountOne,
+            args.account,
             args.market,
             newPar
         );
 
-        state.setParFromDeltaWei(
-            args.accountTwo,
-            args.market,
-            deltaWei.negative()
+        // requires a positive deltaWei
+        Exchange.transferIn(
+            state.getToken(args.market),
+            args.from,
+            deltaWei
         );
 
-        Events.logTransfer(
+        Events.logDeposit(
             state,
             args,
             deltaWei

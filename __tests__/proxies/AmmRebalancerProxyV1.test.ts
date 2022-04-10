@@ -70,6 +70,7 @@ describe('AmmRebalancerProxyV1', () => {
       dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },

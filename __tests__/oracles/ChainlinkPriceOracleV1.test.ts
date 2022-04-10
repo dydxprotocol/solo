@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 import { getDolomiteMargin } from '../helpers/DolomiteMargin';
 import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 import { resetEVM, snapshot } from '../helpers/EVM';
-import { ADDRESSES, INTEGERS } from '../../src/lib/Constants';
-import { address } from '../../src';
+import { address, ADDRESSES, INTEGERS } from '../../src';
 import { expectThrow } from '../../src/lib/Expect';
 
 let dolomiteMargin: TestDolomiteMargin;
@@ -77,6 +76,7 @@ describe('ChainlinkPriceOracleV1', () => {
       dolomiteMargin.testing.tokenA.address,
       dolomiteMargin.contracts.chainlinkPriceOracleV1.options.address,
       dolomiteMargin.contracts.testInterestSetter.options.address,
+      INTEGERS.ZERO,
       INTEGERS.ZERO,
       INTEGERS.ZERO,
       defaultIsClosing,

@@ -311,6 +311,7 @@ export interface Market {
   interestSetter: address;
   marginPremium: Decimal;
   spreadPremium: Decimal;
+  maxWei: Integer;
   isClosing: boolean;
 }
 
@@ -335,6 +336,7 @@ export interface RiskParams {
   liquidationSpread: Decimal;
   earningsRate: Decimal;
   minBorrowedValue: Integer;
+  maxNumberOfMarketsWithBalancesAndDebt: Integer;
 }
 
 export interface Balance {

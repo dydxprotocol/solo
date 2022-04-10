@@ -76,6 +76,7 @@ describe('LiquidatorProxyV1', () => {
       dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },

@@ -20,6 +20,7 @@ pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
 import { Bits } from "./Bits.sol";
+import { Interest } from "./Interest.sol";
 import { Monetary } from "./Monetary.sol";
 import { Require } from "./Require.sol";
 
@@ -43,6 +44,8 @@ library Cache {
         address token;
         bool isClosing;
         uint128 borrowPar;
+        uint128 supplyPar;
+        Interest.Index index;
         Monetary.Price price;
     }
 

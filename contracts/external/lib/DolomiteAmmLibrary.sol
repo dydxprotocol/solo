@@ -32,7 +32,7 @@ library DolomiteAmmLibrary {
     using SafeMath for uint;
 
     bytes32 private constant FILE = "DolomiteAmmLibrary";
-    bytes32 private constant PAIR_INIT_CODE_HASH = 0xfe5c94d470cbe4ddf9b9e6dc49e5be17cfaf7c761e913d4965f17ca372a74f69;
+    bytes32 private constant PAIR_INIT_CODE_HASH = 0x799641aca4af2235e2f55236d49461a8f8a4fcce7cd8d7b00bc3018cf7f2302c;
 
     function getPairInitCodeHash(address factory) internal pure returns (bytes32) {
         // Instead of only returning PAIR_INIT_CODE_HASH, this value is used to make running test coverage possible;

@@ -21,51 +21,52 @@ pragma experimental ABIEncoderV2;
 
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
+import { Exchange } from "../lib/Exchange.sol";
+import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
 
-library TransferImpl {
+library WithdrawalImpl {
     using Storage for Storage.State;
-    using Types for Types.Wei;
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "TransferImpl";
+    bytes32 constant FILE = "WithdrawalImpl";
 
     // ============ Account Actions ============
 
-    function transfer(
+    function withdraw(
         Storage.State storage state,
-        Actions.TransferArgs memory args
+        Actions.WithdrawArgs memory args
     )
     public
     {
-        state.requireIsOperator(args.accountOne, msg.sender);
-        state.requireIsOperator(args.accountTwo, msg.sender);
+        state.requireIsOperator(args.account, msg.sender);
 
         (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
+        Types.Par memory newPar,
+        Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
-            args.accountOne,
+            args.account,
             args.market,
             args.amount
         );
 
         state.setPar(
-            args.accountOne,
+            args.account,
             args.market,
             newPar
         );
 
-        state.setParFromDeltaWei(
-            args.accountTwo,
-            args.market,
-            deltaWei.negative()
+        // requires a negative deltaWei
+        Exchange.transferOut(
+            state.getToken(args.market),
+            args.to,
+            deltaWei
         );
 
-        Events.logTransfer(
+        Events.logWithdraw(
             state,
             args,
             deltaWei

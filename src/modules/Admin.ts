@@ -53,6 +53,7 @@ export class Admin {
     interestSetter: address,
     marginPremium: Decimal,
     spreadPremium: Decimal,
+    maxWei: Integer,
     isClosing: boolean,
     isRecyclable: boolean,
     options?: ContractCallOptions,
@@ -67,6 +68,7 @@ export class Admin {
         interestSetter,
         { value: decimalToString(marginPremium) },
         { value: decimalToString(spreadPremium) },
+        maxWei.toFixed(0),
         isClosing,
         isRecyclable,
       ),
@@ -120,6 +122,17 @@ export class Admin {
       this.contracts.dolomiteMargin.methods.ownerSetSpreadPremium(marketId.toFixed(0), {
         value: decimalToString(spreadPremium),
       }),
+      options,
+    );
+  }
+
+  public async setMaxWei(
+    marketId: Integer,
+    maxWei: Integer,
+    options?: ContractCallOptions,
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.dolomiteMargin.methods.ownerSetMaxWei(marketId.toFixed(0), maxWei.toFixed(0)),
       options,
     );
   }

@@ -86,6 +86,14 @@ contract Getters is
         return g_state.riskParams.minBorrowedValue;
     }
 
+    function getMaxNumberOfMarketsWithBalancesAndDebt()
+        public
+        view
+        returns (uint256)
+    {
+        return g_state.riskParams.maxNumberOfMarketsWithBalancesAndDebt;
+    }
+
     function getRiskParams()
         public
         view
@@ -100,14 +108,6 @@ contract Getters is
         returns (Storage.RiskLimits memory)
     {
         return g_state.riskLimits;
-    }
-
-    function getMaxNumberOfMarketsWithBalancesAndDebt()
-        public
-        view
-        returns (uint256)
-    {
-        return g_state.maxNumberOfMarketsWithBalancesAndDebt;
     }
 
     // ============ Getters for Markets ============
@@ -217,6 +217,17 @@ contract Getters is
     {
         _requireValidMarket(marketId);
         return g_state.markets[marketId].spreadPremium;
+    }
+
+    function getMarketMaxWei(
+        uint256 marketId
+    )
+        public
+        view
+        returns (Types.Wei memory)
+    {
+        _requireValidMarket(marketId);
+        return g_state.markets[marketId].maxWei;
     }
 
     function getMarketIsClosing(

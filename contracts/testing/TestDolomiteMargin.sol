@@ -33,11 +33,10 @@ contract TestDolomiteMargin is DolomiteMargin {
 
     constructor (
         Storage.RiskParams memory rp,
-        Storage.RiskLimits memory rl,
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
+        Storage.RiskLimits memory rl
     )
         public
-        DolomiteMargin(rp, rl, maxNumberOfMarketsWithBalancesAndDebt)
+        DolomiteMargin(rp, rl)
     {}
 
     // ============ Testing Functions ============

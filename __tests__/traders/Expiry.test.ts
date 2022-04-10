@@ -789,7 +789,7 @@ describe('Expiry', () => {
     });
 
     it('Fails for non-global operator calling', async () => {
-      await expectExpireRevert({}, 'OperationImpl: Unpermissioned trade operator', { from: owner1 });
+      await expectExpireRevert({}, 'TradeImpl: Unpermissioned trade operator', { from: owner1 });
     });
   });
 
@@ -1010,7 +1010,7 @@ describe('Expiry', () => {
     });
 
     it('Fails for non-global operator calling', async () => {
-      await expectExpireRevert({}, 'OperationImpl: Unpermissioned trade operator', { from: owner1 });
+      await expectExpireRevert({}, 'TradeImpl: Unpermissioned trade operator', { from: owner1 });
     });
   });
 

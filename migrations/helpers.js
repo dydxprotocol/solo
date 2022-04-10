@@ -102,6 +102,7 @@ async function getRiskParams(network) {
     liquidationSpread: { value: decimalToString('0.05') },
     earningsRate: { value: decimalToString('0.90') },
     minBorrowedValue: { value: decimalToString(mbv) },
+    maxNumberOfMarketsWithBalancesAndDebt: '32',
   };
 }
 

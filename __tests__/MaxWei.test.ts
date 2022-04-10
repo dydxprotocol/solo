@@ -13,11 +13,9 @@ let accounts: address[];
 const accountOne = new BigNumber(111);
 const accountTwo = new BigNumber(222);
 const market = INTEGERS.ZERO;
-const collateralMarket = new BigNumber(2);
-const zero = new BigNumber(0);
 const amount = new BigNumber(100);
 
-describe('Closing', () => {
+describe('MaxWei', () => {
   let snapshotId: string;
 
   beforeAll(async () => {
@@ -30,26 +28,29 @@ describe('Closing', () => {
     await resetEVM();
     await setupMarkets(dolomiteMargin, accounts);
     await Promise.all([
-      dolomiteMargin.admin.setIsClosing(market, true, { from: admin }),
-      dolomiteMargin.testing.setAccountBalance(owner, accountOne, market, amount),
       dolomiteMargin.testing.setAccountBalance(
         owner,
         accountOne,
-        collateralMarket,
+        market,
         amount.times(2),
       ),
       dolomiteMargin.testing.setAccountBalance(
         owner,
         accountTwo,
-        collateralMarket,
+        market,
         amount.times(2),
       ),
       dolomiteMargin.testing.tokenA.issueTo(
-        amount,
+        amount.times('10'),
         dolomiteMargin.contracts.dolomiteMargin.options.address,
+      ),
+      dolomiteMargin.testing.tokenA.issueTo(
+        amount.times('10'),
+        owner,
       ),
       dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(owner),
     ]);
+
     snapshotId = await snapshot();
   });
 
@@ -57,7 +58,9 @@ describe('Closing', () => {
     await resetEVM(snapshotId);
   });
 
-  it('Succeeds for withdraw when closing', async () => {
+  it('Succeeds for withdraw when under max wei', async () => {
+    await dolomiteMargin.admin.setMaxWei(market, amount.times('4'), { from: admin });
+
     await dolomiteMargin.operation
       .initiate()
       .withdraw({
@@ -74,41 +77,85 @@ describe('Closing', () => {
       .commit();
   });
 
-  it('Succeeds for borrow if totalPar doesnt increase', async () => {
+  it('Succeeds for withdraw when over max wei', async () => {
+    await dolomiteMargin.admin.setMaxWei(market, amount.times('0.01'), { from: admin });
+
     await dolomiteMargin.operation
       .initiate()
-      .transfer({
+      .withdraw({
         primaryAccountOwner: owner,
         primaryAccountId: accountOne,
-        toAccountOwner: owner,
-        toAccountId: accountTwo,
         marketId: market,
+        to: owner,
         amount: {
-          value: zero,
+          value: amount.times(-1),
           denomination: AmountDenomination.Actual,
-          reference: AmountReference.Target,
+          reference: AmountReference.Delta,
         },
       })
       .commit();
   });
 
-  it('Fails for borrowing when closing', async () => {
+  it('Succeeds for deposit when under max wei', async () => {
+    await dolomiteMargin.admin.setMaxWei(market, amount.times('5'), { from: admin });
+
+    await dolomiteMargin.operation
+      .initiate()
+      .deposit({
+        primaryAccountOwner: owner,
+        primaryAccountId: accountOne,
+        marketId: market,
+        from: owner,
+        amount: {
+          value: amount.times(1),
+          denomination: AmountDenomination.Actual,
+          reference: AmountReference.Delta,
+        },
+      })
+      .commit();
+  });
+
+  it('Fails for deposit when currently over max wei', async () => {
+    await dolomiteMargin.admin.setMaxWei(market, amount.times('2'), { from: admin });
+
     await expectThrow(
       dolomiteMargin.operation
         .initiate()
-        .withdraw({
+        .deposit({
           primaryAccountOwner: owner,
           primaryAccountId: accountTwo,
           marketId: market,
-          to: owner,
+          from: owner,
           amount: {
-            value: amount.times(-1),
+            value: amount.times(1),
             denomination: AmountDenomination.Actual,
             reference: AmountReference.Delta,
           },
         })
         .commit(),
-      'OperationImpl: Market is closing',
+      `OperationImpl: Total supply exceeds max supply <${market.toFixed(0)}>`,
+    );
+  });
+
+  it('Fails for deposit that pushes over max wei', async () => {
+    await dolomiteMargin.admin.setMaxWei(market, amount.times('5'), { from: admin });
+
+    await expectThrow(
+      dolomiteMargin.operation
+        .initiate()
+        .deposit({
+          primaryAccountOwner: owner,
+          primaryAccountId: accountTwo,
+          marketId: market,
+          from: owner,
+          amount: {
+            value: amount.times(2),
+            denomination: AmountDenomination.Actual,
+            reference: AmountReference.Delta,
+          },
+        })
+        .commit(),
+      `OperationImpl: Total supply exceeds max supply <${market.toFixed(0)}>`,
     );
   });
 });

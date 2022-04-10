@@ -34,6 +34,7 @@ describe('StandardActions', () => {
       dolomiteMargin.testing.interestSetter.address,
       INTEGERS.ZERO,
       INTEGERS.ZERO,
+      INTEGERS.ZERO,
       false,
       false,
       { from: r.accounts[0] },

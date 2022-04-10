@@ -728,7 +728,7 @@ describe('Trade', () => {
 
   it('Fails for one-sided trades', async () => {
     await Promise.all([approveTrader(), setTradeData({ value: negWei })]);
-    await expectTradeRevert({}, 'OperationImpl: Trades cannot be one-sided');
+    await expectTradeRevert({}, 'TradeImpl: Trades cannot be one-sided');
   });
 
   it('Fails to trade to same account', async () => {

@@ -65,10 +65,6 @@ library AdminImpl {
         uint256 amount
     );
 
-    event LogSetMaxNumberOfMarketsWithBalancesAndDebt(
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
-    );
-
     event LogAddMarket(
         uint256 marketId,
         address token
@@ -104,6 +100,11 @@ library AdminImpl {
         Decimal.D256 spreadPremium
     );
 
+    event LogSetMaxWei(
+        uint256 marketId,
+        Types.Wei maxWei
+    );
+
     event LogSetMarginRatio(
         Decimal.D256 marginRatio
     );
@@ -118,6 +119,10 @@ library AdminImpl {
 
     event LogSetMinBorrowedValue(
         Monetary.Value minBorrowedValue
+    );
+
+    event LogSetMaxNumberOfMarketsWithBalancesAndDebt(
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
     );
 
     event LogSetGlobalOperator(
@@ -183,19 +188,6 @@ library AdminImpl {
 
     // ============ Market Functions ============
 
-    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
-        Storage.State storage state,
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
-    ) public {
-        Require.that(
-            maxNumberOfMarketsWithBalancesAndDebt >= 2,
-            FILE,
-            "invalid max # of non-zero bals"
-        );
-        state.maxNumberOfMarketsWithBalancesAndDebt = maxNumberOfMarketsWithBalancesAndDebt.to128();
-        emit LogSetMaxNumberOfMarketsWithBalancesAndDebt(maxNumberOfMarketsWithBalancesAndDebt);
-    }
-
     function ownerAddMarket(
         Storage.State storage state,
         address token,
@@ -203,6 +195,7 @@ library AdminImpl {
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
+        uint256 maxWei,
         bool isClosing,
         bool isRecyclable
     )
@@ -236,6 +229,7 @@ library AdminImpl {
         _setInterestSetter(state, marketId, interestSetter);
         _setMarginPremium(state, marketId, marginPremium);
         _setSpreadPremium(state, marketId, spreadPremium);
+        _setMaxWei(state, marketId, maxWei);
 
         if (isRecyclable) {
             IRecyclable(token).initialize();
@@ -263,8 +257,14 @@ library AdminImpl {
                 "market is not recyclable",
                 marketIds[i]
             );
+
+            (
+                Types.Wei memory supplyWei,
+                Types.Wei memory borrowWei
+            ) = Interest.totalParToWei(state.getTotalPar(marketIds[i]), state.getIndex(marketIds[i]));
+
             Require.that(
-                state.getTotalPar(marketIds[i]).borrow == 0,
+                borrowWei.value == 0,
                 FILE,
                 "market has active borrows",
                 marketIds[i]
@@ -285,7 +285,7 @@ library AdminImpl {
                 expirationTimestamp
             );
 
-            Token.transfer(token, salvager, state.getTotalPar(marketIds[i]).supply);
+            Token.transfer(token, salvager, supplyWei.value);
 
             delete state.markets[marketIds[i]];
             delete state.tokenToMarketId[token];
@@ -311,6 +311,7 @@ library AdminImpl {
     public
     {
         _validateMarketId(state, marketId);
+
         state.markets[marketId].isClosing = isClosing;
         emit LogSetIsClosing(marketId, isClosing);
     }
@@ -357,6 +358,17 @@ library AdminImpl {
     {
         _validateMarketId(state, marketId);
         _setSpreadPremium(state, marketId, spreadPremium);
+    }
+
+    function ownerSetMaxWei(
+        Storage.State storage state,
+        uint256 marketId,
+        uint256 maxWei
+    )
+    public
+    {
+        _validateMarketId(state, marketId);
+        _setMaxWei(state, marketId, maxWei);
     }
 
     // ============ Risk Functions ============
@@ -429,6 +441,19 @@ library AdminImpl {
         );
         state.riskParams.minBorrowedValue = minBorrowedValue;
         emit LogSetMinBorrowedValue(minBorrowedValue);
+    }
+
+    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+        Storage.State storage state,
+        uint256 maxNumberOfMarketsWithBalancesAndDebt
+    ) public {
+        Require.that(
+            maxNumberOfMarketsWithBalancesAndDebt >= 2,
+            FILE,
+            "invalid max # of non-zero bals"
+        );
+        state.riskParams.maxNumberOfMarketsWithBalancesAndDebt = maxNumberOfMarketsWithBalancesAndDebt;
+        emit LogSetMaxNumberOfMarketsWithBalancesAndDebt(maxNumberOfMarketsWithBalancesAndDebt);
     }
 
     // ============ Global Operator Functions ============
@@ -528,6 +553,19 @@ library AdminImpl {
         state.markets[marketId].spreadPremium = spreadPremium;
 
         emit LogSetSpreadPremium(marketId, spreadPremium);
+    }
+
+    function _setMaxWei(
+        Storage.State storage state,
+        uint256 marketId,
+        uint256 maxWei
+    )
+    private
+    {
+        Types.Wei memory maxWeiStruct = Types.Wei(true, maxWei.to128());
+        state.markets[marketId].maxWei = maxWeiStruct;
+
+        emit LogSetMaxWei(marketId, maxWeiStruct);
     }
 
     function _requireNoMarket(

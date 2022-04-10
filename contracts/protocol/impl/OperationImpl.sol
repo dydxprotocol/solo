@@ -29,14 +29,18 @@ import { Decimal } from "../lib/Decimal.sol";
 import { EnumerableSet } from "../lib/EnumerableSet.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 import { CallImpl } from "./CallImpl.sol";
+import { DepositImpl } from "./DepositImpl.sol";
 import { LiquidateOrVaporizeImpl } from "./LiquidateOrVaporizeImpl.sol";
+import { TradeImpl } from "./TradeImpl.sol";
 import { TransferImpl } from "./TransferImpl.sol";
+import { WithdrawalImpl } from "./WithdrawalImpl.sol";
 
 
 /**
@@ -228,33 +232,23 @@ library OperationImpl {
             Actions.ActionArgs memory action = actions[i];
             Actions.ActionType actionType = action.actionType;
 
-
             if (actionType == Actions.ActionType.Deposit) {
-                _deposit(state, Actions.parseDepositArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Withdraw) {
-                _withdraw(state, Actions.parseWithdrawArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Transfer) {
+                DepositImpl.deposit(state, Actions.parseDepositArgs(accounts, action));
+            } else if (actionType == Actions.ActionType.Withdraw) {
+                WithdrawalImpl.withdraw(state, Actions.parseWithdrawArgs(accounts, action));
+            } else if (actionType == Actions.ActionType.Transfer) {
                 TransferImpl.transfer(state, Actions.parseTransferArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Buy) {
-                _buy(state, Actions.parseBuyArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Sell) {
-                _sell(state, Actions.parseSellArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Trade) {
-                _trade(state, Actions.parseTradeArgs(accounts, action));
-            }
-            else if (actionType == Actions.ActionType.Liquidate) {
+            } else if (actionType == Actions.ActionType.Buy) {
+                TradeImpl.buy(state, Actions.parseBuyArgs(accounts, action));
+            } else if (actionType == Actions.ActionType.Sell) {
+                TradeImpl.sell(state, Actions.parseSellArgs(accounts, action));
+            } else if (actionType == Actions.ActionType.Trade) {
+                TradeImpl.trade(state, Actions.parseTradeArgs(accounts, action));
+            } else if (actionType == Actions.ActionType.Liquidate) {
                 LiquidateOrVaporizeImpl.liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
-            }
-            else if (actionType == Actions.ActionType.Vaporize) {
-                // use the library to save space since this function is rarely ever called
+            } else if (actionType == Actions.ActionType.Vaporize) {
                 LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
-            }
-            else if (actionType == Actions.ActionType.Call) {
+            } else if (actionType == Actions.ActionType.Call) {
                 CallImpl.call(state, Actions.parseCallArgs(accounts, action));
             }
         }
@@ -272,14 +266,33 @@ library OperationImpl {
         uint256 numMarkets = cache.getNumMarkets();
         for (uint256 i = 0; i < numMarkets; i++) {
             uint256 marketId = cache.getAtIndex(i).marketId;
+            Types.TotalPar memory totalPar = state.getTotalPar(marketId);
             if (cache.getAtIndex(i).isClosing) {
                 Require.that(
-                    state.getTotalPar(marketId).borrow <= cache.getAtIndex(i).borrowPar,
+                    totalPar.borrow <= cache.getAtIndex(i).borrowPar,
                     FILE,
                     "Market is closing",
                     marketId
                 );
             }
+
+            Types.Wei memory maxWei = state.getMaxWei(marketId);
+            if (maxWei.value != 0) {
+                // require total supply is less than the max OR it scaled down
+                Interest.Index memory index = cache.getAtIndex(i).index;
+                (Types.Wei memory totalSupplyWei,) = Interest.totalParToWei(totalPar, index);
+                Types.Wei memory cachedSupplyWei = Interest.parToWei(
+                    Types.Par(true, cache.getAtIndex(i).supplyPar),
+                    index
+                );
+                Require.that(
+                    totalSupplyWei.value <= maxWei.value || totalSupplyWei.value <= cachedSupplyWei.value,
+                    FILE,
+                    "Total supply exceeds max supply",
+                    marketId
+                );
+            }
+
             if (state.markets[marketId].isRecyclable) {
                 // This market is recyclable. Check that only the `token` is the owner
                 for (uint256 a = 0; a < accounts.length; a++) {
@@ -289,7 +302,7 @@ library OperationImpl {
                         Require.that(
                             !state.getMarketsWithBalancesSet(accounts[a]).contains(marketId),
                             FILE,
-                            "invalid recyclable owner",
+                            "Invalid recyclable owner",
                             accounts[a].owner,
                             accounts[a].number,
                             marketId
@@ -327,287 +340,4 @@ library OperationImpl {
         }
     }
 
-    // ============ Action Functions ============
-
-    function _deposit(
-        Storage.State storage state,
-        Actions.DepositArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.account, msg.sender);
-
-        Require.that(
-            args.from == msg.sender || args.from == args.account.owner,
-            FILE,
-            "Invalid deposit source",
-            args.from
-        );
-
-        (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
-        ) = state.getNewParAndDeltaWei(
-            args.account,
-            args.market,
-            args.amount
-        );
-
-        state.setPar(
-            args.account,
-            args.market,
-            newPar
-        );
-
-        // requires a positive deltaWei
-        Exchange.transferIn(
-            state.getToken(args.market),
-            args.from,
-            deltaWei
-        );
-
-        Events.logDeposit(
-            state,
-            args,
-            deltaWei
-        );
-    }
-
-    function _withdraw(
-        Storage.State storage state,
-        Actions.WithdrawArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.account, msg.sender);
-
-        (
-            Types.Par memory newPar,
-            Types.Wei memory deltaWei
-        ) = state.getNewParAndDeltaWei(
-            args.account,
-            args.market,
-            args.amount
-        );
-
-        state.setPar(
-            args.account,
-            args.market,
-            newPar
-        );
-
-        // requires a negative deltaWei
-        Exchange.transferOut(
-            state.getToken(args.market),
-            args.to,
-            deltaWei
-        );
-
-        Events.logWithdraw(
-            state,
-            args,
-            deltaWei
-        );
-    }
-
-    function _buy(
-        Storage.State storage state,
-        Actions.BuyArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.account, msg.sender);
-
-        address takerToken = state.getToken(args.takerMarket);
-        address makerToken = state.getToken(args.makerMarket);
-
-        (
-            Types.Par memory makerPar,
-            Types.Wei memory makerWei
-        ) = state.getNewParAndDeltaWei(
-            args.account,
-            args.makerMarket,
-            args.amount
-        );
-
-        Types.Wei memory takerWei = Exchange.getCost(
-            args.exchangeWrapper,
-            makerToken,
-            takerToken,
-            makerWei,
-            args.orderData
-        );
-
-        Types.Wei memory tokensReceived = Exchange.exchange(
-            args.exchangeWrapper,
-            args.account.owner,
-            makerToken,
-            takerToken,
-            takerWei,
-            args.orderData
-        );
-
-        Require.that(
-            tokensReceived.value >= makerWei.value,
-            FILE,
-            "Buy amount less than promised",
-            tokensReceived.value
-        );
-
-        state.setPar(
-            args.account,
-            args.makerMarket,
-            makerPar
-        );
-
-        state.setParFromDeltaWei(
-            args.account,
-            args.takerMarket,
-            takerWei
-        );
-
-        Events.logBuy(
-            state,
-            args,
-            takerWei,
-            makerWei
-        );
-    }
-
-    function _sell(
-        Storage.State storage state,
-        Actions.SellArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.account, msg.sender);
-
-        address takerToken = state.getToken(args.takerMarket);
-        address makerToken = state.getToken(args.makerMarket);
-
-        (
-            Types.Par memory takerPar,
-            Types.Wei memory takerWei
-        ) = state.getNewParAndDeltaWei(
-            args.account,
-            args.takerMarket,
-            args.amount
-        );
-
-        Types.Wei memory makerWei = Exchange.exchange(
-            args.exchangeWrapper,
-            args.account.owner,
-            makerToken,
-            takerToken,
-            takerWei,
-            args.orderData
-        );
-
-        state.setPar(
-            args.account,
-            args.takerMarket,
-            takerPar
-        );
-
-        state.setParFromDeltaWei(
-            args.account,
-            args.makerMarket,
-            makerWei
-        );
-
-        Events.logSell(
-            state,
-            args,
-            takerWei,
-            makerWei
-        );
-    }
-
-    function _trade(
-        Storage.State storage state,
-        Actions.TradeArgs memory args
-    )
-        private
-    {
-        state.requireIsOperator(args.takerAccount, msg.sender);
-        state.requireIsOperator(args.makerAccount, args.autoTrader);
-        if (state.isAutoTraderSpecial(args.autoTrader)) {
-            Require.that(
-                state.isGlobalOperator(msg.sender),
-                FILE,
-                "Unpermissioned trade operator"
-            );
-        }
-
-        Types.Par memory oldInputPar = state.getPar(
-            args.makerAccount,
-            args.inputMarket
-        );
-        (
-            Types.Par memory newInputPar,
-            Types.Wei memory inputWei
-        ) = state.getNewParAndDeltaWei(
-            args.makerAccount,
-            args.inputMarket,
-            args.amount
-        );
-
-        Types.AssetAmount memory outputAmount = IAutoTrader(args.autoTrader).getTradeCost(
-            args.inputMarket,
-            args.outputMarket,
-            args.makerAccount,
-            args.takerAccount,
-            oldInputPar,
-            newInputPar,
-            inputWei,
-            args.tradeData
-        );
-
-        (
-            Types.Par memory newOutputPar,
-            Types.Wei memory outputWei
-        ) = state.getNewParAndDeltaWei(
-            args.makerAccount,
-            args.outputMarket,
-            outputAmount
-        );
-
-        Require.that(
-            outputWei.isZero() || inputWei.isZero() || outputWei.sign != inputWei.sign,
-            FILE,
-            "Trades cannot be one-sided",
-            args.autoTrader
-        );
-
-        // set the balance for the maker
-        state.setPar(
-            args.makerAccount,
-            args.inputMarket,
-            newInputPar
-        );
-        state.setPar(
-            args.makerAccount,
-            args.outputMarket,
-            newOutputPar
-        );
-
-        // set the balance for the taker
-        state.setParFromDeltaWei(
-            args.takerAccount,
-            args.inputMarket,
-            inputWei.negative()
-        );
-        state.setParFromDeltaWei(
-            args.takerAccount,
-            args.outputMarket,
-            outputWei.negative()
-        );
-
-        Events.logTrade(
-            state,
-            args,
-            inputWei,
-            outputWei
-        );
-    }
 }

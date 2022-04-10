@@ -33,7 +33,9 @@ const defaultPrice = new BigNumber(999);
 const invalidPrice = new BigNumber(0);
 const defaultRate = new BigNumber(0);
 const defaultPremium = new BigNumber(0);
+const defaultMaxWei = new BigNumber(0);
 const highPremium = new BigNumber('0.2');
+const highMaxWei = new BigNumber('1000e18');
 const defaultMarket = new BigNumber(1);
 const defaultIsClosing = false;
 const defaultIsRecyclable = false;
@@ -282,6 +284,7 @@ describe('Admin', () => {
 
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
+      const maxWei = new BigNumber('420');
 
       const txResult = await dolomiteMargin.admin.addMarket(
         token,
@@ -289,6 +292,7 @@ describe('Admin', () => {
         setterAddress,
         marginPremium,
         spreadPremium,
+        maxWei,
         defaultIsClosing,
         defaultIsRecyclable,
         { from: admin },
@@ -305,6 +309,7 @@ describe('Admin', () => {
       expect(marketInfo.market.interestSetter).toEqual(setterAddress);
       expect(marketInfo.market.marginPremium).toEqual(marginPremium);
       expect(marketInfo.market.spreadPremium).toEqual(spreadPremium);
+      expect(marketInfo.market.maxWei).toEqual(maxWei);
       expect(marketInfo.market.isClosing).toEqual(false);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
@@ -318,7 +323,7 @@ describe('Admin', () => {
       expect(marketInfo.market.index.lastUpdate).toEqual(new BigNumber(timestamp));
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      expect(logs.length).toEqual(5);
+      expect(logs.length).toEqual(6);
 
       const addLog = logs[0];
       expect(addLog.name).toEqual('LogAddMarket');
@@ -344,11 +349,17 @@ describe('Admin', () => {
       expect(spreadPremiumLog.name).toEqual('LogSetSpreadPremium');
       expect(spreadPremiumLog.args.marketId).toEqual(marketId);
       expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
+
+      const maxWeiLog = logs[5];
+      expect(maxWeiLog.name).toEqual('LogSetMaxWei');
+      expect(maxWeiLog.args.marketId).toEqual(marketId);
+      expect(maxWeiLog.args.maxWei).toEqual(maxWei);
     });
 
     it('Successfully adds a market that is closing and recyclable', async () => {
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
+      const maxWei = new BigNumber('420');
       const isClosing = true;
       const isRecyclable = true;
 
@@ -380,6 +391,7 @@ describe('Admin', () => {
         setterAddress,
         marginPremium,
         spreadPremium,
+        maxWei,
         isClosing,
         isRecyclable,
         { from: admin },
@@ -404,6 +416,7 @@ describe('Admin', () => {
       expect(marketInfo.market.interestSetter).toEqual(setterAddress);
       expect(marketInfo.market.marginPremium).toEqual(marginPremium);
       expect(marketInfo.market.spreadPremium).toEqual(spreadPremium);
+      expect(marketInfo.market.maxWei).toEqual(maxWei);
       expect(marketInfo.market.isClosing).toEqual(true);
       expect(marketInfo.market.totalPar.borrow).toEqual(INTEGERS.ZERO);
       expect(marketInfo.market.totalPar.supply).toEqual(INTEGERS.ZERO);
@@ -419,7 +432,7 @@ describe('Admin', () => {
       expect(isRecyclableResult).toEqual(isRecyclable);
 
       const logs = dolomiteMargin.logs.parseLogs(txResult);
-      expect(logs.length).toEqual(6);
+      expect(logs.length).toEqual(7);
 
       const addLog = logs[0];
       expect(addLog.name).toEqual('LogAddMarket');
@@ -450,11 +463,17 @@ describe('Admin', () => {
       expect(spreadPremiumLog.name).toEqual('LogSetSpreadPremium');
       expect(spreadPremiumLog.args.marketId).toEqual(marketId);
       expect(spreadPremiumLog.args.spreadPremium).toEqual(spreadPremium);
+
+      const maxWeiLog = logs[6];
+      expect(maxWeiLog.name).toEqual('LogSetMaxWei');
+      expect(maxWeiLog.args.marketId).toEqual(marketId);
+      expect(maxWeiLog.args.maxWei).toEqual(maxWei);
     });
 
     it('Fails to add a recyclable token with an invalid expiration timestamp', async () => {
       const marginPremium = new BigNumber('0.11');
       const spreadPremium = new BigNumber('0.22');
+      const maxWei = new BigNumber('420');
       const isClosing = true;
       const isRecyclable = true;
 
@@ -487,6 +506,7 @@ describe('Admin', () => {
           setterAddress,
           marginPremium,
           spreadPremium,
+          maxWei,
           isClosing,
           isRecyclable,
           { from: admin },
@@ -504,6 +524,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultMaxWei,
           true,
           true,
           { from: admin },
@@ -522,6 +543,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultMaxWei,
           defaultIsClosing,
           defaultIsRecyclable,
           { from: admin },
@@ -539,6 +561,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultMaxWei,
           defaultIsClosing,
           defaultIsRecyclable,
           { from: admin },
@@ -559,6 +582,7 @@ describe('Admin', () => {
           setterAddress,
           riskLimits.marginPremiumMax.plus(smallestDecimal),
           defaultPremium,
+          defaultMaxWei,
           defaultIsClosing,
           defaultIsRecyclable,
           { from: admin },
@@ -579,6 +603,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           riskLimits.spreadPremiumMax.plus(smallestDecimal),
+          defaultMaxWei,
           defaultIsClosing,
           defaultIsRecyclable,
           { from: admin },
@@ -599,6 +624,7 @@ describe('Admin', () => {
           setterAddress,
           defaultPremium,
           defaultPremium,
+          defaultMaxWei,
           defaultIsClosing,
           defaultIsRecyclable,
           { from: nonAdmin },
@@ -616,6 +642,7 @@ describe('Admin', () => {
     }> {
       const marginPremium = INTEGERS.ZERO;
       const spreadPremium = INTEGERS.ZERO;
+      const maxWei = INTEGERS.ZERO;
       const isClosing = true;
       const isRecyclable = true;
 
@@ -647,6 +674,7 @@ describe('Admin', () => {
         setterAddress,
         marginPremium,
         spreadPremium,
+        maxWei,
         isClosing,
         isRecyclable,
         { from: admin },
@@ -1113,6 +1141,78 @@ describe('Admin', () => {
       }
       const premium = await dolomiteMargin.getters.getMarketSpreadPremium(defaultMarket);
       expect(premium).toEqual(e);
+    }
+  });
+
+  describe('#ownerSetMaxWei', () => {
+    it('Succeeds', async () => {
+      await expectMaxWei(null, defaultMaxWei);
+
+      // set to default
+      txr = await dolomiteMargin.admin.setMaxWei(defaultMarket, defaultMaxWei, {
+        from: admin,
+      });
+      await expectMaxWei(txr, defaultMaxWei);
+
+      // set less risky
+      txr = await dolomiteMargin.admin.setMaxWei(defaultMarket, highMaxWei, {
+        from: admin,
+      });
+      await expectMaxWei(txr, highMaxWei);
+
+      // set to risky again
+      txr = await dolomiteMargin.admin.setMaxWei(defaultMarket, highMaxWei, {
+        from: admin,
+      });
+      await expectMaxWei(txr, highMaxWei);
+
+      // set back to default
+      txr = await dolomiteMargin.admin.setMaxWei(defaultMarket, defaultMaxWei, {
+        from: admin,
+      });
+      await expectMaxWei(txr, defaultMaxWei);
+    });
+
+    it('Succeeds for two markets', async () => {
+      const maxWei1 = new BigNumber('200e18');
+      const maxWei2 = new BigNumber('300e18');
+
+      const [result1, result2] = await Promise.all([
+        dolomiteMargin.admin.setMaxWei(defaultMarket, maxWei1, { from: admin }),
+        dolomiteMargin.admin.setMaxWei(secondaryMarket, maxWei2, { from: admin }),
+      ]);
+
+      await expectMaxWei(result1, maxWei1, defaultMarket);
+      await expectMaxWei(result2, maxWei2, secondaryMarket);
+    });
+
+    it('Fails for invalid market', async () => {
+      await expectThrow(
+        dolomiteMargin.admin.setMaxWei(invalidMarket, highPremium, {
+          from: admin,
+        }),
+        `AdminImpl: Invalid market <${invalidMarket.toFixed()}>`,
+      );
+    });
+
+    it('Fails for non-admin', async () => {
+      await expectThrow(
+        dolomiteMargin.admin.setMaxWei(defaultMarket, highPremium, {
+          from: nonAdmin,
+        }),
+      );
+    });
+
+    async function expectMaxWei(txResult: any, e: Integer, market: Integer = defaultMarket) {
+      if (txResult) {
+        const logs = dolomiteMargin.logs.parseLogs(txResult);
+        expect(logs.length).toEqual(1);
+        const log = logs[0];
+        expect(log.name).toEqual('LogSetMaxWei');
+        expect(log.args.maxWei).toEqual(e);
+      }
+      const maxWei = await dolomiteMargin.getters.getMarketMaxWei(market);
+      expect(maxWei).toEqual(e);
     }
   });
 

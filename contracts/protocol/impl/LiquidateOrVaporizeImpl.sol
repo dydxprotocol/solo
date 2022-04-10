@@ -35,6 +35,9 @@ import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
 
+/**
+ * @dev A library that combines shares code for executing Liquidation or Vaporization actions.
+ */
 library LiquidateOrVaporizeImpl {
     using Cache for Cache.MarketCache;
     using SafeMath for uint256;

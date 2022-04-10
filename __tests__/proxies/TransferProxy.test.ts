@@ -50,6 +50,7 @@ describe('TransferProxy', () => {
       dolomiteMargin.testing.interestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },

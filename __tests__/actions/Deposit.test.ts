@@ -489,7 +489,7 @@ describe('Deposit', () => {
   });
 
   it('Fails for from random address', async () => {
-    await expectDepositRevert({ from: operator }, 'OperationImpl: Invalid deposit source');
+    await expectDepositRevert({ from: operator }, 'DepositImpl: Invalid deposit source');
   });
 
   it('Fails if depositing more tokens than owned', async () => {

@@ -116,6 +116,7 @@ contract Admin is
         IInterestSetter interestSetter,
         Decimal.D256 memory marginPremium,
         Decimal.D256 memory spreadPremium,
+        uint256 maxWei,
         bool isClosing,
         bool isRecyclable
     )
@@ -130,6 +131,7 @@ contract Admin is
             interestSetter,
             marginPremium,
             spreadPremium,
+            maxWei,
             isClosing,
             isRecyclable
         );
@@ -225,6 +227,21 @@ contract Admin is
             g_state,
             marketId,
             marginPremium
+        );
+    }
+
+    function ownerSetMaxWei(
+        uint256 marketId,
+        uint256 maxWei
+    )
+        public
+        onlyOwner
+        nonReentrant
+    {
+        AdminImpl.ownerSetMaxWei(
+            g_state,
+            marketId,
+            maxWei
         );
     }
 

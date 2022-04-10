@@ -119,6 +119,7 @@ export class Getters {
       liquidationSpread: stringToDecimal(result[1].value),
       earningsRate: stringToDecimal(result[2].value),
       minBorrowedValue: new BigNumber(result[3].value),
+      maxNumberOfMarketsWithBalancesAndDebt: new BigNumber(result[4]),
     };
   }
 
@@ -272,6 +273,19 @@ export class Getters {
     return stringToDecimal(spreadPremium.value);
   }
 
+  public async getMarketMaxWei(
+    marketId: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const maxWei = await this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteMargin.methods.getMarketMaxWei(
+        marketId.toFixed(0),
+      ),
+      options,
+    );
+    return valueToInteger(maxWei);
+  }
+
   public async getMarketIsClosing(
     marketId: Integer,
     options?: ContractConstantCallOptions,
@@ -383,6 +397,7 @@ export class Getters {
       index: Getters.parseIndex(market.index),
       marginPremium: stringToDecimal(market.marginPremium.value),
       spreadPremium: stringToDecimal(market.spreadPremium.value),
+      maxWei: new BigNumber(market.maxWei.value),
     };
   }
 
@@ -406,6 +421,7 @@ export class Getters {
         index: Getters.parseIndex(market.index),
         marginPremium: stringToDecimal(market.marginPremium.value),
         spreadPremium: stringToDecimal(market.spreadPremium.value),
+        maxWei: new BigNumber(market.maxWei.value),
       },
       currentIndex: Getters.parseIndex(currentIndex),
       currentPrice: new BigNumber(currentPrice.value),

@@ -332,7 +332,7 @@ describe('Buy', () => {
           makerAmount: makerWei.div(2),
         },
       },
-      'OperationImpl: Buy amount less than promised',
+      'TradeImpl: Buy amount less than promised',
     );
   });
 });

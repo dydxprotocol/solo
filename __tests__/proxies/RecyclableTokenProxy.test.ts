@@ -1,24 +1,23 @@
 import BigNumber from 'bignumber.js';
-import { getDolomiteMargin } from '../helpers/DolomiteMargin';
-import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
-import { resetEVM, snapshot } from '../helpers/EVM';
-import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
-import { INTEGERS } from '../../src/lib/Constants';
-import { address, Amount, AmountDenomination, AmountReference, Integer, TxResult, } from '../../src';
-
-import { abi as recyclableABI, bytecode as recyclableBytecode, } from '../../build/contracts/RecyclableTokenProxy.json';
 import {
   abi as customTestTokenABI,
   bytecode as customTestTokenBytecode,
 } from '../../build/contracts/CustomTestToken.json';
-import { abi as testTraderABI, bytecode as testTraderBytecode, } from '../../build/contracts/TestTrader.json';
+
+import { abi as recyclableABI, bytecode as recyclableBytecode } from '../../build/contracts/RecyclableTokenProxy.json';
+import { abi as testTraderABI, bytecode as testTraderBytecode } from '../../build/contracts/TestTrader.json';
 
 import { CustomTestToken } from '../../build/testing_wrappers/CustomTestToken';
 import { TestRecyclableToken } from '../../build/testing_wrappers/TestRecyclableToken';
 import { TestTrader } from '../../build/testing_wrappers/TestTrader';
-import { expectThrow } from '../../src/lib/Expect';
+import { address, Amount, AmountDenomination, AmountReference, Integer, INTEGERS, TxResult } from '../../src';
 import { toBytes } from '../../src/lib/BytesHelper';
+import { expectThrow } from '../../src/lib/Expect';
+import { getDolomiteMargin } from '../helpers/DolomiteMargin';
+import { setupMarkets } from '../helpers/DolomiteMarginHelpers';
+import { resetEVM, snapshot } from '../helpers/EVM';
 import { EVM } from '../modules/EVM';
+import { TestDolomiteMargin } from '../modules/TestDolomiteMargin';
 
 let dolomiteMargin: TestDolomiteMargin;
 let accounts: address[];
@@ -60,28 +59,18 @@ describe('RecyclableTokenProxy', () => {
     oracleAddress = dolomiteMargin.testing.priceOracle.address;
     setterAddress = dolomiteMargin.testing.interestSetter.address;
 
-    const {
-      recyclableToken: _recyclableToken,
-      customToken: _customToken,
-    } = await addMarket();
+    const { recyclableToken: _recyclableToken, customToken: _customToken } = await addMarket();
     recyclableToken = _recyclableToken;
     customToken = _customToken;
     marketId = new BigNumber(await recyclableToken.methods.MARKET_ID().call());
-    borrowTokenAddress = await dolomiteMargin.getters.getMarketTokenAddress(
-      borrowMarketId,
-    );
+    borrowTokenAddress = await dolomiteMargin.getters.getMarketTokenAddress(borrowMarketId);
 
-    const borrowToken = new dolomiteMargin.web3.eth.Contract(
-      customTestTokenABI,
-      borrowTokenAddress,
-    ) as CustomTestToken;
+    const borrowToken = new dolomiteMargin.web3.eth.Contract(customTestTokenABI, borrowTokenAddress) as CustomTestToken;
 
-    await borrowToken.methods
-      .setBalance(dolomiteMargin.contracts.dolomiteMargin.options.address, '1000000')
-      .send({
-        from: admin,
-        gas: '100000',
-      });
+    await borrowToken.methods.setBalance(dolomiteMargin.contracts.dolomiteMargin.options.address, '1000000').send({
+      from: admin,
+      gas: '100000',
+    });
 
     // set the price to be 100 times less than the recyclable price.
     await dolomiteMargin.testing.priceOracle.setPrice(borrowTokenAddress, defaultPrice);
@@ -106,14 +95,9 @@ describe('RecyclableTokenProxy', () => {
     it('Successfully gets the account number', async () => {
       const _number = 1;
       const account = { owner: user, number: _number };
-      const accountNumber = await recyclableToken.methods
-        .getAccountNumber(account)
-        .call();
+      const accountNumber = await recyclableToken.methods.getAccountNumber(account).call();
       const created = dolomiteMargin.web3.utils.keccak256(
-        dolomiteMargin.web3.eth.abi.encodeParameters(
-          ['address', 'uint256'],
-          [user, _number],
-        ),
+        dolomiteMargin.web3.eth.abi.encodeParameters(['address', 'uint256'], [user, _number]),
       );
       expect(accountNumber).toEqual(dolomiteMargin.web3.utils.hexToNumberString(created));
     });
@@ -127,16 +111,10 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 0;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
-      );
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(balance));
     });
 
     it('Successfully deposits into DolomiteMargin with random account number', async () => {
@@ -146,16 +124,10 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 132;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(balance),
-      );
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(balance));
     });
 
     it('Fails to deposit when contract is expired', async () => {
@@ -193,9 +165,7 @@ describe('RecyclableTokenProxy', () => {
       const balance = 100;
       await customToken.methods.setBalance(user, balance).send(tx);
       await expectThrow(
-        recyclableToken.methods
-          .depositIntoDolomiteMargin(accountNumber, balance)
-          .send(tx),
+        recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx),
         'SafeERC20: low-level call failed',
       );
     });
@@ -209,22 +179,12 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 0;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
-      await recyclableToken.methods
-        .withdrawFromDolomiteMargin(accountNumber, balance - 10)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(10),
-      );
-      expect(await customToken.methods.balanceOf(user).call()).toEqual(
-        (balance - 10).toString(),
-      );
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
+      await recyclableToken.methods.withdrawFromDolomiteMargin(accountNumber, balance - 10).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(10));
+      expect(await customToken.methods.balanceOf(user).call()).toEqual((balance - 10).toString());
     });
 
     it('Fails to withdraw when in recycled state', async () => {
@@ -234,18 +194,12 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 132;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       await expectThrow(
-        recyclableToken.methods
-          .withdrawFromDolomiteMargin(accountNumber, balance)
-          .send(tx),
+        recyclableToken.methods.withdrawFromDolomiteMargin(accountNumber, balance).send(tx),
         'RecyclableTokenProxy: cannot withdraw when recycled',
       );
     });
@@ -259,21 +213,13 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 0;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       expect(await customToken.methods.balanceOf(user).call()).toEqual('0');
-      await recyclableToken.methods
-        .withdrawAfterRecycle(accountNumber)
-        .send(tx);
-      expect(await customToken.methods.balanceOf(user).call()).toEqual(
-        balance.toString(),
-      );
+      await recyclableToken.methods.withdrawAfterRecycle(accountNumber).send(tx);
+      expect(await customToken.methods.balanceOf(user).call()).toEqual(balance.toString());
     });
 
     it('Fails to withdraw twice to the same address in a recycled state', async () => {
@@ -283,21 +229,13 @@ describe('RecyclableTokenProxy', () => {
       };
       const accountNumber = 0;
       const balance = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, balance).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, balance)
-        .send(tx);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, balance).send(tx);
       await removeMarket(marketId, recyclableToken.options.address);
       expect(await customToken.methods.balanceOf(user).call()).toEqual('0');
-      await recyclableToken.methods
-        .withdrawAfterRecycle(accountNumber)
-        .send(tx);
-      expect(await customToken.methods.balanceOf(user).call()).toEqual(
-        balance.toString(),
-      );
+      await recyclableToken.methods.withdrawAfterRecycle(accountNumber).send(tx);
+      expect(await customToken.methods.balanceOf(user).call()).toEqual(balance.toString());
       await expectThrow(
         recyclableToken.methods.withdrawAfterRecycle(accountNumber).send(tx),
         'RecyclableTokenProxy: user already withdrew',
@@ -326,19 +264,11 @@ describe('RecyclableTokenProxy', () => {
       const accountNumber = 0;
       const supplyBalancePar = 100;
       const borrowBalanceWei = 20;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(supplyBalancePar),
-      );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(INTEGERS.ZERO);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, supplyBalancePar).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(supplyBalancePar));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(INTEGERS.ZERO);
 
       await recyclableToken.methods
         .trade(
@@ -356,9 +286,7 @@ describe('RecyclableTokenProxy', () => {
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar + supplyBalancePar),
       );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(new BigNumber(-borrowBalanceWei));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(new BigNumber(-borrowBalanceWei));
       const recyclableAccount = await recyclableToken.methods
         .getAccountNumber({
           owner: user,
@@ -366,7 +294,11 @@ describe('RecyclableTokenProxy', () => {
         })
         .call();
       expect(
-        await dolomiteMargin.expiry.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
+        await dolomiteMargin.expiry.getExpiry(
+          recyclableToken.options.address,
+          new BigNumber(recyclableAccount),
+          borrowMarketId,
+        ),
       ).toEqual(new BigNumber(defaultExpirationTimestamp));
     });
 
@@ -378,19 +310,11 @@ describe('RecyclableTokenProxy', () => {
       const accountNumber = 0;
       const supplyBalancePar = 100;
       const borrowBalanceWei = 20;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(supplyBalancePar),
-      );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(INTEGERS.ZERO);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, supplyBalancePar).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(supplyBalancePar));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(INTEGERS.ZERO);
 
       await recyclableToken.methods
         .trade(
@@ -408,9 +332,7 @@ describe('RecyclableTokenProxy', () => {
       expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
         new BigNumber(supplyBalancePar + supplyBalancePar),
       );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(new BigNumber(-borrowBalanceWei));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(new BigNumber(-borrowBalanceWei));
       const recyclableAccount = await recyclableToken.methods
         .getAccountNumber({
           owner: user,
@@ -418,7 +340,11 @@ describe('RecyclableTokenProxy', () => {
         })
         .call();
       expect(
-        await dolomiteMargin.expiry.getExpiry(recyclableToken.options.address, new BigNumber(recyclableAccount), borrowMarketId)
+        await dolomiteMargin.expiry.getExpiry(
+          recyclableToken.options.address,
+          new BigNumber(recyclableAccount),
+          borrowMarketId,
+        ),
       ).toEqual(new BigNumber(defaultExpirationTimestamp));
 
       await recyclableToken.methods
@@ -551,13 +477,9 @@ describe('RecyclableTokenProxy', () => {
         .call();
       const supplyBalancePar = 100;
       const borrowBalanceWei = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(outerAccountNumber, supplyBalancePar)
-        .send(tx);
+      await recyclableToken.methods.depositIntoDolomiteMargin(outerAccountNumber, supplyBalancePar).send(tx);
       await expectThrow(
         recyclableToken.methods
           .trade(
@@ -585,19 +507,11 @@ describe('RecyclableTokenProxy', () => {
       const accountNumber = 0;
       const supplyBalancePar = 100;
       const borrowBalanceWei = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(supplyBalancePar),
-      );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(INTEGERS.ZERO);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, supplyBalancePar).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(supplyBalancePar));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(INTEGERS.ZERO);
 
       await recyclableToken.methods
         .trade(
@@ -673,19 +587,11 @@ describe('RecyclableTokenProxy', () => {
       const accountNumber = 0;
       const supplyBalancePar = 100;
       const borrowBalanceWei = 100;
-      await customToken.methods
-        .approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed())
-        .send(tx);
+      await customToken.methods.approve(recyclableToken.options.address, INTEGERS.MAX_UINT.toFixed()).send(tx);
       await customToken.methods.setBalance(user, supplyBalancePar).send(tx);
-      await recyclableToken.methods
-        .depositIntoDolomiteMargin(accountNumber, supplyBalancePar)
-        .send(tx);
-      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(
-        new BigNumber(supplyBalancePar),
-      );
-      expect(
-        await getOwnerBalance(user, accountNumber, borrowMarketId),
-      ).toEqual(INTEGERS.ZERO);
+      await recyclableToken.methods.depositIntoDolomiteMargin(accountNumber, supplyBalancePar).send(tx);
+      expect(await getOwnerBalance(user, accountNumber, marketId)).toEqual(new BigNumber(supplyBalancePar));
+      expect(await getOwnerBalance(user, accountNumber, borrowMarketId)).toEqual(INTEGERS.ZERO);
 
       await recyclableToken.methods
         .trade(
@@ -696,7 +602,7 @@ describe('RecyclableTokenProxy', () => {
           testTrader.options.address,
           defaultExpirationTimestamp,
           defaultIsOpen,
-          toBytes(supplyBalancePar, borrowBalanceWei, defaultIsOpen)
+          toBytes(supplyBalancePar, borrowBalanceWei, defaultIsOpen),
         )
         .send(tx);
 
@@ -745,7 +651,7 @@ describe('RecyclableTokenProxy', () => {
             amount: defaultAmount,
           })
           .commit({ from: liquidator, gas: '4000000' }),
-        `OperationImpl: invalid recyclable owner <${liquidator.toLowerCase()}, 0, ${marketId}>`,
+        `OperationImpl: Invalid recyclable owner <${liquidator.toLowerCase()}, 0, ${marketId}>`,
       );
     });
   });
@@ -758,12 +664,11 @@ describe('RecyclableTokenProxy', () => {
   }> {
     const marginPremium = INTEGERS.ZERO;
     const spreadPremium = INTEGERS.ZERO;
+    const maxWei = INTEGERS.ZERO;
     const isClosing = true;
     const isRecyclable = true;
 
-    const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(
-      customTestTokenABI,
-    )
+    const underlyingToken = (await new dolomiteMargin.web3.eth.Contract(customTestTokenABI)
       .deploy({
         data: customTestTokenBytecode,
         arguments: ['TestToken', 'TST', '18'],
@@ -782,10 +687,7 @@ describe('RecyclableTokenProxy', () => {
       })
       .send({ from: admin, gas: '6000000' })) as TestRecyclableToken;
 
-    await dolomiteMargin.testing.priceOracle.setPrice(
-      recyclableToken.options.address,
-      defaultPrice,
-    );
+    await dolomiteMargin.testing.priceOracle.setPrice(recyclableToken.options.address, defaultPrice);
 
     await dolomiteMargin.admin.addMarket(
       recyclableToken.options.address,
@@ -793,6 +695,7 @@ describe('RecyclableTokenProxy', () => {
       setterAddress,
       marginPremium,
       spreadPremium,
+      maxWei,
       isClosing,
       isRecyclable,
       { from: admin },
@@ -801,19 +704,12 @@ describe('RecyclableTokenProxy', () => {
     return { recyclableToken, customToken: underlyingToken };
   }
 
-  async function removeMarket(
-    marketId: Integer,
-    recycler: address,
-  ): Promise<TxResult> {
+  async function removeMarket(marketId: Integer, recycler: address): Promise<TxResult> {
     await expireMarket();
     return dolomiteMargin.admin.removeMarkets([marketId], recycler, { from: admin });
   }
 
-  async function getOwnerBalance(
-    owner: address,
-    accountNumber: number,
-    market: Integer,
-  ): Promise<Integer> {
+  async function getOwnerBalance(owner: address, accountNumber: number, market: Integer): Promise<Integer> {
     const recyclableAccount = await recyclableToken.methods
       .getAccountNumber({
         owner,
@@ -830,7 +726,7 @@ describe('RecyclableTokenProxy', () => {
   async function expireMarket(): Promise<void> {
     await new EVM(dolomiteMargin.web3.currentProvider).callJsonrpcMethod(
       'evm_increaseTime',
-      [(maxExpirationTimestamp - currentTimestamp + 1) + 86400 * 7], // 86400 * 7 is the buffer time; add 1 second as an additional buffer
+      [maxExpirationTimestamp - currentTimestamp + 1 + 86400 * 7], // 86400 * 7 is the buffer time; add 1 second as an additional buffer
     );
   }
 });

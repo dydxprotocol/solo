@@ -44,6 +44,7 @@ describe('DoubleExponentInterestSetter', () => {
       dolomiteMargin.testing.doubleExponentInterestSetter.address,
       zero,
       zero,
+      zero,
       defaultIsClosing,
       defaultIsRecyclable,
       { from: admin },
