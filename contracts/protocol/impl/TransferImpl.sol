@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
 
@@ -37,7 +38,8 @@ library TransferImpl {
 
     function transfer(
         Storage.State storage state,
-        Actions.TransferArgs memory args
+        Actions.TransferArgs memory args,
+        Interest.Index memory index
     )
     public
     {
@@ -50,6 +52,7 @@ library TransferImpl {
         ) = state.getNewParAndDeltaWei(
             args.accountOne,
             args.market,
+            index,
             args.amount
         );
 
@@ -62,6 +65,7 @@ library TransferImpl {
         state.setParFromDeltaWei(
             args.accountTwo,
             args.market,
+            index,
             deltaWei.negative()
         );
 

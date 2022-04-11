@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
@@ -38,18 +39,20 @@ library WithdrawalImpl {
 
     function withdraw(
         Storage.State storage state,
-        Actions.WithdrawArgs memory args
+        Actions.WithdrawArgs memory args,
+        Interest.Index memory index
     )
     public
     {
         state.requireIsOperator(args.account, msg.sender);
 
         (
-        Types.Par memory newPar,
-        Types.Wei memory deltaWei
+            Types.Par memory newPar,
+            Types.Wei memory deltaWei
         ) = state.getNewParAndDeltaWei(
             args.account,
             args.market,
+            index,
             args.amount
         );
 

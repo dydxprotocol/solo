@@ -27,6 +27,7 @@ import { Actions } from "../lib/Actions.sol";
 import { Cache } from "../lib/Cache.sol";
 import { Decimal } from "../lib/Decimal.sol";
 import { Events } from "../lib/Events.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Math } from "../lib/Math.sol";
 import { Monetary } from "../lib/Monetary.sol";
 import { Require } from "../lib/Require.sol";
@@ -53,8 +54,8 @@ library LiquidateOrVaporizeImpl {
 
     function liquidate(
         Storage.State storage state,
-        Actions.LiquidateArgs memory args,
-        Cache.MarketCache memory cache
+        Cache.MarketCache memory cache,
+        Actions.LiquidateArgs memory args
     )
     public
     {
@@ -74,7 +75,8 @@ library LiquidateOrVaporizeImpl {
 
         Types.Wei memory maxHeldWei = state.getWei(
             args.liquidAccount,
-            args.heldMarket
+            args.heldMarket,
+            cache.get(args.heldMarket).index
         );
 
         Require.that(
@@ -84,12 +86,15 @@ library LiquidateOrVaporizeImpl {
             args.heldMarket
         );
 
+        Interest.Index memory owedIndex = cache.get(args.owedMarket).index;
+        Interest.Index memory heldIndex = cache.get(args.heldMarket).index;
         (
             Types.Par memory owedPar,
             Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.liquidAccount,
             args.owedMarket,
+            owedIndex,
             args.amount
         );
 
@@ -126,6 +131,7 @@ library LiquidateOrVaporizeImpl {
             state.setParFromDeltaWei(
                 args.liquidAccount,
                 args.owedMarket,
+                owedIndex,
                 owedWei
             );
         } else {
@@ -145,6 +151,7 @@ library LiquidateOrVaporizeImpl {
             state.setParFromDeltaWei(
                 args.liquidAccount,
                 args.heldMarket,
+                heldIndex,
                 heldWei
             );
         }
@@ -153,11 +160,13 @@ library LiquidateOrVaporizeImpl {
         state.setParFromDeltaWei(
             args.solidAccount,
             args.owedMarket,
+            owedIndex,
             owedWei.negative()
         );
         state.setParFromDeltaWei(
             args.solidAccount,
             args.heldMarket,
+            heldIndex,
             heldWei.negative()
         );
 
@@ -171,8 +180,8 @@ library LiquidateOrVaporizeImpl {
 
     function vaporize(
         Storage.State storage state,
-        Actions.VaporizeArgs memory args,
-        Cache.MarketCache memory cache
+        Cache.MarketCache memory cache,
+        Actions.VaporizeArgs memory args
     )
     public
     {
@@ -191,10 +200,11 @@ library LiquidateOrVaporizeImpl {
         }
 
         // First, attempt to refund using the same token
+        // cache.get(args.owedMarket).index is not stored in a variable here to avoid the "stack too deep" error
         (
             bool fullyRepaid,
             Types.Wei memory excessWei
-        ) = _vaporizeUsingExcess(state, args);
+        ) = _vaporizeUsingExcess(state, args, cache.get(args.owedMarket).index);
         if (fullyRepaid) {
             Events.logVaporize(
                 state,
@@ -216,17 +226,18 @@ library LiquidateOrVaporizeImpl {
         );
 
         (
-        Types.Par memory owedPar,
-        Types.Wei memory owedWei
+            Types.Par memory owedPar,
+            Types.Wei memory owedWei
         ) = state.getNewParAndDeltaWeiForLiquidation(
             args.vaporAccount,
             args.owedMarket,
+            cache.get(args.owedMarket).index,
             args.amount
         );
 
         (
-        Monetary.Price memory heldPrice,
-        Monetary.Price memory owedPrice
+            Monetary.Price memory heldPrice,
+            Monetary.Price memory owedPrice
         ) = _getLiquidationPrices(
             state,
             cache,
@@ -252,6 +263,7 @@ library LiquidateOrVaporizeImpl {
             state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMarket,
+                cache.get(args.owedMarket).index,
                 owedWei
             );
         } else {
@@ -274,11 +286,13 @@ library LiquidateOrVaporizeImpl {
         state.setParFromDeltaWei(
             args.solidAccount,
             args.owedMarket,
+            cache.get(args.owedMarket).index,
             owedWei.negative()
         );
         state.setParFromDeltaWei(
             args.solidAccount,
             args.heldMarket,
+            cache.get(args.heldMarket).index,
             heldWei.negative()
         );
 
@@ -299,7 +313,8 @@ library LiquidateOrVaporizeImpl {
      */
     function _vaporizeUsingExcess(
         Storage.State storage state,
-        Actions.VaporizeArgs memory args
+        Actions.VaporizeArgs memory args,
+        Interest.Index memory owedIndex
     )
     internal
     returns (bool, Types.Wei memory)
@@ -311,7 +326,11 @@ library LiquidateOrVaporizeImpl {
             return (false, Types.zeroWei());
         }
 
-        Types.Wei memory maxRefundWei = state.getWei(args.vaporAccount, args.owedMarket);
+        Types.Wei memory maxRefundWei = state.getWei(
+            args.vaporAccount,
+            args.owedMarket,
+            owedIndex
+        );
         maxRefundWei.sign = true;
 
         // The account is fully vaporizable using excess funds
@@ -329,6 +348,7 @@ library LiquidateOrVaporizeImpl {
             state.setParFromDeltaWei(
                 args.vaporAccount,
                 args.owedMarket,
+                owedIndex,
                 excessWei
             );
             return (false, excessWei);
@@ -397,7 +417,7 @@ library LiquidateOrVaporizeImpl {
         );
 
         Monetary.Price memory owedPriceAdj = Monetary.Price({
-        value: owedPrice.add(Decimal.mul(owedPrice, spread))
+            value: owedPrice.add(Decimal.mul(owedPrice, spread))
         });
 
         return (cache.get(heldMarketId).price, owedPriceAdj);

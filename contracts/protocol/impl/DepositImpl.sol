@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { Actions } from "../lib/Actions.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
@@ -38,7 +39,8 @@ library DepositImpl {
 
     function deposit(
         Storage.State storage state,
-        Actions.DepositArgs memory args
+        Actions.DepositArgs memory args,
+        Interest.Index memory index
     )
         public
     {
@@ -57,6 +59,7 @@ library DepositImpl {
         ) = state.getNewParAndDeltaWei(
             args.account,
             args.market,
+            index,
             args.amount
         );
 

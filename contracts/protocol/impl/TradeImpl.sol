@@ -22,8 +22,10 @@ pragma experimental ABIEncoderV2;
 import { IAutoTrader } from "../interfaces/IAutoTrader.sol";
 
 import { Actions } from "../lib/Actions.sol";
+import { Cache } from "../lib/Cache.sol";
 import { Events } from "../lib/Events.sol";
 import { Exchange } from "../lib/Exchange.sol";
+import { Interest } from "../lib/Interest.sol";
 import { Require } from "../lib/Require.sol";
 import { Storage } from "../lib/Storage.sol";
 import { Types } from "../lib/Types.sol";
@@ -41,7 +43,9 @@ library TradeImpl {
 
     function buy(
         Storage.State storage state,
-        Actions.BuyArgs memory args
+        Actions.BuyArgs memory args,
+        Interest.Index memory makerIndex,
+        Interest.Index memory takerIndex
     )
     public
     {
@@ -51,11 +55,12 @@ library TradeImpl {
         address makerToken = state.getToken(args.makerMarket);
 
         (
-        Types.Par memory makerPar,
-        Types.Wei memory makerWei
+            Types.Par memory makerPar,
+            Types.Wei memory makerWei
         ) = state.getNewParAndDeltaWei(
             args.account,
             args.makerMarket,
+            makerIndex,
             args.amount
         );
 
@@ -92,6 +97,7 @@ library TradeImpl {
         state.setParFromDeltaWei(
             args.account,
             args.takerMarket,
+            takerIndex,
             takerWei
         );
 
@@ -105,7 +111,9 @@ library TradeImpl {
 
     function sell(
         Storage.State storage state,
-        Actions.SellArgs memory args
+        Actions.SellArgs memory args,
+        Interest.Index memory makerIndex,
+        Interest.Index memory takerIndex
     )
     public
     {
@@ -115,11 +123,12 @@ library TradeImpl {
         address makerToken = state.getToken(args.makerMarket);
 
         (
-        Types.Par memory takerPar,
-        Types.Wei memory takerWei
+            Types.Par memory takerPar,
+            Types.Wei memory takerWei
         ) = state.getNewParAndDeltaWei(
             args.account,
             args.takerMarket,
+            takerIndex,
             args.amount
         );
 
@@ -141,6 +150,7 @@ library TradeImpl {
         state.setParFromDeltaWei(
             args.account,
             args.makerMarket,
+            makerIndex,
             makerWei
         );
 
@@ -154,7 +164,9 @@ library TradeImpl {
 
     function trade(
         Storage.State storage state,
-        Actions.TradeArgs memory args
+        Actions.TradeArgs memory args,
+        Interest.Index memory inputIndex,
+        Interest.Index memory outputIndex
     )
     public
     {
@@ -172,12 +184,14 @@ library TradeImpl {
             args.makerAccount,
             args.inputMarket
         );
+
         (
-        Types.Par memory newInputPar,
-        Types.Wei memory inputWei
+            Types.Par memory newInputPar,
+            Types.Wei memory inputWei
         ) = state.getNewParAndDeltaWei(
             args.makerAccount,
             args.inputMarket,
+            inputIndex,
             args.amount
         );
 
@@ -193,11 +207,12 @@ library TradeImpl {
         );
 
         (
-        Types.Par memory newOutputPar,
-        Types.Wei memory outputWei
+            Types.Par memory newOutputPar,
+            Types.Wei memory outputWei
         ) = state.getNewParAndDeltaWei(
             args.makerAccount,
             args.outputMarket,
+            outputIndex,
             outputAmount
         );
 
@@ -224,11 +239,13 @@ library TradeImpl {
         state.setParFromDeltaWei(
             args.takerAccount,
             args.inputMarket,
+            inputIndex,
             inputWei.negative()
         );
         state.setParFromDeltaWei(
             args.takerAccount,
             args.outputMarket,
+            outputIndex,
             outputWei.negative()
         );
 

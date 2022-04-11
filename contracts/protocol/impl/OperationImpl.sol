@@ -233,21 +233,48 @@ library OperationImpl {
             Actions.ActionType actionType = action.actionType;
 
             if (actionType == Actions.ActionType.Deposit) {
-                DepositImpl.deposit(state, Actions.parseDepositArgs(accounts, action));
+                DepositImpl.deposit(
+                    state,
+                    Actions.parseDepositArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Withdraw) {
-                WithdrawalImpl.withdraw(state, Actions.parseWithdrawArgs(accounts, action));
+                WithdrawalImpl.withdraw(
+                    state,
+                    Actions.parseWithdrawArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Transfer) {
-                TransferImpl.transfer(state, Actions.parseTransferArgs(accounts, action));
+                TransferImpl.transfer(
+                    state,
+                    Actions.parseTransferArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Buy) {
-                TradeImpl.buy(state, Actions.parseBuyArgs(accounts, action));
+                TradeImpl.buy(
+                    state,
+                    Actions.parseBuyArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index,
+                    cache.get(action.secondaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Sell) {
-                TradeImpl.sell(state, Actions.parseSellArgs(accounts, action));
+                TradeImpl.sell(
+                    state,
+                    Actions.parseSellArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index,
+                    cache.get(action.secondaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Trade) {
-                TradeImpl.trade(state, Actions.parseTradeArgs(accounts, action));
+                TradeImpl.trade(
+                    state,
+                    Actions.parseTradeArgs(accounts, action),
+                    cache.get(action.primaryMarketId).index,
+                    cache.get(action.secondaryMarketId).index
+                );
             } else if (actionType == Actions.ActionType.Liquidate) {
-                LiquidateOrVaporizeImpl.liquidate(state, Actions.parseLiquidateArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.liquidate(state, cache, Actions.parseLiquidateArgs(accounts, action));
             } else if (actionType == Actions.ActionType.Vaporize) {
-                LiquidateOrVaporizeImpl.vaporize(state, Actions.parseVaporizeArgs(accounts, action), cache);
+                LiquidateOrVaporizeImpl.vaporize(state, cache, Actions.parseVaporizeArgs(accounts, action));
             } else if (actionType == Actions.ActionType.Call) {
                 CallImpl.call(state, Actions.parseCallArgs(accounts, action));
             }

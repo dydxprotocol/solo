@@ -71,7 +71,7 @@ const migration = async (deployer, network) => {
 
     const gnosisSafe = getGnosisSafeAddress(network);
     await Promise.all([
-      deployedAmmRebalancerProxyV1.transferOwnership(gnosisSafe)
+      deployedAmmRebalancerProxyV1.transferOwnership(gnosisSafe),
     ]);
 
     if (isDevNetwork(network)) {

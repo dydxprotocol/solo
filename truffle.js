@@ -27,7 +27,7 @@ module.exports = {
     test: {
       host: '0.0.0.0',
       port: 8445,
-      gasPrice: 1,
+      gasPrice: 1e9,
       network_id: '1001',
     },
     test_ci: {
@@ -42,7 +42,7 @@ module.exports = {
       gasPrice: Number(process.env.GAS_PRICE),
       gas: 6900000,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
+      networkCheckTimeout: 120000,
     },
     kovan: {
       network_id: '42',
@@ -56,7 +56,7 @@ module.exports = {
       gas: 6900000,
       from: process.env.DEPLOYER_ACCOUNT,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
+      networkCheckTimeout: 120000,
     },
     dev: {
       host: 'localhost',
@@ -90,7 +90,7 @@ module.exports = {
       gas: 7900000,
       confirmations: 1,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
+      networkCheckTimeout: 120000,
     },
     mumbai_matic: {
       network_id: '80001',
@@ -103,34 +103,48 @@ module.exports = {
       gasPrice: 5e9,
       gas: 7900000,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
+      networkCheckTimeout: 120000,
     },
     arbitrum: {
-      network_id: '42161',
-      provider: () => new HDWalletProvider(
-        [process.env.DEPLOYER_PRIVATE_KEY],
-        process.env.NODE_URL,
-        0,
-        1,
-      ),
+      network_id: 42161,
+      provider: () => {
+        return new HDWalletProvider({
+          privateKeys: [process.env.DEPLOYER_PRIVATE_KEY],
+          providerOrUrl: process.env.NODE_URL,
+          addressIndex: 0,
+          numberOfAddresses: 1,
+          network_id: 42161,
+          chainId: 42161,
+          pollingInterval: 4000,
+        })
+      },
       gasPrice: 1000000000, // 1 gwei
-      gas: 100000000, // 100M gas
+      gas: 100000000,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
+      networkCheckTimeout: 120000,
+      confirmations: 1,
+      disableConfirmationListener: true,
     },
     arbitrum_rinkeby: {
-      network_id: '421611',
-      provider: () => new HDWalletProvider(
-        [process.env.DEPLOYER_PRIVATE_KEY],
-        process.env.NODE_URL,
-        0,
-        1,
-      ),
+      network_id: 421611,
+      provider: () => {
+        return new HDWalletProvider({
+          privateKeys: [process.env.DEPLOYER_PRIVATE_KEY],
+          providerOrUrl: process.env.NODE_URL,
+          addressIndex: 0,
+          numberOfAddresses: 1,
+          network_id: 421611,
+          chainId: 421611,
+          pollingInterval: 4000,
+        })
+      },
       gasPrice: 100000000, // 0.1 gwei
-      gas: 100000000, // 100M gas
+      gas: 100000000,
       timeoutBlocks: 5000,
-      networkCheckTimeout: 99999,
-    },
+      networkCheckTimeout: 120000,
+      confirmations: 1,
+      disableConfirmationListener: true,
+    }
   },
   plugins: ['truffle-plugin-verify', 'solidity-coverage'],
   api_keys: {

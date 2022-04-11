@@ -25,7 +25,12 @@ import { default as Weth } from '../build/contracts/WETH9.json';
 import { default as Events } from '../build/contracts/Events.json';
 import { default as AdminImpl } from '../build/contracts/AdminImpl.json';
 import { default as OperationImpl } from '../build/contracts/OperationImpl.json';
+import { default as DepositImpl } from '../build/contracts/DepositImpl.json';
+import { default as WithdrawalImpl } from '../build/contracts/WithdrawalImpl.json';
+import { default as TransferImpl } from '../build/contracts/TransferImpl.json';
+import { default as TradeImpl } from '../build/contracts/TradeImpl.json';
 import { default as LiquidateOrVaporizeImpl } from '../build/contracts/LiquidateOrVaporizeImpl.json';
+import { default as CallImplImpl } from '../build/contracts/CallImpl.json';
 import { default as Permission } from '../build/contracts/Permission.json';
 import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
@@ -43,7 +48,12 @@ import { default as IArbitrumGasInfo } from '../build/contracts/IArbitrumGasInfo
 import { default as TestUniswapAmmRebalancerProxy } from '../build/contracts/TestUniswapAmmRebalancerProxy.json';
 
 export default {
+  DepositImpl,
+  WithdrawalImpl,
+  TransferImpl,
+  TradeImpl,
   LiquidateOrVaporizeImpl,
+  CallImplImpl,
   OperationImpl,
   AdminImpl,
   DolomiteMargin,

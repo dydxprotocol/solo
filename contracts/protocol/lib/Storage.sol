@@ -275,7 +275,8 @@ library Storage {
     function getWei(
         Storage.State storage state,
         Account.Info memory account,
-        uint256 marketId
+        uint256 marketId,
+        Interest.Index memory index
     )
         internal
         view
@@ -287,7 +288,6 @@ library Storage {
             return Types.zeroWei();
         }
 
-        Interest.Index memory index = state.getIndex(marketId);
         return Interest.parToWei(par, index);
     }
 
@@ -430,7 +430,7 @@ library Storage {
 
         uint256 numMarkets = cache.getNumMarkets();
         for (uint256 i = 0; i < numMarkets; i++) {
-            Types.Wei memory userWei = state.getWei(account, cache.getAtIndex(i).marketId);
+            Types.Wei memory userWei = state.getWei(account, cache.getAtIndex(i).marketId, cache.getAtIndex(i).index);
 
             if (userWei.isZero()) {
                 continue;
@@ -580,6 +580,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         uint256 marketId,
+        Interest.Index memory index,
         Types.AssetAmount memory amount
     )
         internal
@@ -592,7 +593,6 @@ library Storage {
             return (oldPar, Types.zeroWei());
         }
 
-        Interest.Index memory index = state.getIndex(marketId);
         Types.Wei memory oldWei = Interest.parToWei(oldPar, index);
         Types.Par memory newPar;
         Types.Wei memory deltaWei;
@@ -624,6 +624,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         uint256 marketId,
+        Interest.Index memory index,
         Types.AssetAmount memory amount
     )
         internal
@@ -646,13 +647,14 @@ library Storage {
         ) = state.getNewParAndDeltaWei(
             account,
             marketId,
+            index,
             amount
         );
 
         // if attempting to over-repay the owed asset, bound it by the maximum
         if (newPar.isPositive()) {
             newPar = Types.zeroPar();
-            deltaWei = state.getWei(account, marketId).negative();
+            deltaWei = state.getWei(account, marketId, index).negative();
         }
 
         Require.that(
@@ -780,6 +782,7 @@ library Storage {
         Storage.State storage state,
         Account.Info memory account,
         uint256 marketId,
+        Interest.Index memory index,
         Types.Wei memory deltaWei
     )
         internal
@@ -787,8 +790,7 @@ library Storage {
         if (deltaWei.isZero()) {
             return;
         }
-        Interest.Index memory index = state.getIndex(marketId);
-        Types.Wei memory oldWei = state.getWei(account, marketId);
+        Types.Wei memory oldWei = state.getWei(account, marketId, index);
         Types.Wei memory newWei = oldWei.add(deltaWei);
         Types.Par memory newPar = Interest.weiToPar(newWei, index);
         state.setPar(
