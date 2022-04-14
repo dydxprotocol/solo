@@ -66,7 +66,7 @@ const migration = async (deployer, network) => {
       deployedSignedOperationProxy.transferOwnership(delayedMultisig),
       deployedSimpleFeeOwner.transferOwnership(delayedMultisig),
       deployedChainlinkPriceOracleV1.transferOwnership(delayedMultisig),
-      dolomiteAmmFactory.setFeeToSetter(deployedSimpleFeeOwner.address),
+      dolomiteAmmFactory.setFeeToSetter(delayedMultisig),
     ]);
 
     const gnosisSafe = getGnosisSafeAddress(network);

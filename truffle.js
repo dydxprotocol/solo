@@ -108,15 +108,10 @@ module.exports = {
     arbitrum: {
       network_id: 42161,
       provider: () => {
-        return new HDWalletProvider({
-          privateKeys: [process.env.DEPLOYER_PRIVATE_KEY],
-          providerOrUrl: process.env.NODE_URL,
-          addressIndex: 0,
-          numberOfAddresses: 1,
-          network_id: 42161,
-          chainId: 42161,
-          pollingInterval: 4000,
-        })
+        return new HDWalletProvider(
+          [process.env.DEPLOYER_PRIVATE_KEY],
+          process.env.ARBITRUM_NODE_URL
+        )
       },
       gasPrice: 1000000000, // 1 gwei
       gas: 100000000,
@@ -128,15 +123,10 @@ module.exports = {
     arbitrum_rinkeby: {
       network_id: 421611,
       provider: () => {
-        return new HDWalletProvider({
-          privateKeys: [process.env.DEPLOYER_PRIVATE_KEY],
-          providerOrUrl: process.env.NODE_URL,
-          addressIndex: 0,
-          numberOfAddresses: 1,
-          network_id: 421611,
-          chainId: 421611,
-          pollingInterval: 4000,
-        })
+        return new HDWalletProvider(
+          [process.env.DEPLOYER_PRIVATE_KEY],
+          process.env.ARBITRUM_RINKEBY_NODE_URL
+        )
       },
       gasPrice: 100000000, // 0.1 gwei
       gas: 100000000,

@@ -45,7 +45,7 @@
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "check_amm_bytecode": "ts-node ./scripts/CheckAmmBytecode.ts",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
-    "deploy": "truffle migrate --network=$NETWORK --f 3 && npm run save_deployed_addresses",
+    "deploy": "NODE_ENV=production truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_matic": "NETWORK=matic npm run deploy",
