@@ -140,7 +140,7 @@ describe('Integration', () => {
       accountBalances,
     ] = await Promise.all([
       dolomiteMargin.testing.tokenA.getBalance(who),
-      dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.address),
       dolomiteMargin.getters.getAccountBalances(who, accountNumber),
     ]);
 
@@ -276,7 +276,7 @@ describe('Integration', () => {
       // issue tokens
       heldToken.issueTo(
         amount.times(2),
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
 
       // set balances
@@ -377,7 +377,7 @@ describe('Integration', () => {
       // issue tokens
       heldToken.issueTo(
         amount.times(collateralization),
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
       owedToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.address),
 
@@ -464,8 +464,8 @@ describe('Integration', () => {
       owedToken.getBalance(solidOwner),
       heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
       owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
-      heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
-      owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      heldToken.getBalance(dolomiteMargin.address),
+      owedToken.getBalance(dolomiteMargin.address),
       dolomiteMargin.getters.getAccountBalances(solidOwner, solidNumber),
       dolomiteMargin.getters.getAccountBalances(liquidOwner, liquidNumber),
     ]);
@@ -516,7 +516,7 @@ describe('Integration', () => {
 
     await Promise.all([
       // issue tokens
-      owedToken.issueTo(amount, dolomiteMargin.contracts.dolomiteMargin.options.address),
+      owedToken.issueTo(amount, dolomiteMargin.address),
       heldToken.issueTo(amount, dolomiteMargin.testing.exchangeWrapper.address),
 
       // set balances
@@ -575,8 +575,8 @@ describe('Integration', () => {
     ] = await Promise.all([
       heldToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
       owedToken.getBalance(dolomiteMargin.testing.exchangeWrapper.address),
-      heldToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
-      owedToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+      heldToken.getBalance(dolomiteMargin.address),
+      owedToken.getBalance(dolomiteMargin.address),
       dolomiteMargin.getters.getAccountBalances(owner, oneNumber),
       dolomiteMargin.getters.getAccountBalances(owner, twoNumber),
     ]);

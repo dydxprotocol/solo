@@ -33,6 +33,15 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
+     * Same as `depositWei` but converts the `msg.sender`'s sent ETH into WETH before depositing into `DolomiteMargin`.
+     *
+     * @param _accountIndex The index into which `msg.sender` will be depositing
+     */
+    function depositETH(
+        uint _accountIndex
+    ) external payable;
+
+    /**
      * @dev Same as `depositWei` but defaults to account index 0 to save additional call data
      *
      * @param _marketId     The ID of the market being deposited
@@ -42,6 +51,12 @@ interface IDepositWithdrawalProxy {
         uint _marketId,
         uint _amountWei
     ) external;
+
+    /**
+     * Same as `depositWeiIntoDefaultAccount` but converts the `msg.sender`'s sent ETH into WETH before depositing into
+     * `DolomiteMargin`.
+     */
+    function depositETHIntoDefaultAccount() external payable;
 
     /**
      * @param _accountIndex The index into which `msg.sender` will be withdrawing
@@ -55,13 +70,34 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
+     * Same as `withdrawWei` but for withdrawing ETH. The user will receive unwrapped ETH from DolomiteMargin.
+     *
+     * @param _accountIndex The index into which `msg.sender` will be withdrawing
+     * @param _amountWei    The amount, in Wei, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire balance
+     */
+    function withdrawETH(
+        uint _accountIndex,
+        uint _amountWei
+    ) external;
+
+    /**
      * @dev Same as `depositWei` but defaults to account index 0 to save additional call data
      *
      * @param _marketId     The ID of the market being withdrawn
      * @param _amountWei    The amount, in Wei, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire balance
      */
-    function withdrawWeiIntoDefaultAccount(
+    function withdrawWeiFromDefaultAccount(
         uint _marketId,
+        uint _amountWei
+    ) external;
+
+    /**
+     * Same as `withdrawWeiFromDefaultAccount` but for withdrawing ETH. The user will receive unwrapped ETH from
+     * DolomiteMargin.
+     *
+     * @param _amountWei    The amount, in Wei, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire balance
+     */
+    function withdrawETHFromDefaultAccount(
         uint _amountWei
     ) external;
 

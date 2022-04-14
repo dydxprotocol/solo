@@ -1,8 +1,7 @@
 version: '3'
 services:
   ganache:
-    image: trufflesuite/ganache:v7.0.4
+    image: trufflesuite/ganache-cli:v6.12.2
     ports:
       - 8445:8545
-    entrypoint:
-      node /app/dist/node/cli.js --wallet.deterministic --chain.chainId 1001 --chain.networkId 1001 --chain.asyncRequestProcessing false
+    command: ganache-cli -d -i 1001

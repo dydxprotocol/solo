@@ -497,7 +497,7 @@ describe('Withdraw', () => {
 
   it('Succeeds to withdraw to the DolomiteMargin address', async () => {
     await Promise.all([setAccountBalance(par), issueTokensToDolomiteMargin(wei)]);
-    await expectWithdrawOkay({ to: dolomiteMargin.contracts.dolomiteMargin.options.address });
+    await expectWithdrawOkay({ to: dolomiteMargin.address });
     await expectBalances(zero, zero, zero, wei);
   });
 
@@ -562,7 +562,7 @@ async function setAccountBalance(amount: BigNumber) {
 async function issueTokensToDolomiteMargin(amount: BigNumber) {
   return dolomiteMargin.testing.tokenA.issueTo(
     amount,
-    dolomiteMargin.contracts.dolomiteMargin.options.address,
+    dolomiteMargin.address,
   );
 }
 
@@ -580,7 +580,7 @@ async function expectBalances(
     operatorTokenBalance,
   ] = await Promise.all([
     dolomiteMargin.getters.getAccountBalances(who, accountNumber),
-    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.address),
     dolomiteMargin.testing.tokenA.getBalance(who),
     dolomiteMargin.testing.tokenA.getBalance(operator),
   ]);

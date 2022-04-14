@@ -231,7 +231,7 @@ async function setUpBasicBalances() {
   const marketA = new BigNumber(await getMarketId(dolomiteMargin.testing.tokenA));
   const marketB = new BigNumber(await getMarketId(dolomiteMargin.testing.tokenB));
 
-  const dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
+  const dolomiteMarginAddress = dolomiteMargin.address;
 
   return Promise.all([
     dolomiteMargin.testing.tokenA.setBalance(owner1, parA.times(10000000)),

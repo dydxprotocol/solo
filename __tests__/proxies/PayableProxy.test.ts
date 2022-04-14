@@ -215,7 +215,7 @@ describe('PayableProxy', () => {
     await Promise.all([
       dolomiteMargin.weth.transfer(
         owner1,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
         amount,
       ),
       dolomiteMargin.testing.setAccountBalance(
@@ -244,7 +244,7 @@ describe('PayableProxy', () => {
       }),
       dolomiteMargin.testing.tokenB.issueTo(
         par,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
       dolomiteMargin.testing.setAccountBalance(
         owner1,
@@ -347,7 +347,7 @@ describe('PayableProxy', () => {
     await Promise.all([
       dolomiteMargin.weth.transfer(
         owner1,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
         amount,
       ),
       dolomiteMargin.testing.setAccountBalance(

@@ -158,6 +158,13 @@ export class DolomiteMargin {
     return this.web3.eth.defaultAccount;
   }
 
+  /**
+   * @return The address of the main DolomiteMargin smart contract
+   */
+  public get address(): address {
+    return this.contracts.dolomiteMargin.options.address;
+  }
+
   // ============ Helper Functions ============
 
   public loadAccount(account: EthereumAccount): void {

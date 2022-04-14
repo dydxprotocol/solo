@@ -180,6 +180,15 @@ function getWethAddress(network, WETH9) {
   throw new Error('Cannot find WETH');
 }
 
+function getWrappedCurrencyAddress(network, WETH9) {
+  if (isMatic(network) || isMaticTest(network)) {
+    return getMaticAddress(network)
+  }
+
+  // fall through case
+  return getWethAddress(network, WETH9)
+}
+
 module.exports = {
   getDaiAddress,
   getLinkAddress,
@@ -188,4 +197,5 @@ module.exports = {
   getUsdcAddress,
   getWbtcAddress,
   getWethAddress,
+  getWrappedCurrencyAddress,
 };

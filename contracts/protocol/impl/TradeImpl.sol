@@ -44,8 +44,8 @@ library TradeImpl {
     function buy(
         Storage.State storage state,
         Actions.BuyArgs memory args,
-        Interest.Index memory makerIndex,
-        Interest.Index memory takerIndex
+        Interest.Index memory takerIndex,
+        Interest.Index memory makerIndex
     )
     public
     {
@@ -112,8 +112,8 @@ library TradeImpl {
     function sell(
         Storage.State storage state,
         Actions.SellArgs memory args,
-        Interest.Index memory makerIndex,
-        Interest.Index memory takerIndex
+        Interest.Index memory takerIndex,
+        Interest.Index memory makerIndex
     )
     public
     {

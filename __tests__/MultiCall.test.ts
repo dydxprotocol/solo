@@ -26,7 +26,7 @@ describe('MultiCall', () => {
   it('works for a call', async () => {
     const calls = ['0', '1'].map(marketId => {
       return {
-        target: dolomiteMargin.contracts.dolomiteMargin.options.address,
+        target: dolomiteMargin.address,
         callData: dolomiteMargin.contracts.dolomiteMargin.methods.getMarketPrice(marketId).encodeABI(),
       };
     });
@@ -40,7 +40,7 @@ describe('MultiCall', () => {
   it('works for a call that returns many results', async () => {
     const calls = ['0', '1'].map(marketId => {
       return {
-        target: dolomiteMargin.contracts.dolomiteMargin.options.address,
+        target: dolomiteMargin.address,
         callData: dolomiteMargin.contracts.dolomiteMargin.methods.getMarketCurrentIndex(marketId).encodeABI(),
       };
     });

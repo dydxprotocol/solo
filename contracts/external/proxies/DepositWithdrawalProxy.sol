@@ -19,18 +19,22 @@
 pragma solidity ^0.5.7;
 pragma experimental ABIEncoderV2;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Account } from "../../protocol/lib/Account.sol";
 import { Actions } from "../../protocol/lib/Actions.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { Types } from "../../protocol/lib/Types.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDepositWithdrawalProxy } from "../interfaces/IDepositWithdrawalProxy.sol";
+import "../uniswap-v2/interfaces/IWETH.sol";
 
 
 /**
@@ -41,21 +45,61 @@ import { IDepositWithdrawalProxy } from "../interfaces/IDepositWithdrawalProxy.s
  *      callData
  */
 contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, ReentrancyGuard {
+    using Address for address payable;
 
     // ============ Constants ============
 
     bytes32 constant FILE = "DepositWithdrawalProxy";
 
+    // ============ Field Variables ============
+
+    WETH9 WETH;
+    uint256 ETH_MARKET_ID;
+    bool g_initialized;
+
+    // ============ Modifiers ============
+
+    modifier requireIsInitialized() {
+        Require.that(
+            g_initialized,
+            FILE,
+            "not initialized"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor (
-        address dolomiteMargin
+        address _dolomiteMargin
     )
     public
-    OnlyDolomiteMargin(dolomiteMargin)
+    OnlyDolomiteMargin(_dolomiteMargin)
     {}
 
     // ============ External Functions ============
+
+    function() external payable {
+        Require.that(
+            msg.sender == address(WETH),
+            FILE,
+            "invalid ETH sender"
+        );
+    }
+
+    function initializeETHMarket(
+        address payable _weth
+    ) external {
+        Require.that(
+            !g_initialized,
+            FILE,
+            "already initialized"
+        );
+        g_initialized = true;
+        WETH = WETH9(_weth);
+        ETH_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_weth);
+        WETH.approve(address(DOLOMITE_MARGIN), uint(-1));
+    }
 
     function depositWei(
         uint _accountIndex,
@@ -65,6 +109,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _deposit(
+            /* _from = */ msg.sender,
             _accountIndex,
             _marketId,
             Types.AssetAmount({
@@ -76,6 +121,27 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         );
     }
 
+    function depositETH(
+        uint _accountIndex
+    )
+    external
+    payable
+    requireIsInitialized
+    nonReentrant {
+        _wrap();
+        _deposit(
+            /* _from = */ address(this),
+            _accountIndex,
+            ETH_MARKET_ID,
+            Types.AssetAmount({
+                sign: true,
+                denomination: Types.AssetDenomination.Wei,
+                ref: Types.AssetReference.Delta,
+                value: msg.value
+            })
+        );
+    }
+
     function depositWeiIntoDefaultAccount(
         uint _marketId,
         uint _amountWei
@@ -83,13 +149,33 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _deposit(
-            0,
+            /* _from = */ msg.sender,
+            /* _accountIndex = */ 0,
             _marketId,
             Types.AssetAmount({
                 sign: true,
                 denomination: Types.AssetDenomination.Wei,
                 ref: Types.AssetReference.Delta,
                 value: _amountWei == uint(-1) ? _getSenderBalance(_marketId) : _amountWei
+            })
+        );
+    }
+
+    function depositETHIntoDefaultAccount()
+    external
+    payable
+    requireIsInitialized
+    nonReentrant {
+        _wrap();
+        _deposit(
+            /* _from = */ address(this),
+            /* _accountIndex = */ 0,
+            ETH_MARKET_ID,
+            Types.AssetAmount({
+                sign: true,
+                denomination: Types.AssetDenomination.Wei,
+                ref: Types.AssetReference.Delta,
+                value: msg.value
             })
         );
     }
@@ -102,6 +188,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _withdraw(
+            /* _to = */ msg.sender,
             _accountIndex,
             _marketId,
             Types.AssetAmount({
@@ -113,14 +200,36 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
         );
     }
 
-    function withdrawWeiIntoDefaultAccount(
+    function withdrawETH(
+        uint _accountIndex,
+        uint _amountWei
+    )
+    external
+    requireIsInitialized
+    nonReentrant {
+        _withdraw(
+            /* _to = */ address(this),
+            _accountIndex,
+            ETH_MARKET_ID,
+            Types.AssetAmount({
+                sign: false,
+                denomination: Types.AssetDenomination.Wei,
+                ref: _amountWei == uint(-1) ? Types.AssetReference.Target : Types.AssetReference.Delta,
+                value: _amountWei == uint(-1) ? 0 : _amountWei
+            })
+        );
+        _unwrapAndSend();
+    }
+
+    function withdrawWeiFromDefaultAccount(
         uint _marketId,
         uint _amountWei
     )
     external
     nonReentrant {
         _withdraw(
-            0,
+            /* _to = */ msg.sender,
+            /* _accountIndex = */ 0,
             _marketId,
             Types.AssetAmount({
                 sign: false,
@@ -129,6 +238,26 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
                 value: _amountWei == uint(-1) ? 0 : _amountWei
             })
         );
+    }
+
+    function withdrawETHFromDefaultAccount(
+        uint _amountWei
+    )
+    external
+    requireIsInitialized
+    nonReentrant {
+        _withdraw(
+            /* _to = */ address(this),
+            0,
+            ETH_MARKET_ID,
+            Types.AssetAmount({
+                sign: false,
+                denomination: Types.AssetDenomination.Wei,
+                ref: _amountWei == uint(-1) ? Types.AssetReference.Target : Types.AssetReference.Delta,
+                value: _amountWei == uint(-1) ? 0 : _amountWei
+            })
+        );
+        _unwrapAndSend();
     }
 
     // ========================= Par Functions =========================
@@ -141,6 +270,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _deposit(
+            /* _from = */ msg.sender,
             _accountIndex,
             _marketId,
             Types.AssetAmount({
@@ -159,7 +289,8 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _deposit(
-            0,
+            /* _from = */ msg.sender,
+            /* _accountIndex = */ 0,
             _marketId,
             Types.AssetAmount({
                 sign: true,
@@ -178,6 +309,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _withdraw(
+            /* _to = */ msg.sender,
             _accountIndex,
             _marketId,
             Types.AssetAmount({
@@ -196,7 +328,8 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     external
     nonReentrant {
         _withdraw(
-            0,
+            /* _to = */ msg.sender,
+            /* _accountIndex = */ 0,
             _marketId,
             Types.AssetAmount({
                 sign: false,
@@ -209,11 +342,23 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
 
     // ============ Internal Functions ============
 
+    function _wrap() internal {
+        WETH.deposit.value(msg.value)();
+    }
+
+    function _unwrapAndSend() internal {
+        WETH9 _WETH = WETH;
+        uint amount = _WETH.balanceOf(address(this));
+        _WETH.withdraw(amount);
+        msg.sender.sendValue(amount);
+    }
+
     function _getSenderBalance(uint _marketId) internal view returns (uint) {
         return IERC20(DOLOMITE_MARGIN.getMarketTokenAddress(_marketId)).balanceOf(msg.sender);
     }
 
     function _deposit(
+        address _from,
         uint _accountIndex,
         uint _marketId,
         Types.AssetAmount memory _amount
@@ -231,7 +376,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
             amount: _amount,
             primaryMarketId: _marketId,
             secondaryMarketId: 0,
-            otherAddress: msg.sender,
+            otherAddress: _from,
             otherAccountId: 0,
             data: bytes("")
         });
@@ -240,6 +385,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
     }
 
     function _withdraw(
+        address _to,
         uint _accountIndex,
         uint _marketId,
         Types.AssetAmount memory _amount
@@ -257,7 +403,7 @@ contract DepositWithdrawalProxy is IDepositWithdrawalProxy, OnlyDolomiteMargin, 
             amount: _amount,
             primaryMarketId: _marketId,
             secondaryMarketId: 0,
-            otherAddress: msg.sender,
+            otherAddress: _to,
             otherAccountId: 0,
             data: bytes("")
         });

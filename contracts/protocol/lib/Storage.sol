@@ -484,7 +484,6 @@ library Storage {
         if (borrowValue.value == 0) {
             return true;
         }
-
         if (requireMinBorrow) {
             Require.that(
                 borrowValue.value >= state.riskParams.minBorrowedValue.value,

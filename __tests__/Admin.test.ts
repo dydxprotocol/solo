@@ -62,7 +62,7 @@ describe('Admin', () => {
       setupMarkets(dolomiteMargin, accounts, 2),
     ]);
 
-    dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
+    dolomiteMarginAddress = dolomiteMargin.address;
     oracleAddress = dolomiteMargin.testing.priceOracle.address;
     setterAddress = dolomiteMargin.testing.interestSetter.address;
 
@@ -375,7 +375,7 @@ describe('Admin', () => {
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            dolomiteMargin.contracts.dolomiteMargin.options.address,
+            dolomiteMargin.address,
             underlyingToken.options.address,
             dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,
@@ -489,7 +489,7 @@ describe('Admin', () => {
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            dolomiteMargin.contracts.dolomiteMargin.options.address,
+            dolomiteMargin.address,
             underlyingToken.options.address,
             dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,
@@ -658,7 +658,7 @@ describe('Admin', () => {
         .deploy({
           data: recyclableBytecode,
           arguments: [
-            dolomiteMargin.contracts.dolomiteMargin.options.address,
+            dolomiteMargin.address,
             underlyingToken.options.address,
             dolomiteMargin.contracts.expiry.options.address,
             expirationTimestamp,

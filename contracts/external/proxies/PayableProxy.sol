@@ -34,6 +34,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
  * Contract for wrapping/unwrapping ETH before/after interacting with DolomiteMargin
  */
 contract PayableProxy is OnlyDolomiteMargin, ReentrancyGuard {
+
     // ============ Constants ============
 
     bytes32 constant FILE = "PayableProxy";

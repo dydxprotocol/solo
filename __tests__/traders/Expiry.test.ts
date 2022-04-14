@@ -1896,7 +1896,7 @@ async function deployCallbackContract(
     .deploy({
       data: TestLiquidationCallbackBytecode,
       arguments: [
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
         shouldRevert,
         shouldRevertWithMessage,
         shouldConsumeTonsOfGas,

@@ -42,7 +42,7 @@ describe('MaxWei', () => {
       ),
       dolomiteMargin.testing.tokenA.issueTo(
         amount.times('10'),
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
       dolomiteMargin.testing.tokenA.issueTo(
         amount.times('10'),

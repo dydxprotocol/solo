@@ -181,7 +181,7 @@ describe('Invalid', () => {
       dolomiteMargin.testing.tokenB.setMaximumDolomiteMarginAllowance(owner1),
       dolomiteMargin.testing.tokenC.issueTo(
         wei,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
       dolomiteMargin.testing.priceOracle.setPrice(
         dolomiteMargin.testing.tokenB.address,
@@ -228,7 +228,7 @@ describe('Invalid', () => {
       dolomiteMargin.testing.tokenB.setMaximumDolomiteMarginAllowance(owner1),
       dolomiteMargin.testing.tokenC.issueTo(
         wei,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
     ]);
     await expectThrow(

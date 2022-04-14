@@ -41,8 +41,8 @@ const {
   getChainlinkPriceOracleV1Params,
 } = require('./oracle_helpers');
 const {
-  getMaticAddress,
   getWethAddress,
+  getWrappedCurrencyAddress,
 } = require('./token_helpers');
 const { bytecode: uniswapV2PairBytecode } = require('../build/contracts/UniswapV2Pair.json');
 
@@ -372,7 +372,7 @@ async function deploySecondLayer(deployer, network, accounts) {
     deployer.deploy(
       PayableProxy,
       dolomiteMargin.address,
-      isMatic(network) || isMaticTest(network) ? getMaticAddress(network) : getWethAddress(network, WETH9),
+      getWrappedCurrencyAddress(network, WETH9),
     ),
     deployer.deploy(
       LiquidatorProxyV1,

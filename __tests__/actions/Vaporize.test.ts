@@ -560,14 +560,14 @@ describe('Vaporize', () => {
 async function issueHeldTokensToDolomiteMargin(amount: BigNumber) {
   return dolomiteMargin.testing.tokenB.issueTo(
     amount,
-    dolomiteMargin.contracts.dolomiteMargin.options.address,
+    dolomiteMargin.address,
   );
 }
 
 async function issueOwedTokensToDolomiteMargin(amount: BigNumber) {
   return dolomiteMargin.testing.tokenA.issueTo(
     amount,
-    dolomiteMargin.contracts.dolomiteMargin.options.address,
+    dolomiteMargin.address,
   );
 }
 

@@ -46,7 +46,7 @@ describe('Closing', () => {
       ),
       dolomiteMargin.testing.tokenA.issueTo(
         amount,
-        dolomiteMargin.contracts.dolomiteMargin.options.address,
+        dolomiteMargin.address,
       ),
       dolomiteMargin.testing.tokenA.setMaximumDolomiteMarginAllowance(owner),
     ]);

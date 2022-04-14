@@ -67,7 +67,7 @@ describe('Getters', () => {
       await dolomiteMargin.getters.getMarketIdByTokenAddress(dolomiteMargin.testing.tokenC.address),
     ];
 
-    dolomiteMarginAddress = dolomiteMargin.contracts.dolomiteMargin.options.address;
+    dolomiteMarginAddress = dolomiteMargin.address;
     oracleAddress = dolomiteMargin.testing.priceOracle.address;
     setterAddress = dolomiteMargin.testing.interestSetter.address;
 

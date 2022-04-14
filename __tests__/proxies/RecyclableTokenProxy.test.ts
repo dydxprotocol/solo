@@ -67,7 +67,7 @@ describe('RecyclableTokenProxy', () => {
 
     const borrowToken = new dolomiteMargin.web3.eth.Contract(customTestTokenABI, borrowTokenAddress) as CustomTestToken;
 
-    await borrowToken.methods.setBalance(dolomiteMargin.contracts.dolomiteMargin.options.address, '1000000').send({
+    await borrowToken.methods.setBalance(dolomiteMargin.address, '1000000').send({
       from: admin,
       gas: '100000',
     });
@@ -78,7 +78,7 @@ describe('RecyclableTokenProxy', () => {
     testTrader = (await new dolomiteMargin.web3.eth.Contract(testTraderABI)
       .deploy({
         data: testTraderBytecode,
-        arguments: [dolomiteMargin.contracts.dolomiteMargin.options.address],
+        arguments: [dolomiteMargin.address],
       })
       .send({ from: admin, gas: '6000000' })) as TestTrader;
 
@@ -679,7 +679,7 @@ describe('RecyclableTokenProxy', () => {
       .deploy({
         data: recyclableBytecode,
         arguments: [
-          dolomiteMargin.contracts.dolomiteMargin.options.address,
+          dolomiteMargin.address,
           underlyingToken.options.address,
           dolomiteMargin.contracts.expiry.options.address,
           maxExpirationTimestamp,

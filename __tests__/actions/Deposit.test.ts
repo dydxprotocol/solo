@@ -523,7 +523,7 @@ async function expectBalances(
   const [accountBalances, walletTokenBalance, dolomiteMarginTokenBalance] = await Promise.all([
     dolomiteMargin.getters.getAccountBalances(who, accountNumber),
     dolomiteMargin.testing.tokenA.getBalance(who),
-    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    dolomiteMargin.testing.tokenA.getBalance(dolomiteMargin.address),
   ]);
   accountBalances.forEach(balance => {
     let expected = { par: zero, wei: zero };

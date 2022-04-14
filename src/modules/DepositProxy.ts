@@ -1,10 +1,5 @@
 import { Contracts } from '../lib/Contracts';
-import {
-  address,
-  ContractCallOptions,
-  Integer,
-  TxResult,
-} from '../types';
+import { address, ContractCallOptions, Integer, TxResult } from '../types';
 
 export class DepositProxy {
   private contracts: Contracts;
@@ -13,11 +8,25 @@ export class DepositProxy {
     this.contracts = contracts;
   }
 
+  public get address(): address {
+    return this.contracts.depositProxy.options.address;
+  }
+
   // ============ View Functions ============
 
   public async dolomiteMargin(): Promise<address> {
-    return this.contracts.callConstantContractFunction(
-      this.contracts.depositProxy.methods.DOLOMITE_MARGIN(),
+    return this.contracts.callConstantContractFunction(this.contracts.depositProxy.methods.DOLOMITE_MARGIN());
+  }
+
+  // ============ Write Functions ============
+
+  public async initializeETHMarket(
+    weth: address,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.depositProxy.methods.initializeETHMarket(weth),
+      options,
     );
   }
 
@@ -28,13 +37,20 @@ export class DepositProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.depositProxy.methods.depositWei(
-        accountIndex.toFixed(),
-        marketId.toFixed(),
-        amountWei.toFixed(),
-      ),
+      this.contracts.depositProxy.methods.depositWei(accountIndex.toFixed(), marketId.toFixed(), amountWei.toFixed()),
       options,
     );
+  }
+
+  public async depositETH(
+    accountIndex: Integer,
+    amountWei: Integer,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(this.contracts.depositProxy.methods.depositETH(accountIndex.toFixed()), {
+      ...options,
+      value: amountWei.toFixed(),
+    });
   }
 
   public async depositWeiIntoDefaultAccount(
@@ -48,6 +64,13 @@ export class DepositProxy {
     );
   }
 
+  public async depositETHIntoDefaultAccount(amountWei: Integer, options: ContractCallOptions = {}): Promise<TxResult> {
+    return this.contracts.callContractFunction(this.contracts.depositProxy.methods.depositETHIntoDefaultAccount(), {
+      ...options,
+      value: amountWei.toFixed(),
+    });
+  }
+
   public async withdrawWei(
     accountIndex: Integer,
     marketId: Integer,
@@ -55,22 +78,36 @@ export class DepositProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.depositProxy.methods.withdrawWei(
-        accountIndex.toFixed(),
-        marketId.toFixed(),
-        amountWei.toFixed(),
-      ),
+      this.contracts.depositProxy.methods.withdrawWei(accountIndex.toFixed(), marketId.toFixed(), amountWei.toFixed()),
       options,
     );
   }
 
-  public async withdrawWeiIntoDefaultAccount(
+  public async withdrawETH(
+    accountIndex: Integer,
+    amountWei: Integer,
+    options: ContractCallOptions = {},
+  ): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.depositProxy.methods.withdrawETH(accountIndex.toFixed(), amountWei.toFixed()),
+      options,
+    );
+  }
+
+  public async withdrawWeiFromDefaultAccount(
     marketId: Integer,
     amountWei: Integer,
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.depositProxy.methods.withdrawWeiIntoDefaultAccount(marketId.toFixed(), amountWei.toFixed()),
+      this.contracts.depositProxy.methods.withdrawWeiFromDefaultAccount(marketId.toFixed(), amountWei.toFixed()),
+      options,
+    );
+  }
+
+  public async withdrawETHFromDefaultAccount(amountWei: Integer, options: ContractCallOptions = {}): Promise<TxResult> {
+    return this.contracts.callContractFunction(
+      this.contracts.depositProxy.methods.withdrawETHFromDefaultAccount(amountWei.toFixed()),
       options,
     );
   }
@@ -82,11 +119,7 @@ export class DepositProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.depositProxy.methods.depositPar(
-        accountIndex.toFixed(),
-        marketId.toFixed(),
-        amountPar.toFixed(),
-      ),
+      this.contracts.depositProxy.methods.depositPar(accountIndex.toFixed(), marketId.toFixed(), amountPar.toFixed()),
       options,
     );
   }
@@ -109,11 +142,7 @@ export class DepositProxy {
     options: ContractCallOptions = {},
   ): Promise<TxResult> {
     return this.contracts.callContractFunction(
-      this.contracts.depositProxy.methods.withdrawPar(
-        accountIndex.toFixed(),
-        marketId.toFixed(),
-        amountPar.toFixed(),
-      ),
+      this.contracts.depositProxy.methods.withdrawPar(accountIndex.toFixed(), marketId.toFixed(), amountPar.toFixed()),
       options,
     );
   }

@@ -16,8 +16,6 @@
 
 */
 
-const BigNumber = require('bignumber.js');
-
 const {
   isDevNetwork,
   isKovan,
@@ -29,7 +27,8 @@ const {
   isArbitrumTest,
 } = require('./helpers');
 const { getDaiAddress, getLinkAddress, getMaticAddress, getUsdcAddress, getWethAddress,
-  getWbtcAddress
+  getWbtcAddress,
+  getWrappedCurrencyAddress
 } = require('./token_helpers');
 const { getChainlinkPriceOracleContract } = require('./oracle_helpers');
 
@@ -37,6 +36,7 @@ const { getChainlinkPriceOracleContract } = require('./oracle_helpers');
 
 // Base Protocol
 const DolomiteMargin = artifacts.require('DolomiteMargin');
+const DepositWithdrawalProxy = artifacts.require('DepositWithdrawalProxy');
 const Expiry = artifacts.require('Expiry');
 
 // Test Contracts
@@ -51,11 +51,6 @@ const TestPriceOracle = artifacts.require('TestPriceOracle');
 // Interest Setters
 const DoubleExponentInterestSetter = artifacts.require('DoubleExponentInterestSetter');
 
-// ============ Constants ============
-
-const INITIAL_TOKENS = new BigNumber('10e18');
-const ONE_DOLLAR = new BigNumber('1e18');
-
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
@@ -66,7 +61,7 @@ module.exports = migration;
 
 // ============ Setup Functions ============
 
-async function setupProtocol(deployer, network, accounts) {
+async function setupProtocol(deployer, network) {
   const expiry = await Expiry.deployed();
   const dolomiteMargin = await getDolomiteMargin(network);
   await dolomiteMargin.ownerSetAutoTraderSpecial(expiry.address, true);
@@ -81,18 +76,21 @@ async function setupProtocol(deployer, network, accounts) {
     getSetters(network),
   ]);
 
-  if (isDocker(network)) {
-    // issue tokens to accounts
-    await Promise.all(accounts.map(account => Promise.all([tokens.map(t => t.issueTo(account, INITIAL_TOKENS))])));
-    const testPriceOracle = await TestPriceOracle.deployed();
-    await Promise.all([
-      testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed(0)), // WETH
-      testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed(0)), // DAI
-      testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)), // ZRX
-    ]);
-  }
+  // if (isDocker(network)) {
+  //   // issue tokens to accounts
+  //   await Promise.all(accounts.map(account => Promise.all([tokens.map(t => t.issueTo(account, INITIAL_TOKENS))])));
+  //   const testPriceOracle = await TestPriceOracle.deployed();
+  //   await Promise.all([
+  //     testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed(0)), // WETH
+  //     testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed(0)), // DAI
+  //     testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)), // ZRX
+  //   ]);
+  // }
 
   await addMarkets(dolomiteMargin, tokens, oracles, setters);
+
+  const depositWithdrawalProxy = await DepositWithdrawalProxy.deployed();
+  depositWithdrawalProxy.initializeETHMarket(getWrappedCurrencyAddress(network, WETH9));
 }
 
 async function addMarkets(dolomiteMargin, tokens, priceOracles, interestSetters) {

@@ -335,7 +335,7 @@ async function expectPars(
   expectedTakerPar: Integer,
 ) {
   const [makerBalance, balances] = await Promise.all([
-    makerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    makerToken.getBalance(dolomiteMargin.address),
     dolomiteMargin.getters.getAccountBalances(who, accountNumber),
   ]);
   expect(makerBalance)
@@ -391,8 +391,8 @@ async function expectDolomiteMarginBalances(
   expectedTakerWei: Integer,
 ) {
   const [makerWei, takerWei] = await Promise.all([
-    makerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
-    takerToken.getBalance(dolomiteMargin.contracts.dolomiteMargin.options.address),
+    makerToken.getBalance(dolomiteMargin.address),
+    takerToken.getBalance(dolomiteMargin.address),
   ]);
   expect(makerWei)
     .toEqual(expectedMakerWei);
@@ -405,7 +405,7 @@ async function issueMakerTokenToWrapper(amount: Integer) {
 }
 
 async function issueTakerTokenToDolomiteMargin(amount: Integer) {
-  return takerToken.issueTo(amount, dolomiteMargin.contracts.dolomiteMargin.options.address);
+  return takerToken.issueTo(amount, dolomiteMargin.address);
 }
 
 async function setTakerBalance(par: Integer) {
