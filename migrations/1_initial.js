@@ -16,8 +16,19 @@
 
 */
 
+const { isDevNetwork } = require('./helpers');
+
 const Migrations = artifacts.require('./Migrations.sol');
 
-const migration = deployer => deployer.deploy(Migrations);
+const getDeploymentOptions = () => {
+  const overwrite = process.env.OVERWRITE_EXISTING_CONTRACTS === 'true' || isDevNetwork(process.env.NETWORK);
+  if (!overwrite) {
+    return { overwrite: overwrite };
+  }
+
+  return {}
+};
+
+const migration = deployer => deployer.deploy(Migrations, getDeploymentOptions());
 
 module.exports = migration

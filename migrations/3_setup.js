@@ -76,17 +76,6 @@ async function setupProtocol(deployer, network) {
     getSetters(network),
   ]);
 
-  // if (isDocker(network)) {
-  //   // issue tokens to accounts
-  //   await Promise.all(accounts.map(account => Promise.all([tokens.map(t => t.issueTo(account, INITIAL_TOKENS))])));
-  //   const testPriceOracle = await TestPriceOracle.deployed();
-  //   await Promise.all([
-  //     testPriceOracle.setPrice(tokens[0].address, ONE_DOLLAR.times('100').toFixed(0)), // WETH
-  //     testPriceOracle.setPrice(tokens[1].address, ONE_DOLLAR.toFixed(0)), // DAI
-  //     testPriceOracle.setPrice(tokens[2].address, ONE_DOLLAR.times('0.3').toFixed(0)), // ZRX
-  //   ]);
-  // }
-
   await addMarkets(dolomiteMargin, tokens, oracles, setters);
 
   const depositWithdrawalProxy = await DepositWithdrawalProxy.deployed();
