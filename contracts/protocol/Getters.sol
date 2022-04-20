@@ -408,6 +408,16 @@ contract Getters is
         return g_state.getMarketsWithBalances(account);
     }
 
+    function getNumberOfMarketsWithBalances(
+        Account.Info memory account
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return g_state.getNumberOfMarketsWithBalances(account);
+    }
+
     function getNumberOfMarketsWithBorrow(
         Account.Info memory account
     )

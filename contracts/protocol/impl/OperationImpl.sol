@@ -233,50 +233,67 @@ library OperationImpl {
             Actions.ActionType actionType = action.actionType;
 
             if (actionType == Actions.ActionType.Deposit) {
+                Actions.DepositArgs memory depositArgs = Actions.parseDepositArgs(accounts, action);
                 DepositImpl.deposit(
                     state,
-                    Actions.parseDepositArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index
+                    depositArgs,
+                    cache.get(depositArgs.market).index
                 );
             } else if (actionType == Actions.ActionType.Withdraw) {
+                Actions.WithdrawArgs memory withdrawArgs = Actions.parseWithdrawArgs(accounts, action);
                 WithdrawalImpl.withdraw(
                     state,
-                    Actions.parseWithdrawArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index
+                    withdrawArgs,
+                    cache.get(withdrawArgs.market).index
                 );
             } else if (actionType == Actions.ActionType.Transfer) {
+                Actions.TransferArgs memory transferArgs = Actions.parseTransferArgs(accounts, action);
                 TransferImpl.transfer(
                     state,
-                    Actions.parseTransferArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index
+                    transferArgs,
+                    cache.get(transferArgs.market).index
                 );
             } else if (actionType == Actions.ActionType.Buy) {
+                Actions.BuyArgs memory buyArgs = Actions.parseBuyArgs(accounts, action);
                 TradeImpl.buy(
                     state,
-                    Actions.parseBuyArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index,
-                    cache.get(action.secondaryMarketId).index
+                    buyArgs,
+                    cache.get(buyArgs.takerMarket).index,
+                    cache.get(buyArgs.makerMarket).index
                 );
             } else if (actionType == Actions.ActionType.Sell) {
+                Actions.SellArgs memory sellArgs = Actions.parseSellArgs(accounts, action);
                 TradeImpl.sell(
                     state,
-                    Actions.parseSellArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index,
-                    cache.get(action.secondaryMarketId).index
+                    sellArgs,
+                    cache.get(sellArgs.takerMarket).index,
+                    cache.get(sellArgs.makerMarket).index
                 );
             } else if (actionType == Actions.ActionType.Trade) {
+                Actions.TradeArgs memory tradeArgs = Actions.parseTradeArgs(accounts, action);
                 TradeImpl.trade(
                     state,
-                    Actions.parseTradeArgs(accounts, action),
-                    cache.get(action.primaryMarketId).index,
-                    cache.get(action.secondaryMarketId).index
+                    tradeArgs,
+                    cache.get(tradeArgs.inputMarket).index,
+                    cache.get(tradeArgs.outputMarket).index
                 );
             } else if (actionType == Actions.ActionType.Liquidate) {
-                LiquidateOrVaporizeImpl.liquidate(state, cache, Actions.parseLiquidateArgs(accounts, action));
+                LiquidateOrVaporizeImpl.liquidate(
+                    state,
+                    cache,
+                    Actions.parseLiquidateArgs(accounts, action)
+                );
             } else if (actionType == Actions.ActionType.Vaporize) {
-                LiquidateOrVaporizeImpl.vaporize(state, cache, Actions.parseVaporizeArgs(accounts, action));
+                LiquidateOrVaporizeImpl.vaporize(
+                    state,
+                    cache,
+                    Actions.parseVaporizeArgs(accounts, action)
+                );
             } else if (actionType == Actions.ActionType.Call) {
-                CallImpl.call(state, Actions.parseCallArgs(accounts, action));
+                CallImpl.call(
+                    state,
+                    Actions.parseCallArgs(accounts, action)
+                );
             }
         }
     }
