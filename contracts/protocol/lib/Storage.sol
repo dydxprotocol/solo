@@ -117,8 +117,8 @@ library Storage {
         // There must be sufficient incentivize to liquidate undercollateralized accounts
         Monetary.Value minBorrowedValue;
 
-        // The maximum number of markets a user can have a non-zero balance for, when the account has any debt.
-        uint256 maxNumberOfMarketsWithBalancesAndDebt;
+        // The maximum number of markets a user can have a non-zero balance for a given account.
+        uint256 accountMaxNumberOfMarketsWithBalances;
     }
 
     // The maximum RiskParam values that can be set
@@ -313,6 +313,18 @@ library Storage {
         return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.values();
     }
 
+    function getAccountMarketWithBalanceAtIndex(
+        Storage.State storage state,
+        Account.Info memory account,
+        uint256 index
+    )
+    internal
+    view
+    returns (uint256)
+    {
+        return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.getAtIndex(index);
+    }
+
     function getNumberOfMarketsWithBalances(
         Storage.State storage state,
         Account.Info memory account
@@ -324,7 +336,7 @@ library Storage {
         return state.accounts[account.owner][account.number].marketsWithNonZeroBalanceSet.length();
     }
 
-    function getNumberOfMarketsWithBorrow(
+    function getAccountNumberOfMarketsWithDebt(
         Storage.State storage state,
         Account.Info memory account
     )
@@ -332,7 +344,7 @@ library Storage {
     view
     returns (uint256)
     {
-        return state.accounts[account.owner][account.number].numberOfMarketsWithBorrow;
+        return state.accounts[account.owner][account.number].numberOfMarketsWithDebt;
     }
 
     function getLiquidationSpreadForPair(
@@ -462,18 +474,10 @@ library Storage {
         view
         returns (bool)
     {
-        if (state.getNumberOfMarketsWithBorrow(account) == 0) {
+        if (state.getAccountNumberOfMarketsWithDebt(account) == 0) {
             // The user does not have a balance with a borrow amount, so they must be collateralized
             return true;
         }
-
-        Require.that(
-            state.getNumberOfMarketsWithBalances(account) <= state.riskParams.maxNumberOfMarketsWithBalancesAndDebt,
-            FILE,
-            "Too many non-zero balances",
-            account.owner,
-            account.number
-        );
 
         // get account values (adjusted for liquidity)
         (
@@ -756,10 +760,10 @@ library Storage {
 
         if (oldPar.isLessThanZero() && newPar.isGreaterThanOrEqualToZero()) {
             // user went from borrowing to repaying or positive
-            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow -= 1;
+            state.accounts[account.owner][account.number].numberOfMarketsWithDebt -= 1;
         } else if (oldPar.isGreaterThanOrEqualToZero() && newPar.isLessThanZero()) {
             // user went from zero or positive to borrowing
-            state.accounts[account.owner][account.number].numberOfMarketsWithBorrow += 1;
+            state.accounts[account.owner][account.number].numberOfMarketsWithDebt += 1;
         }
 
         if (newPar.isZero() && (!oldPar.isZero())) {
@@ -810,7 +814,7 @@ library Storage {
         uint counter = 0;
 
         // Really neat byproduct of iterating through a bitmap using the least significant bit, where each set flag
-        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!!!!!!
+        // represents the marketId, --> the initialized `cache.markets` array is sorted in O(n)!
         // Meaning, this function call is O(n) where `n` is the number of markets in the cache
         for (uint i = 0; i < cache.marketBitmaps.length; i++) {
             uint bitmap = cache.marketBitmaps[i];

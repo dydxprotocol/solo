@@ -26,9 +26,15 @@ const {
   isArbitrum,
   isArbitrumTest,
 } = require('./helpers');
-const { getDaiAddress, getLinkAddress, getMaticAddress, getUsdcAddress, getWethAddress,
+const {
+  getDaiAddress,
+  getLinkAddress,
+  getMaticAddress,
+  getUsdcAddress,
+  getWethAddress,
   getWbtcAddress,
-  getWrappedCurrencyAddress
+  getWrappedCurrencyAddress,
+  getUsdtAddress,
 } = require('./token_helpers');
 const { getChainlinkPriceOracleContract } = require('./oracle_helpers');
 
@@ -70,11 +76,7 @@ async function setupProtocol(deployer, network) {
     return;
   }
 
-  const [tokens, oracles, setters] = await Promise.all([
-    getTokens(network),
-    getOracles(network),
-    getSetters(network),
-  ]);
+  const [tokens, oracles, setters] = await Promise.all([getTokens(network), getOracles(network), getSetters(network)]);
 
   await addMarkets(dolomiteMargin, tokens, oracles, setters);
 
@@ -130,13 +132,17 @@ function getTokens(network) {
       { address: getUsdcAddress(network, TokenA) },
     ];
   } else if (isArbitrum(network) || isArbitrumTest(network)) {
-    return [
+    const tokens = [
       { address: getWethAddress(network, WETH9) },
       { address: getDaiAddress(network, TokenB) },
       { address: getUsdcAddress(network, TokenA) },
       { address: getLinkAddress(network, TokenF) },
       { address: getWbtcAddress(network, TokenD) },
     ];
+    if (isArbitrum(network)) {
+      tokens.push({ address: getUsdtAddress(network) });
+    }
+    return tokens;
   }
 
   throw new Error('unknown network');

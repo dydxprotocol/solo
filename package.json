@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "engines": {
     "npm": "6.14.x"
@@ -57,7 +57,7 @@
     "deploy_coverage": "RPC_NODE_URI=http://127.0.0.1:8555 npm run reset_test_evm && COVERAGE=true npm run migrate -- --network coverage && RPC_NODE_URI=http://127.0.0.1:8555 npm run snapshot_test_evm && npm run clean_contract_json",
     "deploy_test_ci": "RPC_NODE_URI=http://0.0.0.0:8545 npm run reset_test_evm && npm run migrate -- --network test_ci --reset && RPC_NODE_URI=http://0.0.0.0:8545 npm run snapshot_test_evm && npm run check_amm_bytecode && npm run clean_contract_json",
     "test_only": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand",
-    "test_only_specific": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand -t 'DepositWithdrawalProxy'",
+    "test_only_specific": "NODE_ENV=test jest --setupFiles dotenv/config --runInBand -t 'AddManyMarkets'",
     "test_cov": "npm run deploy_coverage && NETWORK_ID=1002 COVERAGE=true RPC_NODE_URI=http://127.0.0.1:8555 npm run test_only -- --forceExit",
     "ci_test": "NODE_ENV=test RPC_NODE_URI=http://0.0.0.0:8545 jest --setupFiles dotenv/config --runInBand",
     "reset_test_evm": "node scripts/reset-test-evm.js",

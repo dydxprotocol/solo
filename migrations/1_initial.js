@@ -16,19 +16,16 @@
 
 */
 
-const { isDevNetwork } = require('./helpers');
+const { shouldOverwrite, getNoOverwriteParams } = require('./helpers');
 
 const Migrations = artifacts.require('./Migrations.sol');
 
-const getDeploymentOptions = () => {
-  const overwrite = process.env.OVERWRITE_EXISTING_CONTRACTS === 'true' || isDevNetwork(process.env.NETWORK);
-  if (!overwrite) {
-    return { overwrite: overwrite };
+const migration = async (deployer, network) => {
+  if (shouldOverwrite(Migrations, network)) {
+    await deployer.deploy(Migrations);
+  } else {
+    await deployer.deploy(Migrations, getNoOverwriteParams());
   }
-
-  return {}
 };
-
-const migration = deployer => deployer.deploy(Migrations, getDeploymentOptions());
 
 module.exports = migration

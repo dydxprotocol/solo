@@ -287,9 +287,30 @@ interface IDolomiteMargin {
      * @param  account  The account to query
      * @return          The non-sorted marketIds with non-zero balance for the account.
      */
-    function getAccountMarketsWithNonZeroBalances(
+    function getAccountMarketsWithBalances(
         Account.Info calldata account
     ) external view returns (uint256[] memory);
+
+    /**
+     * Get the number of markets that have a non-zero balance for an account
+     *
+     * @param  account  The account to query
+     * @return          The non-sorted marketIds with non-zero balance for the account.
+     */
+    function getAccountNumberOfMarketsWithBalances(
+        Account.Info calldata account
+    ) external view returns (uint256);
+
+    /**
+     * Get the marketId for an account's market with a non-zero balance at the given index
+     *
+     * @param  account  The account to query
+     * @return          The non-sorted marketIds with non-zero balance for the account.
+     */
+    function getAccountMarketWithBalanceAtIndex(
+        Account.Info calldata account,
+        uint256 index
+    ) external view returns (uint256);
 
     /**
      * Get the number of markets with which an account has a negative balance.
@@ -297,7 +318,7 @@ interface IDolomiteMargin {
      * @param  account  The account to query
      * @return          The non-sorted marketIds with non-zero balance for the account.
      */
-    function getNumberOfMarketsWithBorrow(
+    function getAccountNumberOfMarketsWithDebt(
         Account.Info calldata account
     ) external view returns (uint256);
 

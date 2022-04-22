@@ -94,16 +94,16 @@ contract Admin is
      * the number of gas units needed to process their transaction exceed the block's gas limit. In turn, this would
      * prevent the user from also being liquidated, causing the all of the capital to be "stuck" in the position.
      */
-    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
+    function ownerSetAccountMaxNumberOfMarketsWithBalances(
+        uint256 accountMaxNumberOfMarketsWithBalances
     )
         public
         onlyOwner
         nonReentrant
     {
-        AdminImpl.ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+        AdminImpl.ownerSetAccountMaxNumberOfMarketsWithBalances(
             g_state,
-            maxNumberOfMarketsWithBalancesAndDebt
+            accountMaxNumberOfMarketsWithBalances
         );
     }
 

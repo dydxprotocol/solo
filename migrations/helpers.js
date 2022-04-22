@@ -102,7 +102,7 @@ async function getRiskParams(network) {
     liquidationSpread: { value: decimalToString('0.05') },
     earningsRate: { value: decimalToString('0.90') },
     minBorrowedValue: { value: decimalToString(mbv) },
-    maxNumberOfMarketsWithBalancesAndDebt: '32',
+    accountMaxNumberOfMarketsWithBalances: '32',
   };
 }
 
@@ -213,6 +213,22 @@ function getUniswapV3MultiRouter(network, TestUniswapV3MultiRouter) {
   return '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
 }
 
+const shouldOverwrite = (contract, network) => {
+  const basicCondition = process.env.OVERWRITE_EXISTING_CONTRACTS === 'true' || isDevNetwork(network);
+  if (basicCondition) {
+    return true;
+  }
+
+  try {
+    return !contract.address;
+  } catch (e) {
+    // The address can't be retrieved, which means there isn't one.
+    return true
+  }
+}
+
+const getNoOverwriteParams = () => ({ overwrite: false });
+
 module.exports = {
   isArbitrum,
   isArbitrumTest,
@@ -233,4 +249,6 @@ module.exports = {
   getGnosisSafeAddress,
   getChainlinkFlags,
   getUniswapV3MultiRouter,
+  shouldOverwrite,
+  getNoOverwriteParams,
 };

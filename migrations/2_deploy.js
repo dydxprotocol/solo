@@ -35,6 +35,8 @@ const {
   isArbitrumTest,
   getChainlinkFlags,
   getUniswapV3MultiRouter,
+  shouldOverwrite,
+  getNoOverwriteParams,
 } = require('./helpers');
 const {
   getChainlinkPriceOracleContract,
@@ -122,23 +124,6 @@ const UniswapV2Factory = artifacts.require('UniswapV2Factory');
 const UniswapV2Router02 = artifacts.require('UniswapV2Router02');
 const SimpleFeeOwner = artifacts.require('SimpleFeeOwner');
 
-const shouldOverwrite = (contract) => {
-  const basicCondition = process.env.OVERWRITE_EXISTING_CONTRACTS === 'true' || isDevNetwork(process.env.NETWORK);
-  if (basicCondition) {
-    return true;
-  }
-
-  try {
-    return !contract.address;
-  } catch (e) {
-    // The address can't be retrieved, which means there isn't one.
-    return true
-  }
-}
-
-const getNoOverwriteParams = () => ({ overwrite: false });
-
-
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
@@ -178,37 +163,37 @@ async function deployTestContracts(deployer, network) {
 }
 
 async function deployBaseProtocol(deployer, network) {
-  if (shouldOverwrite(CallImpl)) {
+  if (shouldOverwrite(CallImpl, network)) {
     await deployer.deploy(CallImpl);
   } else {
     await deployer.deploy(CallImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(DepositImpl)) {
+  if (shouldOverwrite(DepositImpl, network)) {
     await deployer.deploy(DepositImpl);
   } else {
     await deployer.deploy(DepositImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(LiquidateOrVaporizeImpl)) {
+  if (shouldOverwrite(LiquidateOrVaporizeImpl, network)) {
     await deployer.deploy(LiquidateOrVaporizeImpl);
   } else {
     await deployer.deploy(LiquidateOrVaporizeImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(TradeImpl)) {
+  if (shouldOverwrite(TradeImpl, network)) {
     await deployer.deploy(TradeImpl);
   } else {
     await deployer.deploy(TradeImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(TransferImpl)) {
+  if (shouldOverwrite(TransferImpl, network)) {
     await deployer.deploy(TransferImpl);
   } else {
     await deployer.deploy(TransferImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(WithdrawalImpl)) {
+  if (shouldOverwrite(WithdrawalImpl, network)) {
     await deployer.deploy(WithdrawalImpl);
   } else {
     await deployer.deploy(WithdrawalImpl, getNoOverwriteParams());
@@ -222,13 +207,13 @@ async function deployBaseProtocol(deployer, network) {
   OperationImpl.link('TransferImpl', TransferImpl.address);
   OperationImpl.link('WithdrawalImpl', WithdrawalImpl.address);
 
-  if (shouldOverwrite(AdminImpl)) {
+  if (shouldOverwrite(AdminImpl, network)) {
     await deployer.deploy(AdminImpl);
   } else {
     await deployer.deploy(AdminImpl, getNoOverwriteParams());
   }
 
-  if (shouldOverwrite(OperationImpl)) {
+  if (shouldOverwrite(OperationImpl, network)) {
     await deployer.deploy(OperationImpl);
   } else {
     await deployer.deploy(OperationImpl, getNoOverwriteParams());
@@ -254,7 +239,7 @@ async function deployBaseProtocol(deployer, network) {
     await dolomiteMargin.link('TestOperationImpl', TestOperationImpl.address);
   }
 
-  if (shouldOverwrite(dolomiteMargin)) {
+  if (shouldOverwrite(dolomiteMargin, network)) {
     await deployer.deploy(dolomiteMargin, getRiskParams(network), getRiskLimits());
   } else {
     await deployer.deploy(dolomiteMargin, getNoOverwriteParams());
@@ -269,7 +254,7 @@ async function deployMultiCall(deployer, network) {
     multiCall = MultiCall;
   }
 
-  if (shouldOverwrite(multiCall)) {
+  if (shouldOverwrite(multiCall, network)) {
     await deployer.deploy(multiCall);
   } else {
     await deployer.deploy(multiCall, getNoOverwriteParams());
@@ -281,7 +266,7 @@ async function deployInterestSetters(deployer, network) {
     await deployer.deploy(TestInterestSetter);
   }
 
-  if (shouldOverwrite(DoubleExponentInterestSetter)) {
+  if (shouldOverwrite(DoubleExponentInterestSetter, network)) {
     await deployer.deploy(DoubleExponentInterestSetter, getDoubleExponentParams(network));
   } else {
     await deployer.deploy(DoubleExponentInterestSetter, getNoOverwriteParams());
@@ -327,7 +312,7 @@ async function deployPriceOracles(deployer, network) {
   const oracleContract = getChainlinkPriceOracleContract(network, artifacts);
   const params = getChainlinkPriceOracleV1Params(network, tokens, aggregators);
 
-  if (shouldOverwrite(oracleContract)) {
+  if (shouldOverwrite(oracleContract, network)) {
     await deployer.deploy(
       oracleContract,
       params.tokens,
@@ -362,7 +347,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const transferProxy = TransferProxy;
-  if (shouldOverwrite(transferProxy)) {
+  if (shouldOverwrite(transferProxy, network)) {
     await deployer.deploy(
       transferProxy,
       dolomiteMargin.address,
@@ -375,7 +360,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const depositWithdrawalProxy = DepositWithdrawalProxy;
-  if (shouldOverwrite(depositWithdrawalProxy)) {
+  if (shouldOverwrite(depositWithdrawalProxy, network)) {
     await deployer.deploy(
       depositWithdrawalProxy,
       dolomiteMargin.address,
@@ -388,7 +373,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const dolomiteAmmFactory = DolomiteAmmFactory;
-  if (shouldOverwrite(dolomiteAmmFactory)) {
+  if (shouldOverwrite(dolomiteAmmFactory, network)) {
     await deployer.deploy(
       dolomiteAmmFactory,
       getSenderAddress(network, accounts),
@@ -403,7 +388,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const simpleFeeOwner = SimpleFeeOwner;
-  if (shouldOverwrite(simpleFeeOwner)) {
+  if (shouldOverwrite(simpleFeeOwner, network)) {
     await deployer.deploy(
       simpleFeeOwner,
       dolomiteAmmFactory.address,
@@ -417,7 +402,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const expiry = Expiry;
-  if (shouldOverwrite(expiry)) {
+  if (shouldOverwrite(expiry, network)) {
     await deployer.deploy(
       expiry,
       dolomiteMargin.address,
@@ -431,7 +416,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const dolomiteAmmRouterProxy = DolomiteAmmRouterProxy;
-  if (shouldOverwrite(dolomiteAmmRouterProxy)) {
+  if (shouldOverwrite(dolomiteAmmRouterProxy, network)) {
     await deployer.deploy(
       dolomiteAmmRouterProxy,
       dolomiteMargin.address,
@@ -466,7 +451,7 @@ async function deploySecondLayer(deployer, network, accounts) {
       [ethers.utils.solidityKeccak256(['bytes'], [uniswapV2PairBytecode])],
     );
   } else {
-    if (shouldOverwrite(AmmRebalancerProxyV1)) {
+    if (shouldOverwrite(AmmRebalancerProxyV1, network)) {
       await deployer.deploy(
         AmmRebalancerProxyV1,
         dolomiteMargin.address,
@@ -493,7 +478,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const ammRebalancerProxyV2 = AmmRebalancerProxyV2
-  if (shouldOverwrite(ammRebalancerProxyV2)) {
+  if (shouldOverwrite(ammRebalancerProxyV2, network)) {
     await deployer.deploy(
       ammRebalancerProxyV2,
       dolomiteMargin.address,
@@ -508,7 +493,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const payableProxy = PayableProxy
-  if (shouldOverwrite(payableProxy)) {
+  if (shouldOverwrite(payableProxy, network)) {
     await deployer.deploy(
       payableProxy,
       dolomiteMargin.address,
@@ -522,7 +507,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const liquidatorProxyV1 = LiquidatorProxyV1
-  if (shouldOverwrite(liquidatorProxyV1)) {
+  if (shouldOverwrite(liquidatorProxyV1, network)) {
     await deployer.deploy(
       liquidatorProxyV1,
       dolomiteMargin.address,
@@ -535,7 +520,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const liquidatorProxyV1WithAmm = LiquidatorProxyV1WithAmm
-  if (shouldOverwrite(liquidatorProxyV1WithAmm)) {
+  if (shouldOverwrite(liquidatorProxyV1WithAmm, network)) {
     await deployer.deploy(
       liquidatorProxyV1WithAmm,
       dolomiteMargin.address,
@@ -550,7 +535,7 @@ async function deploySecondLayer(deployer, network, accounts) {
   }
 
   const signedOperationProxy = SignedOperationProxy
-  if (shouldOverwrite(signedOperationProxy)) {
+  if (shouldOverwrite(signedOperationProxy, network)) {
     await deployer.deploy(
       signedOperationProxy,
       dolomiteMargin.address,

@@ -117,10 +117,10 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
         constants.solidAccount = solidAccount;
         constants.liquidAccount = liquidAccount;
         constants.minLiquidatorRatio = minLiquidatorRatio;
-        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
         constants.markets = getMarketInfos(
             constants.dolomiteMargin,
-            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.dolomiteMargin.getAccountMarketsWithBalances(solidAccount),
             constants.liquidMarkets
         );
 
@@ -433,7 +433,7 @@ contract LiquidatorProxyV1 is OnlyDolomiteMargin, ReentrancyGuard, LiquidatorPro
             constants.dolomiteMargin,
             constants.markets,
             constants.solidAccount,
-            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(constants.solidAccount)
+            constants.dolomiteMargin.getAccountMarketsWithBalances(constants.solidAccount)
         );
 
         MarketInfo memory heldMarketInfo = binarySearch(constants.markets, heldMarket);

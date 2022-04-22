@@ -121,8 +121,8 @@ library AdminImpl {
         Monetary.Value minBorrowedValue
     );
 
-    event LogSetMaxNumberOfMarketsWithBalancesAndDebt(
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
+    event LogSetAccountMaxNumberOfMarketsWithBalances(
+        uint256 accountMaxNumberOfMarketsWithBalances
     );
 
     event LogSetGlobalOperator(
@@ -443,17 +443,17 @@ library AdminImpl {
         emit LogSetMinBorrowedValue(minBorrowedValue);
     }
 
-    function ownerSetMaxNumberOfMarketsWithBalancesAndDebt(
+    function ownerSetAccountMaxNumberOfMarketsWithBalances(
         Storage.State storage state,
-        uint256 maxNumberOfMarketsWithBalancesAndDebt
+        uint256 accountMaxNumberOfMarketsWithBalances
     ) public {
         Require.that(
-            maxNumberOfMarketsWithBalancesAndDebt >= 2,
+            accountMaxNumberOfMarketsWithBalances >= 2,
             FILE,
-            "invalid max # of non-zero bals"
+            "Acct MaxNumberOfMarkets too low"
         );
-        state.riskParams.maxNumberOfMarketsWithBalancesAndDebt = maxNumberOfMarketsWithBalancesAndDebt;
-        emit LogSetMaxNumberOfMarketsWithBalancesAndDebt(maxNumberOfMarketsWithBalancesAndDebt);
+        state.riskParams.accountMaxNumberOfMarketsWithBalances = accountMaxNumberOfMarketsWithBalances;
+        emit LogSetAccountMaxNumberOfMarketsWithBalances(accountMaxNumberOfMarketsWithBalances);
     }
 
     // ============ Global Operator Functions ============

@@ -1,13 +1,15 @@
+const { isDevNetwork, isMainNet, isKovan, isMaticTest, isMatic, isArbitrum, isArbitrumTest } = require('./helpers');
 const {
-  isDevNetwork, isMainNet, isKovan, isMaticTest, isMatic, isArbitrum,
-  isArbitrumTest,
-} = require('./helpers');
-const {
-  getDaiAddress, getLinkAddress, getLrcAddress, getMaticAddress, getUsdcAddress, getWbtcAddress, getWethAddress,
+  getDaiAddress,
+  getLinkAddress,
+  getLrcAddress,
+  getMaticAddress,
+  getUsdcAddress,
+  getWbtcAddress,
+  getWethAddress,
+  getUsdtAddress,
 } = require('./token_helpers');
-const {
-  ADDRESSES,
-} = require('../dist/src/lib/Constants');
+const { ADDRESSES } = require('../dist/src/lib/Constants');
 
 function getBtcUsdAggregatorAddress(network, TestBtcUsdChainlinkAggregator) {
   if (isDevNetwork(network)) {
@@ -135,6 +137,13 @@ function getUsdcUsdAggregatorAddress(network) {
   throw new Error('Cannot find USDC-USD aggregator for network ' + network);
 }
 
+function getUsdtUsdAggregatorAddress(network) {
+  if (isArbitrum(network)) {
+    return '0x3f3f5df88dc9f13eac63df89ec16ef6e7e25dde7';
+  }
+  throw new Error('Cannot find USDT-USD aggregator for network ' + network);
+}
+
 function getUsdcEthAggregatorAddress(network, TestUsdcEthChainlinkAggregator) {
   if (isDevNetwork(network)) {
     return TestUsdcEthChainlinkAggregator.address;
@@ -181,19 +190,21 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
     ]);
   } else if (isArbitrum(network) || isArbitrumTest(network)) {
-    return mapPairsToParams([
+    const pairs = [
       [getDaiAddress(network), getDaiUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
       [getLinkAddress(network), getLinkUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
       [getUsdcAddress(network), getUsdcUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8],
       [getWethAddress(network), getEthUsdAggregatorAddress(network), 18, ADDRESSES.ZERO, 8],
       [getWbtcAddress(network), getBtcUsdAggregatorAddress(network), 8, ADDRESSES.ZERO, 8],
-    ]);
+    ];
+    if (isArbitrum(network)) {
+      pairs.push([getUsdtAddress(network), getUsdtUsdAggregatorAddress(network), 6, ADDRESSES.ZERO, 8]);
+    }
+    return mapPairsToParams(pairs);
   } else if (isArbitrumTest(network)) {
     throw new Error('Cannot get Chainlink params for Arbitrum Rinkeby');
   } else if (isDevNetwork(network)) {
-    const {
-      TokenA, TokenB, TokenD, TokenE, TokenF, WETH9,
-    } = tokens;
+    const { TokenA, TokenB, TokenD, TokenE, TokenF, WETH9 } = tokens;
 
     const {
       btcUsdAggregator,
@@ -210,7 +221,13 @@ function getChainlinkPriceOracleV1Params(network, tokens, aggregators) {
       // eslint-disable-next-line max-len
       [getLinkAddress(network, TokenE), getLinkUsdAggregatorAddress(network, linkUsdAggregator), 18, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len
-      [getLrcAddress(network, TokenF), getLrcEthAggregatorAddress(network, lrcEthAggregator), 18, getWethAddress(network, WETH9), 18],
+      [
+        getLrcAddress(network, TokenF),
+        getLrcEthAggregatorAddress(network, lrcEthAggregator),
+        18,
+        getWethAddress(network, WETH9),
+        18,
+      ],
       // eslint-disable-next-line max-len
       [getUsdcAddress(network, TokenA), getUsdcEthAggregatorAddress(network, usdcUsdAggregator), 6, ADDRESSES.ZERO, 8],
       // eslint-disable-next-line max-len

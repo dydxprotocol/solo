@@ -336,7 +336,7 @@ export interface RiskParams {
   liquidationSpread: Decimal;
   earningsRate: Decimal;
   minBorrowedValue: Integer;
-  maxNumberOfMarketsWithBalancesAndDebt: Integer;
+  accountMaxNumberOfMarketsWithBalances: Integer;
 }
 
 export interface Balance {

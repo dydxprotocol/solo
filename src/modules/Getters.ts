@@ -119,7 +119,7 @@ export class Getters {
       liquidationSpread: stringToDecimal(result[1].value),
       earningsRate: stringToDecimal(result[2].value),
       minBorrowedValue: new BigNumber(result[3].value),
-      maxNumberOfMarketsWithBalancesAndDebt: new BigNumber(result[4]),
+      accountMaxNumberOfMarketsWithBalances: new BigNumber(result[4]),
     };
   }
 
@@ -140,11 +140,11 @@ export class Getters {
     };
   }
 
-  public async getMaxNumberOfMarketsWithBalancesAndDebt(
+  public async getAccountMaxNumberOfMarketsWithBalances(
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteMargin.methods.getMaxNumberOfMarketsWithBalancesAndDebt(),
+      this.contracts.dolomiteMargin.methods.getAccountMaxNumberOfMarketsWithBalances(),
       options,
     );
     return new BigNumber(result);
@@ -536,13 +536,13 @@ export class Getters {
     };
   }
 
-  public async getAccountNonZeroBalances(
+  public async getAccountMarketsWithBalances(
     accountOwner: address,
     accountNumber: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<Integer[]> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteMargin.methods.getAccountMarketsWithNonZeroBalances({
+      this.contracts.dolomiteMargin.methods.getAccountMarketsWithBalances({
         owner: accountOwner,
         number: accountNumber.toFixed(0),
       }),
@@ -551,13 +551,28 @@ export class Getters {
     return result.map(marketIdString => new BigNumber(marketIdString));
   }
 
-  public async getNumberOfMarketsWithBorrow(
+  public async getAccountNumberOfMarketsWithBalances(
     accountOwner: address,
     accountNumber: Integer,
     options?: ContractConstantCallOptions,
   ): Promise<Integer> {
     const result = await this.contracts.callConstantContractFunction(
-      this.contracts.dolomiteMargin.methods.getNumberOfMarketsWithBorrow({
+      this.contracts.dolomiteMargin.methods.getAccountNumberOfMarketsWithBalances({
+        owner: accountOwner,
+        number: accountNumber.toFixed(0),
+      }),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async getAccountNumberOfMarketsWithDebt(
+    accountOwner: address,
+    accountNumber: Integer,
+    options?: ContractConstantCallOptions,
+  ): Promise<Integer> {
+    const result = await this.contracts.callConstantContractFunction(
+      this.contracts.dolomiteMargin.methods.getAccountNumberOfMarketsWithDebt({
         owner: accountOwner,
         number: accountNumber.toFixed(0),
       }),

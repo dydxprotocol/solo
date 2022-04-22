@@ -360,6 +360,14 @@ library OperationImpl {
         for (uint256 a = 0; a < accounts.length; a++) {
             Account.Info memory account = accounts[a];
 
+            Require.that(
+                state.getNumberOfMarketsWithBalances(account) <= state.riskParams.accountMaxNumberOfMarketsWithBalances,
+                FILE,
+                "Too many non-zero balances",
+                account.owner,
+                account.number
+            );
+
             // don't check collateralization for non-primary accounts
             if (!primaryAccounts[a]) {
                 continue;

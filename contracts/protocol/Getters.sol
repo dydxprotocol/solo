@@ -86,12 +86,12 @@ contract Getters is
         return g_state.riskParams.minBorrowedValue;
     }
 
-    function getMaxNumberOfMarketsWithBalancesAndDebt()
+    function getAccountMaxNumberOfMarketsWithBalances()
         public
         view
         returns (uint256)
     {
-        return g_state.riskParams.maxNumberOfMarketsWithBalancesAndDebt;
+        return g_state.riskParams.accountMaxNumberOfMarketsWithBalances;
     }
 
     function getRiskParams()
@@ -398,7 +398,7 @@ contract Getters is
         return g_state.getStatus(account);
     }
 
-    function getAccountMarketsWithNonZeroBalances(
+    function getAccountMarketsWithBalances(
         Account.Info memory account
     )
         public
@@ -408,7 +408,7 @@ contract Getters is
         return g_state.getMarketsWithBalances(account);
     }
 
-    function getNumberOfMarketsWithBalances(
+    function getAccountNumberOfMarketsWithBalances(
         Account.Info memory account
     )
         public
@@ -418,14 +418,25 @@ contract Getters is
         return g_state.getNumberOfMarketsWithBalances(account);
     }
 
-    function getNumberOfMarketsWithBorrow(
+    function getAccountMarketWithBalanceAtIndex(
+        Account.Info memory account,
+        uint256 index
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return g_state.getAccountMarketWithBalanceAtIndex(account, index);
+    }
+
+    function getAccountNumberOfMarketsWithDebt(
         Account.Info memory account
     )
         public
         view
         returns (uint256)
     {
-        return g_state.getNumberOfMarketsWithBorrow(account);
+        return g_state.getAccountNumberOfMarketsWithDebt(account);
     }
 
     function getAccountValues(

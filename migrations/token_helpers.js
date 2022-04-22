@@ -130,6 +130,13 @@ function getUsdcAddress(network, TokenA) {
   throw new Error('Cannot find USDC');
 }
 
+function getUsdtAddress(network) {
+  if (isArbitrum(network)) {
+    return '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9';
+  }
+  throw new Error('Cannot find USDT');
+}
+
 function getWbtcAddress(network, TokenD) {
   if (isDevNetwork(network)) {
     return TokenD.address;
@@ -195,6 +202,7 @@ module.exports = {
   getLrcAddress,
   getMaticAddress,
   getUsdcAddress,
+  getUsdtAddress,
   getWbtcAddress,
   getWethAddress,
   getWrappedCurrencyAddress,

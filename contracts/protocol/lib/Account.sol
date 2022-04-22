@@ -58,7 +58,7 @@ library Account {
     // The complete storage for any account
     struct Storage {
         Status status;
-        uint32 numberOfMarketsWithBorrow;
+        uint32 numberOfMarketsWithDebt;
         EnumerableSet.Set marketsWithNonZeroBalanceSet;
         mapping (uint256 => Types.Par) balances; // Mapping from marketId to principal
     }

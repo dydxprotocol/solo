@@ -100,6 +100,13 @@ library EnumerableSet {
     }
 
     /**
+     * @dev Returns the value at the corresponding index. O(1).
+     */
+    function getAtIndex(Set storage set, uint256 index) internal view returns (uint256) {
+        return set._values[index];
+    }
+
+    /**
      * @dev Return the entire set in an array
      *
      * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed

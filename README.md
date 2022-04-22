@@ -111,7 +111,7 @@ into `DolomiteMargin` such that there isn't enough liquidity to perform timely l
 market size were $50M in TVL, and a whale deposited $1B in UST, it would put too much stress on the system, since that
 much LINK would outweigh every other asset deposited by orders of magnitude. If a `maxWei` is set that is higher than
 the current TVL, all new actions involving that currency must lower the TVL or keep it the same.
-- Added `maxNumberOfMarketsWithBalancesAndDebt` to `RiskParams` which limits how many assets a user can hold in the same
+- Added `accountMaxNumberOfMarketsWithBalances` to `RiskParams` which limits how many assets a user can hold in the same
 account index, if the user has any active debt. This number was initialized to be sufficiently high, at `32`, meaning
 a user could use up to 31 assets as collateral when borrowing one asset, or conversely, 1 asset as collateral and borrow
 up to 31 different assets. This limits the stress that can be put on the system gas-wise, whereby a user could add many

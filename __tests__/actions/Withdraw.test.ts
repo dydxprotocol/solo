@@ -545,10 +545,10 @@ describe('Withdraw', () => {
   it('Fails if the user has too many non-zero balances and has debt', async () => {
     await issueTokensToDolomiteMargin(wei);
     await dolomiteMargin.testing.setAccountBalance(who, accountNumber, otherMarket, wei);
-    await dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(2, { from: admin });
+    await dolomiteMargin.admin.setAccountMaxNumberOfMarketsWithBalances(2, { from: admin });
     await expectWithdrawRevert(
       {},
-      `Storage: Too many non-zero balances <${defaultGlob.primaryAccountOwner.toLowerCase()}, ${defaultGlob.primaryAccountId.toString()}>`,
+      `OperationImpl: Too many non-zero balances <${defaultGlob.primaryAccountOwner.toLowerCase()}, ${defaultGlob.primaryAccountId.toString()}>`,
     );
   });
 });

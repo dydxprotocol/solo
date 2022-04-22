@@ -247,19 +247,19 @@ describe('Admin', () => {
 
   // ============ Market Functions ============
 
-  describe('#setMaxNumberOfMarketsWithBalancesAndDebt', () => {
+  describe('#setAccountMaxNumberOfMarketsWithBalances', () => {
     it('Successfully sets value', async () => {
-      const txResult = await dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(100, { from: admin });
+      const txResult = await dolomiteMargin.admin.setAccountMaxNumberOfMarketsWithBalances(100, { from: admin });
       const logs = dolomiteMargin.logs.parseLogs(txResult);
       expect(logs.length).toEqual(1);
-      expect(logs[0].name).toEqual('LogSetMaxNumberOfMarketsWithBalancesAndDebt');
-      expect(logs[0].args.maxNumberOfMarketsWithBalancesAndDebt).toEqual(new BigNumber('100'));
-      expect(await dolomiteMargin.getters.getMaxNumberOfMarketsWithBalancesAndDebt()).toEqual(new BigNumber('100'));
+      expect(logs[0].name).toEqual('LogSetAccountMaxNumberOfMarketsWithBalances');
+      expect(logs[0].args.accountMaxNumberOfMarketsWithBalances).toEqual(new BigNumber('100'));
+      expect(await dolomiteMargin.getters.getAccountMaxNumberOfMarketsWithBalances()).toEqual(new BigNumber('100'));
     });
 
     it('Fails for non-admin', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(
+        dolomiteMargin.admin.setAccountMaxNumberOfMarketsWithBalances(
           100,
           { from: nonAdmin },
         ),
@@ -268,10 +268,11 @@ describe('Admin', () => {
 
     it('Fails for when too low', async () => {
       await expectThrow(
-        dolomiteMargin.admin.setMaxNumberOfMarketsWithBalancesAndDebt(
+        dolomiteMargin.admin.setAccountMaxNumberOfMarketsWithBalances(
           1,
           { from: admin },
         ),
+        'AdminImpl: Acct MaxNumberOfMarkets too low',
       );
     });
   });

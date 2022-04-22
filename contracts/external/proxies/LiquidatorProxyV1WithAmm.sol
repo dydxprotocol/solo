@@ -200,10 +200,10 @@ contract LiquidatorProxyV1WithAmm is ReentrancyGuard, LiquidatorProxyHelper {
         constants.dolomiteMargin = DOLOMITE_MARGIN;
         constants.solidAccount = solidAccount;
         constants.liquidAccount = liquidAccount;
-        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(liquidAccount);
+        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
         constants.markets = getMarketInfos(
             constants.dolomiteMargin,
-            constants.dolomiteMargin.getAccountMarketsWithNonZeroBalances(solidAccount),
+            constants.dolomiteMargin.getAccountMarketsWithBalances(solidAccount),
             constants.liquidMarkets
         );
         constants.expiryProxy = expiry > 0 ? EXPIRY_PROXY: IExpiry(address(0));
