@@ -11,7 +11,7 @@ The DolomiteMargin smart contracts were audited independently by
 
 **[Bramah Systems Audit Report](https://s3.amazonaws.com/dydx-assets/dYdX_Audit_Report_Bramah_Systems.pdf)**
 
-**[SECBIT Labs Audit Report](https://raw.githubusercontent.com/dolomite-exchange/dolomite-margin/master/docs/Dolomite_Protocol_V2_Report_EN.pdf)**
+**[SECBIT Labs Audit Report](https://github.com/dolomite-exchange/dolomite-margin/blob/master/docs/Dolomite_Protocol_V2_Report_EN.pdf)**
 
 ## Code Coverage
 

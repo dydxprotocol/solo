@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Ethereum Smart Contracts and TypeScript library used for the DolomiteMargin trading protocol",
   "engines": {
     "npm": "6.14.x"
@@ -45,7 +45,8 @@
     "docker_node": "ganache-cli -i 1313 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "check_amm_bytecode": "ts-node ./scripts/CheckAmmBytecode.ts",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
-    "deploy": "truffle migrate --network=$NETWORK --f 3 && npm run save_deployed_addresses",
+    "fix_deployment_file": "ts-node ./scripts/FixDeploymentFile.ts",
+    "deploy": "npm run fix_deployment_file && NODE_ENV=production truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_matic": "NETWORK=matic npm run deploy",
@@ -64,7 +65,8 @@
     "install_compiler": "docker pull ethereum/solc:0.5.7",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts",
     "serve_docs": "docsify serve ./docs",
-    "execute-set-expiry": "ts-node scripts/SetExpiry.ts"
+    "execute-set-expiry": "ts-node scripts/SetExpiry.ts",
+    "verify": "DEPLOYER_PRIVATE_KEY=0x1234567812345678123456781234567812345678123456781234567812345678 NODE_ENV=production ts-node scripts/VerifyContracts.ts"
   },
   "repository": {
     "type": "git",
@@ -90,6 +92,7 @@
     "axios": "^0.21.1",
     "bignumber.js": "^8.1.1",
     "canonical-weth": "^1.4.0",
+    "dotenv": "^16.0.0",
     "es6-promisify": "^6.0.1",
     "ethers": "4.0.39",
     "query-string": "^6.9.0",
@@ -108,7 +111,6 @@
     "chai": "^4.1.2",
     "coveralls": "^3.0.3",
     "docsify-cli": "^4.3.0",
-    "dotenv": "^16.0.0",
     "dotenv-flow": "^0.2.0",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",

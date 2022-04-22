@@ -34,7 +34,6 @@ import { Types } from "../../protocol/lib/Types.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDepositWithdrawalProxy } from "../interfaces/IDepositWithdrawalProxy.sol";
-import "../uniswap-v2/interfaces/IWETH.sol";
 
 
 /**

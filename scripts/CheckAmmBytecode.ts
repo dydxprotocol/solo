@@ -16,28 +16,42 @@ async function replaceBytecode(): Promise<void> {
 
   const initCodeRegex = /bytes32 private constant PAIR_INIT_CODE_HASH = (0x[0-9a-fA-F]{64});/;
 
+  let errors: Error[] = [];
+
   const dolomiteAmmMatcher = dolomiteAmmPairSource.match(initCodeRegex);
   if (!dolomiteAmmMatcher) {
-    throw new Error('Dolomite init code variable not found!');
+    errors.push(new Error('Dolomite init code variable not found!'));
   }
   if (dolomiteAmmMatcher[1].toString() !== dolomiteAmmInitCodeHash) {
-    throw new Error(`Dolomite init code hash does not match! Expected ${dolomiteAmmInitCodeHash}`);
+    errors.push(new Error(`Dolomite init code hash does not match! Expected ${dolomiteAmmInitCodeHash}`));
   }
 
   const uniswapV2Matcher = uniswapV2PairSource.match(initCodeRegex);
   if (!uniswapV2Matcher) {
-    throw new Error('Uniswap init code variable not found!');
+    errors.push(new Error('Uniswap init code variable not found!'));
   }
   if (uniswapV2Matcher[1].toString() !== uniswapV2InitCodeHash) {
-    throw new Error(`Uniswap init code hash does not match! Expected ${uniswapV2InitCodeHash}`);
+    errors.push(new Error(`Uniswap init code hash does not match! Expected ${uniswapV2InitCodeHash}`));
+  }
+
+  if (errors.length > 0) {
+    errors.forEach(error => console.error(error.message));
+    console.error('');
+    return Promise.reject(
+      new Error(
+        `Bytecode checking encountered ${
+          errors.length
+        } errors. Please resolve the above error messages to fix the issue(s).`,
+      ),
+    );
   }
 
   console.log('All bytecodes match!');
 }
 
 replaceBytecode()
-  .catch((e) => {
-    console.error(e);
+  .catch(e => {
+    console.error(e.message);
     process.exit(1);
   })
   .then(() => process.exit(0));

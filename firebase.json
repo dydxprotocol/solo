@@ -9,11 +9,11 @@
     ],
     "headers": [
       {
-        "source": "/service-worker.js",
+        "source": "/*.md",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "no-cache"
+            "value": "max-age=300"
           }
         ]
       }

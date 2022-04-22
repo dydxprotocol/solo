@@ -30,7 +30,7 @@ import { default as WithdrawalImpl } from '../build/contracts/WithdrawalImpl.jso
 import { default as TransferImpl } from '../build/contracts/TransferImpl.json';
 import { default as TradeImpl } from '../build/contracts/TradeImpl.json';
 import { default as LiquidateOrVaporizeImpl } from '../build/contracts/LiquidateOrVaporizeImpl.json';
-import { default as CallImplImpl } from '../build/contracts/CallImpl.json';
+import { default as CallImpl } from '../build/contracts/CallImpl.json';
 import { default as Permission } from '../build/contracts/Permission.json';
 import { default as PartiallyDelayedMultiSig }
   from '../build/contracts/PartiallyDelayedMultiSig.json';
@@ -53,7 +53,7 @@ export default {
   TransferImpl,
   TradeImpl,
   LiquidateOrVaporizeImpl,
-  CallImplImpl,
+  CallImpl,
   OperationImpl,
   AdminImpl,
   DolomiteMargin,
